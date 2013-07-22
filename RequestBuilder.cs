@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using System.Text;
 
 namespace Refit
 {
@@ -32,18 +33,30 @@ namespace Refit
                 .ToDictionary(k => k.Name, v => v);
         }
 
-        public Func<object[], Task<HttpResponseMessage>> BuildRequestForMethod(string methodName)
+        public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName)) {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
             var restMethod = interfaceHttpMethods[methodName];
 
-            var ret = new HttpRequestMessage() {
-                Method = restMethod.HttpMethod,
-            };
+            return paramList => {
+                var ret = new HttpRequestMessage() {
+                    Method = restMethod.HttpMethod,
+                };
 
-            return _ => default(Task<HttpResponseMessage>);
+                var urlTarget = new StringBuilder(restMethod.RelativePath);
+                var urlParams = new Dictionary<string, string>();
+
+                for(int i=0; i < paramList.Length; i++) {
+                    if (restMethod.ParameterMap.ContainsKey(i)) {
+                        urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", paramList[i].ToString());
+                        continue;
+                    }
+                }
+
+                return ret;
+            };
         }
     }
 
@@ -53,7 +66,9 @@ namespace Refit
         public MethodInfo MethodInfo { get; set; }
         public HttpMethod HttpMethod { get; set; }
         public string RelativePath { get; set; }
-        public Dictionary<string, int> ParameterMap { get; set; }
+        public Dictionary<int, string> ParameterMap { get; set; }
+        public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
+        public Dictionary<int, string> QueryParameterMap { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"^{(.*)}$");
 
@@ -70,7 +85,11 @@ namespace Refit
             RelativePath = hma.Path;
 
             verifyUrlPathIsSane(RelativePath);
-            ParameterMap = buildParameterMap(RelativePath, methodInfo.GetParameters().ToList());
+
+            var parameterList = methodInfo.GetParameters().ToList();
+
+            ParameterMap = buildParameterMap(RelativePath, parameterList);
+            BodyParameterInfo = findBodyParameter(parameterList);
         }
 
         void verifyUrlPathIsSane(string relativePath)
@@ -90,9 +109,9 @@ namespace Refit
             throw new ArgumentException("URL path must be of the form '/foo/bar/baz'");
         }
 
-        Dictionary<string, int> buildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
+        Dictionary<int, string> buildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
         {
-            var ret = new Dictionary<string, int>();
+            var ret = new Dictionary<int, string>();
 
             var parameterizedParts = relativePath.Split('/').SelectMany(x => {
                 var m = parameterRegex.Match(x);
@@ -111,7 +130,7 @@ namespace Refit
                     throw new ArgumentException(String.Format("URL has parameter {0}, but no method parameter matches", name));
                 }
 
-                ret.Add(name, parameterInfo.IndexOf(paramValidationDict[name]));
+                ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), name);
             }
 
             return ret;
@@ -123,6 +142,22 @@ namespace Refit
                 .Select(x => x as AliasAsAttribute)
                 .FirstOrDefault(x => x != null);
             return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
+        }
+
+        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList)
+        {
+            var bodyParams = parameterList
+                .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).Select(y => y as BodyAttribute).FirstOrDefault() })
+                .ToList();
+
+            if (bodyParams.Count(x => x.BodyAttribute != null) > 1) {
+                throw new ArgumentException("Only one parameter can be a Body parameter");
+            }
+
+            var ret = bodyParams.FirstOrDefault(x => x.BodyAttribute != null);
+            if (ret == null) return null;
+
+            return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
         }
     }
 
@@ -143,6 +178,9 @@ namespace Refit
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
+                
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
     }
 
     public interface IDummyHttpApi
@@ -191,7 +229,8 @@ namespace Refit
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
-            Assert.AreEqual(0, fixture.ParameterMap["id"]);
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.IsNull(fixture.BodyParameterInfo);
         }
 
         [Test]
@@ -199,7 +238,19 @@ namespace Refit
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
-            Assert.AreEqual(0, fixture.ParameterMap["id"]);
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.IsNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
+        public void FindTheBodyParameter()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithBody"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+
+            Assert.IsNotNull(fixture.BodyParameterInfo);
+            Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
         }
     }
 
@@ -224,7 +275,7 @@ namespace Refit
 
                 try {
                     var fixture = new RequestBuilder(typeof(IDummyHttpApi));
-                    fixture.BuildRequestForMethod(v);
+                    fixture.BuildRequestFactoryForMethod(v);
                 } catch (Exception ex) {
                     shouldDie = false;
                 }
@@ -236,7 +287,7 @@ namespace Refit
 
                 try {
                     var fixture = new RequestBuilder(typeof(IDummyHttpApi));
-                    fixture.BuildRequestForMethod(v);
+                    fixture.BuildRequestFactoryForMethod(v);
                 } catch (Exception ex) {
                     shouldDie = true;
                 }
