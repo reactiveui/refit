@@ -74,11 +74,12 @@ namespace Refit
                 // UriBuilder business so that we preserve any hardcoded query 
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget.ToString()));
-                var query = HttpUtility.ParseQueryString(uri.Query);
+                var query = HttpUtility.ParseQueryString(uri.Query ?? "");
                 foreach(var kvp in queryParamsToAdd) {
                     query.Add(kvp.Key, kvp.Value);
                 }
 
+                uri.Query = query.ToString();
                 ret.RequestUri = new Uri(uri.Uri.PathAndQuery, UriKind.Relative);
                 return ret;
             };
@@ -118,6 +119,7 @@ namespace Refit
             ParameterMap = buildParameterMap(RelativePath, parameterList);
             BodyParameterInfo = findBodyParameter(parameterList);
 
+            QueryParameterMap = new Dictionary<int, string>();
             for (int i=0; i < parameterList.Count; i++) {
                 if (ParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
                     continue;
@@ -148,7 +150,7 @@ namespace Refit
         {
             var ret = new Dictionary<int, string>();
 
-            var parameterizedParts = relativePath.Split('/').SelectMany(x => {
+            var parameterizedParts = relativePath.Split('/', '?').SelectMany(x => {
                 var m = parameterRegex.Match(x);
                 return (m.Success ? EnumerableEx.Return(m) : Enumerable.Empty<Match>());
             }).ToList();
@@ -211,6 +213,12 @@ namespace Refit
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuff(int id);
 
+        [Get("/foo/bar/{id}?baz=bamf")]
+        Task<string> FetchSomeStuffWithHardcodedQueryParam(int id);
+
+        [Get("/foo/bar/{id}?baz=bamf")]
+        Task<string> FetchSomeStuffWithQueryParam(int id, string search);
+
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
                 
@@ -257,6 +265,27 @@ namespace Refit
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
+        public void ParameterMappingWithQuerySmokeTest()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual("search", fixture.QueryParameterMap[1]);
+            Assert.IsNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
+        public void ParameterMappingWithHardcodedQuerySmokeTest()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedQueryParam"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.IsNull(fixture.BodyParameterInfo);
         }
 
@@ -266,6 +295,7 @@ namespace Refit
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.IsNull(fixture.BodyParameterInfo);
         }
 
@@ -277,6 +307,7 @@ namespace Refit
             Assert.AreEqual("id", fixture.ParameterMap[0]);
 
             Assert.IsNotNull(fixture.BodyParameterInfo);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
         }
     }
@@ -344,7 +375,8 @@ namespace Refit
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedQueryParameter");
             var output = factory(new object[] { 6 });
 
-            Assert.AreEqual("/foo/bar/6?baz=bamf", output.RequestUri.PathAndQuery);
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/foo/bar/6?baz=bamf", uri.PathAndQuery);
         }
                         
         [Test]
@@ -354,7 +386,8 @@ namespace Refit
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
             var output = factory(new object[] { 6, "foo" });
 
-            Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", output.RequestUri.PathAndQuery);
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
         }
     }
 }
