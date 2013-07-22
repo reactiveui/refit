@@ -96,6 +96,8 @@ namespace Refit
         public Dictionary<int, string> ParameterMap { get; set; }
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
+        public Type ReturnType { get; set; }
+        public Type SerializedReturnType { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"^{(.*)}$");
 
@@ -113,6 +115,7 @@ namespace Refit
             RelativePath = hma.Path;
 
             verifyUrlPathIsSane(RelativePath);
+            determineReturnTypeInfo(methodInfo);
 
             var parameterList = methodInfo.GetParameters().ToList();
 
@@ -195,6 +198,26 @@ namespace Refit
             if (ret == null) return null;
 
             return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
+        }
+
+        void determineReturnTypeInfo(MethodInfo methodInfo)
+        {
+            if (methodInfo.ReturnType.IsGenericType == false && methodInfo.ReturnType != typeof(Task)) {
+                goto bogusMethod;
+            }
+
+            var genericType = methodInfo.ReturnType.GetGenericTypeDefinition();
+            if (genericType != typeof(Task<>) && genericType != typeof(IObservable<>)) {
+                goto bogusMethod;
+            }
+
+            ReturnType = methodInfo.ReturnType;
+            SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
+            if (SerializedReturnType == typeof(HttpResponseMessage)) SerializedReturnType = null;
+            return;
+
+        bogusMethod:
+            throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
         }
     }
 
