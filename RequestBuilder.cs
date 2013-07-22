@@ -84,6 +84,40 @@ namespace Refit
                 return ret;
             };
         }
+
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
+        {
+            if (!interfaceHttpMethods.ContainsKey(methodName)) {
+                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
+            }
+
+            var restMethod = interfaceHttpMethods[methodName];
+            if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)) {
+                return buildTaskFuncForMethod(restMethod);
+            } else {
+                return buildRxFuncForMethod(restMethod);
+            }
+        }
+
+        Func<HttpClient, object[], Task<object>> buildTaskFuncForMethod(RestMethodInfo restMethod)
+        {
+            var factory = BuildRequestFactoryForMethod(restMethod.Name);
+
+            return async (client, paramList) => {
+                var rq = factory(paramList);
+                var resp = await client.SendAsync(rq);
+                if (restMethod.SerializedReturnType == null) {
+                    return resp;
+                }
+
+                var content = await resp.Content.ReadAsStringAsync();
+                if (restMethod.SerializedReturnType == typeof(string)) {
+                    return content;
+                }
+
+                return JsonConvert.DeserializeObject(content, restMethod.SerializedReturnType);
+            };
+        }
     }
 
     class RestMethodInfo
