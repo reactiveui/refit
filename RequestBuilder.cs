@@ -93,11 +93,26 @@ namespace Refit
             }
 
             var restMethod = interfaceHttpMethods[methodName];
-            if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)) {
+
+            if (restMethod.ReturnType == typeof(Task)) {
+                return buildVoidTaskFuncForMethod(restMethod);
+            } else if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)) {
                 return buildTaskFuncForMethod(restMethod);
             } else {
                 return buildRxFuncForMethod(restMethod);
             }
+        }
+
+        Func<HttpClient, object[], Task> buildVoidTaskFuncForMethod(RestMethodInfo restMethod)
+        {
+            var factory = BuildRequestFactoryForMethod(restMethod.Name);
+                        
+            return async (client, paramList) => {
+                var rq = factory(paramList);
+                var resp = await client.SendAsync(rq);
+
+                resp.EnsureSuccessStatusCode();
+            };
         }
 
         Func<HttpClient, object[], Task<object>> buildTaskFuncForMethod(RestMethodInfo restMethod)
