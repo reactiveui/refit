@@ -195,7 +195,7 @@ namespace System.Web
 
 		static HttpEncoder GetCustomEncoderFromConfig ()
 		{
-            return null;
+            return new HttpEncoder();
 		}
 #endif
 #if NET_4_0
