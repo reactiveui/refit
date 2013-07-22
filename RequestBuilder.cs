@@ -9,6 +9,7 @@ using NUnit.Framework;
 using System.Text;
 using Newtonsoft.Json;
 using System.IO;
+using System.Web;
 
 namespace Refit
 {
@@ -48,7 +49,6 @@ namespace Refit
                 };
 
                 var urlTarget = new StringBuilder(restMethod.RelativePath);
-                var urlParams = new Dictionary<string, string>();
                 var queryParamsToAdd = new Dictionary<string, string>();
 
                 for(int i=0; i < paramList.Length; i++) {
@@ -66,8 +66,20 @@ namespace Refit
                         }
                         continue;
                     }
+
+                    queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
                 }
 
+                // NB: The URI methods in .NET are dumb. Also, we do this 
+                // UriBuilder business so that we preserve any hardcoded query 
+                // parameters as well as add the parameterized ones.
+                var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget.ToString()));
+                var query = HttpUtility.ParseQueryString(uri.Query);
+                foreach(var kvp in queryParamsToAdd) {
+                    query.Add(kvp.Key, kvp.Value);
+                }
+
+                ret.RequestUri = new Uri(uri.Uri.PathAndQuery, UriKind.Relative);
                 return ret;
             };
         }
@@ -76,6 +88,7 @@ namespace Refit
     class RestMethodInfo
     {
         public string Name { get; set; }
+        public Type Type { get; set; }
         public MethodInfo MethodInfo { get; set; }
         public HttpMethod HttpMethod { get; set; }
         public string RelativePath { get; set; }
@@ -87,6 +100,7 @@ namespace Refit
 
         public RestMethodInfo(Type targetInterface, MethodInfo methodInfo)
         {
+            Type = targetInterface;
             Name = methodInfo.Name;
             MethodInfo = methodInfo;
 
@@ -103,6 +117,14 @@ namespace Refit
 
             ParameterMap = buildParameterMap(RelativePath, parameterList);
             BodyParameterInfo = findBodyParameter(parameterList);
+
+            for (int i=0; i < parameterList.Count; i++) {
+                if (ParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
+                    continue;
+                }
+
+                QueryParameterMap[i] = getUrlNameForParameter(parameterList[i]);
+            }
         }
 
         void verifyUrlPathIsSane(string relativePath)
