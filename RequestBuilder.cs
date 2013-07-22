@@ -223,7 +223,10 @@ namespace Refit
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
                 
         [Get("/foo/bar/{id}")]
-        Task<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
+        IObservable<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
+
+        [Post("/foo/{id}")]
+        string AsyncOnlyBuddy(int id);
     }
 
     [TestFixture]
@@ -309,6 +312,21 @@ namespace Refit
             Assert.IsNotNull(fixture.BodyParameterInfo);
             Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
+        }
+
+        [Test]
+        public void SyncMethodsShouldThrow()
+        {
+            bool shouldDie = true;
+
+            try {
+                var input = typeof(IRestMethodInfoTests);
+                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "AsyncOnlyBuddy"));
+            } catch (ArgumentException) {
+                shouldDie = false;
+            }
+
+            Assert.IsFalse(shouldDie);
         }
     }
 
