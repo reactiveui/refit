@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using System.Text;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace Refit
 {
@@ -47,10 +49,21 @@ namespace Refit
 
                 var urlTarget = new StringBuilder(restMethod.RelativePath);
                 var urlParams = new Dictionary<string, string>();
+                var queryParamsToAdd = new Dictionary<string, string>();
 
                 for(int i=0; i < paramList.Length; i++) {
                     if (restMethod.ParameterMap.ContainsKey(i)) {
                         urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", paramList[i].ToString());
+                        continue;
+                    }
+
+                    if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item2 == i) {
+                        var streamParam = paramList[i] as Stream;
+                        if (streamParam != null) {
+                            ret.Content = new StreamContent(streamParam);
+                        } else {
+                            ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8);
+                        }
                         continue;
                     }
                 }
