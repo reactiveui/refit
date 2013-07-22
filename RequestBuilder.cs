@@ -218,14 +218,6 @@ namespace Refit
         Task<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
     }
 
-    public interface IDummyHttpApi
-    {
-        [Get("/foo/bar/{id}")]
-        Task<string> FetchSomeStuff(int id);
-
-        string SomeOtherMethod();
-    }
-
     [TestFixture]
     public class RestMethodInfoTests
     {
@@ -289,6 +281,20 @@ namespace Refit
         }
     }
 
+    public interface IDummyHttpApi
+    {
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuff(int id);
+
+        [Get("/foo/bar/{id}?baz=bamf")]
+        Task<string> FetchSomeStuffWithHardcodedQueryParameter(int id);
+
+        [Get("/foo/bar/{id}?baz=bamf")]
+        Task<string> FetchSomeStuffWithHardcodedAndOtherQueryParameters(int id, [AliasAs("search_for")] string searchQuery);
+
+        string SomeOtherMethod();
+    }
+
     [TestFixture]
     public class RequestBuilderTests
     {
@@ -329,6 +335,26 @@ namespace Refit
 
                 Assert.IsFalse(shouldDie);
             }
+        }
+
+        [Test]
+        public void HardcodedQueryParamShouldBeInUrl()
+        {
+            var fixture = new RequestBuilder(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedQueryParameter");
+            var output = factory(new object[] { 6 });
+
+            Assert.AreEqual("/foo/bar/6?baz=bamf", output.RequestUri.PathAndQuery);
+        }
+                        
+        [Test]
+        public void ParameterizedQueryParamsShouldBeInUrl()
+        {
+            var fixture = new RequestBuilder(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
+            var output = factory(new object[] { 6, "foo" });
+
+            Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", output.RequestUri.PathAndQuery);
         }
     }
 }
