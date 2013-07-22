@@ -111,6 +111,8 @@ namespace Refit
                     return resp;
                 }
 
+                resp.EnsureSuccessStatusCode();
+
                 var content = await resp.Content.ReadAsStringAsync();
                 if (restMethod.SerializedReturnType == typeof(string)) {
                     return content;
