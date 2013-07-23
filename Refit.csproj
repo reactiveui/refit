@@ -62,6 +62,7 @@
     <Compile Include="HttpUtility.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="HtmlEncoder.cs" />
+    <Compile Include="RestService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />

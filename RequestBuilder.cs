@@ -37,6 +37,10 @@ namespace Refit
                 .ToDictionary(k => k.Name, v => v);
         }
 
+        public IEnumerable<string> InterfaceHttpMethods {
+            get { return interfaceHttpMethods.Keys; }
+        }
+
         public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName)) {
