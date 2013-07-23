@@ -5,6 +5,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests-Android", "Refi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Monoandroid", "Refit\Refit-Monoandroid.csproj", "{5F276135-A44C-44D3-9213-235F636245C8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Monomac", "Refit\Refit-Monomac.csproj", "{252CE1CF-331C-4445-A3C2-E4D6C80A935A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests", "Refit-Tests\Refit-Tests.csproj", "{252CE1CF-331C-4445-A3C2-E4D6C80A935A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{14759A94-06C8-4E91-9690-94FF3B555CB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{14759A94-06C8-4E91-9690-94FF3B555CB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{14759A94-06C8-4E91-9690-94FF3B555CB9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5F276135-A44C-44D3-9213-235F636245C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5F276135-A44C-44D3-9213-235F636245C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F276135-A44C-44D3-9213-235F636245C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
