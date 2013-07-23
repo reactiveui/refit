@@ -60,11 +60,16 @@ namespace Refit
 
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item2 == i) {
                         var streamParam = paramList[i] as Stream;
+                        var stringParam = paramList[i] as string;
+
                         if (streamParam != null) {
                             ret.Content = new StreamContent(streamParam);
+                        } else if (stringParam != null) {
+                            ret.Content = new StringContent(stringParam);
                         } else {
                             ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8);
                         }
+
                         continue;
                     }
 
