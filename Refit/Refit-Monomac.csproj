@@ -67,6 +67,7 @@
     <Compile Include="Utility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="CastleRestService.cs" />
+    <Compile Include="RequestBuilderImplementation.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

@@ -13,7 +13,7 @@ namespace Refit
         readonly ProxyGenerator proxyGen = new ProxyGenerator();
         public T For<T>(HttpClient client)
         {
-            var rb = new RequestBuilder(typeof(T));
+            var rb = RequestBuilder.ForType<T>();
             return (T)proxyGen.CreateInterfaceProxyWithoutTarget(typeof(T), new RestServiceMethodMissing(rb, client));
         }
     }
@@ -23,7 +23,7 @@ namespace Refit
         readonly HttpClient client;
         readonly Dictionary<string, Func<HttpClient, object[], object>> methodImpls;
 
-        public RestServiceMethodMissing(RequestBuilder requestBuilder, HttpClient client)
+        public RestServiceMethodMissing(IRequestBuilder requestBuilder, HttpClient client)
         {
             methodImpls = requestBuilder.InterfaceHttpMethods.ToDictionary(k => k, v => requestBuilder.BuildRestResultFuncForMethod(v));
             this.client = client;

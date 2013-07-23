@@ -176,7 +176,7 @@ namespace Refit.Tests
                 bool shouldDie = true;
 
                 try {
-                    var fixture = new RequestBuilder(typeof(IDummyHttpApi));
+                    var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
                 } catch (Exception ex) {
                     shouldDie = false;
@@ -188,7 +188,7 @@ namespace Refit.Tests
                 bool shouldDie = false;
 
                 try {
-                    var fixture = new RequestBuilder(typeof(IDummyHttpApi));
+                    var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
                 } catch (Exception ex) {
                     shouldDie = true;
@@ -201,7 +201,7 @@ namespace Refit.Tests
         [Test]
         public void HardcodedQueryParamShouldBeInUrl()
         {
-            var fixture = new RequestBuilder(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedQueryParameter");
             var output = factory(new object[] { 6 });
 
@@ -212,7 +212,7 @@ namespace Refit.Tests
         [Test]
         public void ParameterizedQueryParamsShouldBeInUrl()
         {
-            var fixture = new RequestBuilder(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
             var output = factory(new object[] { 6, "foo" });
 
