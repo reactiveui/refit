@@ -3,7 +3,7 @@ using Android.App;
 using Android.OS;
 using Xamarin.Android.NUnitLite;
 
-namespace Refit
+namespace Refit.Tests
 {
     [Activity (Label = "Refit", MainLauncher = true)]
     public class MainActivity : TestSuiteActivity
