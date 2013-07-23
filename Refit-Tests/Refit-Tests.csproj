@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{252CE1CF-331C-4445-A3C2-E4D6C80A935A}</ProjectGuid>
+    <ProjectGuid>{A52CE1CF-131C-F445-A3C2-E4D6C80A935A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Refit-Tests</RootNamespace>
