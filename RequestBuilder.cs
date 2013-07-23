@@ -89,7 +89,13 @@ namespace Refit
                     query.Add(kvp.Key, kvp.Value);
                 }
 
-                uri.Query = query.ToString();
+                if (query.HasKeys()) {
+                    var pairs = query.Keys.OfType<string>().Select(x => HttpUtility.UrlEncode(x) + "=" + HttpUtility.UrlEncode(query[x]));
+                    uri.Query = String.Join("&", pairs);
+                } else {
+                    uri.Query = null;
+                }
+
                 ret.RequestUri = new Uri(uri.Uri.PathAndQuery, UriKind.Relative);
                 return ret;
             };
