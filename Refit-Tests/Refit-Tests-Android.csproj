@@ -45,10 +45,10 @@
     <Reference Include="Xamarin.Android.NUnitLite" />
     <Reference Include="System.Net.Http" />
     <Reference Include="Castle.Core">
-      <HintPath>ext\Monoandroid\Castle.Core.dll</HintPath>
+      <HintPath>..\ext\Monoandroid\Castle.Core.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>ext\Monoandroid\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\ext\Monoandroid\Newtonsoft.Json.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
