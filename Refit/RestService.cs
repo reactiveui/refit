@@ -18,6 +18,15 @@ namespace Refit
         static internal IRestService platformRestService = new CastleRestService();
 #else
         static internal IRestService platformRestService;
+        
+        static RestService()
+        {
+            var fullName = typeof(RequestBuilder).AssemblyQualifiedName;
+            var toFind = fullName.Replace("RequestBuilder", "CastleRestService").Replace("Refit-Portable", "Refit");
+            
+            var type = Type.GetType(toFind);
+            platformRestService = Activator.CreateInstance(type) as IRestService;
+        }
 #endif
 
         public static T For<T>(HttpClient client)

@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace Refit
 {
-    class RequestBuilderFactory : IRequestBuilderFactory
+    public class RequestBuilderFactory : IRequestBuilderFactory
     {
         public IRequestBuilder Create(Type interfaceType)
         {

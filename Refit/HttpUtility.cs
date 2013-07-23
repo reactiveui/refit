@@ -184,7 +184,7 @@ namespace System.Web
 
             byte[] buf = bytes.ToArray();
             bytes = null;
-            return e.GetString(buf);
+            return e.GetString(buf, 0, buf.Length);
 
         }
 
@@ -414,7 +414,8 @@ namespace System.Web
             // avoided GetByteCount call
             byte[] bytes = new byte[Enc.GetMaxByteCount(s.Length)];
             int realLen = Enc.GetBytes(s, 0, s.Length, bytes, 0);
-            return Encoding.ASCII.GetString(UrlEncodeToBytes(bytes, 0, realLen));
+            var encodedBytes = UrlEncodeToBytes(bytes, 0, realLen);
+            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
         }
 
         public static string UrlEncode(byte[] bytes)
@@ -425,7 +426,8 @@ namespace System.Web
             if (bytes.Length == 0)
                 return String.Empty;
 
-            return Encoding.ASCII.GetString(UrlEncodeToBytes(bytes, 0, bytes.Length));
+            var encodedBytes = UrlEncodeToBytes(bytes, 0, bytes.Length);
+            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
         }
 
         public static string UrlEncode(byte[] bytes, int offset, int count)
@@ -436,7 +438,8 @@ namespace System.Web
             if (bytes.Length == 0)
                 return String.Empty;
 
-            return Encoding.ASCII.GetString(UrlEncodeToBytes(bytes, offset, count));
+            var encodedBytes = UrlEncodeToBytes(bytes, offset, count);
+            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
         }
 
         public static byte[] UrlEncodeToBytes(string str)
@@ -483,7 +486,8 @@ namespace System.Web
             if (str == null)
                 return null;
 
-            return Encoding.ASCII.GetString(UrlEncodeUnicodeToBytes(str));
+            var encodedBytes = UrlEncodeUnicodeToBytes(str);
+            return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
         }
 
         public static byte[] UrlEncodeUnicodeToBytes(string str)

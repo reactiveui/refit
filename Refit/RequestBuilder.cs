@@ -19,6 +19,16 @@ namespace Refit
     public static class RequestBuilder
     {
 #if PORTABLE
+        static IRequestBuilderFactory platformRequestBuilderFactory;
+
+        static RequestBuilder()
+        {
+            var fullName = typeof(RequestBuilder).AssemblyQualifiedName;
+            var toFind = fullName.Replace("RequestBuilder", "RequestBuilderFactory").Replace("Refit-Portable", "Refit");
+
+            var type = Type.GetType(toFind);
+            platformRequestBuilderFactory = Activator.CreateInstance(type) as IRequestBuilderFactory;
+        }
 #else
         static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
 #endif

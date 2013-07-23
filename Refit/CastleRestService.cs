@@ -8,7 +8,7 @@ using System.Threading;
 
 namespace Refit
 {
-    class CastleRestService : IRestService
+    public class CastleRestService : IRestService
     {
         readonly ProxyGenerator proxyGen = new ProxyGenerator();
         public T For<T>(HttpClient client)
