@@ -33,6 +33,6 @@ Global
 		{5F276135-A44C-44D3-9213-235F636245C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Refit-Tests\Refit-Tests-Android.csproj
+		StartupItem = Refit-Tests\Refit-Tests.csproj
 	EndGlobalSection
 EndGlobal

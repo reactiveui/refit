@@ -57,10 +57,7 @@ namespace Refit.Tests
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             var result = fixture.GetUser("octocat");
 
-            while (!result.IsCompleted) {
-                Thread.Sleep(1000);
-            }
-
+            result.Wait();
             Assert.AreEqual("octocat", result.Result.login);
         }
     }
