@@ -7,51 +7,8 @@ using NUnit.Framework;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace Refit
+namespace Refit.Tests
 {
-    public static class RestService
-    {
-        static readonly ProxyGenerator proxyGen = new ProxyGenerator();
-        public static T For<T>(HttpClient client)
-        {
-            var rb = new RequestBuilder(typeof(T));
-            return (T)proxyGen.CreateInterfaceProxyWithoutTarget(typeof(T), new RestServiceMethodMissing(rb, client));
-        }
-
-        public static T For<T>(string hostUrl)
-        {
-            var client = new HttpClient() { BaseAddress = new Uri(hostUrl) };
-            return RestService.For<T>(client);
-        }
-    }
-
-    class RestServiceMethodMissing : IInterceptor
-    {
-        readonly HttpClient client;
-        readonly Dictionary<string, Func<HttpClient, object[], object>> methodImpls;
-
-        public RestServiceMethodMissing(RequestBuilder requestBuilder, HttpClient client)
-        {
-            methodImpls = requestBuilder.InterfaceHttpMethods.ToDictionary(k => k, v => requestBuilder.BuildRestResultFuncForMethod(v));
-            this.client = client;
-        }
-
-        public void Intercept(IInvocation invocation)
-        {
-            if (!methodImpls.ContainsKey(invocation.Method.Name)) {
-                throw new NotImplementedException();
-            }
-
-            invocation.ReturnValue = methodImpls[invocation.Method.Name](client, invocation.Arguments);
-            Console.WriteLine(invocation.ReturnValue);
-        }
-    }
-
-
-    /*
-     * TESTS
-     */
-
     public class User
     {
         public string login { get; set; }
@@ -100,10 +57,7 @@ namespace Refit
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             var result = fixture.GetUser("octocat");
 
-            while (!result.IsCompleted) {
-                Thread.Sleep(1000);
-            }
-
+            result.Wait();
             Assert.AreEqual("octocat", result.Result.login);
         }
     }

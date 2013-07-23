@@ -203,7 +203,7 @@ namespace System.Web
 #else
 		internal static
 #endif
- string UrlPathEncode(string value)
+        string UrlPathEncode(string value)
 		{
 			if (String.IsNullOrEmpty(value))
 				return value;
@@ -213,7 +213,8 @@ namespace System.Web
 			for (int i = 0; i < length; i++)
 				UrlPathEncodeChar(value[i], result);
 
-			return Encoding.ASCII.GetString(result.ToArray());
+            var encodedBytes = result.ToArray();
+			return Encoding.UTF8.GetString(encodedBytes, 0, encodedBytes.Length);
 		}
 
 		internal static byte[] UrlEncodeToBytes(byte[] bytes, int offset, int count)
