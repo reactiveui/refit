@@ -37,6 +37,10 @@ namespace Refit
                 .ToDictionary(k => k.Name, v => v);
         }
 
+        public IEnumerable<string> InterfaceHttpMethods {
+            get { return interfaceHttpMethods.Keys; }
+        }
+
         public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName)) {
@@ -60,11 +64,16 @@ namespace Refit
 
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item2 == i) {
                         var streamParam = paramList[i] as Stream;
+                        var stringParam = paramList[i] as string;
+
                         if (streamParam != null) {
                             ret.Content = new StreamContent(streamParam);
+                        } else if (stringParam != null) {
+                            ret.Content = new StringContent(stringParam);
                         } else {
                             ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8);
                         }
+
                         continue;
                     }
 
@@ -80,7 +89,13 @@ namespace Refit
                     query.Add(kvp.Key, kvp.Value);
                 }
 
-                uri.Query = query.ToString();
+                if (query.HasKeys()) {
+                    var pairs = query.Keys.OfType<string>().Select(x => HttpUtility.UrlEncode(x) + "=" + HttpUtility.UrlEncode(query[x]));
+                    uri.Query = String.Join("&", pairs);
+                } else {
+                    uri.Query = null;
+                }
+
                 ret.RequestUri = new Uri(uri.Uri.PathAndQuery, UriKind.Relative);
                 return ret;
             };
@@ -97,9 +112,26 @@ namespace Refit
             if (restMethod.ReturnType == typeof(Task)) {
                 return buildVoidTaskFuncForMethod(restMethod);
             } else if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)) {
-                return buildTaskFuncForMethod(restMethod);
+                // NB: This jacked up reflection code is here because it's
+                // difficult to upcast Task<object> to an arbitrary T, especially
+                // if you need to AOT everything, so we need to reflectively 
+                // invoke buildTaskFuncForMethod.
+                var taskFuncMi = GetType().GetMethod("buildTaskFuncForMethod", BindingFlags.NonPublic | BindingFlags.Instance);
+                var taskFunc = (MulticastDelegate)taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
+                    .Invoke(this, new[] { restMethod });
+
+                return (client, args) => {
+                    return taskFunc.DynamicInvoke(new object[] { client, args } );
+                };
             } else {
-                return buildRxFuncForMethod(restMethod);
+                // Same deal
+                var rxFuncMi = GetType().GetMethod("buildRxFuncForMethod", BindingFlags.NonPublic | BindingFlags.Instance);
+                var rxFunc = (MulticastDelegate)rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
+                    .Invoke(this, new[] { restMethod });
+
+                return (client, args) => {
+                    return rxFunc.DynamicInvoke(new object[] { client, args });
+                };
             }
         }
 
@@ -115,7 +147,8 @@ namespace Refit
             };
         }
 
-        Func<HttpClient, object[], Task<object>> buildTaskFuncForMethod(RestMethodInfo restMethod)
+        Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
+            where T : class
         {
             var factory = BuildRequestFactoryForMethod(restMethod.Name);
 
@@ -123,26 +156,27 @@ namespace Refit
                 var rq = factory(paramList);
                 var resp = await client.SendAsync(rq);
                 if (restMethod.SerializedReturnType == null) {
-                    return resp;
+                    return resp as T;
                 }
 
                 resp.EnsureSuccessStatusCode();
 
                 var content = await resp.Content.ReadAsStringAsync();
                 if (restMethod.SerializedReturnType == typeof(string)) {
-                    return content;
+                    return content as T;
                 }
 
-                return JsonConvert.DeserializeObject(content, restMethod.SerializedReturnType);
+                return JsonConvert.DeserializeObject<T>(content);
             };
         }
 
-        Func<HttpClient, object[], IObservable<object>> buildRxFuncForMethod(RestMethodInfo restMethod)
+        Func<HttpClient, object[], IObservable<T>> buildRxFuncForMethod<T>(RestMethodInfo restMethod)
+            where T : class
         {
-            var taskFunc = buildTaskFuncForMethod(restMethod);
+            var taskFunc = buildTaskFuncForMethod<T>(restMethod);
 
             return (client, paramList) => {
-                var ret = new FakeAsyncSubject<object>();
+                var ret = new FakeAsyncSubject<T>();
 
                 taskFunc(client, paramList).ContinueWith(t => {
                     if (t.Exception != null) {
