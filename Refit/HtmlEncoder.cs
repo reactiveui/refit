@@ -267,12 +267,13 @@ namespace System.Web
 				return s;
 
 			StringBuilder output = new StringBuilder();
-			char ch;
 			int len = s.Length;
 
 			for (int i = 0; i < len; i++)
 			{
-				switch (s[i])
+				char ch = s[i];
+
+				switch (ch)
 				{
 					case '&':
 						output.Append("&amp;");
@@ -300,7 +301,6 @@ namespace System.Web
 						break;
 
 					default:
-						ch = s[i];
 						if (ch > 159 && ch < 256)
 						{
 							output.Append("&#");
