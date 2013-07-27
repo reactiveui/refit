@@ -114,6 +114,7 @@
     <Compile Include="NameValueCollection.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RequestBuilderImplementation.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
