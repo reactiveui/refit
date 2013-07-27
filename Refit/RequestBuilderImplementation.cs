@@ -103,7 +103,7 @@ namespace Refit
                     uri.Query = null;
                 }
 
-                ret.RequestUri = new Uri(uri.Uri.PathAndQuery, UriKind.Relative);
+                ret.RequestUri = new Uri(uri.Uri.GetComponents(UriComponents.PathAndQuery, UriFormat.UriEscaped), UriKind.Relative);
                 return ret;
             };
         }
