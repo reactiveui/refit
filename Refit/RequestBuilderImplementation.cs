@@ -84,8 +84,7 @@ namespace Refit
                         continue;
                     }
 
-                    if (paramList[i] != null)
-                    {
+                    if (paramList[i] != null) {
                         queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
                     }
                 }
