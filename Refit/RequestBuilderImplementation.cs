@@ -84,7 +84,9 @@ namespace Refit
                         continue;
                     }
 
-                    queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
+                    if (paramList[i] != null) {
+                        queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
+                    }
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this 
