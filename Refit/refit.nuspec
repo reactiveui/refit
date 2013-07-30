@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>refit</id>
+        <version>1.0.0</version>
+        <title>Refit</title>
+        <authors>Paul Betts,Refit contributors</authors>
+        <owners>Paul Betts</owners>
+        <licenseUrl>https://github.com/xpaulbettsx/refit/blob/master/COPYING</licenseUrl>
+        <projectUrl>https://github.com/xpaulbettsx/refit</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>The automatic type-safe REST library for Xamarin and .NET</description>
+        <summary>The automatic type-safe REST library for Xamarin and .NET</summary>
+
+        <dependencies>
+            <group>
+                <dependency id="Castle.Core" version="3.2.0" />
+            </group>
+            <group targetFramework="WindowsPhone8.0">
+                <dependency id="Microsoft.Net.Http" version="2.2.13" />
+            </group>
+            <group targetFramework="Silverlight5.0">
+                <dependency id="Microsoft.Net.Http" version="2.2.13" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="bin\Release\MonoAndroid\Refit*.*" target="lib\MonoAndroid" />
+        <file src="bin\Release\MonoMac\Refit*.*" target="lib\MonoMac" />
+        <file src="bin\Release\Net45\Refit*.*" target="lib\Net45" />
+        <file src="bin\Release\Portable-Net45+WinRT45+WP8\Refit*.*" target="lib\Portable-Net45+WinRT45+WP8" />
+        <file src="bin\Release\WP8\Refit*.*" target="lib\WP8" />
+        <file src="bin\Release\SL5\Refit*.*" target="lib\SL5" />
+    </files>
+</package>
