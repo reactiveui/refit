@@ -30,37 +30,143 @@
 
       </header>
       <section>
-        <h3>
-<a name="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages"><span class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
+        <h2>
+<a name="refit-the-automatic-type-safe-rest-library-for-xamarin-and-net" class="anchor" href="#refit-the-automatic-type-safe-rest-library-for-xamarin-and-net"><span class="octicon octicon-link"></span></a>Refit: The automatic type-safe REST library for Xamarin and .NET</h2>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>Refit is a library heavily inspired by Square's
+<a href="http://square.github.io/retrofit">Retrofit</a> library, and it turns your REST
+API into a live interface:</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<div class="highlight"><pre><span class="k">public</span> <span class="k">interface</span> <span class="n">IGitHubApi</span>
+<span class="p">{</span>
+<span class="na">    [Get("/users/{user}")]</span>
+    <span class="n">Task</span><span class="p">&lt;</span><span class="n">User</span><span class="p">&gt;</span> <span class="n">GetUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">user</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<p>The <code>RestService</code> class generates an implementation of <code>IGitHubApi</code> that uses
+<code>HttpClient</code> to make its calls:</p>
+
+<div class="highlight"><pre><span class="kt">var</span> <span class="n">gitHubApi</span> <span class="p">=</span> <span class="n">RestService</span><span class="p">.</span><span class="n">For</span><span class="p">&lt;</span><span class="n">IGitHubApi</span><span class="p">&gt;(</span><span class="s">"https://api.github.com"</span><span class="p">);</span>
+
+<span class="kt">var</span> <span class="n">octocat</span> <span class="p">=</span> <span class="k">await</span> <span class="n">gitHubApi</span><span class="p">.</span><span class="n">GetUser</span><span class="p">(</span><span class="s">"octocat"</span><span class="p">);</span>
+</pre></div>
+
+<h3>
+<a name="where-does-this-work" class="anchor" href="#where-does-this-work"><span class="octicon octicon-link"></span></a>Where does this work?</h3>
+
+<p>Refit currently supports the following platforms:</p>
+
+<ul>
+<li>Xamarin.Android</li>
+<li>Xamarin.Mac</li>
+<li>Desktop .NET 4.5 </li>
+<li>Windows Phone 8</li>
+<li>Silverlight 5</li>
+</ul><p>Support for the following platforms is coming soon:</p>
+
+<ul>
+<li>Xamarin.iOS</li>
+<li>Windows Store (WinRT)</li>
+</ul><h3>
+<a name="api-attributes" class="anchor" href="#api-attributes"><span class="octicon octicon-link"></span></a>API Attributes</h3>
+
+<p>Every method must have an HTTP attribute that provides the request method and
+relative URL. There are five built-in annotations: Get, Post, Put, Delete, and
+Head. The relative URL of the resource is specified in the annotation.</p>
+
+<div class="highlight"><pre><span class="na">[Get("/users/list")]</span>
+</pre></div>
+
+<p>You can also specify query parameters in the URL:</p>
+
+<div class="highlight"><pre><span class="na">[Get("/users/list?sort=desc")]</span>
+</pre></div>
+
+<p>A request URL can be updated dynamically using replacement blocks and
+parameters on the method. A replacement block is an alphanumeric string
+surrounded by { and }. </p>
+
+<p>If the name of your parameter doesn't match the name in the URL path, use the
+<code>AliasAs</code> attribute.</p>
+
+<div class="highlight"><pre><span class="na">[Get("/group/{id}/users")]</span>
+<span class="n">Task</span><span class="p">&lt;</span><span class="n">List</span><span class="p">&lt;</span><span class="n">User</span><span class="p">&gt;&gt;</span> <span class="n">GroupList</span><span class="p">([</span><span class="n">AliasAs</span><span class="p">(</span><span class="s">"id"</span><span class="p">)]</span> <span class="kt">int</span> <span class="n">groupId</span><span class="p">);</span>
+</pre></div>
+
+<p>Parameters that are not specified as a URL substitution will automatically be
+used as query parameters. This is different than Retrofit, where all
+parameters must be explicitly specified.</p>
+
+<div class="highlight"><pre><span class="na">[Get("/group/{id}/users")]</span>
+<span class="n">Task</span><span class="p">&lt;</span><span class="n">List</span><span class="p">&lt;</span><span class="n">User</span><span class="p">&gt;&gt;</span> <span class="n">GroupList</span><span class="p">([</span><span class="n">AliasAs</span><span class="p">(</span><span class="s">"id"</span><span class="p">)]</span> <span class="kt">int</span> <span class="n">groupId</span><span class="p">,</span> <span class="p">[</span><span class="n">AliasAs</span><span class="p">(</span><span class="s">"sort"</span><span class="p">)]</span> <span class="kt">string</span> <span class="n">sortOrder</span><span class="p">);</span>
+
+<span class="n">GroupList</span><span class="p">(</span><span class="m">4</span><span class="p">,</span> <span class="s">"desc"</span><span class="p">);</span>
+<span class="p">&gt;&gt;&gt;</span> <span class="s">"/group/4/users?sort=desc"</span>
+</pre></div>
+
+<h3>
+<a name="body-content" class="anchor" href="#body-content"><span class="octicon octicon-link"></span></a>Body content</h3>
+
+<p>One of the parameters in your method can be used as the body, by using the
+Body attribute:</p>
+
+<pre><code>[Post("/users/new")]
+Task CreateUser([Body] User user);
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p>There are three possibilities for supplying the body data, depending on the
+type of the parameter:</p>
+
+<ul>
+<li>If the type is <code>Stream</code>, the content will be streamed via <code>StreamContent</code>
+</li>
+<li>If the type is <code>string</code>, the string will be used directly as the content</li>
+<li>For all other types, the object will be serialized as JSON.</li>
+</ul><h3>
+<a name="retrieving-the-response" class="anchor" href="#retrieving-the-response"><span class="octicon octicon-link"></span></a>Retrieving the response</h3>
+
+<p>Note that in Refit unlike in Retrofit, there is no option for a synchronous
+network request - all requests must be async, either via <code>Task</code> or via
+<code>IObservable</code>. There is also no option to create an async method via a Callback
+parameter unlike Retrofit, because we live in the async/await future.</p>
+
+<p>Similarly to how body content changes via the parameter type, the return type
+will determine the content returned.</p>
+
+<p>Returning Task without a type parameter will discard the content and solely
+tell you whether or not the call succeeded:</p>
+
+<div class="highlight"><pre><span class="na">[Post("/users/new")]</span>
+<span class="n">Task</span> <span class="nf">CreateUser</span><span class="p">([</span><span class="n">Body</span><span class="p">]</span> <span class="n">User</span> <span class="n">user</span><span class="p">);</span>
+
+<span class="c1">// This will throw if the network call fails</span>
+<span class="k">await</span> <span class="nf">CreateUser</span><span class="p">(</span><span class="n">someUser</span><span class="p">);</span>
+</pre></div>
+
+<p>If the type parameter is 'HttpResponseMessage' or 'string', the raw response
+message or the content as a string will be returned respectively.</p>
+
+<div class="highlight"><pre><span class="c1">// Returns the content as a string (i.e. the JSON data)</span>
+<span class="na">[Get("/users/{user}")]</span>
+<span class="n">Task</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">GetUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">user</span><span class="p">);</span>
+
+<span class="c1">// Returns the raw response, as an IObservable that can be used with the</span>
+<span class="c1">// Reactive Extensions</span>
+<span class="na">[Get("/users/{user}")]</span>
+<span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">GetUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">user</span><span class="p">);</span>
+</pre></div>
 
 <h3>
-<a name="designer-templates" class="anchor" href="#designer-templates"><span class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a name="whats-missing--planned" class="anchor" href="#whats-missing--planned"><span class="octicon octicon-link"></span></a>What's missing / planned?</h3>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<p>Currently Refit is missing the following features from Retrofit that are
+planned for a future release soon:</p>
 
-<h3>
-<a name="rather-drive-stick" class="anchor" href="#rather-drive-stick"><span class="octicon octicon-link"></span></a>Rather Drive Stick?</h3>
-
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
-
-<h3>
-<a name="authors-and-contributors" class="anchor" href="#authors-and-contributors"><span class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
-
-<h3>
-<a name="support-or-contact" class="anchor" href="#support-or-contact"><span class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<ul>
+<li>Multipart requests (including file upload)</li>
+<li>Form posts</li>
+</ul>
       </section>
       <footer>
         <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
