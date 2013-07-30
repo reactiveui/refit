@@ -1,4 +1,4 @@
-#if !SILVERLIGHT
+#if !SILVERLIGHT || WINDOWS_PHONE
 #define NET_4_0
 #endif
 
@@ -92,7 +92,7 @@ namespace System.Web
             }
             #if NET_4_0
             HttpEncoder.Current.HtmlAttributeEncode (s, output);
-            #elif SILVERLIGHT
+            #elif SILVERLIGHT && !WINDOWS_PHONE
                 output.Write(Windows.Browser.HttpUtility.HtmlEncode(s));
             #else
             output.Write(HttpEncoder.HtmlAttributeEncode(s));
@@ -109,7 +109,7 @@ namespace System.Web
                 HttpEncoder.Current.HtmlAttributeEncode (s, sw);
                 return sw.ToString ();
             }
-            #elif SILVERLIGHT
+            #elif SILVERLIGHT && !WINDOWS_PHONE
             return Windows.Browser.HttpUtility.HtmlEncode(s);
             #else
             return HttpEncoder.HtmlAttributeEncode(s);
