@@ -1,4 +1,6 @@
+#if !SILVERLIGHT
 #define NET_4_0
+#endif
 
 // 
 // System.Web.HttpUtility
@@ -90,6 +92,8 @@ namespace System.Web
             }
             #if NET_4_0
             HttpEncoder.Current.HtmlAttributeEncode (s, output);
+            #elif SILVERLIGHT
+                output.Write(Windows.Browser.HttpUtility.HtmlEncode(s));
             #else
             output.Write(HttpEncoder.HtmlAttributeEncode(s));
             #endif
@@ -105,6 +109,8 @@ namespace System.Web
                 HttpEncoder.Current.HtmlAttributeEncode (s, sw);
                 return sw.ToString ();
             }
+            #elif SILVERLIGHT
+            return Windows.Browser.HttpUtility.HtmlEncode(s);
             #else
             return HttpEncoder.HtmlAttributeEncode(s);
             #endif
@@ -676,6 +682,8 @@ namespace System.Web
         {
             #if NET_4_0
             return HttpEncoder.Current.UrlPathEncode (s);
+            #elif SILVERLIGHT
+            return Windows.Browser.HttpUtility.UrlEncode(s);
             #else
             return HttpEncoder.UrlPathEncode(s);
             #endif
