@@ -29,6 +29,7 @@ Refit currently supports the following platforms:
 * Xamarin.Mac
 * Desktop .NET 4.5 
 * Windows Phone 8
+* Silverlight 5
 
 Support for the following platforms is coming soon:
 
