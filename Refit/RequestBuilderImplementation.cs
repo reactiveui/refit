@@ -78,7 +78,7 @@ namespace Refit
                         } else if (stringParam != null) {
                             ret.Content = new StringContent(stringParam);
                         } else {
-                            ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8);
+                            ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8, "application/json");
                         }
 
                         continue;
