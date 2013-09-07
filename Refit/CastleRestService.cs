@@ -36,7 +36,6 @@ namespace Refit
             }
 
             invocation.ReturnValue = methodImpls[invocation.Method.Name](client, invocation.Arguments);
-            Console.WriteLine(invocation.ReturnValue);
         }
     }
 }
