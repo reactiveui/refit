@@ -391,15 +391,18 @@ namespace Refit
         {
             var bodyParams = parameterList
                 .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault() })
+                .Where(x => x.BodyAttribute != null)
                 .ToList();
 
-            if (bodyParams.Count(x => x.BodyAttribute != null) > 1) {
+            if (bodyParams.Count > 1) {
                 throw new ArgumentException("Only one parameter can be a Body parameter");
             }
 
-            var ret = bodyParams.FirstOrDefault(x => x.BodyAttribute != null);
-            if (ret == null) return null;
+            if (bodyParams.Count == 0) {
+                return null;
+            }
 
+            var ret = bodyParams[0];
             return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
         }
 
