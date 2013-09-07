@@ -21,7 +21,7 @@ namespace Refit
         }
     }
 
-    class RequestBuilderImplementation : IRequestBuilder
+    public class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
@@ -289,7 +289,7 @@ namespace Refit
         }
     }
 
-    class RestMethodInfo
+    public class RestMethodInfo
     {
         public string Name { get; set; }
         public Type Type { get; set; }
