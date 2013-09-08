@@ -21,7 +21,7 @@ namespace Refit
         }
     }
 
-    class RequestBuilderImplementation : IRequestBuilder
+    public class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
@@ -36,8 +36,8 @@ namespace Refit
             interfaceHttpMethods = targetInterface.GetMethods()
                 .SelectMany(x => {
                     var attrs = x.GetCustomAttributes(true);
-                    var httpMethod = attrs.Select(y => y as HttpMethodAttribute).FirstOrDefault(y => y != null);
-                    if (httpMethod == null) return Enumerable.Empty<RestMethodInfo>();
+                    var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
+                    if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
 
                     return EnumerableEx.Return(new RestMethodInfo(targetInterface, x));
                 })
@@ -99,7 +99,7 @@ namespace Refit
                 }
 
                 if (query.HasKeys()) {
-                    var pairs = query.Keys.OfType<string>().Select(x => HttpUtility.UrlEncode(x) + "=" + HttpUtility.UrlEncode(query[x]));
+                    var pairs = query.Keys.Cast<string>().Select(x => HttpUtility.UrlEncode(x) + "=" + HttpUtility.UrlEncode(query[x]));
                     uri.Query = String.Join("&", pairs);
                 } else {
                     uri.Query = null;
@@ -289,7 +289,7 @@ namespace Refit
         }
     }
 
-    class RestMethodInfo
+    public class RestMethodInfo
     {
         public string Name { get; set; }
         public Type Type { get; set; }
@@ -311,8 +311,8 @@ namespace Refit
             MethodInfo = methodInfo;
 
             var hma = methodInfo.GetCustomAttributes(true)
-                .Select(y => y as HttpMethodAttribute)
-                .First(y => y != null);
+                .OfType<HttpMethodAttribute>()
+                .First();
 
             HttpMethod = hma.Method;
             RelativePath = hma.Path;
@@ -382,24 +382,27 @@ namespace Refit
         string getUrlNameForParameter(ParameterInfo paramInfo)
         {
             var aliasAttr = paramInfo.GetCustomAttributes(true)
-                .Select(x => x as AliasAsAttribute)
-                .FirstOrDefault(x => x != null);
+                .OfType<AliasAsAttribute>()
+                .FirstOrDefault();
             return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
         }
 
         Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList)
         {
             var bodyParams = parameterList
-                .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).Select(y => y as BodyAttribute).FirstOrDefault() })
+                .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault() })
+                .Where(x => x.BodyAttribute != null)
                 .ToList();
 
-            if (bodyParams.Count(x => x.BodyAttribute != null) > 1) {
+            if (bodyParams.Count > 1) {
                 throw new ArgumentException("Only one parameter can be a Body parameter");
             }
 
-            var ret = bodyParams.FirstOrDefault(x => x.BodyAttribute != null);
-            if (ret == null) return null;
+            if (bodyParams.Count == 0) {
+                return null;
+            }
 
+            var ret = bodyParams[0];
             return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
         }
 
