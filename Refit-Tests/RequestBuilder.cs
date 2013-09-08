@@ -39,6 +39,9 @@ namespace Refit.Tests
 
         [Post("/foo/{id}")]
         string AsyncOnlyBuddy(int id);
+
+        [Get("/foo/bar/{anId}")]
+        Task<string> FetchSomeStuffWithCaseMatchingParameterCase(int anId);
     }
 
     [TestFixture]
@@ -115,6 +118,16 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void ParametersShouldMatchInsensitive()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithCaseMatchingParameterCase"));
+            Assert.AreEqual("anid", fixture.ParameterMap[0]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
         public void FindTheBodyParameter()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -152,6 +165,9 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedAndOtherQueryParameters(int id, [AliasAs("search_for")] string searchQuery);
+
+        [Get("/foo/bar/{anId}")]
+        Task<string> FetchSomeStuffWithCaseMatchingParameter(int anId);
 
         string SomeOtherMethod();
     }
@@ -208,7 +224,7 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf", uri.PathAndQuery);
         }
-                        
+
         [Test]
         public void ParameterizedQueryParamsShouldBeInUrl()
         {
@@ -218,6 +234,17 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void ParametersWithUpperCaseShouldStillCreateUrl()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCaseMatchingParameter");
+            var output = factory(new object[] { 6 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/foo/bar/6", uri.LocalPath);
         }
     }
 }

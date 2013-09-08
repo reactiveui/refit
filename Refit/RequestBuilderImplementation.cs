@@ -60,7 +60,7 @@ namespace Refit
                     Method = restMethod.HttpMethod,
                 };
 
-                var urlTarget = new StringBuilder(restMethod.RelativePath);
+                var urlTarget = new StringBuilder(restMethod.RelativePath.ToLowerInvariant());
                 var queryParamsToAdd = new Dictionary<string, string>();
 
                 for(int i=0; i < paramList.Length; i++) {
