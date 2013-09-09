@@ -51,6 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CastleRestService.cs" />
+    <Compile Include="DefaultRestMethodResolver.cs" />
     <Compile Include="RequestBuilderImplementation.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
