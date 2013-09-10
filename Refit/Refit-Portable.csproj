@@ -38,6 +38,7 @@
     <Compile Include="Attributes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RequestBuilder.cs" />
+    <Compile Include="RestMethodInfo.cs" />
     <Compile Include="RestService.cs" />
   </ItemGroup>
   <ItemGroup>
