@@ -33,15 +33,7 @@ namespace Refit
             }
 
             targetType = targetInterface;
-            interfaceHttpMethods = targetInterface.GetMethods()
-                .SelectMany(x => {
-                    var attrs = x.GetCustomAttributes(true);
-                    var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
-                    if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
-
-                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x));
-                })
-                .ToDictionary(k => k.Name, v => v);
+            interfaceHttpMethods = RestService.RestMethodResolver.GetInterfaceRestMethodInfo(targetInterface);
         }
 
         public IEnumerable<string> InterfaceHttpMethods {

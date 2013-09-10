@@ -9,54 +9,56 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
-    public class DefaultRestMethodResolver
-    {
-    }
+    
 
-    public class RestMethodInfo
+    public class DefaultRestMethodResolver : IRestMethodResolver
     {
-        public string Name { get; set; }
-        public Type Type { get; set; }
-        public MethodInfo MethodInfo { get; set; }
-        public HttpMethod HttpMethod { get; set; }
-        public string RelativePath { get; set; }
-        public Dictionary<int, string> ParameterMap { get; set; }
-        public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
-        public Dictionary<int, string> QueryParameterMap { get; set; }
-        public Type ReturnType { get; set; }
-        public Type SerializedReturnType { get; set; }
-
         static readonly Regex parameterRegex = new Regex(@"^{(.*)}$");
 
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo)
+        public Dictionary<string, RestMethodInfo> GetInterfaceRestMethodInfo(Type targetInterface)
         {
-            Type = targetInterface;
-            Name = methodInfo.Name;
-            MethodInfo = methodInfo;
+            return targetInterface.GetMethods()
+                .SelectMany(x =>
+                {
+                    var attrs = x.GetCustomAttributes(true);
+                    var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
+                    if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
+
+                    return EnumerableEx.Return(buildRestMethodInfo(targetInterface, x));
+                })
+                .ToDictionary(k => k.Name, v => v);
+        }
+
+        // Public so we can build the items for the tests? Makes sense?
+        public RestMethodInfo buildRestMethodInfo(Type targetInterface, MethodInfo methodInfo)
+        {
+            var restMethodInfo = new RestMethodInfo(targetInterface, methodInfo);
 
             var hma = methodInfo.GetCustomAttributes(true)
                 .OfType<HttpMethodAttribute>()
                 .First();
 
-            HttpMethod = hma.Method;
-            RelativePath = hma.Path;
+            restMethodInfo.HttpMethod = hma.Method;
+            restMethodInfo.RelativePath = hma.Path;
 
-            verifyUrlPathIsSane(RelativePath);
-            determineReturnTypeInfo(methodInfo);
+            verifyUrlPathIsSane(restMethodInfo.RelativePath);
+            determineReturnTypeInfo(restMethodInfo);
 
             var parameterList = methodInfo.GetParameters().ToList();
 
-            ParameterMap = buildParameterMap(RelativePath, parameterList);
-            BodyParameterInfo = findBodyParameter(parameterList);
+            buildParameterMap(restMethodInfo, parameterList);
+            determineBodyParameter(restMethodInfo, parameterList);
 
-            QueryParameterMap = new Dictionary<int, string>();
+            restMethodInfo.QueryParameterMap = new Dictionary<int, string>();
             for (int i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
+                if (restMethodInfo.ParameterMap.ContainsKey(i) || (restMethodInfo.BodyParameterInfo != null && restMethodInfo.BodyParameterInfo.Item2 == i)) {
                     continue;
                 }
 
-                QueryParameterMap[i] = getUrlNameForParameter(parameterList[i]);
+                restMethodInfo.QueryParameterMap[i] = getUrlNameForParameter(parameterList[i]);
             }
+
+            return restMethodInfo;
         }
 
         void verifyUrlPathIsSane(string relativePath)
@@ -76,17 +78,39 @@ namespace Refit
             throw new ArgumentException("URL path must be of the form '/foo/bar/baz'");
         }
 
-        Dictionary<int, string> buildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
+        void determineReturnTypeInfo(RestMethodInfo restMethodInfo)
+        {
+            var methodInfo = restMethodInfo.MethodInfo;
+            if (methodInfo.ReturnType.IsGenericType == false && methodInfo.ReturnType != typeof(Task)) {
+                goto bogusMethod;
+            }
+
+            var genericType = methodInfo.ReturnType.GetGenericTypeDefinition();
+            if (genericType != typeof(Task<>) && genericType != typeof(IObservable<>)) {
+                goto bogusMethod;
+            }
+
+            restMethodInfo.ReturnType = methodInfo.ReturnType;
+            restMethodInfo.SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
+            if (restMethodInfo.SerializedReturnType == typeof(HttpResponseMessage)) restMethodInfo.SerializedReturnType = null;
+            return;
+
+        bogusMethod:
+            throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
+        }
+
+        void buildParameterMap(RestMethodInfo restMethodInfo, List<ParameterInfo> parameterInfo)
         {
             var ret = new Dictionary<int, string>();
 
-            var parameterizedParts = relativePath.Split('/', '?').SelectMany(x => {
+            var parameterizedParts = restMethodInfo.RelativePath.Split('/', '?').SelectMany(x => {
                 var m = parameterRegex.Match(x);
                 return (m.Success ? EnumerableEx.Return(m) : Enumerable.Empty<Match>());
             }).ToList();
 
             if (parameterizedParts.Count == 0) {
-                return ret;
+                restMethodInfo.ParameterMap = ret;
+                return;
             }
 
             var paramValidationDict = parameterInfo.ToDictionary(k => getUrlNameForParameter(k).ToLowerInvariant(), v => v);
@@ -100,7 +124,7 @@ namespace Refit
                 ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), name);
             }
 
-            return ret;
+            restMethodInfo.ParameterMap = ret;
         }
 
         string getUrlNameForParameter(ParameterInfo paramInfo)
@@ -111,7 +135,7 @@ namespace Refit
             return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
         }
 
-        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList)
+        void determineBodyParameter(RestMethodInfo restMethodInfo, List<ParameterInfo> parameterList)
         {
             var bodyParams = parameterList
                 .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault() })
@@ -123,31 +147,11 @@ namespace Refit
             }
 
             if (bodyParams.Count == 0) {
-                return null;
+                return;
             }
 
             var ret = bodyParams[0];
-            return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
-        }
-
-        void determineReturnTypeInfo(MethodInfo methodInfo)
-        {
-            if (methodInfo.ReturnType.IsGenericType == false && methodInfo.ReturnType != typeof(Task)) {
-                goto bogusMethod;
-            }
-
-            var genericType = methodInfo.ReturnType.GetGenericTypeDefinition();
-            if (genericType != typeof(Task<>) && genericType != typeof(IObservable<>)) {
-                goto bogusMethod;
-            }
-
-            ReturnType = methodInfo.ReturnType;
-            SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
-            if (SerializedReturnType == typeof(HttpResponseMessage)) SerializedReturnType = null;
-            return;
-
-        bogusMethod:
-            throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
+            restMethodInfo.BodyParameterInfo = Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
         }
     }
 }
