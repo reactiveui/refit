@@ -133,7 +133,7 @@ Task<string> GetUser(string user);
 // Returns the raw response, as an IObservable that can be used with the
 // Reactive Extensions
 [Get("/users/{user}")]
-IObservable<string> GetUser(string user);
+IObservable<HttpResponseMessage> GetUser(string user);
 ```
 
 ### What's missing / planned?
