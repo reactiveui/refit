@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests-Net45", "Refit-
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-AspNet", "Refit-AspNet\Refit-AspNet.csproj", "{6D897F65-B391-4982-894D-7FC40FBB9C27}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests-AspNet", "Refit-Tests-AspNet\Refit-Tests-AspNet.csproj", "{1826482A-D5C6-4850-A84A-74CC37868414}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,14 @@ Global
 		{6D897F65-B391-4982-894D-7FC40FBB9C27}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6D897F65-B391-4982-894D-7FC40FBB9C27}.Release|ARM.ActiveCfg = Release|Any CPU
 		{6D897F65-B391-4982-894D-7FC40FBB9C27}.Release|x86.ActiveCfg = Release|Any CPU
+		{1826482A-D5C6-4850-A84A-74CC37868414}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1826482A-D5C6-4850-A84A-74CC37868414}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1826482A-D5C6-4850-A84A-74CC37868414}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{1826482A-D5C6-4850-A84A-74CC37868414}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1826482A-D5C6-4850-A84A-74CC37868414}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1826482A-D5C6-4850-A84A-74CC37868414}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1826482A-D5C6-4850-A84A-74CC37868414}.Release|ARM.ActiveCfg = Release|Any CPU
+		{1826482A-D5C6-4850-A84A-74CC37868414}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
