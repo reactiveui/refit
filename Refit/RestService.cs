@@ -12,20 +12,32 @@ namespace Refit
         T For<T>(HttpClient client);
     }
 
+    public interface IRestMethodResolver
+    {
+        Dictionary<string, RestMethodInfo> GetInterfaceRestMethodInfo(Type targetInterface);
+    }
+
     public static class RestService
     {
 #if !PORTABLE
         static internal IRestService platformRestService = new CastleRestService();
+        public static readonly IRestMethodResolver RestMethodResolver = new DefaultRestMethodResolver();
 #else
         static internal IRestService platformRestService;
+        public static IRestMethodResolver RestMethodResolver;
         
         static RestService()
         {
             var fullName = typeof(RequestBuilder).AssemblyQualifiedName;
-            var toFind = fullName.Replace("RequestBuilder", "CastleRestService").Replace("Refit-Portable", "Refit");
-            
-            var type = Type.GetType(toFind);
-            platformRestService = Activator.CreateInstance(type) as IRestService;
+            var builderFactoryToFind = fullName.Replace("RequestBuilder", "CastleRestService").Replace("Refit-Portable", "Refit");
+
+            var builderFactoryType = Type.GetType(builderFactoryToFind);
+            platformRestService = Activator.CreateInstance(builderFactoryType) as IRestService;
+
+            var restMethodResolverToFind = fullName.Replace("RequestBuilder", "DefaultRestMethodResolver").Replace("Refit-Portable", "Refit");
+
+            var restMethodResolverType = Type.GetType(restMethodResolverToFind);
+            RestMethodResolver = Activator.CreateInstance(restMethodResolverType) as IRestMethodResolver;
         }
 #endif
 

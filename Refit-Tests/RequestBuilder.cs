@@ -50,8 +50,9 @@ namespace Refit.Tests
             bool shouldDie = true;
 
             try {
+                var defaultRestMethodResolver = new DefaultRestMethodResolver();
                 var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
+                var fixture = defaultRestMethodResolver.buildRestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
             } catch (ArgumentException) {
                 shouldDie = false;
             }
@@ -65,8 +66,9 @@ namespace Refit.Tests
             bool shouldDie = true;
 
             try {
+                var defaultRestMethodResolver = new DefaultRestMethodResolver();
                 var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffMissingParameters"));
+                var fixture = defaultRestMethodResolver.buildRestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffMissingParameters"));
             } catch (ArgumentException) {
                 shouldDie = false;
             }
@@ -77,8 +79,9 @@ namespace Refit.Tests
         [Test]
         public void ParameterMappingSmokeTest()
         {
+            var defaultRestMethodResolver = new DefaultRestMethodResolver();
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
+            var fixture = defaultRestMethodResolver.buildRestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
             Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.IsNull(fixture.BodyParameterInfo);
@@ -87,8 +90,9 @@ namespace Refit.Tests
         [Test]
         public void ParameterMappingWithQuerySmokeTest()
         {
+            var defaultRestMethodResolver = new DefaultRestMethodResolver();
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
+            var fixture = defaultRestMethodResolver.buildRestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
             Assert.AreEqual("search", fixture.QueryParameterMap[1]);
             Assert.IsNull(fixture.BodyParameterInfo);
@@ -97,8 +101,9 @@ namespace Refit.Tests
         [Test]
         public void ParameterMappingWithHardcodedQuerySmokeTest()
         {
+            var defaultRestMethodResolver = new DefaultRestMethodResolver();
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedQueryParam"));
+            var fixture = defaultRestMethodResolver.buildRestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedQueryParam"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
             Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.IsNull(fixture.BodyParameterInfo);
@@ -107,8 +112,9 @@ namespace Refit.Tests
         [Test]
         public void AliasMappingShouldWork()
         {
+            var defaultRestMethodResolver = new DefaultRestMethodResolver();
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
+            var fixture = defaultRestMethodResolver.buildRestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
             Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.IsNull(fixture.BodyParameterInfo);
@@ -117,8 +123,9 @@ namespace Refit.Tests
         [Test]
         public void FindTheBodyParameter()
         {
+            var defaultRestMethodResolver = new DefaultRestMethodResolver();
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithBody"));
+            var fixture = defaultRestMethodResolver.buildRestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithBody"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
 
             Assert.IsNotNull(fixture.BodyParameterInfo);
@@ -132,8 +139,9 @@ namespace Refit.Tests
             bool shouldDie = true;
 
             try {
+                var defaultRestMethodResolver = new DefaultRestMethodResolver();
                 var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "AsyncOnlyBuddy"));
+                var fixture = defaultRestMethodResolver.buildRestMethodInfo(input, input.GetMethods().First(x => x.Name == "AsyncOnlyBuddy"));
             } catch (ArgumentException) {
                 shouldDie = false;
             }
