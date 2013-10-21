@@ -46,11 +46,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RestMethodResolver.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Refit\Refit-Net45.csproj">
+      <Project>{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}</Project>
+      <Name>Refit-Net45</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Refit\Refit-Portable.csproj">
+      <Project>{E315020F-33BC-4D85-BC6E-8346F06F1112}</Project>
+      <Name>Refit-Portable</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
