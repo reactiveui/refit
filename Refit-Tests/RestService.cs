@@ -46,6 +46,9 @@ namespace Refit.Tests
     {
         [Get("/users/{username}")]
         Task<User> GetUser(string userName);
+
+        [Get("/")]
+        Task<HttpResponseMessage> GetIndex();
     }
 
     [TestFixture]
@@ -59,6 +62,17 @@ namespace Refit.Tests
 
             result.Wait();
             Assert.AreEqual("octocat", result.Result.login);
+        }
+
+        [Test]
+        public void ShouldRetHttpResponseMessage() 
+        {
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com");
+            var result = fixture.GetIndex();
+
+            result.Wait();
+            Assert.IsNotNull(result.Result);
+            Assert.IsTrue(result.Result.IsSuccessStatusCode);
         }
     }
 }
