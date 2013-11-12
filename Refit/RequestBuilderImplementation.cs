@@ -164,7 +164,7 @@ namespace Refit
             return async (client, paramList) => {
                 var rq = factory(paramList);
                 var resp = await client.SendAsync(rq);
-                if (restMethod.SerializedReturnType == null) {
+                if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
                     return resp as T;
                 }
 
@@ -419,7 +419,6 @@ namespace Refit
 
             ReturnType = methodInfo.ReturnType;
             SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
-            if (SerializedReturnType == typeof(HttpResponseMessage)) SerializedReturnType = null;
             return;
 
         bogusMethod:
