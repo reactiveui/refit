@@ -408,8 +408,14 @@ namespace Refit
 
         void determineReturnTypeInfo(MethodInfo methodInfo)
         {
-            if (methodInfo.ReturnType.IsGenericType == false && methodInfo.ReturnType != typeof(Task)) {
-                goto bogusMethod;
+            if (methodInfo.ReturnType.IsGenericType == false) {
+                if (methodInfo.ReturnType != typeof (Task)) {
+                    goto bogusMethod;
+                }
+
+                ReturnType = methodInfo.ReturnType;
+                SerializedReturnType = typeof(void);
+                return;
             }
 
             var genericType = methodInfo.ReturnType.GetGenericTypeDefinition();
