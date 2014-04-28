@@ -74,6 +74,21 @@ namespace Refit.Tests
             Assert.IsNotNull(result.Result);
             Assert.IsTrue(result.Result.IsSuccessStatusCode);
         }
+
+        [Test]
+        public void PostToRequestBin()
+        {
+            var fixture = RestService.For<IRequestBin>("http://requestb.in/");
+            var result = fixture.Post();
+
+            result.Wait();
+        }
+
+        interface IRequestBin
+        {
+            [Post("/1h3a5jm1")]
+            Task Post();
+        }
     }
 }
 

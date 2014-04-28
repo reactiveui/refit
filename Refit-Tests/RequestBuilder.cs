@@ -38,6 +38,9 @@ namespace Refit.Tests
         IObservable<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
 
         [Post("/foo/{id}")]
+        Task VoidPost(int id);
+
+        [Post("/foo/{id}")]
         string AsyncOnlyBuddy(int id);
     }
 
@@ -124,6 +127,17 @@ namespace Refit.Tests
             Assert.IsNotNull(fixture.BodyParameterInfo);
             Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
+        }
+
+        [Test]
+        public void ReturningTaskShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "VoidPost"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+
+            Assert.AreEqual(typeof(Task), fixture.ReturnType);
+            Assert.AreEqual(typeof(void), fixture.SerializedReturnType);
         }
 
         [Test]
