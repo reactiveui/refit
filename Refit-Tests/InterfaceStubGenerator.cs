@@ -17,8 +17,12 @@ namespace Refit.Tests
     // * Search for all Interfaces, find the method definitions
     // * Generate the data we need for the template based on interface method 
     //   defn's
+    // * Get this into an EXE in tools, write a targets file to beforeBuild execute it
+    // * Get a props file that adds a dummy file to the project
+    // * Write an implementation of RestService that just takes the interface name to
+    //   guess the class name based on our template
     //
-    // What if the Interface is in another module? (fuck 'em)
+    // What if the Interface is in another module? (since we copy usings, should be fine)
     // What if the Interface itself is Generic? (fuck 'em)
     public class InterfaceStubGenerator
     {
