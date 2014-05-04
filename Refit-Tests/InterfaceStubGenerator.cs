@@ -102,22 +102,6 @@ namespace Refit.Tests
         }
     }
 
-    static class EnumerableEx
-    {
-        public static IEnumerable<T> Concat<T>(this IEnumerable<T> This, params IEnumerable<T>[] others)
-        {
-            foreach (var v in This) {
-                yield return v;
-            }
-
-            foreach (var list in others) {
-                foreach (var v in list) {
-                    yield return v;
-                }
-            }
-        }
-    }
-
     public class InterfaceStubGeneratorTests
     {
         [Test]
