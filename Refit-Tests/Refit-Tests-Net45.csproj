@@ -104,6 +104,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <None Include="GeneratedInterfaceStubTemplate.cs.mustache" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
