@@ -87,6 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DeliminatorSeparatedPropertyNamesContractResolver.cs" />
+    <Compile Include="GitHubApi.cs" />
     <Compile Include="IntegrationTestHelper.cs" />
     <Compile Include="InterfaceStubGenerator.cs" />
     <Compile Include="RequestBuilder.cs" />
