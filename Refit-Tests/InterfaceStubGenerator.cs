@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NUnit.Framework;
@@ -21,10 +22,8 @@ namespace Refit.Tests
     // What if the Interface itself is Generic? (fuck 'em)
     public class InterfaceStubGenerator
     {
-        public List<string> FindInterfacesToGenerate(string path)
+        public List<string> FindInterfacesToGenerate(SyntaxTree tree)
         {
-            var tree = CSharpSyntaxTree.ParseFile(path);
-
             var restServiceCalls = tree.GetRoot().DescendantNodes()
                 .OfType<MemberAccessExpressionSyntax>()
                 .Where(x => x.Expression is IdentifierNameSyntax &&
@@ -38,7 +37,30 @@ namespace Refit.Tests
                 .ToList();
         }
 
-        public ClassTemplateInfo GenerateTemplateInfoForInterface(InterfaceDeclarationSyntax interfaceTree)
+        public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList)
+        {
+            var usings = interfaceList
+                .SelectMany(interfaceTree => {
+                    var rootNode = interfaceTree.Parent;
+                    while (rootNode.Parent != null) rootNode = rootNode.Parent;
+
+                    return rootNode.DescendantNodes()
+                        .OfType<UsingDirectiveSyntax>()
+                        .Select(x => x.Name.ToString());
+                })
+                .Distinct()
+                .Where(x => x != "System" && x != "System.Net.Http")
+                .Select(x => new UsingDeclaration() { Item = x });
+
+            var ret = new TemplateInformation() {
+                ClassList = interfaceList.Select(x => GenerateClassInfoForInterface(x)).ToList(),
+                UsingList = usings.ToList(),
+            };
+
+            return ret;
+        }
+
+        public ClassTemplateInfo GenerateClassInfoForInterface(InterfaceDeclarationSyntax interfaceTree)
         {
             var ret = new ClassTemplateInfo();
             var parent = interfaceTree.Parent;
@@ -59,29 +81,6 @@ namespace Refit.Tests
                         .Select(y => String.Format("{0} {1}", y.Type.ToString(), y.Identifier.ValueText))),
                 })
                 .ToList();
-
-            return ret;
-        }
-
-        public TemplateInformation GenerateTemplateForInterfaces(List<InterfaceDeclarationSyntax> interfaceList)
-        {
-            var usings = interfaceList
-                .SelectMany(interfaceTree => {
-                    var rootNode = interfaceTree.Parent;
-                    while (rootNode.Parent != null) rootNode = rootNode.Parent;
-
-                    return rootNode.DescendantNodes()
-                        .OfType<UsingDirectiveSyntax>()
-                        .Select(x => x.Name.ToString());
-                })
-                .Distinct()
-                .Where(x => x != "System" && x != "System.Net.Http")
-                .Select(x => new UsingDeclaration() { Item = x });
-
-            var ret = new TemplateInformation() {
-                ClassList = interfaceList.Select(x => GenerateTemplateInfoForInterface(x)).ToList(),
-                UsingList = usings.ToList(),
-            };
 
             return ret;
         }
@@ -111,13 +110,13 @@ namespace Refit.Tests
             var input = IntegrationTestHelper.GetPath("RestService.cs");
             var fixture = new InterfaceStubGenerator();
 
-            var result = fixture.FindInterfacesToGenerate(input);
+            var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
             Assert.AreEqual(2, result.Count);
             Assert.True(result.Any(x => x == "IGitHubApi"));
         }
 
         [Test]
-        public void GenerateTemplateInfoForInterfaceSmokeTest()
+        public void GenerateClassInfoForInterfaceSmokeTest()
         {
             var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("RestService.cs"));
             var fixture = new InterfaceStubGenerator();
@@ -126,7 +125,7 @@ namespace Refit.Tests
                 .OfType<InterfaceDeclarationSyntax>()
                 .First(x => x.Identifier.ValueText == "IGitHubApi");
 
-            var result = fixture.GenerateTemplateInfoForInterface(input);
+            var result = fixture.GenerateClassInfoForInterface(input);
 
             Assert.AreEqual(2, result.MethodList.Count);
             Assert.AreEqual("GetUser", result.MethodList[0].Name);
@@ -134,7 +133,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void GenerateTemplateForInterfacesSmokeTest()
+        public void GenerateTemplateInfoForInterfaceListSmokeTest()
         {
             var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("RestService.cs"));
             var fixture = new InterfaceStubGenerator();
@@ -143,7 +142,7 @@ namespace Refit.Tests
                 .OfType<InterfaceDeclarationSyntax>()
                 .ToList();
 
-            var result = fixture.GenerateTemplateForInterfaces(input);
+            var result = fixture.GenerateTemplateInfoForInterfaceList(input);
             Encoders.HtmlEncode = (s) => s;
             var text = Render.FileToString(IntegrationTestHelper.GetPath("GeneratedInterfaceStubTemplate.cs.mustache"), result);
             Console.WriteLine(text);
