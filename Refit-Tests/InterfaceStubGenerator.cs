@@ -22,6 +22,22 @@ namespace Refit.Tests
     // What if the Interface itself is Generic? (fuck 'em)
     public class InterfaceStubGenerator
     {
+        public string GenerateInterfaceStubs(string[] paths)
+        {
+            var trees = paths.Select(x => CSharpSyntaxTree.ParseFile(x)).ToList();
+            var interfaceNamesToFind = trees.SelectMany(FindInterfacesToGenerate).Distinct().ToList();
+
+            var interfacesToGenerate = trees.SelectMany(x => x.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>())
+                .Where(x => interfaceNamesToFind.Contains(x.Identifier.ValueText))
+                .ToList();
+
+            var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate);
+
+            Encoders.HtmlEncode = (s) => s;
+            var text = Render.FileToString(IntegrationTestHelper.GetPath("GeneratedInterfaceStubTemplate.cs.mustache"), templateInfo);
+            return text;
+        }
+
         public List<string> FindInterfacesToGenerate(SyntaxTree tree)
         {
             var restServiceCalls = tree.GetRoot().DescendantNodes()
@@ -105,6 +121,19 @@ namespace Refit.Tests
     public class InterfaceStubGeneratorTests
     {
         [Test]
+        public void GenerateInterfaceStubsSmokeTest()
+        {
+            var fixture = new InterfaceStubGenerator();
+
+            var result = fixture.GenerateInterfaceStubs(new[] {
+                IntegrationTestHelper.GetPath("RestService.cs"),
+                IntegrationTestHelper.GetPath("GitHubApi.cs"),
+            });
+
+            Console.WriteLine(result);
+        }
+
+        [Test]
         public void FindInterfacesSmokeTest()
         {
             var input = IntegrationTestHelper.GetPath("RestService.cs");
@@ -143,6 +172,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
+
             Encoders.HtmlEncode = (s) => s;
             var text = Render.FileToString(IntegrationTestHelper.GetPath("GeneratedInterfaceStubTemplate.cs.mustache"), result);
             Console.WriteLine(text);
