@@ -130,7 +130,7 @@ namespace Refit.Tests
                 IntegrationTestHelper.GetPath("GitHubApi.cs"),
             });
 
-            Console.WriteLine(result);
+            Assert.True(result.Contains("IGitHubApi"));
         }
 
         [Test]
@@ -172,10 +172,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-
-            Encoders.HtmlEncode = (s) => s;
-            var text = Render.FileToString(IntegrationTestHelper.GetPath("GeneratedInterfaceStubTemplate.cs.mustache"), result);
-            Console.WriteLine(text);
+            Assert.AreEqual(2, result.ClassList.Count);
         }
     }
 
