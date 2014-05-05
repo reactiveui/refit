@@ -94,6 +94,10 @@
     <Compile Include="RestService.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\InterfaceStubGenerator\InterfaceStubGenerator.csproj">
+      <Project>{5694f8ad-7a15-4717-b649-1749a311300b}</Project>
+      <Name>InterfaceStubGenerator</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Refit\Refit-Net45.csproj">
       <Project>{252ce1ca-19fa-4445-a3c2-e4d6c80a935a}</Project>
       <Name>Refit-Net45</Name>
@@ -105,7 +109,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="GeneratedInterfaceStubTemplate.cs.mustache" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

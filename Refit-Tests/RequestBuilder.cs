@@ -305,7 +305,7 @@ namespace Refit.Tests
                 try {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
-                } catch (Exception ex) {
+                } catch (Exception) {
                     shouldDie = false;
                 }
                 Assert.IsFalse(shouldDie);
