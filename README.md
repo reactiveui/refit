@@ -89,7 +89,7 @@ GroupList(4, "desc");
 One of the parameters in your method can be used as the body, by using the
 Body attribute:
 
-```
+```cs
 [Post("/users/new")]
 Task CreateUser([Body] User user);
 ```
