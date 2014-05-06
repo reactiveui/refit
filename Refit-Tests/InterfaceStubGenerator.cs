@@ -43,7 +43,7 @@ namespace Refit.Tests
         [Test]
         public void GenerateClassInfoForInterfaceSmokeTest()
         {
-            var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("RestService.cs"));
+            var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("GitHubApi.cs"));
             var fixture = new InterfaceStubGenerator();
 
             var input = file.GetRoot().DescendantNodes()
@@ -68,7 +68,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.AreEqual(2, result.ClassList.Count);
+            Assert.AreEqual(1, result.ClassList.Count);
         }
     }
 }
