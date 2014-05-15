@@ -60,6 +60,10 @@ namespace Refit
                     Method = restMethod.HttpMethod,
                 };
 
+                foreach(var header in restMethod.Headers){
+                    ret.Headers.Add(header.Key, header.Value);
+                }   
+
                 var urlTarget = new StringBuilder(restMethod.RelativePath);
                 var queryParamsToAdd = new Dictionary<string, string>();
 
@@ -85,7 +89,18 @@ namespace Refit
                     }
 
                     if (paramList[i] != null) {
-                        queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
+                        if (restMethod.HeaderParameterMap.ContainsKey(i)) {
+                            var headerName = restMethod.HeaderParameterMap[i];
+                            if (ret.Headers.Contains(restMethod.HeaderParameterMap[i])) {
+                                // Would it have been so hard to add an indexer to HttpRequestHeaders?
+                                // We want to use the most specific header (to allow progressive overrides).
+                                ret.Headers.Remove(headerName); 
+                            }
+                            ret.Headers.Add(headerName, paramList[i].ToString());
+                        }
+                        else {
+                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
+                        }
                     }
                 }
 
@@ -297,6 +312,8 @@ namespace Refit
         public HttpMethod HttpMethod { get; set; }
         public string RelativePath { get; set; }
         public Dictionary<int, string> ParameterMap { get; set; }
+        public Dictionary<string, string> Headers { get; set; }
+        public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Type ReturnType { get; set; }
@@ -325,9 +342,12 @@ namespace Refit
             ParameterMap = buildParameterMap(RelativePath, parameterList);
             BodyParameterInfo = findBodyParameter(parameterList);
 
+            Headers = getHeaders(methodInfo);
+            HeaderParameterMap = buildHeaderParameterMap(parameterList);
+
             QueryParameterMap = new Dictionary<int, string>();
             for (int i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
+                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
                     continue;
                 }
 
@@ -404,6 +424,42 @@ namespace Refit
 
             var ret = bodyParams[0];
             return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
+        }
+
+        private Dictionary<string, string> getHeaders(MethodInfo methodInfo) {
+            var ret = new Dictionary<string, string>();
+
+            var declaringTypeAttributes = methodInfo.DeclaringType != null
+                ? methodInfo.DeclaringType.GetCustomAttributes(true)
+                : new Attribute[0];
+
+            var headers = declaringTypeAttributes.Union(methodInfo.GetCustomAttributes(true))
+                .OfType<HeadersAttribute>()
+                .SelectMany(ha => ha.Headers);
+
+            foreach (var header in headers) {
+                var parts = header.Split(':');
+                ret[parts[0].Trim()] = string.Join(":", parts.Skip(1)).Trim();
+            }
+
+            return ret;
+        }
+
+        private Dictionary<int, string> buildHeaderParameterMap(List<ParameterInfo> parameterList) {
+            var ret = new Dictionary<int, string>();
+
+            for (int i = 0; i < parameterList.Count; i++) {
+                var header = parameterList[i].GetCustomAttributes(true)
+                    .OfType<HeaderAttribute>()
+                    .Select(ha => ha.Header)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(header)) {
+                    ret[i] = header.Trim();
+                }
+            }
+
+            return ret;
         }
 
         void determineReturnTypeInfo(MethodInfo methodInfo)
