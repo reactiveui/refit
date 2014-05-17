@@ -101,6 +101,119 @@ type of the parameter:
 * If the type is `string`, the string will be used directly as the content
 * For all other types, the object will be serialized as JSON.
 
+### Setting request headers
+
+#### Static headers
+
+You can set one or more static request headers for a request applying a `Headers` 
+attribute to the method:
+
+```cs
+[Headers("User-Agent: Awesome Octocat App")]
+[Get("/users/{user}")]
+Task<User> GetUser(string user);
+```
+
+Static headers can also be added to _every request in the API_ by applying the 
+`Headers` attribute to the interface:
+
+```cs
+[Headers("User-Agent: Awesome Octocat App")]
+public interface IGitHubApi
+{
+    [Get("/users/{user}")]
+    Task<User> GetUser(string user);
+    
+    [Post("/users/new")]
+    Task CreateUser([Body] User user);
+}
+```
+
+#### Dynamic headers
+
+If the content of the header needs to be set at runtime, you can add a header
+with a dynamic  value to a request by applying a `Header` attribute to a parameter:
+
+```cs
+[Get("/users/{user}")]
+Task<User> GetUser(string user, [Header("Authorization")] string authorization);
+
+// Will add the header "Authorization: token OAUTH-TOKEN" to the request
+var user = await GetUser("octocat", "token OAUTH-TOKEN"); 
+```
+
+#### Redefining headers
+
+Unlike Retrofit, where headers do not overwrite each other and are all added to 
+the request regardless of how many times the same header is defined, Refit takes 
+a similar approach to the approach ASP.NET MVC takes with action filters &mdash; 
+**redefining a header will replace it**, in the following order of precedence:
+
+* `Headers` attribute on the interface _(lowest priority)_
+* `Headers` attribute on the method
+* `Header` attribute on a method parameter _(highest priority)_
+
+```cs
+[Headers("X-Emoji: :rocket:")]
+public interface IGitHubApi
+{
+    [Get("/users/list")]
+    Task<List> GetUsers();
+    
+    [Get("/users/{user}")]
+    [Headers("X-Emoji: :smile_cat:")]
+    Task<User> GetUser(string user);
+    
+    [Post("/users/new")]
+    [Headers("X-Emoji: :metal:")]
+    Task CreateUser([Body] User user, [Header("X-Emoji")] string emoji);
+}
+
+// X-Emoji: :rocket:
+var users = await GetUsers();
+
+// X-Emoji: :smile_cat:
+var user = await GetUser("octocat");
+
+// X-Emoji: :trollface:
+await CreateUser(user, ":trollface:"); 
+```
+
+#### Removing headers
+
+Headers defined on an interface or method can be removed by redefining 
+a static header without a value (i.e. without `: <value>`) or passing `null` for 
+a dynamic header. _Empty strings will be included as empty headers._
+
+```cs
+[Headers("X-Emoji: :rocket:")]
+public interface IGitHubApi
+{
+    [Get("/users/list")]
+    [Headers("X-Emoji")] // Remove the X-Emoji header
+    Task<List> GetUsers();
+    
+    [Get("/users/{user}")]
+    [Headers("X-Emoji:")] // Redefine the X-Emoji header as empty
+    Task<User> GetUser(string user);
+    
+    [Post("/users/new")]
+    Task CreateUser([Body] User user, [Header("X-Emoji")] string emoji);
+}
+
+// No X-Emoji header
+var users = await GetUsers();
+
+// X-Emoji: 
+var user = await GetUser("octocat");
+
+// No X-Emoji header
+await CreateUser(user, null); 
+
+// X-Emoji: 
+await CreateUser(user, ""); 
+```
+
 ### Retrieving the response
 
 Note that in Refit unlike in Retrofit, there is no option for a synchronous
