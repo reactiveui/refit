@@ -120,7 +120,7 @@ namespace Refit
             };
         }
 
-        private void setHeader(HttpRequestMessage request, string name, object value) {
+        void setHeader(HttpRequestMessage request, string name, object value) {
             // Clear any existing version of this header we may have set, because
             // we want to allow removal/redefinition of headers.
             request.Headers.Remove(name);
@@ -438,7 +438,7 @@ namespace Refit
             return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
         }
 
-        private Dictionary<string, string> parseHeaders(MethodInfo methodInfo) {
+        Dictionary<string, string> parseHeaders(MethodInfo methodInfo) {
             var ret = new Dictionary<string, string>();
 
             var declaringTypeAttributes = methodInfo.DeclaringType != null
@@ -464,7 +464,7 @@ namespace Refit
             return ret;
         }
 
-        private Dictionary<int, string> buildHeaderParameterMap(List<ParameterInfo> parameterList) {
+        Dictionary<int, string> buildHeaderParameterMap(List<ParameterInfo> parameterList) {
             var ret = new Dictionary<int, string>();
 
             for (int i = 0; i < parameterList.Count; i++) {
