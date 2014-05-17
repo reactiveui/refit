@@ -61,7 +61,7 @@ namespace Refit
                 };
 
                 foreach(var header in restMethod.Headers){
-                    ret.Headers.Add(header.Key, header.Value);
+                    setHeader(ret, header.Key, header.Value);
                 }   
 
                 var urlTarget = new StringBuilder(restMethod.RelativePath);
@@ -88,17 +88,12 @@ namespace Refit
                         continue;
                     }
 
-                    if (paramList[i] != null) {
-                        if (restMethod.HeaderParameterMap.ContainsKey(i)) {
-                            var headerName = restMethod.HeaderParameterMap[i];
-                            if (ret.Headers.Contains(restMethod.HeaderParameterMap[i])) {
-                                // Would it have been so hard to add an indexer to HttpRequestHeaders?
-                                // We want to use the most specific header (to allow progressive overrides).
-                                ret.Headers.Remove(headerName); 
-                            }
-                            ret.Headers.Add(headerName, paramList[i].ToString());
-                        }
-                        else {
+
+                    if (restMethod.HeaderParameterMap.ContainsKey(i)) {
+                        setHeader(ret, restMethod.HeaderParameterMap[i], paramList[i]);
+                    }
+                    else {
+                        if (paramList[i] != null) {
                             queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
                         }
                     }
@@ -123,6 +118,23 @@ namespace Refit
                 ret.RequestUri = new Uri(uri.Uri.GetComponents(UriComponents.PathAndQuery, UriFormat.UriEscaped), UriKind.Relative);
                 return ret;
             };
+        }
+
+        private void setHeader(HttpRequestMessage request, string name, object value) {
+            // Clear any existing version of this header we may have set, because
+            // we want to allow removal/redefinition of headers.
+            request.Headers.Remove(name);
+            if (request.Content != null) {
+                request.Content.Headers.Remove(name);
+            }
+
+            if (value == null) return;
+            var s = value.ToString();
+
+            request.Headers.TryAddWithoutValidation(name, s);
+            if (request.Content != null) {
+                request.Content.Headers.TryAddWithoutValidation(name, s);
+            }
         }
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
@@ -342,7 +354,7 @@ namespace Refit
             ParameterMap = buildParameterMap(RelativePath, parameterList);
             BodyParameterInfo = findBodyParameter(parameterList);
 
-            Headers = getHeaders(methodInfo);
+            Headers = parseHeaders(methodInfo);
             HeaderParameterMap = buildHeaderParameterMap(parameterList);
 
             QueryParameterMap = new Dictionary<int, string>();
@@ -426,20 +438,27 @@ namespace Refit
             return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
         }
 
-        private Dictionary<string, string> getHeaders(MethodInfo methodInfo) {
+        private Dictionary<string, string> parseHeaders(MethodInfo methodInfo) {
             var ret = new Dictionary<string, string>();
 
             var declaringTypeAttributes = methodInfo.DeclaringType != null
                 ? methodInfo.DeclaringType.GetCustomAttributes(true)
                 : new Attribute[0];
 
-            var headers = declaringTypeAttributes.Union(methodInfo.GetCustomAttributes(true))
+            // Headers set on the declaring type have to come first, 
+            // so headers set on the method can replace them. Switching
+            // the order here will break stuff.
+            var headers = declaringTypeAttributes.Concat(methodInfo.GetCustomAttributes(true))
                 .OfType<HeadersAttribute>()
                 .SelectMany(ha => ha.Headers);
 
             foreach (var header in headers) {
+                if (string.IsNullOrWhiteSpace(header)) continue;
+
+                // Silverlight doesn't have an overload for String.Split() with a count parameter,
+                // but header values can contain ':' so we have to re-join all but the first part to get the value.
                 var parts = header.Split(':');
-                ret[parts[0].Trim()] = string.Join(":", parts.Skip(1)).Trim();
+                ret[parts[0].Trim()] = parts.Length > 1 ? string.Join(":", parts.Skip(1)).Trim() : null;
             }
 
             return ret;
