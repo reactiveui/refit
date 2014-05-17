@@ -42,6 +42,7 @@ namespace Refit.Tests
         public int public_gists { get; set; }
     }
 
+    [Headers("User-Agent: Refit Integration Tests")]
     public interface IGitHubApi
     {
         [Get("/users/{username}")]

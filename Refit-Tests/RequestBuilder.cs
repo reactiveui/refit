@@ -14,6 +14,7 @@ using System.Threading;
 
 namespace Refit.Tests
 {
+    [Headers("User-Agent: Refit Test Client", "Api-Version: 1")]
     public interface IRestMethodInfoTests
     {
         [Get("@)!@_!($_!@($\\\\|||::::")]
@@ -36,6 +37,13 @@ namespace Refit.Tests
                 
         [Get("/foo/bar/{id}")]
         IObservable<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Api-Version: 2 ")]
+        Task<string> FetchSomeStuffWithHardcodedHeaders(int id);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
 
         [Post("/foo/{id}")]
         Task VoidPost(int id);
@@ -130,6 +138,37 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void HardcodedHeadersShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedHeaders"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNull(fixture.BodyParameterInfo);
+
+            Assert.IsTrue(fixture.Headers.ContainsKey("Api-Version"), "Headers include Api-Version header");
+            Assert.AreEqual("2", fixture.Headers["Api-Version"]);
+            Assert.IsTrue(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
+            Assert.AreEqual("Refit Test Client", fixture.Headers["User-Agent"]);
+            Assert.AreEqual(2, fixture.Headers.Count);
+        }
+
+        [Test]
+        public void DynamicHeadersShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeader"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNull(fixture.BodyParameterInfo);
+
+            Assert.AreEqual("Authorization", fixture.HeaderParameterMap[1]);
+            Assert.IsTrue(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
+            Assert.AreEqual("Refit Test Client", fixture.Headers["User-Agent"]);
+            Assert.AreEqual(2, fixture.Headers.Count);
+        }
+
+        [Test]
         public void ReturningTaskShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -156,6 +195,7 @@ namespace Refit.Tests
         }
     }
 
+    [Headers("User-Agent: Refit Test Client", "Api-Version: 1")]
     public interface IDummyHttpApi
     {
         [Get("/foo/bar/{id}")]
@@ -166,6 +206,25 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedAndOtherQueryParameters(int id, [AliasAs("search_for")] string searchQuery);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Api-Version: 2")]
+        Task<string> FetchSomeStuffWithHardcodedHeader(int id);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Api-Version")]
+        Task<string> FetchSomeStuffWithNullHardcodedHeader(int id);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Api-Version: ")]
+        Task<string> FetchSomeStuffWithEmptyHardcodedHeader(int id);
+        
+        [Get("/foo/bar/{id}")]
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
+        Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
 
         string SomeOtherMethod();
     }
@@ -232,6 +291,86 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void HardcodedHeadersShouldBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedHeader");
+            var output = factory(new object[] { 6 });
+
+            Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.AreEqual("Refit Test Client", output.Headers.UserAgent.ToString());
+            Assert.IsTrue(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.AreEqual("2", output.Headers.GetValues("Api-Version").Single());
+        }
+
+        [Test]
+        public void EmptyHardcodedHeadersShouldBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithEmptyHardcodedHeader");
+            var output = factory(new object[] { 6 });
+
+            Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.AreEqual("Refit Test Client", output.Headers.UserAgent.ToString());
+            Assert.IsTrue(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.AreEqual("", output.Headers.GetValues("Api-Version").Single());
+        }
+        [Test]
+        public void NullHardcodedHeadersShouldNotBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithNullHardcodedHeader");
+            var output = factory(new object[] { 6 });
+
+            Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.AreEqual("Refit Test Client", output.Headers.UserAgent.ToString());
+            Assert.IsFalse(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+        }
+
+        [Test]
+        public void DynamicHeaderShouldBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
+            var output = factory(new object[] { 6, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
+
+            Assert.IsNotNull(output.Headers.Authorization, "Headers include Authorization header");
+            Assert.AreEqual("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
+        }
+
+        [Test]
+        public void CustomDynamicHeaderShouldBeInHeaders() 
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
+            var output = factory(new object[] { 6, ":joy_cat:" });
+
+            Assert.IsTrue(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
+            Assert.AreEqual(":joy_cat:", output.Headers.GetValues("X-Emoji").First());
+        }
+
+        [Test]
+        public void EmptyDynamicHeaderShouldBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
+            var output = factory(new object[] { 6, "" });
+
+            Assert.IsTrue(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
+            Assert.AreEqual("", output.Headers.GetValues("X-Emoji").First());
+        }
+
+        [Test]
+        public void NullDynamicHeaderShouldNotBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
+            var output = factory(new object[] { 6, null });
+
+            Assert.IsNull(output.Headers.Authorization, "Headers include Authorization header");
         }
     }
 }

@@ -60,6 +60,10 @@ namespace Refit
                     Method = restMethod.HttpMethod,
                 };
 
+                foreach(var header in restMethod.Headers){
+                    setHeader(ret, header.Key, header.Value);
+                }   
+
                 var urlTarget = new StringBuilder(restMethod.RelativePath);
                 var queryParamsToAdd = new Dictionary<string, string>();
 
@@ -84,8 +88,14 @@ namespace Refit
                         continue;
                     }
 
-                    if (paramList[i] != null) {
-                        queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
+
+                    if (restMethod.HeaderParameterMap.ContainsKey(i)) {
+                        setHeader(ret, restMethod.HeaderParameterMap[i], paramList[i]);
+                    }
+                    else {
+                        if (paramList[i] != null) {
+                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
+                        }
                     }
                 }
 
@@ -108,6 +118,23 @@ namespace Refit
                 ret.RequestUri = new Uri(uri.Uri.GetComponents(UriComponents.PathAndQuery, UriFormat.UriEscaped), UriKind.Relative);
                 return ret;
             };
+        }
+
+        void setHeader(HttpRequestMessage request, string name, object value) {
+            // Clear any existing version of this header we may have set, because
+            // we want to allow removal/redefinition of headers.
+            request.Headers.Remove(name);
+            if (request.Content != null) {
+                request.Content.Headers.Remove(name);
+            }
+
+            if (value == null) return;
+            var s = value.ToString();
+
+            request.Headers.TryAddWithoutValidation(name, s);
+            if (request.Content != null) {
+                request.Content.Headers.TryAddWithoutValidation(name, s);
+            }
         }
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
@@ -297,6 +324,8 @@ namespace Refit
         public HttpMethod HttpMethod { get; set; }
         public string RelativePath { get; set; }
         public Dictionary<int, string> ParameterMap { get; set; }
+        public Dictionary<string, string> Headers { get; set; }
+        public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Type ReturnType { get; set; }
@@ -325,9 +354,12 @@ namespace Refit
             ParameterMap = buildParameterMap(RelativePath, parameterList);
             BodyParameterInfo = findBodyParameter(parameterList);
 
+            Headers = parseHeaders(methodInfo);
+            HeaderParameterMap = buildHeaderParameterMap(parameterList);
+
             QueryParameterMap = new Dictionary<int, string>();
             for (int i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
+                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
                     continue;
                 }
 
@@ -404,6 +436,49 @@ namespace Refit
 
             var ret = bodyParams[0];
             return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
+        }
+
+        Dictionary<string, string> parseHeaders(MethodInfo methodInfo) {
+            var ret = new Dictionary<string, string>();
+
+            var declaringTypeAttributes = methodInfo.DeclaringType != null
+                ? methodInfo.DeclaringType.GetCustomAttributes(true)
+                : new Attribute[0];
+
+            // Headers set on the declaring type have to come first, 
+            // so headers set on the method can replace them. Switching
+            // the order here will break stuff.
+            var headers = declaringTypeAttributes.Concat(methodInfo.GetCustomAttributes(true))
+                .OfType<HeadersAttribute>()
+                .SelectMany(ha => ha.Headers);
+
+            foreach (var header in headers) {
+                if (string.IsNullOrWhiteSpace(header)) continue;
+
+                // Silverlight doesn't have an overload for String.Split() with a count parameter,
+                // but header values can contain ':' so we have to re-join all but the first part to get the value.
+                var parts = header.Split(':');
+                ret[parts[0].Trim()] = parts.Length > 1 ? string.Join(":", parts.Skip(1)).Trim() : null;
+            }
+
+            return ret;
+        }
+
+        Dictionary<int, string> buildHeaderParameterMap(List<ParameterInfo> parameterList) {
+            var ret = new Dictionary<int, string>();
+
+            for (int i = 0; i < parameterList.Count; i++) {
+                var header = parameterList[i].GetCustomAttributes(true)
+                    .OfType<HeaderAttribute>()
+                    .Select(ha => ha.Header)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(header)) {
+                    ret[i] = header.Trim();
+                }
+            }
+
+            return ret;
         }
 
         void determineReturnTypeInfo(MethodInfo methodInfo)
