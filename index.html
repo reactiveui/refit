@@ -124,6 +124,124 @@ type of the parameter:</p>
 <li>If the type is <code>string</code>, the string will be used directly as the content</li>
 <li>For all other types, the object will be serialized as JSON.</li>
 </ul><h3>
+<a name="setting-request-headers" class="anchor" href="#setting-request-headers"><span class="octicon octicon-link"></span></a>Setting request headers</h3>
+
+<h4>
+<a name="static-headers" class="anchor" href="#static-headers"><span class="octicon octicon-link"></span></a>Static headers</h4>
+
+<p>You can set one or more static request headers for a request applying a <code>Headers</code> 
+attribute to the method:</p>
+
+<div class="highlight highlight-cs"><pre><span class="na">[Headers("User-Agent: Awesome Octocat App")]</span>
+<span class="na">[Get("/users/{user}")]</span>
+<span class="n">Task</span><span class="p">&lt;</span><span class="n">User</span><span class="p">&gt;</span> <span class="n">GetUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">user</span><span class="p">);</span>
+</pre></div>
+
+<p>Static headers can also be added to <em>every request in the API</em> by applying the 
+<code>Headers</code> attribute to the interface:</p>
+
+<div class="highlight highlight-cs"><pre><span class="na">[Headers("User-Agent: Awesome Octocat App")]</span>
+<span class="k">public</span> <span class="k">interface</span> <span class="n">IGitHubApi</span>
+<span class="p">{</span>
+<span class="na">    [Get("/users/{user}")]</span>
+    <span class="n">Task</span><span class="p">&lt;</span><span class="n">User</span><span class="p">&gt;</span> <span class="n">GetUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">user</span><span class="p">);</span>
+
+<span class="na">    [Post("/users/new")]</span>
+    <span class="n">Task</span> <span class="nf">CreateUser</span><span class="p">([</span><span class="n">Body</span><span class="p">]</span> <span class="n">User</span> <span class="n">user</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></div>
+
+<h4>
+<a name="dynamic-headers" class="anchor" href="#dynamic-headers"><span class="octicon octicon-link"></span></a>Dynamic headers</h4>
+
+<p>If the content of the header needs to be set at runtime, you can add a header
+with a dynamic  value to a request by applying a <code>Header</code> attribute to a parameter:</p>
+
+<div class="highlight highlight-cs"><pre><span class="na">[Get("/users/{user}")]</span>
+<span class="n">Task</span><span class="p">&lt;</span><span class="n">User</span><span class="p">&gt;</span> <span class="n">GetUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">user</span><span class="p">,</span> <span class="p">[</span><span class="n">Header</span><span class="p">(</span><span class="s">"Authorization"</span><span class="p">)]</span> <span class="kt">string</span> <span class="n">authorization</span><span class="p">);</span>
+
+<span class="c1">// Will add the header "Authorization: token OAUTH-TOKEN" to the request</span>
+<span class="kt">var</span> <span class="n">user</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetUser</span><span class="p">(</span><span class="s">"octocat"</span><span class="p">,</span> <span class="s">"token OAUTH-TOKEN"</span><span class="p">);</span> 
+</pre></div>
+
+<h4>
+<a name="redefining-headers" class="anchor" href="#redefining-headers"><span class="octicon octicon-link"></span></a>Redefining headers</h4>
+
+<p>Unlike Retrofit, where headers do not overwrite each other and are all added to 
+the request regardless of how many times the same header is defined, Refit takes 
+a similar approach to the approach ASP.NET MVC takes with action filters — 
+<strong>redefining a header will replace it</strong>, in the following order of precedence:</p>
+
+<ul>
+<li>
+<code>Headers</code> attribute on the interface <em>(lowest priority)</em>
+</li>
+<li>
+<code>Headers</code> attribute on the method</li>
+<li>
+<code>Header</code> attribute on a method parameter <em>(highest priority)</em>
+</li>
+</ul><div class="highlight highlight-cs"><pre><span class="na">[Headers("X-Emoji: :rocket:")]</span>
+<span class="k">public</span> <span class="k">interface</span> <span class="n">IGitHubApi</span>
+<span class="p">{</span>
+<span class="na">    [Get("/users/list")]</span>
+    <span class="n">Task</span><span class="p">&lt;</span><span class="n">List</span><span class="p">&gt;</span> <span class="n">GetUsers</span><span class="p">();</span>
+
+<span class="na">    [Get("/users/{user}")]</span>
+<span class="na">    [Headers("X-Emoji: :smile_cat:")]</span>
+    <span class="n">Task</span><span class="p">&lt;</span><span class="n">User</span><span class="p">&gt;</span> <span class="n">GetUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">user</span><span class="p">);</span>
+
+<span class="na">    [Post("/users/new")]</span>
+<span class="na">    [Headers("X-Emoji: :metal:")]</span>
+    <span class="n">Task</span> <span class="nf">CreateUser</span><span class="p">([</span><span class="n">Body</span><span class="p">]</span> <span class="n">User</span> <span class="n">user</span><span class="p">,</span> <span class="p">[</span><span class="n">Header</span><span class="p">(</span><span class="s">"X-Emoji"</span><span class="p">)]</span> <span class="kt">string</span> <span class="n">emoji</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// X-Emoji: :rocket:</span>
+<span class="kt">var</span> <span class="n">users</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetUsers</span><span class="p">();</span>
+
+<span class="c1">// X-Emoji: :smile_cat:</span>
+<span class="kt">var</span> <span class="n">user</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetUser</span><span class="p">(</span><span class="s">"octocat"</span><span class="p">);</span>
+
+<span class="c1">// X-Emoji: :trollface:</span>
+<span class="k">await</span> <span class="nf">CreateUser</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s">":trollface:"</span><span class="p">);</span> 
+</pre></div>
+
+<h4>
+<a name="removing-headers" class="anchor" href="#removing-headers"><span class="octicon octicon-link"></span></a>Removing headers</h4>
+
+<p>Headers defined on an interface or method can be removed by redefining 
+a static header without a value (i.e. without <code>: &lt;value&gt;</code>) or passing <code>null</code> for 
+a dynamic header. <em>Empty strings will be included as empty headers.</em></p>
+
+<div class="highlight highlight-cs"><pre><span class="na">[Headers("X-Emoji: :rocket:")]</span>
+<span class="k">public</span> <span class="k">interface</span> <span class="n">IGitHubApi</span>
+<span class="p">{</span>
+<span class="na">    [Get("/users/list")]</span>
+<span class="na">    [Headers("X-Emoji")]</span> <span class="c1">// Remove the X-Emoji header</span>
+    <span class="n">Task</span><span class="p">&lt;</span><span class="n">List</span><span class="p">&gt;</span> <span class="n">GetUsers</span><span class="p">();</span>
+
+<span class="na">    [Get("/users/{user}")]</span>
+<span class="na">    [Headers("X-Emoji:")]</span> <span class="c1">// Redefine the X-Emoji header as empty</span>
+    <span class="n">Task</span><span class="p">&lt;</span><span class="n">User</span><span class="p">&gt;</span> <span class="n">GetUser</span><span class="p">(</span><span class="kt">string</span> <span class="n">user</span><span class="p">);</span>
+
+<span class="na">    [Post("/users/new")]</span>
+    <span class="n">Task</span> <span class="nf">CreateUser</span><span class="p">([</span><span class="n">Body</span><span class="p">]</span> <span class="n">User</span> <span class="n">user</span><span class="p">,</span> <span class="p">[</span><span class="n">Header</span><span class="p">(</span><span class="s">"X-Emoji"</span><span class="p">)]</span> <span class="kt">string</span> <span class="n">emoji</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// No X-Emoji header</span>
+<span class="kt">var</span> <span class="n">users</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetUsers</span><span class="p">();</span>
+
+<span class="c1">// X-Emoji: </span>
+<span class="kt">var</span> <span class="n">user</span> <span class="p">=</span> <span class="k">await</span> <span class="n">GetUser</span><span class="p">(</span><span class="s">"octocat"</span><span class="p">);</span>
+
+<span class="c1">// No X-Emoji header</span>
+<span class="k">await</span> <span class="nf">CreateUser</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span> 
+
+<span class="c1">// X-Emoji: </span>
+<span class="k">await</span> <span class="nf">CreateUser</span><span class="p">(</span><span class="n">user</span><span class="p">,</span> <span class="s">""</span><span class="p">);</span> 
+</pre></div>
+
+<h3>
 <a name="retrieving-the-response" class="anchor" href="#retrieving-the-response"><span class="octicon octicon-link"></span></a>Retrieving the response</h3>
 
 <p>Note that in Refit unlike in Retrofit, there is no option for a synchronous
