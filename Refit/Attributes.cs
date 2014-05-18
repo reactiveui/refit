@@ -93,4 +93,26 @@ namespace Refit
             this.Name = name;
         }
     }
+    
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
+    public class HeadersAttribute : Attribute
+    {
+        public string[] Headers { get; private set; }
+
+        public HeadersAttribute(params string[] headers)
+        {
+            Headers = headers ?? new string[0];
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class HeaderAttribute : Attribute
+    {
+        public string Header { get; private set; }
+
+        public HeaderAttribute(string header)
+        {
+            Header = header;
+        }
+    }
 }
