@@ -118,7 +118,11 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="BeforeBuild" command="mono ${SolutionDir}/InterfaceStubGenerator/bin/${ProjectConfigName}/InterfaceStubGenerator.exe ./RefitStubs.cs" workingdir="${ProjectDir}" />
+      </CustomCommands>
+    </CustomCommands>
   </PropertyGroup>
 
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

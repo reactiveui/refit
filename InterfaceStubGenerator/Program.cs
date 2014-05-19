@@ -19,15 +19,47 @@ namespace Refit.Generator
             var target = new FileInfo(args[0]);
             var targetDir = target.DirectoryName;
 
-            var files = args[1].Split(';')
-                .Select(x => new FileInfo(Path.Combine(targetDir, x)))
-                .Where(x => x.Name.Contains("RefitStubs") == false)
-                .ToArray();
+            var files = default(FileInfo[]);
+
+            if (args.Length > 1) {
+                files = args[1].Split(';')
+                    .Select(x => new FileInfo(Path.Combine(targetDir, x)))
+                    .Where(x => x.Name.Contains("RefitStubs") == false)
+                    .ToArray();
+            } else {
+                // NB: @Compile is completely jacked on Xam Studio in iOS, just
+                // run down all of the .cs files in the current directory and hope
+                // for the best
+                files = recursivelyListFiles(target.Directory, "*.cs").ToArray();
+            }
 
             var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray());
             using (var of = File.OpenWrite(target.FullName)) {
                 var bytes = Encoding.UTF8.GetBytes(template);
                 of.Write(bytes, 0, bytes.Length);
+            }
+        }
+
+        static IEnumerable<FileInfo> recursivelyListFiles(DirectoryInfo root, string filter)
+        {
+            return root.GetFiles(filter)
+                .Concat(root.GetDirectories()
+                    .SelectMany(x => recursivelyListFiles(x, filter)));
+        }
+    }
+
+    static class ConcatExtension
+    {
+        public static IEnumerable<T> Concat<T>(this IEnumerable<T> This, params IEnumerable<T>[] others)
+        {
+            foreach (var t in This) {
+                yield return t;
+            }
+
+            foreach (var list in others) {
+                foreach (var t in list) {
+                    yield return t;
+                }
             }
         }
     }
