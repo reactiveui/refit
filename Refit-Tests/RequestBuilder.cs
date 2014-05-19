@@ -1,12 +1,15 @@
 using System;
-using System.IO;
-using System.Net.Http;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Net.Http;
 using System.Net;
-using NUnit.Framework;
+using System.Text;
+using System.Threading.Tasks;
 using System.Threading;
+
+using NUnit.Framework;
+using Newtonsoft.Json;
 
 namespace Refit.Tests
 {
