@@ -84,7 +84,7 @@
     <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
+    <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator/bin/$(Configuration)/InterfaceStubGenerator.exe "../../RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
