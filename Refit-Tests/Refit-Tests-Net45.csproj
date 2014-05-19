@@ -90,6 +90,7 @@
     <Compile Include="GitHubApi.cs" />
     <Compile Include="IntegrationTestHelper.cs" />
     <Compile Include="InterfaceStubGenerator.cs" />
+    <Compile Include="RefitStubs.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RestService.cs" />
   </ItemGroup>
@@ -119,6 +120,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.8\tools\Microsoft.Bcl.Build.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
