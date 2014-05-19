@@ -93,7 +93,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes.cs" />
-    <Compile Include="CastleRestService.cs" />
     <Compile Include="Helpers.cs">
       <SubType>Code</SubType>
     </Compile>

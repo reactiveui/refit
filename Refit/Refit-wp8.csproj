@@ -108,7 +108,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CastleRestService.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="HtmlEncoder.cs" />
     <Compile Include="HttpUtility.cs" />

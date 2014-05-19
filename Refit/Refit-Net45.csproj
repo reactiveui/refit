@@ -51,7 +51,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CastleRestService.cs" />
     <Compile Include="RequestBuilderImplementation.cs" />
     <Compile Include="Utility.cs" />
   </ItemGroup>
