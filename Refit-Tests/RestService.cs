@@ -25,6 +25,12 @@ namespace Refit.Tests
         Task<RootObject> GetCongruence();
     }
 
+    public interface IRequestBin
+    {
+        [Post("/1h3a5jm1")]
+        Task Post();
+    }
+
     [TestFixture]
     public class RestServiceIntegrationTests
     {
@@ -154,12 +160,6 @@ namespace Refit.Tests
                 Assert.AreEqual("Not Found", content["message"]);
                 Assert.IsNotNull(content["documentation_url"]);
             }
-        }
-
-        public interface IRequestBin
-        {
-            [Post("/1h3a5jm1")]
-            Task Post();
         }
     }
 }
