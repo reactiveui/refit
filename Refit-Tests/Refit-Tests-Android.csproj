@@ -82,7 +82,7 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);REFIT__ANDROID;</DefineConstants>
+    <DefineConstants>$(DefineConstants);REFIT__NOTIOS;</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>

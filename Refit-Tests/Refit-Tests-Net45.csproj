@@ -116,6 +116,10 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.8\tools\Microsoft.Bcl.Build.targets" />
 
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);REFIT__NOTIOS;</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>

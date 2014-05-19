@@ -4,7 +4,13 @@ using System.Net.Http;
 using {{Item}};
 {{/UsingList}}
 
-#if REFIT__ANDROID
+/* ******** Hey You! *********
+ *
+ * This is a generated file, and gets rewritten every time you build the
+ * project. If you want to edit it, you need to edit the mustache template
+ * in the Refit package */
+
+#if REFIT__NOTIOS
 // NB: This is done in this bizarro way because Xamarin.iOS doesn't allow you
 // to add compiler defines in any sane way via a targets file, so we can't gate
 // the MonoTouch Foundation using
@@ -12,7 +18,6 @@ using {{Item}};
 // Fortunately, we'll take advantage of a *different* bug in Xamarin tools, where
 // the Preserve type's namespace doesn't actually matter, it just looks for a
 // attribute named "Preserve".
-
 namespace MonoTouch.Foundation
 {
     [AttributeUsage (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Interface | AttributeTargets.Delegate)]
@@ -27,12 +32,6 @@ namespace MonoTouch.Foundation
     }
 }
 #endif
-
-/* Hey You!
- *
- * This is a generated file, and gets rewritten every time you build the
- * project. If you want to edit it, you need to edit the mustache template
- * in the Refit package */
 
 {{#ClassList}}
 namespace {{Namespace}}
