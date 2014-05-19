@@ -119,9 +119,8 @@
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
+    <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator/bin/$(Configuration)/InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
 
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

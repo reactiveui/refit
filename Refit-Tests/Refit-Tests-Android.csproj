@@ -86,6 +86,7 @@
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator/bin/$(Configuration)/InterfaceStubGenerator.exe "../../RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
     <ProjectReference Include="..\Refit\Refit-Monoandroid.csproj">
