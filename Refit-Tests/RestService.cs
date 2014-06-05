@@ -9,6 +9,8 @@ using System.Threading;
 
 namespace Refit.Tests
 {
+    using System.Diagnostics;
+
     public class User
     {
         public string login { get; set; }
@@ -82,10 +84,28 @@ namespace Refit.Tests
             var fixture = RestService.For<IRequestBin>("http://requestb.in/");
             var result = fixture.Post();
 
-            result.Wait();
+            try
+            {
+                result.Wait();
+            }
+            catch (AggregateException ae)
+            {
+                ae.Handle(
+                    x =>
+                        {
+                            if (x is HttpRequestException)
+                            {
+                                // we should be good but maybe a 404 occurred
+                                return true;
+                            }
+                            
+                            // other exception types might be valid failures
+                            return false;
+                        });
+            }
         }
 
-        interface IRequestBin
+        public interface IRequestBin
         {
             [Post("/1h3a5jm1")]
             Task Post();
