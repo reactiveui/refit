@@ -1,15 +1,19 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30501.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Portable", "Refit\Refit-Portable.csproj", "{E315020F-33BC-4D85-BC6E-8346F06F1112}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Net45", "Refit\Refit-Net45.csproj", "{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-wp8", "Refit\Refit-wp8.csproj", "{1F309EA3-155C-4B66-84DE-7771237CCF6C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-sl5", "Refit\Refit-sl5.csproj", "{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests-Net45", "Refit-Tests\Refit-Tests-Net45.csproj", "{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Net40-Client", "ext\Net40-Client\Refit-Net40-Client.csproj", "{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Net45", "ext\Net45\Refit-Net45.csproj", "{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,14 +33,6 @@ Global
 		{E315020F-33BC-4D85-BC6E-8346F06F1112}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E315020F-33BC-4D85-BC6E-8346F06F1112}.Release|ARM.ActiveCfg = Release|Any CPU
 		{E315020F-33BC-4D85-BC6E-8346F06F1112}.Release|x86.ActiveCfg = Release|Any CPU
-		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Debug|ARM.ActiveCfg = Debug|Any CPU
-		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Release|ARM.ActiveCfg = Release|Any CPU
-		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Release|x86.ActiveCfg = Release|Any CPU
 		{1F309EA3-155C-4B66-84DE-7771237CCF6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1F309EA3-155C-4B66-84DE-7771237CCF6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F309EA3-155C-4B66-84DE-7771237CCF6C}.Debug|ARM.ActiveCfg = Debug|ARM
@@ -65,6 +61,22 @@ Global
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Release|ARM.ActiveCfg = Release|Any CPU
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Release|x86.ActiveCfg = Release|Any CPU
+		{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}.Release|ARM.ActiveCfg = Release|Any CPU
+		{EF13CD57-7E05-46B7-AD2F-14EFA8B21CF8}.Release|x86.ActiveCfg = Release|Any CPU
+		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Release|ARM.ActiveCfg = Release|Any CPU
+		{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
