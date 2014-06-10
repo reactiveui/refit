@@ -14,7 +14,6 @@
 
         <dependencies>
             <group>
-                <dependency id="Castle.Core" version="3.2.0" />
                 <dependency id="Newtonsoft.Json" version="6.0.3" />
             </group>
             <group targetFramework="WindowsPhone8.0">
