@@ -1,0 +1,23 @@
+<PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+  <PreBuildEvent>$(SolutionDir)packages\refit-2.0.0\tools\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
+</PropertyGroup>
+
+<PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+  <PreBuildEvent>mono $(SolutionDir)packages/refit-2.0.0/tools/InterfaceStubGenerator.exe "../../RefitStubs.cs" "@(Compile)"</PreBuildEvent>
+</PropertyGroup>
+
+<PropertyGroup Condition="'$(IPhoneResourcePrefix)' == ''">
+  <DefineConstants>$(DefineConstants);REFIT__NOTIOS;</DefineConstants>
+</PropertyGroup>
+
+<PropertyGroup Condition="'$(IPhoneResourcePrefix)' != ''">
+  <DefineConstants>$(DefineConstants);REFIT__IOS</DefineConstants>
+</PropertyGroup>
+
+<PropertyGroup Condition="'$(OS)' != 'Windows_NT' And '$(IPhoneResourcePrefix)' != ''">
+  <CustomCommands>
+    <CustomCommands>
+      <Command type="BeforeBuild" command="mono ${SolutionDir}/packages/refit-2.0.0/tools/InterfaceStubGenerator.exe ./RefitStubs.cs" workingdir="${ProjectDir}" />
+    </CustomCommands>
+  </CustomCommands>
+</PropertyGroup>

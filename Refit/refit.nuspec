@@ -29,6 +29,9 @@
         </dependencies>
     </metadata>
     <files>
+        <file src="content\*.*" target="content" />
+        <file src="targets\*.*" target="build" />
+
         <file src="bin\Release\MonoAndroid\Refit*.*" target="lib\MonoAndroid" />
         <file src="bin\Release\MonoMac\Refit*.*" target="lib\MonoMac" />
         <file src="bin\Release\Net45\Refit*.*" target="lib\Net45" />
