@@ -63,8 +63,6 @@ stylecop.*
 .DS_Store
 Generated_Code #added for RIA/Silverlight projects
 
-RefitStubs.cs
-
 # Custom
 
 # packages
