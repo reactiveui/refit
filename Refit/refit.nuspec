@@ -31,6 +31,7 @@
     <files>
         <file src="content\*.*" target="content" />
         <file src="targets\*.*" target="build" />
+        <file src="..\InterfaceStubGenerator\bin\Release\*.*" target="tools" />
 
         <file src="bin\Release\MonoAndroid\Refit*.*" target="lib\MonoAndroid" />
         <file src="bin\Release\MonoMac\Refit*.*" target="lib\MonoMac" />
