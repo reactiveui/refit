@@ -126,23 +126,14 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void PostToRequestBin()
+        public async Task PostToRequestBin()
         {
-            var fixture = RestService.For<IRequestBin>("http://requestb.in/");
-            var result = fixture.Post();
-
+            var fixture = RestService.For<IHttpBin>("http://httpbin.org/");
+            
             try {
-                result.Wait();
-            } catch (AggregateException ae) {
-                ae.Handle(x => {
-                    if (x is ApiException) {
-                        // we should be good but maybe a 404 occurred
-                        return true;
-                    }
-
-                    // other exception types might be valid failures
-                    return false;
-                });
+                await fixture.Post();
+            } catch (ApiException ex) { 
+                // we should be good but maybe a 404 occurred
             }
         }
 
