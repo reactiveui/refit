@@ -21,8 +21,10 @@
                 <dependency id="Newtonsoft.Json" version="6.0.3" />
             </group>
             <group targetFramework="Silverlight5.0">
-                <dependency id="Microsoft.Net.Http" version="2.2.13" />
+                <dependency id="Microsoft.Net.Http" version="2.2.22" />
+                <dependency id="Microsoft.Bcl.Async" version="1.0.168" />
                 <dependency id="Newtonsoft.Json" version="6.0.3" />
+                <dependency id="Rx-Interfaces" version="2.2.4" />
             </group>
         </dependencies>
     </metadata>
