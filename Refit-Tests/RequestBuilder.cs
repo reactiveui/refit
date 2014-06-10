@@ -13,7 +13,7 @@ using Newtonsoft.Json;
 
 namespace Refit.Tests
 {
-    [Headers("User-Agent: Refit Test Client", "Api-Version: 1")]
+    [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
     public interface IRestMethodInfoTests
     {
         [Get("@)!@_!($_!@($\\\\|||::::")]
@@ -177,7 +177,7 @@ namespace Refit.Tests
             Assert.IsTrue(fixture.Headers.ContainsKey("Api-Version"), "Headers include Api-Version header");
             Assert.AreEqual("2", fixture.Headers["Api-Version"]);
             Assert.IsTrue(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("Refit Test Client", fixture.Headers["User-Agent"]);
+            Assert.AreEqual("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.AreEqual(2, fixture.Headers.Count);
         }
 
@@ -192,7 +192,7 @@ namespace Refit.Tests
 
             Assert.AreEqual("Authorization", fixture.HeaderParameterMap[1]);
             Assert.IsTrue(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("Refit Test Client", fixture.Headers["User-Agent"]);
+            Assert.AreEqual("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.AreEqual(2, fixture.Headers.Count);
         }
 
@@ -223,7 +223,7 @@ namespace Refit.Tests
         }
     }
 
-    [Headers("User-Agent: Refit Test Client", "Api-Version: 1")]
+    [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
     public interface IDummyHttpApi
     {
         [Get("/foo/bar/{id}")]
@@ -369,7 +369,7 @@ namespace Refit.Tests
             var output = factory(new object[] { 6 });
 
             Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("Refit Test Client", output.Headers.UserAgent.ToString());
+            Assert.AreEqual("RefitTestClient", output.Headers.UserAgent.ToString());
             Assert.IsTrue(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
             Assert.AreEqual("2", output.Headers.GetValues("Api-Version").Single());
         }
@@ -382,7 +382,7 @@ namespace Refit.Tests
             var output = factory(new object[] { 6 });
 
             Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("Refit Test Client", output.Headers.UserAgent.ToString());
+            Assert.AreEqual("RefitTestClient", output.Headers.UserAgent.ToString());
             Assert.IsTrue(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
             Assert.AreEqual("", output.Headers.GetValues("Api-Version").Single());
         }
@@ -394,7 +394,7 @@ namespace Refit.Tests
             var output = factory(new object[] { 6 });
 
             Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("Refit Test Client", output.Headers.UserAgent.ToString());
+            Assert.AreEqual("RefitTestClient", output.Headers.UserAgent.ToString());
             Assert.IsFalse(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
         }
 
