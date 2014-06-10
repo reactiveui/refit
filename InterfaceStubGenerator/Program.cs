@@ -24,7 +24,7 @@ namespace Refit.Generator
             if (args.Length > 1) {
                 files = args[1].Split(';')
                     .Select(x => new FileInfo(Path.Combine(targetDir, x)))
-                    .Where(x => x.Name.Contains("RefitStubs") == false)
+                    .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
                     .ToArray();
             } else {
                 // NB: @Compile is completely jacked on Xam Studio in iOS, just
