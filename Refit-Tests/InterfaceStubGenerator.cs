@@ -14,6 +14,7 @@ using Refit.Generator;
 
 namespace Refit.Tests
 {
+    [TestFixture]
     public class InterfaceStubGeneratorTests
     {
         [Test]
