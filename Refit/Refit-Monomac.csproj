@@ -43,9 +43,6 @@
     <Reference Include="XamMac, Version=0.0.0.0, Culture=neutral, PublicKeyToken=84e04ff9cfb79065" />
     <Reference Include="System.Web" />
     <Reference Include="System.Net.Http" />
-    <Reference Include="Castle.Core">
-      <HintPath>..\ext\Monomac\Castle.Core.dll</HintPath>
-    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>

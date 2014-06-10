@@ -69,7 +69,7 @@ RefitStubs.cs
 
 # packages
 Release/
+packages/
 
 *.userprefs
 Refit-Tests/test-results
-packages

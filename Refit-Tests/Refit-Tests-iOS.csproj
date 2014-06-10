@@ -91,10 +91,10 @@
     <Reference Include="System.Core" />
     <Reference Include="monotouch" />
     <Reference Include="MonoTouch.NUnitLite" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\ext\Monoandroid\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System.Net.Http" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\portable-net40+sl4+wp7+win8\Newtonsoft.Json.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -112,15 +112,12 @@
     <Compile Include="RestService.cs" />
     <Compile Include="RefitStubs.cs" />
   </ItemGroup>
-
   <PropertyGroup>
     <DefineConstants>$(DefineConstants);REFIT__IOS</DefineConstants>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <CustomCommands>
       <CustomCommands>
@@ -128,7 +125,6 @@
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
-
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <ProjectReference Include="..\Refit\Refit-MonoTouch.csproj">

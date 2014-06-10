@@ -97,7 +97,13 @@
     <Reference Include="System.Net.Http.Primitives">
       <HintPath>..\packages\Microsoft.Net.Http.2.2.13\lib\portable-net40+sl4+win8+wp71\System.Net.Http.Primitives.dll</HintPath>
     </Reference>
+
+    <ProjectReference Include="Refit-Portable.csproj">
+      <Project>{E315020F-33BC-4D85-BC6E-8346F06F1112}</Project>
+      <Name>Refit-Portable</Name>
+    </ProjectReference>
   </ItemGroup>
+
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="Helpers.cs" />

@@ -79,6 +79,7 @@
     <Reference Include="System.Threading.Tasks">
       <HintPath>..\packages\Microsoft.Bcl.1.1.3\lib\sl5\System.Threading.Tasks.dll</HintPath>
     </Reference>
+
     <Reference Include="System.Windows" />
     <Reference Include="system" />
     <Reference Include="System.Core">
