@@ -70,7 +70,7 @@ namespace Refit
     }
 
     public enum BodySerializationMethod {
-        Json, Xml,
+        Json, UrlEncoded
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]

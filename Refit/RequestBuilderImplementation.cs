@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
@@ -82,7 +83,15 @@ namespace Refit
                         } else if (stringParam != null) {
                             ret.Content = new StringContent(stringParam);
                         } else {
-                            ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8, "application/json");
+                            switch (restMethod.BodyParameterInfo.Item1) {
+                                case BodySerializationMethod.UrlEncoded:
+                                    ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
+                                    break;
+                                case BodySerializationMethod.Json:
+                                    ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8, "application/json");
+                                    break;
+                            }
+                            
                         }
 
                         continue;
@@ -509,6 +518,39 @@ namespace Refit
 
         bogusMethod:
             throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
+        }
+    }
+
+    class FormValueDictionary : Dictionary<string, string>
+    {
+        // Can't use ConcurrentDictionary because Silverlight doesn't have it
+        private static readonly Dictionary<Type, PropertyInfo[]> propertyCache
+            = new Dictionary<Type, PropertyInfo[]>();
+
+        public FormValueDictionary(object source) {
+            if (source == null) return;
+
+            var dictionary = source as IDictionary;
+            if (dictionary != null) {
+                foreach (var key in dictionary.Keys) {
+                    Add(key.ToString(), string.Format("{0}", dictionary[key]));
+                }
+            }
+            else {
+                var type = source.GetType();
+                if (!propertyCache.ContainsKey(type)) {
+                    propertyCache[type] = getProperties(type);
+                }
+                foreach (var property in propertyCache[type]) {
+                    Add(property.Name, string.Format("{0}", property.GetValue(source, null)));
+                }
+            }
+        }
+
+        PropertyInfo[] getProperties(Type type) {
+            return type.GetProperties()
+                .Where(p => p.CanRead)
+                .ToArray();
         }
     }
 }
