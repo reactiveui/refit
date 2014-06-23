@@ -1,11 +1,8 @@
 using System;
 using System.Net.Http;
-using System.Collections.Generic;
-using System.Linq;
-using Castle.DynamicProxy;
+
 using NUnit.Framework;
 using System.Threading.Tasks;
-using System.Threading;
 
 namespace Refit.Tests
 {
@@ -56,7 +53,7 @@ namespace Refit.Tests
     public class RestServiceIntegrationTests
     {
         [Test]
-        public void HitTheGitHubUserAPI()
+        public void HitTheGitHubUserApi()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             var result = fixture.GetUser("octocat");
