@@ -66,7 +66,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void ShouldRetHttpResponseMessage() 
+        public void ShouldRetHttpResponseMessage()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             var result = fixture.GetIndex();
@@ -82,10 +82,28 @@ namespace Refit.Tests
             var fixture = RestService.For<IRequestBin>("http://requestb.in/");
             var result = fixture.Post();
 
-            result.Wait();
+            try
+            {
+                result.Wait();
+            }
+            catch (AggregateException ae)
+            {
+                ae.Handle(
+                    x =>
+                    {
+                        if (x is HttpRequestException)
+                        {
+                            // we should be good but maybe a 404 occurred
+                            return true;
+                        }
+
+                        // other exception types might be valid failures
+                        return false;
+                    });
+            }
         }
 
-        interface IRequestBin
+        public interface IRequestBin
         {
             [Post("/1h3a5jm1")]
             Task Post();
