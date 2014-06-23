@@ -230,8 +230,11 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
 
-        [Get("/some")]
+        [Get("/string")]
         Task<string> FetchSomeStuffWithoutFullPath();
+
+        [Get("/void")]
+        Task FetchSomeStuffWithVoid();
 
         string SomeOtherMethod();
     }
@@ -409,7 +412,20 @@ namespace Refit.Tests
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
             task.Wait();
 
-            Assert.AreEqual(testHttpMessageHandler.RequestMessage.RequestUri.ToString(), "http://api/foo/bar/some");
+            Assert.AreEqual(testHttpMessageHandler.RequestMessage.RequestUri.ToString(), "http://api/foo/bar/string");
+        }
+
+        [Test]
+        public void HttpClientPathForVoidMethodShouldBePrefixedToTheRequestUri()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithVoid");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
+            task.Wait();
+
+            Assert.AreEqual(testHttpMessageHandler.RequestMessage.RequestUri.ToString(), "http://api/foo/bar/void");
         }
     }
 }

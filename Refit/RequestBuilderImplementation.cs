@@ -174,10 +174,9 @@ namespace Refit
         }
 
         Func<HttpClient, object[], Task> buildVoidTaskFuncForMethod(RestMethodInfo restMethod)
-        {
-            var factory = BuildRequestFactoryForMethod(restMethod.Name);
-                        
+        {                      
             return async (client, paramList) => {
+                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
                 var rq = factory(paramList);
                 var resp = await client.SendAsync(rq);
 
