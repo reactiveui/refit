@@ -48,7 +48,7 @@ namespace Refit
             get { return interfaceHttpMethods.Keys; }
         }
 
-        public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName)
+        public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath = "")
         {
             if (!interfaceHttpMethods.ContainsKey(methodName)) {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
@@ -64,7 +64,7 @@ namespace Refit
                     setHeader(ret, header.Key, header.Value);
                 }   
 
-                var urlTarget = new StringBuilder(restMethod.RelativePath);
+                var urlTarget = new StringBuilder(basePath).Append(restMethod.RelativePath);
                 var queryParamsToAdd = new Dictionary<string, string>();
 
                 for(int i=0; i < paramList.Length; i++) {
@@ -188,9 +188,8 @@ namespace Refit
         Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
             where T : class
         {
-            var factory = BuildRequestFactoryForMethod(restMethod.Name);
-
             return async (client, paramList) => {
+                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
                 var rq = factory(paramList);
                 var resp = await client.SendAsync(rq);
                 if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {

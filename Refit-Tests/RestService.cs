@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace Refit.Tests
 {
+    using System.Security.Cryptography.X509Certificates;
+
     public class User
     {
         public string login { get; set; }
@@ -49,6 +51,20 @@ namespace Refit.Tests
         Task<HttpResponseMessage> GetIndex();
     }
 
+    public class RootObject
+    {
+        public string _id { get; set; }
+        public string _rev { get; set; }
+        public string name { get; set; } 
+    }
+
+    [Headers("User-Agent: Refit Integration Tests")]
+    public interface INpmJs
+    {
+        [Get("/congruence")]
+        Task<RootObject> GetCongruence();
+    }
+
     [TestFixture]
     public class RestServiceIntegrationTests
     {
@@ -71,6 +87,16 @@ namespace Refit.Tests
             result.Wait();
             Assert.IsNotNull(result.Result);
             Assert.IsTrue(result.Result.IsSuccessStatusCode);
+        }
+
+        [Test]
+        public void HitTheNpmJs()
+        {
+            var fixture = RestService.For<INpmJs>("https://registry.npmjs.us/public");
+            var result = fixture.GetCongruence();
+
+            result.Wait();
+            Assert.AreEqual("congruence", result.Result._id);
         }
 
         [Test]

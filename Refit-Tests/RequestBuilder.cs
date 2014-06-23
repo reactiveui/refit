@@ -2,14 +2,9 @@ using System;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+using System.Net;
 using NUnit.Framework;
-using System.Text;
-using Newtonsoft.Json;
-using System.IO;
-using System.Web;
 using System.Threading;
 
 namespace Refit.Tests
@@ -19,7 +14,7 @@ namespace Refit.Tests
     {
         [Get("@)!@_!($_!@($\\\\|||::::")]
         Task<string> GarbagePath();
-                
+
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffMissingParameters();
 
@@ -34,7 +29,7 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
-                
+
         [Get("/foo/bar/{id}")]
         IObservable<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
 
@@ -60,10 +55,13 @@ namespace Refit.Tests
         {
             bool shouldDie = true;
 
-            try {
+            try
+            {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
-            } catch (ArgumentException) {
+            }
+            catch (ArgumentException)
+            {
                 shouldDie = false;
             }
 
@@ -75,10 +73,13 @@ namespace Refit.Tests
         {
             bool shouldDie = true;
 
-            try {
+            try
+            {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffMissingParameters"));
-            } catch (ArgumentException) {
+            }
+            catch (ArgumentException)
+            {
                 shouldDie = false;
             }
 
@@ -184,10 +185,13 @@ namespace Refit.Tests
         {
             bool shouldDie = true;
 
-            try {
+            try
+            {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "AsyncOnlyBuddy"));
-            } catch (ArgumentException) {
+            }
+            catch (ArgumentException)
+            {
                 shouldDie = false;
             }
 
@@ -218,7 +222,7 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         [Headers("Api-Version: ")]
         Task<string> FetchSomeStuffWithEmptyHardcodedHeader(int id);
-        
+
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
@@ -226,7 +230,21 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
 
+        [Get("/some")]
+        Task<string> FetchSomeStuffWithoutFullPath();
+
         string SomeOtherMethod();
+    }
+
+    public class TestHttpMessageHandler : HttpMessageHandler
+    {
+        public HttpRequestMessage RequestMessage { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestMessage = request;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("test") });
+        }
     }
 
     [TestFixture]
@@ -245,25 +263,33 @@ namespace Refit.Tests
                 "FetchSomeStuff",
             };
 
-            foreach (var v in failureMethods) {
+            foreach (var v in failureMethods)
+            {
                 bool shouldDie = true;
 
-                try {
+                try
+                {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     shouldDie = false;
                 }
                 Assert.IsFalse(shouldDie);
             }
 
-            foreach (var v in successMethods) {
+            foreach (var v in successMethods)
+            {
                 bool shouldDie = false;
 
-                try {
+                try
+                {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
-                } catch (Exception ex) {
+                }
+                catch (Exception ex)
+                {
                     shouldDie = true;
                 }
 
@@ -281,7 +307,7 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf", uri.PathAndQuery);
         }
-                        
+
         [Test]
         public void ParameterizedQueryParamsShouldBeInUrl()
         {
@@ -342,7 +368,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void CustomDynamicHeaderShouldBeInHeaders() 
+        public void CustomDynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
@@ -371,6 +397,19 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, null });
 
             Assert.IsNull(output.Headers.Authorization, "Headers include Authorization header");
+        }
+
+        [Test]
+        public void HttpClientPathShouldBePrefixedToTheRequestUri()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithoutFullPath");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
+            task.Wait();
+
+            Assert.AreEqual(testHttpMessageHandler.RequestMessage.RequestUri.ToString(), "http://api/foo/bar/some");
         }
     }
 }
