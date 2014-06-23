@@ -64,7 +64,7 @@ namespace Refit
                     setHeader(ret, header.Key, header.Value);
                 }   
 
-                var urlTarget = new StringBuilder(basePath).Append(restMethod.RelativePath);
+                var urlTarget = new StringBuilder(basePath == "/" ? String.Empty : basePath).Append(restMethod.RelativePath);
                 var queryParamsToAdd = new Dictionary<string, string>();
 
                 for(int i=0; i < paramList.Length; i++) {

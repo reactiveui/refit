@@ -403,7 +403,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void HttpClientPathShouldBePrefixedToTheRequestUri()
+        public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithoutFullPath");
@@ -412,11 +412,11 @@ namespace Refit.Tests
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
             task.Wait();
 
-            Assert.AreEqual(testHttpMessageHandler.RequestMessage.RequestUri.ToString(), "http://api/foo/bar/string");
+            Assert.AreEqual("http://api/foo/bar/string", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
         }
 
         [Test]
-        public void HttpClientPathForVoidMethodShouldBePrefixedToTheRequestUri()
+        public void HttpClientForVoidMethodShouldPrefixedAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithVoid");
@@ -425,7 +425,20 @@ namespace Refit.Tests
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
             task.Wait();
 
-            Assert.AreEqual(testHttpMessageHandler.RequestMessage.RequestUri.ToString(), "http://api/foo/bar/void");
+            Assert.AreEqual("http://api/foo/bar/void", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
+        }
+
+        [Test]
+        public void HttpClientShouldNotPrefixEmptyAbsolutePathToTheRequestUri()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuff");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
+            task.Wait();
+
+            Assert.AreEqual("http://api/foo/bar/42", testHttpMessageHandler.RequestMessage.RequestUri.ToString());            
         }
     }
 }

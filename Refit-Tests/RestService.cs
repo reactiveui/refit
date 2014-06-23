@@ -1,13 +1,10 @@
 using System;
 using System.Net.Http;
-
 using NUnit.Framework;
 using System.Threading.Tasks;
 
 namespace Refit.Tests
 {
-    using System.Security.Cryptography.X509Certificates;
-
     public class User
     {
         public string login { get; set; }
