@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 namespace Refit.Tests
 {
+    using Moq;
+
     public class User
     {
         public string login { get; set; }
@@ -48,6 +50,16 @@ namespace Refit.Tests
         Task<HttpResponseMessage> GetIndex();
     }
 
+    [Headers("User-Agent: Refit Integration Tests")]
+    public interface IObservableGitHubApi
+    {
+        [Get("/users/{username}")]
+        IObservable<User> GetUser(string userName);
+
+        [Get("/")]
+        IObservable<HttpResponseMessage> GetIndex();    
+    }
+
     public class RootObject
     {
         public string _id { get; set; }
@@ -84,6 +96,21 @@ namespace Refit.Tests
             result.Wait();
             Assert.IsNotNull(result.Result);
             Assert.IsTrue(result.Result.IsSuccessStatusCode);
+        }
+
+        [Test]
+        public void HitTheGitHubUserApiObservable()
+        {
+            var fixture = RestService.For<IObservableGitHubApi>("https://api.github.com");
+            var result = fixture.GetUser("octocat");
+            var mockObserver = new Mock<IObserver<User>>();
+            var semaphore = new Semaphore(0, 1);
+            mockObserver.Setup(m => m.OnNext(It.IsAny<User>())).Callback<User>(u => semaphore.Release(1));
+
+            result.Subscribe(mockObserver.Object);
+            semaphore.WaitOne(2000);
+
+            mockObserver.Verify(m => m.OnNext(It.IsAny<User>()));
         }
 
         [Test]

@@ -36,6 +36,9 @@
     <Reference Include="Castle.Core">
       <HintPath>..\ext\Net45\Castle.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Moq">
+      <HintPath>..\packages\Moq.4.2.1402.2112\lib\net40\Moq.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\ext\Net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -73,6 +76,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
