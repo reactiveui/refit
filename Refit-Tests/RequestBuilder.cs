@@ -55,13 +55,11 @@ namespace Refit.Tests
         {
             bool shouldDie = true;
 
-            try
-            {
+            try {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
             }
-            catch (ArgumentException)
-            {
+            catch (ArgumentException) {
                 shouldDie = false;
             }
 
@@ -73,13 +71,11 @@ namespace Refit.Tests
         {
             bool shouldDie = true;
 
-            try
-            {
+            try {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffMissingParameters"));
             }
-            catch (ArgumentException)
-            {
+            catch (ArgumentException) {
                 shouldDie = false;
             }
 
@@ -185,13 +181,11 @@ namespace Refit.Tests
         {
             bool shouldDie = true;
 
-            try
-            {
+            try {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "AsyncOnlyBuddy"));
             }
-            catch (ArgumentException)
-            {
+            catch (ArgumentException) {
                 shouldDie = false;
             }
 
@@ -266,33 +260,27 @@ namespace Refit.Tests
                 "FetchSomeStuff",
             };
 
-            foreach (var v in failureMethods)
-            {
+            foreach (var v in failureMethods) {
                 bool shouldDie = true;
 
-                try
-                {
+                try {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
                 }
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
                     shouldDie = false;
                 }
                 Assert.IsFalse(shouldDie);
             }
 
-            foreach (var v in successMethods)
-            {
+            foreach (var v in successMethods) {
                 bool shouldDie = false;
 
-                try
-                {
+                try {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
                 }
-                catch (Exception ex)
-                {
+                catch (Exception ex) {
                     shouldDie = true;
                 }
 
