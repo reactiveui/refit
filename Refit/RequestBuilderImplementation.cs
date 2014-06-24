@@ -246,38 +246,38 @@ namespace Refit
 
             public void OnNext(T value)
             {
-                if (completion == null) return;
+                if (completion != null && completion.IsCompleted) return;
 
                 result = value;
                 resultSet = true;
 
-                var currentList = default(IObserver<T>[]);
+                IObserver<T>[] currentList;
                 lock (subscriberList) { currentList = subscriberList.ToArray(); }
                 foreach (var v in currentList) v.OnNext(value);
             }
 
             public void OnError(Exception error)
             {
-                var final = Interlocked.CompareExchange(ref completion, new CompletionResult() { IsCompleted = false, Error = error }, null);
-                if (final.IsCompleted) return;
+                Interlocked.CompareExchange(ref completion, new CompletionResult() { IsCompleted = false, Error = error }, null);
+                if (completion.IsCompleted) return;
                                 
-                var currentList = default(IObserver<T>[]);
+                IObserver<T>[] currentList;
                 lock (subscriberList) { currentList = subscriberList.ToArray(); }
                 foreach (var v in currentList) v.OnError(error);
 
-                final.IsCompleted = true;
+                completion.IsCompleted = true;
             }
 
             public void OnCompleted()
             {
-                var final = Interlocked.CompareExchange(ref completion, new CompletionResult() { IsCompleted = false, Error = null }, null);
-                if (final.IsCompleted) return;
+                Interlocked.CompareExchange(ref completion, new CompletionResult() { IsCompleted = false, Error = null }, null);
+                if (completion.IsCompleted) return;
                                 
-                var currentList = default(IObserver<T>[]);
+                IObserver<T>[] currentList;
                 lock (subscriberList) { currentList = subscriberList.ToArray(); }
                 foreach (var v in currentList) v.OnCompleted();
 
-                final.IsCompleted = true;
+                completion.IsCompleted = true;
             }
 
             public IDisposable Subscribe(IObserver<T> observer)
