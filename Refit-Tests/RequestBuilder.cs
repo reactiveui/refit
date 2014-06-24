@@ -58,8 +58,7 @@ namespace Refit.Tests
             try {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
-            }
-            catch (ArgumentException) {
+            } catch (ArgumentException) {
                 shouldDie = false;
             }
 
@@ -74,8 +73,7 @@ namespace Refit.Tests
             try {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffMissingParameters"));
-            }
-            catch (ArgumentException) {
+            } catch (ArgumentException) {
                 shouldDie = false;
             }
 
@@ -184,8 +182,7 @@ namespace Refit.Tests
             try {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "AsyncOnlyBuddy"));
-            }
-            catch (ArgumentException) {
+            } catch (ArgumentException) {
                 shouldDie = false;
             }
 
@@ -266,8 +263,7 @@ namespace Refit.Tests
                 try {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     shouldDie = false;
                 }
                 Assert.IsFalse(shouldDie);
@@ -279,8 +275,7 @@ namespace Refit.Tests
                 try {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     shouldDie = true;
                 }
 
