@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 
 namespace Refit.Tests
 {
+    using System.Threading;
+
     using Moq;
 
     public class User
