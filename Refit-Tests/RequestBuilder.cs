@@ -2,14 +2,9 @@ using System;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+using System.Net;
 using NUnit.Framework;
-using System.Text;
-using Newtonsoft.Json;
-using System.IO;
-using System.Web;
 using System.Threading;
 
 namespace Refit.Tests
@@ -19,7 +14,7 @@ namespace Refit.Tests
     {
         [Get("@)!@_!($_!@($\\\\|||::::")]
         Task<string> GarbagePath();
-                
+
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffMissingParameters();
 
@@ -34,7 +29,7 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
-                
+
         [Get("/foo/bar/{id}")]
         IObservable<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
 
@@ -218,7 +213,7 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         [Headers("Api-Version: ")]
         Task<string> FetchSomeStuffWithEmptyHardcodedHeader(int id);
-        
+
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
@@ -226,7 +221,24 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
 
+        [Get("/string")]
+        Task<string> FetchSomeStuffWithoutFullPath();
+
+        [Get("/void")]
+        Task FetchSomeStuffWithVoid();
+
         string SomeOtherMethod();
+    }
+
+    public class TestHttpMessageHandler : HttpMessageHandler
+    {
+        public HttpRequestMessage RequestMessage { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestMessage = request;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("test") });
+        }
     }
 
     [TestFixture]
@@ -281,7 +293,7 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf", uri.PathAndQuery);
         }
-                        
+
         [Test]
         public void ParameterizedQueryParamsShouldBeInUrl()
         {
@@ -342,7 +354,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void CustomDynamicHeaderShouldBeInHeaders() 
+        public void CustomDynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
@@ -371,6 +383,45 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, null });
 
             Assert.IsNull(output.Headers.Authorization, "Headers include Authorization header");
+        }
+
+        [Test]
+        public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithoutFullPath");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
+            task.Wait();
+
+            Assert.AreEqual("http://api/foo/bar/string", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
+        }
+
+        [Test]
+        public void HttpClientForVoidMethodShouldPrefixedAbsolutePathToTheRequestUri()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithVoid");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
+            task.Wait();
+
+            Assert.AreEqual("http://api/foo/bar/void", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
+        }
+
+        [Test]
+        public void HttpClientShouldNotPrefixEmptyAbsolutePathToTheRequestUri()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuff");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
+            task.Wait();
+
+            Assert.AreEqual("http://api/foo/bar/42", testHttpMessageHandler.RequestMessage.RequestUri.ToString());            
         }
     }
 }

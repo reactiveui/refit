@@ -1,11 +1,7 @@
 using System;
 using System.Net.Http;
-using System.Collections.Generic;
-using System.Linq;
-using Castle.DynamicProxy;
 using NUnit.Framework;
 using System.Threading.Tasks;
-using System.Threading;
 
 namespace Refit.Tests
 {
@@ -52,11 +48,25 @@ namespace Refit.Tests
         Task<HttpResponseMessage> GetIndex();
     }
 
+    public class RootObject
+    {
+        public string _id { get; set; }
+        public string _rev { get; set; }
+        public string name { get; set; } 
+    }
+
+    [Headers("User-Agent: Refit Integration Tests")]
+    public interface INpmJs
+    {
+        [Get("/congruence")]
+        Task<RootObject> GetCongruence();
+    }
+
     [TestFixture]
     public class RestServiceIntegrationTests
     {
         [Test]
-        public void HitTheGitHubUserAPI()
+        public void HitTheGitHubUserApi()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             var result = fixture.GetUser("octocat");
@@ -66,7 +76,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void ShouldRetHttpResponseMessage() 
+        public void ShouldRetHttpResponseMessage()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             var result = fixture.GetIndex();
@@ -77,15 +87,43 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void HitTheNpmJs()
+        {
+            var fixture = RestService.For<INpmJs>("https://registry.npmjs.us/public");
+            var result = fixture.GetCongruence();
+
+            result.Wait();
+            Assert.AreEqual("congruence", result.Result._id);
+        }
+
+        [Test]
         public void PostToRequestBin()
         {
             var fixture = RestService.For<IRequestBin>("http://requestb.in/");
             var result = fixture.Post();
 
-            result.Wait();
+            try
+            {
+                result.Wait();
+            }
+            catch (AggregateException ae)
+            {
+                ae.Handle(
+                    x =>
+                    {
+                        if (x is HttpRequestException)
+                        {
+                            // we should be good but maybe a 404 occurred
+                            return true;
+                        }
+
+                        // other exception types might be valid failures
+                        return false;
+                    });
+            }
         }
 
-        interface IRequestBin
+        public interface IRequestBin
         {
             [Post("/1h3a5jm1")]
             Task Post();
