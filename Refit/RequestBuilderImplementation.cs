@@ -131,7 +131,7 @@ namespace Refit
             }
             if (request.Content != null && request.Content.Headers.Any(x => x.Key == name)) {
                 request.Content.Headers.Remove(name);
-            }
+            }*/
 
             if (value == null) return;
 
@@ -216,91 +216,41 @@ namespace Refit
             var taskFunc = buildTaskFuncForMethod<T>(restMethod);
 
             return (client, paramList) => {
-                var ret = new FakeAsyncSubject<T>();
-
-                taskFunc(client, paramList).ContinueWith(t => {
-                    if (t.Exception != null) {
-                        ret.OnError(t.Exception);
-                    } else {
-                        ret.OnNext(t.Result);
-                        ret.OnCompleted();
-                    }
-                });
+                var ret = new FakeAsyncSubject<T>(taskFunc, client, paramList);
 
                 return ret;
             };
         }
 
-        class CompletionResult 
+        class FakeAsyncSubject<T> : IObservable<T>
         {
-            public bool IsCompleted { get; set; }
-            public Exception Error { get; set; }
-        }
+            Func<HttpClient, object[], Task<T>> taskFunc;
+            HttpClient client;
+            object[] paramList;
 
-        class FakeAsyncSubject<T> : IObservable<T>, IObserver<T>
-        {
-            bool resultSet;
-            T result;
-            CompletionResult completion;
-            List<IObserver<T>> subscriberList = new List<IObserver<T>>();
-
-            public void OnNext(T value)
+            public FakeAsyncSubject(Func<HttpClient, object[], Task<T>> taskFunc, HttpClient client, object[] paramList)
             {
-                if (completion != null && completion.IsCompleted) return;
-
-                result = value;
-                resultSet = true;
-
-                IObserver<T>[] currentList;
-                lock (subscriberList) { currentList = subscriberList.ToArray(); }
-                foreach (var v in currentList) v.OnNext(value);
-            }
-
-            public void OnError(Exception error)
-            {
-                Interlocked.CompareExchange(ref completion, new CompletionResult() { IsCompleted = false, Error = error }, null);
-                if (completion.IsCompleted) return;
-                                
-                IObserver<T>[] currentList;
-                lock (subscriberList) { currentList = subscriberList.ToArray(); }
-                foreach (var v in currentList) v.OnError(error);
-
-                completion.IsCompleted = true;
-            }
-
-            public void OnCompleted()
-            {
-                Interlocked.CompareExchange(ref completion, new CompletionResult() { IsCompleted = false, Error = null }, null);
-                if (completion.IsCompleted) return;
-                                
-                IObserver<T>[] currentList;
-                lock (subscriberList) { currentList = subscriberList.ToArray(); }
-                foreach (var v in currentList) v.OnCompleted();
-
-                completion.IsCompleted = true;
+                this.taskFunc = taskFunc;
+                this.client = client;
+                this.paramList = paramList;
             }
 
             public IDisposable Subscribe(IObserver<T> observer)
             {
-                if (completion != null) {
-                    if (completion.Error != null) {
-                        observer.OnError(completion.Error);
-                        return new AnonymousDisposable(() => {});
+                taskFunc(client, paramList).ContinueWith(t =>
+                {
+                    if (t.Exception != null)
+                    {
+                        observer.OnError(t.Exception);
                     }
-
-                    if (resultSet) observer.OnNext(result);
-                    observer.OnCompleted();
-                        
-                    return new AnonymousDisposable(() => {});
-                }
-
-                lock (subscriberList) { 
-                    subscriberList.Add(observer);
-                }
-
-                return new AnonymousDisposable(() => {
-                    lock (subscriberList) { subscriberList.Remove(observer); }
+                    else
+                    {
+                        observer.OnNext(t.Result);
+                        observer.OnCompleted();
+                    }
                 });
+
+                return new AnonymousDisposable(() => { });
             }
         }
     }
