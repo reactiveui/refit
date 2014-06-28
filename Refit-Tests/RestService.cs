@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Http;
 using NUnit.Framework;
 using System.Threading.Tasks;
@@ -46,6 +47,9 @@ namespace Refit.Tests
 
         [Get("/")]
         Task<HttpResponseMessage> GetIndex();
+
+        [Get("/give-me-some-404-action")]
+        Task NothingToSeeHere();
     }
 
     public class RootObject
@@ -111,7 +115,7 @@ namespace Refit.Tests
                 ae.Handle(
                     x =>
                     {
-                        if (x is HttpRequestException)
+                        if (x is ApiException)
                         {
                             // we should be good but maybe a 404 occurred
                             return true;
@@ -120,6 +124,22 @@ namespace Refit.Tests
                         // other exception types might be valid failures
                         return false;
                     });
+            }
+        }
+
+        [Test]
+        public async Task CanGetDataOutOfErrorResponses() 
+        {
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com");
+            try {
+                await fixture.NothingToSeeHere();
+                Assert.Fail();
+            }
+            catch (ApiException exception) {
+                Assert.AreEqual(HttpStatusCode.NotFound, exception.StatusCode);
+                var content = exception.GetContentAs<dynamic>();
+                Assert.AreEqual("Not Found", (string)content.message);
+                Assert.IsNotNull((string)content.documentation_url);
             }
         }
 
