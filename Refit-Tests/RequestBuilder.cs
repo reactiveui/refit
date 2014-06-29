@@ -216,6 +216,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedAndOtherQueryParameters(int id, [AliasAs("search_for")] string searchQuery);
 
+        [Get("/{id}/{width}x{height}/foo")]
+        Task<string> FetchSomethingWithMultipleParametersPerSegment(int id, int width, int height);
+
         [Get("/foo/bar/{id}")]
         [Headers("Api-Version: 2")]
         Task<string> FetchSomeStuffWithHardcodedHeader(int id);
@@ -317,6 +320,17 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void MutlipleParametersInTheSameSegmentAreGeneratedProperly()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomethingWithMultipleParametersPerSegment");
+            var output = factory(new object[] { 6, 1024, 768 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/6/1024x768/foo", uri.PathAndQuery);
         }
 
         [Test]
