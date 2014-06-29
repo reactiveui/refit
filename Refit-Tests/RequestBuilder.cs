@@ -30,6 +30,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
 
+        [Get("/foo/bar/{width}x{height}")]
+        Task<string> FetchAnImage(int width, int height);
+
         [Get("/foo/bar/{id}")]
         IObservable<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
 
@@ -116,6 +119,17 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
+        public void MultipleParametersPerSegmentShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchAnImage"));
+            Assert.AreEqual("width", fixture.ParameterMap[0]);
+            Assert.AreEqual("height", fixture.ParameterMap[1]);
             Assert.AreEqual(0, fixture.QueryParameterMap.Count);
             Assert.IsNull(fixture.BodyParameterInfo);
         }
