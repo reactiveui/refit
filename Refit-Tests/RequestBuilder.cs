@@ -323,7 +323,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void MutlipleParametersInTheSameSegmentAreGeneratedProperly()
+        public void MultipleParametersInTheSameSegmentAreGeneratedProperly()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomethingWithMultipleParametersPerSegment");
