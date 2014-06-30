@@ -30,6 +30,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
 
+        [Get("/foo/bar/{width}x{height}")]
+        Task<string> FetchAnImage(int width, int height);
+
         [Get("/foo/bar/{id}")]
         IObservable<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
 
@@ -121,6 +124,17 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void MultipleParametersPerSegmentShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchAnImage"));
+            Assert.AreEqual("width", fixture.ParameterMap[0]);
+            Assert.AreEqual("height", fixture.ParameterMap[1]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
         public void FindTheBodyParameter()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -201,6 +215,9 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedAndOtherQueryParameters(int id, [AliasAs("search_for")] string searchQuery);
+
+        [Get("/{id}/{width}x{height}/foo")]
+        Task<string> FetchSomethingWithMultipleParametersPerSegment(int id, int width, int height);
 
         [Get("/foo/bar/{id}")]
         [Headers("Api-Version: 2")]
@@ -303,6 +320,17 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void MultipleParametersInTheSameSegmentAreGeneratedProperly()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomethingWithMultipleParametersPerSegment");
+            var output = factory(new object[] { 6, 1024, 768 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/6/1024x768/foo", uri.PathAndQuery);
         }
 
         [Test]

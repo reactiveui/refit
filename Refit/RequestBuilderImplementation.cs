@@ -331,7 +331,7 @@ namespace Refit
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
 
-        static readonly Regex parameterRegex = new Regex(@"^{(.*)}$");
+        static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
 
         public RestMethodInfo(Type targetInterface, MethodInfo methodInfo)
         {
@@ -388,10 +388,9 @@ namespace Refit
         {
             var ret = new Dictionary<int, string>();
 
-            var parameterizedParts = relativePath.Split('/', '?').SelectMany(x => {
-                var m = parameterRegex.Match(x);
-                return (m.Success ? EnumerableEx.Return(m) : Enumerable.Empty<Match>());
-            }).ToList();
+            var parameterizedParts = relativePath.Split('/', '?')
+                .SelectMany(x => parameterRegex.Matches(x).Cast<Match>())
+                .ToList();
 
             if (parameterizedParts.Count == 0) {
                 return ret;
