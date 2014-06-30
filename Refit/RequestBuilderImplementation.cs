@@ -549,11 +549,18 @@ namespace Refit
             var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers);
 
             if (response.Content == null) return exception;
-
-            exception.ContentHeaders = response.Content.Headers;
-            exception.Content = await response.Content.ReadAsStringAsync();
-            response.Content.Dispose();
-
+            
+            try {
+                exception.ContentHeaders = response.Content.Headers;
+                exception.Content = await response.Content.ReadAsStringAsync();
+                response.Content.Dispose();
+            }
+            catch {
+                // We're already handling an exception at this point, 
+                // so we want to make sure we don't throw another one 
+                // that hides the real error.
+            }
+            
             return exception;
         }
 
