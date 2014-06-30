@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
@@ -245,6 +246,12 @@ namespace Refit.Tests
         Task FetchSomeStuffWithVoid();
 
         string SomeOtherMethod();
+
+        [Put("/foo/bar/{id}")]
+        Task PutSomeContentWithAuthorization(int id, [Body] object content, [Header("Authorization")] string authorization);
+
+        [Put("/foo/bar/{id}")]
+        Task<string> PutSomeStuffWithDynamicContentType(int id, [Body] string content, [Header("Content-Type")] string contentType);
     }
 
     public class TestHttpMessageHandler : HttpMessageHandler
@@ -450,6 +457,29 @@ namespace Refit.Tests
             task.Wait();
 
             Assert.AreEqual("http://api/foo/bar/42", testHttpMessageHandler.RequestMessage.RequestUri.ToString());            
+        }
+
+        [Test]
+        public void DontBlowUpWithDynamicAuthorizationHeaderAndContent() 
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PutSomeContentWithAuthorization");
+            var output = factory(new object[] { 7, new { Octocat = "Dunetocat" }, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
+
+            Assert.IsNotNull(output.Headers.Authorization, "Headers include Authorization header");
+            Assert.AreEqual("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
+        }
+
+        [Test]
+        public void SuchFlexibleContentTypeWow()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PutSomeStuffWithDynamicContentType");
+            var output = factory(new object[] { 7, "such \"refit\" is \"amaze\" wow", "text/dson" });
+
+            Assert.IsNotNull(output.Content, "Request has content");
+            Assert.IsNotNull(output.Content.Headers.ContentType, "Headers include Content-Type header");
+            Assert.AreEqual("text/dson", output.Content.Headers.ContentType.MediaType, "Content-Type header has the expected value");
         }
     }
 }

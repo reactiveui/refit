@@ -122,10 +122,14 @@ namespace Refit
         void setHeader(HttpRequestMessage request, string name, object value) 
         {
             // Clear any existing version of this header we may have set, because
-            // we want to allow removal/redefinition of headers.
-            request.Headers.Remove(name);
+            // we want to allow removal/redefinition of headers. 
 
-            if (request.Content != null) {
+            // NB: We have to enumerate the header names to check existence because 
+            // Contains throws if it's the wrong header type for the collection.
+            if (request.Headers.Any(x => x.Key == name)) {
+                request.Headers.Remove(name);
+            }
+            if (request.Content != null && request.Content.Headers.Any(x => x.Key == name)) {
                 request.Content.Headers.Remove(name);
             }
 
