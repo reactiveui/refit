@@ -2,9 +2,12 @@ using System;
 using System.Net.Http;
 using NUnit.Framework;
 using System.Threading.Tasks;
+using System.Threading;
+using Refit.Tests.support;
 
 namespace Refit.Tests
 {
+
     public class User
     {
         public string login { get; set; }
@@ -48,6 +51,16 @@ namespace Refit.Tests
         Task<HttpResponseMessage> GetIndex();
     }
 
+    [Headers("User-Agent: Refit Integration Tests")]
+    public interface IObservableGitHubApi
+    {
+        [Get("/users/{username}")]
+        IObservable<User> GetUser(string userName);
+
+        [Get("/")]
+        IObservable<HttpResponseMessage> GetIndex();    
+    }
+
     public class RootObject
     {
         public string _id { get; set; }
@@ -84,6 +97,34 @@ namespace Refit.Tests
             result.Wait();
             Assert.IsNotNull(result.Result);
             Assert.IsTrue(result.Result.IsSuccessStatusCode);
+        }
+
+        [Test]
+        public void HitTheGitHubUserApiObservable()
+        {
+            var fixture = RestService.For<IObservableGitHubApi>("https://api.github.com");
+            var result = fixture.GetUser("octocat");
+            var semaphore = new Semaphore(0, 2);
+            var testableObserver = new TestableObserver<User>(() => semaphore.Release());
+            result.Subscribe(testableObserver);
+            semaphore.WaitOne(3000);
+
+            Assert.IsTrue(testableObserver.OnNextWasCalled);
+            Assert.IsTrue(testableObserver.OnCompleteWasCalled);
+        }
+
+        [Test]
+        public void HitTheGitHubUserApiErrorObservable()
+        {
+            var fixture = RestService.For<IObservableGitHubApi>("https://api.github.com");
+            var result = fixture.GetUser("some_random_user_that_I_hope_does_not_exist");
+
+            var semaphore = new Semaphore(0, 1);
+            var testableObserver = new TestableObserver<User>(() => semaphore.Release());
+            result.Subscribe(testableObserver);
+            semaphore.WaitOne(1000);
+
+            Assert.IsTrue(testableObserver.OnErrorWasCalled);
         }
 
         [Test]

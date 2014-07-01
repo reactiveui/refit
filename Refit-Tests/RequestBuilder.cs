@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +6,7 @@ using System.Threading.Tasks;
 using System.Net;
 using NUnit.Framework;
 using System.Threading;
+using Refit.Tests.support;
 
 namespace Refit.Tests
 {
@@ -211,6 +211,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuff(int id);
 
+        [Get("/foo/bar/{id}")]
+        IObservable<string> FetchSomeStuffObservable(int id);
+
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedQueryParameter(int id);
 
@@ -258,9 +261,17 @@ namespace Refit.Tests
     {
         public HttpRequestMessage RequestMessage { get; private set; }
 
+        public bool WasSend { get; set; }
+
+        public TestHttpMessageHandler()
+        {
+            WasSend = false;
+        }
+
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestMessage = request;
+            WasSend = true;
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("test") });
         }
     }
@@ -481,5 +492,35 @@ namespace Refit.Tests
             Assert.IsNotNull(output.Content.Headers.ContentType, "Headers include Content-Type header");
             Assert.AreEqual("text/dson", output.Content.Headers.ContentType.MediaType, "Content-Type header has the expected value");
         }
+
+        [Test]
+        public void ObservableMethodDoesNotGetDispachedOnCreation()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffObservable");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
+
+            Assert.IsFalse(testHttpMessageHandler.WasSend);
+        }
+
+        [Test]
+        public void ObservableMethodDoesGetDispachedOnSubscription()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffObservable");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var observable = (IObservable<string>) factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
+            var semaphore = new Semaphore(0, 1);
+            var testableObserver = new TestableObserver<string>(() => semaphore.Release());
+            observable.Subscribe(testableObserver);
+            semaphore.WaitOne(100);
+
+            Assert.IsTrue(testHttpMessageHandler.WasSend);
+            Assert.IsTrue(testableObserver.OnNextWasCalled);
+        }
+
     }
 }
