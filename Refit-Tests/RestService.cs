@@ -2,12 +2,11 @@ using System;
 using System.Net.Http;
 using NUnit.Framework;
 using System.Threading.Tasks;
+using System.Threading;
+using Refit.Tests.support;
 
 namespace Refit.Tests
 {
-    using System.Threading;
-
-    using Moq;
 
     public class User
     {
@@ -105,21 +104,13 @@ namespace Refit.Tests
         {
             var fixture = RestService.For<IObservableGitHubApi>("https://api.github.com");
             var result = fixture.GetUser("octocat");
-            var mockObserver = new Mock<IObserver<User>>();
             var semaphore = new Semaphore(0, 2);
-            mockObserver.Setup(m => m.OnNext(It.IsAny<User>())).Callback<User>(
-                u =>
-                    {
-                        Assert.AreEqual("octocat", u.login);
-                        semaphore.Release();
-                    });
-            mockObserver.Setup(m => m.OnCompleted()).Callback(() => semaphore.Release());
-
-            result.Subscribe(mockObserver.Object);
+            var testableObserver = new TestableObserver<User>(() => semaphore.Release());
+            result.Subscribe(testableObserver);
             semaphore.WaitOne(3000);
 
-            mockObserver.Verify(m => m.OnNext(It.IsAny<User>()), Times.Once);
-            mockObserver.Verify(m => m.OnCompleted(), Times.Once);
+            Assert.IsTrue(testableObserver.OnNextWasCalled);
+            Assert.IsTrue(testableObserver.OnCompleteWasCalled);
         }
 
         [Test]
@@ -127,14 +118,13 @@ namespace Refit.Tests
         {
             var fixture = RestService.For<IObservableGitHubApi>("https://api.github.com");
             var result = fixture.GetUser("some_random_user_that_I_hope_does_not_exist");
-            var mockObserver = new Mock<IObserver<User>>();
+
             var semaphore = new Semaphore(0, 1);
-            mockObserver.Setup(m => m.OnError(It.IsAny<Exception>())).Callback(() => semaphore.Release());
+            var testableObserver = new TestableObserver<User>(() => semaphore.Release());
+            result.Subscribe(testableObserver);
+            semaphore.WaitOne(1000);
 
-            result.Subscribe(mockObserver.Object);
-            semaphore.WaitOne(3000);
-
-            mockObserver.Verify(m => m.OnError(It.IsAny<Exception>()), Times.Once);
+            Assert.IsTrue(testableObserver.OnErrorWasCalled);
         }
 
         [Test]

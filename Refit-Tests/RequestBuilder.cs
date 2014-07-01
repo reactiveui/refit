@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,11 +6,10 @@ using System.Threading.Tasks;
 using System.Net;
 using NUnit.Framework;
 using System.Threading;
+using Refit.Tests.support;
 
 namespace Refit.Tests
 {
-    using Moq;
-
     [Headers("User-Agent: Refit Test Client", "Api-Version: 1")]
     public interface IRestMethodInfoTests
     {
@@ -508,19 +506,20 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void ObservableMethodDoesGetsDispachedOnSubscription()
+        public void ObservableMethodDoesGetDispachedOnSubscription()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffObservable");
             var testHttpMessageHandler = new TestHttpMessageHandler();
-            var mock = new Mock<IObserver<string>>();
 
             var observable = (IObservable<string>) factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
-            Thread.Sleep(1000);
-            observable.Subscribe(mock.Object);
+            var semaphore = new Semaphore(0, 1);
+            var testableObserver = new TestableObserver<string>(() => semaphore.Release());
+            observable.Subscribe(testableObserver);
+            semaphore.WaitOne(100);
 
             Assert.IsTrue(testHttpMessageHandler.WasSend);
-            mock.Verify(m => m.OnNext("test"), Times.Once);
+            Assert.IsTrue(testableObserver.OnNextWasCalled);
         }
 
     }

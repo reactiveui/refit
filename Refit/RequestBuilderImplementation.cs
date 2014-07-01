@@ -131,7 +131,7 @@ namespace Refit
             }
             if (request.Content != null && request.Content.Headers.Any(x => x.Key == name)) {
                 request.Content.Headers.Remove(name);
-            }*/
+            }
 
             if (value == null) return;
 
