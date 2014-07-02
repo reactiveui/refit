@@ -1,18 +1,20 @@
+using System.Collections.Generic;
+using System.Text;
+using System;
+using System.Globalization;
+
+using Newtonsoft.Json.Serialization;
+
 namespace Refit.Tests.Support.Serialization
 {
-    using System.Collections.Generic;
-    using System.Text;
-
-    using Newtonsoft.Json.Serialization;
-
     public class DeliminatorSeparatedPropertyNamesContractResolver : DefaultContractResolver
     {
-        private readonly string _separator;
+        readonly string separator;
 
         protected DeliminatorSeparatedPropertyNamesContractResolver(char separator)
             : base(true)
         {
-            _separator = separator.ToString();
+            this.separator = separator.ToString(CultureInfo.InvariantCulture);
         }
 
         protected override string ResolvePropertyName(string propertyName)
@@ -20,8 +22,7 @@ namespace Refit.Tests.Support.Serialization
             var parts = new List<string>();
             var currentWord = new StringBuilder();
 
-            foreach (var c in propertyName)
-            {
+            foreach (var c in propertyName.ToCharArray()) {
                 if (char.IsUpper(c) && currentWord.Length > 0)
                 {
                     parts.Add(currentWord.ToString());
@@ -35,7 +36,7 @@ namespace Refit.Tests.Support.Serialization
                 parts.Add(currentWord.ToString());
             }
 
-            return string.Join(_separator, parts.ToArray());
+            return String.Join(separator, parts.ToArray());
         }
     }
 }

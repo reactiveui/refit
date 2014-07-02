@@ -70,7 +70,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Support\Serialization\DeliminatorSeparatedPropertyNamesContractResolver.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RestService.cs" />
+    <Compile Include="Support\Serialization\SnakeCasePropertyNamesContractResolver.cs" />
   </ItemGroup>
 </Project>
