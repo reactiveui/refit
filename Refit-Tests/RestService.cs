@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Reactive.Linq;
 using Newtonsoft.Json;
 using NUnit.Framework;
 
@@ -47,6 +48,9 @@ namespace Refit.Tests
         [Get("/users/{username}")]
         Task<User> GetUser(string userName);
 
+        [Get("/users/{username}")]
+        IObservable<User> GetUserObservable(string userName);
+
         [Get("/")]
         Task<HttpResponseMessage> GetIndex();
 
@@ -79,6 +83,20 @@ namespace Refit.Tests
                 () => new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
 
             var result = await fixture.GetUser("octocat");
+
+            Assert.AreEqual("octocat", result.Login);
+            Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
+        }
+
+        [Test]
+        public async Task HitTheGitHubUserApiAsObservable()
+        {
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com");
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
+
+            var result = await fixture.GetUserObservable("octocat")
+                .Timeout(TimeSpan.FromSeconds(10));
 
             Assert.AreEqual("octocat", result.Login);
             Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
