@@ -245,25 +245,19 @@ namespace Refit
             };
         }
 
-        class CompletionResult 
-        {
-            public bool IsCompleted { get; set; }
-            public Exception Error { get; set; }
-        }
-
         class FakeAsyncSubject<T> : IObservable<T>, IObserver<T>
         {
-            bool resultSet;
-            T result;
-            CompletionResult completion;
+            Tuple<bool, T> resultBox;
+            Tuple<bool, Exception> completionResult;
+
             List<IObserver<T>> subscriberList = new List<IObserver<T>>();
 
             public void OnNext(T value)
             {
-                if (completion == null) return;
+                if (completionResult != null) return;
 
-                result = value;
-                resultSet = true;
+                var result = Tuple.Create(true, value);
+                Interlocked.Exchange(ref resultBox, result);
 
                 var currentList = default(IObserver<T>[]);
                 lock (subscriberList) { currentList = subscriberList.ToArray(); }
@@ -272,38 +266,38 @@ namespace Refit
 
             public void OnError(Exception error)
             {
-                var final = Interlocked.CompareExchange(ref completion, new CompletionResult() { IsCompleted = false, Error = error }, null);
-                if (final.IsCompleted) return;
+                var final = Interlocked.CompareExchange(ref completionResult, Tuple.Create(true, error), null);
+                if (final != null) return;
                                 
                 var currentList = default(IObserver<T>[]);
                 lock (subscriberList) { currentList = subscriberList.ToArray(); }
                 foreach (var v in currentList) v.OnError(error);
 
-                final.IsCompleted = true;
+                subscriberList = null;
             }
 
             public void OnCompleted()
             {
-                var final = Interlocked.CompareExchange(ref completion, new CompletionResult() { IsCompleted = false, Error = null }, null);
-                if (final.IsCompleted) return;
+                var final = Interlocked.CompareExchange(ref completionResult, Tuple.Create(true, default(Exception)), null);
+                if (final != null) return;
                                 
                 var currentList = default(IObserver<T>[]);
                 lock (subscriberList) { currentList = subscriberList.ToArray(); }
                 foreach (var v in currentList) v.OnCompleted();
 
-                final.IsCompleted = true;
+                subscriberList = null;
             }
 
             public IDisposable Subscribe(IObserver<T> observer)
             {
-                if (completion != null) {
-                    if (completion.Error != null) {
-                        observer.OnError(completion.Error);
-                        return new AnonymousDisposable(() => {});
-                    }
+                if (completionResult != null) {
+                    if (resultBox != null) observer.OnNext(resultBox.Item2);
 
-                    if (resultSet) observer.OnNext(result);
-                    observer.OnCompleted();
+                    if (completionResult.Item2 != null) {
+                        observer.OnError(completionResult.Item2);
+                    } else { 
+                        observer.OnCompleted();
+                    }
                         
                     return new AnonymousDisposable(() => {});
                 }
