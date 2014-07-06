@@ -1,14 +1,16 @@
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Text;
 using Newtonsoft.Json;
 using System.IO;
-using System.Web;
+using HttpUtility = System.Web.HttpUtility;
 using System.Threading;
 
 namespace Refit
@@ -184,7 +186,9 @@ namespace Refit
                 var rq = factory(paramList);
                 var resp = await client.SendAsync(rq);
 
-                resp.EnsureSuccessStatusCode();
+                if (!resp.IsSuccessStatusCode) {
+                    throw await ApiException.Create(resp);
+                }
             };
         }
 
@@ -199,7 +203,9 @@ namespace Refit
                     return resp as T;
                 }
 
-                resp.EnsureSuccessStatusCode();
+                if (!resp.IsSuccessStatusCode) {
+                    throw await ApiException.Create(resp);
+                }
 
                 var content = await resp.Content.ReadAsStringAsync();
                 if (restMethod.SerializedReturnType == typeof(string)) {
@@ -512,6 +518,60 @@ namespace Refit
 
         bogusMethod:
             throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
+        }
+    }
+
+    public class ApiException : Exception
+    {
+        public HttpStatusCode StatusCode { get; private set; }
+        public string ReasonPhrase { get; private set; }
+        public HttpResponseHeaders Headers { get; private set; }
+
+        public HttpContentHeaders ContentHeaders { get; private set; }
+
+        public string Content { get; private set; }
+
+        public bool HasContent {
+            get { return !String.IsNullOrWhiteSpace(Content); }
+        }
+
+        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers) : 
+            base(createMessage(statusCode, reasonPhrase)) 
+        {
+            StatusCode = statusCode;
+            ReasonPhrase = reasonPhrase;
+            Headers = headers;
+        }
+
+        public T GetContentAs<T>()
+        {
+            return HasContent ? 
+                JsonConvert.DeserializeObject<T>(Content) : 
+                default(T);
+        }
+
+        public static async Task<ApiException> Create(HttpResponseMessage response) 
+        {
+            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers);
+
+            if (response.Content == null) return exception;
+            
+            try {
+                exception.ContentHeaders = response.Content.Headers;
+                exception.Content = await response.Content.ReadAsStringAsync();
+                response.Content.Dispose();
+            } catch {
+                // NB: We're already handling an exception at this point, 
+                // so we want to make sure we don't throw another one 
+                // that hides the real error.
+            }
+            
+            return exception;
+        }
+
+        static string createMessage(HttpStatusCode statusCode, string reasonPhrase)
+        {
+            return String.Format("Response status code does not indicate success: {0} ({1}).", (int)statusCode, reasonPhrase);
         }
     }
 }

@@ -26,27 +26,28 @@ namespace Refit.Tests
 		
 		public static void UpdateIdValues()
 		{
-			Xamarin.Android.NUnitLite.Resource.Id.OptionHostName = Refit.Tests.Resource.Id.OptionHostName;
-			Xamarin.Android.NUnitLite.Resource.Id.OptionPort = Refit.Tests.Resource.Id.OptionPort;
-			Xamarin.Android.NUnitLite.Resource.Id.OptionRemoteServer = Refit.Tests.Resource.Id.OptionRemoteServer;
-			Xamarin.Android.NUnitLite.Resource.Id.OptionsButton = Refit.Tests.Resource.Id.OptionsButton;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultFullName = Refit.Tests.Resource.Id.ResultFullName;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultMessage = Refit.Tests.Resource.Id.ResultMessage;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultResultState = Refit.Tests.Resource.Id.ResultResultState;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultStackTrace = Refit.Tests.Resource.Id.ResultStackTrace;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultsFailed = Refit.Tests.Resource.Id.ResultsFailed;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultsId = Refit.Tests.Resource.Id.ResultsId;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultsIgnored = Refit.Tests.Resource.Id.ResultsIgnored;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultsInconclusive = Refit.Tests.Resource.Id.ResultsInconclusive;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultsMessage = Refit.Tests.Resource.Id.ResultsMessage;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultsPassed = Refit.Tests.Resource.Id.ResultsPassed;
-			Xamarin.Android.NUnitLite.Resource.Id.ResultsResult = Refit.Tests.Resource.Id.ResultsResult;
-			Xamarin.Android.NUnitLite.Resource.Id.RunTestsButton = Refit.Tests.Resource.Id.RunTestsButton;
-			Xamarin.Android.NUnitLite.Resource.Id.TestSuiteListView = Refit.Tests.Resource.Id.TestSuiteListView;
-			Xamarin.Android.NUnitLite.Resource.Layout.options = Refit.Tests.Resource.Layout.options;
-			Xamarin.Android.NUnitLite.Resource.Layout.results = Refit.Tests.Resource.Layout.results;
-			Xamarin.Android.NUnitLite.Resource.Layout.test_result = Refit.Tests.Resource.Layout.test_result;
-			Xamarin.Android.NUnitLite.Resource.Layout.test_suite = Refit.Tests.Resource.Layout.test_suite;
+			global::Xamarin.Android.NUnitLite.Resource.Id.OptionHostName = global::Refit.Tests.Resource.Id.OptionHostName;
+			global::Xamarin.Android.NUnitLite.Resource.Id.OptionPort = global::Refit.Tests.Resource.Id.OptionPort;
+			global::Xamarin.Android.NUnitLite.Resource.Id.OptionRemoteServer = global::Refit.Tests.Resource.Id.OptionRemoteServer;
+			global::Xamarin.Android.NUnitLite.Resource.Id.OptionsButton = global::Refit.Tests.Resource.Id.OptionsButton;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultFullName = global::Refit.Tests.Resource.Id.ResultFullName;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultMessage = global::Refit.Tests.Resource.Id.ResultMessage;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultResultState = global::Refit.Tests.Resource.Id.ResultResultState;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultRunSingleMethodTest = global::Refit.Tests.Resource.Id.ResultRunSingleMethodTest;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultStackTrace = global::Refit.Tests.Resource.Id.ResultStackTrace;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsFailed = global::Refit.Tests.Resource.Id.ResultsFailed;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsId = global::Refit.Tests.Resource.Id.ResultsId;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsIgnored = global::Refit.Tests.Resource.Id.ResultsIgnored;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsInconclusive = global::Refit.Tests.Resource.Id.ResultsInconclusive;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsMessage = global::Refit.Tests.Resource.Id.ResultsMessage;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsPassed = global::Refit.Tests.Resource.Id.ResultsPassed;
+			global::Xamarin.Android.NUnitLite.Resource.Id.ResultsResult = global::Refit.Tests.Resource.Id.ResultsResult;
+			global::Xamarin.Android.NUnitLite.Resource.Id.RunTestsButton = global::Refit.Tests.Resource.Id.RunTestsButton;
+			global::Xamarin.Android.NUnitLite.Resource.Id.TestSuiteListView = global::Refit.Tests.Resource.Id.TestSuiteListView;
+			global::Xamarin.Android.NUnitLite.Resource.Layout.options = global::Refit.Tests.Resource.Layout.options;
+			global::Xamarin.Android.NUnitLite.Resource.Layout.results = global::Refit.Tests.Resource.Layout.results;
+			global::Xamarin.Android.NUnitLite.Resource.Layout.test_result = global::Refit.Tests.Resource.Layout.test_result;
+			global::Xamarin.Android.NUnitLite.Resource.Layout.test_suite = global::Refit.Tests.Resource.Layout.test_suite;
 		}
 		
 		public partial class Attribute
@@ -93,17 +94,20 @@ namespace Refit.Tests
 			// aapt resource value: 0x7f040010
 			public const int OptionsButton = 2130968592;
 			
-			// aapt resource value: 0x7f04000a
-			public const int ResultFullName = 2130968586;
-			
-			// aapt resource value: 0x7f04000c
-			public const int ResultMessage = 2130968588;
-			
 			// aapt resource value: 0x7f04000b
-			public const int ResultResultState = 2130968587;
+			public const int ResultFullName = 2130968587;
 			
 			// aapt resource value: 0x7f04000d
-			public const int ResultStackTrace = 2130968589;
+			public const int ResultMessage = 2130968589;
+			
+			// aapt resource value: 0x7f04000c
+			public const int ResultResultState = 2130968588;
+			
+			// aapt resource value: 0x7f04000a
+			public const int ResultRunSingleMethodTest = 2130968586;
+			
+			// aapt resource value: 0x7f04000e
+			public const int ResultStackTrace = 2130968590;
 			
 			// aapt resource value: 0x7f040006
 			public const int ResultsFailed = 2130968582;
@@ -129,8 +133,8 @@ namespace Refit.Tests
 			// aapt resource value: 0x7f04000f
 			public const int RunTestsButton = 2130968591;
 			
-			// aapt resource value: 0x7f04000e
-			public const int TestSuiteListView = 2130968590;
+			// aapt resource value: 0x7f040011
+			public const int TestSuiteListView = 2130968593;
 			
 			static Id()
 			{

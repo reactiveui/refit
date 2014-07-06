@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 using System.Net.Http;
 using NUnit.Framework;
 using System.Threading.Tasks;
@@ -46,6 +47,9 @@ namespace Refit.Tests
 
         [Get("/")]
         Task<HttpResponseMessage> GetIndex();
+
+        [Get("/give-me-some-404-action")]
+        Task NothingToSeeHere();
     }
 
     public class RootObject
@@ -66,34 +70,32 @@ namespace Refit.Tests
     public class RestServiceIntegrationTests
     {
         [Test]
-        public void HitTheGitHubUserApi()
+        public async Task HitTheGitHubUserApi()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
-            var result = fixture.GetUser("octocat");
+            var result = await fixture.GetUser("octocat");
 
             result.Wait();
-            Assert.AreEqual("octocat", result.Result.login);
+            Assert.AreEqual("octocat", result.login);
         }
 
         [Test]
-        public void ShouldRetHttpResponseMessage()
+        public async Task ShouldRetHttpResponseMessage()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
-            var result = fixture.GetIndex();
+            var result = await fixture.GetIndex();
 
-            result.Wait();
             Assert.IsNotNull(result.Result);
-            Assert.IsTrue(result.Result.IsSuccessStatusCode);
+            Assert.IsTrue(result.IsSuccessStatusCode);
         }
 
         [Test]
-        public void HitTheNpmJs()
+        public async Task HitTheNpmJs()
         {
             var fixture = RestService.For<INpmJs>("https://registry.npmjs.us/public");
-            var result = fixture.GetCongruence();
+            var result = await fixture.GetCongruence();
 
-            result.Wait();
-            Assert.AreEqual("congruence", result.Result._id);
+            Assert.AreEqual("congruence", result._id);
         }
 
         [Test]
@@ -102,24 +104,33 @@ namespace Refit.Tests
             var fixture = RestService.For<IRequestBin>("http://requestb.in/");
             var result = fixture.Post();
 
-            try
-            {
+            try {
                 result.Wait();
-            }
-            catch (AggregateException ae)
-            {
-                ae.Handle(
-                    x =>
-                    {
-                        if (x is HttpRequestException)
-                        {
-                            // we should be good but maybe a 404 occurred
-                            return true;
-                        }
+            } catch (AggregateException ae) {
+                ae.Handle(x => {
+                    if (x is ApiException) {
+                        // we should be good but maybe a 404 occurred
+                        return true;
+                    }
 
-                        // other exception types might be valid failures
-                        return false;
-                    });
+                    // other exception types might be valid failures
+                    return false;
+                });
+            }
+        }
+
+        [Test]
+        public async Task CanGetDataOutOfErrorResponses() 
+        {
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com");
+            try {
+                await fixture.NothingToSeeHere();
+                Assert.Fail();
+            } catch (ApiException exception) {
+                Assert.AreEqual(HttpStatusCode.NotFound, exception.StatusCode);
+                var content = exception.GetContentAs<dynamic>();
+                Assert.AreEqual("Not Found", (string)content.message);
+                Assert.IsNotNull((string)content.documentation_url);
             }
         }
 
