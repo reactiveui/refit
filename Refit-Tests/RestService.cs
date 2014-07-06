@@ -1,9 +1,10 @@
 using System;
 using System.Net;
 using System.Net.Http;
-using NUnit.Framework;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using NUnit.Framework;
 
 namespace Refit.Tests
 {
@@ -80,7 +81,7 @@ namespace Refit.Tests
             var result = await fixture.GetUser("octocat");
 
             Assert.AreEqual("octocat", result.Login);
-            Assert.IsNotEmpty(result.AvatarUrl);
+            Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
         }
 
         [Test]
@@ -132,9 +133,10 @@ namespace Refit.Tests
                 Assert.Fail();
             } catch (ApiException exception) {
                 Assert.AreEqual(HttpStatusCode.NotFound, exception.StatusCode);
-                var content = exception.GetContentAs<dynamic>();
-                Assert.AreEqual("Not Found", (string)content.message);
-                Assert.IsNotNull((string)content.documentation_url);
+                var content = exception.GetContentAs<Dictionary<string, string>>();
+
+                Assert.AreEqual("Not Found", content["message"]);
+                Assert.IsNotNull(content["documentation_url"]);
             }
         }
 
