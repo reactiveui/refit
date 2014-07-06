@@ -3,40 +3,41 @@ using System.Net;
 using System.Net.Http;
 using NUnit.Framework;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Refit.Tests
 {
     public class User
     {
-        public string login { get; set; }
-        public int id { get; set; }
-        public string avatar_url { get; set; }
-        public string gravatar_id { get; set; }
-        public string url { get; set; }
-        public string html_url { get; set; }
-        public string followers_url { get; set; }
-        public string following_url { get; set; }
-        public string gists_url { get; set; }
-        public string starred_url { get; set; }
-        public string subscriptions_url { get; set; }
-        public string organizations_url { get; set; }
-        public string repos_url { get; set; }
-        public string events_url { get; set; }
-        public string received_events_url { get; set; }
-        public string type { get; set; }
-        public string name { get; set; }
-        public string company { get; set; }
-        public string blog { get; set; }
-        public string location { get; set; }
-        public string email { get; set; }
-        public bool hireable { get; set; }
-        public string bio { get; set; }
-        public int public_repos { get; set; }
-        public int followers { get; set; }
-        public int following { get; set; }
-        public string created_at { get; set; }
-        public string updated_at { get; set; }
-        public int public_gists { get; set; }
+        public string Login { get; set; }
+        public int Id { get; set; }
+        public string AvatarUrl { get; set; }
+        public string GravatarId { get; set; }
+        public string Url { get; set; }
+        public string HtmlUrl { get; set; }
+        public string FollowersUrl { get; set; }
+        public string FollowingUrl { get; set; }
+        public string GistsUrl { get; set; }
+        public string StarredUrl { get; set; }
+        public string SubscriptionsUrl { get; set; }
+        public string OrganizationsUrl { get; set; }
+        public string ReposUrl { get; set; }
+        public string EventsUrl { get; set; }
+        public string ReceivedEventsUrl { get; set; }
+        public string Type { get; set; }
+        public string Name { get; set; }
+        public string Company { get; set; }
+        public string Blog { get; set; }
+        public string Location { get; set; }
+        public string Email { get; set; }
+        public bool Hireable { get; set; }
+        public string Bio { get; set; }
+        public int PublicRepos { get; set; }
+        public int Followers { get; set; }
+        public int Following { get; set; }
+        public string CreatedAt { get; set; }
+        public string UpdatedAt { get; set; }
+        public int PublicGists { get; set; }
     }
 
     [Headers("User-Agent: Refit Integration Tests")]
@@ -73,10 +74,13 @@ namespace Refit.Tests
         public async Task HitTheGitHubUserApi()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
+
             var result = await fixture.GetUser("octocat");
 
-            result.Wait();
-            Assert.AreEqual("octocat", result.login);
+            Assert.AreEqual("octocat", result.Login);
+            Assert.IsNotEmpty(result.AvatarUrl);
         }
 
         [Test]

@@ -59,6 +59,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DeliminatorSeparatedPropertyNamesContractResolver.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RestService.cs" />
   </ItemGroup>
