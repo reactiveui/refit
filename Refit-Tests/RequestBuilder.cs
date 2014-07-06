@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using System.Net;
 using NUnit.Framework;
 using System.Threading;
-using Refit.Tests.Support;
 
 namespace Refit.Tests
 {

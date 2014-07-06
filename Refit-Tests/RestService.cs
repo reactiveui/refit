@@ -89,7 +89,7 @@ namespace Refit.Tests
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             var result = await fixture.GetIndex();
 
-            Assert.IsNotNull(result.Result);
+            Assert.IsNotNull(result);
             Assert.IsTrue(result.IsSuccessStatusCode);
         }
 
