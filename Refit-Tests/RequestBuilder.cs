@@ -38,6 +38,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         IObservable<string> FetchSomeStuffWithBody([AliasAs("id")] int anId, [Body] Dictionary<int, string> theData);
 
+        [Post("/foo/bar/{id}")]
+        IObservable<string> PostSomeUrlEncodedStuff([AliasAs("id")] int anId, [Body(BodySerializationMethod.UrlEncoded)] Dictionary<string, string> theData);
+
         [Get("/foo/bar/{id}")]
         [Headers("Api-Version: 2 ")]
         Task<string> FetchSomeStuffWithHardcodedHeaders(int id);
@@ -149,6 +152,18 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void AllowUrlEncodedContent()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostSomeUrlEncodedStuff"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+
+            Assert.IsNotNull(fixture.BodyParameterInfo);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.AreEqual(BodySerializationMethod.UrlEncoded, fixture.BodyParameterInfo.Item1);
+        }
+
+        [Test]
         public void HardcodedHeadersShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -245,6 +260,9 @@ namespace Refit.Tests
 
         [Get("/void")]
         Task FetchSomeStuffWithVoid();
+
+        [Post("/foo/bar/{id}")]
+        Task<string> PostSomeUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] object content); 
 
         string SomeOtherMethod();
 
@@ -481,6 +499,26 @@ namespace Refit.Tests
             Assert.IsNotNull(output.Content, "Request has content");
             Assert.IsNotNull(output.Content.Headers.ContentType, "Headers include Content-Type header");
             Assert.AreEqual("text/dson", output.Content.Headers.ContentType.MediaType, "Content-Type header has the expected value");
+        }
+
+        [Test]
+        public async Task BodyContentGetsUrlEncoded() 
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PostSomeUrlEncodedStuff");
+            var output = factory(
+                new object[] {
+                    6, 
+                    new {
+                        Foo = "Something", 
+                        Bar = 100, 
+                        Baz = default(string)
+                    }
+                });
+
+            string content = await output.Content.ReadAsStringAsync();
+
+            Assert.AreEqual("Foo=Something&Bar=100&Baz=", content);
         }
     }
 }
