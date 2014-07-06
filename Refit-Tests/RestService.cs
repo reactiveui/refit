@@ -97,7 +97,7 @@ namespace Refit.Tests
         [Test]
         public async Task HitTheNpmJs()
         {
-            var fixture = RestService.For<INpmJs>("https://registry.npmjs.us/public");
+            var fixture = RestService.For<INpmJs>("https://registry.npmjs.org");
             var result = await fixture.GetCongruence();
 
             Assert.AreEqual("congruence", result._id);
