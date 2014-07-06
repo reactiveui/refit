@@ -208,7 +208,7 @@ Copyright (C) Microsoft Corporation. All rights reserved.
     -->
   <UsingTask TaskName="ValidatePackageReferences" AssemblyFile="$(MSBuildThisFileDirectory)Microsoft.Bcl.Build.Tasks.dll" />
   <Target Name="BclBuildValidateNugetPackageReferences"
-          Condition="'$(BclBuildRunningFullBuild)' != 'true' AND '$(SkipValidatePackageReferences)' != 'true' AND '$(BuildingInsideVisualStudio)' == 'true'"
+          Condition="'$(BclBuildRunningFullBuild)' != 'true' AND '$(SkipValidatePackageReferences)' != 'true' AND '$(BuildingInsideVisualStudio)' == 'goaway'"
           BeforeTargets="GetTargetPath">
     <ItemGroup>
       <ValidatePackages Include="Microsoft.Bcl"/>
