@@ -1,0 +1,494 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Microsoft.Reactive.Testing</name>
+    </assembly>
+    <members>
+        <member name="T:Microsoft.Reactive.Testing.ITestableObservable`1">
+            <summary>
+            Observable sequence that records subscription lifetimes and timestamped notification messages sent to observers.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+        </member>
+        <member name="P:Microsoft.Reactive.Testing.ITestableObservable`1.Subscriptions">
+            <summary>
+            Gets a list of all the subscriptions to the observable sequence, including their lifetimes.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Reactive.Testing.ITestableObservable`1.Messages">
+            <summary>
+            Gets the recorded timestamped notification messages that were sent by the observable sequence to its observers.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Reactive.Testing.ITestableObserver`1">
+            <summary>
+            Observer that records received notification messages and timestamps those.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+        </member>
+        <member name="P:Microsoft.Reactive.Testing.ITestableObserver`1.Messages">
+            <summary>
+            Gets recorded timestamped notification messages received by the observer.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Reactive.Testing.NamespaceDoc">
+            <summary>
+            The <b>Microsoft.Reactive.Testing</b> namespace contains interfaces and classes providing functionality to test applications and libraries built using Reactive Extensions.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Reactive.Testing.ReactiveAssert">
+            <summary>
+            Helper class to write asserts in unit tests for applications and libraries built using Reactive Extensions.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.AreElementsEqual``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0})">
+            <summary>
+            Asserts that both enumerable sequences have equal length and equal elements.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+            <param name="expected">Expected sequence.</param>
+            <param name="actual">Actual sequence to compare against the expected one.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="expected"/> or <paramref name="actual"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.AreElementsEqual``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0},System.String)">
+            <summary>
+            Asserts that both enumerable sequences have equal length and equal elements.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+            <param name="expected">Expected sequence.</param>
+            <param name="actual">Actual sequence to compare against the expected one.</param>
+            <param name="message">Error message for assert failure.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="expected"/> or <paramref name="actual"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.AreElementsEqual``1(System.IObservable{``0},System.IObservable{``0})">
+            <summary>
+            Asserts that both observable sequences have equal length and equal notifications.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+            <param name="expected">Expected sequence.</param>
+            <param name="actual">Actual sequence to compare against the expected one.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="expected"/> or <paramref name="actual"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.AreElementsEqual``1(System.IObservable{``0},System.IObservable{``0},System.String)">
+            <summary>
+            Asserts that both observable sequences have equal length and equal elements.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+            <param name="expected">Expected sequence.</param>
+            <param name="actual">Actual sequence to compare against the expected one.</param>
+            <param name="message">Error message for assert failure.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="expected"/> or <paramref name="actual"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.Throws``1(System.Action)">
+            <summary>
+            Asserts that the given action throws an exception of the type specified in the generic parameter, or a subtype thereof.
+            </summary>
+            <typeparam name="TException">Type of the exception to check for.</typeparam>
+            <param name="action">Action to run.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="action"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.Throws``1(System.Action,System.String)">
+            <summary>
+            Asserts that the given action throws an exception of the type specified in the generic parameter, or a subtype thereof.
+            </summary>
+            <typeparam name="TException">Type of the exception to check for.</typeparam>
+            <param name="action">Action to run.</param>
+            <param name="message">Error message for assert failure.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="action"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.Throws``1(``0,System.Action)">
+            <summary>
+            Asserts that the given action throws the specified exception.
+            </summary>
+            <typeparam name="TException">Type of the exception to check for.</typeparam>
+            <param name="exception">Exception to assert being thrown.</param>
+            <param name="action">Action to run.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="action"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.Throws``1(``0,System.Action,System.String)">
+            <summary>
+            Asserts that the given action throws the specified exception.
+            </summary>
+            <typeparam name="TException">Type of the exception to check for.</typeparam>
+            <param name="exception">Exception to assert being thrown.</param>
+            <param name="action">Action to run.</param>
+            <param name="message">Error message for assert failure.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="action"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.AssertEqual``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEnumerable{``0})">
+            <summary>
+            Asserts that both enumerable sequences have equal length and equal elements.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+            <param name="actual">Actual sequence to compare against the expected one.</param>
+            <param name="expected">Expected sequence.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="expected"/> or <paramref name="actual"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.AssertEqual``1(System.Collections.Generic.IEnumerable{``0},``0[])">
+            <summary>
+            Asserts the enumerable sequence has the expected elements.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+            <param name="actual">Actual sequence to compare against the expected elements.</param>
+            <param name="expected">Expected elements.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="expected"/> or <paramref name="actual"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveAssert.AssertEqual``1(System.IObservable{``0},System.IObservable{``0})">
+            <summary>
+            Asserts that both observable sequences have equal length and equal notifications.
+            </summary>
+            <typeparam name="T">The type of the elements in the sequence.</typeparam>
+            <param name="actual">Actual sequence to compare against the expected one.</param>
+            <param name="expected">Expected sequence.</param>
+            <exception cref="T:System.ArgumentNullException"><paramref name="expected"/> or <paramref name="actual"/> is null.</exception>
+        </member>
+        <member name="T:Microsoft.Reactive.Testing.ReactiveTest">
+            <summary>
+            Base class to write unit tests for applications and libraries built using Reactive Extensions.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Reactive.Testing.ReactiveTest.Created">
+            <summary>
+            Default virtual time used for creation of observable sequences in <see cref="T:Microsoft.Reactive.Testing.ReactiveTest"/>-based unit tests.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Reactive.Testing.ReactiveTest.Subscribed">
+            <summary>
+            Default virtual time used to subscribe to observable sequences in <see cref="T:Microsoft.Reactive.Testing.ReactiveTest"/>-based unit tests.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Reactive.Testing.ReactiveTest.Disposed">
+            <summary>
+            Default virtual time used to dispose subscriptions in <see cref="T:Microsoft.Reactive.Testing.ReactiveTest"/>-based unit tests.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.OnNext``1(System.Int64,``0)">
+            <summary>
+            Factory method for an OnNext notification record at a given time with a given value.
+            </summary>
+            <typeparam name="T">The element type for the resulting notification object.</typeparam>
+            <param name="ticks">Recorded virtual time the OnNext notification occurs.</param>
+            <param name="value">Recorded value stored in the OnNext notification.</param>
+            <returns>Recorded OnNext notification.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.OnNext``1(System.Int64,System.Func{``0,System.Boolean})">
+            <summary>
+            Factory method for writing an assert that checks for an OnNext notification record at a given time, using the specified predicate to check the value.
+            </summary>
+            <typeparam name="T">The element type for the resulting notification object.</typeparam>
+            <param name="ticks">Recorded virtual time the OnNext notification occurs.</param>
+            <param name="predicate">Predicate function to check the OnNext notification value against an expected value.</param>
+            <returns>Recorded OnNext notification with a predicate to assert a given value.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="predicate"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.OnCompleted``1(System.Int64)">
+            <summary>
+            Factory method for an OnCompleted notification record at a given time.
+            </summary>
+            <typeparam name="T">The element type for the resulting notification object.</typeparam>
+            <param name="ticks">Recorded virtual time the OnCompleted notification occurs.</param>
+            <returns>Recorded OnCompleted notification.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.OnCompleted``1(System.Int64,``0)">
+            <summary>
+            Factory method for an OnCompleted notification record at a given time, using inference to determine the type of <typeparamref name="T"/>.
+            </summary>
+            <typeparam name="T">The element type for the resulting notification object.</typeparam>
+            <param name="ticks">Recorded virtual time the OnCompleted notification occurs.</param>
+            <param name="witness">Object solely used to infer the type of the <typeparamref name="T"/> type parameter. This parameter is typically used when creating a sequence of anonymously typed elements.</param>
+            <returns>Recorded OnCompleted notification.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.OnError``1(System.Int64,System.Exception)">
+            <summary>
+            Factory method for an OnError notification record at a given time with a given error.
+            </summary>
+            <typeparam name="T">The element type for the resulting notification object.</typeparam>
+            <param name="ticks">Recorded virtual time the OnError notification occurs.</param>
+            <param name="exception">Recorded exception stored in the OnError notification.</param>
+            <returns>Recorded OnError notification.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="exception"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.OnError``1(System.Int64,System.Func{System.Exception,System.Boolean})">
+            <summary>
+            Factory method for writing an assert that checks for an OnError notification record at a given time, using the specified predicate to check the exception.
+            </summary>
+            <typeparam name="T">The element type for the resulting notification object.</typeparam>
+            <param name="ticks">Recorded virtual time the OnError notification occurs.</param>
+            <param name="predicate">Predicate function to check the OnError notification value against an expected exception.</param>
+            <returns>Recorded OnError notification with a predicate to assert a given exception.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="predicate"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.OnError``1(System.Int64,System.Exception,``0)">
+            <summary>
+            Factory method for an OnError notification record at a given time with a given error, using inference to determine the type of <typeparamref name="T"/>.
+            </summary>
+            <typeparam name="T">The element type for the resulting notification object.</typeparam>
+            <param name="ticks">Recorded virtual time the OnError notification occurs.</param>
+            <param name="exception">Recorded exception stored in the OnError notification.</param>
+            <param name="witness">Object solely used to infer the type of the <typeparamref name="T"/> type parameter. This parameter is typically used when creating a sequence of anonymously typed elements.</param>
+            <returns>Recorded OnError notification.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="exception"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.OnError``1(System.Int64,System.Func{System.Exception,System.Boolean},``0)">
+            <summary>
+            Factory method for writing an assert that checks for an OnError notification record at a given time, using the specified predicate to check the exception and inference to determine the type of <typeparamref name="T"/>.
+            </summary>
+            <typeparam name="T">The element type for the resulting notification object.</typeparam>
+            <param name="ticks">Recorded virtual time the OnError notification occurs.</param>
+            <param name="predicate">Predicate function to check the OnError notification value against an expected exception.</param>
+            <param name="witness">Object solely used to infer the type of the <typeparamref name="T"/> type parameter. This parameter is typically used when creating a sequence of anonymously typed elements.</param>
+            <returns>Recorded OnError notification with a predicate to assert a given exception.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="predicate"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.Subscribe(System.Int64,System.Int64)">
+            <summary>
+            Factory method for a subscription record based on a given subscription and disposal time.
+            </summary>
+            <param name="start">Virtual time indicating when the subscription was created.</param>
+            <param name="end">Virtual time indicating when the subscription was disposed.</param>
+            <returns>Subscription object.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.ReactiveTest.Subscribe(System.Int64)">
+            <summary>
+            Factory method for a subscription record based on a given subscription time.
+            </summary>
+            <param name="start">Virtual time indicating when the subscription was created.</param>
+            <returns>Subscription object.</returns>
+        </member>
+        <member name="T:Microsoft.Reactive.Testing.Recorded`1">
+            <summary>
+            Record of a value including the virtual time it was produced on.
+            </summary>
+            <typeparam name="T">Type of the value.</typeparam>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Recorded`1.#ctor(System.Int64,`0)">
+            <summary>
+            Creates a new object recording the production of the specified value at the given virtual time.
+            </summary>
+            <param name="time">Virtual time the value was produced on.</param>
+            <param name="value">Value that was produced.</param>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Recorded`1.Equals(Microsoft.Reactive.Testing.Recorded{`0})">
+            <summary>
+            Checks whether the given recorded object is equal to the current instance.
+            </summary>
+            <param name="other">Recorded object to check for equality.</param>
+            <returns>true if both objects are equal; false otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Recorded`1.op_Equality(Microsoft.Reactive.Testing.Recorded{`0},Microsoft.Reactive.Testing.Recorded{`0})">
+            <summary>
+            Determines whether the two specified Recorded&lt;T&gt; values have the same Time and Value.
+            </summary>
+            <param name="left">The first Recorded&lt;T&gt; value to compare.</param>
+            <param name="right">The second Recorded&lt;T&gt; value to compare.</param>
+            <returns>true if the first Recorded&lt;T&gt; value has the same Time and Value as the second Recorded&lt;T&gt; value; otherwise, false.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Recorded`1.op_Inequality(Microsoft.Reactive.Testing.Recorded{`0},Microsoft.Reactive.Testing.Recorded{`0})">
+            <summary>
+            Determines whether the two specified Recorded&lt;T&gt; values don't have the same Time and Value.
+            </summary>
+            <param name="left">The first Recorded&lt;T&gt; value to compare.</param>
+            <param name="right">The second Recorded&lt;T&gt; value to compare.</param>
+            <returns>true if the first Recorded&lt;T&gt; value has a different Time or Value as the second Recorded&lt;T&gt; value; otherwise, false.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Recorded`1.Equals(System.Object)">
+            <summary>
+            Determines whether the specified System.Object is equal to the current Recorded&lt;T&gt; value.
+            </summary>
+            <param name="obj">The System.Object to compare with the current Recorded&lt;T&gt; value.</param>
+            <returns>true if the specified System.Object is equal to the current Recorded&lt;T&gt; value; otherwise, false.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Recorded`1.GetHashCode">
+            <summary>
+            Returns the hash code for the current Recorded&lt;T&gt; value.
+            </summary>
+            <returns>A hash code for the current Recorded&lt;T&gt; value.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Recorded`1.ToString">
+            <summary>
+            Returns a string representation of the current Recorded&lt;T&gt; value.
+            </summary>
+            <returns>String representation of the current Recorded&lt;T&gt; value.</returns>
+        </member>
+        <member name="P:Microsoft.Reactive.Testing.Recorded`1.Time">
+            <summary>
+            Gets the virtual time the value was produced on.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Reactive.Testing.Recorded`1.Value">
+            <summary>
+            Gets the recorded value.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Reactive.Testing.Subscription">
+            <summary>
+            Records information about subscriptions to and unsubscriptions from observable sequences.
+            </summary>
+        </member>
+        <member name="F:Microsoft.Reactive.Testing.Subscription.Infinite">
+            <summary>
+            Infinite virtual time value, used to indicate an unsubscription never took place.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Subscription.#ctor(System.Int64)">
+            <summary>
+            Creates a new subscription object with the given virtual subscription time.
+            </summary>
+            <param name="subscribe">Virtual time at which the subscription occurred.</param>-
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Subscription.#ctor(System.Int64,System.Int64)">
+            <summary>
+            Creates a new subscription object with the given virtual subscription and unsubscription time.
+            </summary>
+            <param name="subscribe">Virtual time at which the subscription occurred.</param>
+            <param name="unsubscribe">Virtual time at which the unsubscription occurred.</param>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Subscription.Equals(Microsoft.Reactive.Testing.Subscription)">
+            <summary>
+            Checks whether the given subscription is equal to the current instance.
+            </summary>
+            <param name="other">Subscription object to check for equality.</param>
+            <returns>true if both objects are equal; false otherwise.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Subscription.op_Equality(Microsoft.Reactive.Testing.Subscription,Microsoft.Reactive.Testing.Subscription)">
+            <summary>
+            Determines whether the two specified Subscription values have the same Subscribe and Unsubscribe.
+            </summary>
+            <param name="left">The first Subscription value to compare.</param>
+            <param name="right">The second Subscription value to compare.</param>
+            <returns>true if the first Subscription value has the same Subscribe and Unsubscribe as the second Subscription value; otherwise, false.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Subscription.op_Inequality(Microsoft.Reactive.Testing.Subscription,Microsoft.Reactive.Testing.Subscription)">
+            <summary>
+            Determines whether the two specified Subscription values don't have the same Subscribe and Unsubscribe.
+            </summary>
+            <param name="left">The first Subscription value to compare.</param>
+            <param name="right">The second Subscription value to compare.</param>
+            <returns>true if the first Subscription value has a different Subscribe or Unsubscribe as the second Subscription value; otherwise, false.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Subscription.Equals(System.Object)">
+            <summary>
+            Determines whether the specified System.Object is equal to the current Subscription value.
+            </summary>
+            <param name="obj">The System.Object to compare with the current Subscription value.</param>
+            <returns>true if the specified System.Object is equal to the current Subscription value; otherwise, false.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Subscription.GetHashCode">
+            <summary>
+            Returns the hash code for the current Subscription value.
+            </summary>
+            <returns>A hash code for the current Subscription value.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.Subscription.ToString">
+            <summary>
+            Returns a string representation of the current Subscription value.
+            </summary>
+            <returns>String representation of the current Subscription value.</returns>
+        </member>
+        <member name="P:Microsoft.Reactive.Testing.Subscription.Subscribe">
+            <summary>
+            Gets the subscription virtual time.
+            </summary>
+        </member>
+        <member name="P:Microsoft.Reactive.Testing.Subscription.Unsubscribe">
+            <summary>
+            Gets the unsubscription virtual time.
+            </summary>
+        </member>
+        <member name="T:Microsoft.Reactive.Testing.TestScheduler">
+            <summary>
+            Virtual time scheduler used for testing applications and libraries built using Reactive Extensions.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.ScheduleAbsolute``1(``0,System.Int64,System.Func{System.Reactive.Concurrency.IScheduler,``0,System.IDisposable})">
+            <summary>
+            Schedules an action to be executed at the specified virtual time.
+            </summary>
+            <typeparam name="TState">The type of the state passed to the scheduled action.</typeparam>
+            <param name="state">State passed to the action to be executed.</param>
+            <param name="action">Action to be executed.</param>
+            <param name="dueTime">Absolute virtual time at which to execute the action.</param>
+            <returns>Disposable object used to cancel the scheduled action (best effort).</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="action"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.Add(System.Int64,System.Int64)">
+            <summary>
+            Adds a relative virtual time to an absolute virtual time value.
+            </summary>
+            <param name="absolute">Absolute virtual time value.</param>
+            <param name="relative">Relative virtual time value to add.</param>
+            <returns>Resulting absolute virtual time sum value.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.ToDateTimeOffset(System.Int64)">
+            <summary>
+            Converts the absolute virtual time value to a DateTimeOffset value.
+            </summary>
+            <param name="absolute">Absolute virtual time value to convert.</param>
+            <returns>Corresponding DateTimeOffset value.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.ToRelative(System.TimeSpan)">
+            <summary>
+            Converts the TimeSpan value to a relative virtual time value.
+            </summary>
+            <param name="timeSpan">TimeSpan value to convert.</param>
+            <returns>Corresponding relative virtual time value.</returns>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.Start``1(System.Func{System.IObservable{``0}},System.Int64,System.Int64,System.Int64)">
+            <summary>
+            Starts the test scheduler and uses the specified virtual times to invoke the factory function, subscribe to the resulting sequence, and dispose the subscription.
+            </summary>
+            <typeparam name="T">The element type of the observable sequence being tested.</typeparam>
+            <param name="create">Factory method to create an observable sequence.</param>
+            <param name="created">Virtual time at which to invoke the factory to create an observable sequence.</param>
+            <param name="subscribed">Virtual time at which to subscribe to the created observable sequence.</param>
+            <param name="disposed">Virtual time at which to dispose the subscription.</param>
+            <returns>Observer with timestamped recordings of notification messages that were received during the virtual time window when the subscription to the source sequence was active.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="create"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.Start``1(System.Func{System.IObservable{``0}},System.Int64)">
+            <summary>
+            Starts the test scheduler and uses the specified virtual time to dispose the subscription to the sequence obtained through the factory function.
+            Default virtual times are used for <see cref="F:Microsoft.Reactive.Testing.ReactiveTest.Created">factory invocation</see> and <see cref="F:Microsoft.Reactive.Testing.ReactiveTest.Subscribed">sequence subscription</see>.
+            </summary>
+            <typeparam name="T">The element type of the observable sequence being tested.</typeparam>
+            <param name="create">Factory method to create an observable sequence.</param>
+            <param name="disposed">Virtual time at which to dispose the subscription.</param>
+            <returns>Observer with timestamped recordings of notification messages that were received during the virtual time window when the subscription to the source sequence was active.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="create"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.Start``1(System.Func{System.IObservable{``0}})">
+            <summary>
+            Starts the test scheduler and uses default virtual times to <see cref="F:Microsoft.Reactive.Testing.ReactiveTest.Created">invoke the factory function</see>, to <see cref="F:Microsoft.Reactive.Testing.ReactiveTest.Subscribed">subscribe to the resulting sequence</see>, and to <see cref="F:Microsoft.Reactive.Testing.ReactiveTest.Disposed">dispose the subscription</see>.
+            </summary>
+            <typeparam name="T">The element type of the observable sequence being tested.</typeparam>
+            <param name="create">Factory method to create an observable sequence.</param>
+            <returns>Observer with timestamped recordings of notification messages that were received during the virtual time window when the subscription to the source sequence was active.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="create"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.CreateHotObservable``1(Microsoft.Reactive.Testing.Recorded{System.Reactive.Notification{``0}}[])">
+            <summary>
+            Creates a hot observable using the specified timestamped notification messages.
+            </summary>
+            <typeparam name="T">The element type of the observable sequence being created.</typeparam>
+            <param name="messages">Notifications to surface through the created sequence at their specified absolute virtual times.</param>
+            <returns>Hot observable sequence that can be used to assert the timing of subscriptions and notifications.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="messages"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.CreateColdObservable``1(Microsoft.Reactive.Testing.Recorded{System.Reactive.Notification{``0}}[])">
+            <summary>
+            Creates a cold observable using the specified timestamped notification messages.
+            </summary>
+            <typeparam name="T">The element type of the observable sequence being created.</typeparam>
+            <param name="messages">Notifications to surface through the created sequence at their specified virtual time offsets from the sequence subscription time.</param>
+            <returns>Cold observable sequence that can be used to assert the timing of subscriptions and notifications.</returns>
+            <exception cref="T:System.ArgumentNullException"><paramref name="messages"/> is null.</exception>
+        </member>
+        <member name="M:Microsoft.Reactive.Testing.TestScheduler.CreateObserver``1">
+            <summary>
+            Creates an observer that records received notification messages and timestamps those.
+            </summary>
+            <typeparam name="T">The element type of the observer being created.</typeparam>
+            <returns>Observer that can be used to assert the timing of received notifications.</returns>
+        </member>
+    </members>
+</doc>

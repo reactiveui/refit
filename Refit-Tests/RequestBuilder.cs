@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +6,7 @@ using System.Threading.Tasks;
 using System.Net;
 using NUnit.Framework;
 using System.Threading;
+using Microsoft.Reactive.Testing;
 
 namespace Refit.Tests
 {
@@ -21,6 +21,10 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuff(int id);
+
+        [ColdObservable]
+        [Get("/foo/bar/{id}")]
+        IObservable<string> FetchSomeStuffColdObservable(int id);
 
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedQueryParam(int id);
@@ -218,6 +222,15 @@ namespace Refit.Tests
 
             Assert.IsFalse(shouldDie);
         }
+
+        [Test]
+        public void ColdObserbleGetsStoredInAttributes()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffColdObservable"));
+
+            Assert.IsTrue(fixture.Attributes.First().GetType() == typeof(ColdObservable));
+        }
     }
 
     [Headers("User-Agent: Refit Test Client", "Api-Version: 1")]
@@ -225,6 +238,10 @@ namespace Refit.Tests
     {
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuff(int id);
+
+        [ColdObservable]
+        [Get("/foo/bar/{id}")]
+        IObservable<string> FetchSomeStuffColdObservable(int id);
 
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedQueryParameter(int id);
@@ -275,6 +292,14 @@ namespace Refit.Tests
     public class TestHttpMessageHandler : HttpMessageHandler
     {
         public HttpRequestMessage RequestMessage { get; private set; }
+
+        public bool WasSend
+        {
+            get
+            {
+                return RequestMessage != null;
+            }
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
@@ -518,6 +543,20 @@ namespace Refit.Tests
             string content = await output.Content.ReadAsStringAsync();
 
             Assert.AreEqual("Foo=Something&Bar=100&Baz=", content);
+        }
+
+        [Test]
+        public void ColdObservableMethodNotDoesGetsDispachedOnCall()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffColdObservable");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+            var testableObserver = new TestScheduler().CreateObserver<string>();
+
+            factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
+
+            Assert.IsFalse(testHttpMessageHandler.WasSend);
+            Assert.IsTrue(testableObserver.Messages.Count == 0);
         }
     }
 }
