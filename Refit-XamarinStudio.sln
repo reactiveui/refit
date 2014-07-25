@@ -1,8 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests-Android", "Refit-Tests\Refit-Tests-Android.csproj", "{14759A94-06C8-4E91-9690-94FF3B555CB9}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Monoandroid", "Refit\Refit-Monoandroid.csproj", "{5F276135-A44C-44D3-9213-235F636245C8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Monomac", "Refit\Refit-Monomac.csproj", "{252CE1CF-331C-4445-A3C2-E4D6C80A935A}"
@@ -15,10 +13,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{14759A94-06C8-4E91-9690-94FF3B555CB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{14759A94-06C8-4E91-9690-94FF3B555CB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{14759A94-06C8-4E91-9690-94FF3B555CB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{14759A94-06C8-4E91-9690-94FF3B555CB9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{252CE1CF-331C-4445-A3C2-E4D6C80A935A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -33,6 +27,6 @@ Global
 		{A52CE1CF-131C-F445-A3C2-E4D6C80A935A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
-		StartupItem = Refit-Tests\Refit-Tests-Android.csproj
+		StartupItem = Refit\Refit-Monoandroid.csproj
 	EndGlobalSection
 EndGlobal
