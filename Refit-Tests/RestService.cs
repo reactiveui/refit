@@ -111,7 +111,7 @@ namespace Refit.Tests
 
             var result = await fixture.GetOrgMembers("github");
 
-            Assert.Greater(result.Count, 0);
+            Assert.IsTrue(result.Count > 0);
             Assert.IsTrue(result.Any(member => member.Type == "User"));
         }
 
@@ -124,7 +124,7 @@ namespace Refit.Tests
 
             var result = await fixture.FindUsers("tom repos:>42 followers:>1000");
 
-            Assert.Greater(result.TotalCount, 0);
+            Assert.IsTrue(result.TotalCount > 0);
             Assert.IsTrue(result.Items.Any(member => member.Type == "User"));
         }
 
