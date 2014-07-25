@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Reactive.Linq;
-using Newtonsoft.Json;
+using System.Threading.Tasks;
 using NUnit.Framework;
+using Newtonsoft.Json;
 
 namespace Refit.Tests
 {
@@ -42,6 +43,13 @@ namespace Refit.Tests
         public int PublicGists { get; set; }
     }
 
+    public class UserSearchResult
+    {
+        public int TotalCount { get; set; }
+        public bool IncompleteResults { get; set; }
+        public IList<User> Items { get; set; }
+    }
+
     [Headers("User-Agent: Refit Integration Tests")]
     public interface IGitHubApi
     {
@@ -50,6 +58,12 @@ namespace Refit.Tests
 
         [Get("/users/{username}")]
         IObservable<User> GetUserObservable(string userName);
+
+        [Get("/orgs/{orgname}/members")]
+        Task<List<User>> GetOrgMembers(string orgName);
+
+        [Get("/search/users")]
+        Task<UserSearchResult> FindUsers(string q);
 
         [Get("/")]
         Task<HttpResponseMessage> GetIndex();
@@ -86,6 +100,32 @@ namespace Refit.Tests
 
             Assert.AreEqual("octocat", result.Login);
             Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
+        }
+
+        [Test]
+        public async Task HitTheGitHubOrgMembersApi()
+        {
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com");
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
+
+            var result = await fixture.GetOrgMembers("github");
+
+            Assert.Greater(result.Count, 0);
+            Assert.IsTrue(result.Any(member => member.Type == "User"));
+        }
+
+        [Test]
+        public async Task HitTheGitHubUserSearchApi()
+        {
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com");
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
+
+            var result = await fixture.FindUsers("tom repos:>42 followers:>1000");
+
+            Assert.Greater(result.TotalCount, 0);
+            Assert.IsTrue(result.Items.Any(member => member.Type == "User"));
         }
 
         [Test]
