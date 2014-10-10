@@ -88,7 +88,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="packages.config" />
+    <None Include="packages.Refit-Tests-Net45.config" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
