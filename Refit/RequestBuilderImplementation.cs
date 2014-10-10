@@ -603,7 +603,7 @@ namespace Refit
                 }
 
                 foreach (var property in propertyCache[type]) {
-                    Add(property.Name, string.Format("{0}", property.GetValue(source, null)));
+                    Add(getFieldNameForProperty(property), string.Format("{0}", property.GetValue(source, null)));
                 }
             }
         }
@@ -613,6 +613,14 @@ namespace Refit
             return type.GetProperties()
                 .Where(p => p.CanRead)
                 .ToArray();
+        }
+
+        string getFieldNameForProperty(PropertyInfo propertyInfo)
+        {
+            var aliasAttr = propertyInfo.GetCustomAttributes(true)
+                .OfType<AliasAsAttribute>()
+                .FirstOrDefault();
+            return aliasAttr != null ? aliasAttr.Name : propertyInfo.Name;
         }
     }
 }
