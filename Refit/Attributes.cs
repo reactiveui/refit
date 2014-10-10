@@ -84,7 +84,7 @@ namespace Refit
         }
     }
 
-    [AttributeUsage(AttributeTargets.Parameter)]
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
     public class AliasAsAttribute : Attribute
     {
         public string Name { get; protected set; }

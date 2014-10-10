@@ -264,7 +264,10 @@ namespace Refit.Tests
         Task FetchSomeStuffWithVoid();
 
         [Post("/foo/bar/{id}")]
-        Task<string> PostSomeUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] object content); 
+        Task<string> PostSomeUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] object content);
+
+        [Post("/foo/bar/{id}")]
+        Task<string> PostSomeAliasedUrlEncodedStuff(int id,[Body(BodySerializationMethod.UrlEncoded)] SomeRequestData content);
 
         string SomeOtherMethod();
 
@@ -273,6 +276,12 @@ namespace Refit.Tests
 
         [Put("/foo/bar/{id}")]
         Task<string> PutSomeStuffWithDynamicContentType(int id, [Body] string content, [Header("Content-Type")] string contentType);
+    }
+
+    public class SomeRequestData
+    {
+        [AliasAs("rpn")]
+        public int ReadablePropertyName { get; set; }
     }
 
     public class TestHttpMessageHandler : HttpMessageHandler
@@ -521,6 +530,24 @@ namespace Refit.Tests
             string content = await output.Content.ReadAsStringAsync();
 
             Assert.AreEqual("Foo=Something&Bar=100&Baz=", content);
+        }
+
+        [Test]
+        public async Task FormFieldGetsAliased()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PostSomeAliasedUrlEncodedStuff");
+            var output = factory(
+                new object[] {
+                    6, 
+                    new SomeRequestData {
+                        ReadablePropertyName = 99
+                    }
+                });
+
+            string content = await output.Content.ReadAsStringAsync();
+
+            Assert.AreEqual("rpn=99", content);
         }
     }
 }
