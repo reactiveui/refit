@@ -5,8 +5,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Monoandroid", "Refit\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InterfaceStubGenerator", "InterfaceStubGenerator\InterfaceStubGenerator.csproj", "{5694F8AD-7A15-4717-B649-1749A311300B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-MonoTouch", "Refit\Refit-MonoTouch.csproj", "{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests-iOS", "Refit-Tests\Refit-Tests-iOS.csproj", "{589206CA-7FE7-4533-B206-67708A44E3A8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Net45", "Refit\Refit-Net45.csproj", "{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}"
@@ -16,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Portable", "Refit\Refit-Portable.csproj", "{E315020F-33BC-4D85-BC6E-8346F06F1112}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests-Android", "Refit-Tests\Refit-Tests-Android.csproj", "{14759A94-06C8-4E91-9690-94FF3B555CB9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Xamarin.iOS10", "Refit\Refit-Xamarin.iOS10.csproj", "{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -121,10 +121,10 @@ Global
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Release|iPhone.Build.0 = Release|Any CPU
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
-		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.Ad-Hoc|iPhone.ActiveCfg = Debug|Any CPU
-		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.Ad-Hoc|iPhone.Build.0 = Debug|Any CPU
-		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.AppStore|iPhone.ActiveCfg = Debug|Any CPU
-		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.AppStore|iPhone.Build.0 = Debug|Any CPU
+		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.Ad-Hoc|iPhone.ActiveCfg = Release|Any CPU
+		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.Ad-Hoc|iPhone.Build.0 = Release|Any CPU
+		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.AppStore|iPhone.ActiveCfg = Release|Any CPU
+		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.AppStore|iPhone.Build.0 = Release|Any CPU
 		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}.Debug|iPhone.ActiveCfg = Debug|Any CPU

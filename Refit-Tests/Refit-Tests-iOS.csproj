@@ -141,10 +141,4 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.MonoTouch.CSharp.targets" />
-  <ItemGroup>
-    <ProjectReference Include="..\Refit\Refit-MonoTouch.csproj">
-      <Project>{A22C5D02-3EB9-4262-98DF-223F0E29AD8F}</Project>
-      <Name>Refit-MonoTouch</Name>
-    </ProjectReference>
-  </ItemGroup>
 </Project>
