@@ -20,12 +20,6 @@
                 <dependency id="Microsoft.Net.Http" version="2.2.13" />
                 <dependency id="Newtonsoft.Json" version="6.0.3" />
             </group>
-            <group targetFramework="Silverlight5.0">
-                <dependency id="Microsoft.Net.Http" version="2.2.22" />
-                <dependency id="Microsoft.Bcl.Async" version="1.0.168" />
-                <dependency id="Newtonsoft.Json" version="6.0.3" />
-                <dependency id="Rx-Interfaces" version="2.2.4" />
-            </group>
         </dependencies>
     </metadata>
     <files>
@@ -38,6 +32,5 @@
         <file src="bin\Release\Net45\Refit*.*" target="lib\Net45" />
         <file src="bin\Release\Portable-Net45+WinRT45+WP8\Refit*.*" target="lib\Portable-Net45+WinRT45+WP8" />
         <file src="bin\Release\WP8\Refit*.*" target="lib\WP8" />
-        <file src="bin\Release\SL5\Refit*.*" target="lib\SL5" />
     </files>
 </package>

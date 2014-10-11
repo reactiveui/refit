@@ -1,15 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30324.0
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Portable", "Refit\Refit-Portable.csproj", "{E315020F-33BC-4D85-BC6E-8346F06F1112}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Net45", "Refit\Refit-Net45.csproj", "{252CE1CA-19FA-4445-A3C2-E4D6C80A935A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-wp8", "Refit\Refit-wp8.csproj", "{1F309EA3-155C-4B66-84DE-7771237CCF6C}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-sl5", "Refit\Refit-sl5.csproj", "{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Tests-Net45", "Refit-Tests\Refit-Tests-Net45.csproj", "{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}"
 EndProject
@@ -53,14 +51,6 @@ Global
 		{1F309EA3-155C-4B66-84DE-7771237CCF6C}.Release|ARM.Build.0 = Release|ARM
 		{1F309EA3-155C-4B66-84DE-7771237CCF6C}.Release|x86.ActiveCfg = Release|x86
 		{1F309EA3-155C-4B66-84DE-7771237CCF6C}.Release|x86.Build.0 = Release|x86
-		{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}.Debug|ARM.ActiveCfg = Debug|Any CPU
-		{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}.Release|ARM.ActiveCfg = Release|Any CPU
-		{291D2F59-F1F9-4B4F-98EF-ADAF78EFB44A}.Release|x86.ActiveCfg = Release|Any CPU
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605}.Debug|ARM.ActiveCfg = Debug|Any CPU
