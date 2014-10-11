@@ -33,7 +33,11 @@ Refit currently supports the following platforms:
 
 Support for the following platforms is coming soon:
 
-* Xamarin.iOS
+* Xamarin.iOS 64-bit
+
+Support for the following platforms will probably not happen because they're
+too broken:
+
 * Windows Store (WinRT)
 
 ### API Attributes
@@ -255,4 +259,3 @@ Currently Refit is missing the following features from Retrofit that are
 planned for a future release soon:
 
 * Multipart requests (including file upload)
-* Form posts
