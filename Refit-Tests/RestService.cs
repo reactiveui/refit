@@ -128,7 +128,7 @@ namespace Refit.Tests
         [Test]
         public async Task PostToRequestBin()
         {
-            var fixture = RestService.For<IHttpBin>("http://httpbin.org/");
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/");
             
             try {
                 await fixture.Post();
