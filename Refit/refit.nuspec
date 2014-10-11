@@ -34,7 +34,7 @@
         <file src="..\InterfaceStubGenerator\bin\Release\*.*" target="tools" />
 
         <file src="bin\Release\MonoAndroid\Refit*.*" target="lib\MonoAndroid" />
-        <file src="bin\Release\MonoMac\Refit*.*" target="lib\MonoMac" />
+        <file src="bin\Release\Xamarin.iOS10\Refit*.*" target="lib\Xamarin.iOS10" />
         <file src="bin\Release\Net45\Refit*.*" target="lib\Net45" />
         <file src="bin\Release\Portable-Net45+WinRT45+WP8\Refit*.*" target="lib\Portable-Net45+WinRT45+WP8" />
         <file src="bin\Release\WP8\Refit*.*" target="lib\WP8" />
