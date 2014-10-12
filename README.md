@@ -102,9 +102,34 @@ type of the parameter:
 * If the type is `string`, the string will be used directly as the content
 * For all other types, the object will be serialized as JSON.
 
-### Setting request headers
+#### Sending Form Posts
 
-#### Static headers
+The Body attribute also supports encoding its data as a Form POST - to do
+this, initialize the `[Body]` attribute with `BodySerializationMethod.UrlEncoded`:
+
+```cs
+[Post("/api/auth.signin")]
+Task<AuthenticationResult> Login([Body(BodySerializationMethod.UrlEncoded)] Dictionary<string, string> form);
+```
+
+Simple objects can also be used as forms, where the key will be the property
+name - the `AliasAs` attribute works here as well:
+
+```cs
+public interface IMeasurementProtocolApi
+{
+    [Post("/collect")]
+    Task Collect([Body(BodySerializationMethod.UrlEncoded)] Measurement measurement);
+}
+
+public Measurement
+{
+    [AliasAs("t")] 
+    public string Type { get; set; }
+}
+```
+
+### Setting request headers
 
 You can set one or more static request headers for a request applying a `Headers` 
 attribute to the method:
