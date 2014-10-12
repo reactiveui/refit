@@ -18,20 +18,8 @@ namespace Refit
 
     public static class RequestBuilder
     {
-#if PORTABLE
-        static IRequestBuilderFactory platformRequestBuilderFactory;
-
-        static RequestBuilder()
-        {
-            var fullName = typeof(RequestBuilder).AssemblyQualifiedName;
-            var toFind = fullName.Replace("RequestBuilder", "RequestBuilderFactory").Replace("Refit-Portable", "Refit");
-
-            var type = Type.GetType(toFind);
-            platformRequestBuilderFactory = Activator.CreateInstance(type) as IRequestBuilderFactory;
-        }
-#else
         static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
-#endif
+
         public static IRequestBuilder ForType(Type interfaceType)
         {
             return platformRequestBuilderFactory.Create(interfaceType);
@@ -42,5 +30,15 @@ namespace Refit
             return ForType(typeof(T));
         }
     }
+
+#if PORTABLE
+    class RequestBuilderFactory : IRequestBuilderFactory
+    {
+        public IRequestBuilder Create(Type interfaceType)
+        {
+            throw new NotImplementedException("You've somehow included the PCL version of Refit in your app. You need to use the platform-specific version!");
+        }
+    }
+#endif
 }
 
