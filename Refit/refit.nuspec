@@ -14,11 +14,11 @@
 
         <dependencies>
             <group>
-                <dependency id="Newtonsoft.Json" version="6.0.3" />
+                <dependency id="Newtonsoft.Json" version="6.0.5" />
             </group>
             <group targetFramework="WindowsPhone8.0">
-                <dependency id="Microsoft.Net.Http" version="2.2.13" />
-                <dependency id="Newtonsoft.Json" version="6.0.3" />
+                <dependency id="Microsoft.Net.Http" version="2.2.28" />
+                <dependency id="Newtonsoft.Json" version="6.0.5" />
             </group>
         </dependencies>
     </metadata>
