@@ -75,6 +75,12 @@ namespace Refit.Tests
             return (Task<HttpResponseMessage>) methodImpls["GetIndex"](Client, arguments);
         }
 
+        public virtual IObservable<string> GetIndexObservable()
+        {
+            var arguments = new object[] {  };
+            return (IObservable<string>) methodImpls["GetIndexObservable"](Client, arguments);
+        }
+
         public virtual Task NothingToSeeHere()
         {
             var arguments = new object[] {  };

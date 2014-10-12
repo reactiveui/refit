@@ -287,10 +287,12 @@ namespace Refit.Tests
     public class TestHttpMessageHandler : HttpMessageHandler
     {
         public HttpRequestMessage RequestMessage { get; private set; }
+        public int MessagesSent { get; set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestMessage = request;
+            MessagesSent++;
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("test") });
         }
     }

@@ -65,6 +65,9 @@ namespace Refit.Tests
         [Get("/")]
         Task<HttpResponseMessage> GetIndex();
 
+        [Get("/")]
+        IObservable<string> GetIndexObservable();
+
         [Get("/give-me-some-404-action")]
         Task NothingToSeeHere();
     }

@@ -100,10 +100,31 @@ namespace Refit.Tests
             // NB: We're gonna await twice, so that the 2nd await is definitely
             // after the result has completed.
             await obs;
-
             var result2 = await obs;
             Assert.AreEqual("octocat", result2.Login);
             Assert.IsFalse(String.IsNullOrEmpty(result2.AvatarUrl));
+        }
+
+        [Test]
+        public async Task TwoSubscriptionsResultInTwoRequests()
+        {
+            var input = new TestHttpMessageHandler();
+            var client = new HttpClient(input) { BaseAddress = new Uri("http://foo") };
+            var fixture = RestService.For<IGitHubApi>(client);
+
+            Assert.AreEqual(0, input.MessagesSent);
+
+            var obs = fixture.GetIndexObservable()
+                .Timeout(TimeSpan.FromSeconds(10));
+
+            await obs;
+            Assert.AreEqual(1, input.MessagesSent);
+
+            var result = await obs;
+            Assert.AreEqual(2, input.MessagesSent);
+
+            // NB: TestHttpMessageHandler returns 'test' for every request
+            Assert.IsTrue(result.Contains("test"));
         }
 
         [Test]
