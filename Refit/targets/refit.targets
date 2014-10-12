@@ -6,7 +6,6 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <PreBuildEvent>mono $(SolutionDir)packages/refit.2.0.0/tools/InterfaceStubGenerator.exe "../../RefitStubs.cs" "@(Compile)"</PreBuildEvent>
+    <PreBuildEvent>mono $(SolutionDir)packages/refit.2.0.0/tools/InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
-
 </Project>
