@@ -95,12 +95,114 @@ Body attribute:
 Task CreateUser([Body] User user);
 ```
 
-There are three possibilities for supplying the body data, depending on the
+There are four possibilities for supplying the body data, depending on the
 type of the parameter:
 
 * If the type is `Stream`, the content will be streamed via `StreamContent`
 * If the type is `string`, the string will be used directly as the content
+* If the parameter has the attribute `[Body(BodySerializationMethod.UrlEncoded)]`, 
+  the content will be URL-encoded (see [form posts](#form-posts) below)
 * For all other types, the object will be serialized as JSON.
+
+#### JSON content
+
+JSON requests and responses are serialized/deserialized using Json.NET. 
+Default settings for the API can be configured by setting 
+_Newtonsoft.Json.JsonConvert.DefaultSettings_:
+
+```cs
+
+JsonConvert.DefaultSettings = 
+    () => new JsonSerializerSettings
+	{ 
+		ContractResolver = new CamelCasePropertyNamesContractResolver(),
+	    Converters = {new StringEnumConverter()}
+	};
+
+// Serialized as: {"day":"Saturday"}
+await PostSomeStuff(new { Day = DayOfWeek.Saturday });
+```
+
+Property serialization/deserialization can be customised using Json.NET's 
+JsonProperty attribute:
+
+```cs 
+
+public class Foo 
+{
+	// Works like [AliasAs("b")] would in form posts (see below)
+	[JsonProperty(PropertyName="b")] 
+	public string Bar { get; set; }
+} 
+```
+
+#### <a name="form-posts"></a>Form posts
+
+For APIs that take form posts (i.e. serialized as `application/x-www-form-urlencoded`),
+initialize the Body attribute with `BodySerializationMethod.UrlEncoded`.
+
+The parameter can be an `IDictionary`:
+
+```cs
+
+public interface IMeasurementProtocolApi
+{
+    [Post("/collect")]
+    Task Collect([Body(BodySerializationMethod.UrlEncoded)] Dictionary<string, object> data);
+}
+
+var data = new Dictionary<string, object>
+{
+	{"v", 1}, 
+	{"tid", "UA-1234-5"}, 
+	{"cid", new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c")}, 
+	{"t", "event"}
+};
+
+// Serialized as: v=1&tid=UA-1234-5&cid=d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c&t=event
+await api.Collect(data);
+```
+
+Or you can just pass any object and all _public, readable_ properties will 
+be serialized as form fields in the request. This approach allows you to alias 
+property names using `[AliasAs("whatever")]` which can help if the API has
+cryptic field names:
+
+```cs
+
+public interface IMeasurementProtocolApi
+{
+    [Post("/collect")]
+    Task Collect([Body(BodySerializationMethod.UrlEncoded)] Measurement measurement);
+}
+
+public class Measurement
+{
+	// Properties can be read-only and [AliasAs] isn't required
+	public int v { get { return 1; }
+ 
+	[AliasAs("tid")]
+	public string WebPropertyId { get; set; }
+
+    [AliasAs("cid")]
+	public Guid ClientId { get;set; }
+
+	[AliasAs("t")] 
+    public string Type { get; set; }
+
+	public object IgnoreMe { private get; set; }
+}
+
+var measurement = new Measurement 
+{ 
+	WebPropertyId = "UA-1234-5", 
+	ClientId = new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c"), 
+	Type = "event" 
+}; 
+
+// Serialized as: v=1&tid=UA-1234-5&cid=d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c&t=event
+await api.Collect(measurement);
+``` 
 
 ### Setting request headers
 
