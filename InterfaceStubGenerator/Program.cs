@@ -37,6 +37,7 @@ namespace Refit.Generator
             using (var of = File.OpenWrite(target.FullName)) {
                 var bytes = Encoding.UTF8.GetBytes(template);
                 of.Write(bytes, 0, bytes.Length);
+                of.Flush();
             }
         }
 
