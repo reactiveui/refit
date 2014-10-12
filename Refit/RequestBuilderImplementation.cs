@@ -203,10 +203,19 @@ namespace Refit
         Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
             where T : class
         {
-            return async (client, paramList) => {
+            var ret = buildCancellableTaskFuncForMethod<T>(restMethod);
+            return (client, paramList) => ret(client, CancellationToken.None, paramList);
+        }
+
+        Func<HttpClient, CancellationToken, object[], Task<T>> buildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
+            where T : class
+        {
+            return async (client, ct, paramList) => {
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
                 var rq = factory(paramList);
-                var resp = await client.SendAsync(rq);
+
+                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct);
+
                 if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
                     return resp as T;
                 }
@@ -215,7 +224,11 @@ namespace Refit
                     throw await ApiException.Create(resp);
                 }
 
-                var content = await resp.Content.ReadAsStringAsync();
+                var ms = new MemoryStream();
+                var fromStream = await resp.Content.ReadAsStreamAsync();
+                await fromStream.CopyToAsync(ms, 4096, ct);
+
+                var content = Encoding.UTF8.GetString(ms.ToArray());
                 if (restMethod.SerializedReturnType == typeof(string)) {
                     return content as T;
                 }
