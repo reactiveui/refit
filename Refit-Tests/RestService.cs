@@ -5,73 +5,12 @@ using System.Net;
 using System.Net.Http;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+
 using NUnit.Framework;
 using Newtonsoft.Json;
 
 namespace Refit.Tests
 {
-    public class User
-    {
-        public string Login { get; set; }
-        public int Id { get; set; }
-        public string AvatarUrl { get; set; }
-        public string GravatarId { get; set; }
-        public string Url { get; set; }
-        public string HtmlUrl { get; set; }
-        public string FollowersUrl { get; set; }
-        public string FollowingUrl { get; set; }
-        public string GistsUrl { get; set; }
-        public string StarredUrl { get; set; }
-        public string SubscriptionsUrl { get; set; }
-        public string OrganizationsUrl { get; set; }
-        public string ReposUrl { get; set; }
-        public string EventsUrl { get; set; }
-        public string ReceivedEventsUrl { get; set; }
-        public string Type { get; set; }
-        public string Name { get; set; }
-        public string Company { get; set; }
-        public string Blog { get; set; }
-        public string Location { get; set; }
-        public string Email { get; set; }
-        public bool Hireable { get; set; }
-        public string Bio { get; set; }
-        public int PublicRepos { get; set; }
-        public int Followers { get; set; }
-        public int Following { get; set; }
-        public string CreatedAt { get; set; }
-        public string UpdatedAt { get; set; }
-        public int PublicGists { get; set; }
-    }
-
-    public class UserSearchResult
-    {
-        public int TotalCount { get; set; }
-        public bool IncompleteResults { get; set; }
-        public IList<User> Items { get; set; }
-    }
-
-    [Headers("User-Agent: Refit Integration Tests")]
-    public interface IGitHubApi
-    {
-        [Get("/users/{username}")]
-        Task<User> GetUser(string userName);
-
-        [Get("/users/{username}")]
-        IObservable<User> GetUserObservable(string userName);
-
-        [Get("/orgs/{orgname}/members")]
-        Task<List<User>> GetOrgMembers(string orgName);
-
-        [Get("/search/users")]
-        Task<UserSearchResult> FindUsers(string q);
-
-        [Get("/")]
-        Task<HttpResponseMessage> GetIndex();
-
-        [Get("/give-me-some-404-action")]
-        Task NothingToSeeHere();
-    }
-
     public class RootObject
     {
         public string _id { get; set; }
@@ -84,6 +23,12 @@ namespace Refit.Tests
     {
         [Get("/congruence")]
         Task<RootObject> GetCongruence();
+    }
+
+    public interface IRequestBin
+    {
+        [Post("/1h3a5jm1")]
+        Task Post();
     }
 
     [TestFixture]
@@ -181,23 +126,14 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void PostToRequestBin()
+        public async Task PostToRequestBin()
         {
-            var fixture = RestService.For<IRequestBin>("http://requestb.in/");
-            var result = fixture.Post();
-
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/");
+            
             try {
-                result.Wait();
-            } catch (AggregateException ae) {
-                ae.Handle(x => {
-                    if (x is ApiException) {
-                        // we should be good but maybe a 404 occurred
-                        return true;
-                    }
-
-                    // other exception types might be valid failures
-                    return false;
-                });
+                await fixture.Post();
+            } catch (ApiException ex) { 
+                // we should be good but maybe a 404 occurred
             }
         }
 
@@ -216,12 +152,5 @@ namespace Refit.Tests
                 Assert.IsNotNull(content["documentation_url"]);
             }
         }
-
-        public interface IRequestBin
-        {
-            [Post("/1h3a5jm1")]
-            Task Post();
-        }
     }
 }
-

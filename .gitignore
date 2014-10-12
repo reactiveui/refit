@@ -67,7 +67,7 @@ Generated_Code #added for RIA/Silverlight projects
 
 # packages
 Release/
+packages/
 
 *.userprefs
 Refit-Tests/test-results
-packages
