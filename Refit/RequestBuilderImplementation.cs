@@ -228,7 +228,8 @@ namespace Refit
                 var fromStream = await resp.Content.ReadAsStreamAsync();
                 await fromStream.CopyToAsync(ms, 4096, ct);
 
-                var content = Encoding.UTF8.GetString(ms.ToArray());
+                var bytes = ms.ToArray();
+                var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                 if (restMethod.SerializedReturnType == typeof(string)) {
                     return content as T;
                 }
@@ -240,88 +241,42 @@ namespace Refit
         Func<HttpClient, object[], IObservable<T>> buildRxFuncForMethod<T>(RestMethodInfo restMethod)
             where T : class
         {
-            var taskFunc = buildTaskFuncForMethod<T>(restMethod);
+            var taskFunc = buildCancellableTaskFuncForMethod<T>(restMethod);
 
-            return (client, paramList) => {
-                var ret = new FakeAsyncSubject<T>();
-
-                taskFunc(client, paramList).ContinueWith(t => {
-                    if (t.Exception != null) {
-                        ret.OnError(t.Exception);
-                    } else {
-                        ret.OnNext(t.Result);
-                        ret.OnCompleted();
-                    }
-                });
-
-                return ret;
-            };
+            return (client, paramList) => 
+                new TaskToObservable<T>(ct => taskFunc(client, ct, paramList));
         }
 
-        class FakeAsyncSubject<T> : IObservable<T>, IObserver<T>
+        class TaskToObservable<T> : IObservable<T>
         {
-            Tuple<bool, T> resultBox;
-            Tuple<bool, Exception> completionResult;
+            Func<CancellationToken, Task<T>> taskFactory;
 
-            List<IObserver<T>> subscriberList = new List<IObserver<T>>();
-
-            public void OnNext(T value)
+            public TaskToObservable(Func<CancellationToken, Task<T>> taskFactory) 
             {
-                if (completionResult != null) return;
-
-                var result = Tuple.Create(true, value);
-                Interlocked.Exchange(ref resultBox, result);
-
-                var currentList = default(IObserver<T>[]);
-                lock (subscriberList) { currentList = subscriberList.ToArray(); }
-                foreach (var v in currentList) v.OnNext(value);
-            }
-
-            public void OnError(Exception error)
-            {
-                var final = Interlocked.CompareExchange(ref completionResult, Tuple.Create(true, error), null);
-                if (final != null) return;
-                                
-                var currentList = default(IObserver<T>[]);
-                lock (subscriberList) { currentList = subscriberList.ToArray(); }
-                foreach (var v in currentList) v.OnError(error);
-
-                subscriberList = null;
-            }
-
-            public void OnCompleted()
-            {
-                var final = Interlocked.CompareExchange(ref completionResult, Tuple.Create(true, default(Exception)), null);
-                if (final != null) return;
-                                
-                var currentList = default(IObserver<T>[]);
-                lock (subscriberList) { currentList = subscriberList.ToArray(); }
-                foreach (var v in currentList) v.OnCompleted();
-
-                subscriberList = null;
+                this.taskFactory = taskFactory;
             }
 
             public IDisposable Subscribe(IObserver<T> observer)
             {
-                if (completionResult != null) {
-                    if (resultBox != null) observer.OnNext(resultBox.Item2);
+                var cts = new CancellationTokenSource();
+                taskFactory(cts.Token).ContinueWith(t => {
+                    if (cts.IsCancellationRequested) return;
 
-                    if (completionResult.Item2 != null) {
-                        observer.OnError(completionResult.Item2);
-                    } else { 
-                        observer.OnCompleted();
+                    if (t.Exception != null) {
+                        observer.OnError(t.Exception.InnerExceptions.First());
+                        return;
+                    }
+
+                    try {
+                        observer.OnNext(t.Result);
+                    } catch (Exception ex) {
+                        observer.OnError(ex);
                     }
                         
-                    return new AnonymousDisposable(() => {});
-                }
-
-                lock (subscriberList) { 
-                    subscriberList.Add(observer);
-                }
-
-                return new AnonymousDisposable(() => {
-                    lock (subscriberList) { subscriberList.Remove(observer); }
+                    observer.OnCompleted();
                 });
+
+                return new AnonymousDisposable(cts.Cancel);
             }
         }
     }
