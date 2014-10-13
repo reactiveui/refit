@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace Refit.Generator
 {
@@ -34,10 +35,25 @@ namespace Refit.Generator
             }
 
             var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray());
-            using (var of = File.OpenWrite(target.FullName)) {
-                var bytes = Encoding.UTF8.GetBytes(template);
-                of.Write(bytes, 0, bytes.Length);
-                of.Flush();
+
+        retry:
+            int retryCount = 3; 
+            var file = default(FileStream);
+
+            // NB: Parallel build weirdness means that we might get >1 person 
+            // trying to party on this file at the same time.
+            try {
+                file = File.Open(target.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
+            } catch (Exception ex) {
+                if (retryCount < 0) throw;
+
+                retryCount--;
+                Thread.Sleep(500);
+                goto retry;
+            }
+
+            using (var sw = new StreamWriter(file, Encoding.UTF8)) {
+                sw.WriteLine(template);
             }
         }
 
