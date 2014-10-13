@@ -31,7 +31,7 @@ namespace Refit
 
         public RequestBuilderImplementation(Type targetInterface)
         {
-            if (targetInterface == null || !targetInterface.IsInterface) {
+            if (targetInterface == null || !targetInterface.IsInterface()) {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
 
@@ -467,7 +467,7 @@ namespace Refit
 
         void determineReturnTypeInfo(MethodInfo methodInfo)
         {
-            if (methodInfo.ReturnType.IsGenericType == false) {
+            if (methodInfo.ReturnType.IsGenericType() == false) {
                 if (methodInfo.ReturnType != typeof (Task)) {
                     goto bogusMethod;
                 }
