@@ -27,15 +27,14 @@ Refit currently supports the following platforms:
 
 * Xamarin.Android
 * Xamarin.Mac
-* Xamarin.iOS 64-bit
+* Xamarin.iOS 64-bit (Unified API)
 * Desktop .NET 4.5 
 * Windows Phone 8
 
-Support for the following platforms will probably not happen because they're
-too broken:
+The following platforms are not supported:
 
-* Silverlight 5
-* Windows Store (WinRT)
+* Xamarin.iOS 32-bit - build system doesn't support targets files
+* Windows Store (WinRT) - can't build normal .NET code
 
 ### API Attributes
 
