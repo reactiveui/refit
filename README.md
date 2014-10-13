@@ -111,13 +111,11 @@ Default settings for the API can be configured by setting
 _Newtonsoft.Json.JsonConvert.DefaultSettings_:
 
 ```cs
-
 JsonConvert.DefaultSettings = 
-    () => new JsonSerializerSettings
-	{ 
-		ContractResolver = new CamelCasePropertyNamesContractResolver(),
-	    Converters = {new StringEnumConverter()}
-	};
+    () => new JsonSerializerSettings() { 
+        ContractResolver = new CamelCasePropertyNamesContractResolver(),
+        Converters = {new StringEnumConverter()}
+    };
 
 // Serialized as: {"day":"Saturday"}
 await PostSomeStuff(new { Day = DayOfWeek.Saturday });
@@ -127,12 +125,11 @@ Property serialization/deserialization can be customised using Json.NET's
 JsonProperty attribute:
 
 ```cs 
-
 public class Foo 
 {
-	// Works like [AliasAs("b")] would in form posts (see below)
-	[JsonProperty(PropertyName="b")] 
-	public string Bar { get; set; }
+    // Works like [AliasAs("b")] would in form posts (see below)
+    [JsonProperty(PropertyName="b")] 
+    public string Bar { get; set; }
 } 
 ```
 
@@ -144,19 +141,17 @@ initialize the Body attribute with `BodySerializationMethod.UrlEncoded`.
 The parameter can be an `IDictionary`:
 
 ```cs
-
 public interface IMeasurementProtocolApi
 {
     [Post("/collect")]
     Task Collect([Body(BodySerializationMethod.UrlEncoded)] Dictionary<string, object> data);
 }
 
-var data = new Dictionary<string, object>
-{
-	{"v", 1}, 
-	{"tid", "UA-1234-5"}, 
-	{"cid", new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c")}, 
-	{"t", "event"}
+var data = new Dictionary<string, object> {
+    {"v", 1}, 
+    {"tid", "UA-1234-5"}, 
+    {"cid", new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c")}, 
+    {"t", "event"},
 };
 
 // Serialized as: v=1&tid=UA-1234-5&cid=d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c&t=event
@@ -169,7 +164,6 @@ property names using `[AliasAs("whatever")]` which can help if the API has
 cryptic field names:
 
 ```cs
-
 public interface IMeasurementProtocolApi
 {
     [Post("/collect")]
@@ -178,26 +172,25 @@ public interface IMeasurementProtocolApi
 
 public class Measurement
 {
-	// Properties can be read-only and [AliasAs] isn't required
-	public int v { get { return 1; }
+    // Properties can be read-only and [AliasAs] isn't required
+    public int v { get { return 1; }
  
-	[AliasAs("tid")]
-	public string WebPropertyId { get; set; }
+    [AliasAs("tid")]
+    public string WebPropertyId { get; set; }
 
     [AliasAs("cid")]
-	public Guid ClientId { get;set; }
+    public Guid ClientId { get;set; }
 
-	[AliasAs("t")] 
+    [AliasAs("t")] 
     public string Type { get; set; }
 
-	public object IgnoreMe { private get; set; }
+    public object IgnoreMe { private get; set; }
 }
 
-var measurement = new Measurement 
-{ 
-	WebPropertyId = "UA-1234-5", 
-	ClientId = new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c"), 
-	Type = "event" 
+var measurement = new Measurement { 
+    WebPropertyId = "UA-1234-5", 
+    ClientId = new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c"), 
+    Type = "event" 
 }; 
 
 // Serialized as: v=1&tid=UA-1234-5&cid=d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c&t=event
