@@ -34,7 +34,9 @@
 //
 using System;
 using System.Collections.Generic;
+#if !WINDOWS_APP
 using System.Configuration;
+#endif
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -474,7 +476,11 @@ namespace System.Web
 							int result = Entities.BinarySearch(new KeyValuePair<string, char>(entityName, ' '), new EntityNameComparer());
 							if (result >= 0)
 							{
+#if !WINDOWS_APP
 								key = Entities[result].Value.ToString(Helpers.InvariantCulture);
+#else
+                                key = Entities[result].Value.ToString(); // What will this do?
+#endif
 							}
 						}
 
@@ -920,4 +926,27 @@ namespace System.Web
 			return String.Compare(x.Key, y.Key, StringComparison.Ordinal);
 		}
 	}
+
+#if WINDOWS_APP
+    // Fine, I'll just make my own
+    static class Uri
+    {
+        static readonly Dictionary<char, int> hexDigits
+            = "0123456789abcdef".Select((c, i) => new {c, i})
+                .ToDictionary(x => x.c, c => c.i);
+
+        public static bool IsHexDigit(char c)
+        {
+            return hexDigits.ContainsKey(c);
+        }
+
+        public static int FromHex(char digit)
+        {
+            if(!IsHexDigit(digit))
+                throw new ArgumentOutOfRangeException("digit");
+
+            return hexDigits[digit];
+        }
+  }
+#endif
 }

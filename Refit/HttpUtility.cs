@@ -1,4 +1,4 @@
-#if !SILVERLIGHT || WINDOWS_PHONE
+#if !SILVERLIGHT || WINDOWS_PHONE || WINDOWS_APP
 #define NET_4_0
 #endif
 
@@ -39,7 +39,9 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.IO;
+#if !WINDOWS_APP
 using System.Security.Permissions;
+#endif
 using System.Text;
 
 namespace System.Web
@@ -123,7 +125,11 @@ namespace System.Web
 
         static char[] GetChars(MemoryStream b, Encoding e)
         {
+#if !WINDOWS_APP
             return e.GetChars(b.GetBuffer(), 0, (int)b.Length);
+#else
+            return e.GetChars(b.ToArray(), 0, (int) b.Length);
+#endif
         }
 
         static void WriteCharBytes(IList buf, char ch, Encoding e)
