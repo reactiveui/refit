@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E315020F-33BC-4D85-BC6E-8346F06F1112}</ProjectGuid>
+    <ProjectGuid>{200C9B4E-4881-44B2-B88D-EFE0E54193A1}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Refit</RootNamespace>
@@ -47,7 +47,6 @@
       <HintPath>..\packages\Microsoft.Net.Http.2.2.28\lib\win8\System.Net.Http.Primitives.dll</HintPath>
     </Reference>
   </ItemGroup>
-
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
@@ -58,11 +57,20 @@
   <ItemGroup>
     <None Include="packages.Refit-WPA81.config" />
   </ItemGroup>
-
   <ItemGroup>
     <TargetPlatform Include="Windows, Version=8.1" />
     <TargetPlatform Include="WindowsPhoneApp, Version=8.1" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Attributes.cs" />
+    <Compile Include="Helpers.cs" />
+    <Compile Include="HtmlEncoder.cs" />
+    <Compile Include="HttpUtility.cs" />
+    <Compile Include="NameValueCollection.cs" />
+    <Compile Include="RequestBuilder.cs" />
+    <Compile Include="RequestBuilderImplementation.cs" />
+    <Compile Include="RestService.cs" />
+    <Compile Include="Utility.cs" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
-
 </Project>
