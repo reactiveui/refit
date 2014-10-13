@@ -25,7 +25,9 @@
     <files>
         <file src="content\*.*" target="content" />
         <file src="targets\*.*" target="build" />
-        <file src="..\InterfaceStubGenerator\bin\Release\*.*" target="tools" />
+        <file src="..\InterfaceStubGenerator\bin\Release\*.exe" target="tools" />
+        <file src="..\InterfaceStubGenerator\bin\Release\*.dll" target="tools" />
+        <file src="..\InterfaceStubGenerator\bin\Release\*.mustache" target="tools" />
 
         <file src="bin\Release\MonoAndroid\Refit*.*" target="lib\MonoAndroid" />
         <file src="bin\Release\Xamarin.iOS10\Refit*.*" target="lib\Xamarin.iOS10" />
