@@ -82,15 +82,15 @@
   <ItemGroup>
     <AndroidResource Include="Resources\drawable\Icon.png" />
   </ItemGroup>
-  <PropertyGroup>
-    <DefineConstants>$(DefineConstants);REFIT__NOTIOS;</DefineConstants>
-  </PropertyGroup>
+
+  <!-- This is the prototype / testing version of the Refit.targets file -->
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator/bin/$(Configuration)/InterfaceStubGenerator.exe "../../RefitStubs.cs" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
+
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
   <ItemGroup>
