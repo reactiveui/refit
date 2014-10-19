@@ -37,7 +37,7 @@ namespace Refit.Tests
             var fixture = new InterfaceStubGenerator();
 
             var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
-            Assert.AreEqual(2, result.Count);
+            Assert.AreEqual(3, result.Count);
             Assert.True(result.Any(x => x == "IGitHubApi"));
         }
 
@@ -53,7 +53,7 @@ namespace Refit.Tests
 
             var result = fixture.GenerateClassInfoForInterface(input);
 
-            Assert.AreEqual(2, result.MethodList.Count);
+            Assert.AreEqual(7, result.MethodList.Count);
             Assert.AreEqual("GetUser", result.MethodList[0].Name);
             Assert.AreEqual("string userName", result.MethodList[0].ArgumentListWithTypes);
         }
@@ -69,7 +69,21 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.AreEqual(1, result.ClassList.Count);
+            Assert.AreEqual(2, result.ClassList.Count);
+        }
+
+        [Test]
+        public void RetainsAliasesInUsings()
+        {
+            var fixture = new InterfaceStubGenerator();
+
+            var syntaxTree = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("NamespaceCollisionApi.cs"));
+            var interfaceDefinition = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
+            var result = fixture.GenerateTemplateInfoForInterfaceList(new List<InterfaceDeclarationSyntax>(interfaceDefinition));
+
+            var usingList = result.UsingList.Select(x => x.Item).ToList();
+            CollectionAssert.Contains(usingList, "SomeType = CollisionA.SomeType");
+            CollectionAssert.Contains(usingList, "CollisionB");
         }
     }
 }

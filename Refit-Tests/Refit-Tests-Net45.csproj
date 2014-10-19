@@ -108,6 +108,7 @@
     <Compile Include="GitHubApi.cs" />
     <Compile Include="IntegrationTestHelper.cs" />
     <Compile Include="InterfaceStubGenerator.cs" />
+    <Compile Include="NamespaceCollisionApi.cs" />
     <Compile Include="RefitStubs.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RestService.cs" />
