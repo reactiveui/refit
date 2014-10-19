@@ -9,6 +9,14 @@ namespace Refit.Tests
         [Get("/")]
         Task<SomeType> SomeRequest();
     }
+
+    public static class NamespaceCollisionApi
+    {
+        public static INamespaceCollisionApi Create()
+        {
+            return RestService.For<INamespaceCollisionApi>("http://somewhere.com");
+        }
+    }
 }
 
 namespace CollisionA
