@@ -71,5 +71,19 @@ namespace Refit.Tests
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
             Assert.AreEqual(2, result.ClassList.Count);
         }
+
+        [Test]
+        public void RetainsAliasesInUsings()
+        {
+            var fixture = new InterfaceStubGenerator();
+
+            var syntaxTree = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("NamespaceCollisionApi.cs"));
+            var interfaceDefinition = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
+            var result = fixture.GenerateTemplateInfoForInterfaceList(new List<InterfaceDeclarationSyntax>(interfaceDefinition));
+
+            var usingList = result.UsingList.Select(x => x.Item).ToList();
+            CollectionAssert.Contains(usingList, "SomeType = CollisionA.SomeType");
+            CollectionAssert.Contains(usingList, "CollisionB");
+        }
     }
 }
