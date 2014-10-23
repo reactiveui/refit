@@ -58,6 +58,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="RequestBuilderImplementation.cs" />
+    <Compile Include="DefaultRequestParameterFormatter.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="Helpers.cs" />

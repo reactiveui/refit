@@ -35,7 +35,7 @@ namespace Refit
 #if PORTABLE
     class RequestBuilderFactory : IRequestBuilderFactory
     {
-        public IRequestBuilder Create(Type interfaceType)
+        public IRequestBuilder Create(Type interfaceType, IRequestParameterFormatter requestParameterFormatter)
         {
             throw new NotImplementedException("You've somehow included the PCL version of Refit in your app. You need to use the platform-specific version!");
         }
