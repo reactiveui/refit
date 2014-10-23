@@ -20,7 +20,7 @@ namespace Refit
 
         public virtual string Format(object value, ParameterInfo parameterInfo)
         {
-            var formatAttribute = parameterInfo.CustomAttributes.OfType<FormatAttribute>()
+            var formatAttribute = parameterInfo.GetCustomAttributes(true).OfType<FormatAttribute>()
                                                .FirstOrDefault();
             var formattable = value as IFormattable;
 
