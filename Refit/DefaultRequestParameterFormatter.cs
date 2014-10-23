@@ -11,11 +11,6 @@ namespace Refit
 
     public class DefaultRequestParameterFormatter : IRequestParameterFormatter
     {
-        public DefaultRequestParameterFormatter(Type interfaceType)
-        {
-            InterfaceType = interfaceType;
-        }
-
         protected Type InterfaceType { get; private set; }
 
         public virtual string Format(object value, ParameterInfo parameterInfo)

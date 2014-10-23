@@ -317,7 +317,7 @@ namespace Refit.Tests
                 bool shouldDie = true;
 
                 try {
-                    var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+                    var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
                 } catch (Exception) {
                     shouldDie = false;
@@ -329,7 +329,7 @@ namespace Refit.Tests
                 bool shouldDie = false;
 
                 try {
-                    var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+                    var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
                 } catch (Exception ex) {
                     shouldDie = true;
@@ -342,7 +342,7 @@ namespace Refit.Tests
         [Test]
         public void HardcodedQueryParamShouldBeInUrl()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedQueryParameter");
             var output = factory(new object[] { 6 });
 
@@ -353,7 +353,7 @@ namespace Refit.Tests
         [Test]
         public void ParameterizedQueryParamsShouldBeInUrl()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
             var output = factory(new object[] { 6, "foo" });
 
@@ -364,7 +364,7 @@ namespace Refit.Tests
         [Test]
         public void MultipleParametersInTheSameSegmentAreGeneratedProperly()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomethingWithMultipleParametersPerSegment");
             var output = factory(new object[] { 6, 1024, 768 });
 
@@ -375,7 +375,7 @@ namespace Refit.Tests
         [Test]
         public void HardcodedHeadersShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedHeader");
             var output = factory(new object[] { 6 });
 
@@ -388,7 +388,7 @@ namespace Refit.Tests
         [Test]
         public void EmptyHardcodedHeadersShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithEmptyHardcodedHeader");
             var output = factory(new object[] { 6 });
 
@@ -400,7 +400,7 @@ namespace Refit.Tests
         [Test]
         public void NullHardcodedHeadersShouldNotBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithNullHardcodedHeader");
             var output = factory(new object[] { 6 });
 
@@ -412,7 +412,7 @@ namespace Refit.Tests
         [Test]
         public void DynamicHeaderShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
             var output = factory(new object[] { 6, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
 
@@ -423,7 +423,7 @@ namespace Refit.Tests
         [Test]
         public void CustomDynamicHeaderShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
             var output = factory(new object[] { 6, ":joy_cat:" });
 
@@ -434,7 +434,7 @@ namespace Refit.Tests
         [Test]
         public void EmptyDynamicHeaderShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
             var output = factory(new object[] { 6, "" });
 
@@ -445,7 +445,7 @@ namespace Refit.Tests
         [Test]
         public void NullDynamicHeaderShouldNotBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
             var output = factory(new object[] { 6, null });
 
@@ -455,7 +455,7 @@ namespace Refit.Tests
         [Test]
         public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithoutFullPath");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
@@ -468,7 +468,7 @@ namespace Refit.Tests
         [Test]
         public void HttpClientForVoidMethodShouldPrefixedAbsolutePathToTheRequestUri()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithVoid");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
@@ -481,7 +481,7 @@ namespace Refit.Tests
         [Test]
         public void HttpClientShouldNotPrefixEmptyAbsolutePathToTheRequestUri()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuff");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
@@ -494,7 +494,7 @@ namespace Refit.Tests
         [Test]
         public void DontBlowUpWithDynamicAuthorizationHeaderAndContent() 
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PutSomeContentWithAuthorization");
             var output = factory(new object[] { 7, new { Octocat = "Dunetocat" }, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
 
@@ -505,7 +505,7 @@ namespace Refit.Tests
         [Test]
         public void SuchFlexibleContentTypeWow()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PutSomeStuffWithDynamicContentType");
             var output = factory(new object[] { 7, "such \"refit\" is \"amaze\" wow", "text/dson" });
 
@@ -517,7 +517,7 @@ namespace Refit.Tests
         [Test]
         public async Task BodyContentGetsUrlEncoded() 
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PostSomeUrlEncodedStuff");
             var output = factory(
                 new object[] {
@@ -537,7 +537,7 @@ namespace Refit.Tests
         [Test]
         public async Task FormFieldGetsAliased()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new DefaultRequestParameterFormatter(typeof(IDummyHttpApi)));
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PostSomeAliasedUrlEncodedStuff");
             var output = factory(
                 new object[] {
