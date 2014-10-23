@@ -18,7 +18,7 @@ namespace Refit
 {
     public class RequestBuilderFactory : IRequestBuilderFactory
     {
-        public IRequestBuilder Create(Type interfaceType, IRequestParameterFormatter requestParameterFormatter)
+        public IRequestBuilder Create(Type interfaceType, IRequestParameterFormatter requestParameterFormatter = null)
         {
             return new RequestBuilderImplementation(interfaceType, requestParameterFormatter);
         }
@@ -30,8 +30,9 @@ namespace Refit
         readonly IRequestParameterFormatter formatter;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
 
-        public RequestBuilderImplementation(Type targetInterface, IRequestParameterFormatter paramFormatter)
+        public RequestBuilderImplementation(Type targetInterface, IRequestParameterFormatter paramFormatter = null)
         {
+            paramFormatter = paramFormatter ?? new DefaultRequestParameterFormatter();
             if (targetInterface == null || !targetInterface.IsInterface()) {
                 throw new ArgumentException("targetInterface must be an Interface");
             }

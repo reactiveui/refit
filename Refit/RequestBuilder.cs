@@ -18,24 +18,23 @@ namespace Refit
 
     public static class RequestBuilder
     {
-        public static Func<Type, IRequestParameterFormatter> FormatterFactory = type => new DefaultRequestParameterFormatter(type);
         static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
         
-        public static IRequestBuilder ForType(Type interfaceType)
+        public static IRequestBuilder ForType(Type interfaceType, IRequestParameterFormatter requestParameterFormatter = null)
         {
-            return platformRequestBuilderFactory.Create(interfaceType, FormatterFactory(interfaceType));
+            return platformRequestBuilderFactory.Create(interfaceType, requestParameterFormatter);
         }
 
-        public static IRequestBuilder ForType<T>()
+        public static IRequestBuilder ForType<T>(IRequestParameterFormatter requestParameterFormatter = null)
         {
-            return ForType(typeof(T));
+            return ForType(typeof(T), requestParameterFormatter);
         }
     }
 
 #if PORTABLE
     class RequestBuilderFactory : IRequestBuilderFactory
     {
-        public IRequestBuilder Create(Type interfaceType, IRequestParameterFormatter requestParameterFormatter)
+        public IRequestBuilder Create(Type interfaceType, IRequestParameterFormatter requestParameterFormatter = null)
         {
             throw new NotImplementedException("You've somehow included the PCL version of Refit in your app. You need to use the platform-specific version!");
         }
