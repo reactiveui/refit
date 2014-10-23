@@ -18,24 +18,26 @@ namespace Refit
 {
     public class RequestBuilderFactory : IRequestBuilderFactory
     {
-        public IRequestBuilder Create(Type interfaceType)
+        public IRequestBuilder Create(Type interfaceType, IRequestParameterFormatter requestParameterFormatter)
         {
-            return new RequestBuilderImplementation(interfaceType);
+            return new RequestBuilderImplementation(interfaceType, requestParameterFormatter);
         }
     }
 
     public class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
+        readonly IRequestParameterFormatter formatter;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
 
-        public RequestBuilderImplementation(Type targetInterface)
+        public RequestBuilderImplementation(Type targetInterface, IRequestParameterFormatter paramFormatter)
         {
             if (targetInterface == null || !targetInterface.IsInterface()) {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
 
             targetType = targetInterface;
+            formatter = paramFormatter;
             interfaceHttpMethods = targetInterface.GetMethods()
                 .SelectMany(x => {
                     var attrs = x.GetCustomAttributes(true);
@@ -72,7 +74,7 @@ namespace Refit
 
                 for(int i=0; i < paramList.Length; i++) {
                     if (restMethod.ParameterMap.ContainsKey(i)) {
-                        urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", paramList[i].ToString());
+                        urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", formatter.Format(paramList[i], restMethod.ParameterInfoMap[i]));
                         continue;
                     }
 
@@ -103,7 +105,7 @@ namespace Refit
                         setHeader(ret, restMethod.HeaderParameterMap[i], paramList[i]);
                     } else {
                         if (paramList[i] != null) {
-                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = paramList[i].ToString();
+                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = formatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
                         }
                     }
                 }
@@ -308,6 +310,7 @@ namespace Refit
         public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
+        public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
 
@@ -330,7 +333,8 @@ namespace Refit
             determineReturnTypeInfo(methodInfo);
 
             var parameterList = methodInfo.GetParameters().ToList();
-
+            ParameterInfoMap = parameterList.Select((parameter, index) => new { index, parameter })
+                                            .ToDictionary(x => x.index, x => x.parameter);
             ParameterMap = buildParameterMap(RelativePath, parameterList);
             BodyParameterInfo = findBodyParameter(parameterList);
 

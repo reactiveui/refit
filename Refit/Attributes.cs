@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Net.Http;
 
 namespace Refit
@@ -91,6 +92,24 @@ namespace Refit
         public AliasAsAttribute(string name)
         {
             this.Name = name;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
+    public class FormatAttribute : Attribute
+    {
+        public string Format { get; protected set; }
+        public IFormatProvider FormatProvider { get; protected set; }
+        public FormatAttribute(string name, IFormatProvider provider)
+        {
+            this.Format = name;
+            this.FormatProvider = provider;
+        }
+
+        public FormatAttribute(string name)
+        {
+            this.Format = name;
+            this.FormatProvider = CultureInfo.CurrentUICulture;
         }
     }
     
