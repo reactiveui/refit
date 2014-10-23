@@ -13,16 +13,17 @@ namespace Refit
 
     interface IRequestBuilderFactory
     {
-        IRequestBuilder Create(Type interfaceType);
+        IRequestBuilder Create(Type interfaceType, IRequestParameterFormatter requestParameterFormatter);
     }
 
     public static class RequestBuilder
     {
         static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
+        static Func<Type, IRequestParameterFormatter> FormatterFactory = type => new DefaultRequestParameterFormatter(type);
 
         public static IRequestBuilder ForType(Type interfaceType)
         {
-            return platformRequestBuilderFactory.Create(interfaceType);
+            return platformRequestBuilderFactory.Create(interfaceType, FormatterFactory(interfaceType));
         }
 
         public static IRequestBuilder ForType<T>()
