@@ -18,9 +18,9 @@ namespace Refit
 
     public static class RequestBuilder
     {
+        public static Func<Type, IRequestParameterFormatter> FormatterFactory = type => new DefaultRequestParameterFormatter(type);
         static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
-        static Func<Type, IRequestParameterFormatter> FormatterFactory = type => new DefaultRequestParameterFormatter(type);
-
+        
         public static IRequestBuilder ForType(Type interfaceType)
         {
             return platformRequestBuilderFactory.Create(interfaceType, FormatterFactory(interfaceType));
