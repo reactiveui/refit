@@ -2,31 +2,26 @@
 
 namespace Refit
 {
-    public interface IRefitSettings
+    public class RefitSettings
     {
-        IRequestParameterFormatter RequestParameterFormatter { get; set; }
-    }
-
-    public class DefaultRefitSettings : IRefitSettings
-    {
-        public DefaultRefitSettings()
+        public RefitSettings()
         {
-            RequestParameterFormatter = new DefaultRequestParameterFormatter();
+            UrlParameterFormatter = new DefaultUrlParameterFormatter();
         }
 
-        public IRequestParameterFormatter RequestParameterFormatter { get; set; }
+        public IUrlParameterFormatter UrlParameterFormatter { get; set; }
     }
 
-    public interface IRequestParameterFormatter
+    public interface IUrlParameterFormatter
     {
         string Format(object value, ParameterInfo parameterInfo);
     }
 
-    public class DefaultRequestParameterFormatter : IRequestParameterFormatter
+    public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     {
         public virtual string Format(object parameterValue, ParameterInfo parameterInfo)
         {
-            return parameterValue.ToString();
+            return parameterValue != null ? parameterValue.ToString() : null;
         }
     }
 }

@@ -298,11 +298,11 @@ namespace Refit.Tests
         }
     }
 
-    public class TestRequestParameterFormatter : IRequestParameterFormatter
+    public class TestUrlParameterFormatter : IUrlParameterFormatter
     {
         private readonly string constantParameterOutput;
 
-        public TestRequestParameterFormatter(string constantOutput)
+        public TestUrlParameterFormatter(string constantOutput)
         {
             constantParameterOutput = constantOutput;
         }
@@ -571,7 +571,7 @@ namespace Refit.Tests
         [Test]
         public async Task CustomParmeterFormatter()
         {
-            var settings = new DefaultRefitSettings { RequestParameterFormatter = new TestRequestParameterFormatter("custom-parameter") };
+            var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
             var output = factory(new object[] { 5 });

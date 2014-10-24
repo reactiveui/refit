@@ -18,7 +18,7 @@ namespace Refit
 {
     public class RequestBuilderFactory : IRequestBuilderFactory
     {
-        public IRequestBuilder Create(Type interfaceType, IRefitSettings settings = null)
+        public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)
         {
             return new RequestBuilderImplementation(interfaceType, settings);
         }
@@ -28,11 +28,11 @@ namespace Refit
     {
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
-        readonly IRefitSettings settings;
+        readonly RefitSettings settings;
 
-        public RequestBuilderImplementation(Type targetInterface, IRefitSettings refitSettings = null)
+        public RequestBuilderImplementation(Type targetInterface, RefitSettings refitSettings = null)
         {
-            settings = refitSettings ?? new DefaultRefitSettings();
+            settings = refitSettings ?? new RefitSettings();
             if (targetInterface == null || !targetInterface.IsInterface()) {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
@@ -74,7 +74,7 @@ namespace Refit
 
                 for(int i=0; i < paramList.Length; i++) {
                     if (restMethod.ParameterMap.ContainsKey(i)) {
-                        urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", settings.RequestParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]));
+                        urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]));
                         continue;
                     }
 
@@ -105,7 +105,7 @@ namespace Refit
                         setHeader(ret, restMethod.HeaderParameterMap[i], paramList[i]);
                     } else {
                         if (paramList[i] != null) {
-                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.RequestParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
+                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
                         }
                     }
                 }
