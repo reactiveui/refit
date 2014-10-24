@@ -38,8 +38,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Attributes.cs" />
-    <Compile Include="DefaultRequestParameterFormatter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RefitSettings.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RestService.cs" />
   </ItemGroup>
