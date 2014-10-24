@@ -18,27 +18,26 @@ namespace Refit
 {
     public class RequestBuilderFactory : IRequestBuilderFactory
     {
-        public IRequestBuilder Create(Type interfaceType, IRequestParameterFormatter requestParameterFormatter = null)
+        public IRequestBuilder Create(Type interfaceType, IRefitSettings settings = null)
         {
-            return new RequestBuilderImplementation(interfaceType, requestParameterFormatter);
+            return new RequestBuilderImplementation(interfaceType, settings);
         }
     }
 
     public class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
-        readonly IRequestParameterFormatter formatter;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
+        readonly IRefitSettings settings;
 
-        public RequestBuilderImplementation(Type targetInterface, IRequestParameterFormatter paramFormatter = null)
+        public RequestBuilderImplementation(Type targetInterface, IRefitSettings refitSettings = null)
         {
-            paramFormatter = paramFormatter ?? new DefaultRequestParameterFormatter();
+            settings = refitSettings ?? new DefaultRefitSettings();
             if (targetInterface == null || !targetInterface.IsInterface()) {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
 
             targetType = targetInterface;
-            formatter = paramFormatter;
             interfaceHttpMethods = targetInterface.GetMethods()
                 .SelectMany(x => {
                     var attrs = x.GetCustomAttributes(true);
@@ -75,7 +74,7 @@ namespace Refit
 
                 for(int i=0; i < paramList.Length; i++) {
                     if (restMethod.ParameterMap.ContainsKey(i)) {
-                        urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", formatter.Format(paramList[i], restMethod.ParameterInfoMap[i]));
+                        urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", settings.RequestParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]));
                         continue;
                     }
 
@@ -106,7 +105,7 @@ namespace Refit
                         setHeader(ret, restMethod.HeaderParameterMap[i], paramList[i]);
                     } else {
                         if (paramList[i] != null) {
-                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = formatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
+                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.RequestParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
                         }
                     }
                 }

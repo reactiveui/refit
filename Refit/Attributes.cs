@@ -94,24 +94,6 @@ namespace Refit
             this.Name = name;
         }
     }
-
-    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-    public class FormatAttribute : Attribute
-    {
-        public string Format { get; protected set; }
-        public IFormatProvider FormatProvider { get; protected set; }
-        public FormatAttribute(string name, IFormatProvider provider)
-        {
-            this.Format = name;
-            this.FormatProvider = provider;
-        }
-
-        public FormatAttribute(string name)
-        {
-            this.Format = name;
-            this.FormatProvider = CultureInfo.CurrentUICulture;
-        }
-    }
     
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
     public class HeadersAttribute : Attribute
