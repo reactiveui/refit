@@ -96,7 +96,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.AreEqual(2, result.ClassList.Count);
+            Assert.AreEqual(3, result.ClassList.Count);
         }
 
         [Test]
