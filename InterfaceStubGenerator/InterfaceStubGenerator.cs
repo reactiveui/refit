@@ -67,7 +67,8 @@ namespace Refit.Generator
             // Could be turtles all the way down.
             return method.AttributeLists.SelectMany(a => a.Attributes)
                 .Any(a => httpMethodAttributeNames.Contains(a.Name.ToFullString().Split('.').Last()) &&
-                    a.ArgumentList.Arguments.Count == 1);;
+                    a.ArgumentList.Arguments.Count == 1 &&
+                    a.ArgumentList.Arguments[0].Expression.CSharpKind() == SyntaxKind.StringLiteralExpression);
         }
 
         public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList)

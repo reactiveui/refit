@@ -127,6 +127,12 @@ namespace Refit.Tests
             return (Task) methodImpls["AnotherRefitMethod"](Client, arguments);
         }
 
+        public virtual Task NoConstantsAllowed()
+        {
+            var arguments = new object[] {  };
+            return (Task) methodImpls["NoConstantsAllowed"](Client, arguments);
+        }
+
     }
 }
 

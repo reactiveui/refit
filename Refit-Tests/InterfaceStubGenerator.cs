@@ -65,6 +65,7 @@ namespace Refit.Tests
 
             Assert.IsTrue(result["RefitMethod"]);
             Assert.IsTrue(result["AnotherRefitMethod"]);
+            Assert.IsFalse(result["NoConstantsAllowed"]);
             Assert.IsFalse(result["NotARefitMethod"]);
         }
 
@@ -116,7 +117,7 @@ namespace Refit.Tests
 
     public static class ThisIsDumbButMightHappen
     {
-        public const string PeopleDoWeirdStuff = "Should we let them?";
+        public const string PeopleDoWeirdStuff = "But we don't let them";
     }
 
     public interface IAmARefitInterfaceButNobodyUsesMe
@@ -124,9 +125,11 @@ namespace Refit.Tests
         [Get("whatever")]
         Task RefitMethod();
 
-        [Refit.GetAttribute(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
+        [Refit.GetAttribute("something-else")]
         Task AnotherRefitMethod();
 
+        [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
+        Task NoConstantsAllowed();
     }
 
     public interface IAmNotARefitInterface
