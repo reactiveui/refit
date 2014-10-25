@@ -31,6 +31,11 @@ namespace Refit.Tests
         Task Post();
     }
 
+    public interface INoRefitHereBuddy
+    {
+        Task Post();
+    }
+
     [TestFixture]
     public class RestServiceIntegrationTests
     {
@@ -171,6 +176,16 @@ namespace Refit.Tests
 
                 Assert.AreEqual("Not Found", content["message"]);
                 Assert.IsNotNull(content["documentation_url"]);
+            }
+        }
+
+        [Test]
+        public void NonRefitInterfacesThrowMeaningfulExceptions() 
+        {
+            try {
+                RestService.For<INoRefitHereBuddy>("http://example.com");
+            } catch (InvalidOperationException exception) {
+                StringAssert.StartsWith("INoRefitHereBuddy", exception.Message);
             }
         }
     }

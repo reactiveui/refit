@@ -21,6 +21,9 @@ namespace Refit
             var typeName = typeof(T).AssemblyQualifiedName.Replace(typeof(T).Name, className);
             var generatedType = Type.GetType(typeName);
 
+            if(generatedType == null)
+                throw new InvalidOperationException(typeof(T).Name + " doesn't look like a Refit interface. Make sure it has at least one method with a Refit HTTP method attribute and Refit is installed in the project.");
+
             return (T)Activator.CreateInstance(generatedType, client, requestBuilder);
         }
 
