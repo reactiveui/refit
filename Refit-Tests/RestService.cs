@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using NUnit.Framework;
 using Newtonsoft.Json;
+using Refit; // InterfaceStubGenerator looks for this
 
 namespace Refit.Tests
 {
