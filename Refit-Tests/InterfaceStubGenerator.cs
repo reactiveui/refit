@@ -44,8 +44,9 @@ namespace Refit.Tests
             input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
 
             result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
-            Assert.AreEqual(1, result.Count);
+            Assert.AreEqual(2, result.Count);
             Assert.True(result.Any(x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe"));
+            Assert.True(result.Any(x => x.Identifier.ValueText == "IBoringCrudApi"));
             Assert.True(result.All(x => x.Identifier.ValueText != "IAmNotARefitInterface"));
         }
 
@@ -67,6 +68,7 @@ namespace Refit.Tests
             Assert.IsTrue(result["AnotherRefitMethod"]);
             Assert.IsFalse(result["NoConstantsAllowed"]);
             Assert.IsFalse(result["NotARefitMethod"]);
+            Assert.IsTrue(result["ReadOne"]);
         }
 
         [Test]
@@ -97,7 +99,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.AreEqual(4, result.ClassList.Count);
+            Assert.AreEqual(5, result.ClassList.Count);
         }
 
         [Test]
@@ -135,5 +137,23 @@ namespace Refit.Tests
     public interface IAmNotARefitInterface
     {
         Task NotARefitMethod();
+    }
+
+    public interface IBoringCrudApi<T, in TKey> where T : class
+    {
+        [Post("")]
+        Task<T> Create([Body] T paylod);
+
+        [Get("")]
+        Task<List<T>> ReadAll();
+
+        [Get("/{key}")]
+        Task<T> ReadOne(TKey key);
+
+        [Put("/{key}")]
+        Task Update(TKey key, [Body]T payload);
+
+        [Delete("/{key}")]
+        Task Delete(TKey key);
     }
 }
