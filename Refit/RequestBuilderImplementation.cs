@@ -67,12 +67,12 @@ namespace Refit
                     setHeader(ret, header.Key, header.Value);
                 }   
 
-                var urlTarget = new StringBuilder(basePath == "/" ? String.Empty : basePath).Append(restMethod.RelativePath);
+                string urlTarget = (basePath == "/" ? String.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new Dictionary<string, string>();
 
                 for(int i=0; i < paramList.Length; i++) {
                     if (restMethod.ParameterMap.ContainsKey(i)) {
-                        urlTarget.Replace("{" + restMethod.ParameterMap[i] + "}", paramList[i].ToString());
+                        urlTarget = Regex.Replace(urlTarget, "{" + restMethod.ParameterMap[i] + "}", paramList[i].ToString(), RegexOptions.IgnoreCase);
                         continue;
                     }
 
@@ -111,7 +111,7 @@ namespace Refit
                 // NB: The URI methods in .NET are dumb. Also, we do this 
                 // UriBuilder business so that we preserve any hardcoded query 
                 // parameters as well as add the parameterized ones.
-                var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget.ToString()));
+                var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
                 foreach(var kvp in queryParamsToAdd) {
                     query.Add(kvp.Key, kvp.Value);

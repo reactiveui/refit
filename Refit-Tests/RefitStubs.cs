@@ -59,6 +59,12 @@ namespace Refit.Tests
             return (IObservable<User>) methodImpls["GetUserObservable"](Client, arguments);
         }
 
+        public virtual IObservable<User> GetUserCamelCase(string userName)
+        {
+            var arguments = new object[] { userName };
+            return (IObservable<User>) methodImpls["GetUserCamelCase"](Client, arguments);
+        }
+
         public virtual Task<List<User>> GetOrgMembers(string orgName)
         {
             var arguments = new object[] { orgName };
