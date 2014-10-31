@@ -46,8 +46,13 @@ namespace {{Namespace}}
 {{#MethodList}}
         public virtual {{ReturnType}} {{Name}}({{ArgumentListWithTypes}})
         {
+{{#IsRefitMethod}}    
             var arguments = new object[] { {{ArgumentList}} };
             return ({{ReturnType}}) methodImpls["{{Name}}"](Client, arguments);
+{{/IsRefitMethod}}
+{{^IsRefitMethod}}
+            throw new NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
+{{/IsRefitMethod}}
         }
 
 {{/MethodList}}

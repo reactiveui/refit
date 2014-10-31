@@ -37,6 +37,14 @@ namespace Refit.Tests
         Task Post();
     }
 
+    public interface IAmHalfRefit
+    {
+        [Post("/anything")]
+        Task Post();
+
+        Task Get();
+    }
+
     [TestFixture]
     public class RestServiceIntegrationTests
     {
@@ -187,6 +195,17 @@ namespace Refit.Tests
                 RestService.For<INoRefitHereBuddy>("http://example.com");
             } catch (InvalidOperationException exception) {
                 StringAssert.StartsWith("INoRefitHereBuddy", exception.Message);
+            }
+        }
+
+        [Test]
+        public async Task NonRefitMethodsThrowMeaningfulExceptions() 
+        {
+            try {
+                var fixture = RestService.For<IAmHalfRefit>("http://example.com");
+                await fixture.Get();
+            } catch (NotImplementedException exception) {
+                StringAssert.Contains("no Refit HTTP method attribute", exception.Message);
             }
         }
     }
