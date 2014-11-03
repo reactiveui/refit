@@ -69,11 +69,7 @@ Parameters that are not specified as a URL substitution will automatically be
 used as query parameters. This is different than Retrofit, where all
 parameters must be explicitly specified.
 
-One thing that is important to note, is that **URL paths must be lowercase**.
-URLs are case-insensitive in the HTTP spec, so we reflect that by being picky
-about case :trollface:
-
-However, the comparison between parameter name and URL parameter is *not*
+The comparison between parameter name and URL parameter is *not*
 case-sensitive, so it will work correctly if you name your parameter `groupId`
 in the path `/group/{groupid}/show` for example.
 
