@@ -4,7 +4,7 @@ Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
 API into a live interface:
 
-```cs
+```csharp
 public interface IGitHubApi
 {
     [Get("/users/{user}")]
@@ -15,7 +15,7 @@ public interface IGitHubApi
 The `RestService` class generates an implementation of `IGitHubApi` that uses
 `HttpClient` to make its calls:
 
-```cs
+```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com");
 
 var octocat = await gitHubApi.GetUser("octocat");
@@ -43,13 +43,13 @@ Every method must have an HTTP attribute that provides the request method and
 relative URL. There are five built-in annotations: Get, Post, Put, Delete, and
 Head. The relative URL of the resource is specified in the annotation.
 
-```cs
+```csharp
 [Get("/users/list")]
 ```
 
 You can also specify query parameters in the URL:
 
-```cs
+```csharp
 [Get("/users/list?sort=desc")]
 ```
 
@@ -60,7 +60,7 @@ surrounded by { and }.
 If the name of your parameter doesn't match the name in the URL path, use the
 `AliasAs` attribute.
 
-```cs
+```csharp
 [Get("/group/{id}/users")]
 Task<List<User>> GroupList([AliasAs("id")] int groupId);
 ```
@@ -73,7 +73,7 @@ The comparison between parameter name and URL parameter is *not*
 case-sensitive, so it will work correctly if you name your parameter `groupId`
 in the path `/group/{groupid}/show` for example.
 
-```cs
+```csharp
 [Get("/group/{id}/users")]
 Task<List<User>> GroupList([AliasAs("id")] int groupId, [AliasAs("sort")] string sortOrder);
 
@@ -86,7 +86,7 @@ GroupList(4, "desc");
 One of the parameters in your method can be used as the body, by using the
 Body attribute:
 
-```cs
+```csharp
 [Post("/users/new")]
 Task CreateUser([Body] User user);
 ```
@@ -106,7 +106,7 @@ JSON requests and responses are serialized/deserialized using Json.NET.
 Default settings for the API can be configured by setting 
 _Newtonsoft.Json.JsonConvert.DefaultSettings_:
 
-```cs
+```csharp
 JsonConvert.DefaultSettings = 
     () => new JsonSerializerSettings() { 
         ContractResolver = new CamelCasePropertyNamesContractResolver(),
@@ -120,7 +120,7 @@ await PostSomeStuff(new { Day = DayOfWeek.Saturday });
 Property serialization/deserialization can be customised using Json.NET's 
 JsonProperty attribute:
 
-```cs 
+```csharp 
 public class Foo 
 {
     // Works like [AliasAs("b")] would in form posts (see below)
@@ -136,7 +136,7 @@ initialize the Body attribute with `BodySerializationMethod.UrlEncoded`.
 
 The parameter can be an `IDictionary`:
 
-```cs
+```csharp
 public interface IMeasurementProtocolApi
 {
     [Post("/collect")]
@@ -159,7 +159,7 @@ be serialized as form fields in the request. This approach allows you to alias
 property names using `[AliasAs("whatever")]` which can help if the API has
 cryptic field names:
 
-```cs
+```csharp
 public interface IMeasurementProtocolApi
 {
     [Post("/collect")]
@@ -200,7 +200,7 @@ await api.Collect(measurement);
 You can set one or more static request headers for a request applying a `Headers` 
 attribute to the method:
 
-```cs
+```csharp
 [Headers("User-Agent: Awesome Octocat App")]
 [Get("/users/{user}")]
 Task<User> GetUser(string user);
@@ -209,7 +209,7 @@ Task<User> GetUser(string user);
 Static headers can also be added to _every request in the API_ by applying the 
 `Headers` attribute to the interface:
 
-```cs
+```csharp
 [Headers("User-Agent: Awesome Octocat App")]
 public interface IGitHubApi
 {
@@ -226,7 +226,7 @@ public interface IGitHubApi
 If the content of the header needs to be set at runtime, you can add a header
 with a dynamic  value to a request by applying a `Header` attribute to a parameter:
 
-```cs
+```csharp
 [Get("/users/{user}")]
 Task<User> GetUser(string user, [Header("Authorization")] string authorization);
 
@@ -245,7 +245,7 @@ a similar approach to the approach ASP.NET MVC takes with action filters &mdash;
 * `Headers` attribute on the method
 * `Header` attribute on a method parameter _(highest priority)_
 
-```cs
+```csharp
 [Headers("X-Emoji: :rocket:")]
 public interface IGitHubApi
 {
@@ -277,7 +277,7 @@ Headers defined on an interface or method can be removed by redefining
 a static header without a value (i.e. without `: <value>`) or passing `null` for 
 a dynamic header. _Empty strings will be included as empty headers._
 
-```cs
+```csharp
 [Headers("X-Emoji: :rocket:")]
 public interface IGitHubApi
 {
@@ -319,7 +319,7 @@ will determine the content returned.
 Returning Task without a type parameter will discard the content and solely
 tell you whether or not the call succeeded:
 
-```cs
+```csharp
 [Post("/users/new")]
 Task CreateUser([Body] User user);
 
@@ -330,7 +330,7 @@ await CreateUser(someUser);
 If the type parameter is 'HttpResponseMessage' or 'string', the raw response
 message or the content as a string will be returned respectively.
 
-```cs
+```csharp
 // Returns the content as a string (i.e. the JSON data)
 [Get("/users/{user}")]
 Task<string> GetUser(string user);
@@ -340,6 +340,38 @@ Task<string> GetUser(string user);
 [Get("/users/{user}")]
 IObservable<HttpResponseMessage> GetUser(string user);
 ```
+
+### Using generic interfaces
+
+When using something like ASP.NET Web API, it's a fairly common pattern to have a whole stack of CRUD REST services. Refit now supports these, allowing you to define a single API interface with a generic type:
+
+```csharp
+public interface IReallyExcitingCrudApi<T, in TKey> where T : class
+{
+    [Post("")]
+    Task<T> Create([Body] T paylod);
+
+    [Get("")]
+    Task<List<T>> ReadAll();
+
+    [Get("/{key}")]
+    Task<T> ReadOne(TKey key);
+
+    [Put("/{key}")]
+    Task Update(TKey key, [Body]T payload);
+
+    [Delete("/{key}")]
+    Task Delete(TKey key);
+}
+```
+
+Which can be used like this:
+
+```csharp
+// The "/users" part here is kind of important if you want it to work for more 
+// than one type (unless you have a different domain for each type)
+var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
+``` 
 
 ### What's missing / planned?
 

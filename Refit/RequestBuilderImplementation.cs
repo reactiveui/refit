@@ -352,7 +352,8 @@ namespace Refit
             }
         }
 
-        void verifyUrlPathIsSane(string relativePath) {
+        void verifyUrlPathIsSane(string relativePath) 
+        {
             if (relativePath == "")
                 return;
 
