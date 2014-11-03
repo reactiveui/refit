@@ -62,6 +62,19 @@ namespace Refit.Tests
         }
 
         [Test]
+        public async Task HitWithCamelCaseParameter()
+        {
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com");
+            JsonConvert.DefaultSettings =
+                () => new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
+
+            var result = await fixture.GetUserCamelCase("octocat");
+
+            Assert.AreEqual("octocat", result.Login);
+            Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
+        }
+
+        [Test]
         public async Task HitTheGitHubOrgMembersApi()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");

@@ -81,7 +81,7 @@ namespace Refit.Tests
 
             var result = fixture.GenerateClassInfoForInterface(input);
 
-            Assert.AreEqual(7, result.MethodList.Count);
+            Assert.AreEqual(8, result.MethodList.Count);
             Assert.AreEqual("GetUser", result.MethodList[0].Name);
             Assert.AreEqual("string userName", result.MethodList[0].ArgumentListWithTypes);
         }
