@@ -45,6 +45,22 @@ namespace Refit.Tests
         Task Get();
     }
 
+    public interface IHttpBinApi<TResponse, in TParam, in THeader>
+        where TResponse : class
+        where THeader : struct
+    {
+        [Get("")]
+        Task<TResponse> Get(TParam param, [Header("X-Refit")] THeader header);
+    }
+
+    public class HttpBinGet
+    {
+        public Dictionary<string, string> Args { get; set; }
+        public Dictionary<string, string> Headers { get; set; }
+        public string Origin { get; set; }
+        public string Url { get; set; }
+    }
+
     [TestFixture]
     public class RestServiceIntegrationTests
     {
@@ -220,6 +236,18 @@ namespace Refit.Tests
             } catch (NotImplementedException exception) {
                 StringAssert.Contains("no Refit HTTP method attribute", exception.Message);
             }
+        }
+
+        [Test]
+        public async Task GenericsWork() 
+        {
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, string, int>>("http://httpbin.org/get");
+
+            var result = await fixture.Get("foo", 99);
+
+            Assert.AreEqual("http://httpbin.org/get?param=foo", result.Url);
+            Assert.AreEqual("foo", result.Args["param"]);
+            Assert.AreEqual("99", result.Headers["X-Refit"]);
         }
     }
 }

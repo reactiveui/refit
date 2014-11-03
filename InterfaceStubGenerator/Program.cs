@@ -36,8 +36,8 @@ namespace Refit.Generator
 
             var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray());
 
+        int retryCount = 3; 
         retry:
-            int retryCount = 3; 
             var file = default(FileStream);
 
             // NB: Parallel build weirdness means that we might get >1 person 

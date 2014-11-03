@@ -24,7 +24,6 @@ namespace Refit.Generator
     //   guess the class name based on our template
     //
     // What if the Interface is in another module? (since we copy usings, should be fine)
-    // What if the Interface itself is Generic? (fuck 'em)
     public class InterfaceStubGenerator
     {
         public string GenerateInterfaceStubs(string[] paths)
@@ -104,6 +103,13 @@ namespace Refit.Generator
             ret.Namespace = ns.Name.ToString();
             ret.InterfaceName = interfaceTree.Identifier.ValueText;
 
+            if (interfaceTree.TypeParameterList != null) {
+                var typeParameters = interfaceTree.TypeParameterList.Parameters;
+                if (typeParameters.Any()) {
+                    ret.TypeParameters = string.Join(", ", typeParameters.Select(p => p.Identifier.ValueText));
+                }
+                ret.ConstraintClauses = interfaceTree.ConstraintClauses.ToFullString().Trim();
+            }
             ret.MethodList = interfaceTree.Members
                 .OfType<MethodDeclarationSyntax>()
                 .Select(x => new MethodTemplateInfo() {
@@ -147,6 +153,8 @@ namespace Refit.Generator
     {
         public string Namespace { get; set; }
         public string InterfaceName { get; set; }
+        public string TypeParameters { get; set; }
+        public string ConstraintClauses { get; set; }
         public List<MethodTemplateInfo> MethodList { get; set; }
     }
 
