@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Refit; // InterfaceStubGenerator looks for this
 
 namespace Refit.Tests
 {

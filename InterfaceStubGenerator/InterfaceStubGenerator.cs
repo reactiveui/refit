@@ -14,8 +14,8 @@ using Nustache.Core;
 
 namespace Refit.Generator
 {
-    // * Find all calls to RestService.For<T>, extract all T's
-    // * Search for all Interfaces, find the method definitions
+    // * Search for all Interfaces, find the method definitions 
+    //   and make sure there's at least one Refit attribute on one
     // * Generate the data we need for the template based on interface method
     //   defn's
     // * Get this into an EXE in tools, write a targets file to beforeBuild execute it
@@ -30,11 +30,8 @@ namespace Refit.Generator
         public string GenerateInterfaceStubs(string[] paths)
         {
             var trees = paths.Select(x => CSharpSyntaxTree.ParseFile(x)).ToList();
-            var interfaceNamesToFind = trees.SelectMany(FindInterfacesToGenerate).Distinct().ToList();
 
-            var interfacesToGenerate = trees.SelectMany(x => x.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>())
-                .Where(x => interfaceNamesToFind.Contains(x.Identifier.ValueText))
-                .ToList();
+            var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
 
             var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate);
 
@@ -43,19 +40,35 @@ namespace Refit.Generator
             return text;
         }
 
-        public List<string> FindInterfacesToGenerate(SyntaxTree tree)
+        public List<InterfaceDeclarationSyntax> FindInterfacesToGenerate(SyntaxTree tree)
         {
-            var restServiceCalls = tree.GetRoot().DescendantNodes()
-                .OfType<MemberAccessExpressionSyntax>()
-                .Where(x => x.Expression is IdentifierNameSyntax &&
-                    ((IdentifierNameSyntax)x.Expression).Identifier.ValueText == "RestService" &&
-                    x.Name.Identifier.ValueText == "For");
+            var nodes = tree.GetRoot().DescendantNodes().ToList();
 
-            return restServiceCalls
-                .SelectMany(x => ((GenericNameSyntax)x.Name).TypeArgumentList.Arguments)
-                .Select(x => ((IdentifierNameSyntax)x).Identifier.ValueText)
-                .Distinct()
+            // Make sure this file imports Refit. If not, we're not going to 
+            // find any Refit interfaces
+            // NB: This falls down in the tests unless we add an explicit "using Refit;",
+            // but we can rely on this being there in any other file
+            if (nodes.OfType<UsingDirectiveSyntax>().All(u => u.Name.ToFullString() != "Refit"))
+                return new List<InterfaceDeclarationSyntax>();
+
+            return nodes.OfType<InterfaceDeclarationSyntax>()
+                .Where(i => i.Members.OfType<MethodDeclarationSyntax>().Any(HasRefitHttpMethodAttribute))
                 .ToList();
+        }
+
+        static readonly HashSet<string> httpMethodAttributeNames = new HashSet<string>(
+            new[] {"Get", "Head", "Post", "Put", "Delete"}
+                .SelectMany(x => new[] {"{0}", "{0}Attribute"}.Select(f => string.Format(f, x))));
+
+        public bool HasRefitHttpMethodAttribute(MethodDeclarationSyntax method)
+        {
+            // We could also verify that the single argument is a string, 
+            // but what if somebody is dumb and uses a constant?
+            // Could be turtles all the way down.
+            return method.AttributeLists.SelectMany(a => a.Attributes)
+                .Any(a => httpMethodAttributeNames.Contains(a.Name.ToFullString().Split('.').Last()) &&
+                    a.ArgumentList.Arguments.Count == 1 &&
+                    a.ArgumentList.Arguments[0].Expression.CSharpKind() == SyntaxKind.StringLiteralExpression);
         }
 
         public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList)
@@ -100,6 +113,7 @@ namespace Refit.Generator
                         .Select(y => y.Identifier.ValueText)),
                     ArgumentListWithTypes = String.Join(",", x.ParameterList.Parameters
                         .Select(y => String.Format("{0} {1}", y.Type.ToString(), y.Identifier.ValueText))),
+                    IsRefitMethod = HasRefitHttpMethodAttribute(x)
                 })
                 .ToList();
 
@@ -142,6 +156,7 @@ namespace Refit.Generator
         public string Name { get; set; }
         public string ArgumentListWithTypes { get; set; }
         public string ArgumentList { get; set; }
+        public bool IsRefitMethod { get; set; }
     }
 
     public class TemplateInformation

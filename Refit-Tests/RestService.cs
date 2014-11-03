@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 using NUnit.Framework;
 using Newtonsoft.Json;
+using Refit; // InterfaceStubGenerator looks for this
 
 namespace Refit.Tests
 {
@@ -29,6 +30,19 @@ namespace Refit.Tests
     {
         [Post("/1h3a5jm1")]
         Task Post();
+    }
+
+    public interface INoRefitHereBuddy
+    {
+        Task Post();
+    }
+
+    public interface IAmHalfRefit
+    {
+        [Post("/anything")]
+        Task Post();
+
+        Task Get();
     }
 
     [TestFixture]
@@ -171,6 +185,27 @@ namespace Refit.Tests
 
                 Assert.AreEqual("Not Found", content["message"]);
                 Assert.IsNotNull(content["documentation_url"]);
+            }
+        }
+
+        [Test]
+        public void NonRefitInterfacesThrowMeaningfulExceptions() 
+        {
+            try {
+                RestService.For<INoRefitHereBuddy>("http://example.com");
+            } catch (InvalidOperationException exception) {
+                StringAssert.StartsWith("INoRefitHereBuddy", exception.Message);
+            }
+        }
+
+        [Test]
+        public async Task NonRefitMethodsThrowMeaningfulExceptions() 
+        {
+            try {
+                var fixture = RestService.For<IAmHalfRefit>("http://example.com");
+                await fixture.Get();
+            } catch (NotImplementedException exception) {
+                StringAssert.Contains("no Refit HTTP method attribute", exception.Message);
             }
         }
     }

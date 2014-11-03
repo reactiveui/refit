@@ -10,6 +10,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using NUnit.Framework;
 using Nustache;
 using Nustache.Core;
+using Refit; // InterfaceStubGenerator looks for this
 using Refit.Generator;
 
 namespace Refit.Tests
@@ -33,12 +34,39 @@ namespace Refit.Tests
         [Test]
         public void FindInterfacesSmokeTest()
         {
-            var input = IntegrationTestHelper.GetPath("RestService.cs");
+            var input = IntegrationTestHelper.GetPath("GitHubApi.cs");
             var fixture = new InterfaceStubGenerator();
 
             var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
-            Assert.AreEqual(3, result.Count);
-            Assert.True(result.Any(x => x == "IGitHubApi"));
+            Assert.AreEqual(1, result.Count);
+            Assert.True(result.Any(x => x.Identifier.ValueText == "IGitHubApi"));
+
+            input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
+
+            result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
+            Assert.AreEqual(1, result.Count);
+            Assert.True(result.Any(x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe"));
+            Assert.True(result.All(x => x.Identifier.ValueText != "IAmNotARefitInterface"));
+        }
+
+        [Test]
+        public void HasRefitHttpMethodAttributeSmokeTest()
+        {
+            var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs"));
+            var fixture = new InterfaceStubGenerator();
+
+            var input = file.GetRoot().DescendantNodes()
+                .OfType<InterfaceDeclarationSyntax>()
+                .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>())
+                .ToList();
+
+            var result = input
+                .ToDictionary(m => m.Identifier.ValueText, fixture.HasRefitHttpMethodAttribute);
+
+            Assert.IsTrue(result["RefitMethod"]);
+            Assert.IsTrue(result["AnotherRefitMethod"]);
+            Assert.IsFalse(result["NoConstantsAllowed"]);
+            Assert.IsFalse(result["NotARefitMethod"]);
         }
 
         [Test]
@@ -69,7 +97,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.AreEqual(2, result.ClassList.Count);
+            Assert.AreEqual(4, result.ClassList.Count);
         }
 
         [Test]
@@ -85,5 +113,27 @@ namespace Refit.Tests
             CollectionAssert.Contains(usingList, "SomeType = CollisionA.SomeType");
             CollectionAssert.Contains(usingList, "CollisionB");
         }
+    }
+
+    public static class ThisIsDumbButMightHappen
+    {
+        public const string PeopleDoWeirdStuff = "But we don't let them";
+    }
+
+    public interface IAmARefitInterfaceButNobodyUsesMe
+    {
+        [Get("whatever")]
+        Task RefitMethod();
+
+        [Refit.GetAttribute("something-else")]
+        Task AnotherRefitMethod();
+
+        [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
+        Task NoConstantsAllowed();
+    }
+
+    public interface IAmNotARefitInterface
+    {
+        Task NotARefitMethod();
     }
 }
