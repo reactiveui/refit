@@ -55,6 +55,7 @@
     <Compile Include="RequestBuilderImplementation.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RefitSettings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
 </Project>

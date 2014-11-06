@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
@@ -297,6 +298,21 @@ namespace Refit.Tests
         }
     }
 
+    public class TestUrlParameterFormatter : IUrlParameterFormatter
+    {
+        readonly string constantParameterOutput;
+
+        public TestUrlParameterFormatter(string constantOutput)
+        {
+            constantParameterOutput = constantOutput;
+        }
+
+        public string Format(object value, ParameterInfo parameterInfo)
+        {
+            return constantParameterOutput;
+        }
+    }
+
     [TestFixture]
     public class RequestBuilderTests
     {
@@ -550,6 +566,19 @@ namespace Refit.Tests
             string content = await output.Content.ReadAsStringAsync();
 
             Assert.AreEqual("rpn=99", content);
+        }
+
+        [Test]
+        public async Task CustomParmeterFormatter()
+        {
+            var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
+            var output = factory(new object[] { 5 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/foo/bar/custom-parameter", uri.PathAndQuery);
         }
     }
 }

@@ -47,6 +47,7 @@
     <Compile Include="RequestBuilderImplementation.cs" />
     <Compile Include="RestService.cs" />
     <Compile Include="Utility.cs" />
+    <Compile Include="RefitSettings.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.Refit-WinRT45.config" />

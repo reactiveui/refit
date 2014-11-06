@@ -71,6 +71,7 @@
     <Compile Include="RequestBuilderImplementation.cs" />
     <Compile Include="RestService.cs" />
     <Compile Include="Utility.cs" />
+    <Compile Include="RefitSettings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
 </Project>
