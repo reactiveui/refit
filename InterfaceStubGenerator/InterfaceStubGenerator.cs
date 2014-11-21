@@ -65,7 +65,7 @@ namespace Refit.Generator
             // but what if somebody is dumb and uses a constant?
             // Could be turtles all the way down.
             return method.AttributeLists.SelectMany(a => a.Attributes)
-                .Any(a => httpMethodAttributeNames.Contains(a.Name.ToFullString().Split('.').Last()) &&
+                .Any(a => httpMethodAttributeNames.Contains(a.Name.ToString().Split('.').Last()) &&
                     a.ArgumentList.Arguments.Count == 1 &&
                     a.ArgumentList.Arguments[0].Expression.CSharpKind() == SyntaxKind.StringLiteralExpression);
         }

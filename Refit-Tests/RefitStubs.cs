@@ -138,6 +138,12 @@ namespace Refit.Tests
             throw new NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
         }
 
+        public virtual Task SpacesShouldntBreakMe()
+        {
+            var arguments = new object[] {  };
+            return (Task) methodImpls["SpacesShouldntBreakMe"](Client, arguments);
+        }
+
     }
 }
 
