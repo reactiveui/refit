@@ -69,6 +69,7 @@ namespace Refit.Tests
             Assert.IsFalse(result["NoConstantsAllowed"]);
             Assert.IsFalse(result["NotARefitMethod"]);
             Assert.IsTrue(result["ReadOne"]);
+            Assert.IsTrue(result["SpacesShouldntBreakMe"]);
         }
 
         [Test]
@@ -132,6 +133,9 @@ namespace Refit.Tests
 
         [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
         Task NoConstantsAllowed();
+
+        [Get  ("spaces-shouldnt-break-me")]
+        Task SpacesShouldntBreakMe();
     }
 
     public interface IAmNotARefitInterface
