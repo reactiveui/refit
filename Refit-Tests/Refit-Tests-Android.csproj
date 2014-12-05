@@ -72,6 +72,7 @@
     <Compile Include="GitHubApi.cs" />
     <Compile Include="IntegrationTestHelper.cs" />
     <Compile Include="RefitStubs.cs" />
+    <Compile Include="MethodOverloads.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
