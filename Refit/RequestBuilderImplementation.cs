@@ -44,7 +44,7 @@ namespace Refit
                     var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                     if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
 
-                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x));
+                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x,settings));
                 })
                 .ToDictionary(k => k.Name, v => v);
         }
@@ -96,7 +96,7 @@ namespace Refit
                                 ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
                                 break;
                             case BodySerializationMethod.Json:
-                                ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8, "application/json");
+                                ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i],settings.SerializerSettings), Encoding.UTF8, "application/json");
                                 break;
                             }
                         }
@@ -201,7 +201,7 @@ namespace Refit
                 var resp = await client.SendAsync(rq);
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp);
+                    throw await ApiException.Create(resp,restMethod.RefitSettings.SerializerSettings);
                 }
             };
         }
@@ -227,7 +227,7 @@ namespace Refit
                 }
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp);
+                    throw await ApiException.Create(resp,restMethod.RefitSettings.SerializerSettings);
                 }
 
                 var ms = new MemoryStream();
@@ -240,7 +240,7 @@ namespace Refit
                     return content as T;
                 }
 
-                return JsonConvert.DeserializeObject<T>(content);
+                return JsonConvert.DeserializeObject<T>(content,settings.SerializerSettings);
             };
         }
 
@@ -317,11 +317,13 @@ namespace Refit
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
+        public RefitSettings RefitSettings { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
 
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo)
+        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo,RefitSettings settings = null)
         {
+            RefitSettings =settings ?? RefitSettings;
             Type = targetInterface;
             Name = methodInfo.Name;
             MethodInfo = methodInfo;
@@ -516,25 +518,27 @@ namespace Refit
         public bool HasContent {
             get { return !String.IsNullOrWhiteSpace(Content); }
         }
+        public JsonSerializerSettings Settings{get;set;}
 
-        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers) : 
+        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers,JsonSerializerSettings settings) : 
             base(createMessage(statusCode, reasonPhrase)) 
         {
             StatusCode = statusCode;
             ReasonPhrase = reasonPhrase;
             Headers = headers;
+            Settings = settings;
         }
 
         public T GetContentAs<T>()
         {
             return HasContent ? 
-                JsonConvert.DeserializeObject<T>(Content) : 
+                JsonConvert.DeserializeObject<T>(Content,Settings) : 
                 default(T);
         }
 
-        public static async Task<ApiException> Create(HttpResponseMessage response) 
+        public static async Task<ApiException> Create(HttpResponseMessage response,JsonSerializerSettings settings) 
         {
-            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers);
+            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers, settings);
 
             if (response.Content == null) return exception;
             
