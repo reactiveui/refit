@@ -130,20 +130,22 @@ namespace Refit.Generator
 
         public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate)
         {
-            foreach (var message in interfacesToGenerate
+            var missingAttributeWarnings = interfacesToGenerate
                 .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new {Interface = i, Method = m}))
                 .Where(x => !HasRefitHttpMethodAttribute(x.Method))
-                .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method))) {
-                    Console.Error.WriteLine(message);
-            }
+                .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
 
-            foreach (var message in interfacesToGenerate
+            var overloadWarnings = interfacesToGenerate
                 .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new {Interface = i, Method = m}))
                 .Where(x => HasRefitHttpMethodAttribute(x.Method))
                 .GroupBy(x => new {Interface = x.Interface, MethodName = x.Method.Identifier.Text})
                 .Where(g => g.Count() > 1)
-                .SelectMany(g => g.Select(x => new MultipleRefitMethodSameNameWarning(x.Interface, x.Method)))) {
-                    Console.Error.WriteLine(message);
+                .SelectMany(g => g.Select(x => new MultipleRefitMethodSameNameWarning(x.Interface, x.Method)));
+
+            var diagnostics = Enumerable.Concat<Diagnostic>(missingAttributeWarnings, overloadWarnings);
+
+            foreach (var diagnostic in diagnostics) {
+                Console.Error.WriteLine(diagnostic);
             }
         }
 
