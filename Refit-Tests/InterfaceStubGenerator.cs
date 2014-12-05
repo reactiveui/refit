@@ -116,24 +116,6 @@ namespace Refit.Tests
             CollectionAssert.Contains(usingList, "SomeType = CollisionA.SomeType");
             CollectionAssert.Contains(usingList, "CollisionB");
         }
-
-        [Test]
-        public void CheckGeneratedWarning()
-        {
-            var fixture = new InterfaceStubGenerator();
-            var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs"));
-
-            var input = file.GetRoot().DescendantNodes()
-                .OfType<InterfaceDeclarationSyntax>()
-                .First(x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe");
-            var logger = new DiagnosticsLogger();
-
-            fixture.GenerateWarnings(new List<InterfaceDeclarationSyntax> { input }, logger);
-            var result = logger.Diagnostics.OfType<MissingRefitAttributeWarning>().Single();
-
-            Assert.AreEqual("IAmARefitInterfaceButNobodyUsesMe", result.InterfaceName);
-            Assert.AreEqual("NoConstantsAllowed", result.MethodName);
-        }
     }
 
     public static class ThisIsDumbButMightHappen

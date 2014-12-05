@@ -7,51 +7,6 @@ using System.Threading.Tasks;
 
 namespace Refit.Generator
 {
-    public class DiagnosticsLogger
-    {
-        List<Diagnostic> diagnostics = new List<Diagnostic>();
-
-        public IEnumerable<Diagnostic> Diagnostics { get { return diagnostics.AsReadOnly(); } }
-
-        public void Add(Diagnostic diagnostic)
-        {
-            this.diagnostics.Add(diagnostic);
-        }
-
-        public void AddRange(IEnumerable<Diagnostic> collection)
-        {
-            this.diagnostics.AddRange(collection);
-        }
-
-        public void Dump()
-        {
-            var builder = new StringBuilder();
-
-            foreach (var diagnostic in diagnostics)
-            {
-                builder.Clear();
-
-                if (!string.IsNullOrWhiteSpace(diagnostic.File))
-                {
-                    builder.Append(diagnostic.File);
-                    if (diagnostic.Line.HasValue)
-                    {
-                        builder.AppendFormat("({0}", diagnostic.Line);
-                        if (diagnostic.Character.HasValue)
-                            builder.AppendFormat(",{0}", diagnostic.Character);
-                        builder.Append(")");
-                    }
-                    builder.Append(": ");
-                }
-                builder.AppendFormat("{0} {1}", diagnostic.Type, diagnostic.Code);
-                if (!string.IsNullOrWhiteSpace(diagnostic.Message))
-                    builder.AppendFormat(": {0}", diagnostic.Message);
-
-                Console.Error.WriteLine(builder.ToString());
-            }
-        }
-    }
-
     public class Diagnostic
     {
         public string Type { get; private set; }
@@ -63,8 +18,29 @@ namespace Refit.Generator
 
         public Diagnostic(string type, string code)
         {
-            this.Type = type;
-            this.Code = code;
+            Type = type;
+            Code = code;
+        }
+
+        public override string ToString()
+        {
+            var builder = new StringBuilder();
+
+            if (!string.IsNullOrWhiteSpace(File)) {
+                builder.Append(File);
+                if (Line.HasValue) {
+                    builder.AppendFormat("({0}", Line);
+                    if (Character.HasValue)
+                        builder.AppendFormat(",{0}", Character);
+                    builder.Append(")");
+                }
+                builder.Append(": ");
+            }
+            builder.AppendFormat("{0} {1}", Type, Code);
+            if (!string.IsNullOrWhiteSpace(Message))
+                builder.AppendFormat(": {0}", Message);
+
+            return builder.ToString();
         }
     }
 
@@ -92,7 +68,7 @@ namespace Refit.Generator
 
             this.Message = string.Format(
                 "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
-                this.InterfaceName, this.MethodName);
+                InterfaceName, MethodName);
         }
     }
 }
