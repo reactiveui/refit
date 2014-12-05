@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator
 {
@@ -20,6 +21,15 @@ namespace Refit.Generator
         {
             Type = type;
             Code = code;
+        }
+
+        protected void setLocation(Location location)
+        {
+            var line = location.GetMappedLineSpan().StartLinePosition;
+
+            File = location.FilePath;
+            Line = line.Line + 1;
+            Character = line.Character + 1;
         }
 
         public override string ToString()
@@ -57,17 +67,32 @@ namespace Refit.Generator
         public MissingRefitAttributeWarning(InterfaceDeclarationSyntax @interface, MethodDeclarationSyntax method)
             : base("RF001")
         {
-            var location = method.GetLocation();
-            var line = location.GetMappedLineSpan().StartLinePosition;
+            setLocation(method.GetLocation());
 
-            File = location.FilePath;
-            Line = line.Line + 1;
-            Character = line.Character + 1;
             InterfaceName = @interface.Identifier.Text;
             MethodName = method.Identifier.Text;
 
             Message = string.Format(
                 "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
+                InterfaceName, MethodName);
+        }
+    }
+
+    public class MultipleRefitMethodSameNameWarning : Warning
+    {
+        public string InterfaceName { get; private set; }
+        public string MethodName { get; private set; }
+
+        public MultipleRefitMethodSameNameWarning(InterfaceDeclarationSyntax @interface, MethodDeclarationSyntax method)
+            : base("RF002")
+        {
+            setLocation(method.GetLocation());
+
+            InterfaceName = @interface.Identifier.Text;
+            MethodName = method.Identifier.Text;
+
+            Message = string.Format(
+                "Method {0}.{1} has been declared multiple times. Refit doesn't support overloading.",
                 InterfaceName, MethodName);
         }
     }
