@@ -1,4 +1,8 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Refit
 {
@@ -7,9 +11,12 @@ namespace Refit
         public RefitSettings()
         {
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
+            CustomSerializers = new Dictionary<Type, ITypeSerializer>();
         }
 
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
+
+        public Dictionary<Type, ITypeSerializer> CustomSerializers { get; private set; }
     }
 
     public interface IUrlParameterFormatter
@@ -23,5 +30,11 @@ namespace Refit
         {
             return parameterValue != null ? parameterValue.ToString() : null;
         }
+    }
+
+    public interface ITypeSerializer
+    {
+        HttpContent SerializeAsHttpContent(object value);
+        Task<object> DeserializeFromHttpContent(HttpContent content);
     }
 }

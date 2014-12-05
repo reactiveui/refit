@@ -92,6 +92,10 @@ namespace Refit
                             ret.Content = new StringContent(stringParam);
                         } else {
                             switch (restMethod.BodyParameterInfo.Item1) {
+                            case BodySerializationMethod.Custom:
+                                var param = paramList[i];
+                                ret.Content = settings.CustomSerializers[param.GetType()].SerializeAsHttpContent(param);
+                                break;
                             case BodySerializationMethod.UrlEncoded:
                                 ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
                                 break;
@@ -230,6 +234,11 @@ namespace Refit
                     throw await ApiException.Create(resp);
                 }
 
+                ITypeSerializer customSerializer;
+                if (settings.CustomSerializers.TryGetValue(restMethod.SerializedReturnType, out customSerializer)) {
+                    return (T)await customSerializer.DeserializeFromHttpContent(resp.Content);
+                }
+
                 var ms = new MemoryStream();
                 var fromStream = await resp.Content.ReadAsStreamAsync();
                 await fromStream.CopyToAsync(ms, 4096, ct);
@@ -317,6 +326,7 @@ namespace Refit
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
+        public RefitSettings RefitSettings { get; set; } // Placeholder until #80 is merged. How lazy am I!
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
 
@@ -413,8 +423,12 @@ namespace Refit
         Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList)
         {
             var bodyParams = parameterList
-                .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault() })
-                .Where(x => x.BodyAttribute != null)
+                .Select(x => new {
+                    Parameter = x, 
+                    BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault(), 
+                    HasCustomSerializer = RefitSettings.CustomSerializers.ContainsKey(x.ParameterType)
+                })
+                .Where(x => x.BodyAttribute != null || x.HasCustomSerializer)
                 .ToList();
 
             if (bodyParams.Count > 1) {
@@ -426,7 +440,10 @@ namespace Refit
             }
 
             var ret = bodyParams[0];
-            return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
+            var serializationMethod = ret.HasCustomSerializer
+                ? BodySerializationMethod.Custom
+                : ret.BodyAttribute.SerializationMethod;
+            return Tuple.Create(serializationMethod, parameterList.IndexOf(ret.Parameter));
         }
 
         Dictionary<string, string> parseHeaders(MethodInfo methodInfo) 
