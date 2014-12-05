@@ -142,7 +142,7 @@ namespace Refit.Generator
                 .Where(g => g.Count() > 1)
                 .SelectMany(g => g.Select(x => new MultipleRefitMethodSameNameWarning(x.Interface, x.Method)));
 
-            var diagnostics = Enumerable.Concat<Diagnostic>(missingAttributeWarnings, overloadWarnings);
+            var diagnostics = missingAttributeWarnings.Concat<Diagnostic>(overloadWarnings);
 
             foreach (var diagnostic in diagnostics) {
                 Console.Error.WriteLine(diagnostic);
