@@ -60,13 +60,13 @@ namespace Refit.Generator
             var location = method.GetLocation();
             var line = location.GetMappedLineSpan().StartLinePosition;
 
-            this.File = location.FilePath;
-            this.Line = line.Line + 1;
-            this.Character = line.Character + 1;
-            this.InterfaceName = @interface.Identifier.Text;
-            this.MethodName = method.Identifier.Text;
+            File = location.FilePath;
+            Line = line.Line + 1;
+            Character = line.Character + 1;
+            InterfaceName = @interface.Identifier.Text;
+            MethodName = method.Identifier.Text;
 
-            this.Message = string.Format(
+            Message = string.Format(
                 "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
                 InterfaceName, MethodName);
         }
