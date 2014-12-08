@@ -129,6 +129,7 @@
     <Compile Include="RestService.cs" />
     <Compile Include="RefitStubs.cs" />
     <Compile Include="DeliminatorSeparatedPropertyNamesContractResolver.cs" />
+    <Compile Include="MethodOverloads.cs" />
   </ItemGroup>
 
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />

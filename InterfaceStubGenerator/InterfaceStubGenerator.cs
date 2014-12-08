@@ -34,6 +34,8 @@ namespace Refit.Generator
 
             var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate);
 
+            GenerateWarnings(interfacesToGenerate);
+
             Encoders.HtmlEncode = (s) => s;
             var text = Render.StringToString(ExtractTemplateSource(), templateInfo);
             return text;
@@ -124,6 +126,27 @@ namespace Refit.Generator
                 .ToList();
 
             return ret;
+        }
+
+        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate)
+        {
+            var missingAttributeWarnings = interfacesToGenerate
+                .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new {Interface = i, Method = m}))
+                .Where(x => !HasRefitHttpMethodAttribute(x.Method))
+                .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
+
+            var overloadWarnings = interfacesToGenerate
+                .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new {Interface = i, Method = m}))
+                .Where(x => HasRefitHttpMethodAttribute(x.Method))
+                .GroupBy(x => new {Interface = x.Interface, MethodName = x.Method.Identifier.Text})
+                .Where(g => g.Count() > 1)
+                .SelectMany(g => g.Select(x => new MultipleRefitMethodSameNameWarning(x.Interface, x.Method)));
+
+            var diagnostics = missingAttributeWarnings.Concat<Diagnostic>(overloadWarnings);
+
+            foreach (var diagnostic in diagnostics) {
+                Console.Error.WriteLine(diagnostic);
+            }
         }
 
         public static string ExtractTemplateSource()

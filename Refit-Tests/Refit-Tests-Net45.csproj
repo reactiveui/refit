@@ -112,6 +112,7 @@
     <Compile Include="RefitStubs.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RestService.cs" />
+    <Compile Include="MethodOverloads.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\InterfaceStubGenerator\InterfaceStubGenerator.csproj">
