@@ -9,7 +9,7 @@ namespace Refit
         public RefitSettings()
         {
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
-            JsonSerializerSettings = JsonConvert.DefaultSettings();
+            JsonSerializerSettings = JsonConvert.DefaultSettings == null ? new JsonSerializerSettings() : JsonConvert.DefaultSettings();
         }
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
