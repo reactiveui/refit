@@ -201,7 +201,7 @@ namespace Refit
                 var resp = await client.SendAsync(rq);
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, restMethod.RefitSettings);
+                    throw await ApiException.Create(resp, settings);
                 }
             };
         }
@@ -240,7 +240,7 @@ namespace Refit
                     return content as T;
                 }
 
-                return JsonConvert.DeserializeObject<T>(content,settings.JsonSerializerSettings);
+                return JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
             };
         }
 
