@@ -121,7 +121,7 @@ As these are global settings they will affect your entire application. It
 might be beneficial to isolate the settings for calls to a particular API. 
 When creating a Refit generated live interface, you may optionally pass a 
 `RefitSettings` that will allow you to specify what serializer settings you 
-would like. This allows you to have different serializer settings for seperate
+would like. This allows you to have different serializer settings for separate
 APIs:
 
 ```csharp
