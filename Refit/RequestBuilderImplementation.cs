@@ -44,7 +44,7 @@ namespace Refit
                     var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                     if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
 
-                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x,settings));
+                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x, settings));
                 })
                 .ToDictionary(k => k.Name, v => v);
         }
@@ -96,7 +96,7 @@ namespace Refit
                                 ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
                                 break;
                             case BodySerializationMethod.Json:
-                                ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i],settings.SerializerSettings), Encoding.UTF8, "application/json");
+                                ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
                                 break;
                             }
                         }
@@ -201,7 +201,7 @@ namespace Refit
                 var resp = await client.SendAsync(rq);
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp,restMethod.RefitSettings.SerializerSettings);
+                    throw await ApiException.Create(resp, restMethod.RefitSettings);
                 }
             };
         }
@@ -227,7 +227,7 @@ namespace Refit
                 }
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp,restMethod.RefitSettings.SerializerSettings);
+                    throw await ApiException.Create(resp, restMethod.RefitSettings);
                 }
 
                 var ms = new MemoryStream();
@@ -240,7 +240,7 @@ namespace Refit
                     return content as T;
                 }
 
-                return JsonConvert.DeserializeObject<T>(content,settings.SerializerSettings);
+                return JsonConvert.DeserializeObject<T>(content,settings.JsonSerializerSettings);
             };
         }
 
@@ -321,9 +321,9 @@ namespace Refit
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
 
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo,RefitSettings settings = null)
+        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
         {
-            RefitSettings =settings ?? RefitSettings;
+            RefitSettings = refitSettings ?? new RefitSettings();
             Type = targetInterface;
             Name = methodInfo.Name;
             MethodInfo = methodInfo;
@@ -518,27 +518,27 @@ namespace Refit
         public bool HasContent {
             get { return !String.IsNullOrWhiteSpace(Content); }
         }
-        public JsonSerializerSettings Settings{get;set;}
+        public RefitSettings RefitSettings{get;set;}
 
-        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers,JsonSerializerSettings settings) : 
+        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) : 
             base(createMessage(statusCode, reasonPhrase)) 
         {
             StatusCode = statusCode;
             ReasonPhrase = reasonPhrase;
             Headers = headers;
-            Settings = settings;
+            RefitSettings = refitSettings;
         }
 
         public T GetContentAs<T>()
         {
             return HasContent ? 
-                JsonConvert.DeserializeObject<T>(Content,Settings) : 
+                JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) : 
                 default(T);
         }
 
-        public static async Task<ApiException> Create(HttpResponseMessage response,JsonSerializerSettings settings) 
+        public static async Task<ApiException> Create(HttpResponseMessage response, RefitSettings refitSettings = null) 
         {
-            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers, settings);
+            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
             if (response.Content == null) return exception;
             
