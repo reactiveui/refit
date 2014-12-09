@@ -127,14 +127,14 @@ APIs:
 ```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     new RefitSettings {
-        JsonSerializerSettings = {
+        JsonSerializerSettings = new JsonSerializerSettings {
             ContractResolver = new SnakeCasePropertyNamesContractResolver()
         }
     });
 
 var otherApi = RestService.For<IOtherApi>("https://api.example.com",
     new RefitSettings {
-        JsonSerializerSettings = {
+        JsonSerializerSettings = new JsonSerializerSettings {
             ContractResolver = new CamelCasePropertyNamesContractResolver()
         }
     });
