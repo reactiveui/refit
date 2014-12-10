@@ -121,6 +121,8 @@ namespace Refit.Generator
                         .Select(y => y.Identifier.ValueText)),
                     ArgumentListWithTypes = String.Join(",", x.ParameterList.Parameters
                         .Select(y => String.Format("{0} {1}", y.Type.ToString(), y.Identifier.ValueText))),
+                    ArgumentTypeofTypes = String.Join(",", x.ParameterList.Parameters
+                        .Select(y => String.Format("typeof({0})", y.Type.ToString()))),
                     IsRefitMethod = HasRefitHttpMethodAttribute(x)
                 })
                 .ToList();
@@ -187,6 +189,7 @@ namespace Refit.Generator
         public string Name { get; set; }
         public string ArgumentListWithTypes { get; set; }
         public string ArgumentList { get; set; }
+        public string ArgumentTypeofTypes { get; set; }
         public bool IsRefitMethod { get; set; }
     }
 
