@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-
+using Newtonsoft.Json.Serialization;
 using NUnit.Framework;
 using Newtonsoft.Json;
 using Refit; // InterfaceStubGenerator looks for this
@@ -147,6 +147,119 @@ namespace Refit.Tests
             Assert.AreEqual("octocat", result2.Login);
             Assert.IsFalse(String.IsNullOrEmpty(result2.AvatarUrl));
         }
+
+        [Test]
+        public async Task HitTheGitHubUserApiWithSettingsObj()
+        {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+            var fixture = RestService.For<IGitHubApi>(
+                "https://api.github.com",
+                new RefitSettings{
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                });
+
+
+            var result = await fixture.GetUser("octocat");
+
+            Assert.AreEqual("octocat", result.Login);
+            Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
+        }
+
+        [Test]
+        public async Task HitWithCamelCaseParameterWithSettingsObj()
+        {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+            var fixture = RestService.For<IGitHubApi>(
+                "https://api.github.com",
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                });
+
+
+            var result = await fixture.GetUserCamelCase("octocat");
+
+            Assert.AreEqual("octocat", result.Login);
+            Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
+        }
+
+        [Test]
+        public async Task HitTheGitHubOrgMembersApiWithSettingsObj()
+        {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+            var fixture = RestService.For<IGitHubApi>(
+                "https://api.github.com",
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                });
+
+
+            var result = await fixture.GetOrgMembers("github");
+
+            Assert.IsTrue(result.Count > 0);
+            Assert.IsTrue(result.Any(member => member.Type == "User"));
+        }
+
+        [Test]
+        public async Task HitTheGitHubUserSearchApiWithSettingsObj()
+        {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+            var fixture = RestService.For<IGitHubApi>(
+                "https://api.github.com",
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                });
+
+            var result = await fixture.FindUsers("tom repos:>42 followers:>1000");
+
+            Assert.IsTrue(result.TotalCount > 0);
+            Assert.IsTrue(result.Items.Any(member => member.Type == "User"));
+        }
+
+        [Test]
+        public async Task HitTheGitHubUserApiAsObservableWithSettingsObj()
+        {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+            var fixture = RestService.For<IGitHubApi>(
+                "https://api.github.com",
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                });
+
+
+            var result = await fixture.GetUserObservable("octocat")
+                .Timeout(TimeSpan.FromSeconds(10));
+
+            Assert.AreEqual("octocat", result.Login);
+            Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
+        }
+
+        [Test]
+        public async Task HitTheGitHubUserApiAsObservableAndSubscribeAfterTheFactWithSettingsObj()
+        {
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+            var fixture = RestService.For<IGitHubApi>(
+                "https://api.github.com",
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                });
+
+
+            var obs = fixture.GetUserObservable("octocat")
+                .Timeout(TimeSpan.FromSeconds(10));
+
+            // NB: We're gonna await twice, so that the 2nd await is definitely
+            // after the result has completed.
+            await obs;
+            var result2 = await obs;
+            Assert.AreEqual("octocat", result2.Login);
+            Assert.IsFalse(String.IsNullOrEmpty(result2.AvatarUrl));
+        }
+
 
         [Test]
         public async Task TwoSubscriptionsResultInTwoRequests()

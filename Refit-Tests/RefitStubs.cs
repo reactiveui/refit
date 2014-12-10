@@ -16,6 +16,7 @@ using SomeType = CollisionA.SomeType;
 using CollisionB;
 using System.Net;
 using System.Reactive.Linq;
+using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 
 /* ******** Hey You! *********
