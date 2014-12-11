@@ -103,8 +103,8 @@ type of the parameter:
 #### JSON content
 
 JSON requests and responses are serialized/deserialized using Json.NET. 
-Default settings for the API can be configured by setting 
-_Newtonsoft.Json.JsonConvert.DefaultSettings_:
+By default, Refit will use the serializer settings that can be configured 
+by setting _Newtonsoft.Json.JsonConvert.DefaultSettings_:
 
 ```csharp
 JsonConvert.DefaultSettings = 
@@ -115,6 +115,29 @@ JsonConvert.DefaultSettings =
 
 // Serialized as: {"day":"Saturday"}
 await PostSomeStuff(new { Day = DayOfWeek.Saturday });
+```
+
+As these are global settings they will affect your entire application. It
+might be beneficial to isolate the settings for calls to a particular API. 
+When creating a Refit generated live interface, you may optionally pass a 
+`RefitSettings` that will allow you to specify what serializer settings you 
+would like. This allows you to have different serializer settings for separate
+APIs:
+
+```csharp
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        JsonSerializerSettings = new JsonSerializerSettings {
+            ContractResolver = new SnakeCasePropertyNamesContractResolver()
+        }
+    });
+
+var otherApi = RestService.For<IOtherApi>("https://api.example.com",
+    new RefitSettings {
+        JsonSerializerSettings = new JsonSerializerSettings {
+            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        }
+    });
 ```
 
 Property serialization/deserialization can be customised using Json.NET's 

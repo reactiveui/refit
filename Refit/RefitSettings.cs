@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 namespace Refit
 {
     public class RefitSettings
@@ -8,7 +10,7 @@ namespace Refit
         {
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
         }
-
+        public JsonSerializerSettings JsonSerializerSettings { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
     }
 
