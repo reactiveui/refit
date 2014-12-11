@@ -257,6 +257,76 @@ Task<User> GetUser(string user, [Header("Authorization")] string authorization);
 var user = await GetUser("octocat", "token OAUTH-TOKEN"); 
 ```
 
+#### Authorization (Dynamic Headers redux)
+The most common reason to use headers is for authorization. Today most API's use some flavor of oAuth with access tokens that expire and refresh tokens that are longer lived.
+
+One way to encapsulate these kinds of token usage, a custom `HttpClientHandler` can be inserted instead. 
+
+For example:
+```csharp
+class AuthenticatedHttpClientHandler : HttpClientHandler
+{
+    private readonly Func<Task<string>> getToken;
+
+    public AuthenticatedHttpClientHandler(Func<Task<string>> getToken)
+    {
+        if (getToken == null) throw new ArgumentNullException("getToken");
+        this.getToken = getToken;
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // See if the request has an authorize header
+        var auth = request.Headers.Authorization;
+        if (auth != null)
+        {
+            var token = await getToken().ConfigureAwait(false);
+            request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+This class is used like so (example uses the [ADAL](http://msdn.microsoft.com/en-us/library/azure/jj573266.aspx) library to manage auto-token refresh but the principal holds for Xamarin.Auth or any other library:
+
+```csharp
+class LoginViewModel
+{
+	AuthenticationContext context = new AuthenticationContext(...);
+	private async Task<string> GetToken()
+    {
+		// The AquireTokenAsync call will prompt with a UI if necessary
+		// Or otherwise silently use a refresh token to return
+		// a valid access token	
+        var token = await context.AcquireTokenAsync("http://my.service.uri/app", "clientId", new Uri("callback://complete"));
+
+        return token;
+    }
+
+	public async void LoginAndCallApi()
+	{
+		var api = RestService.For<IMyRestService>(new HttpClient(new AuthenticatedHttpClientHandler(GetToken)) { BaseAddress = new Uri("https://the.end.point/") });
+
+		var location = await api.GetLocationOfRebelBase();
+	}
+}
+
+interface IMyRestService
+{
+	[Get("/getPublicInfo")]
+	Task<Foobar> SomePublicMethod();
+
+	[Get("/secretStuff")]
+    [Header("Authorization: Bearer")]
+	Task<Location> GetLocationOfRebelBase();
+}
+
+```
+
+In the above example, any time a method that requires authentication is called, the `AuthenticatedHttpClientHandler` will try to get a fresh access token. It's up to the app to provide one, checking the expiration time of an existing access token and obtaining a new one if needed. 
+
 #### Redefining headers
 
 Unlike Retrofit, where headers do not overwrite each other and are all added to 
