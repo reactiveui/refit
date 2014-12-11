@@ -53,6 +53,12 @@ namespace Refit.Tests
         Task<TResponse> Get(TParam param, [Header("X-Refit")] THeader header);
     }
 
+    public interface IBrokenWebApi
+    {
+        [Post("/what-spec")]
+        Task<bool> PostAValue([Body] string derp);
+    }
+
     public class HttpBinGet
     {
         public Dictionary<string, string> Args { get; set; }
@@ -279,7 +285,7 @@ namespace Refit.Tests
             var result = await obs;
             Assert.AreEqual(2, input.MessagesSent);
 
-            // NB: TestHttpMessageHandler returns 'test' for every request
+            // NB: TestHttpMessageHandler returns what we tell it to ('test' by default)
             Assert.IsTrue(result.Contains("test"));
         }
 
@@ -361,6 +367,18 @@ namespace Refit.Tests
             Assert.AreEqual("http://httpbin.org/get?param=foo", result.Url);
             Assert.AreEqual("foo", result.Args["param"]);
             Assert.AreEqual("99", result.Headers["X-Refit"]);
+        }
+
+        [Test]
+        public async Task ValueTypesArentValidButTheyWorkAnyway()
+        {
+            var handler = new TestHttpMessageHandler("true");
+
+            var fixture = RestService.For<IBrokenWebApi>(new HttpClient(handler) { BaseAddress = new Uri("http://nowhere.com") });
+
+            var result = await fixture.PostAValue("Does this work?");
+
+            Assert.AreEqual(true, result);
         }
     }
 }

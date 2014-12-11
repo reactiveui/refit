@@ -207,14 +207,12 @@ namespace Refit
         }
 
         Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
-            where T : class
         {
             var ret = buildCancellableTaskFuncForMethod<T>(restMethod);
             return (client, paramList) => ret(client, CancellationToken.None, paramList);
         }
 
         Func<HttpClient, CancellationToken, object[], Task<T>> buildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
-            where T : class
         {
             return async (client, ct, paramList) => {
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
@@ -223,7 +221,10 @@ namespace Refit
                 var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct);
 
                 if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
-                    return resp as T;
+                    // NB: This double-casting manual-boxing hate crime is the only way to make 
+                    // this work without a 'class' generic constraint. It could blow up at runtime 
+                    // and would be A Bad Idea if we hadn't already vetted the return type.
+                    return (T)(object)resp; 
                 }
 
                 if (!resp.IsSuccessStatusCode) {
@@ -237,7 +238,7 @@ namespace Refit
                 var bytes = ms.ToArray();
                 var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                 if (restMethod.SerializedReturnType == typeof(string)) {
-                    return content as T;
+                    return (T)(object)content; 
                 }
 
                 return JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
@@ -245,7 +246,6 @@ namespace Refit
         }
 
         Func<HttpClient, object[], IObservable<T>> buildRxFuncForMethod<T>(RestMethodInfo restMethod)
-            where T : class
         {
             var taskFunc = buildCancellableTaskFuncForMethod<T>(restMethod);
 
