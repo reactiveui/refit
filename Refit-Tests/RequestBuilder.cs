@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
-
 using NUnit.Framework;
-using Newtonsoft.Json;
 
 namespace Refit.Tests
 {
@@ -50,6 +46,9 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
+        
+        [Post("/foo/{id}")]
+        Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
 
         [Post("/foo/{id}")]
         Task VoidPost(int id);
@@ -198,6 +197,19 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void ValueTypesDontBlowUp()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypes"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.AreEqual(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
+            Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
+
+            Assert.AreEqual(typeof(bool), fixture.SerializedReturnType);
+        }
+
+        [Test]
         public void ReturningTaskShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -277,6 +289,9 @@ namespace Refit.Tests
 
         [Put("/foo/bar/{id}")]
         Task<string> PutSomeStuffWithDynamicContentType(int id, [Body] string content, [Header("Content-Type")] string contentType);
+
+        [Post("/foo/bar/{id}")]
+        Task<bool> PostAValueType(int id, [Body] Guid? content);
     }
 
     public class SomeRequestData
@@ -289,12 +304,18 @@ namespace Refit.Tests
     {
         public HttpRequestMessage RequestMessage { get; private set; }
         public int MessagesSent { get; set; }
+        public string Content { get; set; }
+
+        public TestHttpMessageHandler(string content = "test")
+        {
+            Content = content;
+        }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestMessage = request;
             MessagesSent++;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("test") });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Content) });
         }
     }
 
@@ -579,6 +600,20 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/custom-parameter", uri.PathAndQuery);
+        }
+
+        [Test]
+        public async Task ICanPostAValueTypeIfIWantYoureNotTheBossOfMe()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("PostAValueType"));
+            var guid = Guid.NewGuid();
+            var expected = string.Format("\"{0}\"", guid);
+            var output = factory(new object[] { 7, guid });
+
+            var content = await output.Content.ReadAsStringAsync();
+            
+            Assert.AreEqual(expected, content);
         }
 
         string mangle<TInterface>(string methodName)

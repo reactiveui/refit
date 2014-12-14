@@ -44,7 +44,7 @@ namespace Refit
                     var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                     if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
 
-                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x));
+                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x, settings));
                 })
                 .ToDictionary(k => k.MangledName, v => v);
         }
@@ -96,7 +96,7 @@ namespace Refit
                                 ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
                                 break;
                             case BodySerializationMethod.Json:
-                                ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i]), Encoding.UTF8, "application/json");
+                                ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
                                 break;
                             }
                         }
@@ -201,20 +201,18 @@ namespace Refit
                 var resp = await client.SendAsync(rq);
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp);
+                    throw await ApiException.Create(resp, settings);
                 }
             };
         }
 
         Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
-            where T : class
         {
             var ret = buildCancellableTaskFuncForMethod<T>(restMethod);
             return (client, paramList) => ret(client, CancellationToken.None, paramList);
         }
 
         Func<HttpClient, CancellationToken, object[], Task<T>> buildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
-            where T : class
         {
             return async (client, ct, paramList) => {
                 var factory = BuildRequestFactoryForMethod(restMethod.MangledName, client.BaseAddress.AbsolutePath);
@@ -223,11 +221,14 @@ namespace Refit
                 var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct);
 
                 if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
-                    return resp as T;
+                    // NB: This double-casting manual-boxing hate crime is the only way to make 
+                    // this work without a 'class' generic constraint. It could blow up at runtime 
+                    // and would be A Bad Idea if we hadn't already vetted the return type.
+                    return (T)(object)resp; 
                 }
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp);
+                    throw await ApiException.Create(resp, restMethod.RefitSettings);
                 }
 
                 var ms = new MemoryStream();
@@ -237,15 +238,14 @@ namespace Refit
                 var bytes = ms.ToArray();
                 var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
                 if (restMethod.SerializedReturnType == typeof(string)) {
-                    return content as T;
+                    return (T)(object)content; 
                 }
 
-                return JsonConvert.DeserializeObject<T>(content);
+                return JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
             };
         }
 
         Func<HttpClient, object[], IObservable<T>> buildRxFuncForMethod<T>(RestMethodInfo restMethod)
-            where T : class
         {
             var taskFunc = buildCancellableTaskFuncForMethod<T>(restMethod);
 
@@ -318,11 +318,13 @@ namespace Refit
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
+        public RefitSettings RefitSettings { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
 
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo)
+        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
         {
+            RefitSettings = refitSettings ?? new RefitSettings();
             Type = targetInterface;
             Name = methodInfo.Name;
             MethodInfo = methodInfo;
@@ -518,25 +520,27 @@ namespace Refit
         public bool HasContent {
             get { return !String.IsNullOrWhiteSpace(Content); }
         }
+        public RefitSettings RefitSettings{get;set;}
 
-        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers) : 
+        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) : 
             base(createMessage(statusCode, reasonPhrase)) 
         {
             StatusCode = statusCode;
             ReasonPhrase = reasonPhrase;
             Headers = headers;
+            RefitSettings = refitSettings;
         }
 
         public T GetContentAs<T>()
         {
             return HasContent ? 
-                JsonConvert.DeserializeObject<T>(Content) : 
+                JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) : 
                 default(T);
         }
 
-        public static async Task<ApiException> Create(HttpResponseMessage response) 
+        public static async Task<ApiException> Create(HttpResponseMessage response, RefitSettings refitSettings = null) 
         {
-            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers);
+            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
             if (response.Content == null) return exception;
             
