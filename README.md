@@ -466,6 +466,56 @@ Which can be used like this:
 var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
 ``` 
 
+### Services composition
+
+Multiple services can be composed in a bigger service.
+It allows splitting big services interfaces in smaller ones and grouping them by category/endpoint.
+
+Composition can be done in two ways:
+- in a specific class:
+```csharp
+public interface IServicePart
+{
+   [Get("/")]
+   Task<List<string>> GetUsers();
+
+   [Get("/{user}")]
+   Task<string> GetUser(string user);
+}
+
+public class Service 
+{
+    IServicePart Users {
+        get { return RestService.For<IServicePart>("https://myservice.com/users"); }
+    }
+}
+```
+
+- in a refit interface:
+```csharp
+public interface IServicePart
+{
+   [Get("/")]
+   Task<List<string>> GetUsers();
+
+   [Get("/{user}")]
+   Task<string> GetUser(string user);
+}
+
+public interface IService
+{
+   [Get("/")]
+   Task<List<string>> Get();
+}
+
+public static class UsersExtension
+{
+    public static IServicePart Users(this IService This) {
+        return RestService.For<IServicePart>("https://myservice.com/users");
+    } 
+}
+```
+
 ### What's missing / planned?
 
 Currently Refit is missing the following features from Retrofit that are
