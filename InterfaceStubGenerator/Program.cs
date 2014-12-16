@@ -36,25 +36,42 @@ namespace Refit.Generator
 
             var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray());
 
-        int retryCount = 3; 
-        retry:
-            var file = default(FileStream);
 
-            // NB: Parallel build weirdness means that we might get >1 person 
-            // trying to party on this file at the same time.
-            try {
-                file = File.Open(target.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
-            } catch (Exception ex) {
-                if (retryCount < 0) throw;
-
-                retryCount--;
-                Thread.Sleep(500);
-                goto retry;
+            // If the file is read-only, we might be on a build server. Check the file to see if 
+            // the contents match what we expect
+            if (target.IsReadOnly)
+            {
+                var contents = File.ReadAllText(target.FullName, Encoding.UTF8);
+                if (contents != template)
+                    Environment.Exit(-1); // error....
             }
+            else
+            {
+                int retryCount = 3;
+                retry:
+                var file = default(FileStream);
 
-            using (var sw = new StreamWriter(file, Encoding.UTF8)) {
-                sw.WriteLine(template);
+                // NB: Parallel build weirdness means that we might get >1 person 
+                // trying to party on this file at the same time.
+                try
+                {
+                    file = File.Open(target.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
+                }
+                catch (Exception ex)
+                {
+                    if (retryCount < 0) throw;
+
+                    retryCount--;
+                    Thread.Sleep(500);
+                    goto retry;
+                }
+
+                using (var sw = new StreamWriter(file, Encoding.UTF8))
+                {
+                    sw.WriteLine(template);
+                }
             }
+        
         }
 
         static IEnumerable<FileInfo> recursivelyListFiles(DirectoryInfo root, string filter)
