@@ -393,7 +393,7 @@ namespace Refit
 
             var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
             if(ctParams.Count > 1)
-                throw new ArgumentException("Agument list can only contain a single CancellationToken");
+                throw new ArgumentException("Argument list can only contain a single CancellationToken");
 
             CancellationToken = ctParams.FirstOrDefault();
         }
