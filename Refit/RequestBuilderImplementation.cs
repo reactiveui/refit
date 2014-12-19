@@ -437,22 +437,23 @@ namespace Refit
                 return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
             }
 
-            if (bodyParams.Count == 0) {
-             
-                // see if we're a post/put/patch
-                if (method.Equals(HttpMethod.Post) || method.Equals(HttpMethod.Put) || method.Equals(patchMethod))
-                {
-                    var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
-                    if (refParams.Count > 1)
-                    {
-                        throw new ArgumentException("Multiple complex types found. Specify one parameter as the body using BodyAttribute");
-                    }
-                    else if (refParams.Count == 1)
-                    {
-                        return Tuple.Create(BodySerializationMethod.Json, parameterList.IndexOf(refParams[0]));
-                    }
-                }
+            // No body attribute found, check rule #2
+         
+            // see if we're a post/put/patch
+            if (method.Equals(HttpMethod.Post) || method.Equals(HttpMethod.Put) || method.Equals(patchMethod))
+            {
 
+                var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
+                
+                // Check for rule #3
+                if (refParams.Count > 1)
+                {
+                    throw new ArgumentException("Multiple complex types found. Specify one parameter as the body using BodyAttribute");
+                }
+                else if (refParams.Count == 1)
+                {
+                    return Tuple.Create(BodySerializationMethod.Json, parameterList.IndexOf(refParams[0]));
+                }
             }
 
             return null;
