@@ -43,7 +43,10 @@ namespace Refit.Generator
             {
                 var contents = File.ReadAllText(target.FullName, Encoding.UTF8);
                 if (contents != template)
+                {
+                    Console.Error.WriteLine(new ReadOnlyFileError(target));
                     Environment.Exit(-1); // error....
+                }
             }
             else
             {
