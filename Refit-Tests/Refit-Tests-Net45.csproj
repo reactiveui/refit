@@ -104,6 +104,8 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AConflictingApi2.cs" />
+    <Compile Include="AConflictingApi.cs" />
     <Compile Include="DeliminatorSeparatedPropertyNamesContractResolver.cs" />
     <Compile Include="GitHubApi.cs" />
     <Compile Include="IntegrationTestHelper.cs" />
