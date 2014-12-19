@@ -213,10 +213,10 @@ namespace Refit
                     
                 }
 
-                var resp = await client.SendAsync(rq, ct);
+                var resp = await client.SendAsync(rq, ct).ConfigureAwait(false);
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, settings);
+                    throw await ApiException.Create(resp, settings).ConfigureAwait(false);
                 }
             };
         }
@@ -238,7 +238,7 @@ namespace Refit
                 var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
-                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct);
+                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
 
                 if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
                     // NB: This double-casting manual-boxing hate crime is the only way to make 
@@ -248,12 +248,12 @@ namespace Refit
                 }
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, restMethod.RefitSettings);
+                    throw await ApiException.Create(resp, restMethod.RefitSettings).ConfigureAwait(false);
                 }
 
                 var ms = new MemoryStream();
-                var fromStream = await resp.Content.ReadAsStreamAsync();
-                await fromStream.CopyToAsync(ms, 4096, ct);
+                var fromStream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                await fromStream.CopyToAsync(ms, 4096, ct).ConfigureAwait(false);
 
                 var bytes = ms.ToArray();
                 var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
@@ -584,7 +584,7 @@ namespace Refit
             
             try {
                 exception.ContentHeaders = response.Content.Headers;
-                exception.Content = await response.Content.ReadAsStringAsync();
+                exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 response.Content.Dispose();
             } catch {
                 // NB: We're already handling an exception at this point, 

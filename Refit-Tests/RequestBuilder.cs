@@ -330,7 +330,7 @@ namespace Refit.Tests
         {
             RequestMessage = request;
             if(request.Content != null)
-                SendContent = await request.Content.ReadAsStringAsync();
+                SendContent = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             CancellationToken = cancellationToken;
             MessagesSent++;
