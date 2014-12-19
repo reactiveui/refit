@@ -329,8 +329,10 @@ namespace Refit.Tests
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestMessage = request;
-            if(request.Content != null)
+            if (request.Content != null)
+            {
                 SendContent = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
+            }
 
             CancellationToken = cancellationToken;
             MessagesSent++;
