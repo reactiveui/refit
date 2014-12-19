@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net;
@@ -304,18 +305,21 @@ namespace Refit.Tests
     {
         public HttpRequestMessage RequestMessage { get; private set; }
         public int MessagesSent { get; set; }
-        public string Content { get; set; }
+        public HttpContent Content { get; set; }
+
+        public Func<HttpContent> ContentFactory { get; set; }
 
         public TestHttpMessageHandler(string content = "test")
         {
-            Content = content;
+            Content = new StringContent(content);
+            ContentFactory = () => Content;
         }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestMessage = request;
             MessagesSent++;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Content) });
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = ContentFactory() });
         }
     }
 
@@ -337,6 +341,25 @@ namespace Refit.Tests
     [TestFixture]
     public class RequestBuilderTests
     {
+        [Test]
+        public void HttpContentTest()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IHttpContentApi));
+            var factory = fixture.BuildRestResultFuncForMethod("PostFileUpload");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+            var retContent = new StreamContent(new MemoryStream());
+            testHttpMessageHandler.Content = retContent;
+
+            var mpc = new MultipartContent("foosubtype");
+
+
+            var task = (Task<HttpContent>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { mpc });
+            task.Wait();
+
+            Assert.AreEqual(testHttpMessageHandler.RequestMessage.Content, mpc);
+            Assert.AreEqual(retContent, task.Result);
+        }
+
         [Test]
         public void MethodsThatDontHaveAnHttpMethodShouldFail()
         {

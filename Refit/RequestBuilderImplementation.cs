@@ -85,8 +85,12 @@ namespace Refit
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item2 == i) {
                         var streamParam = paramList[i] as Stream;
                         var stringParam = paramList[i] as string;
+                        var httpContentParam = paramList[i] as HttpContent;
 
-                        if (streamParam != null) {
+                        if (httpContentParam != null)
+                        {
+                            ret.Content = httpContentParam;
+                        } else if (streamParam != null) {
                             ret.Content = new StreamContent(streamParam);
                         } else if (stringParam != null) {
                             ret.Content = new StringContent(stringParam);
@@ -229,6 +233,11 @@ namespace Refit
 
                 if (!resp.IsSuccessStatusCode) {
                     throw await ApiException.Create(resp, restMethod.RefitSettings);
+                }
+
+                if (restMethod.SerializedReturnType == typeof(HttpContent))
+                {
+                    return (T)(object)resp.Content;
                 }
 
                 var ms = new MemoryStream();
