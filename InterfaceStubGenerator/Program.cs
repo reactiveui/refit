@@ -24,9 +24,9 @@ namespace Refit.Generator
 
             if (args.Length > 1) {
                 files = args[1].Split(';')
-                    .Select(x => new FileInfo(Path.Combine(targetDir, x)))
-                    .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
-                    .ToArray();
+                               .Select(x => new FileInfo(Path.Combine(targetDir, x)))
+                               .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
+                               .ToArray();
             } else {
                 // NB: @Compile is completely jacked on Xam Studio in iOS, just
                 // run down all of the .cs files in the current directory and hope
@@ -39,49 +39,42 @@ namespace Refit.Generator
 
             // If the file is read-only, we might be on a build server. Check the file to see if 
             // the contents match what we expect
-            if (target.IsReadOnly)
-            {
+            if (target.IsReadOnly) {
                 var contents = File.ReadAllText(target.FullName, Encoding.UTF8);
-                if (contents != template)
-                {
+                if (contents != template) {
                     Console.Error.WriteLine(new ReadOnlyFileError(target));
                     Environment.Exit(-1); // error....
                 }
-            }
-            else
-            {
-                int retryCount = 3;
+            } else {
+                var retryCount = 3;
                 retry:
                 var file = default(FileStream);
 
                 // NB: Parallel build weirdness means that we might get >1 person 
                 // trying to party on this file at the same time.
-                try
-                {
+                try {
                     file = File.Open(target.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
-                }
-                catch (Exception ex)
-                {
-                    if (retryCount < 0) throw;
+                } catch (Exception ex) {
+                    if (retryCount < 0) {
+                        throw;
+                    }
 
                     retryCount--;
                     Thread.Sleep(500);
                     goto retry;
                 }
 
-                using (var sw = new StreamWriter(file, Encoding.UTF8))
-                {
+                using(var sw = new StreamWriter(file, Encoding.UTF8)) {
                     sw.WriteLine(template);
                 }
             }
-        
         }
 
         static IEnumerable<FileInfo> recursivelyListFiles(DirectoryInfo root, string filter)
         {
             return root.GetFiles(filter)
-                .Concat(root.GetDirectories()
-                    .SelectMany(x => recursivelyListFiles(x, filter)));
+                       .Concat(root.GetDirectories()
+                                   .SelectMany(x => recursivelyListFiles(x, filter)));
         }
     }
 
