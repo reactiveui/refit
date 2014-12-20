@@ -25,7 +25,7 @@ namespace Refit.Tests
 
             var result = fixture.GenerateInterfaceStubs(new[] {
                 IntegrationTestHelper.GetPath("RestService.cs"),
-                IntegrationTestHelper.GetPath("GitHubApi.cs"),
+                IntegrationTestHelper.GetPath("GitHubApi.cs")
             });
 
             Assert.True(result.Contains("IGitHubApi"));
@@ -57,9 +57,9 @@ namespace Refit.Tests
             var fixture = new InterfaceStubGenerator();
 
             var input = file.GetRoot().DescendantNodes()
-                .OfType<InterfaceDeclarationSyntax>()
-                .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>())
-                .ToList();
+                            .OfType<InterfaceDeclarationSyntax>()
+                            .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>())
+                            .ToList();
 
             var result = input
                 .ToDictionary(m => m.Identifier.ValueText, fixture.HasRefitHttpMethodAttribute);
@@ -79,8 +79,8 @@ namespace Refit.Tests
             var fixture = new InterfaceStubGenerator();
 
             var input = file.GetRoot().DescendantNodes()
-                .OfType<InterfaceDeclarationSyntax>()
-                .First(x => x.Identifier.ValueText == "IGitHubApi");
+                            .OfType<InterfaceDeclarationSyntax>()
+                            .First(x => x.Identifier.ValueText == "IGitHubApi");
 
             var result = fixture.GenerateClassInfoForInterface(input);
 
@@ -96,8 +96,8 @@ namespace Refit.Tests
             var fixture = new InterfaceStubGenerator();
 
             var input = file.GetRoot().DescendantNodes()
-                .OfType<InterfaceDeclarationSyntax>()
-                .ToList();
+                            .OfType<InterfaceDeclarationSyntax>()
+                            .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
             Assert.AreEqual(7, result.ClassList.Count);
@@ -128,13 +128,13 @@ namespace Refit.Tests
         [Get("whatever")]
         Task RefitMethod();
 
-        [Refit.GetAttribute("something-else")]
+        [Get("something-else")]
         Task AnotherRefitMethod();
 
         [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
         Task NoConstantsAllowed();
 
-        [Get  ("spaces-shouldnt-break-me")]
+        [Get("spaces-shouldnt-break-me")]
         Task SpacesShouldntBreakMe();
     }
 
@@ -155,7 +155,7 @@ namespace Refit.Tests
         Task<T> ReadOne(TKey key);
 
         [Put("/{key}")]
-        Task Update(TKey key, [Body]T payload);
+        Task Update(TKey key, [Body] T payload);
 
         [Delete("/{key}")]
         Task Delete(TKey key);
