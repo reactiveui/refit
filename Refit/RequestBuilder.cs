@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Reflection;
+using System.Text;
+using System.Linq;
 
 namespace Refit
 {
@@ -38,6 +41,21 @@ namespace Refit
         public static IRequestBuilder ForType<T>()
         {
             return ForType(typeof(T), null);
+        }
+
+        public static string Mangle(MethodBase methodBase)
+        {
+            StringBuilder builder = new StringBuilder();
+
+            builder.Append(methodBase.Name);
+            if (methodBase.IsGenericMethod) {
+                var genericArguments = methodBase.GetGenericArguments().Select(t => t.Name);
+                builder.AppendFormat("<{0}>", string.Join(",", genericArguments));
+            }
+            var parameters = methodBase.GetParameters().Select(p => p.ParameterType.Name);
+            builder.AppendFormat("({0})", string.Join(",", parameters));
+
+            return builder.ToString();
         }
     }
 

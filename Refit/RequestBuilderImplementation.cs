@@ -46,7 +46,7 @@ namespace Refit
 
                     return EnumerableEx.Return(new RestMethodInfo(targetInterface, x, settings));
                 })
-                .ToDictionary(k => k.Name, v => v);
+                .ToDictionary(k => k.MangledName, v => v);
         }
 
         public IEnumerable<string> InterfaceHttpMethods {
@@ -196,7 +196,7 @@ namespace Refit
         Func<HttpClient, object[], Task> buildVoidTaskFuncForMethod(RestMethodInfo restMethod)
         {                      
             return async (client, paramList) => {
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
+                var factory = BuildRequestFactoryForMethod(restMethod.MangledName, client.BaseAddress.AbsolutePath);
                 var rq = factory(paramList);
                 var resp = await client.SendAsync(rq);
 
@@ -215,7 +215,7 @@ namespace Refit
         Func<HttpClient, CancellationToken, object[], Task<T>> buildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
+                var factory = BuildRequestFactoryForMethod(restMethod.MangledName, client.BaseAddress.AbsolutePath);
                 var rq = factory(paramList);
 
                 var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct);
@@ -305,6 +305,7 @@ namespace Refit
     public class RestMethodInfo
     {
         public string Name { get; set; }
+        public string MangledName { get; set; }
         public Type Type { get; set; }
         public MethodInfo MethodInfo { get; set; }
         public HttpMethod HttpMethod { get; set; }
@@ -327,6 +328,7 @@ namespace Refit
             Type = targetInterface;
             Name = methodInfo.Name;
             MethodInfo = methodInfo;
+            MangledName = RequestBuilder.Mangle(methodInfo);
 
             var hma = methodInfo.GetCustomAttributes(true)
                 .OfType<HttpMethodAttribute>()

@@ -341,13 +341,13 @@ namespace Refit.Tests
         public void MethodsThatDontHaveAnHttpMethodShouldFail()
         {
             var failureMethods = new[] { 
-                "SomeOtherMethod",
+                mangle<IDummyHttpApi>("SomeOtherMethod"),
                 "weofjwoeijfwe",
                 null,
             };
 
             var successMethods = new[] {
-                "FetchSomeStuff",
+                mangle<IDummyHttpApi>("FetchSomeStuff"),
             };
 
             foreach (var v in failureMethods) {
@@ -380,7 +380,7 @@ namespace Refit.Tests
         public void HardcodedQueryParamShouldBeInUrl()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedQueryParameter");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithHardcodedQueryParameter"));
             var output = factory(new object[] { 6 });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
@@ -391,7 +391,7 @@ namespace Refit.Tests
         public void ParameterizedQueryParamsShouldBeInUrl()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithHardcodedAndOtherQueryParameters"));
             var output = factory(new object[] { 6, "foo" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
@@ -402,7 +402,7 @@ namespace Refit.Tests
         public void MultipleParametersInTheSameSegmentAreGeneratedProperly()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomethingWithMultipleParametersPerSegment");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomethingWithMultipleParametersPerSegment"));
             var output = factory(new object[] { 6, 1024, 768 });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
@@ -413,7 +413,7 @@ namespace Refit.Tests
         public void HardcodedHeadersShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithHardcodedHeader"));
             var output = factory(new object[] { 6 });
 
             Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
@@ -426,7 +426,7 @@ namespace Refit.Tests
         public void EmptyHardcodedHeadersShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithEmptyHardcodedHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithEmptyHardcodedHeader"));
             var output = factory(new object[] { 6 });
 
             Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
@@ -438,7 +438,7 @@ namespace Refit.Tests
         public void NullHardcodedHeadersShouldNotBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithNullHardcodedHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithNullHardcodedHeader"));
             var output = factory(new object[] { 6 });
 
             Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
@@ -450,7 +450,7 @@ namespace Refit.Tests
         public void DynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithDynamicHeader"));
             var output = factory(new object[] { 6, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
 
             Assert.IsNotNull(output.Headers.Authorization, "Headers include Authorization header");
@@ -461,7 +461,7 @@ namespace Refit.Tests
         public void CustomDynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithCustomHeader"));
             var output = factory(new object[] { 6, ":joy_cat:" });
 
             Assert.IsTrue(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
@@ -472,7 +472,7 @@ namespace Refit.Tests
         public void EmptyDynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithCustomHeader"));
             var output = factory(new object[] { 6, "" });
 
             Assert.IsTrue(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
@@ -483,7 +483,7 @@ namespace Refit.Tests
         public void NullDynamicHeaderShouldNotBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithDynamicHeader"));
             var output = factory(new object[] { 6, null });
 
             Assert.IsNull(output.Headers.Authorization, "Headers include Authorization header");
@@ -493,7 +493,7 @@ namespace Refit.Tests
         public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithoutFullPath");
+            var factory = fixture.BuildRestResultFuncForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithoutFullPath"));
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
@@ -506,7 +506,7 @@ namespace Refit.Tests
         public void HttpClientForVoidMethodShouldPrefixedAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithVoid");
+            var factory = fixture.BuildRestResultFuncForMethod(mangle<IDummyHttpApi>("FetchSomeStuffWithVoid"));
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
@@ -519,7 +519,7 @@ namespace Refit.Tests
         public void HttpClientShouldNotPrefixEmptyAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuff");
+            var factory = fixture.BuildRestResultFuncForMethod(mangle<IDummyHttpApi>("FetchSomeStuff"));
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
@@ -532,7 +532,7 @@ namespace Refit.Tests
         public void DontBlowUpWithDynamicAuthorizationHeaderAndContent() 
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PutSomeContentWithAuthorization");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("PutSomeContentWithAuthorization"));
             var output = factory(new object[] { 7, new { Octocat = "Dunetocat" }, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
 
             Assert.IsNotNull(output.Headers.Authorization, "Headers include Authorization header");
@@ -543,7 +543,7 @@ namespace Refit.Tests
         public void SuchFlexibleContentTypeWow()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PutSomeStuffWithDynamicContentType");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("PutSomeStuffWithDynamicContentType"));
             var output = factory(new object[] { 7, "such \"refit\" is \"amaze\" wow", "text/dson" });
 
             Assert.IsNotNull(output.Content, "Request has content");
@@ -555,7 +555,7 @@ namespace Refit.Tests
         public async Task BodyContentGetsUrlEncoded() 
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PostSomeUrlEncodedStuff");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("PostSomeUrlEncodedStuff"));
             var output = factory(
                 new object[] {
                     6, 
@@ -575,7 +575,7 @@ namespace Refit.Tests
         public async Task FormFieldGetsAliased()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PostSomeAliasedUrlEncodedStuff");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("PostSomeAliasedUrlEncodedStuff"));
             var output = factory(
                 new object[] {
                     6, 
@@ -595,7 +595,7 @@ namespace Refit.Tests
             var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
 
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("FetchSomeStuff"));
             var output = factory(new object[] { 5 });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
@@ -606,7 +606,7 @@ namespace Refit.Tests
         public async Task ICanPostAValueTypeIfIWantYoureNotTheBossOfMe()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PostAValueType");
+            var factory = fixture.BuildRequestFactoryForMethod(mangle<IDummyHttpApi>("PostAValueType"));
             var guid = Guid.NewGuid();
             var expected = string.Format("\"{0}\"", guid);
             var output = factory(new object[] { 7, guid });
@@ -614,6 +614,11 @@ namespace Refit.Tests
             var content = await output.Content.ReadAsStringAsync();
             
             Assert.AreEqual(expected, content);
+        }
+
+        string mangle<TInterface>(string methodName)
+        {
+            return RequestBuilder.Mangle(typeof(TInterface).GetMethod(methodName));
         }
     }
 }
