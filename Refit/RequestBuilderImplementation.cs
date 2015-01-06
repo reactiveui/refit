@@ -40,16 +40,17 @@ namespace Refit
             targetType = targetInterface;
             interfaceHttpMethods = targetInterface.GetMethods()
                 .SelectMany(x => {
-                    var attrs = x.GetCustomAttributes(true);
-                    var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
-                    if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
+                var attrs = x.GetCustomAttributes(true);
+                var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
+                if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
 
-                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x, settings));
-                })
+                return EnumerableEx.Return(new RestMethodInfo(targetInterface, x, settings));
+            })
                 .ToDictionary(k => k.Name, v => v);
         }
 
-        public IEnumerable<string> InterfaceHttpMethods {
+        public IEnumerable<string> InterfaceHttpMethods
+        {
             get { return interfaceHttpMethods.Keys; }
         }
 
@@ -61,7 +62,8 @@ namespace Refit
             var restMethod = interfaceHttpMethods[methodName];
 
             return paramList => {
-                var ret = new HttpRequestMessage() {
+                var ret = new HttpRequestMessage()
+                {
                     Method = restMethod.HttpMethod,
                 };
 
@@ -72,7 +74,7 @@ namespace Refit
                 string urlTarget = (basePath == "/" ? String.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new Dictionary<string, string>();
 
-                for(int i=0; i < paramList.Length; i++) {
+                for (int i = 0; i < paramList.Length; i++) {
                     if (restMethod.ParameterMap.ContainsKey(i)) {
                         urlTarget = Regex.Replace(
                             urlTarget, 
@@ -119,7 +121,7 @@ namespace Refit
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
-                foreach(var kvp in queryParamsToAdd) {
+                foreach (var kvp in queryParamsToAdd) {
                     query.Add(kvp.Key, kvp.Value);
                 }
 
@@ -135,7 +137,7 @@ namespace Refit
             };
         }
 
-        void setHeader(HttpRequestMessage request, string name, object value) 
+        void setHeader(HttpRequestMessage request, string name, object value)
         {
             // Clear any existing version of this header we may have set, because
             // we want to allow removal/redefinition of headers. 
@@ -179,7 +181,7 @@ namespace Refit
                     .Invoke(this, new[] { restMethod });
 
                 return (client, args) => {
-                    return taskFunc.DynamicInvoke(new object[] { client, args } );
+                    return taskFunc.DynamicInvoke(new object[] { client, args });
                 };
             } else {
                 // Same deal
@@ -257,7 +259,7 @@ namespace Refit
         {
             Func<CancellationToken, Task<T>> taskFactory;
 
-            public TaskToObservable(Func<CancellationToken, Task<T>> taskFactory) 
+            public TaskToObservable(Func<CancellationToken, Task<T>> taskFactory)
             {
                 this.taskFactory = taskFactory;
             }
@@ -305,18 +307,31 @@ namespace Refit
     public class RestMethodInfo
     {
         public string Name { get; set; }
+
         public Type Type { get; set; }
+
         public MethodInfo MethodInfo { get; set; }
+
         public HttpMethod HttpMethod { get; set; }
+
         public string RelativePath { get; set; }
+
         public Dictionary<int, string> ParameterMap { get; set; }
+
         public Dictionary<string, string> Headers { get; set; }
+
         public Dictionary<int, string> HeaderParameterMap { get; set; }
+
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
+
         public Dictionary<int, string> QueryParameterMap { get; set; }
+
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
+
         public Type ReturnType { get; set; }
+
         public Type SerializedReturnType { get; set; }
+
         public RefitSettings RefitSettings { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
@@ -349,7 +364,7 @@ namespace Refit
             HeaderParameterMap = buildHeaderParameterMap(parameterList);
 
             QueryParameterMap = new Dictionary<int, string>();
-            for (int i=0; i < parameterList.Count; i++) {
+            for (int i = 0; i < parameterList.Count; i++) {
                 if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
                     continue;
                 }
@@ -358,10 +373,9 @@ namespace Refit
             }
         }
 
-        void verifyUrlPathIsSane(string relativePath) 
+        void verifyUrlPathIsSane(string relativePath)
         {
-            if (relativePath == "")
-                return;
+            if (relativePath == "") return;
 
             if (!relativePath.StartsWith("/")) {
                 goto bogusPath;
@@ -374,8 +388,8 @@ namespace Refit
 
             return;
 
-        bogusPath:
-            throw new ArgumentException("URL path must be of the form '/foo/bar/baz'");
+            bogusPath:
+            throw new ArgumentException("URL path must be of the form '/foo/bar/baz' \r\nCurrent path is: {0}", relativePath);
         }
 
         Dictionary<int, string> buildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
@@ -431,7 +445,7 @@ namespace Refit
             return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
         }
 
-        Dictionary<string, string> parseHeaders(MethodInfo methodInfo) 
+        Dictionary<string, string> parseHeaders(MethodInfo methodInfo)
         {
             var ret = new Dictionary<string, string>();
 
@@ -449,10 +463,10 @@ namespace Refit
             foreach (var header in headers) {
                 if (string.IsNullOrWhiteSpace(header)) continue;
 
-            // NB: Silverlight doesn't have an overload for String.Split()
-            // with a count parameter, but header values can contain
-            // ':' so we have to re-join all but the first part to get the
-            // value.
+                // NB: Silverlight doesn't have an overload for String.Split()
+                // with a count parameter, but header values can contain
+                // ':' so we have to re-join all but the first part to get the
+                // value.
                 var parts = header.Split(':');
                 ret[parts[0].Trim()] = parts.Length > 1 ? 
                     String.Join(":", parts.Skip(1)).Trim() : null;
@@ -461,7 +475,7 @@ namespace Refit
             return ret;
         }
 
-        Dictionary<int, string> buildHeaderParameterMap(List<ParameterInfo> parameterList) 
+        Dictionary<int, string> buildHeaderParameterMap(List<ParameterInfo> parameterList)
         {
             var ret = new Dictionary<int, string>();
 
@@ -482,7 +496,7 @@ namespace Refit
         void determineReturnTypeInfo(MethodInfo methodInfo)
         {
             if (methodInfo.ReturnType.IsGenericType() == false) {
-                if (methodInfo.ReturnType != typeof (Task)) {
+                if (methodInfo.ReturnType != typeof(Task)) {
                     goto bogusMethod;
                 }
 
@@ -500,7 +514,7 @@ namespace Refit
             SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
             return;
 
-        bogusMethod:
+            bogusMethod:
             throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
         }
     }
@@ -508,20 +522,24 @@ namespace Refit
     public class ApiException : Exception
     {
         public HttpStatusCode StatusCode { get; private set; }
+
         public string ReasonPhrase { get; private set; }
+
         public HttpResponseHeaders Headers { get; private set; }
 
         public HttpContentHeaders ContentHeaders { get; private set; }
 
         public string Content { get; private set; }
 
-        public bool HasContent {
+        public bool HasContent
+        {
             get { return !String.IsNullOrWhiteSpace(Content); }
         }
-        public RefitSettings RefitSettings{get;set;}
 
-        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) : 
-            base(createMessage(statusCode, reasonPhrase)) 
+        public RefitSettings RefitSettings { get; set; }
+
+        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
+            base(createMessage(statusCode, reasonPhrase))
         {
             StatusCode = statusCode;
             ReasonPhrase = reasonPhrase;
@@ -536,7 +554,7 @@ namespace Refit
                 default(T);
         }
 
-        public static async Task<ApiException> Create(HttpResponseMessage response, RefitSettings refitSettings = null) 
+        public static async Task<ApiException> Create(HttpResponseMessage response, RefitSettings refitSettings = null)
         {
             var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
@@ -566,7 +584,7 @@ namespace Refit
         static readonly Dictionary<Type, PropertyInfo[]> propertyCache
             = new Dictionary<Type, PropertyInfo[]>();
 
-        public FormValueDictionary(object source) 
+        public FormValueDictionary(object source)
         {
             if (source == null) return;
             var dictionary = source as IDictionary;
@@ -592,7 +610,7 @@ namespace Refit
             }
         }
 
-        PropertyInfo[] getProperties(Type type) 
+        PropertyInfo[] getProperties(Type type)
         {
             return type.GetProperties()
                 .Where(p => p.CanRead)
