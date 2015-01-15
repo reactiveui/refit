@@ -55,6 +55,9 @@ namespace Refit.Tests
 
         [Post("/foo/{id}")]
         string AsyncOnlyBuddy(int id);
+
+        [Patch("/foo/{id}")]
+        IObservable<string> PatchSomething(int id, [Body] string someAttribute);
     }
 
     [TestFixture]
@@ -234,6 +237,15 @@ namespace Refit.Tests
 
             Assert.IsFalse(shouldDie);
         }
+
+        [Test]
+        public void UsingThePatchAttributeSetsTheCorrectMethod()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchSomething"));
+
+            Assert.AreEqual("Patch", fixture.HttpMethod.Method);
+        }
     }
 
     [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
@@ -292,6 +304,9 @@ namespace Refit.Tests
 
         [Post("/foo/bar/{id}")]
         Task<bool> PostAValueType(int id, [Body] Guid? content);
+
+        [Patch("/foo/bar/{id}")]
+        IObservable<string> PatchSomething(int id, [Body] string someAttribute);
     }
 
     public class SomeRequestData
@@ -614,6 +629,16 @@ namespace Refit.Tests
             var content = await output.Content.ReadAsStringAsync();
             
             Assert.AreEqual(expected, content);
+        }
+
+        [Test]
+        public async Task SupportPATCHMethod()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PatchSomething");
+            var output = factory(new object[] { "testData" });
+
+            Assert.AreEqual("Patch", output.Method.Method);
         }
     }
 }
