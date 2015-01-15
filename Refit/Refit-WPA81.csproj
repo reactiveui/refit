@@ -63,6 +63,7 @@
     <TargetPlatform Include="WindowsPhoneApp, Version=8.1" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="HtmlEncoder.cs" />
