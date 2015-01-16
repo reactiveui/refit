@@ -12,6 +12,8 @@ namespace Refit
         }
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
+
+        public bool IsDebug { get; set; }
     }
 
     public interface IUrlParameterFormatter

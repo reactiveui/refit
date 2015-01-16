@@ -337,6 +337,27 @@ namespace Refit.Tests
         }
 
         [Test]
+        public async Task DebugCanHappenOnApiException()
+        {
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", new RefitSettings() {
+                IsDebug = true
+            });
+            try
+            {
+                await fixture.NothingToSeeHere();
+                Assert.Fail();
+            }
+            catch (ApiException exception)
+            {
+                Assert.AreEqual(HttpStatusCode.NotFound, exception.StatusCode);
+                var content = exception.GetContentAs<Dictionary<string, string>>();
+
+                Assert.AreEqual("Not Found", content["message"]);
+                Assert.IsNotNull(content["documentation_url"]);
+            }
+        }
+
+        [Test]
         public void NonRefitInterfacesThrowMeaningfulExceptions() 
         {
             try {

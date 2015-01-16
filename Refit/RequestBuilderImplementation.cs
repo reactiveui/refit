@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using System.IO;
 using HttpUtility = System.Web.HttpUtility;
 using System.Threading;
+using System.Diagnostics;
 
 namespace Refit
 {
@@ -72,6 +73,8 @@ namespace Refit
                 string urlTarget = (basePath == "/" ? String.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new Dictionary<string, string>();
 
+                var formBody = string.Empty;
+
                 for(int i=0; i < paramList.Length; i++) {
                     if (restMethod.ParameterMap.ContainsKey(i)) {
                         urlTarget = Regex.Replace(
@@ -91,6 +94,9 @@ namespace Refit
                         } else if (stringParam != null) {
                             ret.Content = new StringContent(stringParam);
                         } else {
+                            if (this.settings.IsDebug) {
+                                formBody = paramList[i].ToString();
+                            }
                             switch (restMethod.BodyParameterInfo.Item1) {
                             case BodySerializationMethod.UrlEncoded:
                                 ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
@@ -113,12 +119,19 @@ namespace Refit
                         }
                     }
                 }
+               
+
 
                 // NB: The URI methods in .NET are dumb. Also, we do this 
                 // UriBuilder business so that we preserve any hardcoded query 
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
+                
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
+
+                
+                
+
                 foreach(var kvp in queryParamsToAdd) {
                     query.Add(kvp.Key, kvp.Value);
                 }
@@ -129,7 +142,10 @@ namespace Refit
                 } else {
                     uri.Query = null;
                 }
-
+                
+                Debug.WriteLineIf(this.settings.IsDebug, "Refit Debug: URL Target: " + urlTarget);
+                Debug.WriteLineIf(this.settings.IsDebug, string.Format("Refit Debug: QueryString: {0}", String.IsNullOrEmpty(uri.Query) ? "Empty Query String" : uri.Query));
+                Debug.WriteLineIf(this.settings.IsDebug, string.Format("Refit Debug: Body: {0}", String.IsNullOrEmpty(formBody) ? "Empty Body" : formBody));
                 ret.RequestUri = new Uri(uri.Uri.GetComponents(UriComponents.PathAndQuery, UriFormat.UriEscaped), UriKind.Relative);
                 return ret;
             };
@@ -545,6 +561,7 @@ namespace Refit
             try {
                 exception.ContentHeaders = response.Content.Headers;
                 exception.Content = await response.Content.ReadAsStringAsync();
+                Debug.WriteLineIf(refitSettings != null && refitSettings.IsDebug, "Refit Debug: Content: " + exception.Content);
                 response.Content.Dispose();
             } catch {
                 // NB: We're already handling an exception at this point, 
