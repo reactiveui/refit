@@ -615,5 +615,21 @@ namespace Refit.Tests
             
             Assert.AreEqual(expected, content);
         }
+
+        [Test]
+        public async Task IsDebugWillDebugWriteLineIfForPost()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), new RefitSettings()
+            {
+                IsDebug = true
+            });
+            var factory = fixture.BuildRequestFactoryForMethod("PostSomeUrlEncodedStuff");
+            var output = factory(
+                new object[] {                    6,                     new {                        Foo = "Something",                         Bar = 100,                         Baz = default(string)                    }                });
+
+            string content = await output.Content.ReadAsStringAsync();
+
+            Assert.AreEqual("Foo=Something&Bar=100&Baz=", content);
+        }
     }
 }
