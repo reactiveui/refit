@@ -244,7 +244,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchSomething"));
 
-            Assert.AreEqual("Patch", fixture.HttpMethod.Method);
+            Assert.AreEqual("PATCH", fixture.HttpMethod.Method);
         }
     }
 
@@ -638,7 +638,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod("PatchSomething");
             var output = factory(new object[] { "testData" });
 
-            Assert.AreEqual("Patch", output.Method.Method);
+            Assert.AreEqual("PATCH", output.Method.Method);
         }
     }
 }
