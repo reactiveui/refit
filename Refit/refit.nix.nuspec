@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+    <metadata>
+        <id>refit</id>
+        <version>2.1.0</version>
+        <title>Refit</title>
+        <authors>Paul Betts,Refit contributors</authors>
+        <owners>Paul Betts</owners>
+        <licenseUrl>https://github.com/xpaulbettsx/refit/blob/master/COPYING</licenseUrl>
+        <projectUrl>https://github.com/xpaulbettsx/refit</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>The automatic type-safe REST library for Xamarin and .NET</description>
+        <summary>The automatic type-safe REST library for Xamarin and .NET</summary>
+
+        <dependencies>
+            <group>
+                <dependency id="Newtonsoft.Json" version="6.0.5" />
+            </group>
+            <group targetFramework="WindowsPhone8.0">
+                <dependency id="Microsoft.Net.Http" version="2.2.28" />
+                <dependency id="Newtonsoft.Json" version="6.0.5" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="content/*.*" target="content" />
+        <file src="targets/*.*" target="build" />
+        <file src="../InterfaceStubGenerator/bin/Release/*.exe" target="tools" />
+        <file src="../InterfaceStubGenerator/bin/Release/*.dll" target="tools" />
+        <file src="../InterfaceStubGenerator/bin/Release/*.mustache" target="tools" />
+        <file src="bin/Release/MonoAndroid/Refit*.*" target="lib/MonoAndroid" />
+        <file src="bin/Release/Xamarin.iOS10/Refit*.*" target="lib/Xamarin.iOS10" />
+        <file src="bin/Release/Net45/Refit*.*" target="lib/Net45" />
+        <file src="bin/Release/Portable-Net45+WinRT45+WP8+WPA81/Refit*.*" target="lib/Portable-Net45+WinRT45+WP8+WPA81" />
+    </files>
+</package>
