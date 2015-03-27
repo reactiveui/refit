@@ -275,6 +275,10 @@ namespace Refit.Tests
         [Headers("Api-Version: ")]
         Task<string> FetchSomeStuffWithEmptyHardcodedHeader(int id);
 
+        [Post("/foo/bar/{id}")]
+        [Headers("Content-Type: literally/anything")]
+        Task<string> PostSomeStuffWithHardCodedContentTypeHeader(int id, [Body] string content);
+
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
@@ -462,6 +466,17 @@ namespace Refit.Tests
             Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
             Assert.AreEqual("RefitTestClient", output.Headers.UserAgent.ToString());
             Assert.IsFalse(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+        }
+
+        [Test]
+        public void ContentHeadersCanBeHardcoded()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PostSomeStuffWithHardCodedContentTypeHeader");
+            var output = factory(new object[] { 6, "stuff" });
+
+            Assert.IsTrue(output.Content.Headers.Contains("Content-Type"), "Content headers include Content-Type header");
+            Assert.AreEqual("literally/anything", output.Content.Headers.ContentType.ToString());
         }
 
         [Test]
