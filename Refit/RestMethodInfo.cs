@@ -88,7 +88,7 @@ namespace Refit
         {
             var ret = new Dictionary<int, string>();
 
-            var names = RefitSettings.UriTemplateHandler.GetParameterNames(relativePath); //new UriTemplate(relativePath).GetParameterNames();
+            var names = RefitSettings.UrlTemplateHandler.GetParameterNames(relativePath); //new UriTemplate(relativePath).GetParameterNames();
             if (names.Count() == 0) {
                 return ret;
             }
