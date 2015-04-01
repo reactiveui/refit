@@ -113,14 +113,13 @@
     <Compile Include="NameValueCollection.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RequestBuilderImplementation.cs" />
+    <Compile Include="RestMethodInfo.cs" />
     <Compile Include="RestService.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="RefitSettings.cs" />
   </ItemGroup>
-
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).$(TargetFrameworkVersion).Overrides.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\$(TargetFrameworkIdentifier)\$(TargetFrameworkVersion)\Microsoft.$(TargetFrameworkIdentifier).CSharp.targets" />
-
   <ProjectExtensions />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

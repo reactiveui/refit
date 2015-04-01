@@ -71,6 +71,7 @@
     <Compile Include="NameValueCollection.cs" />
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RequestBuilderImplementation.cs" />
+    <Compile Include="RestMethodInfo.cs" />
     <Compile Include="RestService.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="RefitSettings.cs" />
