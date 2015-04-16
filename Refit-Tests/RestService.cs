@@ -16,7 +16,7 @@ namespace Refit.Tests
     {
         public string _id { get; set; }
         public string _rev { get; set; }
-        public string name { get; set; }
+        public string name { get; set; } 
     }
 
     [Headers("User-Agent: Refit Integration Tests")]
@@ -80,10 +80,8 @@ namespace Refit.Tests
         public async Task HitTheGitHubUserApi()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
-            JsonConvert.DefaultSettings =
-                () => new JsonSerializerSettings {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                };
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
 
             var result = await fixture.GetUser("octocat");
 
@@ -96,9 +94,7 @@ namespace Refit.Tests
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             JsonConvert.DefaultSettings =
-                () => new JsonSerializerSettings {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                };
+                () => new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
 
             var result = await fixture.GetUserCamelCase("octocat");
 
@@ -110,10 +106,8 @@ namespace Refit.Tests
         public async Task HitTheGitHubOrgMembersApi()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
-            JsonConvert.DefaultSettings =
-                () => new JsonSerializerSettings {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                };
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
 
             var result = await fixture.GetOrgMembers("github");
 
@@ -125,10 +119,8 @@ namespace Refit.Tests
         public async Task HitTheGitHubUserSearchApi()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
-            JsonConvert.DefaultSettings =
-                () => new JsonSerializerSettings {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                };
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
 
             var result = await fixture.FindUsers("tom repos:>42 followers:>1000");
 
@@ -140,13 +132,11 @@ namespace Refit.Tests
         public async Task HitTheGitHubUserApiAsObservable()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
-            JsonConvert.DefaultSettings =
-                () => new JsonSerializerSettings {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                };
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
 
             var result = await fixture.GetUserObservable("octocat")
-                                      .Timeout(TimeSpan.FromSeconds(10));
+                .Timeout(TimeSpan.FromSeconds(10));
 
             Assert.AreEqual("octocat", result.Login);
             Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
@@ -156,13 +146,11 @@ namespace Refit.Tests
         public async Task HitTheGitHubUserApiAsObservableAndSubscribeAfterTheFact()
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
-            JsonConvert.DefaultSettings =
-                () => new JsonSerializerSettings {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                };
+            JsonConvert.DefaultSettings = 
+                () => new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() };
 
             var obs = fixture.GetUserObservable("octocat")
-                             .Timeout(TimeSpan.FromSeconds(10));
+                .Timeout(TimeSpan.FromSeconds(10));
 
             // NB: We're gonna await twice, so that the 2nd await is definitely
             // after the result has completed.
@@ -175,15 +163,11 @@ namespace Refit.Tests
         [Test]
         public async Task HitTheGitHubUserApiWithSettingsObj()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
             var fixture = RestService.For<IGitHubApi>(
                 "https://api.github.com",
-                new RefitSettings {
-                    JsonSerializerSettings = new JsonSerializerSettings {
-                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                    }
+                new RefitSettings{
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
                 });
 
 
@@ -196,15 +180,12 @@ namespace Refit.Tests
         [Test]
         public async Task HitWithCamelCaseParameterWithSettingsObj()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
             var fixture = RestService.For<IGitHubApi>(
                 "https://api.github.com",
-                new RefitSettings {
-                    JsonSerializerSettings = new JsonSerializerSettings {
-                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                    }
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
                 });
 
 
@@ -217,15 +198,12 @@ namespace Refit.Tests
         [Test]
         public async Task HitTheGitHubOrgMembersApiWithSettingsObj()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
             var fixture = RestService.For<IGitHubApi>(
                 "https://api.github.com",
-                new RefitSettings {
-                    JsonSerializerSettings = new JsonSerializerSettings {
-                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                    }
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
                 });
 
 
@@ -238,15 +216,12 @@ namespace Refit.Tests
         [Test]
         public async Task HitTheGitHubUserSearchApiWithSettingsObj()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
             var fixture = RestService.For<IGitHubApi>(
                 "https://api.github.com",
-                new RefitSettings {
-                    JsonSerializerSettings = new JsonSerializerSettings {
-                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                    }
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
                 });
 
             var result = await fixture.FindUsers("tom repos:>42 followers:>1000");
@@ -258,20 +233,17 @@ namespace Refit.Tests
         [Test]
         public async Task HitTheGitHubUserApiAsObservableWithSettingsObj()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
             var fixture = RestService.For<IGitHubApi>(
                 "https://api.github.com",
-                new RefitSettings {
-                    JsonSerializerSettings = new JsonSerializerSettings {
-                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                    }
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
                 });
 
 
             var result = await fixture.GetUserObservable("octocat")
-                                      .Timeout(TimeSpan.FromSeconds(10));
+                .Timeout(TimeSpan.FromSeconds(10));
 
             Assert.AreEqual("octocat", result.Login);
             Assert.IsFalse(String.IsNullOrEmpty(result.AvatarUrl));
@@ -280,20 +252,17 @@ namespace Refit.Tests
         [Test]
         public async Task HitTheGitHubUserApiAsObservableAndSubscribeAfterTheFactWithSettingsObj()
         {
-            JsonConvert.DefaultSettings = () => new JsonSerializerSettings {
-                ContractResolver = new CamelCasePropertyNamesContractResolver()
-            };
+            JsonConvert.DefaultSettings = () => new JsonSerializerSettings() { ContractResolver = new CamelCasePropertyNamesContractResolver() };
             var fixture = RestService.For<IGitHubApi>(
                 "https://api.github.com",
-                new RefitSettings {
-                    JsonSerializerSettings = new JsonSerializerSettings {
-                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                    }
+                new RefitSettings
+                {
+                    JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
                 });
 
 
             var obs = fixture.GetUserObservable("octocat")
-                             .Timeout(TimeSpan.FromSeconds(10));
+                .Timeout(TimeSpan.FromSeconds(10));
 
             // NB: We're gonna await twice, so that the 2nd await is definitely
             // after the result has completed.
@@ -312,15 +281,13 @@ namespace Refit.Tests
             // we need to use a factory here to ensure each request gets its own httpcontent instance
             input.ContentFactory = () => new StringContent("test");
 
-            var client = new HttpClient(input) {
-                BaseAddress = new Uri("http://foo")
-            };
+            var client = new HttpClient(input) { BaseAddress = new Uri("http://foo") };
             var fixture = RestService.For<IGitHubApi>(client);
 
             Assert.AreEqual(0, input.MessagesSent);
 
             var obs = fixture.GetIndexObservable()
-                             .Timeout(TimeSpan.FromSeconds(10));
+                .Timeout(TimeSpan.FromSeconds(10));
 
             var result1 = await obs;
             Assert.AreEqual(1, input.MessagesSent);
@@ -356,16 +323,16 @@ namespace Refit.Tests
         public async Task PostToRequestBin()
         {
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/");
-
+            
             try {
                 await fixture.Post();
-            } catch (ApiException ex) {
+            } catch (ApiException ex) { 
                 // we should be good but maybe a 404 occurred
             }
         }
 
         [Test]
-        public async Task CanGetDataOutOfErrorResponses()
+        public async Task CanGetDataOutOfErrorResponses() 
         {
             var fixture = RestService.For<IGitHubApi>("https://api.github.com");
             try {
@@ -381,7 +348,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public void NonRefitInterfacesThrowMeaningfulExceptions()
+        public void NonRefitInterfacesThrowMeaningfulExceptions() 
         {
             try {
                 RestService.For<INoRefitHereBuddy>("http://example.com");
@@ -391,7 +358,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public async Task NonRefitMethodsThrowMeaningfulExceptions()
+        public async Task NonRefitMethodsThrowMeaningfulExceptions() 
         {
             try {
                 var fixture = RestService.For<IAmHalfRefit>("http://example.com");
@@ -402,7 +369,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public async Task GenericsWork()
+        public async Task GenericsWork() 
         {
             var fixture = RestService.For<IHttpBinApi<HttpBinGet, string, int>>("http://httpbin.org/get");
 
@@ -418,9 +385,7 @@ namespace Refit.Tests
         {
             var handler = new TestHttpMessageHandler("true");
 
-            var fixture = RestService.For<IBrokenWebApi>(new HttpClient(handler) {
-                BaseAddress = new Uri("http://nowhere.com")
-            });
+            var fixture = RestService.For<IBrokenWebApi>(new HttpClient(handler) { BaseAddress = new Uri("http://nowhere.com") });
 
             var result = await fixture.PostAValue("Does this work?");
 
