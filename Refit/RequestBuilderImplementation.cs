@@ -65,12 +65,9 @@ namespace Refit
                     Method = restMethod.HttpMethod,
                 };
 
-                foreach (var header in restMethod.Headers) {
-                    setHeader(ret, header.Key, header.Value);
-                }   
-
                 string urlTarget = (basePath == "/" ? String.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new Dictionary<string, string>();
+                var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
 
                 for(int i=0; i < paramList.Length; i++) {
                     if (restMethod.ParameterMap.ContainsKey(i)) {
@@ -110,12 +107,20 @@ namespace Refit
 
 
                     if (restMethod.HeaderParameterMap.ContainsKey(i)) {
-                        setHeader(ret, restMethod.HeaderParameterMap[i], paramList[i]);
+                        headersToAdd[restMethod.HeaderParameterMap[i]] = paramList[i] != null 
+                            ? paramList[i].ToString() 
+                            : null;
                     } else {
                         if (paramList[i] != null) {
                             queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
                         }
                     }
+                }
+
+                // NB: We defer setting headers until the body has been
+                // added so any custom content headers don't get left out.
+                foreach (var header in headersToAdd) {
+                    setHeader(ret, header.Key, header.Value);
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this 
@@ -139,10 +144,12 @@ namespace Refit
             };
         }
 
-        void setHeader(HttpRequestMessage request, string name, object value) 
+        static void setHeader(HttpRequestMessage request, string name, string value) 
         {
-            // Clear any existing version of this header we may have set, because
+            // Clear any existing version of this header that might be set, because
             // we want to allow removal/redefinition of headers. 
+            // We also don't want to double up content headers which may have been
+            // set for us automatically.
 
             // NB: We have to enumerate the header names to check existence because 
             // Contains throws if it's the wrong header type for the collection.
@@ -155,11 +162,12 @@ namespace Refit
 
             if (value == null) return;
 
-            var s = value.ToString();
-            request.Headers.TryAddWithoutValidation(name, s);
+            var added = request.Headers.TryAddWithoutValidation(name, value);
 
-            if (request.Content != null) {
-                request.Content.Headers.TryAddWithoutValidation(name, s);
+            // Don't even bother trying to add the header as a content header
+            // if we just added it to the other collection.
+            if (!added && request.Content != null) {
+                request.Content.Headers.TryAddWithoutValidation(name, value);
             }
         }
 
@@ -511,62 +519,6 @@ namespace Refit
 
         bogusMethod:
             throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
-        }
-    }
-
-    public class ApiException : Exception
-    {
-        public HttpStatusCode StatusCode { get; private set; }
-        public string ReasonPhrase { get; private set; }
-        public HttpResponseHeaders Headers { get; private set; }
-
-        public HttpContentHeaders ContentHeaders { get; private set; }
-
-        public string Content { get; private set; }
-
-        public bool HasContent {
-            get { return !String.IsNullOrWhiteSpace(Content); }
-        }
-        public RefitSettings RefitSettings{get;set;}
-
-        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) : 
-            base(createMessage(statusCode, reasonPhrase)) 
-        {
-            StatusCode = statusCode;
-            ReasonPhrase = reasonPhrase;
-            Headers = headers;
-            RefitSettings = refitSettings;
-        }
-
-        public T GetContentAs<T>()
-        {
-            return HasContent ? 
-                JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) : 
-                default(T);
-        }
-
-        public static async Task<ApiException> Create(HttpResponseMessage response, RefitSettings refitSettings = null) 
-        {
-            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
-
-            if (response.Content == null) return exception;
-            
-            try {
-                exception.ContentHeaders = response.Content.Headers;
-                exception.Content = await response.Content.ReadAsStringAsync();
-                response.Content.Dispose();
-            } catch {
-                // NB: We're already handling an exception at this point, 
-                // so we want to make sure we don't throw another one 
-                // that hides the real error.
-            }
-            
-            return exception;
-        }
-
-        static string createMessage(HttpStatusCode statusCode, string reasonPhrase)
-        {
-            return String.Format("Response status code does not indicate success: {0} ({1}).", (int)statusCode, reasonPhrase);
         }
     }
 

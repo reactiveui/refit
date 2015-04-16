@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -59,6 +60,12 @@ namespace Refit.Generator
         public Warning(string code) : base("warning", code) { }
     }
 
+    public class Error : Diagnostic
+    {
+        public Error(string code) : base("error", code) { }
+    }
+
+
     public class MissingRefitAttributeWarning : Warning
     {
         public string InterfaceName { get; private set; }
@@ -94,6 +101,15 @@ namespace Refit.Generator
             Message = string.Format(
                 "Method {0}.{1} has been declared multiple times. Refit doesn't support overloading.",
                 InterfaceName, MethodName);
+        }
+    }
+
+    public class ReadOnlyFileError : Error
+    {
+        public ReadOnlyFileError(FileInfo file) : base("RF003")
+        {
+            File = file.FullName;
+            Message = "File is marked as read-only and is not up-to-date.";
         }
     }
 }
