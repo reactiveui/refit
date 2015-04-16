@@ -319,7 +319,7 @@ interface IMyRestService
 	Task<Foobar> SomePublicMethod();
 
 	[Get("/secretStuff")]
-    [Header("Authorization: Bearer")]
+    [Headers("Authorization: Bearer")]
 	Task<Location> GetLocationOfRebelBase();
 }
 
