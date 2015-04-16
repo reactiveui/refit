@@ -40,6 +40,8 @@ ipch/
 *.opensdf
 *.sdf
 
+*.ide/
+
 # Visual Studio profiler
 *.psess
 *.vsp
