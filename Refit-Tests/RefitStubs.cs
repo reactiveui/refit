@@ -18,6 +18,8 @@ using System.Net;
 using System.Reactive.Linq;
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
+using System.IO;
+using System.Reflection;
 
 /* ******** Hey You! *********
  *

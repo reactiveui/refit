@@ -69,6 +69,10 @@ namespace Refit
         }
     }
 
+    [AttributeUsage(AttributeTargets.Method)]
+    public class MultipartAttribute : Attribute {
+    }
+
     public enum BodySerializationMethod {
         Json, UrlEncoded
     }
