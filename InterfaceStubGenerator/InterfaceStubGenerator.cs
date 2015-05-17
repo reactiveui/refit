@@ -58,7 +58,7 @@ namespace Refit.Generator
         }
 
         static readonly HashSet<string> httpMethodAttributeNames = new HashSet<string>(
-            new[] {"Get", "Head", "Post", "Put", "Delete"}
+            new[] {"Get", "Head", "Post", "Put", "Delete", "Patch"}
                 .SelectMany(x => new[] {"{0}", "{0}Attribute"}.Select(f => string.Format(f, x))));
 
         public bool HasRefitHttpMethodAttribute(MethodDeclarationSyntax method)

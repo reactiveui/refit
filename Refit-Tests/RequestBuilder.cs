@@ -55,6 +55,9 @@ namespace Refit.Tests
 
         [Post("/foo/{id}")]
         string AsyncOnlyBuddy(int id);
+
+        [Patch("/foo/{id}")]
+        IObservable<string> PatchSomething(int id, [Body] string someAttribute);
     }
 
     [TestFixture]
@@ -234,6 +237,15 @@ namespace Refit.Tests
 
             Assert.IsFalse(shouldDie);
         }
+
+        [Test]
+        public void UsingThePatchAttributeSetsTheCorrectMethod()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchSomething"));
+
+            Assert.AreEqual("PATCH", fixture.HttpMethod.Method);
+        }
     }
 
     [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
@@ -263,12 +275,19 @@ namespace Refit.Tests
         [Headers("Api-Version: ")]
         Task<string> FetchSomeStuffWithEmptyHardcodedHeader(int id);
 
+        [Post("/foo/bar/{id}")]
+        [Headers("Content-Type: literally/anything")]
+        Task<string> PostSomeStuffWithHardCodedContentTypeHeader(int id, [Body] string content);
+
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
+
+        [Post("/foo/bar/{id}")]
+        Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
 
         [Get("/string")]
         Task<string> FetchSomeStuffWithoutFullPath();
@@ -292,6 +311,9 @@ namespace Refit.Tests
 
         [Post("/foo/bar/{id}")]
         Task<bool> PostAValueType(int id, [Body] Guid? content);
+
+        [Patch("/foo/bar/{id}")]
+        IObservable<string> PatchSomething(int id, [Body] string someAttribute);
     }
 
     public class SomeRequestData
@@ -447,6 +469,17 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void ContentHeadersCanBeHardcoded()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PostSomeStuffWithHardCodedContentTypeHeader");
+            var output = factory(new object[] { 6, "stuff" });
+
+            Assert.IsTrue(output.Content.Headers.Contains("Content-Type"), "Content headers include Content-Type header");
+            Assert.AreEqual("literally/anything", output.Content.Headers.ContentType.ToString());
+        }
+
+        [Test]
         public void DynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -487,6 +520,19 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, null });
 
             Assert.IsNull(output.Headers.Authorization, "Headers include Authorization header");
+        }
+
+        [Test]
+        public void AddCustomHeadersToRequestHeadersOnly()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PostSomeStuffWithCustomHeader");
+            var output = factory(new object[] { 6, new { Foo = "bar" }, ":smile_cat:" });
+
+            Assert.IsTrue(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.IsTrue(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
+            Assert.IsFalse(output.Content.Headers.Contains("Api-Version"), "Content headers include Api-Version header");
+            Assert.IsFalse(output.Content.Headers.Contains("X-Emoji"), "Content headers include X-Emoji header");
         }
 
         [Test]
@@ -614,6 +660,16 @@ namespace Refit.Tests
             var content = await output.Content.ReadAsStringAsync();
             
             Assert.AreEqual(expected, content);
+        }
+
+        [Test]
+        public async Task SupportPATCHMethod()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PatchSomething");
+            var output = factory(new object[] { "testData" });
+
+            Assert.AreEqual("PATCH", output.Method.Method);
         }
     }
 }
