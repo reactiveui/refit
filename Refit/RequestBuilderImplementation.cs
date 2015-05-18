@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using System.Collections;
 using System.Net.Http;
 using System.Collections.Generic;
@@ -128,9 +127,11 @@ namespace Refit
                         continue;
                     }
 
-                    // we are in a multipart method,
-                    // add the part to the content
-                    addMultipartItem(multiPartContent, restMethod.QueryParameterMap[i], paramList[i]);
+                    // we are in a multipart method, add the part to the content
+                    // the parameter name should be either the attachment name or the parameter name (as fallback)
+                    string itemName;
+                    if (! restMethod.AttachmentNameMap.TryGetValue(i, out itemName)) itemName = restMethod.QueryParameterMap[i];
+                    addMultipartItem(multiPartContent, itemName, paramList[i]);
                 }
 
                 // NB: We defer setting headers until the body has been
@@ -198,9 +199,9 @@ namespace Refit
                 var streamContent = new StreamContent(streamValue);
                 streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
                 {
-                    FileName = "unspecified.bin"
+                    FileName = itemName
                 };
-                multiPartContent.Add(streamContent, itemName);
+                multiPartContent.Add(streamContent);
                 return;
             }
              
@@ -225,7 +226,7 @@ namespace Refit
                 {
                     FileName = itemName
                 };
-                multiPartContent.Add(fileContent, itemName);
+                multiPartContent.Add(fileContent);
                 return;
             }
 
@@ -388,6 +389,7 @@ namespace Refit
         public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
+        public Dictionary<int, string> AttachmentNameMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
@@ -426,9 +428,24 @@ namespace Refit
             Headers = parseHeaders(methodInfo);
             HeaderParameterMap = buildHeaderParameterMap(parameterList);
 
+            // get names for multipart attachments
+            AttachmentNameMap = new Dictionary<int, string>();
+            if (IsMultipart) {
+                for (int i = 0; i < parameterList.Count; i++) {
+                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i)) {
+                        continue;
+                    }
+
+                    var attachmentName = getAttachmentNameForParameter(parameterList[i]);
+                    if (attachmentName == null) continue;
+
+                    AttachmentNameMap[i] = attachmentName;
+                }
+            }
+
             QueryParameterMap = new Dictionary<int, string>();
             for (int i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
+                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i) || AttachmentNameMap.ContainsKey(i)) {
                     continue;
                 }
 
@@ -488,6 +505,14 @@ namespace Refit
                 .OfType<AliasAsAttribute>()
                 .FirstOrDefault();
             return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
+        }
+
+        string getAttachmentNameForParameter(ParameterInfo paramInfo)
+        {
+            var nameAttr = paramInfo.GetCustomAttributes(true)
+                .OfType<AttachmentNameAttribute>()
+                .FirstOrDefault();
+            return nameAttr != null ? nameAttr.Name : null;
         }
 
         Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList, bool isMultipart)

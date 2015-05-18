@@ -13,11 +13,11 @@ namespace Refit.Tests
     {
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadStream(Stream stream);
+        Task<HttpResponseMessage> UploadStream([AttachmentName("test.pdf")] Stream stream);
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadBytes(byte[] bytes);
+        Task<HttpResponseMessage> UploadBytes([AttachmentName("test.pdf")] byte[] bytes);
 
         [Multipart]
         [Post("/")]
