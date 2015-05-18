@@ -195,7 +195,12 @@ namespace Refit
             var byteArrayValue = itemValue as byte[];
 
             if (streamValue != null) {
-                multiPartContent.Add(new StreamContent(streamValue), itemName);
+                var streamContent = new StreamContent(streamValue);
+                streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = "unspecified.bin"
+                };
+                multiPartContent.Add(streamContent, itemName);
                 return;
             }
              
