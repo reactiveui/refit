@@ -216,8 +216,12 @@ namespace Refit
 
             if (byteArrayValue != null) {
                 var fileContent = new ByteArrayContent(byteArrayValue);
-                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment");
+                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+                {
+                    FileName = itemName
+                };
                 multiPartContent.Add(fileContent, itemName);
+                return;
             }
 
             throw new ArgumentException("Multipart parameters must be on of String, Stream, FileInfo, or Byte array", "itemValue");

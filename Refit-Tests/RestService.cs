@@ -5,12 +5,10 @@ using System.Net;
 using System.Net.Http;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NUnit.Framework;
-using Newtonsoft.Json;
 using Refit; // InterfaceStubGenerator looks for this
-using System.IO;
-using System.Reflection;
 
 namespace Refit.Tests
 {
@@ -381,49 +379,6 @@ namespace Refit.Tests
             var result = await fixture.PostAValue("Does this work?");
 
             Assert.AreEqual(true, result);
-        }
-
-        [Test]
-        public async Task MultipartUploadShouldWork()
-        {
-            using (var stream = GetTestFileStream("Test Files/Test.pdf")) {
-
-                // insert API that accepts public upload here
-                /*
-                var fixture = 
-                var result = await fixture.Upload(stream);
-
-                Assert.IsTrue(result.IsSuccessStatusCode);
-                */
-            }
-        }
-
-        private static Stream GetTestFileStream(string relativeFilePath)
-        {
-            const char namespaceSeparator = '.';
-
-            // get calling assembly
-            var assembly = Assembly.GetCallingAssembly();
-
-            // compute resource name suffix
-            var relativeName = "." + relativeFilePath
-                .Replace(Path.DirectorySeparatorChar, namespaceSeparator)
-                .Replace(' ', '_');
-
-            // get resource stream
-            var fullName = assembly
-                .GetManifestResourceNames()
-                .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture));
-            if (fullName == null) {
-                throw new Exception(string.Format("Unable to find resource for path \"{0}\". Resource with name ending on \"{1}\" was not found in assembly.", relativeFilePath, relativeName));
-            }
-
-            var stream = assembly.GetManifestResourceStream(fullName);
-            if (stream == null) {
-                throw new Exception(string.Format("Unable to find resource for path \"{0}\". Resource named \"{1}\" was not found in assembly.", relativeFilePath, fullName));
-            }
-
-            return stream;
         }
     }
 }
