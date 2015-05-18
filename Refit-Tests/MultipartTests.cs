@@ -36,6 +36,7 @@ namespace Refit.Tests
         private const string runscopeUri = "https://yourapihere-com-<key>.runscope.net/";
 
         [Test]
+        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithStream()
         {
             using (var stream = GetTestFileStream("Test Files/Test.pdf")) {
@@ -47,6 +48,7 @@ namespace Refit.Tests
         }
 
         [Test]
+        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithByteArray()
         {
             using (var stream = GetTestFileStream("Test Files/Test.pdf"))
@@ -61,6 +63,7 @@ namespace Refit.Tests
         }
 
         [Test]
+        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithFileInfo()
         {
             var fileName = Path.GetTempFileName();
@@ -83,6 +86,7 @@ namespace Refit.Tests
         }
 
         [Test]
+        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithString()
         {
             const string text = "This is random text";
