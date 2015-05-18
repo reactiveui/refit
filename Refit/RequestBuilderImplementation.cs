@@ -197,8 +197,7 @@ namespace Refit
 
             if (streamValue != null) {
                 var streamContent = new StreamContent(streamValue);
-                streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-                {
+                streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
                     FileName = itemName
                 };
                 multiPartContent.Add(streamContent);
@@ -212,8 +211,7 @@ namespace Refit
 
             if (fileInfoValue != null) {
                 var fileContent = new StreamContent(fileInfoValue.OpenRead());
-                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-                {
+                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
                     FileName = fileInfoValue.Name
                 };
                 multiPartContent.Add(fileContent);
@@ -222,8 +220,7 @@ namespace Refit
 
             if (byteArrayValue != null) {
                 var fileContent = new ByteArrayContent(byteArrayValue);
-                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
-                {
+                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
                     FileName = itemName
                 };
                 multiPartContent.Add(fileContent);
