@@ -5,9 +5,9 @@ using System.Net;
 using System.Net.Http;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using NUnit.Framework;
-using Newtonsoft.Json;
 using Refit; // InterfaceStubGenerator looks for this
 
 namespace Refit.Tests

@@ -79,6 +79,10 @@ namespace Refit
         }
     }
 
+    [AttributeUsage(AttributeTargets.Method)]
+    public class MultipartAttribute : Attribute {
+    }
+
     public enum BodySerializationMethod {
         Json, UrlEncoded
     }
@@ -103,7 +107,17 @@ namespace Refit
             this.Name = name;
         }
     }
-    
+
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
+    public class AttachmentNameAttribute : Attribute
+    {
+        public string Name { get; protected set; }
+        public AttachmentNameAttribute(string name)
+        {
+            Name = name;
+        }
+    }
+
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
     public class HeadersAttribute : Attribute
     {

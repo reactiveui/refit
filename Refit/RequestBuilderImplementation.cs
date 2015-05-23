@@ -1,5 +1,4 @@
 using System;
-using System.Net;
 using System.Collections;
 using System.Net.Http;
 using System.Collections.Generic;
@@ -61,15 +60,23 @@ namespace Refit
             var restMethod = interfaceHttpMethods[methodName];
 
             return paramList => {
-                var ret = new HttpRequestMessage() {
+                var ret = new HttpRequestMessage {
                     Method = restMethod.HttpMethod,
                 };
+
+                // set up multipart content
+                MultipartFormDataContent multiPartContent = null;
+                if (restMethod.IsMultipart) {
+                    multiPartContent = new MultipartFormDataContent("----MyGreatBoundary");
+                    ret.Content = multiPartContent;
+                }
 
                 string urlTarget = (basePath == "/" ? String.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new Dictionary<string, string>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
 
                 for(int i=0; i < paramList.Length; i++) {
+                    // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.ContainsKey(i)) {
                         urlTarget = Regex.Replace(
                             urlTarget, 
@@ -79,6 +86,7 @@ namespace Refit
                         continue;
                     }
 
+                    // if marked as body, add to content
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item2 == i) {
                         var streamParam = paramList[i] as Stream;
                         var stringParam = paramList[i] as string;
@@ -101,16 +109,29 @@ namespace Refit
                         continue;
                     }
 
-
+                    // if header, add to request headers
                     if (restMethod.HeaderParameterMap.ContainsKey(i)) {
                         headersToAdd[restMethod.HeaderParameterMap[i]] = paramList[i] != null 
                             ? paramList[i].ToString() 
                             : null;
-                    } else {
-                        if (paramList[i] != null) {
-                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
-                        }
+                        continue;
                     }
+
+                    // ignore nulls
+                    if (paramList[i] == null) continue;
+
+                    // for anything that fell through to here, if this is not
+                    // a multipart method, add the parameter to the query string
+                    if (!restMethod.IsMultipart) {
+                        queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
+                        continue;
+                    }
+
+                    // we are in a multipart method, add the part to the content
+                    // the parameter name should be either the attachment name or the parameter name (as fallback)
+                    string itemName;
+                    if (! restMethod.AttachmentNameMap.TryGetValue(i, out itemName)) itemName = restMethod.QueryParameterMap[i];
+                    addMultipartItem(multiPartContent, itemName, paramList[i]);
                 }
 
                 // NB: We defer setting headers until the body has been
@@ -165,6 +186,48 @@ namespace Refit
             if (!added && request.Content != null) {
                 request.Content.Headers.TryAddWithoutValidation(name, value);
             }
+        }
+
+        void addMultipartItem(MultipartFormDataContent multiPartContent, string itemName, object itemValue)
+        {
+            var streamValue = itemValue as Stream;
+            var stringValue = itemValue as String;
+            var fileInfoValue = itemValue as FileInfo;
+            var byteArrayValue = itemValue as byte[];
+
+            if (streamValue != null) {
+                var streamContent = new StreamContent(streamValue);
+                streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
+                    FileName = itemName
+                };
+                multiPartContent.Add(streamContent);
+                return;
+            }
+             
+            if (stringValue != null) {
+                multiPartContent.Add(new StringContent(stringValue), itemName);
+                return;
+            }
+
+            if (fileInfoValue != null) {
+                var fileContent = new StreamContent(fileInfoValue.OpenRead());
+                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
+                    FileName = fileInfoValue.Name
+                };
+                multiPartContent.Add(fileContent);
+                return;
+            }
+
+            if (byteArrayValue != null) {
+                var fileContent = new ByteArrayContent(byteArrayValue);
+                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
+                    FileName = itemName
+                };
+                multiPartContent.Add(fileContent);
+                return;
+            }
+
+            throw new ArgumentException("Multipart parameters must be on of String, Stream, FileInfo, or Byte array", "itemValue");
         }
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
@@ -317,11 +380,13 @@ namespace Refit
         public MethodInfo MethodInfo { get; set; }
         public HttpMethod HttpMethod { get; set; }
         public string RelativePath { get; set; }
+        public bool IsMultipart { get; private set; }
         public Dictionary<int, string> ParameterMap { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
+        public Dictionary<int, string> AttachmentNameMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
@@ -343,6 +408,10 @@ namespace Refit
             HttpMethod = hma.Method;
             RelativePath = hma.Path;
 
+            IsMultipart = methodInfo.GetCustomAttributes(true)
+                .OfType<MultipartAttribute>()
+                .Any();
+
             verifyUrlPathIsSane(RelativePath);
             determineReturnTypeInfo(methodInfo);
 
@@ -351,14 +420,29 @@ namespace Refit
                 .Select((parameter, index) => new { index, parameter })
                 .ToDictionary(x => x.index, x => x.parameter);
             ParameterMap = buildParameterMap(RelativePath, parameterList);
-            BodyParameterInfo = findBodyParameter(parameterList);
+            BodyParameterInfo = findBodyParameter(parameterList, IsMultipart);
 
             Headers = parseHeaders(methodInfo);
             HeaderParameterMap = buildHeaderParameterMap(parameterList);
 
+            // get names for multipart attachments
+            AttachmentNameMap = new Dictionary<int, string>();
+            if (IsMultipart) {
+                for (int i = 0; i < parameterList.Count; i++) {
+                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i)) {
+                        continue;
+                    }
+
+                    var attachmentName = getAttachmentNameForParameter(parameterList[i]);
+                    if (attachmentName == null) continue;
+
+                    AttachmentNameMap[i] = attachmentName;
+                }
+            }
+
             QueryParameterMap = new Dictionary<int, string>();
             for (int i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
+                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i) || AttachmentNameMap.ContainsKey(i)) {
                     continue;
                 }
 
@@ -420,12 +504,24 @@ namespace Refit
             return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
         }
 
-        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList)
+        string getAttachmentNameForParameter(ParameterInfo paramInfo)
+        {
+            var nameAttr = paramInfo.GetCustomAttributes(true)
+                .OfType<AttachmentNameAttribute>()
+                .FirstOrDefault();
+            return nameAttr != null ? nameAttr.Name : null;
+        }
+
+        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList, bool isMultipart)
         {
             var bodyParams = parameterList
                 .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault() })
                 .Where(x => x.BodyAttribute != null)
                 .ToList();
+
+            if (isMultipart && bodyParams.Count > 0) {
+                throw new ArgumentException("Multipart requests may not contain a Body parameter");
+            }
 
             if (bodyParams.Count > 1) {
                 throw new ArgumentException("Only one parameter can be a Body parameter");
