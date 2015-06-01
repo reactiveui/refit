@@ -33,9 +33,10 @@ namespace Refit.Tests
     {
         // To test: sign up for a Runscope account (it's free, despite them implying that's its only good for 30 days)
         // and then insert your bucket URI here in order to run tests and verify success via the Runscope UI
-        private const string runscopeUri = "https://yourapihere-com-<key>.runscope.net/";
+        const string runscopeUri = "https://yourapihere-com-<key>.runscope.net/";
 
         [Test]
+        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithStream()
         {
             using (var stream = GetTestFileStream("Test Files/Test.pdf")) {

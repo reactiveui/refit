@@ -1,5 +1,7 @@
-﻿using System.Reflection;
-
+﻿using System;
+using System.Net.Http;
+using System.Reflection;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 namespace Refit
@@ -10,8 +12,11 @@ namespace Refit
         {
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
         }
+
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
+        public Func<Task<string>> AuthorizationHeaderValueGetter { get; set; }
+        public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
     }
 
     public interface IUrlParameterFormatter
