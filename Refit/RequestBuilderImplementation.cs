@@ -90,8 +90,11 @@ namespace Refit
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item2 == i) {
                         var streamParam = paramList[i] as Stream;
                         var stringParam = paramList[i] as string;
+                        var httpContentParam = paramList[i] as HttpContent;
 
-                        if (streamParam != null) {
+                        if (httpContentParam != null) {
+                            ret.Content = httpContentParam;
+                        } else if (streamParam != null) {
                             ret.Content = new StreamContent(streamParam);
                         } else if (stringParam != null) {
                             ret.Content = new StringContent(stringParam);
@@ -192,7 +195,6 @@ namespace Refit
         {
             var streamValue = itemValue as Stream;
             var stringValue = itemValue as String;
-            var fileInfoValue = itemValue as FileInfo;
             var byteArrayValue = itemValue as byte[];
 
             if (streamValue != null) {
@@ -209,6 +211,8 @@ namespace Refit
                 return;
             }
 
+#if !NETFX_CORE
+            var fileInfoValue = itemValue as FileInfo;
             if (fileInfoValue != null) {
                 var fileContent = new StreamContent(fileInfoValue.OpenRead());
                 fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
@@ -217,6 +221,7 @@ namespace Refit
                 multiPartContent.Add(fileContent);
                 return;
             }
+#endif
 
             if (byteArrayValue != null) {
                 var fileContent = new ByteArrayContent(byteArrayValue);
@@ -300,6 +305,10 @@ namespace Refit
 
                 if (!resp.IsSuccessStatusCode) {
                     throw await ApiException.Create(resp, restMethod.RefitSettings);
+                }
+
+                if (restMethod.SerializedReturnType == typeof(HttpContent)) {
+                    return (T)(object)resp.Content;
                 }
 
                 var ms = new MemoryStream();

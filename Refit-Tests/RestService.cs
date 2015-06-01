@@ -59,6 +59,12 @@ namespace Refit.Tests
         Task<bool> PostAValue([Body] string derp);
     }
 
+    public interface IHttpContentApi
+    {
+        [Post("/blah")]
+        Task<HttpContent> PostFileUpload([Body] HttpContent content);
+    }
+
     public class HttpBinGet
     {
         public Dictionary<string, string> Args { get; set; }
@@ -271,6 +277,10 @@ namespace Refit.Tests
         public async Task TwoSubscriptionsResultInTwoRequests()
         {
             var input = new TestHttpMessageHandler();
+
+            // we need to use a factory here to ensure each request gets its own httpcontent instance
+            input.ContentFactory = () => new StringContent("test");
+
             var client = new HttpClient(input) { BaseAddress = new Uri("http://foo") };
             var fixture = RestService.For<IGitHubApi>(client);
 
@@ -279,14 +289,15 @@ namespace Refit.Tests
             var obs = fixture.GetIndexObservable()
                 .Timeout(TimeSpan.FromSeconds(10));
 
-            await obs;
+            var result1 = await obs;
             Assert.AreEqual(1, input.MessagesSent);
 
-            var result = await obs;
+            var result2 = await obs;
             Assert.AreEqual(2, input.MessagesSent);
 
             // NB: TestHttpMessageHandler returns what we tell it to ('test' by default)
-            Assert.IsTrue(result.Contains("test"));
+            Assert.IsTrue(result1.Contains("test"));
+            Assert.IsTrue(result2.Contains("test"));
         }
 
         [Test]

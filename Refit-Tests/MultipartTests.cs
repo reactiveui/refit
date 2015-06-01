@@ -36,7 +36,6 @@ namespace Refit.Tests
         private const string runscopeUri = "https://yourapihere-com-<key>.runscope.net/";
 
         [Test]
-        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithStream()
         {
             using (var stream = GetTestFileStream("Test Files/Test.pdf")) {
