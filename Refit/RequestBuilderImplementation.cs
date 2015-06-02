@@ -232,7 +232,7 @@ namespace Refit
                 return;
             }
 
-            throw new ArgumentException("Multipart parameters must be on of String, Stream, FileInfo, or Byte array", "itemValue");
+            throw new ArgumentException(string.Format("Unexpected parameter type in a Multipart request. Parameter {0} is of type {1}, whereas allowed types are String, Stream, FileInfo, and Byte array", itemName, itemValue.GetType().Name), "itemValue");
         }
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
