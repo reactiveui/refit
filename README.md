@@ -399,6 +399,28 @@ await CreateUser(user, null);
 await CreateUser(user, ""); 
 ```
 
+### Multipart uploads
+
+Methods decorated with `Multipart` attribute will be submitted with multipart content type.
+At this time, multipart methods support the following parameter types:
+
+ - string (parameter name will be used as name and string value as value)
+ - byte array
+ - Stream
+ - FileInfo
+
+For byte array and Stream parameters, use `AttachmentName` parameter attribute to specify the
+name for the attachment. For `FileInfo` parameters, the file name will be used.
+
+```csharp
+public interface ISomeApi
+{
+    [Multipart]
+    [Post("/users/{id}/photo")]
+    Task UploadPhoto(int id, [AttachmentName("photo.jpg")] Stream stream);
+}
+```
+
 ### Retrieving the response
 
 Note that in Refit unlike in Retrofit, there is no option for a synchronous
@@ -465,10 +487,3 @@ Which can be used like this:
 // than one type (unless you have a different domain for each type)
 var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
 ``` 
-
-### What's missing / planned?
-
-Currently Refit is missing the following features from Retrofit that are
-planned for a future release soon:
-
-* Multipart requests (including file upload)
