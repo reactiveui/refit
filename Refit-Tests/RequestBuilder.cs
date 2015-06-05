@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net;
@@ -335,15 +336,15 @@ namespace Refit.Tests
     {
         public HttpRequestMessage RequestMessage { get; private set; }
         public int MessagesSent { get; set; }
-        public string Content { get; set; }
-
+        public HttpContent Content { get; set; }
+        public Func<HttpContent> ContentFactory { get; set; }
         public CancellationToken CancellationToken { get; set; }
-
         public string SendContent { get; set; }
 
         public TestHttpMessageHandler(string content = "test")
         {
-            Content = content;
+            Content = new StringContent(content);
+            ContentFactory = () => Content;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -356,7 +357,7 @@ namespace Refit.Tests
 
             CancellationToken = cancellationToken;
             MessagesSent++;
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(Content) };
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = ContentFactory() };
         }
     }
 
@@ -419,6 +420,24 @@ namespace Refit.Tests
 
             
             Assert.IsTrue(output.CancellationToken.IsCancellationRequested);
+        }
+
+        [Test]
+        public void HttpContentTest()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IHttpContentApi));
+            var factory = fixture.BuildRestResultFuncForMethod("PostFileUpload");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+            var retContent = new StreamContent(new MemoryStream());
+            testHttpMessageHandler.Content = retContent;
+
+            var mpc = new MultipartContent("foosubtype");
+
+            var task = (Task<HttpContent>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { mpc });
+            task.Wait();
+
+            Assert.AreEqual(testHttpMessageHandler.RequestMessage.Content, mpc);
+            Assert.AreEqual(retContent, task.Result);
         }
 
         [Test]
@@ -746,8 +765,7 @@ namespace Refit.Tests
             var factory = builder.BuildRestResultFuncForMethod(methodName);
             var testHttpMessageHandler = new TestHttpMessageHandler();
             if (returnContent != null)
-                testHttpMessageHandler.Content = returnContent;
-
+                testHttpMessageHandler.Content = new StringContent(returnContent);
 
             return paramList =>
             {
@@ -756,16 +774,6 @@ namespace Refit.Tests
             
                 return testHttpMessageHandler;
             };
-        }
-
-        [Test]
-        public async Task SupportPATCHMethod()
-        {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PatchSomething");
-            var output = factory(new object[] { "testData" });
-
-            Assert.AreEqual("PATCH", output.Method.Method);
         }
     }
 }

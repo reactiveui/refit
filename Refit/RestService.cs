@@ -41,8 +41,26 @@ namespace Refit
 
         public static T For<T>(string hostUrl, RefitSettings settings)
         {
-            var client = new HttpClient() { BaseAddress = new Uri(hostUrl) };
+#if PORTABLE
+            throw new NotImplementedException("You've somehow included the PCL version of Refit in your app. You need to use the platform-specific version!");
+#else
+            // check to see if user provided custom auth t
+
+            HttpMessageHandler innerHandler = null;
+            if (settings != null) {
+                if (settings.HttpMessageHandlerFactory != null) {
+                    innerHandler = settings.HttpMessageHandlerFactory();
+                }
+
+                if (settings.AuthorizationHeaderValueGetter != null) {
+                    innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, innerHandler);
+                }
+            }
+
+            var client = new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl) };
             return RestService.For<T>(client, settings);
+#endif
+
         }
 
         public static T For<T>(string hostUrl)
