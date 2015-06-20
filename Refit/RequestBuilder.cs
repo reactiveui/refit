@@ -7,7 +7,6 @@ namespace Refit
     public interface IRequestBuilder
     {
         IEnumerable<string> InterfaceHttpMethods { get; }
-        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath = "");
         Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName);
     }
 

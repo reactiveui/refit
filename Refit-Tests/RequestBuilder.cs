@@ -317,6 +317,15 @@ namespace Refit.Tests
         IObservable<string> PatchSomething(int id, [Body] string someAttribute);
     }
 
+    interface ICancellableMethods
+    {
+        [Get("/foo")]
+        Task GetWithCancellation(CancellationToken token = default (CancellationToken));
+        [Get("/foo")]
+        Task<string> GetWithCancellationAndReturn(CancellationToken token = default (CancellationToken));
+    }
+
+  
     public class SomeRequestData
     {
         [AliasAs("rpn")]
@@ -328,8 +337,9 @@ namespace Refit.Tests
         public HttpRequestMessage RequestMessage { get; private set; }
         public int MessagesSent { get; set; }
         public HttpContent Content { get; set; }
-
         public Func<HttpContent> ContentFactory { get; set; }
+        public CancellationToken CancellationToken { get; set; }
+        public string SendContent { get; set; }
 
         public TestHttpMessageHandler(string content = "test")
         {
@@ -337,11 +347,17 @@ namespace Refit.Tests
             ContentFactory = () => Content;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestMessage = request;
+            if (request.Content != null)
+            {
+                SendContent = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
+            }
+
+            CancellationToken = cancellationToken;
             MessagesSent++;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = ContentFactory() });
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = ContentFactory() };
         }
     }
 
@@ -363,6 +379,49 @@ namespace Refit.Tests
     [TestFixture]
     public class RequestBuilderTests
     {
+
+        [Test]
+        public void MethodsShouldBeCancellableDefault()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
+            var factory = fixture.RunRequest("GetWithCancellation");
+            var output = factory(new object[0]);
+
+            var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
+            Assert.AreEqual("/foo", uri.PathAndQuery);
+            Assert.IsFalse(output.CancellationToken.IsCancellationRequested);
+        }
+
+        [Test]
+        public void MethodsShouldBeCancellableWithToken()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
+            var factory = fixture.RunRequest("GetWithCancellation");
+
+            var cts = new CancellationTokenSource();
+
+            var output = factory(new object[]{cts.Token});
+
+            var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
+            Assert.AreEqual("/foo", uri.PathAndQuery);
+            Assert.IsFalse(output.CancellationToken.IsCancellationRequested);
+        }
+
+        [Test]
+        public void MethodsShouldBeCancellableWithTokenDoesCancel()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
+            var factory = fixture.RunRequest("GetWithCancellation");
+
+            var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            var output = factory(new object[] { cts.Token });
+
+            
+            Assert.IsTrue(output.CancellationToken.IsCancellationRequested);
+        }
+
         [Test]
         public void HttpContentTest()
         {
@@ -457,6 +516,7 @@ namespace Refit.Tests
         public void HardcodedHeadersShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedHeader");
             var output = factory(new object[] { 6 });
 
@@ -620,10 +680,10 @@ namespace Refit.Tests
         }
 
         [Test]
-        public async Task BodyContentGetsUrlEncoded() 
+        public void BodyContentGetsUrlEncoded() 
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PostSomeUrlEncodedStuff");
+            var factory = fixture.RunRequest("PostSomeUrlEncodedStuff");
             var output = factory(
                 new object[] {
                     6, 
@@ -634,16 +694,14 @@ namespace Refit.Tests
                     }
                 });
 
-            string content = await output.Content.ReadAsStringAsync();
-
-            Assert.AreEqual("Foo=Something&Bar=100&Baz=", content);
+            Assert.AreEqual("Foo=Something&Bar=100&Baz=", output.SendContent);
         }
 
         [Test]
         public async Task FormFieldGetsAliased()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PostSomeAliasedUrlEncodedStuff");
+            var factory = fixture.RunRequest("PostSomeAliasedUrlEncodedStuff");
             var output = factory(
                 new object[] {
                     6, 
@@ -652,9 +710,9 @@ namespace Refit.Tests
                     }
                 });
 
-            string content = await output.Content.ReadAsStringAsync();
 
-            Assert.AreEqual("rpn=99", content);
+
+            Assert.AreEqual("rpn=99", output.SendContent);
         }
 
         [Test]
@@ -671,27 +729,51 @@ namespace Refit.Tests
         }
 
         [Test]
-        public async Task ICanPostAValueTypeIfIWantYoureNotTheBossOfMe()
+        public void ICanPostAValueTypeIfIWantYoureNotTheBossOfMe()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PostAValueType");
+            var factory = fixture.RunRequest("PostAValueType", "true");
             var guid = Guid.NewGuid();
             var expected = string.Format("\"{0}\"", guid);
             var output = factory(new object[] { 7, guid });
 
-            var content = await output.Content.ReadAsStringAsync();
-            
-            Assert.AreEqual(expected, content);
+
+            Assert.AreEqual(expected, output.SendContent);
+        }
+    }
+
+    static class RequestBuilderTestExtensions
+    {
+        public static Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(this IRequestBuilder builder, string methodName)
+        {
+            var factory = builder.BuildRestResultFuncForMethod(methodName);
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+
+            return paramList =>
+                   {
+                       var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/")}, paramList);
+                       task.Wait();
+
+                       return testHttpMessageHandler.RequestMessage;
+                   };
         }
 
-        [Test]
-        public async Task SupportPATCHMethod()
+       
+        public static Func<object[], TestHttpMessageHandler> RunRequest(this IRequestBuilder builder, string methodName, string returnContent = null)
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            var factory = fixture.BuildRequestFactoryForMethod("PatchSomething");
-            var output = factory(new object[] { "testData" });
+            var factory = builder.BuildRestResultFuncForMethod(methodName);
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+            if (returnContent != null)
+                testHttpMessageHandler.Content = new StringContent(returnContent);
 
-            Assert.AreEqual("PATCH", output.Method.Method);
+            return paramList =>
+            {
+                var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, paramList);
+                task.Wait();
+            
+                return testHttpMessageHandler;
+            };
         }
     }
 }

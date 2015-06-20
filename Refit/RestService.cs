@@ -110,7 +110,7 @@ namespace Refit
 
             try {
                 exception.ContentHeaders = response.Content.Headers;
-                exception.Content = await response.Content.ReadAsStringAsync();
+                exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 response.Content.Dispose();
             } catch {
                 // NB: We're already handling an exception at this point, 

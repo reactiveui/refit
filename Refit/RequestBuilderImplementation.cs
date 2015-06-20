@@ -15,7 +15,7 @@ using System.Threading;
 
 namespace Refit
 {
-    public class RequestBuilderFactory : IRequestBuilderFactory
+    internal class RequestBuilderFactory : IRequestBuilderFactory
     {
         public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)
         {
@@ -23,7 +23,7 @@ namespace Refit
         }
     }
 
-    public class RequestBuilderImplementation : IRequestBuilder
+    internal class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
@@ -52,7 +52,7 @@ namespace Refit
             get { return interfaceHttpMethods.Keys; }
         }
 
-        public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath = "")
+        private Func<object[], HttpRequestMessage> buildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName)) {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
@@ -60,6 +60,12 @@ namespace Refit
             var restMethod = interfaceHttpMethods[methodName];
 
             return paramList => {
+                // make sure we strip out any cancelation tokens
+                if (paramsContainsCancellationToken)
+                {
+                    paramList = paramList.Where(o => o == null || o.GetType() != typeof(CancellationToken)).ToArray();
+                }
+                
                 var ret = new HttpRequestMessage {
                     Method = restMethod.HttpMethod,
                 };
@@ -126,7 +132,7 @@ namespace Refit
                     // for anything that fell through to here, if this is not
                     // a multipart method, add the parameter to the query string
                     if (!restMethod.IsMultipart) {
-                        queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
+                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
                         continue;
                     }
 
@@ -272,12 +278,21 @@ namespace Refit
         Func<HttpClient, object[], Task> buildVoidTaskFuncForMethod(RestMethodInfo restMethod)
         {                      
             return async (client, paramList) => {
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
+                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
-                var resp = await client.SendAsync(rq);
+
+                var ct = CancellationToken.None;
+
+                if (restMethod.CancellationToken != null)
+                {
+                    ct = paramList.OfType<CancellationToken>().FirstOrDefault();
+                    
+                }
+
+                var resp = await client.SendAsync(rq, ct).ConfigureAwait(false);
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, settings);
+                    throw await ApiException.Create(resp, settings).ConfigureAwait(false);
                 }
             };
         }
@@ -285,16 +300,21 @@ namespace Refit
         Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             var ret = buildCancellableTaskFuncForMethod<T>(restMethod);
-            return (client, paramList) => ret(client, CancellationToken.None, paramList);
+            return (client, paramList) =>
+                   {
+                       if(restMethod.CancellationToken != null)
+                        return ret(client, paramList.OfType<CancellationToken>().FirstOrDefault(), paramList);
+                       return ret(client, CancellationToken.None, paramList);
+                   };
         }
 
         Func<HttpClient, CancellationToken, object[], Task<T>> buildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
+                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
-                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct);
+                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
 
                 if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
                     // NB: This double-casting manual-boxing hate crime is the only way to make 
@@ -304,7 +324,7 @@ namespace Refit
                 }
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, restMethod.RefitSettings);
+                    throw await ApiException.Create(resp, restMethod.RefitSettings).ConfigureAwait(false);
                 }
 
                 if (restMethod.SerializedReturnType == typeof(HttpContent)) {
@@ -312,11 +332,12 @@ namespace Refit
                 }
 
                 var ms = new MemoryStream();
-                var fromStream = await resp.Content.ReadAsStreamAsync();
-                await fromStream.CopyToAsync(ms, 4096, ct);
+                var fromStream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                await fromStream.CopyToAsync(ms, 4096, ct).ConfigureAwait(false);
 
                 var bytes = ms.ToArray();
                 var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+
                 if (restMethod.SerializedReturnType == typeof(string)) {
                     return (T)(object)content; 
                 }
@@ -330,7 +351,18 @@ namespace Refit
             var taskFunc = buildCancellableTaskFuncForMethod<T>(restMethod);
 
             return (client, paramList) => 
-                new TaskToObservable<T>(ct => taskFunc(client, ct, paramList));
+                new TaskToObservable<T>(ct =>
+                                        {
+                                            var methodCt = CancellationToken.None;
+                                            if (restMethod.CancellationToken != null)
+                                            {
+                                                methodCt = paramList.OfType<CancellationToken>().FirstOrDefault();
+                                            }
+                                            // link the two
+                                            var cts = CancellationTokenSource.CreateLinkedTokenSource(methodCt, ct);
+                                            
+                                            return taskFunc(client, cts.Token, paramList);
+                                        });
         }
 
         class TaskToObservable<T> : IObservable<T>
@@ -391,6 +423,7 @@ namespace Refit
         public string RelativePath { get; set; }
         public bool IsMultipart { get; private set; }
         public Dictionary<int, string> ParameterMap { get; set; }
+        public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
@@ -424,7 +457,8 @@ namespace Refit
             verifyUrlPathIsSane(RelativePath);
             determineReturnTypeInfo(methodInfo);
 
-            var parameterList = methodInfo.GetParameters().ToList();
+            // Exclude cancellation token parameters from this list
+            var parameterList = methodInfo.GetParameters().Where(p => p.ParameterType != typeof(CancellationToken)).ToList();
             ParameterInfoMap = parameterList
                 .Select((parameter, index) => new { index, parameter })
                 .ToDictionary(x => x.index, x => x.parameter);
@@ -457,6 +491,12 @@ namespace Refit
 
                 QueryParameterMap[i] = getUrlNameForParameter(parameterList[i]);
             }
+
+            var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
+            if(ctParams.Count > 1)
+                throw new ArgumentException("Argument list can only contain a single CancellationToken");
+
+            CancellationToken = ctParams.FirstOrDefault();
         }
 
         void verifyUrlPathIsSane(string relativePath) 
