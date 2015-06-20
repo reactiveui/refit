@@ -435,6 +435,7 @@ namespace Refit
         public RefitSettings RefitSettings { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
+        static readonly HttpMethod patchMethod = new HttpMethod("PATCH");
 
         public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
         {
@@ -463,7 +464,7 @@ namespace Refit
                 .Select((parameter, index) => new { index, parameter })
                 .ToDictionary(x => x.index, x => x.parameter);
             ParameterMap = buildParameterMap(RelativePath, parameterList);
-            BodyParameterInfo = findBodyParameter(parameterList, IsMultipart);
+            BodyParameterInfo = findBodyParameter(parameterList, IsMultipart, hma.Method);
 
             Headers = parseHeaders(methodInfo);
             HeaderParameterMap = buildHeaderParameterMap(parameterList);
@@ -561,8 +562,14 @@ namespace Refit
             return nameAttr != null ? nameAttr.Name : null;
         }
 
-        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList, bool isMultipart)
+        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
         {
+
+            // The body parameter is found using the following logic / order of precedence:
+            // 1) [Body] attribute
+            // 2) POST/PUT/PATCH: Reference type other than string
+            // 3) If there are two reference types other than string, without the body attribute, throw
+
             var bodyParams = parameterList
                 .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault() })
                 .Where(x => x.BodyAttribute != null)
@@ -576,12 +583,33 @@ namespace Refit
                 throw new ArgumentException("Only one parameter can be a Body parameter");
             }
 
-            if (bodyParams.Count == 0) {
-                return null;
+            // #1, body attribute wins
+            if (bodyParams.Count == 1)
+            {
+                var ret = bodyParams[0];
+                return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
             }
 
-            var ret = bodyParams[0];
-            return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
+            // No body attribute found, check rule #2
+         
+            // see if we're a post/put/patch
+            if (method.Equals(HttpMethod.Post) || method.Equals(HttpMethod.Put) || method.Equals(patchMethod))
+            {
+
+                var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
+                
+                // Check for rule #3
+                if (refParams.Count > 1)
+                {
+                    throw new ArgumentException("Multiple complex types found. Specify one parameter as the body using BodyAttribute");
+                }
+                else if (refParams.Count == 1)
+                {
+                    return Tuple.Create(BodySerializationMethod.Json, parameterList.IndexOf(refParams[0]));
+                }
+            }
+
+            return null;
         }
 
         Dictionary<string, string> parseHeaders(MethodInfo methodInfo) 

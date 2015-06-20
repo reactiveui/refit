@@ -59,11 +59,96 @@ namespace Refit.Tests
 
         [Patch("/foo/{id}")]
         IObservable<string> PatchSomething(int id, [Body] string someAttribute);
+
+
+        [Post("/foo")]
+        Task PostWithBodyDetected(Dictionary<int, string> theData);
+
+        [Get("/foo")]
+        Task GetWithBodyDetected(Dictionary<int, string> theData);
+
+        [Put("/foo")]
+        Task PutWithBodyDetected(Dictionary<int, string> theData);
+
+        [Patch("/foo")]
+        Task PatchWithBodyDetected(Dictionary<int, string> theData);
+
+        [Post("/foo")]
+        Task TooManyComplexTypes(Dictionary<int, string> theData, Dictionary<int, string> theData1);
+
+        [Post("/foo")]
+        Task ManyComplexTypes(Dictionary<int, string> theData, [Body] Dictionary<int, string> theData1);
     }
 
     [TestFixture]
     public class RestMethodInfoTests
     {
+
+        [Test]
+        public void TooManyComplexTypesThrows()
+        {
+            var input = typeof(IRestMethodInfoTests);
+
+            Assert.Throws<ArgumentException>(() =>
+            {
+                var fixture = new RestMethodInfo(input, input.GetMethods()
+                                                            .First(x => x.Name == "TooManyComplexTypes"));
+
+            });
+
+        }
+
+        [Test]
+        public void ManyComplexTypes()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "ManyComplexTypes"));
+
+            Assert.AreEqual(1, fixture.QueryParameterMap.Count);
+            Assert.IsNotNull(fixture.BodyParameterInfo);
+            Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
+        }
+
+        [Test]
+        public void DefaultBodyParameterDetectedForPost()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithBodyDetected"));
+
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNotNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
+        public void DefaultBodyParameterDetectedForPut()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PutWithBodyDetected"));
+
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNotNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
+        public void DefaultBodyParameterDetectedForPatch()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchWithBodyDetected"));
+
+            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
+            Assert.IsNotNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
+        public void DefaultBodyParameterNotDetectedForGet()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GetWithBodyDetected"));
+
+            Assert.AreEqual(1, fixture.QueryParameterMap.Count);
+            Assert.IsNull(fixture.BodyParameterInfo);
+        }
+
         [Test]
         public void GarbagePathsShouldThrow()
         {
