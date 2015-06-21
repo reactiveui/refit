@@ -15,7 +15,7 @@ using System.Threading;
 
 namespace Refit
 {
-    internal class RequestBuilderFactory : IRequestBuilderFactory
+    class RequestBuilderFactory : IRequestBuilderFactory
     {
         public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)
         {
@@ -23,7 +23,7 @@ namespace Refit
         }
     }
 
-    internal class RequestBuilderImplementation : IRequestBuilder
+    class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
@@ -52,7 +52,7 @@ namespace Refit
             get { return interfaceHttpMethods.Keys; }
         }
 
-        private Func<object[], HttpRequestMessage> buildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
+        Func<object[], HttpRequestMessage> buildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName)) {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
@@ -61,8 +61,7 @@ namespace Refit
 
             return paramList => {
                 // make sure we strip out any cancelation tokens
-                if (paramsContainsCancellationToken)
-                {
+                if (paramsContainsCancellationToken) {
                     paramList = paramList.Where(o => o == null || o.GetType() != typeof(CancellationToken)).ToArray();
                 }
                 
@@ -132,7 +131,7 @@ namespace Refit
                     // for anything that fell through to here, if this is not
                     // a multipart method, add the parameter to the query string
                     if (!restMethod.IsMultipart) {
-                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
+                        queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
                         continue;
                     }
 
@@ -283,8 +282,7 @@ namespace Refit
 
                 var ct = CancellationToken.None;
 
-                if (restMethod.CancellationToken != null)
-                {
+                if (restMethod.CancellationToken != null) {
                     ct = paramList.OfType<CancellationToken>().FirstOrDefault();
                     
                 }
@@ -300,8 +298,7 @@ namespace Refit
         Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             var ret = buildCancellableTaskFuncForMethod<T>(restMethod);
-            return (client, paramList) =>
-                   {
+            return (client, paramList) => {
                        if(restMethod.CancellationToken != null)
                         return ret(client, paramList.OfType<CancellationToken>().FirstOrDefault(), paramList);
                        return ret(client, CancellationToken.None, paramList);
@@ -584,8 +581,7 @@ namespace Refit
             }
 
             // #1, body attribute wins
-            if (bodyParams.Count == 1)
-            {
+            if (bodyParams.Count == 1) {
                 var ret = bodyParams[0];
                 return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
             }
@@ -593,18 +589,15 @@ namespace Refit
             // No body attribute found, check rule #2
          
             // see if we're a post/put/patch
-            if (method.Equals(HttpMethod.Post) || method.Equals(HttpMethod.Put) || method.Equals(patchMethod))
-            {
+            if (method.Equals(HttpMethod.Post) || method.Equals(HttpMethod.Put) || method.Equals(patchMethod)) {
 
                 var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
                 
                 // Check for rule #3
-                if (refParams.Count > 1)
-                {
+                if (refParams.Count > 1) {
                     throw new ArgumentException("Multiple complex types found. Specify one parameter as the body using BodyAttribute");
                 }
-                else if (refParams.Count == 1)
-                {
+                else if (refParams.Count == 1) {
                     return Tuple.Create(BodySerializationMethod.Json, parameterList.IndexOf(refParams[0]));
                 }
             }
