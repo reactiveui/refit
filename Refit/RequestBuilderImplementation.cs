@@ -348,18 +348,17 @@ namespace Refit
             var taskFunc = buildCancellableTaskFuncForMethod<T>(restMethod);
 
             return (client, paramList) => 
-                new TaskToObservable<T>(ct =>
-                                        {
-                                            var methodCt = CancellationToken.None;
-                                            if (restMethod.CancellationToken != null)
-                                            {
-                                                methodCt = paramList.OfType<CancellationToken>().FirstOrDefault();
-                                            }
-                                            // link the two
-                                            var cts = CancellationTokenSource.CreateLinkedTokenSource(methodCt, ct);
+                new TaskToObservable<T>(ct => {
+                    var methodCt = CancellationToken.None;
+                    if (restMethod.CancellationToken != null)
+                    {
+                        methodCt = paramList.OfType<CancellationToken>().FirstOrDefault();
+                    }
+                    // link the two
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(methodCt, ct);
                                             
-                                            return taskFunc(client, cts.Token, paramList);
-                                        });
+                    return taskFunc(client, cts.Token, paramList);
+                });
         }
 
         class TaskToObservable<T> : IObservable<T>
