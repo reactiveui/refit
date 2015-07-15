@@ -21,9 +21,11 @@
                 <dependency id="Newtonsoft.Json" version="6.0.5" />
             </group>
         </dependencies>
+        <frameworkAssemblies>
+            <frameworkAssembly assemblyName="System.Net.Http" targetFramework=".NETPortable0.0-net45+monoandroid+xamarin.ios10" />
+        </frameworkAssemblies>
     </metadata>
     <files>
-        <file src="content\*.*" target="content" />
         <file src="targets\*.*" target="build" />
         <file src="..\InterfaceStubGenerator\bin\Release\*.exe" target="tools" />
         <file src="..\InterfaceStubGenerator\bin\Release\*.dll" target="tools" />
