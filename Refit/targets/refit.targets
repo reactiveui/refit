@@ -3,11 +3,11 @@
 
   <Target Name="GenerateRefitStubs" BeforeTargets="Build"> 
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\tools\InterfaceStubGenerator.exe" "$(ProjectDir)$(IntermediateOutputPath)\RefitStubs.g.cs" "$(ProjectDir)$(ProjectFileName)" "@(Compile)"</RefitExecCmd>
+      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\..\tools\InterfaceStubGenerator.exe" "$(ProjectDir)$(IntermediateOutputPath)\RefitStubs.g.cs" "$(ProjectDir)$(ProjectFileName)" "@(Compile)"</RefitExecCmd>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../tools/InterfaceStubGenerator.exe" "$(ProjectDir)$(IntermediateOutputPath)\RefitStubs.g.cs" "$(ProjectDir)$(ProjectFileName)" "@(Compile)"</RefitExecCmd>
+      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../../tools/InterfaceStubGenerator.exe" "$(ProjectDir)$(IntermediateOutputPath)\RefitStubs.g.cs" "$(ProjectDir)$(ProjectFileName)" "@(Compile)"</RefitExecCmd>
     </PropertyGroup>
     
     <Exec Command="$(RefitExecCmd)" />
