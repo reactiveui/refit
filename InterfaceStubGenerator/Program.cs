@@ -18,7 +18,7 @@ namespace Refit.Generator
             // directory - pass in the project and use its dir 
             var generator = new InterfaceStubGenerator();
             var target = new FileInfo(args[0]);
-            var targetDir = new FileInfo(args[1]).Directory;
+            var targetDir = new DirectoryInfo(args[1]);
 
             var files = default(FileInfo[]);
 
@@ -41,8 +41,7 @@ namespace Refit.Generator
             if (target.Exists) {
                 // Only try writing if the contents are different. Don't cause a rebuild
                 contents = File.ReadAllText(target.FullName, Encoding.UTF8);
-                if (contents == template)
-                {
+                if (string.Equals(contents, template, StringComparison.Ordinal)) {
                     return;
                 }    
             }

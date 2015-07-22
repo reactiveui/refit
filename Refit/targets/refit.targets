@@ -1,29 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <Target Name="GenerateRefitStubs"> 
+  <PropertyGroup>
+    <IntermediateOutputPath Condition="$(IntermediateOutputPath) == '' Or $(IntermediateOutputPath) == '*Undefined*'">$(MSBuildProjectDirectory)obj\$(Configuration)\</IntermediateOutputPath>    
+  </PropertyGroup>
+
+  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile"> 
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\..\tools\InterfaceStubGenerator.exe" "$(ProjectDir)$(IntermediateOutputPath)\RefitStubs.g.cs" "$(ProjectDir)$(ProjectFileName)" "@(Compile)"</RefitExecCmd>
+      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\..\tools\InterfaceStubGenerator.exe" "$(IntermediateOutputPath)\RefitStubs.g.cs" "$(MSBuildProjectDirectory)" "@(Compile)"</RefitExecCmd>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../../tools/InterfaceStubGenerator.exe" "$(ProjectDir)$(IntermediateOutputPath)\RefitStubs.g.cs" "$(ProjectDir)$(ProjectFileName)" "@(Compile)"</RefitExecCmd>
+      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../../tools/InterfaceStubGenerator.exe" "$(IntermediateOutputPath)\RefitStubs.g.cs" "$(MSBuildProjectDirectory)" "@(Compile)"</RefitExecCmd>
     </PropertyGroup>
     
     <Exec Command="$(RefitExecCmd)" />
-    <Message Text="Processed Refit Stubs" />   
+    <Message Text="Processed Refit Stubs" />      
    
+    <ItemGroup Condition="Exists('$(IntermediateOutputPath)\RefitStubs.g.cs')">
+        <Compile Include="$(IntermediateOutputPath)\RefitStubs.g.cs" />
+    </ItemGroup>    
   </Target>
-  
-   <ItemGroup Condition="Exists('$(ProjectDir)$(IntermediateOutputPath)\RefitStubs.g.cs')">
-      <Compile Include="$(ProjectDir)$(IntermediateOutputPath)\RefitStubs.g.cs" />
-    </ItemGroup>
-    
-    <!--The following property group adds our custom pre-target to CoreCompileDependsOn to ensure it is called before CoreCompile -->
-    <PropertyGroup>
-      <CoreCompileDependsOn>
-          $(CoreCompileDependsOn);
-          GenerateRefitStubs
-      </CoreCompileDependsOn>
-    </PropertyGroup>
 </Project>

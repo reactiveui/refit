@@ -86,10 +86,10 @@
 
   <!-- This is the prototype / testing version of the Refit.targets file -->
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(ProjectDir)$(ProjectFileName)" "@(Compile)"</PreBuildEvent>
+    <PreBuildEvent>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator/bin/$(Configuration)/InterfaceStubGenerator.exe "../../RefitStubs.cs" "$(ProjectDir)$(ProjectFileName)" "@(Compile)"</PreBuildEvent>
+    <PreBuildEvent>mono $(SolutionDir)InterfaceStubGenerator/bin/$(Configuration)/InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "@(Compile)"</PreBuildEvent>
   </PropertyGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
