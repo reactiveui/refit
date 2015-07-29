@@ -104,6 +104,7 @@ namespace Refit.Generator
             var ns = parent as NamespaceDeclarationSyntax;
             ret.Namespace = ns.Name.ToString();
             ret.InterfaceName = interfaceTree.Identifier.ValueText;
+            ret.Modifiers = interfaceTree.Modifiers.Select(t => t.ValueText).FirstOrDefault(m => m == "public" || m == "internal");
 
             if (interfaceTree.TypeParameterList != null) {
                 var typeParameters = interfaceTree.TypeParameterList.Parameters;
@@ -174,6 +175,7 @@ namespace Refit.Generator
 
     public class ClassTemplateInfo
     {
+        public string Modifiers { get; set; }
         public string Namespace { get; set; }
         public string InterfaceName { get; set; }
         public string TypeParameters { get; set; }
