@@ -157,7 +157,7 @@ namespace Refit.Generator
             // Try to return a flat file from the same directory, if it doesn't
             // exist, use the built-in resource version
             if (File.Exists(ourPath)) {
-                return File.ReadAllText(Path.Combine(ourPath, "GeneratedInterfaceStubTemplate.cs.mustache"), Encoding.UTF8);
+                return File.ReadAllText(Path.Combine(ourPath, "GeneratedInterfaceStubTemplate.mustache"), Encoding.UTF8);
             }
 
             using (var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache")) {
