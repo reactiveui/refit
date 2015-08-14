@@ -23,7 +23,8 @@ namespace Refit.Generator
             var files = default(FileInfo[]);
 
             if (args.Length > 2) {
-                files = args[2].Split(';')
+                // We get a file with each line being a file
+                files = File.ReadLines(args[2])
                     .Select(x => new FileInfo(Path.Combine(targetDir.FullName, x)))
                     .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
                     .ToArray();
