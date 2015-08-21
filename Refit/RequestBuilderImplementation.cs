@@ -274,10 +274,11 @@ namespace Refit
             return async (client, paramList) => {
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
                 var rq = factory(paramList);
-                var resp = await client.SendAsync(rq);
 
-                if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, settings);
+                using (var resp = await client.SendAsync(rq)) {
+                    if (!resp.IsSuccessStatusCode) {
+                        throw await ApiException.Create(resp, settings);
+                    }
                 }
             };
         }
@@ -294,26 +295,25 @@ namespace Refit
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
                 var rq = factory(paramList);
 
-                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct);
-
-                if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
-                    // NB: This double-casting manual-boxing hate crime is the only way to make 
-                    // this work without a 'class' generic constraint. It could blow up at runtime 
-                    // and would be A Bad Idea if we hadn't already vetted the return type.
-                    return (T)(object)resp; 
-                }
-
-                if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, restMethod.RefitSettings);
-                }
-
-                if (restMethod.SerializedReturnType == typeof(HttpContent)) {
-                    return (T)(object)resp.Content;
-                }
-
                 var ms = new MemoryStream();
-                using (var fromStream = await resp.Content.ReadAsStreamAsync())
-                {
+                using (var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct)) {
+
+                    if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
+                        // NB: This double-casting manual-boxing hate crime is the only way to make 
+                        // this work without a 'class' generic constraint. It could blow up at runtime 
+                        // and would be A Bad Idea if we hadn't already vetted the return type.
+                        return (T)(object)resp; 
+                    }
+
+                    if (!resp.IsSuccessStatusCode) {
+                        throw await ApiException.Create(resp, restMethod.RefitSettings);
+                    }
+
+                    if (restMethod.SerializedReturnType == typeof(HttpContent)) {
+                        return (T)(object)resp.Content;
+                    }
+
+                    var fromStream = await resp.Content.ReadAsStreamAsync();
                     await fromStream.CopyToAsync(ms, 4096, ct);
                 }
 
