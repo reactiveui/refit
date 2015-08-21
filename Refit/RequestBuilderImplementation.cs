@@ -312,8 +312,10 @@ namespace Refit
                 }
 
                 var ms = new MemoryStream();
-                var fromStream = await resp.Content.ReadAsStreamAsync();
-                await fromStream.CopyToAsync(ms, 4096, ct);
+                using (var fromStream = await resp.Content.ReadAsStreamAsync())
+                {
+                    await fromStream.CopyToAsync(ms, 4096, ct);
+                }
 
                 var bytes = ms.ToArray();
                 var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
