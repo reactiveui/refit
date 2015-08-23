@@ -274,10 +274,11 @@ namespace Refit
             return async (client, paramList) => {
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
                 var rq = factory(paramList);
-                var resp = await client.SendAsync(rq);
 
-                if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, settings);
+                using (var resp = await client.SendAsync(rq)) {
+                    if (!resp.IsSuccessStatusCode) {
+                        throw await ApiException.Create(resp, settings);
+                    }
                 }
             };
         }
@@ -312,8 +313,9 @@ namespace Refit
                 }
 
                 var ms = new MemoryStream();
-                var fromStream = await resp.Content.ReadAsStreamAsync();
-                await fromStream.CopyToAsync(ms, 4096, ct);
+                using (var fromStream = await resp.Content.ReadAsStreamAsync()) {
+                    await fromStream.CopyToAsync(ms, 4096, ct);
+                }
 
                 var bytes = ms.ToArray();
                 var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
