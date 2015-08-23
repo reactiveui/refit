@@ -15,7 +15,7 @@ using System.Threading;
 
 namespace Refit
 {
-    public class RequestBuilderFactory : IRequestBuilderFactory
+    class RequestBuilderFactory : IRequestBuilderFactory
     {
         public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)
         {
@@ -23,7 +23,7 @@ namespace Refit
         }
     }
 
-    public class RequestBuilderImplementation : IRequestBuilder
+    class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
@@ -52,7 +52,7 @@ namespace Refit
             get { return interfaceHttpMethods.Keys; }
         }
 
-        public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath = "")
+        Func<object[], HttpRequestMessage> buildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName)) {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
@@ -60,6 +60,11 @@ namespace Refit
             var restMethod = interfaceHttpMethods[methodName];
 
             return paramList => {
+                // make sure we strip out any cancelation tokens
+                if (paramsContainsCancellationToken) {
+                    paramList = paramList.Where(o => o == null || o.GetType() != typeof(CancellationToken)).ToArray();
+                }
+                
                 var ret = new HttpRequestMessage {
                     Method = restMethod.HttpMethod,
                 };
@@ -272,12 +277,18 @@ namespace Refit
         Func<HttpClient, object[], Task> buildVoidTaskFuncForMethod(RestMethodInfo restMethod)
         {                      
             return async (client, paramList) => {
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
+                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
-                using (var resp = await client.SendAsync(rq)) {
+                var ct = CancellationToken.None;
+
+                if (restMethod.CancellationToken != null) {
+                    ct = paramList.OfType<CancellationToken>().FirstOrDefault();
+                }
+
+                using (var resp = await client.SendAsync(rq, ct).ConfigureAwait(false)) {
                     if (!resp.IsSuccessStatusCode) {
-                        throw await ApiException.Create(resp, settings);
+                        throw await ApiException.Create(resp, settings).ConfigureAwait(false);
                     }
                 }
             };
@@ -286,16 +297,23 @@ namespace Refit
         Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             var ret = buildCancellableTaskFuncForMethod<T>(restMethod);
-            return (client, paramList) => ret(client, CancellationToken.None, paramList);
+
+            return (client, paramList) => {
+                if(restMethod.CancellationToken != null) {
+                    return ret(client, paramList.OfType<CancellationToken>().FirstOrDefault(), paramList);
+                }
+
+                return ret(client, CancellationToken.None, paramList);
+            };
         }
 
         Func<HttpClient, CancellationToken, object[], Task<T>> buildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath);
+                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
-                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct);
+                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
 
                 if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
                     // NB: This double-casting manual-boxing hate crime is the only way to make 
@@ -305,7 +323,7 @@ namespace Refit
                 }
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, restMethod.RefitSettings);
+                    throw await ApiException.Create(resp, restMethod.RefitSettings).ConfigureAwait(false);
                 }
 
                 if (restMethod.SerializedReturnType == typeof(HttpContent)) {
@@ -313,12 +331,13 @@ namespace Refit
                 }
 
                 var ms = new MemoryStream();
-                using (var fromStream = await resp.Content.ReadAsStreamAsync()) {
-                    await fromStream.CopyToAsync(ms, 4096, ct);
+                using (var fromStream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false)) {
+                    await fromStream.CopyToAsync(ms, 4096, ct).ConfigureAwait(false);
                 }
 
                 var bytes = ms.ToArray();
                 var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+
                 if (restMethod.SerializedReturnType == typeof(string)) {
                     return (T)(object)content; 
                 }
@@ -331,8 +350,19 @@ namespace Refit
         {
             var taskFunc = buildCancellableTaskFuncForMethod<T>(restMethod);
 
-            return (client, paramList) => 
-                new TaskToObservable<T>(ct => taskFunc(client, ct, paramList));
+            return (client, paramList) =>  {
+                return new TaskToObservable<T>(ct => {
+                    var methodCt = CancellationToken.None;
+                    if (restMethod.CancellationToken != null) {
+                        methodCt = paramList.OfType<CancellationToken>().FirstOrDefault();
+                    }
+
+                    // link the two
+                    var cts = CancellationTokenSource.CreateLinkedTokenSource(methodCt, ct);
+                                            
+                    return taskFunc(client, cts.Token, paramList);
+                });
+            }
         }
 
         class TaskToObservable<T> : IObservable<T>
@@ -393,6 +423,7 @@ namespace Refit
         public string RelativePath { get; set; }
         public bool IsMultipart { get; private set; }
         public Dictionary<int, string> ParameterMap { get; set; }
+        public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
@@ -404,6 +435,7 @@ namespace Refit
         public RefitSettings RefitSettings { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
+        static readonly HttpMethod patchMethod = new HttpMethod("PATCH");
 
         public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
         {
@@ -426,12 +458,13 @@ namespace Refit
             verifyUrlPathIsSane(RelativePath);
             determineReturnTypeInfo(methodInfo);
 
-            var parameterList = methodInfo.GetParameters().ToList();
+            // Exclude cancellation token parameters from this list
+            var parameterList = methodInfo.GetParameters().Where(p => p.ParameterType != typeof(CancellationToken)).ToList();
             ParameterInfoMap = parameterList
                 .Select((parameter, index) => new { index, parameter })
                 .ToDictionary(x => x.index, x => x.parameter);
             ParameterMap = buildParameterMap(RelativePath, parameterList);
-            BodyParameterInfo = findBodyParameter(parameterList, IsMultipart);
+            BodyParameterInfo = findBodyParameter(parameterList, IsMultipart, hma.Method);
 
             Headers = parseHeaders(methodInfo);
             HeaderParameterMap = buildHeaderParameterMap(parameterList);
@@ -459,6 +492,13 @@ namespace Refit
 
                 QueryParameterMap[i] = getUrlNameForParameter(parameterList[i]);
             }
+
+            var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
+            if(ctParams.Count > 1) {
+                throw new ArgumentException("Argument list can only contain a single CancellationToken");
+            }
+
+            CancellationToken = ctParams.FirstOrDefault();
         }
 
         void verifyUrlPathIsSane(string relativePath) 
@@ -523,8 +563,14 @@ namespace Refit
             return nameAttr != null ? nameAttr.Name : null;
         }
 
-        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList, bool isMultipart)
+        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
         {
+
+            // The body parameter is found using the following logic / order of precedence:
+            // 1) [Body] attribute
+            // 2) POST/PUT/PATCH: Reference type other than string
+            // 3) If there are two reference types other than string, without the body attribute, throw
+
             var bodyParams = parameterList
                 .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault() })
                 .Where(x => x.BodyAttribute != null)
@@ -538,12 +584,30 @@ namespace Refit
                 throw new ArgumentException("Only one parameter can be a Body parameter");
             }
 
-            if (bodyParams.Count == 0) {
-                return null;
+            // #1, body attribute wins
+            if (bodyParams.Count == 1) {
+                var ret = bodyParams[0];
+                return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
             }
 
-            var ret = bodyParams[0];
-            return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
+            // Not in post/put/patch? bail
+            if (!method.Equals(HttpMethod.Post) && method.Equals(HttpMethod.Put) && !method.Equals(patchMethod)) {
+                return null;
+            }
+         
+            // see if we're a post/put/patch
+            var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
+            
+            // Check for rule #3
+            if (refParams.Count > 1) {
+                throw new ArgumentException("Multiple complex types found. Specify one parameter as the body using BodyAttribute");
+            } 
+            
+            if (refParams.Count == 1) {
+                return Tuple.Create(BodySerializationMethod.Json, parameterList.IndexOf(refParams[0]));
+            }
+
+            return null;
         }
 
         Dictionary<string, string> parseHeaders(MethodInfo methodInfo) 
