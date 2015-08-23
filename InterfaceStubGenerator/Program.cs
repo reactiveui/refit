@@ -13,34 +13,43 @@ namespace Refit.Generator
     {
         static void Main(string[] args)
         {
+            
             // NB: @Compile passes us a list of files relative to the project
-            // directory - we're going to assume that the target is always in
-            // the same directory as the project file
+            // directory - pass in the project and use its dir 
             var generator = new InterfaceStubGenerator();
             var target = new FileInfo(args[0]);
-            var targetDir = target.DirectoryName;
+            var targetDir = new DirectoryInfo(args[1]);
 
             var files = default(FileInfo[]);
 
-            if (args.Length > 1) {
-                files = args[1].Split(';')
-                    .Select(x => new FileInfo(Path.Combine(targetDir, x)))
+            if (args.Length > 2) {
+                files = args[2].Split(';')
+                    .Select(x => new FileInfo(Path.Combine(targetDir.FullName, x)))
                     .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
                     .ToArray();
             } else {
                 // NB: @Compile is completely jacked on Xam Studio in iOS, just
                 // run down all of the .cs files in the current directory and hope
                 // for the best
-                files = recursivelyListFiles(target.Directory, "*.cs").ToArray();
+                files = recursivelyListFiles(targetDir, "*.cs").ToArray();
             }
 
             var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray());
 
+            string contents = null;
 
+            if (target.Exists) {
+                // Only try writing if the contents are different. Don't cause a rebuild
+                contents = File.ReadAllText(target.FullName, Encoding.UTF8);
+                if (string.Equals(contents, template, StringComparison.Ordinal)) {
+                    return;
+                }    
+            }
+            
+            
             // If the file is read-only, we might be on a build server. Check the file to see if 
             // the contents match what we expect
-            if (target.IsReadOnly) {
-                var contents = File.ReadAllText(target.FullName, Encoding.UTF8);
+            if (target.Exists && target.IsReadOnly) {
                 if (contents != template) {
                     Console.Error.WriteLine(new ReadOnlyFileError(target));
                     Environment.Exit(-1); // error....

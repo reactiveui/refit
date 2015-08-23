@@ -1,11 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <PreBuildEvent>"$(SolutionDir)packages\refit.2.3.0\tools\InterfaceStubGenerator.exe" "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
+  <PropertyGroup>
+    <IntermediateOutputPath Condition="$(IntermediateOutputPath) == '' Or $(IntermediateOutputPath) == '*Undefined*'">$(MSBuildProjectDirectory)obj\$(Configuration)\</IntermediateOutputPath>    
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <PreBuildEvent>mono "$(SolutionDir)packages/refit.2.3.0/tools/InterfaceStubGenerator.exe" "$(ProjectDir)RefitStubs.cs" "@(Compile)"</PreBuildEvent>
-  </PropertyGroup>
+  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile"> 
+    <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\..\tools\InterfaceStubGenerator.exe" "$(IntermediateOutputPath)\RefitStubs.g.cs" "$(MSBuildProjectDirectory)" "@(Compile)"</RefitExecCmd>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../../tools/InterfaceStubGenerator.exe" "$(IntermediateOutputPath)\RefitStubs.g.cs" "$(MSBuildProjectDirectory)" "@(Compile)"</RefitExecCmd>
+    </PropertyGroup>
+    
+    <Exec Command="$(RefitExecCmd)" />
+    <Message Text="Processed Refit Stubs" />      
+   
+    <ItemGroup Condition="Exists('$(IntermediateOutputPath)\RefitStubs.g.cs')">
+        <Compile Include="$(IntermediateOutputPath)\RefitStubs.g.cs" />
+    </ItemGroup>    
+  </Target>
 </Project>
