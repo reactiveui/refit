@@ -591,7 +591,7 @@ namespace Refit
             }
 
             // Not in post/put/patch? bail
-            if (!method.Equals(HttpMethod.Post) && method.Equals(HttpMethod.Put) && !method.Equals(patchMethod)) {
+            if (!method.Equals(HttpMethod.Post) && !method.Equals(HttpMethod.Put) && !method.Equals(patchMethod)) {
                 return null;
             }
          
