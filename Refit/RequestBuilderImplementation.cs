@@ -350,7 +350,7 @@ namespace Refit
         {
             var taskFunc = buildCancellableTaskFuncForMethod<T>(restMethod);
 
-            return (client, paramList) =>  {
+            return (client, paramList) => {
                 return new TaskToObservable<T>(ct => {
                     var methodCt = CancellationToken.None;
                     if (restMethod.CancellationToken != null) {
@@ -359,10 +359,10 @@ namespace Refit
 
                     // link the two
                     var cts = CancellationTokenSource.CreateLinkedTokenSource(methodCt, ct);
-                                            
+
                     return taskFunc(client, cts.Token, paramList);
                 });
-            }
+            };
         }
 
         class TaskToObservable<T> : IObservable<T>
