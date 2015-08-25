@@ -35,13 +35,13 @@ namespace Refit.Generator
                 files = recursivelyListFiles(targetDir, "*.cs").ToArray();
             }
 
-            var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray());
+            var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray()).Trim();
 
             string contents = null;
 
             if (target.Exists) {
                 // Only try writing if the contents are different. Don't cause a rebuild
-                contents = File.ReadAllText(target.FullName, Encoding.UTF8);
+                contents = File.ReadAllText(target.FullName, Encoding.UTF8).Trim();
                 if (string.Equals(contents, template, StringComparison.Ordinal)) {
                     return;
                 }    
@@ -51,7 +51,7 @@ namespace Refit.Generator
             // If the file is read-only, we might be on a build server. Check the file to see if 
             // the contents match what we expect
             if (target.Exists && target.IsReadOnly) {
-                if (contents != template) {
+                if (!string.Equals(contents, template, StringComparison.Ordinal)) {
                     Console.Error.WriteLine(new ReadOnlyFileError(target));
                     Environment.Exit(-1); // error....
                 }
