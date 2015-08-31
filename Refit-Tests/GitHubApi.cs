@@ -31,7 +31,7 @@ namespace Refit.Tests
         public string Blog { get; set; }
         public string Location { get; set; }
         public string Email { get; set; }
-        public bool Hireable { get; set; }
+        public bool? Hireable { get; set; }
         public string Bio { get; set; }
         public int PublicRepos { get; set; }
         public int Followers { get; set; }
