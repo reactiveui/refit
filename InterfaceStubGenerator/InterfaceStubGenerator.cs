@@ -116,12 +116,12 @@ namespace Refit.Generator
             ret.MethodList = interfaceTree.Members
                 .OfType<MethodDeclarationSyntax>()
                 .Select(x => new MethodTemplateInfo() {
-                    Name = x.Identifier.ValueText,
+                    Name = x.Identifier.Text,
                     ReturnType = x.ReturnType.ToString(),
                     ArgumentList = String.Join(",", x.ParameterList.Parameters
-                        .Select(y => y.Identifier.ValueText)),
+                        .Select(y => y.Identifier.Text)),
                     ArgumentListWithTypes = String.Join(",", x.ParameterList.Parameters
-                        .Select(y => String.Format("{0} {1}", y.Type.ToString(), y.Identifier.ValueText))),
+                        .Select(y => String.Format("{0} {1}", y.Type.ToString(), y.Identifier.Text))),
                     IsRefitMethod = HasRefitHttpMethodAttribute(x)
                 })
                 .ToList();

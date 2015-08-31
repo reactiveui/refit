@@ -149,6 +149,12 @@ namespace Refit.Tests
             return (Task) methodImpls["SpacesShouldntBreakMe"](Client, arguments);
         }
 
+        public virtual Task ReservedWordsForParameterNames(int @int,string @string,float @long)
+        {
+            var arguments = new object[] { @int,@string,@long };
+            return (Task) methodImpls["ReservedWordsForParameterNames"](Client, arguments);
+        }
+
     }
 }
 
