@@ -563,7 +563,7 @@ namespace Refit
             return nameAttr != null ? nameAttr.Name : null;
         }
 
-        Tuple<BodySerializationMethod, int> findBodyParameter(List<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
+        static Tuple<BodySerializationMethod, int> findBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
         {
 
             // The body parameter is found using the following logic / order of precedence:
@@ -576,8 +576,12 @@ namespace Refit
                 .Where(x => x.BodyAttribute != null)
                 .ToList();
 
-            if (isMultipart && bodyParams.Count > 0) {
-                throw new ArgumentException("Multipart requests may not contain a Body parameter");
+            // multipart requests may not contain a body, implicit or explicit
+            if (isMultipart) {
+                if (bodyParams.Count > 0) {
+                    throw new ArgumentException("Multipart requests may not contain a Body parameter");
+                }
+                return null;
             }
 
             if (bodyParams.Count > 1) {
