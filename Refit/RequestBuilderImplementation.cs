@@ -288,7 +288,7 @@ namespace Refit
 
                 using (var resp = await client.SendAsync(rq, ct).ConfigureAwait(false)) {
                     if (!resp.IsSuccessStatusCode) {
-                        throw await ApiException.Create(resp, settings).ConfigureAwait(false);
+                        throw await ApiException.Create(rq.RequestUri.ToString(), restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
                     }
                 }
             };
@@ -323,7 +323,7 @@ namespace Refit
                 }
 
                 if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(resp, restMethod.RefitSettings).ConfigureAwait(false);
+                    throw await ApiException.Create(rq.RequestUri.ToString(), restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                 }
 
                 if (restMethod.SerializedReturnType == typeof(HttpContent)) {

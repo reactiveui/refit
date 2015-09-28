@@ -74,6 +74,8 @@ namespace Refit
         public HttpStatusCode StatusCode { get; private set; }
         public string ReasonPhrase { get; private set; }
         public HttpResponseHeaders Headers { get; private set; }
+        public HttpMethod HttpMethod { get; private set; }
+        public string Url { get; private set; }
 
         public HttpContentHeaders ContentHeaders { get; private set; }
 
@@ -85,9 +87,11 @@ namespace Refit
         }
         public RefitSettings RefitSettings { get; set; }
 
-        ApiException(HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
+        ApiException(string url, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
             base(createMessage(statusCode, reasonPhrase))
         {
+            Url = url;
+            HttpMethod = httpMethod;
             StatusCode = statusCode;
             ReasonPhrase = reasonPhrase;
             Headers = headers;
@@ -101,9 +105,9 @@ namespace Refit
                 default(T);
         }
 
-        public static async Task<ApiException> Create(HttpResponseMessage response, RefitSettings refitSettings = null)
+        public static async Task<ApiException> Create(string url, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
         {
-            var exception = new ApiException(response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
+            var exception = new ApiException(url, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
             if (response.Content == null)
                 return exception;
