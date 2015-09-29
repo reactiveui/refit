@@ -136,6 +136,10 @@ namespace Refit.Tests
 
         [Get  ("spaces-shouldnt-break-me")]
         Task SpacesShouldntBreakMe();
+
+        // We don't need an explicit test for this because if it isn't supported we can't compile
+        [Get("anything")]
+        Task ReservedWordsForParameterNames(int @int, string @string, float @long);
     }
 
     public interface IAmNotARefitInterface
