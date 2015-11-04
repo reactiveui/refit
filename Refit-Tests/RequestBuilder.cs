@@ -380,6 +380,9 @@ namespace Refit.Tests
         [Get("/void")]
         Task FetchSomeStuffWithVoid();
 
+        [Get("/void/{id}/path")]
+        Task FetchSomeStuffWithVoidAndQueryAlias(string id, [AliasAs("a")] string valueA, [AliasAs("b")] string valueB);
+
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] object content);
 
@@ -581,6 +584,50 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncoded()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
+            var output = factory(new object[] { 6, "test@example.com" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=test%40example.com", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQuery()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
+            var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void QueryParamWithPathDelimiterShouldBeEncoded()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
+            var output = factory(new object[] { "6/6", "test@example.com", "push!=pull" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/void/6%2F6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQueryBadId()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
+            var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
         }
 
         [Test]
