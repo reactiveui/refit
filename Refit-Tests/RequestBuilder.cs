@@ -32,6 +32,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
 
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithQueryParamAlias(int id, [AliasAs("q")] string search);
+
         [Get("/foo/bar/{width}x{height}")]
         Task<string> FetchAnImage(int width, int height);
 
@@ -195,6 +198,16 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
             Assert.AreEqual("id", fixture.ParameterMap[0]);
             Assert.AreEqual("search", fixture.QueryParameterMap[1]);
+            Assert.IsNull(fixture.BodyParameterInfo);
+        }
+
+        [Test]
+        public void ParameterMappingWithQueryAliasSmokeTest()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParamAlias"));
+            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.AreEqual("q", fixture.QueryParameterMap[1]);
             Assert.IsNull(fixture.BodyParameterInfo);
         }
 
@@ -379,6 +392,9 @@ namespace Refit.Tests
 
         [Get("/void")]
         Task FetchSomeStuffWithVoid();
+
+        [Get("/void/{id}/path")]
+        Task FetchSomeStuffWithVoidAndQueryAlias(string id, [AliasAs("a")] string valueA, [AliasAs("b")] string valueB);
 
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] object content);
@@ -581,6 +597,28 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncoded()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
+            var output = factory(new object[] { 6, "test@example.com" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=test%40example.com", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQuery()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
+            var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.AreEqual("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
         }
 
         [Test]
