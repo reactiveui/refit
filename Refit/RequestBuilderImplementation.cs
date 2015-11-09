@@ -86,8 +86,9 @@ namespace Refit
                         urlTarget = Regex.Replace(
                             urlTarget, 
                             "{" + restMethod.ParameterMap[i] + "}", 
-                            settings.UrlPathSegmentTransformer.Transform(
-                                settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])), 
+                            settings.UrlParameterFormatter
+                                    .Format(paramList[i], restMethod.ParameterInfoMap[i])
+                                    .Replace("/", "%2F"), 
                             RegexOptions.IgnoreCase);
                         continue;
                     }

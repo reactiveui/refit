@@ -11,12 +11,10 @@ namespace Refit
         public RefitSettings()
         {
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
-            UrlPathSegmentTransformer = new DelimiterEncodingPathSegmentTransformer();
         }
 
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
-        public IUrlPathSegmentTransformer UrlPathSegmentTransformer { get; set; }
         public Func<Task<string>> AuthorizationHeaderValueGetter { get; set; }
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
     }
@@ -37,15 +35,5 @@ namespace Refit
     public interface IUrlPathSegmentTransformer
     {
         string Transform(string value);
-    }
-
-    public class PassthroughPathSegmentTransformer : IUrlPathSegmentTransformer
-    {
-        public string Transform(string value) { return value; }
-    }
-
-    public class DelimiterEncodingPathSegmentTransformer : IUrlPathSegmentTransformer
-    {
-        public string Transform(string value) { return value?.Replace("/", "%2F"); }
     }
 }
