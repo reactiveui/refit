@@ -31,9 +31,4 @@ namespace Refit
             return parameterValue != null ? parameterValue.ToString() : null;
         }
     }
-
-    public interface IUrlPathSegmentTransformer
-    {
-        string Transform(string value);
-    }
 }
