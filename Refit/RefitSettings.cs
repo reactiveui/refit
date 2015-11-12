@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
+
 namespace Refit
 {
     public class RefitSettings
