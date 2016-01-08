@@ -1,12 +1,15 @@
 {
-  "version": "1.0.0-*",
-  "description": "Refit Class Library",
-  "authors": [ "Paul" ],
+  "title": "refit",
+  "version": "2.4.1-*",
+  "description": "The automatic type-safe REST library for Xamarin and .NET",
+  "summary": "The automatic type-safe REST library for Xamarin and .NET",
+  "authors": [ "Paul Betts,Refit contributors" ],
+  "owners": [ "Paul Betts" ],
   "tags": [ "" ],
-  "projectUrl": "",
-  "licenseUrl": "",
+  "projectUrl": "https://github.com/xpaulbettsx/refit",
+  "licenseUrl": "https://github.com/xpaulbettsx/refit/blob/master/COPYING",
 
-  "exclude": ["targets/*", "Resources/*", "packages.*.config", "Stubs/*.*", "NameValueCollection.cs"],
+  "exclude": [ "targets/*", "Resources/*", "packages.*.config", "Stubs/*.*", "NameValueCollection.cs" ],
 
   "dependencies": {
     "Microsoft.Net.Http": "2.2.29",
