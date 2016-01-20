@@ -139,9 +139,10 @@ namespace Refit
 
                     // we are in a multipart method, add the part to the content
                     // the parameter name should be either the attachment name or the parameter name (as fallback)
-                    string itemName;
-                    if (! restMethod.AttachmentNameMap.TryGetValue(i, out itemName)) itemName = restMethod.QueryParameterMap[i];
-                    addMultipartItem(multiPartContent, itemName, paramList[i]);
+                    string attachmentName;
+					string itemName = restMethod.ParameterInfoMap[i].Name;
+					if (! restMethod.AttachmentNameMap.TryGetValue(i, out attachmentName)) attachmentName = itemName;
+					addMultipartItem(multiPartContent, itemName, paramList[i], attachmentName);
                 }
 
                 // NB: We defer setting headers until the body has been
@@ -198,7 +199,7 @@ namespace Refit
             }
         }
 
-        void addMultipartItem(MultipartFormDataContent multiPartContent, string itemName, object itemValue)
+        void addMultipartItem(MultipartFormDataContent multiPartContent, string itemName, object itemValue, string fileName)
         {
             var streamValue = itemValue as Stream;
             var stringValue = itemValue as String;
@@ -206,10 +207,7 @@ namespace Refit
 
             if (streamValue != null) {
                 var streamContent = new StreamContent(streamValue);
-                streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
-                    FileName = itemName
-                };
-                multiPartContent.Add(streamContent);
+				multiPartContent.Add(streamContent, itemName, fileName);
                 return;
             }
              
@@ -221,25 +219,26 @@ namespace Refit
 #if !NETFX_CORE
             var fileInfoValue = itemValue as FileInfo;
             if (fileInfoValue != null) {
-                var fileContent = new StreamContent(fileInfoValue.OpenRead());
-                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
-                    FileName = fileInfoValue.Name
-                };
-                multiPartContent.Add(fileContent);
+				var fileContent = new StreamContent(fileInfoValue.OpenRead());
+				multiPartContent.Add(fileContent, itemName, fileName);
                 return;
             }
 #endif
 
             if (byteArrayValue != null) {
-                var fileContent = new ByteArrayContent(byteArrayValue);
-                fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
-                    FileName = itemName
-                };
-                multiPartContent.Add(fileContent);
+				var fileContent = new ByteArrayContent(byteArrayValue);
+				multiPartContent.Add(fileContent, itemName, fileName);
                 return;
             }
 
-            throw new ArgumentException(string.Format("Unexpected parameter type in a Multipart request. Parameter {0} is of type {1}, whereas allowed types are String, Stream, FileInfo, and Byte array", itemName, itemValue.GetType().Name), "itemValue");
+			try {
+				var jsonValue = JsonConvert.SerializeObject (itemValue, settings.JsonSerializerSettings);
+				var jsonContent = new StringContent(jsonValue, Encoding.UTF8, "application/json");
+				multiPartContent.Add(jsonContent, itemName);
+			}
+			catch {
+				throw new ArgumentException (string.Format ("Unexpected parameter type in a Multipart request. Parameter {0} is of type {1}, whereas allowed types are String, Stream, FileInfo, and Byte array", itemName, itemValue.GetType ().Name), "itemValue");
+			}
         }
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
