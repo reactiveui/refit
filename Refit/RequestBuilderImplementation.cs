@@ -203,28 +203,31 @@ namespace Refit
             var streamValue = itemValue as Stream;
             var stringValue = itemValue as String;
             var byteArrayValue = itemValue as byte[];
+            var quotedItemName = quoteString(itemName);      
 
             if (streamValue != null) {
                 var streamContent = new StreamContent(streamValue);
                 streamContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
-                    FileName = itemName
+                  Name = quotedItemName,
+                  FileName = quotedItemName
                 };
                 multiPartContent.Add(streamContent);
                 return;
             }
              
             if (stringValue != null) {
-                multiPartContent.Add(new StringContent(stringValue), itemName);
+                multiPartContent.Add(new StringContent(stringValue), quotedItemName);
                 return;
             }
 
 #if !NETFX_CORE
             var fileInfoValue = itemValue as FileInfo;
             if (fileInfoValue != null) {
+                var quotedInfoName = quoteString(fileInfoValue.Name);
                 var fileContent = new StreamContent(fileInfoValue.OpenRead());
                 fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
-                    Name = fileInfoValue.Name,
-                    FileName = fileInfoValue.Name
+                    Name = quotedInfoName,
+                    FileName = quotedInfoName
                 };
                 multiPartContent.Add(fileContent);
                 return;
@@ -234,13 +237,41 @@ namespace Refit
             if (byteArrayValue != null) {
                 var fileContent = new ByteArrayContent(byteArrayValue);
                 fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
-                    FileName = itemName
+                  Name = quotedItemName,
+                  FileName = quotedItemName
                 };
                 multiPartContent.Add(fileContent);
                 return;
             }
 
-            throw new ArgumentException(string.Format("Unexpected parameter type in a Multipart request. Parameter {0} is of type {1}, whereas allowed types are String, Stream, FileInfo, and Byte array", itemName, itemValue.GetType().Name), "itemValue");
+            // Thanks tamirdresher https://github.com/paulcbetts/refit/issues/161
+            try
+            {
+                var stringContent = new StringContent(
+                  JsonConvert.SerializeObject(itemValue, settings.JsonSerializerSettings), 
+                  Encoding.UTF8, 
+                  "application/json"
+                );
+                multiPartContent.Add(stringContent, quotedItemName);
+                return;
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException(string.Format("Unexpected parameter type in a Multipart request. Parameter {0} is of type {1}, whereas allowed "
+                  + "types are String, Stream, FileInfo, and Byte array or a type that can be converted to json", itemName, itemValue.GetType().Name), "itemValue", ex);
+            }
+
+            throw new ArgumentException(string.Format("Unexpected parameter type in a Multipart request. Parameter {0} is of type {1}, whereas allowed "
+               + "types are String, Stream, FileInfo, and Byte array or a type that can be converted to json", itemName, itemValue.GetType().Name), "itemValue");
+    }
+
+        static string quoteString(string str)
+        {
+            var output = new StringBuilder();
+            output.Append('"');
+            output.Append(str.Replace("\"", ""));
+            output.Append('"');
+            return output.ToString();
         }
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
