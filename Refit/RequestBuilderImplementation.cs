@@ -223,6 +223,7 @@ namespace Refit
             if (fileInfoValue != null) {
                 var fileContent = new StreamContent(fileInfoValue.OpenRead());
                 fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") {
+                    Name = fileInfoValue.Name,
                     FileName = fileInfoValue.Name
                 };
                 multiPartContent.Add(fileContent);
