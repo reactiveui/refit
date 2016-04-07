@@ -89,7 +89,7 @@ namespace Refit
                             settings.UrlParameterFormatter
                                     .Format(paramList[i], restMethod.ParameterInfoMap[i])
                                     .Replace("/", "%2F"), 
-                            RegexOptions.IgnoreCase);
+                            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                         continue;
                     }
 
