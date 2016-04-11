@@ -48,6 +48,8 @@
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RequestBuilderImplementation.cs" />
     <Compile Include="RestService.cs" />
+    <Compile Include="Serializers\IDeserializer.cs" />
+    <Compile Include="Serializers\NewtonsoftJsonDeserializer.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="RefitSettings.cs" />
   </ItemGroup>

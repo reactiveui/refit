@@ -61,6 +61,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RefitSettings.cs" />
     <Compile Include="RequestBuilderImplementation.cs" />
+    <Compile Include="Serializers\IDeserializer.cs" />
+    <Compile Include="Serializers\NewtonsoftJsonDeserializer.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="Helpers.cs" />

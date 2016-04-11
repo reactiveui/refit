@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -55,6 +55,8 @@
     <Compile Include="HtmlEncoder.cs" />
     <Compile Include="HttpUtility.cs" />
     <Compile Include="RestService.cs" />
+    <Compile Include="Serializers\IDeserializer.cs" />
+    <Compile Include="Serializers\NewtonsoftJsonDeserializer.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -63,9 +65,7 @@
     <Compile Include="RefitSettings.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Novell\Novell.MonoDroid.CSharp.targets" />
-  <ItemGroup>
-    <Folder Include="Properties\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="packages.Refit-Monoandroid.config" />
   </ItemGroup>

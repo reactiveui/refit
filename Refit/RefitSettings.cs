@@ -8,15 +8,33 @@ namespace Refit
 {
     public class RefitSettings
     {
+        JsonSerializerSettings jsonSerializerSettings;
+
         public RefitSettings()
         {
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
+            ResponseContentDeserializer = new NewtonsoftJsonDeserializer();
         }
 
-        public JsonSerializerSettings JsonSerializerSettings { get; set; }
+        /// <summary>
+        /// Default serializer settings
+        /// </summary>
+        public JsonSerializerSettings JsonSerializerSettings
+        {
+            get { return jsonSerializerSettings; }
+            set
+            {
+                jsonSerializerSettings = value;
+
+                NewtonsoftJsonDeserializer newtonsoftJsonDeserializer = ResponseContentDeserializer as NewtonsoftJsonDeserializer;
+                if (newtonsoftJsonDeserializer != null) newtonsoftJsonDeserializer.JsonSerializerSettings = value;
+            }
+        }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public Func<Task<string>> AuthorizationHeaderValueGetter { get; set; }
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
+
+        public IDeserializer ResponseContentDeserializer { get; set; }
     }
 
     public interface IUrlParameterFormatter
