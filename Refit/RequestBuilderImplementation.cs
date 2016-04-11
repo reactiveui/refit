@@ -344,7 +344,7 @@ namespace Refit
                     return (T)(object)content; 
                 }
 
-                return JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
+                return settings.ResponseContentDeserializer.Deserialize<T>(content);
             };
         }
 

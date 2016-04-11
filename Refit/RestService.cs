@@ -101,7 +101,7 @@ namespace Refit
         public T GetContentAs<T>()
         {
             return HasContent ?
-                JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) :
+                RefitSettings.ResponseContentDeserializer.Deserialize<T>(Content) :
                 default(T);
         }
 

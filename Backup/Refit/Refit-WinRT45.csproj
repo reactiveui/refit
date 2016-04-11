@@ -12,13 +12,12 @@
     <RootNamespace>Refit</RootNamespace>
     <AssemblyName>Refit</AssemblyName>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <TargetPlatformVersion>8.1</TargetPlatformVersion>
-    <MinimumVisualStudioVersion>12</MinimumVisualStudioVersion>
+    <TargetPlatformVersion>8.0</TargetPlatformVersion>
+    <MinimumVisualStudioVersion>11</MinimumVisualStudioVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{BC8A1FFA-BEE3-4634-8014-F334798102B3};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <NuGetPackageImportStamp>61707e7c</NuGetPackageImportStamp>
     <BaseIntermediateOutputPath>obj\WinRT45\</BaseIntermediateOutputPath>
-    <TargetFrameworkVersion />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -48,8 +47,6 @@
     <Compile Include="RequestBuilder.cs" />
     <Compile Include="RequestBuilderImplementation.cs" />
     <Compile Include="RestService.cs" />
-    <Compile Include="Serializers\IDeserializer.cs" />
-    <Compile Include="Serializers\NewtonsoftJsonDeserializer.cs" />
     <Compile Include="Utility.cs" />
     <Compile Include="RefitSettings.cs" />
   </ItemGroup>
