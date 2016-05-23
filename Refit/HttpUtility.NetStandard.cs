@@ -13,7 +13,7 @@ namespace System.Web
     {
         internal static NameValueCollection ParseQueryString(string v)
         {
-            var parsed = QueryHelpers.ParseNullableQuery(v);
+            var parsed = QueryHelpers.ParseQuery(v);
 
             var all = from kvp in parsed
                       from val in kvp.Value
