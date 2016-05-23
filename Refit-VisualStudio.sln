@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-Portable", "Refit\Refit-Portable.csproj", "{E315020F-33BC-4D85-BC6E-8346F06F1112}"
 EndProject
@@ -20,7 +20,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4F1C8991-7097-4471-A9A6-A72005AB594D}"
 	ProjectSection(SolutionItems) = preProject
 		Rebracer.xml = Rebracer.xml
+		Refit\refit.nuspec = Refit\refit.nuspec
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-NetStandard", "Refit\Refit-NetStandard.csproj", "{C86EBFD7-E5AB-450B-85A3-E600570463ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -108,6 +111,22 @@ Global
 		{200C9B4E-4881-44B2-B88D-EFE0E54193A1}.Release|ARM.ActiveCfg = Release|Any CPU
 		{200C9B4E-4881-44B2-B88D-EFE0E54193A1}.Release|x64.ActiveCfg = Release|Any CPU
 		{200C9B4E-4881-44B2-B88D-EFE0E54193A1}.Release|x86.ActiveCfg = Release|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Debug|ARM.Build.0 = Debug|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Debug|x64.Build.0 = Debug|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Debug|x86.Build.0 = Debug|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Release|ARM.ActiveCfg = Release|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Release|ARM.Build.0 = Release|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Release|x64.ActiveCfg = Release|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Release|x64.Build.0 = Release|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Release|x86.ActiveCfg = Release|Any CPU
+		{C86EBFD7-E5AB-450B-85A3-E600570463ED}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

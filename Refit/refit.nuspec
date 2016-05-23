@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
     <metadata>
         <id>refit</id>
-        <version>2.4.1</version>
+        <version>2.5.0-beta-001</version>
         <title>Refit</title>
         <authors>Paul Betts,Refit contributors</authors>
         <owners>Paul Betts</owners>
@@ -13,6 +13,12 @@
         <summary>The automatic type-safe REST library for Xamarin and .NET</summary>
 
         <dependencies>
+          <group targetFramework="netstandard1.3">
+            <dependency id="Microsoft.AspNetCore.WebUtilities" version="1.0.0-rc2-final" />
+            <dependency id="NETStandard.Library" version="1.5.0-rc2-24027" />
+            <dependency id="Newtonsoft.Json" version="8.0.4-beta1" />
+            <dependency id="System.Text.Encodings.Web" version="4.0.0-rc2-24027" />
+          </group>
             <group>
                 <dependency id="Newtonsoft.Json" version="6.0.5" />
             </group>
@@ -27,10 +33,12 @@
     </metadata>
     <files>
         <file src="targets\*.*" target="build\portable-net45+netcore45+wp8+wpa81+monoandroid+xamarin.ios10" />
+        <file src="targets\*.*" target="build\netstandard1.3" />
         <file src="..\InterfaceStubGenerator\bin\Release\*.exe" target="tools" />
         <file src="..\InterfaceStubGenerator\bin\Release\*.dll" target="tools" />
         <file src="..\InterfaceStubGenerator\bin\Release\*.mustache" target="tools" />
 
+        <file src="bin\Release\NetStandard1.3\Refit*.*" target="lib\netstandard1.3" />
         <file src="bin\Release\MonoAndroid\Refit*.*" target="lib\MonoAndroid" />
         <file src="bin\Release\Xamarin.iOS10\Refit*.*" target="lib\Xamarin.iOS10" />
         <file src="bin\Release\Net45\Refit*.*" target="lib\Net45" />

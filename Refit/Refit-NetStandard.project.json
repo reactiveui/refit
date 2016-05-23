@@ -1,0 +1,12 @@
+{
+  "supports": {},
+  "dependencies": {
+      "Microsoft.AspNetCore.WebUtilities": "1.0.0-rc2-final",
+      "NETStandard.Library": "1.5.0-rc2-24027",
+      "Newtonsoft.Json": "8.0.4-beta1",
+      "System.Text.Encodings.Web": "4.0.0-rc2-24027"
+  },
+  "frameworks": {
+    "netstandard1.3": {}
+  }
+}
