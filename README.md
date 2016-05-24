@@ -247,7 +247,7 @@ public interface IGitHubApi
 #### Dynamic headers
 
 If the content of the header needs to be set at runtime, you can add a header
-with a dynamic  value to a request by applying a `Header` attribute to a parameter:
+with a dynamic value to a request by applying a `Header` attribute to a parameter:
 
 ```csharp
 [Get("/users/{user}")]
@@ -288,6 +288,8 @@ class AuthenticatedHttpClientHandler : HttpClientHandler
     }
 }
 ```
+
+While HttpClient contains a nearly identical method signature, it is used differently. HttpClient.SendAsync is not called by Refit. The HttpClientHandler must be modified instead.
 
 This class is used like so (example uses the [ADAL](http://msdn.microsoft.com/en-us/library/azure/jj573266.aspx) library to manage auto-token refresh but the principal holds for Xamarin.Auth or any other library:
 
