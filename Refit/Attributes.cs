@@ -148,4 +148,14 @@ namespace Refit
         {
         }
     }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class AttachmentContentTypeAttribute : Attribute
+    {
+        public string MediaType { get; protected set; }
+        public AttachmentContentTypeAttribute(string mediaType)
+        {
+            MediaType = mediaType;
+        }
+    }
 }
