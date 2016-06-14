@@ -21,7 +21,7 @@ namespace Refit.Tests
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadString([AliasAs("SomeStringAlias")][AttachmentName("test.text")][AttachmentContentType("text/placebo")]string someString);
+        Task<HttpResponseMessage> UploadString([AliasAs("SomeStringAlias")]string someString);
 
         [Multipart]
         [Post("/")]
