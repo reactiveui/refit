@@ -142,6 +142,7 @@ namespace Refit
                     // the parameter name should be either the attachment name or the parameter name (as fallback)
                     string itemName;
                     string parameterName;
+                    string mediaType;
 
                     Tuple<string, string> attachment;
                     if (!restMethod.AttachmentNameMap.TryGetValue(i, out attachment)) {
@@ -152,6 +153,9 @@ namespace Refit
                         parameterName = attachment.Item2;
                     }
 
+                    if (!restMethod.AttachmentContentTypeMap.TryGetValue(i, out mediaType)) {
+                        mediaType = null;
+                    }
 
                     // Check to see if it's an IEnumerable
                     var itemValue = paramList[i];
@@ -184,10 +188,10 @@ namespace Refit
 
                     if (typeIsCollection) {
                         foreach (var item in enumerable) {
-                            addMultipartItem(multiPartContent, itemName, parameterName, item);
+                            addMultipartItem(multiPartContent, itemName, parameterName, mediaType, item);
                         }
                     } else{
-                        addMultipartItem(multiPartContent, itemName, parameterName, itemValue);
+                        addMultipartItem(multiPartContent, itemName, parameterName, mediaType, itemValue);
                     }
 
                 }
@@ -246,7 +250,7 @@ namespace Refit
             }
         }
 
-        void addMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
+        void addMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, string mediaType, object itemValue)
         {
             var streamValue = itemValue as Stream;
             var stringValue = itemValue as string;
@@ -254,6 +258,10 @@ namespace Refit
 
             if (streamValue != null) {
                 var streamContent = new StreamContent(streamValue);
+                if (!string.IsNullOrEmpty(mediaType))
+                {
+                    streamContent.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+                }
                 multiPartContent.Add(streamContent, parameterName, fileName);
                 return;
             }
@@ -267,6 +275,10 @@ namespace Refit
             var fileInfoValue = itemValue as FileInfo;
             if (fileInfoValue != null) {
                 var fileContent = new StreamContent(fileInfoValue.OpenRead());
+                if (!string.IsNullOrEmpty(mediaType))
+                {
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+                }
                 multiPartContent.Add(fileContent, parameterName, fileInfoValue.Name);
                 return;
             }
@@ -274,6 +286,10 @@ namespace Refit
 
             if (byteArrayValue != null) {
                 var fileContent = new ByteArrayContent(byteArrayValue);
+                if (!string.IsNullOrEmpty(mediaType))
+                {
+                    fileContent.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+                }
                 multiPartContent.Add(fileContent, parameterName, fileName);
                 return;
             }
@@ -470,6 +486,7 @@ namespace Refit
         public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
+        public Dictionary<int, string> AttachmentContentTypeMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
@@ -526,9 +543,26 @@ namespace Refit
                 }
             }
 
+            AttachmentContentTypeMap = new Dictionary<int, string>();
+            if (IsMultipart)
+            {
+                for (int i = 0; i < parameterList.Count; i++)
+                {
+                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i))
+                    {
+                        continue;
+                    }
+
+                    var contentType = getAttachmentContentTypeForParameter(parameterList[i]);
+                    if (contentType == null) continue;
+
+                    AttachmentContentTypeMap[i] = contentType;
+                }
+            }
+
             QueryParameterMap = new Dictionary<int, string>();
             for (int i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i) || AttachmentNameMap.ContainsKey(i)) {
+                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
                     continue;
                 }
 
@@ -603,6 +637,14 @@ namespace Refit
                 .OfType<AttachmentNameAttribute>()
                 .FirstOrDefault();
             return nameAttr != null ? nameAttr.Name : null;
+        }
+
+        string getAttachmentContentTypeForParameter(ParameterInfo paramInfo)
+        {
+            var nameAttr = paramInfo.GetCustomAttributes(true)
+                .OfType<AttachmentContentTypeAttribute>()
+                .FirstOrDefault();
+            return nameAttr != null ? nameAttr.MediaType : null;
         }
 
         static Tuple<BodySerializationMethod, int> findBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
