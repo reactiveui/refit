@@ -411,7 +411,7 @@ At this time, multipart methods support the following parameter types:
 
 The parameter name will be used as the name of the field in the multipart data. This can be overridden with the `AliasAs` attribute.
 
-For byte array, Stream and string parameters, use `AttachmentName` parameter attribute to specify the
+For byte array and Stream parameters, use `AttachmentName` parameter attribute to specify the
 file name for the attachment. If the attachment name is not specified, the name will be used. For `FileInfo` parameters, `FileInfo.Name` will be used.
 
 Use `AttachmentContentType` attribute to specify the content type of an attachment. This should be applied to the parameter, not the method.

@@ -222,12 +222,7 @@ namespace Refit
             }
              
             if (stringValue != null) {
-                var stringContent = new StringContent(stringValue);
-                if (!string.IsNullOrEmpty(mediaType))
-                {
-                    stringContent.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
-                }
-                multiPartContent.Add(stringContent, itemName, fileName);
+                multiPartContent.Add(new StringContent(stringValue), itemName);
                 return;
             }
 
