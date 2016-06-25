@@ -20,11 +20,12 @@
             <dependency id="System.Text.Encodings.Web" version="4.0.0" />
           </group>
             <group>
-                <dependency id="Newtonsoft.Json" version="6.0.5" />
+                <dependency id="Newtonsoft.Json" version="9.0.1" />
             </group>
             <group targetFramework="WindowsPhone8.0">
-                <dependency id="Microsoft.Net.Http" version="2.2.28" />
-                <dependency id="Newtonsoft.Json" version="6.0.5" />
+                <dependency id="Microsoft.Net.Http" version="2.2.29" />
+                <dependency id="Microsoft.Bcl" version="1.1.10" />
+                <dependency id="Newtonsoft.Json" version="9.0.1" />
             </group>
         </dependencies>
         <frameworkAssemblies>
@@ -32,15 +33,13 @@
         </frameworkAssemblies>
     </metadata>
     <files>
-        <file src="targets\*.*" target="build\portable-net45+netcore45+wp8+wpa81+monoandroid+xamarin.ios10" />
+        <file src="targets\*.*" target="build\portable-net45+netcore45+wp8+wpa81" />
         <file src="targets\*.*" target="build\netstandard1.3" />
         <file src="..\InterfaceStubGenerator\bin\Release\*.exe" target="tools" />
         <file src="..\InterfaceStubGenerator\bin\Release\*.dll" target="tools" />
         <file src="..\InterfaceStubGenerator\bin\Release\*.mustache" target="tools" />
 
         <file src="bin\Release\NetStandard1.3\Refit*.*" target="lib\netstandard1.3" />
-        <file src="bin\Release\MonoAndroid\Refit*.*" target="lib\MonoAndroid" />
-        <file src="bin\Release\Xamarin.iOS10\Refit*.*" target="lib\Xamarin.iOS10" />
         <file src="bin\Release\Net45\Refit*.*" target="lib\Net45" />
         <file src="bin\Release\Portable-Net45+WinRT45+WP8+WPA81\Refit*.*" target="lib\Portable-Net45+NetCore45+WP8+WPA81" />
         <file src="bin\Release\WP8\Refit*.*" target="lib\WP8" />

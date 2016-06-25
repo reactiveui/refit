@@ -40,6 +40,10 @@
       <HintPath>..\packages\Rx-Testing.2.2.5\lib\net45\Microsoft.Reactive.Testing.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\newtonsoft.json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="nunit.core">
       <HintPath>..\packages\NUnitTestAdapter.2.0.0\lib\nunit.core.dll</HintPath>
       <Private>False</Private>
@@ -114,9 +118,6 @@
       <HintPath>..\packages\NUnit.2.6.3\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.6.0.5\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DeliminatorSeparatedPropertyNamesContractResolver.cs" />
@@ -142,7 +143,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="packages.Refit-Tests-Net45.config" />
+    <None Include="packages.Refit-Tests-Net45.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
@@ -152,7 +155,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />
-    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
@@ -162,28 +165,18 @@
   <ItemGroup>
     <EmbeddedResource Include="Test Files\Test.pdf" />
   </ItemGroup>
-  
-  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile"> 
+  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile">
     <PropertyGroup>
       <RefitParameterFile>$(IntermediateOutputPath)\RefitParams.rsp</RefitParameterFile>
     </PropertyGroup>
-    
-    <WriteLinesToFile 
-      File="$(RefitParameterFile)"
-      Lines="@(Compile)"
-      Overwrite="true"
-    />
-    
+    <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
       <RefitExecCmd>$(SolutionDir)InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
-
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
       <RefitExecCmd>mono $(SolutionDir)InterfaceStubGenerator/bin/$(Configuration)/InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
-    
     <Exec Command="$(RefitExecCmd)" />
-    <Message Text="Processed Refit Stubs" />         
-     
+    <Message Text="Processed Refit Stubs" />
   </Target>
 </Project>
