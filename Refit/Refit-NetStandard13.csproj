@@ -37,7 +37,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="HttpUtility.NetStandard.cs" />
-    <None Include="Refit-NetStandard.project.json" />
+    <None Include="Refit-NetStandard13.project.json" />
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>

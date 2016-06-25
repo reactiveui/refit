@@ -1,0 +1,14 @@
+{
+  "supports": {},
+  "dependencies": {
+    "Microsoft.CodeAnalysis.CSharp": "0.7.4052301-beta",
+    "Mono.Options": "4.4.0.0",
+    "Nustache": "1.16.0.1"
+  },
+  "frameworks": {
+    "net45": {}
+  },
+  "runtimes": {
+      "win": {} 
+  }
+}
