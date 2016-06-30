@@ -17,6 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		Rebracer.xml = Rebracer.xml
 		Refit\refit.nuspec = Refit\refit.nuspec
+		Refit\targets\refit.targets = Refit\targets\refit.targets
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-NetStandard13", "Refit\Refit-NetStandard13.csproj", "{C86EBFD7-E5AB-450B-85A3-E600570463ED}"
