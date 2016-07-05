@@ -134,7 +134,17 @@ namespace Refit
                     // for anything that fell through to here, if this is not
                     // a multipart method, add the parameter to the query string
                     if (!restMethod.IsMultipart) {
-                        queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
+                        // dynamic query parameters can be captured in Dictionary
+                        if (paramList[i] is IQueryParameters)
+                        {
+                            foreach (var item in ((IQueryParameters)paramList[i]).GetParameters())
+                                queryParamsToAdd[item.Key] = settings.UrlParameterFormatter.Format(item.Value, restMethod.ParameterInfoMap[i]);
+                        }
+                        else
+                        {
+                            queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
+                        }
+
                         continue;
                     }
 
@@ -446,6 +456,13 @@ namespace Refit
             Type = targetInterface;
             Name = methodInfo.Name;
             MethodInfo = methodInfo;
+
+            var uma = methodInfo.GetCustomAttributes(true)
+                .OfType<UniqueNameAttribute>()
+                .FirstOrDefault();
+
+            if (uma != null)
+                Name = uma.MethodName;
 
             var hma = methodInfo.GetCustomAttributes(true)
                 .OfType<HttpMethodAttribute>()

@@ -61,6 +61,9 @@ namespace Refit.Generator
             new[] {"Get", "Head", "Post", "Put", "Delete", "Patch"}
                 .SelectMany(x => new[] {"{0}", "{0}Attribute"}.Select(f => string.Format(f, x))));
 
+        static readonly HashSet<string> uniqueNameAttributeNames = new HashSet<string>( new[] { "UniqueName" }
+            .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
+
         public bool HasRefitHttpMethodAttribute(MethodDeclarationSyntax method)
         {
             // We could also verify that the single argument is a string, 
@@ -122,11 +125,23 @@ namespace Refit.Generator
                         .Select(y => y.Identifier.Text)),
                     ArgumentListWithTypes = String.Join(",", x.ParameterList.Parameters
                         .Select(y => String.Format("{0} {1}", y.Type.ToString(), y.Identifier.Text))),
-                    IsRefitMethod = HasRefitHttpMethodAttribute(x)
+                    IsRefitMethod = HasRefitHttpMethodAttribute(x),
+                    MethodName = GetMethodUniqueName(x)
                 })
                 .ToList();
 
             return ret;
+        }
+
+        public string GetMethodUniqueName(MethodDeclarationSyntax method)
+        {
+            var att = method.AttributeLists.SelectMany(a => a.Attributes)
+                .SingleOrDefault(a =>
+                    uniqueNameAttributeNames.Contains(a.Name.ToString().Split('.').Last()) &&
+                    a.ArgumentList.Arguments.Count == 1 &&
+                    a.ArgumentList.Arguments[0].Expression.CSharpKind() == SyntaxKind.StringLiteralExpression);
+
+            return att == null ? method.Identifier.Text : ((LiteralExpressionSyntax)att.ArgumentList.Arguments[0].Expression).Token.ValueText;
         }
 
         public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate)
@@ -136,14 +151,7 @@ namespace Refit.Generator
                 .Where(x => !HasRefitHttpMethodAttribute(x.Method))
                 .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
 
-            var overloadWarnings = interfacesToGenerate
-                .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new {Interface = i, Method = m}))
-                .Where(x => HasRefitHttpMethodAttribute(x.Method))
-                .GroupBy(x => new {Interface = x.Interface, MethodName = x.Method.Identifier.Text})
-                .Where(g => g.Count() > 1)
-                .SelectMany(g => g.Select(x => new MultipleRefitMethodSameNameWarning(x.Interface, x.Method)));
-
-            var diagnostics = missingAttributeWarnings.Concat<Diagnostic>(overloadWarnings);
+            var diagnostics = missingAttributeWarnings;
 
             foreach (var diagnostic in diagnostics) {
                 Console.Error.WriteLine(diagnostic);
@@ -190,6 +198,7 @@ namespace Refit.Generator
         public string ArgumentListWithTypes { get; set; }
         public string ArgumentList { get; set; }
         public bool IsRefitMethod { get; set; }
+        public string MethodName { get; set; }
     }
 
     public class TemplateInformation
