@@ -49,7 +49,7 @@
     <file src="bin\Release\NetStandard1.3\Refit*.*" target="lib\net46" />
     <file src="bin\Release\NetStandard1.3\Refit*.*" target="lib\netcore50" />
     <file src="bin\Release\Net45\Refit*.*" target="lib\Net45" />
-    <file src="bin\Release\Portable-Net45+WinRT45+WP8+WPA81\Refit*.*" target="lib\netstandard1.1" />
+    <file src="bin\Release\netstandard1.1\Refit*.*" target="lib\netstandard1.1" />
     <file src="bin\Release\Portable-Win81+Wpa81\Refit*.*" target="lib\Portable-Win81+Wpa81" />
     <file src="bin\Release\WinRT45\Refit*.*" target="lib\NetCore45" />
   </files>
