@@ -1,0 +1,15 @@
+{
+  "supports": {},
+  "dependencies": {
+    "Newtonsoft.Json": "9.0.1",
+    "NUnit": "2.6.0.12054",
+    "Rx-Main": "2.2.5",
+    "NUnitTestAdapter": "2.0.0"
+  },
+  "frameworks": {
+    "net45": {}
+  },
+  "runtimes": {
+      "win": {} 
+  }
+}
