@@ -72,8 +72,6 @@ stylecop.*
 .DS_Store
 Generated_Code #added for RIA/Silverlight projects
 
-*.sln.ide/
-
 # Custom
 
 # packages
