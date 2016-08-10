@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-NetStandard13", "Refi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-WinRT45", "Refit\Refit-WinRT45.csproj", "{27DDD1C6-4037-419F-8682-100C71D5AD6F}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0E99249A-FB80-4C60-8FD3-13820E853FF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -121,5 +123,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5F52E5C6-9A0B-48B3-AE05-D8CB0B9CC605} = {0E99249A-FB80-4C60-8FD3-13820E853FF7}
 	EndGlobalSection
 EndGlobal

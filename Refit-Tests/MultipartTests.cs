@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-using NUnit.Framework;
+using Xunit;
 using Refit;
 
 namespace Refit.Tests
@@ -28,27 +28,24 @@ namespace Refit.Tests
         Task<HttpResponseMessage> UploadFileInfo(FileInfo fileInfo);
     }
 
-    [TestFixture]
     public class MultipartTests
     {
         // To test: sign up for a Runscope account (it's free, despite them implying that's its only good for 30 days)
         // and then insert your bucket URI here in order to run tests and verify success via the Runscope UI
         const string runscopeUri = "https://yourapihere-com-<key>.runscope.net/";
 
-        [Test]
-        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithStream()
         {
             using (var stream = GetTestFileStream("Test Files/Test.pdf")) {
                 var fixture = RestService.For<IRunscopeApi>(runscopeUri);
                 var result = await fixture.UploadStream(stream);
 
-                Assert.IsTrue(result.IsSuccessStatusCode);
+                Assert.True(result.IsSuccessStatusCode);
             }
         }
 
-        [Test]
-        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithByteArray()
         {
             using (var stream = GetTestFileStream("Test Files/Test.pdf"))
@@ -58,12 +55,11 @@ namespace Refit.Tests
                 var fixture = RestService.For<IRunscopeApi>(runscopeUri);
                 var result = await fixture.UploadBytes(bytes);
 
-                Assert.IsTrue(result.IsSuccessStatusCode);
+                Assert.True(result.IsSuccessStatusCode);
             }
         }
 
-        [Test]
-        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithFileInfo()
         {
             var fileName = Path.GetTempFileName();
@@ -78,15 +74,14 @@ namespace Refit.Tests
                     var fixture = RestService.For<IRunscopeApi>(runscopeUri);
                     var result = await fixture.UploadFileInfo(new FileInfo(fileName));
 
-                    Assert.IsTrue(result.IsSuccessStatusCode);
+                    Assert.True(result.IsSuccessStatusCode);
                 }
             } finally {
                 File.Delete(fileName);
             }
         }
 
-        [Test]
-        [Ignore("Set runscopeUri field to your Runscope key in order to test this function.")]
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithString()
         {
             const string text = "This is random text";
@@ -94,7 +89,7 @@ namespace Refit.Tests
             var fixture = RestService.For<IRunscopeApi>(runscopeUri);
             var result = await fixture.UploadString(text);
 
-            Assert.IsTrue(result.IsSuccessStatusCode);
+            Assert.True(result.IsSuccessStatusCode);
         }
 
         private static Stream GetTestFileStream(string relativeFilePath)

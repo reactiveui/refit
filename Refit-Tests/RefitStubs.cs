@@ -8,7 +8,7 @@ using Refit;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using NUnit.Framework;
+using Xunit;
 using Nustache;
 using Nustache.Core;
 using Refit.Generator;

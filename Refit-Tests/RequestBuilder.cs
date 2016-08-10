@@ -7,7 +7,7 @@ using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Threading;
-using NUnit.Framework;
+using Xunit;
 
 namespace Refit.Tests
 {
@@ -79,12 +79,11 @@ namespace Refit.Tests
         [Post("/foo")]
         Task ManyComplexTypes(Dictionary<int, string> theData, [Body] Dictionary<int, string> theData1);
     }
-
-    [TestFixture]
+    
     public class RestMethodInfoTests
     {
 
-        [Test]
+        [Fact]
         public void TooManyComplexTypesThrows()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -97,58 +96,58 @@ namespace Refit.Tests
 
         }
 
-        [Test]
+        [Fact]
         public void ManyComplexTypes()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "ManyComplexTypes"));
 
-            Assert.AreEqual(1, fixture.QueryParameterMap.Count);
-            Assert.IsNotNull(fixture.BodyParameterInfo);
-            Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
+            Assert.Equal(1, fixture.QueryParameterMap.Count);
+            Assert.NotNull(fixture.BodyParameterInfo);
+            Assert.Equal(1, fixture.BodyParameterInfo.Item2);
         }
 
-        [Test]
+        [Fact]
         public void DefaultBodyParameterDetectedForPost()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithBodyDetected"));
 
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNotNull(fixture.BodyParameterInfo);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.NotNull(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void DefaultBodyParameterDetectedForPut()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PutWithBodyDetected"));
 
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNotNull(fixture.BodyParameterInfo);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.NotNull(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void DefaultBodyParameterDetectedForPatch()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchWithBodyDetected"));
 
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNotNull(fixture.BodyParameterInfo);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.NotNull(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void DefaultBodyParameterNotDetectedForGet()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GetWithBodyDetected"));
 
-            Assert.AreEqual(1, fixture.QueryParameterMap.Count);
-            Assert.IsNull(fixture.BodyParameterInfo);
+            Assert.Equal(1, fixture.QueryParameterMap.Count);
+            Assert.Null(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void GarbagePathsShouldThrow()
         {
             bool shouldDie = true;
@@ -160,10 +159,10 @@ namespace Refit.Tests
                 shouldDie = false;
             }
 
-            Assert.IsFalse(shouldDie);
+            Assert.False(shouldDie);
         }
 
-        [Test]
+        [Fact]
         public void MissingParametersShouldBlowUp()
         {
             bool shouldDie = true;
@@ -175,140 +174,140 @@ namespace Refit.Tests
                 shouldDie = false;
             }
 
-            Assert.IsFalse(shouldDie);
+            Assert.False(shouldDie);
         }
 
-        [Test]
+        [Fact]
         public void ParameterMappingSmokeTest()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNull(fixture.BodyParameterInfo);
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Null(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void ParameterMappingWithQuerySmokeTest()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
-            Assert.AreEqual("search", fixture.QueryParameterMap[1]);
-            Assert.IsNull(fixture.BodyParameterInfo);
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal("search", fixture.QueryParameterMap[1]);
+            Assert.Null(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void ParameterMappingWithHardcodedQuerySmokeTest()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedQueryParam"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNull(fixture.BodyParameterInfo);
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Null(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void AliasMappingShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNull(fixture.BodyParameterInfo);
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Null(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void MultipleParametersPerSegmentShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchAnImage"));
-            Assert.AreEqual("width", fixture.ParameterMap[0]);
-            Assert.AreEqual("height", fixture.ParameterMap[1]);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNull(fixture.BodyParameterInfo);
+            Assert.Equal("width", fixture.ParameterMap[0]);
+            Assert.Equal("height", fixture.ParameterMap[1]);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Null(fixture.BodyParameterInfo);
         }
 
-        [Test]
+        [Fact]
         public void FindTheBodyParameter()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithBody"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0]);
 
-            Assert.IsNotNull(fixture.BodyParameterInfo);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
+            Assert.NotNull(fixture.BodyParameterInfo);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Equal(1, fixture.BodyParameterInfo.Item2);
         }
 
-        [Test]
+        [Fact]
         public void AllowUrlEncodedContent()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostSomeUrlEncodedStuff"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0]);
 
-            Assert.IsNotNull(fixture.BodyParameterInfo);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.AreEqual(BodySerializationMethod.UrlEncoded, fixture.BodyParameterInfo.Item1);
+            Assert.NotNull(fixture.BodyParameterInfo);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Equal(BodySerializationMethod.UrlEncoded, fixture.BodyParameterInfo.Item1);
         }
 
-        [Test]
+        [Fact]
         public void HardcodedHeadersShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedHeaders"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNull(fixture.BodyParameterInfo);
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.IsTrue(fixture.Headers.ContainsKey("Api-Version"), "Headers include Api-Version header");
-            Assert.AreEqual("2", fixture.Headers["Api-Version"]);
-            Assert.IsTrue(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("RefitTestClient", fixture.Headers["User-Agent"]);
-            Assert.AreEqual(2, fixture.Headers.Count);
+            Assert.True(fixture.Headers.ContainsKey("Api-Version"), "Headers include Api-Version header");
+            Assert.Equal("2", fixture.Headers["Api-Version"]);
+            Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
+            Assert.Equal(2, fixture.Headers.Count);
         }
 
-        [Test]
+        [Fact]
         public void DynamicHeadersShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeader"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.IsNull(fixture.BodyParameterInfo);
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.AreEqual("Authorization", fixture.HeaderParameterMap[1]);
-            Assert.IsTrue(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("RefitTestClient", fixture.Headers["User-Agent"]);
-            Assert.AreEqual(2, fixture.Headers.Count);
+            Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
+            Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
+            Assert.Equal(2, fixture.Headers.Count);
         }
 
-        [Test]
+        [Fact]
         public void ValueTypesDontBlowUp()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypes"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
-            Assert.AreEqual(0, fixture.QueryParameterMap.Count);
-            Assert.AreEqual(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
-            Assert.AreEqual(1, fixture.BodyParameterInfo.Item2);
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
+            Assert.Equal(1, fixture.BodyParameterInfo.Item2);
 
-            Assert.AreEqual(typeof(bool), fixture.SerializedReturnType);
+            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
         }
 
-        [Test]
+        [Fact]
         public void ReturningTaskShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "VoidPost"));
-            Assert.AreEqual("id", fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0]);
 
-            Assert.AreEqual(typeof(Task), fixture.ReturnType);
-            Assert.AreEqual(typeof(void), fixture.SerializedReturnType);
+            Assert.Equal(typeof(Task), fixture.ReturnType);
+            Assert.Equal(typeof(void), fixture.SerializedReturnType);
         }
 
-        [Test]
+        [Fact]
         public void SyncMethodsShouldThrow()
         {
             bool shouldDie = true;
@@ -320,16 +319,16 @@ namespace Refit.Tests
                 shouldDie = false;
             }
 
-            Assert.IsFalse(shouldDie);
+            Assert.False(shouldDie);
         }
 
-        [Test]
+        [Fact]
         public void UsingThePatchAttributeSetsTheCorrectMethod()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchSomething"));
 
-            Assert.AreEqual("PATCH", fixture.HttpMethod.Method);
+            Assert.Equal("PATCH", fixture.HttpMethod.Method);
         }
     }
 
@@ -463,11 +462,10 @@ namespace Refit.Tests
         }
     }
 
-    [TestFixture]
     public class RequestBuilderTests
     {
 
-        [Test]
+        [Fact]
         public void MethodsShouldBeCancellableDefault()
         {
             var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
@@ -475,11 +473,11 @@ namespace Refit.Tests
             var output = factory(new object[0]);
 
             var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
-            Assert.AreEqual("/foo", uri.PathAndQuery);
-            Assert.IsFalse(output.CancellationToken.IsCancellationRequested);
+            Assert.Equal("/foo", uri.PathAndQuery);
+            Assert.False(output.CancellationToken.IsCancellationRequested);
         }
 
-        [Test]
+        [Fact]
         public void MethodsShouldBeCancellableWithToken()
         {
             var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
@@ -490,11 +488,11 @@ namespace Refit.Tests
             var output = factory(new object[]{cts.Token});
 
             var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
-            Assert.AreEqual("/foo", uri.PathAndQuery);
-            Assert.IsFalse(output.CancellationToken.IsCancellationRequested);
+            Assert.Equal("/foo", uri.PathAndQuery);
+            Assert.False(output.CancellationToken.IsCancellationRequested);
         }
 
-        [Test]
+        [Fact]
         public void MethodsShouldBeCancellableWithTokenDoesCancel()
         {
             var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
@@ -504,10 +502,10 @@ namespace Refit.Tests
             cts.Cancel();
 
             var output = factory(new object[] { cts.Token });
-            Assert.IsTrue(output.CancellationToken.IsCancellationRequested);
+            Assert.True(output.CancellationToken.IsCancellationRequested);
         }
 
-        [Test]
+        [Fact]
         public void HttpContentTest()
         {
             var fixture = new RequestBuilderImplementation(typeof(IHttpContentApi));
@@ -521,11 +519,11 @@ namespace Refit.Tests
             var task = (Task<HttpContent>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { mpc });
             task.Wait();
 
-            Assert.AreEqual(testHttpMessageHandler.RequestMessage.Content, mpc);
-            Assert.AreEqual(retContent, task.Result);
+            Assert.Equal(testHttpMessageHandler.RequestMessage.Content, mpc);
+            Assert.Equal(retContent, task.Result);
         }
 
-        [Test]
+        [Fact]
         public void MethodsThatDontHaveAnHttpMethodShouldFail()
         {
             var failureMethods = new[] { 
@@ -547,7 +545,7 @@ namespace Refit.Tests
                 } catch (Exception) {
                     shouldDie = false;
                 }
-                Assert.IsFalse(shouldDie);
+                Assert.False(shouldDie);
             }
 
             foreach (var v in successMethods) {
@@ -560,11 +558,11 @@ namespace Refit.Tests
                     shouldDie = true;
                 }
 
-                Assert.IsFalse(shouldDie);
+                Assert.False(shouldDie);
             }
         }
 
-        [Test]
+        [Fact]
         public void HardcodedQueryParamShouldBeInUrl()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -572,10 +570,10 @@ namespace Refit.Tests
             var output = factory(new object[] { 6 });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.AreEqual("/foo/bar/6?baz=bamf", uri.PathAndQuery);
+            Assert.Equal("/foo/bar/6?baz=bamf", uri.PathAndQuery);
         }
 
-        [Test]
+        [Fact]
         public void ParameterizedQueryParamsShouldBeInUrl()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -583,10 +581,10 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, "foo" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+            Assert.Equal("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
         }
 
-        [Test]
+        [Fact]
         public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncoded()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -594,10 +592,10 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, "test@example.com" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.AreEqual("/foo/bar/6?baz=bamf&search_for=test%40example.com", uri.PathAndQuery);
+            Assert.Equal("/foo/bar/6?baz=bamf&search_for=test%40example.com", uri.PathAndQuery);
         }
 
-        [Test]
+        [Fact]
         public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQuery()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -605,10 +603,10 @@ namespace Refit.Tests
             var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.AreEqual("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
+            Assert.Equal("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
         }
 
-        [Test]
+        [Fact]
         public void QueryParamWithPathDelimiterShouldBeEncoded()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -616,10 +614,10 @@ namespace Refit.Tests
             var output = factory(new object[] { "6/6", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.AreEqual("/void/6%2F6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
+            Assert.Equal("/void/6%2F6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
         }
 
-        [Test]
+        [Fact]
         public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQueryBadId()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -627,10 +625,10 @@ namespace Refit.Tests
             var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.AreEqual("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
+            Assert.Equal("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
         }
 
-        [Test]
+        [Fact]
         public void MultipleParametersInTheSameSegmentAreGeneratedProperly()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -638,10 +636,10 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, 1024, 768 });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.AreEqual("/6/1024x768/foo", uri.PathAndQuery);
+            Assert.Equal("/6/1024x768/foo", uri.PathAndQuery);
         }
 
-        [Test]
+        [Fact]
         public void HardcodedHeadersShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -649,104 +647,104 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedHeader");
             var output = factory(new object[] { 6 });
 
-            Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("RefitTestClient", output.Headers.UserAgent.ToString());
-            Assert.IsTrue(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
-            Assert.AreEqual("2", output.Headers.GetValues("Api-Version").Single());
+            Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", output.Headers.UserAgent.ToString());
+            Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.Equal("2", output.Headers.GetValues("Api-Version").Single());
         }
 
-        [Test]
+        [Fact]
         public void EmptyHardcodedHeadersShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithEmptyHardcodedHeader");
             var output = factory(new object[] { 6 });
 
-            Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("RefitTestClient", output.Headers.UserAgent.ToString());
-            Assert.IsTrue(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
-            Assert.AreEqual("", output.Headers.GetValues("Api-Version").Single());
+            Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", output.Headers.UserAgent.ToString());
+            Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.Equal("", output.Headers.GetValues("Api-Version").Single());
         }
-        [Test]
+        [Fact]
         public void NullHardcodedHeadersShouldNotBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithNullHardcodedHeader");
             var output = factory(new object[] { 6 });
 
-            Assert.IsTrue(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
-            Assert.AreEqual("RefitTestClient", output.Headers.UserAgent.ToString());
-            Assert.IsFalse(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", output.Headers.UserAgent.ToString());
+            Assert.False(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
         }
 
-        [Test]
+        [Fact]
         public void ContentHeadersCanBeHardcoded()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PostSomeStuffWithHardCodedContentTypeHeader");
             var output = factory(new object[] { 6, "stuff" });
 
-            Assert.IsTrue(output.Content.Headers.Contains("Content-Type"), "Content headers include Content-Type header");
-            Assert.AreEqual("literally/anything", output.Content.Headers.ContentType.ToString());
+            Assert.True(output.Content.Headers.Contains("Content-Type"), "Content headers include Content-Type header");
+            Assert.Equal("literally/anything", output.Content.Headers.ContentType.ToString());
         }
 
-        [Test]
+        [Fact]
         public void DynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
             var output = factory(new object[] { 6, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
 
-            Assert.IsNotNull(output.Headers.Authorization, "Headers include Authorization header");
-            Assert.AreEqual("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
+            Assert.NotNull(output.Headers.Authorization);//, "Headers include Authorization header");
+            Assert.Equal("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
         }
 
-        [Test]
+        [Fact]
         public void CustomDynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
             var output = factory(new object[] { 6, ":joy_cat:" });
 
-            Assert.IsTrue(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
-            Assert.AreEqual(":joy_cat:", output.Headers.GetValues("X-Emoji").First());
+            Assert.True(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
+            Assert.Equal(":joy_cat:", output.Headers.GetValues("X-Emoji").First());
         }
 
-        [Test]
+        [Fact]
         public void EmptyDynamicHeaderShouldBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
             var output = factory(new object[] { 6, "" });
 
-            Assert.IsTrue(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
-            Assert.AreEqual("", output.Headers.GetValues("X-Emoji").First());
+            Assert.True(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
+            Assert.Equal("", output.Headers.GetValues("X-Emoji").First());
         }
 
-        [Test]
+        [Fact]
         public void NullDynamicHeaderShouldNotBeInHeaders()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
             var output = factory(new object[] { 6, null });
 
-            Assert.IsNull(output.Headers.Authorization, "Headers include Authorization header");
+            Assert.Null(output.Headers.Authorization);//, "Headers include Authorization header");
         }
 
-        [Test]
+        [Fact]
         public void AddCustomHeadersToRequestHeadersOnly()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PostSomeStuffWithCustomHeader");
             var output = factory(new object[] { 6, new { Foo = "bar" }, ":smile_cat:" });
 
-            Assert.IsTrue(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
-            Assert.IsTrue(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
-            Assert.IsFalse(output.Content.Headers.Contains("Api-Version"), "Content headers include Api-Version header");
-            Assert.IsFalse(output.Content.Headers.Contains("X-Emoji"), "Content headers include X-Emoji header");
+            Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.True(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
+            Assert.False(output.Content.Headers.Contains("Api-Version"), "Content headers include Api-Version header");
+            Assert.False(output.Content.Headers.Contains("X-Emoji"), "Content headers include X-Emoji header");
         }
 
-        [Test]
+        [Fact]
         public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -756,10 +754,10 @@ namespace Refit.Tests
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
             task.Wait();
 
-            Assert.AreEqual("http://api/foo/bar/string", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
+            Assert.Equal("http://api/foo/bar/string", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
         }
 
-        [Test]
+        [Fact]
         public void HttpClientForVoidMethodShouldPrefixedAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -769,10 +767,10 @@ namespace Refit.Tests
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
             task.Wait();
 
-            Assert.AreEqual("http://api/foo/bar/void", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
+            Assert.Equal("http://api/foo/bar/void", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
         }
 
-        [Test]
+        [Fact]
         public void HttpClientShouldNotPrefixEmptyAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -782,33 +780,33 @@ namespace Refit.Tests
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
             task.Wait();
 
-            Assert.AreEqual("http://api/foo/bar/42", testHttpMessageHandler.RequestMessage.RequestUri.ToString());            
+            Assert.Equal("http://api/foo/bar/42", testHttpMessageHandler.RequestMessage.RequestUri.ToString());            
         }
 
-        [Test]
+        [Fact]
         public void DontBlowUpWithDynamicAuthorizationHeaderAndContent() 
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PutSomeContentWithAuthorization");
             var output = factory(new object[] { 7, new { Octocat = "Dunetocat" }, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
 
-            Assert.IsNotNull(output.Headers.Authorization, "Headers include Authorization header");
-            Assert.AreEqual("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
+            Assert.NotNull(output.Headers.Authorization);//, "Headers include Authorization header");
+            Assert.Equal("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
         }
 
-        [Test]
+        [Fact]
         public void SuchFlexibleContentTypeWow()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PutSomeStuffWithDynamicContentType");
             var output = factory(new object[] { 7, "such \"refit\" is \"amaze\" wow", "text/dson" });
 
-            Assert.IsNotNull(output.Content, "Request has content");
-            Assert.IsNotNull(output.Content.Headers.ContentType, "Headers include Content-Type header");
-            Assert.AreEqual("text/dson", output.Content.Headers.ContentType.MediaType, "Content-Type header has the expected value");
+            Assert.NotNull(output.Content);//, "Request has content");
+            Assert.NotNull(output.Content.Headers.ContentType);//, "Headers include Content-Type header");
+            Assert.Equal("text/dson", output.Content.Headers.ContentType.MediaType);//, "Content-Type header has the expected value");
         }
 
-        [Test]
+        [Fact]
         public void BodyContentGetsUrlEncoded() 
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -823,10 +821,10 @@ namespace Refit.Tests
                     }
                 });
 
-            Assert.AreEqual("Foo=Something&Bar=100&Baz=", output.SendContent);
+            Assert.Equal("Foo=Something&Bar=100&Baz=", output.SendContent);
         }
 
-        [Test]
+        [Fact]
         public async Task FormFieldGetsAliased()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -841,10 +839,10 @@ namespace Refit.Tests
 
 
 
-            Assert.AreEqual("rpn=99", output.SendContent);
+            Assert.Equal("rpn=99", output.SendContent);
         }
 
-        [Test]
+        [Fact]
         public async Task CustomParmeterFormatter()
         {
             var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
@@ -854,10 +852,10 @@ namespace Refit.Tests
             var output = factory(new object[] { 5 });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.AreEqual("/foo/bar/custom-parameter", uri.PathAndQuery);
+            Assert.Equal("/foo/bar/custom-parameter", uri.PathAndQuery);
         }
 
-        [Test]
+        [Fact]
         public void ICanPostAValueTypeIfIWantYoureNotTheBossOfMe()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -867,7 +865,7 @@ namespace Refit.Tests
             var output = factory(new object[] { 7, guid });
 
 
-            Assert.AreEqual(expected, output.SendContent);
+            Assert.Equal(expected, output.SendContent);
         }
     }
 

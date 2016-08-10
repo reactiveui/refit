@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using NUnit.Framework;
+using Xunit;
 using Nustache;
 using Nustache.Core;
 using Refit; // InterfaceStubGenerator looks for this
@@ -15,10 +15,9 @@ using Refit.Generator;
 
 namespace Refit.Tests
 {
-    [TestFixture]
     public class InterfaceStubGeneratorTests
     {
-        [Test]
+        [Fact]
         public void GenerateInterfaceStubsSmokeTest()
         {
             var fixture = new InterfaceStubGenerator();
@@ -31,26 +30,26 @@ namespace Refit.Tests
             Assert.True(result.Contains("IGitHubApi"));
         }
 
-        [Test]
+        [Fact]
         public void FindInterfacesSmokeTest()
         {
             var input = IntegrationTestHelper.GetPath("GitHubApi.cs");
             var fixture = new InterfaceStubGenerator();
 
             var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
-            Assert.AreEqual(1, result.Count);
+            Assert.Equal(1, result.Count);
             Assert.True(result.Any(x => x.Identifier.ValueText == "IGitHubApi"));
 
             input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
 
             result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
-            Assert.AreEqual(2, result.Count);
+            Assert.Equal(2, result.Count);
             Assert.True(result.Any(x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe"));
             Assert.True(result.Any(x => x.Identifier.ValueText == "IBoringCrudApi"));
             Assert.True(result.All(x => x.Identifier.ValueText != "IAmNotARefitInterface"));
         }
 
-        [Test]
+        [Fact]
         public void HasRefitHttpMethodAttributeSmokeTest()
         {
             var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs"));
@@ -64,15 +63,15 @@ namespace Refit.Tests
             var result = input
                 .ToDictionary(m => m.Identifier.ValueText, fixture.HasRefitHttpMethodAttribute);
 
-            Assert.IsTrue(result["RefitMethod"]);
-            Assert.IsTrue(result["AnotherRefitMethod"]);
-            Assert.IsFalse(result["NoConstantsAllowed"]);
-            Assert.IsFalse(result["NotARefitMethod"]);
-            Assert.IsTrue(result["ReadOne"]);
-            Assert.IsTrue(result["SpacesShouldntBreakMe"]);
+            Assert.True(result["RefitMethod"]);
+            Assert.True(result["AnotherRefitMethod"]);
+            Assert.False(result["NoConstantsAllowed"]);
+            Assert.False(result["NotARefitMethod"]);
+            Assert.True(result["ReadOne"]);
+            Assert.True(result["SpacesShouldntBreakMe"]);
         }
 
-        [Test]
+        [Fact]
         public void GenerateClassInfoForInterfaceSmokeTest()
         {
             var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("GitHubApi.cs"));
@@ -84,12 +83,12 @@ namespace Refit.Tests
 
             var result = fixture.GenerateClassInfoForInterface(input);
 
-            Assert.AreEqual(8, result.MethodList.Count);
-            Assert.AreEqual("GetUser", result.MethodList[0].Name);
-            Assert.AreEqual("string userName", result.MethodList[0].ArgumentListWithTypes);
+            Assert.Equal(8, result.MethodList.Count);
+            Assert.Equal("GetUser", result.MethodList[0].Name);
+            Assert.Equal("string userName", result.MethodList[0].ArgumentListWithTypes);
         }
 
-        [Test]
+        [Fact]
         public void GenerateTemplateInfoForInterfaceListSmokeTest()
         {
             var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("RestService.cs"));
@@ -100,10 +99,10 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.AreEqual(7, result.ClassList.Count);
+            Assert.Equal(7, result.ClassList.Count);
         }
 
-        [Test]
+        [Fact]
         public void RetainsAliasesInUsings()
         {
             var fixture = new InterfaceStubGenerator();
@@ -113,8 +112,8 @@ namespace Refit.Tests
             var result = fixture.GenerateTemplateInfoForInterfaceList(new List<InterfaceDeclarationSyntax>(interfaceDefinition));
 
             var usingList = result.UsingList.Select(x => x.Item).ToList();
-            CollectionAssert.Contains(usingList, "SomeType = CollisionA.SomeType");
-            CollectionAssert.Contains(usingList, "CollisionB");
+            Assert.Contains("SomeType = CollisionA.SomeType", usingList);
+            Assert.Contains("CollisionB", usingList);
         }
     }
 
