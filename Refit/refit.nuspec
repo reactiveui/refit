@@ -1,5 +1,4 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
     <id>refit</id>
@@ -7,8 +6,8 @@
     <title>Refit</title>
     <authors>Paul Betts,Refit contributors</authors>
     <owners>Paul Betts</owners>
-    <licenseUrl>https://github.com/xpaulbettsx/refit/blob/master/COPYING</licenseUrl>
-    <projectUrl>https://github.com/xpaulbettsx/refit</projectUrl>
+    <licenseUrl>https://github.com/paulcbetts/refit/blob/master/COPYING</licenseUrl>
+    <projectUrl>https://github.com/paulcbetts/refit</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>The automatic type-safe REST library for Xamarin and .NET</description>
     <summary>The automatic type-safe REST library for Xamarin and .NET</summary>

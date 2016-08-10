@@ -19,7 +19,7 @@ build:
   
 after_build:
   - cmd: '.\packages\gitlink\lib\net45\GitLink.exe . -f Refit.sln -u https://github.com/paulcbetts/refit -s %APPVEYOR_REPO_COMMIT% -errorsaswarnings'
-  - cmd: nuget pack nuget\Zeroconf.nuspec -version "%GitVersion_NuGetVersionV2%" -prop "target=%CONFIGURATION%" -NoPackageAnalysis
+  - cmd: nuget pack Refit\Refit.nuspec -version "%GitVersion_NuGetVersionV2%" -prop "target=%CONFIGURATION%" -NoPackageAnalysis
   - cmd: appveyor PushArtifact "Refit.%GitVersion_NuGetVersion%.nupkg"  
   
 deploy:
