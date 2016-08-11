@@ -35,6 +35,8 @@ var isRunningOnAppVeyor = AppVeyor.IsRunningOnAppVeyor;
 var isPullRequest = AppVeyor.Environment.PullRequest.IsPullRequest;
 
 var IsMainRepository = StringComparer.OrdinalIgnoreCase.Equals("paulcbetts/refit", AppVeyor.Environment.Repository.Name);
+var IsMasterBranch = StringComparer.OrdinalIgnoreCase.Equals("master", AppVeyor.Environment.Repository.Branch);
+var IsDevelopBranch = StringComparer.OrdinalIgnoreCase.Equals("develop", AppVeyor.Environment.Repository.Branch);
 
 // Parse release notes.
 var releaseNotes = ParseReleaseNotes("RELEASENOTES.md");
@@ -206,6 +208,9 @@ Task("Publish")
     }
 });
 
+Task("Default")
+    .IsDependentOn("Publish");
+
 //////////////////////////////////////////////////////////////////////
 // TASK TARGETS
 //////////////////////////////////////////////////////////////////////
@@ -215,4 +220,4 @@ Task("Publish")
 // EXECUTION
 //////////////////////////////////////////////////////////////////////
 
-RunTarget("Publish");
+RunTarget("Default");
