@@ -20,7 +20,7 @@
 
 
 
-**Which versions of ReactiveUI, and which platform / OS are affected by this issue? Did this work in previous versions of Refit? Please also test with the latest stable and snapshot (https://www.myget.org/feed/refit/package/nuget/refit) versions.**
+**Which versions of Refit, and which platform / OS are affected by this issue? Did this work in previous versions of Refit? Please also test with the latest stable and snapshot (https://www.myget.org/feed/refit/package/nuget/refit) versions.**
 
 
 
