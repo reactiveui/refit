@@ -210,9 +210,15 @@ namespace Refit
 
         void addMultipartItem(MultipartFormDataContent multiPartContent, string itemName, object itemValue)
         {
+            var httpContentValue = itemValue as HttpContent;
             var streamValue = itemValue as Stream;
             var stringValue = itemValue as String;
             var byteArrayValue = itemValue as byte[];
+
+            if (httpContentValue != null) {
+                multiPartContent.Add(httpContentValue);
+                return;
+            }
 
             if (streamValue != null) {
                 var streamContent = new StreamContent(streamValue);
@@ -249,7 +255,7 @@ namespace Refit
                 return;
             }
 
-            throw new ArgumentException(string.Format("Unexpected parameter type in a Multipart request. Parameter {0} is of type {1}, whereas allowed types are String, Stream, FileInfo, and Byte array", itemName, itemValue.GetType().Name), "itemValue");
+            throw new ArgumentException(string.Format("Unexpected parameter type in a Multipart request. Parameter {0} is of type {1}, whereas allowed types are String, Stream, HttpContent, FileInfo, and Byte array", itemName, itemValue.GetType().Name), "itemValue");
         }
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)

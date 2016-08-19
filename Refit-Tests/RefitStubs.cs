@@ -463,5 +463,3 @@ namespace Refit.Tests
 
     }
 }
-
-
