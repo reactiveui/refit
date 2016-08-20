@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="Helpers.cs" />
+    <Compile Include="IQueryParameters.cs" />
     <Compile Include="NameValueCollection.cs" />
     <Compile Include="RefitSettings.cs" />
     <Compile Include="RequestBuilder.cs" />
