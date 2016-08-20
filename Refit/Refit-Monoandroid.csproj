@@ -50,6 +50,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IQueryParameters.cs" />
     <Compile Include="Attributes.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="HtmlEncoder.cs" />

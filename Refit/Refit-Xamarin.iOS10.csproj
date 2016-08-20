@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes.cs" />
+    <Compile Include="IQueryParameters.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="HtmlEncoder.cs" />
     <Compile Include="HttpUtility.cs" />
