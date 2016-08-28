@@ -212,12 +212,20 @@ namespace Refit
         void addMultipartItem(MultipartFormDataContent multiPartContent, string itemName, object itemValue)
         {
             var httpContentValue = itemValue as HttpContent;
+            var httpContentValueList = itemValue as IEnumerable<HttpContent>;
             var streamValue = itemValue as Stream;
-            var stringValue = itemValue as String;
+            var stringValue = itemValue as string;
             var byteArrayValue = itemValue as byte[];
 
             if (httpContentValue != null) {
                 multiPartContent.Add(httpContentValue);
+                return;
+            }
+
+            if (httpContentValueList != null)
+            {
+                foreach (var item in httpContentValueList)
+                    multiPartContent.Add(item);
                 return;
             }
 
