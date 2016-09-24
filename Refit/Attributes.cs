@@ -3,6 +3,17 @@ using System.Net.Http;
 
 namespace Refit
 {
+    [AttributeUsage(AttributeTargets.Method)]
+    public class UniqueNameAttribute : Attribute
+    {
+        public string MethodName { get; private set; }
+
+        public UniqueNameAttribute(string methodName)
+        {
+            MethodName = methodName;
+        }
+    }
+
     public abstract class HttpMethodAttribute : Attribute
     {
         public abstract HttpMethod Method { get; }
