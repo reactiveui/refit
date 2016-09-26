@@ -13,19 +13,19 @@ namespace Refit.Tests
     {
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadStream([AttachmentName("test.pdf")] Stream stream);
+        Task<HttpResponseMessage> UploadStream([AttachmentName("test.pdf")][AttachmentContentType("application/pdf")] Stream stream);
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadBytes([AttachmentName("test.pdf")] byte[] bytes);
+        Task<HttpResponseMessage> UploadBytes([AttachmentName("test.pdf")][AttachmentContentType("application/pdf")] byte[] bytes);
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadString(string someString);
+        Task<HttpResponseMessage> UploadString([AliasAs("SomeStringAlias")]string someString);
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadFileInfo(FileInfo fileInfo);
+        Task<HttpResponseMessage> UploadFileInfo([AttachmentContentType("application/pdf")]FileInfo fileInfo);
     }
 
     public class MultipartTests

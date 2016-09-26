@@ -412,15 +412,19 @@ At this time, multipart methods support the following parameter types:
  - Stream
  - FileInfo
 
+The parameter name will be used as the name of the field in the multipart data. This can be overridden with the `AliasAs` attribute.
+
 For byte array and Stream parameters, use `AttachmentName` parameter attribute to specify the
-name for the attachment. For `FileInfo` parameters, the file name will be used.
+file name for the attachment. If the attachment name is not specified, the name will be used. For `FileInfo` parameters, `FileInfo.Name` will be used.
+
+Use `AttachmentContentType` attribute to specify the content type of an attachment. This should be applied to the parameter, not the method.
 
 ```csharp
 public interface ISomeApi
 {
     [Multipart]
     [Post("/users/{id}/photo")]
-    Task UploadPhoto(int id, [AttachmentName("photo.jpg")] Stream stream);
+    Task UploadPhoto(int id, [AliasAs("myPhoto")][AttachmentName("photo.jpg")][AttachmentContentType("image/jpeg")] Stream stream);
 }
 ```
 
