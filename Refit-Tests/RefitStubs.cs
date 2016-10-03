@@ -18,6 +18,7 @@ using System.Net;
 using System.Reactive.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using RichardSzalay.MockHttp;
 using System.IO;
 using System.Reflection;
 
