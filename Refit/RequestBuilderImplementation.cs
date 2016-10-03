@@ -152,7 +152,44 @@ namespace Refit
                         parameterName = attachment.Item2;
                     }
 
-                    addMultipartItem(multiPartContent, itemName, parameterName, paramList[i]);
+
+                    // Check to see if it's an IEnumerable
+                    var itemValue = paramList[i];
+                    var enumerable = itemValue as IEnumerable<object>;
+                    var typeIsCollection = false;
+
+                    if (enumerable != null) {
+                        Type tType = null;
+                        var eType = enumerable.GetType();
+                        if (eType.GetTypeInfo().ContainsGenericParameters) {
+                            tType = eType.GenericTypeArguments[0];
+                        } else if (eType.IsArray) {
+                            tType = eType.GetElementType();
+                        }
+
+                        // check to see if it's one of the types we support for multipart:
+                        // FileInfo, Stream, string or byte[]
+                        if (tType == typeof(Stream) ||
+                            tType == typeof(string) ||
+                            tType == typeof(byte[])
+#if !NETFX_CORE
+                            || tType == typeof(FileInfo)
+#endif
+                        ) {
+                            typeIsCollection = true;
+                        }
+
+                        
+                    }
+
+                    if (typeIsCollection) {
+                        foreach (var item in enumerable) {
+                            addMultipartItem(multiPartContent, itemName, parameterName, item);
+                        }
+                    } else{
+                        addMultipartItem(multiPartContent, itemName, parameterName, itemValue);
+                    }
+
                 }
 
                 // NB: We defer setting headers until the body has been
@@ -212,7 +249,7 @@ namespace Refit
         void addMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
             var streamValue = itemValue as Stream;
-            var stringValue = itemValue as String;
+            var stringValue = itemValue as string;
             var byteArrayValue = itemValue as byte[];
 
             if (streamValue != null) {
