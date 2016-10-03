@@ -101,7 +101,8 @@ namespace Refit.Tests
 
             // compute resource name suffix
             var relativeName = "." + relativeFilePath
-                .Replace(Path.DirectorySeparatorChar, namespaceSeparator)
+                .Replace('\\', namespaceSeparator)
+                .Replace('/', namespaceSeparator)
                 .Replace(' ', '_');
 
             // get resource stream
