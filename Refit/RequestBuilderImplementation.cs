@@ -371,13 +371,7 @@ namespace Refit
                     return (T)(object)resp.Content;
                 }
 
-                var ms = new MemoryStream();
-                using (var fromStream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false)) {
-                    await fromStream.CopyToAsync(ms, 4096, ct).ConfigureAwait(false);
-                }
-
-                var bytes = ms.ToArray();
-                var content = Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+                var content = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (restMethod.SerializedReturnType == typeof(string)) {
                     return (T)(object)content; 
