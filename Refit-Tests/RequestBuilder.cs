@@ -211,16 +211,6 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void ParameterMappingWithQueryAliasSmokeTest()
-        {
-            var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParamAlias"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
-            Assert.Equal("q", fixture.QueryParameterMap[1]);
-            Assert.Null(fixture.BodyParameterInfo);
-        }
-
-        [Fact]
         public void ParameterMappingWithHardcodedQuerySmokeTest()
         {
             var input = typeof(IRestMethodInfoTests);
