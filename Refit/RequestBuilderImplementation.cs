@@ -175,7 +175,8 @@ namespace Refit
                         // FileInfo, Stream, string or byte[]
                         if (tType == typeof(Stream) ||
                             tType == typeof(string) ||
-                            tType == typeof(byte[])
+                            tType == typeof(byte[]) ||
+                            tType.GetTypeInfo().IsSubclassOf(typeof(MultipartItem))
 #if !NETFX_CORE
                             || tType == typeof(FileInfo)
 #endif
@@ -252,9 +253,21 @@ namespace Refit
 
         void addMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, string mediaType, object itemValue)
         {
+            var multipartItem = itemValue as MultipartItem;
             var streamValue = itemValue as Stream;
             var stringValue = itemValue as string;
             var byteArrayValue = itemValue as byte[];
+
+            if (multipartItem != null)
+            {
+                var httpContent = multipartItem.ToContent();
+                if (!string.IsNullOrEmpty(mediaType) && string.IsNullOrEmpty(multipartItem.ContentType))
+                {
+                    httpContent.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+                }
+                multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
+                return;
+            }
 
             if (streamValue != null) {
                 var streamContent = new StreamContent(streamValue);

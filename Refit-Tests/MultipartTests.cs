@@ -15,18 +15,10 @@ namespace Refit.Tests
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadStream([AttachmentName("test.pdf")][AttachmentContentType("application/pdf")] Stream stream);
-
-        [Multipart]
-        [Post("/")]
-        Task<HttpResponseMessage> UploadStreamWithoutContentType([AttachmentName("test.pdf")] Stream stream);
-
+        
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadBytes([AttachmentName("test.pdf")][AttachmentContentType("application/pdf")] byte[] bytes);
-
-        [Multipart]
-        [Post("/")]
-        Task<HttpResponseMessage> UploadBytesWithoutContentType([AttachmentName("test.pdf")] byte[] bytes);
 
         [Multipart]
         [Post("/")]
@@ -35,11 +27,21 @@ namespace Refit.Tests
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadFileInfo([AttachmentContentType("application/pdf")]IEnumerable<FileInfo> fileInfos, [AttachmentContentType("application/tmp")]FileInfo anotherFile);
+    }
 
+    public interface IAdvancedMultipartRunscopeApi
+    {
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadStream(StreamPart stream);
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadFileInfoWithoutContentTypes(IEnumerable<FileInfo> fileInfos, FileInfo anotherFile);
+        Task<HttpResponseMessage> UploadBytes(ByteArrayPart bytes);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadFileInfo(IEnumerable<FileInfoPart> fileInfos, FileInfoPart anotherFile);
     }
 
     public class MultipartTests
@@ -60,18 +62,6 @@ namespace Refit.Tests
         }
 
         [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
-        public async Task MultipartUploadShouldWorkWithStreamWithoutContentType()
-        {
-            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
-            {
-                var fixture = RestService.For<IRunscopeApi>(runscopeUri);
-                var result = await fixture.UploadStreamWithoutContentType(stream);
-
-                Assert.True(result.IsSuccessStatusCode);
-            }
-        }
-
-        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithByteArray()
         {
             using (var stream = GetTestFileStream("Test Files/Test.pdf"))
@@ -80,21 +70,6 @@ namespace Refit.Tests
 
                 var fixture = RestService.For<IRunscopeApi>(runscopeUri);
                 var result = await fixture.UploadBytes(bytes);
-
-                Assert.True(result.IsSuccessStatusCode);
-            }
-        }
-
-        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
-        public async Task MultipartUploadShouldWorkWithByteArrayWithoutContentType()
-        {
-            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
-            using (var reader = new BinaryReader(stream))
-            {
-                var bytes = reader.ReadBytes((int)stream.Length);
-
-                var fixture = RestService.For<IRunscopeApi>(runscopeUri);
-                var result = await fixture.UploadBytesWithoutContentType(bytes);
 
                 Assert.True(result.IsSuccessStatusCode);
             }
@@ -123,28 +98,6 @@ namespace Refit.Tests
         }
 
         [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
-        public async Task MultipartUploadShouldWorkWithFileInfoWithoutContentTypes()
-        {
-            var fileName = Path.GetTempFileName();
-
-            try {
-                using (var stream = GetTestFileStream("Test Files/Test.pdf"))
-                using (var outStream = File.OpenWrite(fileName)) {
-                    await stream.CopyToAsync(outStream);
-                    await outStream.FlushAsync();
-                    outStream.Close();
-
-                    var fixture = RestService.For<IRunscopeApi>(runscopeUri);
-                    var result = await fixture.UploadFileInfoWithoutContentTypes(new [] { new FileInfo(fileName), new FileInfo(fileName) }, new FileInfo(fileName));
-
-                    Assert.True(result.IsSuccessStatusCode);
-                }
-            } finally {
-                File.Delete(fileName);
-            }
-        }
-
-        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithString()
         {
             const string text = "This is random text";
@@ -153,6 +106,63 @@ namespace Refit.Tests
             var result = await fixture.UploadString(text);
 
             Assert.True(result.IsSuccessStatusCode);
+        }
+
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
+        public async Task MultipartUploadShouldWorkWithStreamPart()
+        {
+            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+            {
+                var fixture = RestService.For<IAdvancedMultipartRunscopeApi>(runscopeUri);
+                var result = await fixture.UploadStream(new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
+
+                Assert.True(result.IsSuccessStatusCode);
+            }
+        }
+
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
+        public async Task MultipartUploadShouldWorkWithByteArrayPart()
+        {
+            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+            using (var reader = new BinaryReader(stream))
+            {
+                var bytes = reader.ReadBytes((int)stream.Length);
+
+                var fixture = RestService.For<IAdvancedMultipartRunscopeApi>(runscopeUri);
+                var result = await fixture.UploadBytes(new ByteArrayPart(bytes, "test-bytearraypart.pdf", "application/pdf"));
+
+                Assert.True(result.IsSuccessStatusCode);
+            }
+        }
+
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
+        public async Task MultipartUploadShouldWorkWithFileInfoPart()
+        {
+            var fileName = Path.GetTempFileName();
+
+            try
+            {
+                using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+                using (var outStream = File.OpenWrite(fileName))
+                {
+                    await stream.CopyToAsync(outStream);
+                    await outStream.FlushAsync();
+                    outStream.Close();
+
+                    var fixture = RestService.For<IAdvancedMultipartRunscopeApi>(runscopeUri);
+                    var result = await fixture.UploadFileInfo(new[] 
+                    {
+                        new FileInfoPart(new FileInfo(fileName), "test-fileinfopart.pdf", "application/pdf"),
+                        new FileInfoPart(new FileInfo(fileName)) { FileName = "test-fileinfopart2.pdf" }
+                    }, new FileInfoPart(new FileInfo(fileName)) { ContentType = "application/pdf" });
+
+                    Assert.True(result.IsSuccessStatusCode);
+                }
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
         }
 
         private static Stream GetTestFileStream(string relativeFilePath)
