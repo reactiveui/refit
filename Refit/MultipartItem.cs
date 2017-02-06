@@ -13,6 +13,11 @@ namespace Refit
     {
         public MultipartItem(string fileName, string contentType)
         {
+            if (fileName == null)
+            {
+                throw new ArgumentNullException("fileName");
+            }
+
             this.FileName = fileName;
             this.ContentType = contentType;
         }
@@ -35,7 +40,7 @@ namespace Refit
 
     public class StreamPart : MultipartItem
     {
-        public StreamPart(Stream value, string fileName, string contentType) :
+        public StreamPart(Stream value, string fileName, string contentType = null) :
             base(fileName, contentType)
         {
             if (value == null)
@@ -43,11 +48,6 @@ namespace Refit
                 throw new ArgumentNullException("value");
             }
             Value = value;
-        }
-
-        public StreamPart(Stream value) :
-            this(value, null, null)
-        {
         }
 
         public Stream Value { get; private set; }
@@ -60,7 +60,7 @@ namespace Refit
 
     public class ByteArrayPart : MultipartItem
     {
-        public ByteArrayPart(byte[] value, string fileName, string contentType) :
+        public ByteArrayPart(byte[] value, string fileName, string contentType = null) :
             base(fileName, contentType)
         {
             if (value == null)
@@ -68,11 +68,6 @@ namespace Refit
                 throw new ArgumentNullException("value");
             }
             Value = value;
-        }
-
-        public ByteArrayPart(byte[] value) :
-            this(value, null, null)
-        {
         }
 
         public byte[] Value { get; private set; }
@@ -86,19 +81,14 @@ namespace Refit
 #if !NETFX_CORE
     public class FileInfoPart : MultipartItem
     {
-        public FileInfoPart(FileInfo value, string fileName, string contentType) :
-            base(string.IsNullOrEmpty(fileName) && value != null ? value.Name : fileName, contentType)
+        public FileInfoPart(FileInfo value, string fileName, string contentType = null) :
+            base(fileName, contentType)
         {
             if (value == null)
             {
                 throw new ArgumentNullException("value");
             }
             Value = value;
-        }
-
-        public FileInfoPart(FileInfo value) :
-            this(value, null, null)
-        {
         }
 
         public FileInfo Value { get; private set; }

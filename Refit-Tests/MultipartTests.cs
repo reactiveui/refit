@@ -151,7 +151,7 @@ namespace Refit.Tests
                     {
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart.pdf", "application/pdf"),
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart2.pdf", contentType: null)
-                    }, new FileInfoPart(new FileInfo(fileName), fileName: null, contentType: "application/pdf"));
+                    }, new FileInfoPart(new FileInfo(fileName), fileName: "additionalfile.pdf", contentType: "application/pdf"));
 
                     Assert.True(result.IsSuccessStatusCode);
                 }
@@ -162,12 +162,21 @@ namespace Refit.Tests
             }
         }
 
-        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
-        public void FileInfoPartConstructorShouldThrowArgumentNullException()
+        [Fact]
+        public void MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName()
         {
             Assert.Throws(typeof(ArgumentNullException), () =>
             {
-                var fileInfoPart = new FileInfoPart(null, null, null);
+                var byteArrayPart = new ByteArrayPart(new byte[0], null, "application/pdf");
+            });
+        }
+
+        [Fact]
+        public void FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo()
+        {
+            Assert.Throws(typeof(ArgumentNullException), () =>
+            {
+                var fileInfoPart = new FileInfoPart(null, "file.pdf", "application/pdf");
             });
         }
 

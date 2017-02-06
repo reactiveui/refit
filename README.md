@@ -417,8 +417,6 @@ The parameter name will be used as the name of the field in the multipart data. 
 To specify the file name and content type for byte array (`byte[]`), `Stream` and `FileInfo` parameters, use of a wrapper class is required.
 The wrapper classes for these types are `ByteArrayPart`, `StreamPart` and `FileInfoPart`.
 
-If the file name is not specified for `Stream` and `byte[]` parameters, the parameter name will be used. For `FileInfo` parameters, `FileInfo.Name` will be used.
-
 ```csharp
 public interface ISomeApi
 {
