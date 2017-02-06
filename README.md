@@ -414,19 +414,27 @@ At this time, multipart methods support the following parameter types:
 
 The parameter name will be used as the name of the field in the multipart data. This can be overridden with the `AliasAs` attribute.
 
-For byte array and Stream parameters, use `AttachmentName` parameter attribute to specify the
-file name for the attachment. If the attachment name is not specified, the name will be used. For `FileInfo` parameters, `FileInfo.Name` will be used.
+To specify the file name and content type for byte array (`byte[]`), `Stream` and `FileInfo` parameters, use of a wrapper class is required.
+The wrapper classes for these types are `ByteArrayPart`, `StreamPart` and `FileInfoPart`.
 
-Use `AttachmentContentType` attribute to specify the content type of an attachment. This should be applied to the parameter, not the method.
+If the file name is not specified for `Stream` and `byte[]` parameters, the parameter name will be used. For `FileInfo` parameters, `FileInfo.Name` will be used.
 
 ```csharp
 public interface ISomeApi
 {
     [Multipart]
     [Post("/users/{id}/photo")]
-    Task UploadPhoto(int id, [AliasAs("myPhoto")][AttachmentName("photo.jpg")][AttachmentContentType("image/jpeg")] Stream stream);
+    Task UploadPhoto(int id, [AliasAs("myPhoto")] StreamPart stream);
 }
 ```
+
+To pass a Stream to this method, construct a StreamPart object like so:
+
+```csharp
+someApiInstance.UploadPhoto(id, new StreamPart(myPhotoStream, "photo.jpg", "image/jpeg"));
+```
+
+Note: The AttachmentName attribute that was previously described in this section has been deprecated and its use is not recommended.
 
 ### Retrieving the response
 

@@ -11,21 +11,16 @@ namespace Refit
 {
     public abstract class MultipartItem
     {
-        public MultipartItem()
-        {
-
-        }
-
         public MultipartItem(string fileName, string contentType)
         {
             this.FileName = fileName;
             this.ContentType = contentType;
         }
 
-        public virtual string FileName { get; set; }
-        public virtual string ContentType { get; set; }
+        public string FileName { get; private set; }
+        public string ContentType { get; private set; }
 
-        public virtual HttpContent ToContent()
+        public HttpContent ToContent()
         {
             var content = CreateContent();
             if (!string.IsNullOrEmpty(ContentType))
@@ -43,15 +38,19 @@ namespace Refit
         public StreamPart(Stream value, string fileName, string contentType) :
             base(fileName, contentType)
         {
+            if (value == null)
+            {
+                throw new ArgumentNullException("value");
+            }
             Value = value;
         }
 
-        public StreamPart(Stream value)
+        public StreamPart(Stream value) :
+            this(value, null, null)
         {
-            Value = value;
         }
 
-        public Stream Value { get; set; }
+        public Stream Value { get; private set; }
 
         protected override HttpContent CreateContent()
         {
@@ -64,15 +63,19 @@ namespace Refit
         public ByteArrayPart(byte[] value, string fileName, string contentType) :
             base(fileName, contentType)
         {
+            if (value == null)
+            {
+                throw new ArgumentNullException("value");
+            }
             Value = value;
         }
 
-        public ByteArrayPart(byte[] value)
+        public ByteArrayPart(byte[] value) :
+            this(value, null, null)
         {
-            Value = value;
         }
 
-        public byte[] Value;
+        public byte[] Value { get; private set; }
 
         protected override HttpContent CreateContent()
         {
@@ -84,17 +87,21 @@ namespace Refit
     public class FileInfoPart : MultipartItem
     {
         public FileInfoPart(FileInfo value, string fileName, string contentType) :
-            base(fileName, contentType)
+            base(string.IsNullOrEmpty(fileName) && value != null ? value.Name : fileName, contentType)
         {
+            if (value == null)
+            {
+                throw new ArgumentNullException("value");
+            }
             Value = value;
         }
 
-        public FileInfoPart(FileInfo value)
+        public FileInfoPart(FileInfo value) :
+            this(value, null, null)
         {
-            Value = value;
         }
 
-        public FileInfo Value { get; set; }
+        public FileInfo Value { get; private set; }
 
         protected override HttpContent CreateContent()
         {

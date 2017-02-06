@@ -108,7 +108,7 @@ namespace Refit
         }
     }
 
-    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)][Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem", false)]
     public class AttachmentNameAttribute : Attribute
     {
         public string Name { get; protected set; }
@@ -146,16 +146,6 @@ namespace Refit
         public AuthorizeAttribute(string scheme = "Bearer")
             : base("Authorization: " + scheme)
         {
-        }
-    }
-
-    [AttributeUsage(AttributeTargets.Parameter)]
-    public class AttachmentContentTypeAttribute : Attribute
-    {
-        public string MediaType { get; protected set; }
-        public AttachmentContentTypeAttribute(string mediaType)
-        {
-            MediaType = mediaType;
         }
     }
 }

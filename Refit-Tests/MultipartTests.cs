@@ -14,11 +14,19 @@ namespace Refit.Tests
     {
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadStream([AttachmentName("test.pdf")][AttachmentContentType("application/pdf")] Stream stream);
-        
+        Task<HttpResponseMessage> UploadStream(Stream stream);
+
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadBytes([AttachmentName("test.pdf")][AttachmentContentType("application/pdf")] byte[] bytes);
+        Task<HttpResponseMessage> UploadStreamPart(StreamPart stream);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadBytes(byte[] bytes);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadBytesPart([AliasAs("ByteArrayPartParamAlias")]ByteArrayPart bytes);
 
         [Multipart]
         [Post("/")]
@@ -26,22 +34,11 @@ namespace Refit.Tests
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadFileInfo([AttachmentContentType("application/pdf")]IEnumerable<FileInfo> fileInfos, [AttachmentContentType("application/tmp")]FileInfo anotherFile);
-    }
-
-    public interface IAdvancedMultipartRunscopeApi
-    {
-        [Multipart]
-        [Post("/")]
-        Task<HttpResponseMessage> UploadStream(StreamPart stream);
+        Task<HttpResponseMessage> UploadFileInfo(IEnumerable<FileInfo> fileInfos, FileInfo anotherFile);
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadBytes(ByteArrayPart bytes);
-
-        [Multipart]
-        [Post("/")]
-        Task<HttpResponseMessage> UploadFileInfo(IEnumerable<FileInfoPart> fileInfos, FileInfoPart anotherFile);
+        Task<HttpResponseMessage> UploadFileInfoPart(IEnumerable<FileInfoPart> fileInfos, FileInfoPart anotherFile);
     }
 
     public class MultipartTests
@@ -113,8 +110,8 @@ namespace Refit.Tests
         {
             using (var stream = GetTestFileStream("Test Files/Test.pdf"))
             {
-                var fixture = RestService.For<IAdvancedMultipartRunscopeApi>(runscopeUri);
-                var result = await fixture.UploadStream(new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
+                var fixture = RestService.For<IRunscopeApi>(runscopeUri);
+                var result = await fixture.UploadStreamPart(new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
 
                 Assert.True(result.IsSuccessStatusCode);
             }
@@ -128,8 +125,8 @@ namespace Refit.Tests
             {
                 var bytes = reader.ReadBytes((int)stream.Length);
 
-                var fixture = RestService.For<IAdvancedMultipartRunscopeApi>(runscopeUri);
-                var result = await fixture.UploadBytes(new ByteArrayPart(bytes, "test-bytearraypart.pdf", "application/pdf"));
+                var fixture = RestService.For<IRunscopeApi>(runscopeUri);
+                var result = await fixture.UploadBytesPart(new ByteArrayPart(bytes, "test-bytearraypart.pdf", "application/pdf"));
 
                 Assert.True(result.IsSuccessStatusCode);
             }
@@ -149,12 +146,12 @@ namespace Refit.Tests
                     await outStream.FlushAsync();
                     outStream.Close();
 
-                    var fixture = RestService.For<IAdvancedMultipartRunscopeApi>(runscopeUri);
-                    var result = await fixture.UploadFileInfo(new[] 
+                    var fixture = RestService.For<IRunscopeApi>(runscopeUri);
+                    var result = await fixture.UploadFileInfoPart(new[] 
                     {
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart.pdf", "application/pdf"),
-                        new FileInfoPart(new FileInfo(fileName)) { FileName = "test-fileinfopart2.pdf" }
-                    }, new FileInfoPart(new FileInfo(fileName)) { ContentType = "application/pdf" });
+                        new FileInfoPart(new FileInfo(fileName), "test-fileinfopart2.pdf", contentType: null)
+                    }, new FileInfoPart(new FileInfo(fileName), fileName: null, contentType: "application/pdf"));
 
                     Assert.True(result.IsSuccessStatusCode);
                 }
@@ -163,6 +160,15 @@ namespace Refit.Tests
             {
                 File.Delete(fileName);
             }
+        }
+
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
+        public void FileInfoPartConstructorShouldThrowArgumentNullException()
+        {
+            Assert.Throws(typeof(ArgumentNullException), () =>
+            {
+                var fileInfoPart = new FileInfoPart(null, null, null);
+            });
         }
 
         private static Stream GetTestFileStream(string relativeFilePath)
