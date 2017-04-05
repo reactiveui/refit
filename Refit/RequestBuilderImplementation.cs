@@ -377,7 +377,16 @@ namespace Refit
                     return (T)(object)content; 
                 }
 
-                return JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
+                var deserializedObject = JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
+
+                // enable message post-processor functionality on resulting object if implements interface,
+                // so it is possible to access http response message even when resulting type
+                // of the call is something more specific (e.g. to allow processing of response headers)
+                if (deserializedObject is IHttpResponseMessagePostProcessor) {
+                    (deserializedObject as IHttpResponseMessagePostProcessor).PostProcessHttpResponseMessage(resp);
+                }
+
+                return deserializedObject;
             };
         }
 

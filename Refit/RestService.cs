@@ -15,6 +15,11 @@ namespace Refit
         T For<T>(HttpClient client);
     }
 
+    public interface IHttpResponseMessagePostProcessor
+    {
+        void PostProcessHttpResponseMessage(HttpResponseMessage message);
+    }
+
     public static class RestService
     {
         public static T For<T>(HttpClient client, RefitSettings settings)
