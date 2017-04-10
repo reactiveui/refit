@@ -152,12 +152,12 @@ namespace Refit.Generator
 
         public static string ExtractTemplateSource()
         {
-            var ourPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var ourPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "GeneratedInterfaceStubTemplate.mustache");
 
             // Try to return a flat file from the same directory, if it doesn't
             // exist, use the built-in resource version
             if (File.Exists(ourPath)) {
-                return File.ReadAllText(Path.Combine(ourPath, "GeneratedInterfaceStubTemplate.mustache"), Encoding.UTF8);
+                return File.ReadAllText(ourPath, Encoding.UTF8);
             }
 
             using (var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache")) {
