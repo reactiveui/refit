@@ -53,7 +53,7 @@ namespace Refit
                 }
 
                 if (settings.AuthorizationHeaderValueGetter != null) {
-                    innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, innerHandler);
+                    innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, settings.AuthorizationHeaderRefreshedValueGetter, innerHandler);
                 }
             }
 

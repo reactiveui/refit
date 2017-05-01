@@ -16,6 +16,7 @@ namespace Refit
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public Func<Task<string>> AuthorizationHeaderValueGetter { get; set; }
+        public Func<Task<string>> AuthorizationHeaderRefreshedValueGetter { get; set; }
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
     }
 
