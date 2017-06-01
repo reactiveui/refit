@@ -318,7 +318,7 @@ namespace Refit
         Func<HttpClient, object[], Task> buildVoidTaskFuncForMethod(RestMethodInfo restMethod)
         {                      
             return async (client, paramList) => {
-                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress?.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
                 var ct = CancellationToken.None;
@@ -351,7 +351,7 @@ namespace Refit
         Func<HttpClient, CancellationToken, object[], Task<T>> buildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
-                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress?.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
                 var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
