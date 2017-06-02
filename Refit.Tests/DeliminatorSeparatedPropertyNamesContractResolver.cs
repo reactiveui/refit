@@ -11,7 +11,6 @@ namespace Refit.Tests
         readonly string separator;
 
         protected DeliminatorSeparatedPropertyNamesContractResolver(char separator)
-            : base(true)
         {
             this.separator = separator.ToString(CultureInfo.InvariantCulture);
         }

@@ -30,7 +30,7 @@ namespace Refit.Generator
         {
             var trees = paths.Select(x => CSharpSyntaxTree.ParseFile(x)).ToList();
 
-            var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
+            var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).OrderBy(i => i.Identifier.Text).ToList();
 
             var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate);
 
