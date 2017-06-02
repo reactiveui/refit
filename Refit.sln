@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit-WPA81", "Refit\Refit-
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4F1C8991-7097-4471-A9A6-A72005AB594D}"
 	ProjectSection(SolutionItems) = preProject
-		Rebracer.xml = Rebracer.xml
+		.editorconfig = .editorconfig
 		Refit\refit.nuspec = Refit\refit.nuspec
 		Refit\targets\refit.targets = Refit\targets\refit.targets
 	EndProjectSection
