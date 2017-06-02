@@ -32,10 +32,10 @@
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd>$(MSBuildThisFileDirectory)..\InterfaceStubGenerator\bin\$(ConfigurationName)\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>$(MSBuildThisFileDirectory)..\InterfaceStubGenerator\bin\$(ConfigurationName)\net45\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>mono $(MSBuildThisFileDirectory)../InterfaceStubGenerator/bin/$(Configuration)/InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>mono $(MSBuildThisFileDirectory)../InterfaceStubGenerator/bin/$(Configuration)/net45/InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     <Exec Command="$(RefitExecCmd)" />
     <Message Text="Processed Refit Stubs" />
