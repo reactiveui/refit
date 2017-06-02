@@ -142,7 +142,6 @@ namespace Refit
                     // the parameter name should be either the attachment name or the parameter name (as fallback)
                     string itemName;
                     string parameterName;
-                    string mediaType;
 
                     Tuple<string, string> attachment;
                     if (!restMethod.AttachmentNameMap.TryGetValue(i, out attachment)) {
@@ -173,10 +172,11 @@ namespace Refit
                             tType == typeof(string) ||
                             tType == typeof(byte[]) ||
                             tType.GetTypeInfo().IsSubclassOf(typeof(MultipartItem))
-#if !NETFX_CORE
+#if NETSTANDARD1_3 || NET45
                             || tType == typeof(FileInfo)
 #endif
-                        ) {
+                        )
+                        {
                             typeIsCollection = true;
                         }
 
@@ -272,7 +272,7 @@ namespace Refit
                 return;
             }
 
-#if !NETFX_CORE
+#if NETSTANDARD1_3 || NET45
             var fileInfoValue = itemValue as FileInfo;
             if (fileInfoValue != null) {
                 var fileContent = new StreamContent(fileInfoValue.OpenRead());
@@ -603,7 +603,9 @@ namespace Refit
         string getAttachmentNameForParameter(ParameterInfo paramInfo)
         {
             var nameAttr = paramInfo.GetCustomAttributes(true)
+#pragma warning disable 618
                 .OfType<AttachmentNameAttribute>()
+#pragma warning restore 618
                 .FirstOrDefault();
             return nameAttr != null ? nameAttr.Name : null;
         }
