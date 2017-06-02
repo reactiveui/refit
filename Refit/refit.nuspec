@@ -34,9 +34,10 @@
   </metadata>
   <files>
     <file src="targets\*.*" target="build\netstandard1.1" />
-    <file src="..\InterfaceStubGenerator\bin\Release\net45\*.exe" target="tools" />
-    <file src="..\InterfaceStubGenerator\bin\Release\net45\*.dll" target="tools" />
-    <file src="..\InterfaceStubGenerator\bin\Release\net45\*.mustache" target="tools" />
+    <file src="..\InterfaceStubGenerator\bin\Release\net46\*.exe" target="tools" />
+    <file src="..\InterfaceStubGenerator\bin\Release\net46\*.config" target="tools" />
+    <file src="..\InterfaceStubGenerator\bin\Release\net46\*.dll" target="tools" />
+    <file src="..\InterfaceStubGenerator\bin\Release\net46\*.mustache" target="tools" />
 
     <file src="bin\Release\NetStandard1.3\Refit*.*" target="lib\netstandard1.3" />
     <file src="bin\Release\Net45\Refit*.*" target="lib\Net45" />
