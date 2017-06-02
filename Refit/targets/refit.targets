@@ -27,7 +27,7 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../../tools/InterfaceStubGenerator.exe" "$(IntermediateOutputPath)\RefitStubs.g.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../../tools/InterfaceStubGenerator.exe" "$(IntermediateOutputPath)/RefitStubs.g.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     
     <Exec Command="$(RefitExecCmd)" />
