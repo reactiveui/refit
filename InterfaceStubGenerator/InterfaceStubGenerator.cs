@@ -28,7 +28,7 @@ namespace Refit.Generator
     {
         public string GenerateInterfaceStubs(string[] paths)
         {
-            var trees = paths.Select(x => CSharpSyntaxTree.ParseFile(x)).ToList();
+            var trees = paths.Select(x => CSharpSyntaxTree.ParseText(File.ReadAllText(x))).ToList();
 
             var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).OrderBy(i => i.Identifier.Text).ToList();
 
@@ -69,7 +69,7 @@ namespace Refit.Generator
             return method.AttributeLists.SelectMany(a => a.Attributes)
                 .Any(a => httpMethodAttributeNames.Contains(a.Name.ToString().Split('.').Last()) &&
                     a.ArgumentList.Arguments.Count == 1 &&
-                    a.ArgumentList.Arguments[0].Expression.CSharpKind() == SyntaxKind.StringLiteralExpression);
+                    a.ArgumentList.Arguments[0].Expression.Kind() == SyntaxKind.StringLiteralExpression);
         }
 
         public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList)

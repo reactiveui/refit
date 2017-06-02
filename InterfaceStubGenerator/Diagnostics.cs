@@ -28,7 +28,7 @@ namespace Refit.Generator
         {
             var line = location.GetMappedLineSpan().StartLinePosition;
 
-            File = location.FilePath;
+            File = location.GetMappedLineSpan().Path;
             Line = line.Line + 1;
             Character = line.Character + 1;
         }

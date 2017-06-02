@@ -14,7 +14,7 @@
   </PropertyGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(NCrunch)' == '' and '$(SourceLinkEnabled)' != 'false'">
-    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.1.0" PrivateAssets="All" /> 
+    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.1.2" PrivateAssets="All" /> 
   </ItemGroup>
   
     <!-- Workaround -->

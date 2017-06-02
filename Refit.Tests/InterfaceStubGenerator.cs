@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -36,13 +37,13 @@ namespace Refit.Tests
             var input = IntegrationTestHelper.GetPath("GitHubApi.cs");
             var fixture = new InterfaceStubGenerator();
 
-            var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
+            var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
             Assert.Equal(1, result.Count);
             Assert.True(result.Any(x => x.Identifier.ValueText == "IGitHubApi"));
 
             input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
 
-            result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseFile(input));
+            result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
             Assert.Equal(2, result.Count);
             Assert.True(result.Any(x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe"));
             Assert.True(result.Any(x => x.Identifier.ValueText == "IBoringCrudApi"));
@@ -52,7 +53,7 @@ namespace Refit.Tests
         [Fact]
         public void HasRefitHttpMethodAttributeSmokeTest()
         {
-            var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs"));
+            var file = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs")));
             var fixture = new InterfaceStubGenerator();
 
             var input = file.GetRoot().DescendantNodes()
@@ -74,7 +75,7 @@ namespace Refit.Tests
         [Fact]
         public void GenerateClassInfoForInterfaceSmokeTest()
         {
-            var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("GitHubApi.cs"));
+            var file = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs")));
             var fixture = new InterfaceStubGenerator();
 
             var input = file.GetRoot().DescendantNodes()
@@ -91,7 +92,7 @@ namespace Refit.Tests
         [Fact]
         public void GenerateTemplateInfoForInterfaceListSmokeTest()
         {
-            var file = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("RestService.cs"));
+            var file = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("RestService.cs")));
             var fixture = new InterfaceStubGenerator();
 
             var input = file.GetRoot().DescendantNodes()
@@ -107,7 +108,7 @@ namespace Refit.Tests
         {
             var fixture = new InterfaceStubGenerator();
 
-            var syntaxTree = CSharpSyntaxTree.ParseFile(IntegrationTestHelper.GetPath("NamespaceCollisionApi.cs"));
+            var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("NamespaceCollisionApi.cs")));
             var interfaceDefinition = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
             var result = fixture.GenerateTemplateInfoForInterfaceList(new List<InterfaceDeclarationSyntax>(interfaceDefinition));
 

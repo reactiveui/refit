@@ -3,6 +3,7 @@ using System;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -20,7 +21,6 @@ using Newtonsoft.Json.Serialization;
 using RichardSzalay.MockHttp;
 using SomeType = CollisionA.SomeType;
 using CollisionB;
-using System.IO;
 using System.Reflection;
 
 /* ******** Hey You! *********
