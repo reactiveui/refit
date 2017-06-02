@@ -14,19 +14,31 @@ namespace Refit.Tests
     {
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadStream([AttachmentName("test.pdf")] Stream stream);
+        Task<HttpResponseMessage> UploadStream(Stream stream);
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadBytes([AttachmentName("test.pdf")] byte[] bytes);
+        Task<HttpResponseMessage> UploadStreamPart(StreamPart stream);
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadString(string someString);
+        Task<HttpResponseMessage> UploadBytes(byte[] bytes);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadBytesPart([AliasAs("ByteArrayPartParamAlias")]ByteArrayPart bytes);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadString([AliasAs("SomeStringAlias")]string someString);
 
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadFileInfo(IEnumerable<FileInfo> fileInfos, FileInfo anotherFile);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadFileInfoPart(IEnumerable<FileInfoPart> fileInfos, FileInfoPart anotherFile);
     }
 
     public class MultipartTests
@@ -91,6 +103,81 @@ namespace Refit.Tests
             var result = await fixture.UploadString(text);
 
             Assert.True(result.IsSuccessStatusCode);
+        }
+
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
+        public async Task MultipartUploadShouldWorkWithStreamPart()
+        {
+            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+            {
+                var fixture = RestService.For<IRunscopeApi>(runscopeUri);
+                var result = await fixture.UploadStreamPart(new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
+
+                Assert.True(result.IsSuccessStatusCode);
+            }
+        }
+
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
+        public async Task MultipartUploadShouldWorkWithByteArrayPart()
+        {
+            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+            using (var reader = new BinaryReader(stream))
+            {
+                var bytes = reader.ReadBytes((int)stream.Length);
+
+                var fixture = RestService.For<IRunscopeApi>(runscopeUri);
+                var result = await fixture.UploadBytesPart(new ByteArrayPart(bytes, "test-bytearraypart.pdf", "application/pdf"));
+
+                Assert.True(result.IsSuccessStatusCode);
+            }
+        }
+
+        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
+        public async Task MultipartUploadShouldWorkWithFileInfoPart()
+        {
+            var fileName = Path.GetTempFileName();
+
+            try
+            {
+                using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+                using (var outStream = File.OpenWrite(fileName))
+                {
+                    await stream.CopyToAsync(outStream);
+                    await outStream.FlushAsync();
+                    outStream.Close();
+
+                    var fixture = RestService.For<IRunscopeApi>(runscopeUri);
+                    var result = await fixture.UploadFileInfoPart(new[] 
+                    {
+                        new FileInfoPart(new FileInfo(fileName), "test-fileinfopart.pdf", "application/pdf"),
+                        new FileInfoPart(new FileInfo(fileName), "test-fileinfopart2.pdf", contentType: null)
+                    }, new FileInfoPart(new FileInfo(fileName), fileName: "additionalfile.pdf", contentType: "application/pdf"));
+
+                    Assert.True(result.IsSuccessStatusCode);
+                }
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        }
+
+        [Fact]
+        public void MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName()
+        {
+            Assert.Throws(typeof(ArgumentNullException), () =>
+            {
+                var byteArrayPart = new ByteArrayPart(new byte[0], null, "application/pdf");
+            });
+        }
+
+        [Fact]
+        public void FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo()
+        {
+            Assert.Throws(typeof(ArgumentNullException), () =>
+            {
+                var fileInfoPart = new FileInfoPart(null, "file.pdf", "application/pdf");
+            });
         }
 
         private static Stream GetTestFileStream(string relativeFilePath)

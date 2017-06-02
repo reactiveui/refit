@@ -108,7 +108,7 @@ namespace Refit
         }
     }
 
-    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)][Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem", false)]
     public class AttachmentNameAttribute : Attribute
     {
         public string Name { get; protected set; }

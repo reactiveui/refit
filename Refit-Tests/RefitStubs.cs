@@ -444,10 +444,22 @@ namespace Refit.Tests
             return (Task<HttpResponseMessage>) methodImpls["UploadStream"](Client, arguments);
         }
 
+        public virtual Task<HttpResponseMessage> UploadStreamPart(StreamPart stream)
+        {
+            var arguments = new object[] { stream };
+            return (Task<HttpResponseMessage>) methodImpls["UploadStreamPart"](Client, arguments);
+        }
+
         public virtual Task<HttpResponseMessage> UploadBytes(byte[] bytes)
         {
             var arguments = new object[] { bytes };
             return (Task<HttpResponseMessage>) methodImpls["UploadBytes"](Client, arguments);
+        }
+
+        public virtual Task<HttpResponseMessage> UploadBytesPart(ByteArrayPart bytes)
+        {
+            var arguments = new object[] { bytes };
+            return (Task<HttpResponseMessage>) methodImpls["UploadBytesPart"](Client, arguments);
         }
 
         public virtual Task<HttpResponseMessage> UploadString(string someString)
@@ -460,6 +472,12 @@ namespace Refit.Tests
         {
             var arguments = new object[] { fileInfos,anotherFile };
             return (Task<HttpResponseMessage>) methodImpls["UploadFileInfo"](Client, arguments);
+        }
+
+        public virtual Task<HttpResponseMessage> UploadFileInfoPart(IEnumerable<FileInfoPart> fileInfos,FileInfoPart anotherFile)
+        {
+            var arguments = new object[] { fileInfos,anotherFile };
+            return (Task<HttpResponseMessage>) methodImpls["UploadFileInfoPart"](Client, arguments);
         }
 
     }

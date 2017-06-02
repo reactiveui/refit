@@ -142,6 +142,7 @@ namespace Refit
                     // the parameter name should be either the attachment name or the parameter name (as fallback)
                     string itemName;
                     string parameterName;
+                    string mediaType;
 
                     Tuple<string, string> attachment;
                     if (!restMethod.AttachmentNameMap.TryGetValue(i, out attachment)) {
@@ -151,7 +152,6 @@ namespace Refit
                         itemName = attachment.Item1;
                         parameterName = attachment.Item2;
                     }
-
 
                     // Check to see if it's an IEnumerable
                     var itemValue = paramList[i];
@@ -171,7 +171,8 @@ namespace Refit
                         // FileInfo, Stream, string or byte[]
                         if (tType == typeof(Stream) ||
                             tType == typeof(string) ||
-                            tType == typeof(byte[])
+                            tType == typeof(byte[]) ||
+                            tType.GetTypeInfo().IsSubclassOf(typeof(MultipartItem))
 #if !NETFX_CORE
                             || tType == typeof(FileInfo)
 #endif
@@ -248,9 +249,17 @@ namespace Refit
 
         void addMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
+            var multipartItem = itemValue as MultipartItem;
             var streamValue = itemValue as Stream;
             var stringValue = itemValue as string;
             var byteArrayValue = itemValue as byte[];
+
+            if (multipartItem != null)
+            {
+                var httpContent = multipartItem.ToContent();
+                multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
+                return;
+            }
 
             if (streamValue != null) {
                 var streamContent = new StreamContent(streamValue);
@@ -528,7 +537,7 @@ namespace Refit
 
             QueryParameterMap = new Dictionary<int, string>();
             for (int i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i) || AttachmentNameMap.ContainsKey(i)) {
+                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
                     continue;
                 }
 
