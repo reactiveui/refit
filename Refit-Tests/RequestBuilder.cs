@@ -32,6 +32,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithAlias([AliasAs("id")] int anId);
 
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithQueryParamAlias(int id, [AliasAs("q")] string search);
+
         [Get("/foo/bar/{width}x{height}")]
         Task<string> FetchAnImage(int width, int height);
 
@@ -194,6 +197,16 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
             Assert.Equal("id", fixture.ParameterMap[0]);
             Assert.Equal("search", fixture.QueryParameterMap[1]);
+            Assert.Null(fixture.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void ParameterMappingWithQueryAliasSmokeTest()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParamAlias"));
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal("q", fixture.QueryParameterMap[1]);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
