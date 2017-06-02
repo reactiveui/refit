@@ -40,7 +40,7 @@ namespace Refit
         }
     }
 
-#if PORTABLE
+#if NETSTANDARD1_1
     class RequestBuilderFactory : IRequestBuilderFactory
     {
         public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)

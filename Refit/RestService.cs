@@ -41,7 +41,7 @@ namespace Refit
 
         public static T For<T>(string hostUrl, RefitSettings settings)
         {
-#if PORTABLE
+#if NETSTANDARD1_1
             throw new NotImplementedException("You've somehow included the PCL version of Refit in your app. You need to use the platform-specific version!");
 #else
             // check to see if user provided custom auth t

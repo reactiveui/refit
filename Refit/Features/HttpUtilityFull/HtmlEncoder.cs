@@ -34,7 +34,7 @@
 //
 using System;
 using System.Collections.Generic;
-#if !WINDOWS_APP
+#if !PROFILE32
 using System.Configuration;
 #endif
 using System.IO;
@@ -376,9 +376,13 @@ namespace System.Web
 			return output.ToString();
 		}
 
-		internal static string HtmlDecode(string s)
+        internal static string HtmlDecode(string s)
 		{
-			if (s == null)
+
+#if PROFILE32
+            throw new NotImplementedException("We shouldn't be hitting this code path");
+#else
+            if (s == null)
 				return null;
 
 			if (s.Length == 0)
@@ -476,7 +480,7 @@ namespace System.Web
 							int result = Entities.BinarySearch(new KeyValuePair<string, char>(entityName, ' '), new EntityNameComparer());
 							if (result >= 0)
 							{
-#if !WINDOWS_APP
+#if !NETSTANDARD1_1 && !PROFILE32
 								key = Entities[result].Value.ToString(Helpers.InvariantCulture);
 #else
                                 key = Entities[result].Value.ToString(); // What will this do?
@@ -518,7 +522,8 @@ namespace System.Web
 #endif
 						have_trailing_digits = false;
 					}
-					else if (is_hex_value && Uri.IsHexDigit(c))
+#if !PROFILE32
+                    else if (is_hex_value && Uri.IsHexDigit(c))
 					{
 						number = number * 16 + Uri.FromHex(c);
 						have_trailing_digits = true;
@@ -526,7 +531,8 @@ namespace System.Web
 						rawEntity.Append (c);
 #endif
 					}
-					else if (Char.IsDigit(c))
+#endif
+                    else if (Char.IsDigit(c))
 					{
 						number = number * 10 + ((int)c - '0');
 						have_trailing_digits = true;
@@ -563,9 +569,10 @@ namespace System.Web
 				output.Append(number.ToString(Helpers.InvariantCulture));
 			}
 			return output.ToString();
+#endif
 		}
 
-		internal static bool NotEncoded(char c)
+        internal static bool NotEncoded(char c)
 		{
 			return (c == '!' || c == '(' || c == ')' || c == '*' || c == '-' || c == '.' || c == '_'
 #if !NET_4_0
