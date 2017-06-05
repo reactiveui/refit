@@ -1,0 +1,38 @@
+{
+  "title": "refit",
+  "version": "2.4.1-*",
+  "description": "The automatic type-safe REST library for Xamarin and .NET",
+  "summary": "The automatic type-safe REST library for Xamarin and .NET",
+  "authors": [ "Paul Betts,Refit contributors" ],
+  "owners": [ "Paul Betts" ],
+  "tags": [ "" ],
+  "projectUrl": "https://github.com/xpaulbettsx/refit",
+  "licenseUrl": "https://github.com/xpaulbettsx/refit/blob/master/COPYING",
+
+  "exclude": [ "targets/*", "Resources/*", "packages.*.config", "Stubs/*.*", "NameValueCollection.cs" ],
+
+  "dependencies": {
+    "Microsoft.Net.Http": "2.2.29",
+    "Newtonsoft.Json": "6.0.1"
+  },
+
+  "frameworks": {
+    "net45": {
+      "dependencies": {
+      }
+    },
+    "dotnet5.4": {
+      "compilationOptions": { "define": [ "WINDOWS_APP", "NETFX_CORE" ] },
+      "dependencies": {
+        "System.Text.RegularExpressions": "4.0.11-rc2-23616",
+        "System.Net.Http": "4.0.1-beta-23516",
+        "Microsoft.CSharp": "4.0.1-beta-23516",
+        "System.Collections": "4.0.11-beta-23516",
+        "System.Collections.Specialized": "4.0.1-beta-23516",
+        "System.Linq": "4.0.1-beta-23516",
+        "System.Runtime": "4.0.21-beta-23516",
+        "System.Threading": "4.0.11-beta-23516"
+      }
+    }
+  }
+}
