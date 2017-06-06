@@ -78,7 +78,6 @@ namespace Refit
         }
     }
 
-#if NETSTANDARD1_3 || NET45
     public class FileInfoPart : MultipartItem
     {
         public FileInfoPart(FileInfo value, string fileName, string contentType = null) :
@@ -98,5 +97,4 @@ namespace Refit
             return new StreamContent(Value.OpenRead());
         }
     }
-#endif
 }
