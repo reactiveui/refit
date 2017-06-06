@@ -1,7 +1,6 @@
 <Project>  
   
   <PropertyGroup>
-    <Product>$(AssemblyName) ($(TargetFramework))</Product>
     <MinClientVersion>2.12</MinClientVersion>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <Authors>Paul Betts,Refit contributors</Authors>

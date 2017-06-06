@@ -5,6 +5,8 @@ install:
      
 init:
   - git config --global core.autocrlf input
+
+skip_branch_with_pr: true
        
 before_build:
   - cmd: msbuild /t:restore Refit.sln

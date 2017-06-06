@@ -125,7 +125,7 @@ namespace System.Web
 
         static char[] GetChars(MemoryStream b, Encoding e)
         {
-#if WINDOWS_APP
+#if !PROFILE32
             return e.GetChars(b.GetBuffer(), 0, (int)b.Length);
 #else
             return e.GetChars(b.ToArray(), 0, (int) b.Length);

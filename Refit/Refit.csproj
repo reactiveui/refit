@@ -1,10 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard1.1;netstandard1.3;net45;portable-win81+wpa81;wp8</TargetFrameworks>    
+    <Product>Refit ($(TargetFramework))</Product>
+    <TargetFrameworks>netstandard1.1;netstandard1.3;net45;wp8;win81;wpa81;uap10.0</TargetFrameworks>    
     <IncludeSymbols>true</IncludeSymbols>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <DebugType>full</DebugType>
+    <DefineConstants Condition="'$(TargetFramework)' == 'wpa81' or '$(TargetFramework)' == 'win81'">$(DefineConstants);PROFILE32</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>    
@@ -18,15 +20,15 @@
     <None Include="RequestBuilderImplementation.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3' or '$(TargetFramework)' == 'uap10.0'">
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="1.1.2" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.3.1" />
+    <Compile Include="Features\HttpUtility.NetStandard.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'portable-win81+wpa81'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'wpa81' or '$(TargetFramework)' == 'win81'">
     <Compile Include="Features\HttpUtilityFull\*.cs" />
   </ItemGroup>
-
 
   <ItemGroup Condition="'$(TargetFramework)' == 'wp8'">
     <PackageReference Include="Microsoft.Net.Http" Version="2.2.29" />
@@ -34,15 +36,14 @@
     <Compile Include="Features\HttpUtilityFull\*.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
-    <Compile Include="Features\HttpUtility.NetStandard.cs" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <Reference Include="System.Web" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   
+  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' "> 
+    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform " Version="5.2.3" /> 
+  </ItemGroup> 
   
   <Import Project="$(MSBuildSDKExtrasTargets)" Condition="Exists('$(MSBuildSDKExtrasTargets)')" />
 </Project>
