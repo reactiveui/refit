@@ -12,7 +12,7 @@ namespace Refit
             yield return value;
         }
     }
-#if WINDOWS_APP || NETSTANDARD1_3 || PROFILE32 ||NETSTANDARD1_1 || WINDOWS_UWP
+#if NETSTANDARD1_4 
     // Shims for old-style reflection
     static class ReflectionExtensions
     {

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.WebUtilities;
+﻿#if NETSTANDARD1_4
+using Microsoft.AspNetCore.WebUtilities;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -30,3 +31,4 @@ namespace System.Web
         internal static string UrlEncode(string x) => UrlEncoder.Default.Encode(x);        
     }
 }
+#endif

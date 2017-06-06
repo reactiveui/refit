@@ -2,49 +2,28 @@
 
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
-    <TargetFrameworks>netstandard1.1;netstandard1.3;net45;wp8;win81;wpa81;uap10.0</TargetFrameworks>    
-    <IncludeSymbols>true</IncludeSymbols>
+    <TargetFrameworks>netstandard1.4;net45</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
-    <DebugType>full</DebugType>
-    <DefineConstants Condition="'$(TargetFramework)' == 'wpa81' or '$(TargetFramework)' == 'win81'">$(DefineConstants);PROFILE32</DefineConstants>
+    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
-  <ItemGroup>    
-    <PackageReference Include="MSBuild.Sdk.Extras" Version="1.0.2" PrivateAssets="All" />
+  <ItemGroup>
+
     <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
-    <PackageReference Condition="'$(TargetFramework)' != 'wp8' and '$(TargetFramework)' != 'net45' " Include="System.Net.Http" Version="4.3.2" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net45' " Include="System.Net.Http" Version="4.3.2" />
     <Compile Remove="Features\**\*.*" />
     <None Include="Features\**\*.*" />
-
-    <Compile Condition="'$(TargetFramework)' == 'netstandard1.1'" Remove="RequestBuilderImplementation.cs" />
-    <None Include="RequestBuilderImplementation.cs" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3' or '$(TargetFramework)' == 'uap10.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.4' ">
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="1.1.2" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.3.1" />
-    <Compile Include="Features\HttpUtility.NetStandard.cs" />
   </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'wpa81' or '$(TargetFramework)' == 'win81'">
-    <Compile Include="Features\HttpUtilityFull\*.cs" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'wp8'">
-    <PackageReference Include="Microsoft.Net.Http" Version="2.2.29" />
-    <PackageReference Include="Microsoft.Bcl.Build" Version="1.0.21" />
-    <Compile Include="Features\HttpUtilityFull\*.cs" />
-  </ItemGroup>
-
+  
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
     <Reference Include="System.Web" />
     <Reference Include="System.Net.Http" />
   </ItemGroup>
-  
-  <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' "> 
-    <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform " Version="5.2.3" /> 
-  </ItemGroup>
-
 
   <ItemGroup Label="Package">
     <None Include="targets\refit.targets" PackagePath="build\netstandard1.1" Pack="true" />
@@ -53,6 +32,5 @@
     <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.dll" PackagePath="tools" Pack="true" />
     <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.mustache" PackagePath="tools" Pack="true" />
   </ItemGroup>
-  
-  <Import Project="$(MSBuildSDKExtrasTargets)" Condition="Exists('$(MSBuildSDKExtrasTargets)')" />
+
 </Project>
