@@ -27,10 +27,10 @@
 
   <ItemGroup Label="Package">
     <None Include="targets\refit.targets" PackagePath="build\netstandard1.1" Pack="true" />
-    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.exe" PackagePath="tools" Pack="true" />
-    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.config" PackagePath="tools" Pack="true" />
-    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.dll" PackagePath="tools" Pack="true" />
-    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.mustache" PackagePath="tools" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.exe" PackagePath="tools\net46" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.config" PackagePath="tools\net46" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.dll" PackagePath="tools\net46" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.mustache" PackagePath="tools\net46" Pack="true" />
   </ItemGroup>
 
 </Project>
