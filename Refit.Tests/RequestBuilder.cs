@@ -554,7 +554,7 @@ namespace Refit.Tests
                 try {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
                     fixture.BuildRequestFactoryForMethod(v);
-                } catch (Exception ex) {
+                } catch (Exception) {
                     shouldDie = true;
                 }
 
@@ -841,7 +841,7 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public async Task FormFieldGetsAliased()
+        public void FormFieldGetsAliased()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.RunRequest("PostSomeAliasedUrlEncodedStuff");
@@ -859,7 +859,7 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public async Task CustomParmeterFormatter()
+        public void CustomParmeterFormatter()
         {
             var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);

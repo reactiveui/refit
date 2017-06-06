@@ -65,7 +65,7 @@ namespace Refit.Generator
                 // trying to party on this file at the same time.
                 try {
                     file = File.Open(target.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
-                } catch (Exception ex) {
+                } catch (Exception) {
                     if (retryCount < 0) {
                         throw;
                     }

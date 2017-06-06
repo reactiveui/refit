@@ -306,11 +306,8 @@ namespace Refit.Tests
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
             
-            try {
-                await fixture.Post();
-            } catch (ApiException ex) { 
-                // we should be good but maybe a 404 occurred
-            }
+            
+            await fixture.Post();
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
