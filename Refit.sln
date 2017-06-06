@@ -15,6 +15,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{0E99249A-FB80-4C60-8FD3-13820E853FF7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit", "Refit\Refit.csproj", "{613670B3-BBC6-4479-A3D6-B6A6E80D94FD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5694F8AD-7A15-4717-B649-1749A311300B} = {5694F8AD-7A15-4717-B649-1749A311300B}
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.Tests", "Refit.Tests\Refit.Tests.csproj", "{EB833B36-D3CA-4308-A776-8D574F2ADF64}"
 EndProject
