@@ -23,6 +23,7 @@ artifacts:
 deploy:
   provider: NuGet
   server: https://www.myget.org/F/refit/api/v2/package
+  symbol_server: https://www.myget.org/F/refit/symbols/api/v2/package
   on:
     branch: master  
   api_key:
