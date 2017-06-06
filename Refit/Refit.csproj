@@ -43,7 +43,16 @@
   
   <ItemGroup Condition=" '$(TargetFramework)' == 'uap10.0' "> 
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform " Version="5.2.3" /> 
-  </ItemGroup> 
+  </ItemGroup>
+
+
+  <ItemGroup Label="Package">
+    <None Include="targets\refit.targets" PackagePath="build\netstandard1.1" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.exe" PackagePath="tools" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.config" PackagePath="tools" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.dll" PackagePath="tools" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\*.mustache" PackagePath="tools" Pack="true" />
+  </ItemGroup>
   
   <Import Project="$(MSBuildSDKExtrasTargets)" Condition="Exists('$(MSBuildSDKExtrasTargets)')" />
 </Project>

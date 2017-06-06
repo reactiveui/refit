@@ -1,8 +1,6 @@
 image: Visual Studio 2017
 configuration: Release  
-install: 
-  - cmd: appveyor DownloadFile https://dist.nuget.org/win-x86-commandline/v4.1.0/NuGet.exe
-     
+  
 init:
   - git config --global core.autocrlf input
 
@@ -16,12 +14,11 @@ build:
   parallel: true
   project: Refit.sln
   
-after_build:
-  - ps: |
-      $vers = & $env:UserProfile\.nuget\packages\nerdbank.gitversioning\2.0.4-beta\tools\Get-Version.ps1
-      $env:NuGetPackageVersion = $vers.NuGetPackageVersion      
-  - cmd: nuget pack Refit\Refit.nuspec -version "%NuGetPackageVersion%" -prop "target=%CONFIGURATION%" -NoPackageAnalysis
-  - cmd: appveyor PushArtifact "Refit.%NuGetPackageVersion%.nupkg"  
+after_build:  
+  - cmd: msbuild Refit\Refit.csproj /t:pack /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
+  
+artifacts:
+  - path: '*.nupkg'
   
 deploy:
   provider: NuGet
