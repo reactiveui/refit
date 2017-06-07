@@ -28,8 +28,8 @@
   <ItemGroup Label="Package">
     <None Include="targets\refit.targets" PackagePath="build\net45" Pack="true" />
     <None Include="targets\refit.targets" PackagePath="build\netstandard1.1" Pack="true" />
-    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\publish\**\*.*" PackagePath="tools\net46\%(RecursiveDir)" Pack="true" />
-    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\netcoreapp2.0\publish\**\*.*" PackagePath="tools\netcoreapp2.0\%(RecursiveDir)" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\net46\publish\**\*.*" PackagePath="build\MSBuildFull46\%(RecursiveDir)" Pack="true" />
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\netcoreapp2.0\publish\**\*.*" PackagePath="build\MSBuildCore20\%(RecursiveDir)" Pack="true" />
   </ItemGroup>
 
   <Target Name="BuildAndPublishStubGenerator" BeforeTargets="CoreBuild">

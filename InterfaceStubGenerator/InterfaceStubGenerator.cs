@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Build.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -26,6 +27,17 @@ namespace Refit.Generator
     // What if the Interface is in another module? (since we copy usings, should be fine)
     public class InterfaceStubGenerator
     {
+        public TaskLoggingHelper Log { get; }
+
+        public InterfaceStubGenerator() : this(null)
+        {
+            
+        }
+        public InterfaceStubGenerator(TaskLoggingHelper log)
+        {
+            Log = log;
+        }
+
         public string GenerateInterfaceStubs(string[] paths)
         {
             var trees = paths.Select(x => CSharpSyntaxTree.ParseText(File.ReadAllText(x))).ToList();
@@ -88,7 +100,7 @@ namespace Refit.Generator
                 .Select(x => new UsingDeclaration() { Item = x });
 
             var ret = new TemplateInformation() {
-                ClassList = interfaceList.Select(x => GenerateClassInfoForInterface(x)).ToList(),
+                ClassList = interfaceList.Select(GenerateClassInfoForInterface).ToList(),
                 UsingList = usings.ToList(),
             };
 
@@ -121,7 +133,7 @@ namespace Refit.Generator
                     ArgumentList = String.Join(",", x.ParameterList.Parameters
                         .Select(y => y.Identifier.Text)),
                     ArgumentListWithTypes = String.Join(",", x.ParameterList.Parameters
-                        .Select(y => String.Format("{0} {1}", y.Type.ToString(), y.Identifier.Text))),
+                        .Select(y => $"{y.Type.ToString()} {y.Identifier.Text}")),
                     IsRefitMethod = HasRefitHttpMethodAttribute(x)
                 })
                 .ToList();
@@ -146,7 +158,7 @@ namespace Refit.Generator
             var diagnostics = missingAttributeWarnings.Concat<Diagnostic>(overloadWarnings);
 
             foreach (var diagnostic in diagnostics) {
-                Console.Error.WriteLine(diagnostic);
+                Log?.LogWarning(diagnostic.ToString());
             }
         }
 
