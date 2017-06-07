@@ -12,7 +12,8 @@
     <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\MSBuildCore20\InterfaceStubGenerator.dll</RefitTaskAssemblyFile>
     <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\MSBuildFull46\InterfaceStubGenerator.dll</RefitTaskAssemblyFile>
   </PropertyGroup>
-
+  <UsingTask TaskName="Refit.Generator.Tasks.GenerateStubsTask" AssemblyFile="$(RefitTaskAssemblyFile)" />
+  
   <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile">
 
     <GenerateStubsTask SourceFiles="@(Compile)" BaseDirectory="$(MSBuildProjectDirectory)" OutputFile="$(IntermediateOutputPath)\RefitStubs.g.cs" />
