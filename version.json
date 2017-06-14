@@ -1,5 +1,5 @@
 {
-  "version": "4.0.0-preview.{height}",
+  "version": "4.0.0-preview.1.build.{height}",
   "publicReleaseRefSpec": [
     "^refs/heads/master$", // we release out of master
     "^refs/tags/v\\d+\\.\\d+" // we also release tags starting with vN.N
