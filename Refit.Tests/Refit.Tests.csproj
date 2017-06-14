@@ -35,9 +35,9 @@
     <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\InterfaceStubGenerator\bin\$(Configuration)\netcoreapp2.0\publish\InterfaceStubGenerator.dll</RefitTaskAssemblyFile>
     <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\InterfaceStubGenerator\bin\$(Configuration)\net46\publish\InterfaceStubGenerator.dll</RefitTaskAssemblyFile>
   </PropertyGroup>
-  <UsingTask TaskName="Refit.Generator.Tasks.GenerateStubsTask" AssemblyFile="$(RefitTaskAssemblyFile)" />
+  <UsingTask TaskName="Refit.Generator.Tasks.GenerateStubsTask" AssemblyFile="$(RefitTaskAssemblyFile)" Condition="'$(CI)' != 'true'" />
 
-  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' != 'true'">
+  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile" Condition="'$(DesignTimeBuild)' != 'true' and '$(CI)' != 'true'">
     
     <PropertyGroup>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net46' ">$(ProjectDir)RefitStubs.Net46.cs</OutputStubsFile>
