@@ -9,13 +9,10 @@ skip_branch_with_pr: true
 before_build:
   - cmd: msbuild /t:restore Refit.sln
   
-build:
-  verbosity: normal
-  parallel: true
-  project: Refit.sln
-  
-after_build:  
-  - cmd: msbuild Refit\Refit.csproj /t:pack /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
+build_script:
+  - cmd: msbuild Refit.sln /t:restore
+  - cmd: msbuild Refit\Refit.csproj.csproj /t:pack /p:Configuration=Release /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
+  - cmd: dotnet test Refit.Tests\Refit.Tests.csproj -c Release   
   
 artifacts:
   - path: '*.nupkg'
