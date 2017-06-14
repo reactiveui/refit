@@ -11,7 +11,8 @@ before_build:
   
 build_script:
   - cmd: msbuild Refit.sln /t:restore
-  - cmd: msbuild Refit\Refit.csproj /t:pack /p:Configuration=Release /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
+  - cmd: msbuild Refit\Refit.csproj /t:pack /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
+  - cmd: msbuild Refit\Refit.Tests.csproj /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
   - cmd: dotnet test Refit.Tests\Refit.Tests.csproj -c Release --no-build
   
 artifacts:
