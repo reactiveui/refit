@@ -21,6 +21,10 @@
   
   <PropertyGroup>
     <NerdbankGitVersioningVersion>2.0.21-beta</NerdbankGitVersioningVersion>
+    
+    <DisableImplicitPackageTargetFallback>true</DisableImplicitPackageTargetFallback>
+    <DisableImplicitAssetTargetFallback>true</DisableImplicitAssetTargetFallback>
+    <PackageTargetFallback>net20</PackageTargetFallback>
   </PropertyGroup>
   
   <ItemGroup>
