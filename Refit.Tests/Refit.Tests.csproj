@@ -20,6 +20,8 @@
 
   <ItemGroup>
     <Reference Condition="'$(TargetFramework)' == 'net46' " Include="System.Net.Http" />
+    <PackageReference Condition="'$(TargetFramework)' == 'net46' " Include="Microsoft.Build.Tasks.Core" Version="14.3" PrivateAssets="all" />
+    <PackageReference Condition="'$(TargetFramework)' == 'netcoreapp2.0' " Include="Microsoft.Build.Tasks.Core" Version="15.1.548" PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RefitStubs.*.cs" />

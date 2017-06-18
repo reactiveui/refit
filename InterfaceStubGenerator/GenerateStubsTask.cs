@@ -9,7 +9,7 @@ using Microsoft.Build.Framework;
 
 namespace Refit.Generator.Tasks
 {
-    public class GenerateStubsTask : Microsoft.Build.Utilities.Task
+    public class GenerateStubsTask : ContextAwareTask
     {
         [Required]
         public ITaskItem[] SourceFiles  { get; set; }
@@ -21,7 +21,7 @@ namespace Refit.Generator.Tasks
         public string OutputFile { get; set; }
 
 
-        public override bool Execute()
+        protected override bool ExecuteInner()
         {
             try
             {
