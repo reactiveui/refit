@@ -31,7 +31,7 @@
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
-  <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' and '$(CI)' == ''" BeforeTargets="CoreCompile">
+  <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' " BeforeTargets="CoreCompile">
     <PropertyGroup>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net46' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.0' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
@@ -48,7 +48,7 @@
     <Message Text="Processed Refit Stubs" />
   </Target>
 
-  <Target Name="GenerateRefitStubsCore" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' == 'Core' and '$(CI)' == ''" BeforeTargets="CoreCompile">
+  <Target Name="GenerateRefitStubsCore" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' == 'Core' " BeforeTargets="CoreCompile">
     <PropertyGroup>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net46' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.0' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
