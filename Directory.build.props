@@ -11,6 +11,7 @@
     <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
     <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
     <NoWarn>$(NoWarn);1701;1702;CS1591</NoWarn>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
   </PropertyGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(NCrunch)' == '' and '$(SourceLinkEnabled)' != 'false'">

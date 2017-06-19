@@ -28,7 +28,7 @@ namespace Refit
     {
         public virtual string Format(object parameterValue, ParameterInfo parameterInfo)
         {
-            return parameterValue != null ? parameterValue.ToString() : null;
+            return parameterValue?.ToString();
         }
     }
 }

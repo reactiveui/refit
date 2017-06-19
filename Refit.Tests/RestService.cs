@@ -14,12 +14,14 @@ using RichardSzalay.MockHttp;
 
 namespace Refit.Tests
 {
+#pragma warning disable IDE1006 // Naming Styles
     public class RootObject
     {
         public string _id { get; set; }
         public string _rev { get; set; }
-        public string name { get; set; } 
+        public string name { get; set; }
     }
+#pragma warning restore IDE1006 // Naming Styles
 
     [Headers("User-Agent: Refit Integration Tests")]
     public interface INpmJs
@@ -96,7 +98,7 @@ namespace Refit.Tests
             var result = await fixture.GetUser("octocat");
 
             Assert.Equal("octocat", result.Login);
-            Assert.False(String.IsNullOrEmpty(result.AvatarUrl));
+            Assert.False(string.IsNullOrEmpty(result.AvatarUrl));
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
@@ -119,7 +121,7 @@ namespace Refit.Tests
             var result = await fixture.GetUserCamelCase("octocat");
 
             Assert.Equal("octocat", result.Login);
-            Assert.False(String.IsNullOrEmpty(result.AvatarUrl));
+            Assert.False(string.IsNullOrEmpty(result.AvatarUrl));
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
@@ -191,7 +193,7 @@ namespace Refit.Tests
                 .Timeout(TimeSpan.FromSeconds(10));
 
             Assert.Equal("octocat", result.Login);
-            Assert.False(String.IsNullOrEmpty(result.AvatarUrl));
+            Assert.False(string.IsNullOrEmpty(result.AvatarUrl));
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
@@ -219,16 +221,18 @@ namespace Refit.Tests
             await obs;
             var result2 = await obs;
             Assert.Equal("octocat", result2.Login);
-            Assert.False(String.IsNullOrEmpty(result2.AvatarUrl));
+            Assert.False(string.IsNullOrEmpty(result2.AvatarUrl));
         }
         
         [Fact]
         public async Task TwoSubscriptionsResultInTwoRequests()
         {
-            var input = new TestHttpMessageHandler();
+            var input = new TestHttpMessageHandler
+            {
 
-            // we need to use a factory here to ensure each request gets its own httpcontent instance
-            input.ContentFactory = () => new StringContent("test");
+                // we need to use a factory here to ensure each request gets its own httpcontent instance
+                ContentFactory = () => new StringContent("test")
+            };
 
             var client = new HttpClient(input) { BaseAddress = new Uri("http://foo") };
             var fixture = RestService.For<IGitHubApi>(client);

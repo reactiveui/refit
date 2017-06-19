@@ -13,13 +13,8 @@ namespace Refit
     {
         public MultipartItem(string fileName, string contentType)
         {
-            if (fileName == null)
-            {
-                throw new ArgumentNullException("fileName");
-            }
-
-            this.FileName = fileName;
-            this.ContentType = contentType;
+            FileName = fileName ?? throw new ArgumentNullException("fileName");
+            ContentType = contentType;
         }
 
         public string FileName { get; private set; }
@@ -43,11 +38,7 @@ namespace Refit
         public StreamPart(Stream value, string fileName, string contentType = null) :
             base(fileName, contentType)
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException("value");
-            }
-            Value = value;
+            Value = value ?? throw new ArgumentNullException("value");
         }
 
         public Stream Value { get; private set; }
@@ -63,11 +54,7 @@ namespace Refit
         public ByteArrayPart(byte[] value, string fileName, string contentType = null) :
             base(fileName, contentType)
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException("value");
-            }
-            Value = value;
+            Value = value ?? throw new ArgumentNullException("value");
         }
 
         public byte[] Value { get; private set; }
@@ -83,11 +70,7 @@ namespace Refit
         public FileInfoPart(FileInfo value, string fileName, string contentType = null) :
             base(fileName, contentType)
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException("value");
-            }
-            Value = value;
+            Value = value ?? throw new ArgumentNullException("value");
         }
 
         public FileInfo Value { get; private set; }
