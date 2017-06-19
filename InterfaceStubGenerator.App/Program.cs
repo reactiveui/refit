@@ -9,34 +9,31 @@ namespace Refit.Generator.App
 {
     class Program
     {
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
 
             // NB: @Compile passes us a list of files relative to the project
             // directory - pass in the project and use its dir 
-            var generator = new InterfaceStubGenerator(msg => Console.Error.WriteLine(msg));
+            var generator = new InterfaceStubGenerator(msg => Console.Out.WriteLine(msg));
             var target = new FileInfo(args[0]);
             var targetDir = new DirectoryInfo(args[1]);
 
             var files = default(FileInfo[]);
 
-            if (args.Length > 2)
+            if (args.Length ==3)
             {
                 // We get a file with each line being a file
                 files = File.ReadLines(args[2])
                     .Distinct()
-                    .Select(x => new FileInfo(Path.Combine(targetDir.FullName, x)))
+                    .Select(x => File.Exists(x) ? new FileInfo(x) : new FileInfo(Path.Combine(targetDir.FullName, x)))
                     .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
                     .ToArray();
             }
             else
             {
-                // NB: @Compile is completely jacked on Xam Studio in iOS, just
-                // run down all of the .cs files in the current directory and hope
-                // for the best
-                files = recursivelyListFiles(targetDir, "*.cs").ToArray();
+                return -1;
             }
-
+           
             var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray()).Trim();
 
             string contents = null;
@@ -47,7 +44,7 @@ namespace Refit.Generator.App
                 contents = File.ReadAllText(target.FullName, Encoding.UTF8).Trim();
                 if (string.Equals(contents, template, StringComparison.Ordinal))
                 {
-                    return;
+                    return 0;
                 }
             }
 
@@ -59,7 +56,7 @@ namespace Refit.Generator.App
                 if (!string.Equals(contents, template, StringComparison.Ordinal))
                 {
                     Console.Error.WriteLine(new ReadOnlyFileError(target));
-                    Environment.Exit(-1); // error....
+                    return -1; // error....
                 }
             }
             else
@@ -75,7 +72,7 @@ namespace Refit.Generator.App
                 {
                     file = File.Open(target.FullName, FileMode.Create, FileAccess.Write, FileShare.None);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     if (retryCount < 0)
                     {
@@ -92,13 +89,8 @@ namespace Refit.Generator.App
                     sw.WriteLine(template);
                 }
             }
-        }
 
-        static IEnumerable<FileInfo> recursivelyListFiles(DirectoryInfo root, string filter)
-        {
-            return root.GetFiles(filter)
-                .Concat(root.GetDirectories()
-                .SelectMany(x => recursivelyListFiles(x, filter)));
+            return 0;
         }
     }
 
