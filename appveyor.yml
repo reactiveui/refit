@@ -10,14 +10,11 @@ install:
   
 skip_branch_with_pr: true
        
-before_build:
-  - cmd: msbuild /t:restore Refit.sln
-  
 build_script:
-  - cmd: msbuild Refit.sln /t:restore
-  - cmd: msbuild Refit\Refit.csproj /t:pack /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
-  - cmd: msbuild Refit.Tests\Refit.Tests.csproj /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
-  - cmd: dotnet test Refit.Tests\Refit.Tests.csproj -c Release --no-build
+  - cmd: dotnet restore Refit.sln 
+  - cmd: dotnet build Refit\Refit.csproj -c Release 
+  - cmd: dotnet pack Refit\Refit.csproj -c Release --no-build -o %APPVEYOR_BUILD_FOLDER%
+  - cmd: dotnet test Refit.Tests\Refit.Tests.csproj -c Release 
   
 artifacts:
   - path: '*.nupkg'
