@@ -172,9 +172,8 @@ namespace Refit
                             tType == typeof(string) ||
                             tType == typeof(byte[]) ||
                             tType.GetTypeInfo().IsSubclassOf(typeof(MultipartItem))
-#if NETSTANDARD1_3 || NET45
                             || tType == typeof(FileInfo)
-#endif
+
                         )
                         {
                             typeIsCollection = true;
@@ -272,14 +271,12 @@ namespace Refit
                 return;
             }
 
-#if NETSTANDARD1_3 || NET45
             var fileInfoValue = itemValue as FileInfo;
             if (fileInfoValue != null) {
                 var fileContent = new StreamContent(fileInfoValue.OpenRead());
                 multiPartContent.Add(fileContent, parameterName, fileInfoValue.Name);
                 return;
             }
-#endif
 
             if (byteArrayValue != null) {
                 var fileContent = new ByteArrayContent(byteArrayValue);

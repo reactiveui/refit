@@ -1,24 +1,30 @@
-image: Visual Studio 2017
+image: Visual Studio 2017 Preview
 configuration: Release  
   
 init:
   - git config --global core.autocrlf input
 
+install:
+  - cmd: curl -O https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/2.0.0/dotnet-sdk-latest-win-x64.exe 
+  - cmd: dotnet-sdk-latest-win-x64.exe /install /quiet /norestart /log install.log 
+  
 skip_branch_with_pr: true
        
 before_build:
   - cmd: msbuild /t:restore Refit.sln
   
-build:
-  verbosity: normal
-  parallel: true
-  project: Refit.sln
-  
-after_build:  
+build_script:
+  - cmd: msbuild Refit.sln /t:restore
   - cmd: msbuild Refit\Refit.csproj /t:pack /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
+  - cmd: msbuild Refit.Tests\Refit.Tests.csproj /p:Configuration=Release /p:PackageOutputPath=%APPVEYOR_BUILD_FOLDER%
+  - cmd: dotnet test Refit.Tests\Refit.Tests.csproj -c Release --no-build
   
 artifacts:
   - path: '*.nupkg'
+    name: Package
+    
+  - path: '*.log'
+    name: CLI install log
   
 deploy:
   provider: NuGet

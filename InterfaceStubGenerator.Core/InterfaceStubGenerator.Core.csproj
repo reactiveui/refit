@@ -1,16 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
-    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
     <RootNamespace>Refit.Generator</RootNamespace>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.2.0" />
-    <PackageReference Include="Mono.Options" Version="5.3.0" />
     <PackageReference Include="Nustache" Version="1.16.0.4" />
-    <Reference Include="System.Net.Http" />
+    <Reference Condition="'$(TargetFramework)' == 'net46' " Include="System.Net.Http" />
+
+    
   </ItemGroup>
 
   <ItemGroup>

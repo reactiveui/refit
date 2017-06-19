@@ -13,6 +13,7 @@ using Nustache;
 using Nustache.Core;
 using Refit; // InterfaceStubGenerator looks for this
 using Refit.Generator;
+using Task = System.Threading.Tasks.Task;
 
 namespace Refit.Tests
 {

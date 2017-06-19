@@ -10,6 +10,7 @@
     <IncludeSymbols>false</IncludeSymbols>
     <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
     <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
+    <NoWarn>$(NoWarn);1701;1702;CS1591</NoWarn>
   </PropertyGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(NCrunch)' == '' and '$(SourceLinkEnabled)' != 'false'">
@@ -20,11 +21,15 @@
   <Target Name="GetPackagingOutputs" />
   
   <PropertyGroup>
-    <NerdbankGitVersioningVersion>2.0.4-beta</NerdbankGitVersioningVersion>
+    <NerdbankGitVersioningVersion>2.0.21-beta</NerdbankGitVersioningVersion>
+    
+    <DisableImplicitPackageTargetFallback>true</DisableImplicitPackageTargetFallback>
+    <DisableImplicitAssetTargetFallback>true</DisableImplicitAssetTargetFallback>
+    <PackageTargetFallback>net20</PackageTargetFallback>
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Nerdbank.GitVersioning" Version="2.0.4-beta" PrivateAssets="all" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.0.21-beta" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- https://github.com/NuGet/Home/issues/4337 -->

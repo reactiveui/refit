@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net46</TargetFramework>
+    <TargetFrameworks>netcoreapp2.0;net46</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,28 +14,52 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.2.0" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
     <PackageReference Include="RichardSzalay.MockHttp" Version="1.3.1" />
+    <ProjectReference Include="..\InterfaceStubGenerator.App\InterfaceStubGenerator.App.csproj" />
     <ProjectReference Include="..\Refit\Refit.csproj" />
-    <ProjectReference Include="..\InterfaceStubGenerator\InterfaceStubGenerator.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="System.Net.Http" />
+    <Reference Condition="'$(TargetFramework)' == 'net46' " Include="System.Net.Http" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RefitStubs.*.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'net46' " Remove="RefitStubs.NetCore2.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.0' " Remove="RefitStubs.Net46.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
-  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile">
+  <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' and '$(CI)' == ''" BeforeTargets="CoreCompile">
     <PropertyGroup>
-      <RefitParameterFile>$(IntermediateOutputPath)\RefitParams.rsp</RefitParameterFile>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'net46' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.0' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
+      <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd>$(MSBuildThisFileDirectory)..\InterfaceStubGenerator\bin\$(ConfigurationName)\net46\InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\net46\InterfaceStubGenerator.App.exe "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>mono $(MSBuildThisFileDirectory)../InterfaceStubGenerator/bin/$(Configuration)/net46/InterfaceStubGenerator.exe "$(ProjectDir)RefitStubs.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>mono $(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/net46/InterfaceStubGenerator.App.exe "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+    </PropertyGroup>
+    <Exec Command="$(RefitExecCmd)" />
+    <Message Text="Processed Refit Stubs" />
+  </Target>
+
+  <Target Name="GenerateRefitStubsCore" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' == 'Core' and '$(CI)' == ''" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'net46' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.0' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
+      <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
+    <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+      <RefitExecCmd>dotnet $(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\netcoreapp2.0\InterfaceStubGenerator.App.dll "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+      <RefitExecCmd>dotnet $(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/netcoreapp2.0/InterfaceStubGenerator.App.dll "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     <Exec Command="$(RefitExecCmd)" />
     <Message Text="Processed Refit Stubs" />
