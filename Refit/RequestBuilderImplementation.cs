@@ -782,20 +782,49 @@ namespace Refit
     class AuthenticatedHttpClientHandler : DelegatingHandler
     {
         readonly Func<Task<string>> getToken;
+        readonly Func<Task<string>> getRefreshedToken;
 
-        public AuthenticatedHttpClientHandler(Func<Task<string>> getToken, HttpMessageHandler innerHandler = null) 
+        public AuthenticatedHttpClientHandler(Func<Task<string>> getToken, Func<Task<string>> getRefreshedToken, HttpMessageHandler innerHandler = null) 
             : base(innerHandler ?? new HttpClientHandler())
         {
             if (getToken == null) throw new ArgumentNullException("getToken");
             this.getToken = getToken;
+            this.getRefreshedToken = getRefreshedToken;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            HttpResponseMessage result;
+            // See if the request has an authorize header
+            if (request.Headers.Authorization != null)
+            {
+                var token = await getToken().ConfigureAwait(false);
+
+                //1st try using the provided token
+                result = await SendWithTokenAsync(request, cancellationToken, token).ConfigureAwait(false);
+                //if we got a 401 and a getRefreshedToken callback is set up
+                if (result.StatusCode == System.Net.HttpStatusCode.Unauthorized && getRefreshedToken != null)
+                {
+                    //use it to get a refreshed token
+                    var refreshedToken = await getRefreshedToken().ConfigureAwait(false);
+                    //and retry using it. When this call still results in a 401 an exception is thrown later (as expected)
+                    result = await SendWithTokenAsync(request, cancellationToken, refreshedToken).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                //when we don't have a authorization header then proceed without any extra logic
+                result = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+            return result;
+        }
+
+        private async Task<HttpResponseMessage> SendWithTokenAsync(HttpRequestMessage request, CancellationToken cancellationToken, string token)
+        {
             // See if the request has an authorize header
             var auth = request.Headers.Authorization;
-            if (auth != null) {
-                var token = await getToken().ConfigureAwait(false);
+            if (auth != null)
+            {
                 request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
             }
 
