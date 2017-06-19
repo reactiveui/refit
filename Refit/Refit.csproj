@@ -32,7 +32,7 @@
     <None Include="..\InterfaceStubGenerator.BuildTasks\bin\$(Configuration)\netcoreapp2.0\publish\**\*.*" LinkBase="build\MSBuildCore20" PackagePath="build\MSBuildCore20" Pack="true" />
   </ItemGroup>
 
-  <Target Name="BuildAndPublishStubGenerator" BeforeTargets="CoreBuild">
+  <Target Name="BuildAndPublishStubGenerator" BeforeTargets="CoreBuild" Condition="'$(TargetFramework)' == 'netstandard1.4'">
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
       <RefitExecCmd46>dotnet publish $(MSBuildThisFileDirectory)..\InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj -c $(Configuration) -f net46</RefitExecCmd46>
       <RefitExecCmd20>dotnet publish $(MSBuildThisFileDirectory)..\InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj -c $(Configuration) -f netcoreapp2.0</RefitExecCmd20>
