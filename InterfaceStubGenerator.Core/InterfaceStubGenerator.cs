@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Build.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -27,15 +26,15 @@ namespace Refit.Generator
     // What if the Interface is in another module? (since we copy usings, should be fine)
     public class InterfaceStubGenerator
     {
-        public TaskLoggingHelper Log { get; }
+        public Action<string> Log { get; }
 
         public InterfaceStubGenerator() : this(null)
         {
             
         }
-        public InterfaceStubGenerator(TaskLoggingHelper log)
+        public InterfaceStubGenerator(Action<string> logWarning)
         {
-            Log = log;
+            Log = logWarning;
         }
 
         public string GenerateInterfaceStubs(string[] paths)
@@ -158,7 +157,7 @@ namespace Refit.Generator
             var diagnostics = missingAttributeWarnings.Concat<Diagnostic>(overloadWarnings);
 
             foreach (var diagnostic in diagnostics) {
-                Log?.LogWarning(diagnostic.ToString());
+                Log?.Invoke(diagnostic.ToString());
             }
         }
 

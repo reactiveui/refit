@@ -9,8 +9,8 @@
   
   <PropertyGroup>
     <IntermediateOutputPath Condition="$(IntermediateOutputPath) == '' Or $(IntermediateOutputPath) == '*Undefined*'">$(MSBuildProjectDirectory)obj\$(Configuration)\</IntermediateOutputPath>
-    <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\MSBuildCore20\InterfaceStubGenerator.dll</RefitTaskAssemblyFile>
-    <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\MSBuildFull46\InterfaceStubGenerator.dll</RefitTaskAssemblyFile>
+    <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\MSBuildCore20\InterfaceStubGenerator.BuildTasks.dll</RefitTaskAssemblyFile>
+    <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\MSBuildFull46\InterfaceStubGenerator.BuildTasks.dll</RefitTaskAssemblyFile>
   </PropertyGroup>
   <UsingTask TaskName="Refit.Generator.Tasks.GenerateStubsTask" AssemblyFile="$(RefitTaskAssemblyFile)" />
   
