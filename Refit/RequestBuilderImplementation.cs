@@ -21,10 +21,13 @@ namespace Refit
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
         readonly RefitSettings settings;
+        readonly JsonSerializer serializer;
 
         public RequestBuilderImplementation(Type targetInterface, RefitSettings refitSettings = null)
         {
             settings = refitSettings ?? new RefitSettings();
+            serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
+            
             if (targetInterface == null || !targetInterface.IsInterface()) {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
@@ -352,7 +355,7 @@ namespace Refit
                 return ret(client, CancellationToken.None, paramList);
             };
         }
-
+        
         Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
@@ -376,13 +379,16 @@ namespace Refit
                     return (T)(object)resp.Content;
                 }
 
-                var content = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+                using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                using (var reader = new StreamReader(stream)) {
+                    if (restMethod.SerializedReturnType == typeof(string)) {
+                        return (T)(object)reader.ReadToEndAsync().ConfigureAwait(false);
+                    }
 
-                if (restMethod.SerializedReturnType == typeof(string)) {
-                    return (T)(object)content; 
+                    using (var jsonReader = new JsonTextReader(reader)) {
+                        return serializer.Deserialize<T>(jsonReader);
+                    }
                 }
-
-                return JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
             };
         }
 
