@@ -7,7 +7,7 @@ namespace Refit
 {
     partial class RequestBuilderImplementation
     {
-        class TaskToObservable<T> : IObservable<T>
+        sealed class TaskToObservable<T> : IObservable<T>
         {
             Func<CancellationToken, Task<T>> taskFactory;
 
@@ -19,24 +19,35 @@ namespace Refit
             public IDisposable Subscribe(IObserver<T> observer)
             {
                 var cts = new CancellationTokenSource();
-                taskFactory(cts.Token).ContinueWith(t => {
+                taskFactory(cts.Token).ContinueWith(t => 
+                {
                     if (cts.IsCancellationRequested) return;
 
-                    if (t.Exception != null) {
-                        observer.OnError(t.Exception.InnerExceptions.First());
-                        return;
-                    }
-
-                    try {
-                        observer.OnNext(t.Result);
-                    } catch (Exception ex) {
-                        observer.OnError(ex);
-                    }
-                        
-                    observer.OnCompleted();
+                    ToObservableDone(t, observer);
                 }, TaskScheduler.Default);
 
                 return new AnonymousDisposable(cts.Cancel);
+            }
+
+            static void ToObservableDone<TResult>(Task<TResult> task, IObserver<TResult> subject)
+            {
+                switch (task.Status)
+                {
+                    case TaskStatus.RanToCompletion:
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+#pragma warning disable VSTHRD102 // Implement internal logic asynchronously
+                        subject.OnNext(task.Result);
+#pragma warning restore VSTHRD102 // Implement internal logic asynchronously
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+                        subject.OnCompleted();
+                        break;
+                    case TaskStatus.Faulted:
+                        subject.OnError(task.Exception.InnerException);
+                        break;
+                    case TaskStatus.Canceled:
+                        subject.OnError(new TaskCanceledException(task));
+                        break;
+                }
             }
         }
     }
