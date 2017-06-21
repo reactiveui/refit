@@ -382,7 +382,7 @@ namespace Refit
                 using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var reader = new StreamReader(stream)) {
                     if (restMethod.SerializedReturnType == typeof(string)) {
-                        return (T)(object)reader.ReadToEndAsync().ConfigureAwait(false);
+                        return (T)(object) await reader.ReadToEndAsync().ConfigureAwait(false);
                     }
 
                     using (var jsonReader = new JsonTextReader(reader)) {
