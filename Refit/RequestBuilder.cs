@@ -10,11 +10,6 @@ namespace Refit
         Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName);
     }
 
-    interface IRequestBuilderFactory
-    {
-        IRequestBuilder Create(Type interfaceType, RefitSettings settings);
-    }
-
     public static class RequestBuilder
     {
         static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
