@@ -440,7 +440,7 @@ namespace Refit
                     }
                         
                     observer.OnCompleted();
-                });
+                }, TaskScheduler.Default);
 
                 return new AnonymousDisposable(cts.Cancel);
             }

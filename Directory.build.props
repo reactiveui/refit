@@ -12,10 +12,14 @@
     <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
     <NoWarn>$(NoWarn);1701;1702;CS1591</NoWarn>
     <NoPackageAnalysis>true</NoPackageAnalysis>
+    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Refit.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(SourceLinkEnabled)' != 'false'">
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.1.2" PrivateAssets="All" /> 
+  </ItemGroup>
+  <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.3.23" PrivateAssets="All" />
   </ItemGroup>
   
   <PropertyGroup>

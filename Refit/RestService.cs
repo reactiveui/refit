@@ -75,10 +75,7 @@ namespace Refit
 
         public string Content { get; private set; }
 
-        public bool HasContent
-        {
-            get { return !String.IsNullOrWhiteSpace(Content); }
-        }
+        public bool HasContent => !string.IsNullOrWhiteSpace(Content);
         public RefitSettings RefitSettings { get; set; }
 
         ApiException(Uri uri, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
@@ -99,7 +96,9 @@ namespace Refit
                 default(T);
         }
 
+#pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
         public static async Task<ApiException> Create(Uri uri, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
+#pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
             var exception = new ApiException(uri, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
@@ -121,7 +120,7 @@ namespace Refit
 
         static string createMessage(HttpStatusCode statusCode, string reasonPhrase)
         {
-            return String.Format("Response status code does not indicate success: {0} ({1}).", (int)statusCode, reasonPhrase);
+            return string.Format("Response status code does not indicate success: {0} ({1}).", (int)statusCode, reasonPhrase);
         }
     }
 }
