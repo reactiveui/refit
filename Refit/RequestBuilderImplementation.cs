@@ -114,7 +114,12 @@ namespace Refit
                                     ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
                                     break;
                                 case BodySerializationMethod.Json:
-                                    ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
+                                    var stream = new MemoryStream();
+                                    var jsonWriter = new JsonTextWriter(new StreamWriter(stream));
+                                    serializer.Serialize(jsonWriter, paramList[i]);
+                                    jsonWriter.Flush();
+                                    stream.Seek(0, SeekOrigin.Begin);
+                                    ret.Content = new StreamContent(stream);
                                     break;
                             }
                         }
@@ -378,7 +383,7 @@ namespace Refit
                 if (restMethod.SerializedReturnType == typeof(HttpContent)) {
                     return (T)(object)resp.Content;
                 }
-
+                
                 using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
                 using (var reader = new StreamReader(stream)) {
                     if (restMethod.SerializedReturnType == typeof(string)) {
