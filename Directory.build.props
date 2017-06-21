@@ -14,16 +14,14 @@
     <NoPackageAnalysis>true</NoPackageAnalysis>
   </PropertyGroup>
   
-  <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(NCrunch)' == '' and '$(SourceLinkEnabled)' != 'false'">
+  <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(SourceLinkEnabled)' != 'false'">
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.1.2" PrivateAssets="All" /> 
   </ItemGroup>
-  
-    <!-- Workaround -->
-  <Target Name="GetPackagingOutputs" />
   
   <PropertyGroup>
     <NerdbankGitVersioningVersion>2.0.21-beta</NerdbankGitVersioningVersion>
     
+    <!-- Workaround -->
     <DisableImplicitPackageTargetFallback>true</DisableImplicitPackageTargetFallback>
     <DisableImplicitAssetTargetFallback>true</DisableImplicitAssetTargetFallback>
     <PackageTargetFallback>net20</PackageTargetFallback>
