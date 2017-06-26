@@ -7,7 +7,6 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using System.Text;
 using Newtonsoft.Json;
 using System.IO;
 using System.Threading;
@@ -114,12 +113,12 @@ namespace Refit
                                     ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
                                     break;
                                 case BodySerializationMethod.Json:
-                                    var stream = new MemoryStream();
-                                    var jsonWriter = new JsonTextWriter(new StreamWriter(stream));
-                                    serializer.Serialize(jsonWriter, paramList[i]);
-                                    jsonWriter.Flush();
-                                    stream.Seek(0, SeekOrigin.Begin);
-                                    ret.Content = new StreamContent(stream);
+                                    var param = paramList[i];
+                                    ret.Content = new PushStreamContent((stream, _, __) => {
+                                        using(var writer = new JsonTextWriter(new StreamWriter(stream))) {
+                                            serializer.Serialize(writer, param);
+                                        }
+                                    }, "application/json");
                                     break;
                             }
                         }
