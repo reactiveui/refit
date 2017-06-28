@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace Refit
 {
@@ -15,10 +16,8 @@ namespace Refit
         {
             if (source == null) return;
 
-            if (source is IDictionary dictionary)
-            {
-                foreach (var key in dictionary.Keys)
-                {
+            if (source is IDictionary dictionary) {
+                foreach (var key in dictionary.Keys) {
                     Add(key.ToString(), string.Format("{0}", dictionary[key]));
                 }
 
@@ -47,10 +46,13 @@ namespace Refit
 
         string GetFieldNameForProperty(PropertyInfo propertyInfo)
         {
-            var aliasAttr = propertyInfo.GetCustomAttributes(true)
-                .OfType<AliasAsAttribute>()
-                .FirstOrDefault();
-            return aliasAttr != null ? aliasAttr.Name : propertyInfo.Name;
+            return propertyInfo.GetCustomAttributes<AliasAsAttribute>(true)
+                .Select(a => a.Name)
+                .FirstOrDefault()
+                ?? propertyInfo.GetCustomAttributes<JsonPropertyAttribute>(true)
+                .Select(a => a.PropertyName)
+                .FirstOrDefault()
+                ?? propertyInfo.Name;
         }
     }
 }
