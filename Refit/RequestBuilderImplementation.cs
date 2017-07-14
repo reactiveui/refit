@@ -7,7 +7,6 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using System.Text;
 using Newtonsoft.Json;
 using System.IO;
 using System.Threading;
@@ -21,10 +20,13 @@ namespace Refit
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
         readonly RefitSettings settings;
+        readonly JsonSerializer serializer;
 
         public RequestBuilderImplementation(Type targetInterface, RefitSettings refitSettings = null)
         {
             settings = refitSettings ?? new RefitSettings();
+            serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
+            
             if (targetInterface == null || !targetInterface.IsInterface()) {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
@@ -111,7 +113,12 @@ namespace Refit
                                     ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
                                     break;
                                 case BodySerializationMethod.Json:
-                                    ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
+                                    var param = paramList[i];
+                                    ret.Content = new PushStreamContent((stream, _, __) => {
+                                        using(var writer = new JsonTextWriter(new StreamWriter(stream))) {
+                                            serializer.Serialize(writer, param);
+                                        }
+                                    }, "application/json");
                                     break;
                             }
                         }
@@ -352,7 +359,7 @@ namespace Refit
                 return ret(client, CancellationToken.None, paramList);
             };
         }
-
+        
         Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
@@ -375,14 +382,17 @@ namespace Refit
                 if (restMethod.SerializedReturnType == typeof(HttpContent)) {
                     return (T)(object)resp.Content;
                 }
+                
+                using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                using (var reader = new StreamReader(stream)) {
+                    if (restMethod.SerializedReturnType == typeof(string)) {
+                        return (T)(object) await reader.ReadToEndAsync().ConfigureAwait(false);
+                    }
 
-                var content = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                if (restMethod.SerializedReturnType == typeof(string)) {
-                    return (T)(object)content; 
+                    using (var jsonReader = new JsonTextReader(reader)) {
+                        return serializer.Deserialize<T>(jsonReader);
+                    }
                 }
-
-                return JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
             };
         }
 
