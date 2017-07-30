@@ -104,7 +104,7 @@ namespace Refit
         public string Name { get; protected set; }
         public AliasAsAttribute(string name)
         {
-            this.Name = name;
+            Name = name;
         }
     }
 
