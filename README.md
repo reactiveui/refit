@@ -219,6 +219,23 @@ var measurement = new Measurement {
 await api.Collect(measurement);
 ``` 
 
+If you have a type that has `[JsonProperty(PropertyName)]` attributes setting property aliases, Refit will use those too (`[AliasAs]` will take precedence where you have both). 
+This means that the following type will serialize as `one=value1&two=value2`:
+
+```csharp
+
+public class SomeObject
+{
+    [JsonProperty(PropertyName = "one")]
+    public string FirstProperty { get; set; }
+
+    [JsonProperty(PropertyName = "notTwo")]
+    [AliasAs("two")]
+    public string SecondProperty { get; set; }
+}
+
+```
+
 ### Setting request headers
 
 #### Static headers
