@@ -330,11 +330,7 @@ namespace Refit
         Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(RestMethodInfo restMethod)
         {                      
             return async (client, paramList) => {
-<<<<<<< HEAD
-                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress?.AbsolutePath, restMethod.CancellationToken != null);
-=======
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
->>>>>>> b4e181dff1fd337dea8c25c6ab1e0c8bf496456c
                 var rq = factory(paramList);
 
                 var ct = CancellationToken.None;
@@ -367,11 +363,7 @@ namespace Refit
         Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
-<<<<<<< HEAD
-                var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress?.AbsolutePath, restMethod.CancellationToken != null);
-=======
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
->>>>>>> b4e181dff1fd337dea8c25c6ab1e0c8bf496456c
                 var rq = factory(paramList);
 
                 var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
@@ -393,7 +385,7 @@ namespace Refit
 
                 if (restMethod.SerializedReturnType == typeof(Stream))
                 {
-                    return (T)(object)await resp.Content.ReadAsStreamAsync();
+                    return (T)(object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 }
                 
                 using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
