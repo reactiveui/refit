@@ -104,11 +104,11 @@ namespace Refit
         public string Name { get; protected set; }
         public AliasAsAttribute(string name)
         {
-            this.Name = name;
+            Name = name;
         }
     }
 
-    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)][Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem", false)]
     public class AttachmentNameAttribute : Attribute
     {
         public string Name { get; protected set; }

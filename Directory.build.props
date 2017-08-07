@@ -1,0 +1,47 @@
+<Project>  
+  
+  <PropertyGroup>
+    <MinClientVersion>2.12</MinClientVersion>
+    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
+    <Authors>Paul Betts,Refit contributors</Authors>
+    <PackageProjectUrl>https://github.com/paulcbetts/refit</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/paulcbetts/refit/blob/master/COPYING</PackageLicenseUrl>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <IncludeSymbols>false</IncludeSymbols>
+    <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
+    <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
+    <NoWarn>$(NoWarn);1701;1702;CS1591</NoWarn>
+    <NoPackageAnalysis>true</NoPackageAnalysis>
+    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Refit.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  
+  <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(SourceLinkEnabled)' != 'false'">
+    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.1.2" PrivateAssets="All" /> 
+  </ItemGroup>
+  <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.3.23" PrivateAssets="All" />
+  </ItemGroup>
+  
+  <PropertyGroup>
+    <NerdbankGitVersioningVersion>2.0.21-beta</NerdbankGitVersioningVersion>
+    
+    <!-- Workaround -->
+    <DisableImplicitPackageTargetFallback>true</DisableImplicitPackageTargetFallback>
+    <DisableImplicitAssetTargetFallback>true</DisableImplicitAssetTargetFallback>
+    <PackageTargetFallback>net20</PackageTargetFallback>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.0.21-beta" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- https://github.com/NuGet/Home/issues/4337 -->
+  <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' == 'true' ">
+    <Import Project="$(UserProfile)\.nuget\packages\nerdbank.gitversioning\$(NerdbankGitVersioningVersion)\buildCrossTargeting\Nerdbank.GitVersioning.targets"
+            Condition="Exists('$(UserProfile)\.nuget\packages\nerdbank.gitversioning\$(NerdbankGitVersioningVersion)\buildCrossTargeting\Nerdbank.GitVersioning.targets')" />
+  </ImportGroup>
+  <Target Name="FixUpVersion"
+      BeforeTargets="_GenerateRestoreProjectSpec"
+      DependsOnTargets="GetBuildVersion"
+      Condition=" '$(NerdbankGitVersioningTasksPath)' != '' " />
+</Project>

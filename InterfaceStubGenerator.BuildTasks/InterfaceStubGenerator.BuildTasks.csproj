@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
+    <RootNamespace>Refit.Generator.Tasks</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Condition="'$(TargetFramework)' == 'net46' " Include="Microsoft.Build.Tasks.Core" Version="14.3" PrivateAssets="all" />
+    <PackageReference Condition="'$(TargetFramework)' == 'netcoreapp2.0' " Include="Microsoft.Build.Tasks.Core" Version="15.1.548" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

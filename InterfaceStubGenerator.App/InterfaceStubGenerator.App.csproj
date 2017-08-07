@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp2.0;net46</TargetFrameworks>
+    <RootNamespace>Refit.Generator.App</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" />
+  </ItemGroup>
+
+</Project>

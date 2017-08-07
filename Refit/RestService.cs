@@ -34,18 +34,11 @@ namespace Refit
             return (T)Activator.CreateInstance(generatedType, client, requestBuilder);
         }
 
-        public static T For<T>(HttpClient client)
-        {
-            return RestService.For<T>(client, null);
-        }
+        public static T For<T>(HttpClient client) => For<T>(client, null);
 
         public static T For<T>(string hostUrl, RefitSettings settings)
         {
-#if PORTABLE
-            throw new NotImplementedException("You've somehow included the PCL version of Refit in your app. You need to use the platform-specific version!");
-#else
-            // check to see if user provided custom auth t
-
+            // check to see if user provided custom auth token
             HttpMessageHandler innerHandler = null;
             if (settings != null) {
                 if (settings.HttpMessageHandlerFactory != null) {
@@ -58,76 +51,9 @@ namespace Refit
             }
 
             var client = new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl) };
-            return RestService.For<T>(client, settings);
-#endif
-
+            return For<T>(client, settings);
         }
 
-        public static T For<T>(string hostUrl)
-        {
-            return RestService.For<T>(hostUrl, null);
-        }
-    }
-
-    public class ApiException : Exception
-    {
-        public HttpStatusCode StatusCode { get; private set; }
-        public string ReasonPhrase { get; private set; }
-        public HttpResponseHeaders Headers { get; private set; }
-        public HttpMethod HttpMethod { get; private set; }
-        public Uri Uri { get; private set; }
-
-        public HttpContentHeaders ContentHeaders { get; private set; }
-
-        public string Content { get; private set; }
-
-        public bool HasContent
-        {
-            get { return !String.IsNullOrWhiteSpace(Content); }
-        }
-        public RefitSettings RefitSettings { get; set; }
-
-        ApiException(Uri uri, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
-            base(createMessage(statusCode, reasonPhrase))
-        {
-            Uri = uri;
-            HttpMethod = httpMethod;
-            StatusCode = statusCode;
-            ReasonPhrase = reasonPhrase;
-            Headers = headers;
-            RefitSettings = refitSettings;
-        }
-
-        public T GetContentAs<T>()
-        {
-            return HasContent ?
-                JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) :
-                default(T);
-        }
-
-        public static async Task<ApiException> Create(Uri uri, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
-        {
-            var exception = new ApiException(uri, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
-
-            if (response.Content == null)
-                return exception;
-
-            try {
-                exception.ContentHeaders = response.Content.Headers;
-                exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                response.Content.Dispose();
-            } catch {
-                // NB: We're already handling an exception at this point, 
-                // so we want to make sure we don't throw another one 
-                // that hides the real error.
-            }
-
-            return exception;
-        }
-
-        static string createMessage(HttpStatusCode statusCode, string reasonPhrase)
-        {
-            return String.Format("Response status code does not indicate success: {0} ({1}).", (int)statusCode, reasonPhrase);
-        }
+        public static T For<T>(string hostUrl) => For<T>(hostUrl, null);
     }
 }
