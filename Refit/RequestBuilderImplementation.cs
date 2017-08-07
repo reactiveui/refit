@@ -383,8 +383,7 @@ namespace Refit
                     return (T)(object)resp.Content;
                 }
 
-                if (restMethod.SerializedReturnType == typeof(Stream))
-                {
+                if (restMethod.SerializedReturnType == typeof(Stream)) {
                     return (T)(object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
                 }
                 
