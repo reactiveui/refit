@@ -524,6 +524,28 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void StreamResponseTest()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IStreamApi));
+            var factory = fixture.BuildRestResultFuncForMethod("GetRemoteFile");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+            var streamResponse = new MemoryStream();
+            var reponseContent = "A remote file";
+            testHttpMessageHandler.Content = new StreamContent(streamResponse);
+
+            var writer = new StreamWriter(streamResponse);
+            writer.Write(reponseContent);
+            writer.Flush();
+            streamResponse.Seek(0L, SeekOrigin.Begin);
+
+            var task = (Task<Stream>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { "test-file" });
+            task.Wait();
+            
+            using (var reader = new StreamReader(task.Result))
+                Assert.Equal(reponseContent, reader.ReadToEnd());
+        }
+
+        [Fact]
         public void MethodsThatDontHaveAnHttpMethodShouldFail()
         {
             var failureMethods = new[] { 

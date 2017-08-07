@@ -10,7 +10,7 @@ using Newtonsoft.Json.Serialization;
 using Xunit;
 using Refit; // InterfaceStubGenerator looks for this
 using RichardSzalay.MockHttp;
-
+using System.IO;
 
 namespace Refit.Tests
 {
@@ -67,6 +67,12 @@ namespace Refit.Tests
     {
         [Post("/blah")]
         Task<HttpContent> PostFileUpload([Body] HttpContent content);
+    }
+    
+    public interface IStreamApi
+    {
+        [Post("/{filename}")]
+        Task<Stream> GetRemoteFile(string filename);
     }
 
     public class HttpBinGet
