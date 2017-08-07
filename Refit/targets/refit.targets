@@ -8,29 +8,26 @@
   </PropertyGroup>
   
   <PropertyGroup>
-    <IntermediateOutputPath Condition="$(IntermediateOutputPath) == '' Or $(IntermediateOutputPath) == '*Undefined*'">$(MSBuildProjectDirectory)obj\$(Configuration)\</IntermediateOutputPath>    
+    <IntermediateOutputPath Condition="$(IntermediateOutputPath) == '' Or $(IntermediateOutputPath) == '*Undefined*'">$(MSBuildProjectDirectory)obj\$(Configuration)\</IntermediateOutputPath>
+    <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\MSBuildCore20\InterfaceStubGenerator.BuildTasks.dll</RefitTaskAssemblyFile>
+    <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\MSBuildFull46\InterfaceStubGenerator.BuildTasks.dll</RefitTaskAssemblyFile>
+
+    <RefitMinCoreVersionRequired>2.0</RefitMinCoreVersionRequired>
+    <!-- Our default CLI version for error checking purposes -->
+    <RefitNetCoreAppVersion>$(BundledNETCoreAppTargetFrameworkVersion)</RefitNetCoreAppVersion>
+    <RefitNetCoreAppVersion Condition="'$(RefitNetCoreAppVersion)' == ''">1.0</RefitNetCoreAppVersion>
   </PropertyGroup>
+  <UsingTask TaskName="Refit.Generator.Tasks.GenerateStubsTask" AssemblyFile="$(RefitTaskAssemblyFile)" />
+  
+  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile">
 
-  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile"> 
-    <PropertyGroup>
-      <RefitParameterFile>$(IntermediateOutputPath)\RefitParams.rsp</RefitParameterFile>
-    </PropertyGroup>
+    <Error Condition="'$(MSBuildRuntimeType)' == 'Core' and '$(RefitMinCoreVersionRequired)' > '$(RefitNetCoreAppVersion)' "
+           Text="Refit requires at least the .NET Core SDK v2.0 to run with 'dotnet build'"
+           ContinueOnError="false"
+           />
     
-    <WriteLinesToFile 
-      File="$(RefitParameterFile)"
-      Lines="@(Compile)"
-      Overwrite="true"
-    />
-    
-    <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\..\tools\InterfaceStubGenerator.exe" "$(IntermediateOutputPath)\RefitStubs.g.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
-    </PropertyGroup>
+    <GenerateStubsTask SourceFiles="@(Compile)" BaseDirectory="$(MSBuildProjectDirectory)" OutputFile="$(IntermediateOutputPath)\RefitStubs.g.cs" />
 
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../../tools/InterfaceStubGenerator.exe" "$(IntermediateOutputPath)\RefitStubs.g.cs" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
-    </PropertyGroup>
-    
-    <Exec Command="$(RefitExecCmd)" />
     <Message Text="Processed Refit Stubs" />      
    
     <ItemGroup Condition="Exists('$(IntermediateOutputPath)\RefitStubs.g.cs')">

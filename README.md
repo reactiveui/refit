@@ -219,6 +219,23 @@ var measurement = new Measurement {
 await api.Collect(measurement);
 ``` 
 
+If you have a type that has `[JsonProperty(PropertyName)]` attributes setting property aliases, Refit will use those too (`[AliasAs]` will take precedence where you have both). 
+This means that the following type will serialize as `one=value1&two=value2`:
+
+```csharp
+
+public class SomeObject
+{
+    [JsonProperty(PropertyName = "one")]
+    public string FirstProperty { get; set; }
+
+    [JsonProperty(PropertyName = "notTwo")]
+    [AliasAs("two")]
+    public string SecondProperty { get; set; }
+}
+
+```
+
 ### Setting request headers
 
 #### Static headers
@@ -414,17 +431,27 @@ At this time, multipart methods support the following parameter types:
  - Stream
  - FileInfo
 
-For byte array and Stream parameters, use `AttachmentName` parameter attribute to specify the
-name for the attachment. For `FileInfo` parameters, the file name will be used.
+The parameter name will be used as the name of the field in the multipart data. This can be overridden with the `AliasAs` attribute.
+
+To specify the file name and content type for byte array (`byte[]`), `Stream` and `FileInfo` parameters, use of a wrapper class is required.
+The wrapper classes for these types are `ByteArrayPart`, `StreamPart` and `FileInfoPart`.
 
 ```csharp
 public interface ISomeApi
 {
     [Multipart]
     [Post("/users/{id}/photo")]
-    Task UploadPhoto(int id, [AttachmentName("photo.jpg")] Stream stream);
+    Task UploadPhoto(int id, [AliasAs("myPhoto")] StreamPart stream);
 }
 ```
+
+To pass a Stream to this method, construct a StreamPart object like so:
+
+```csharp
+someApiInstance.UploadPhoto(id, new StreamPart(myPhotoStream, "photo.jpg", "image/jpeg"));
+```
+
+Note: The AttachmentName attribute that was previously described in this section has been deprecated and its use is not recommended.
 
 ### Retrieving the response
 

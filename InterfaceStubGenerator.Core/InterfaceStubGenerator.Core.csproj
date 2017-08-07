@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
+    <RootNamespace>Refit.Generator</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.2.0" />
+    <PackageReference Include="Nustache" Version="1.16.0.4" />
+    <Reference Condition="'$(TargetFramework)' == 'net46' " Include="System.Net.Http" />
+
+    
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="GeneratedInterfaceStubTemplate.mustache">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+
+
+</Project>

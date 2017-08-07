@@ -7,7 +7,6 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using System.Text;
 using Newtonsoft.Json;
 using System.IO;
 using System.Threading;
@@ -16,23 +15,18 @@ using HttpUtility = System.Web.HttpUtility;
 
 namespace Refit
 {
-    class RequestBuilderFactory : IRequestBuilderFactory
-    {
-        public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)
-        {
-            return new RequestBuilderImplementation(interfaceType, settings);
-        }
-    }
-
-    class RequestBuilderImplementation : IRequestBuilder
+    partial class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
         readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
         readonly RefitSettings settings;
+        readonly JsonSerializer serializer;
 
         public RequestBuilderImplementation(Type targetInterface, RefitSettings refitSettings = null)
         {
             settings = refitSettings ?? new RefitSettings();
+            serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
+            
             if (targetInterface == null || !targetInterface.IsInterface()) {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
@@ -53,7 +47,7 @@ namespace Refit
             get { return interfaceHttpMethods.Keys; }
         }
 
-        Func<object[], HttpRequestMessage> buildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
+        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName)) {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
@@ -77,11 +71,11 @@ namespace Refit
                     ret.Content = multiPartContent;
                 }
 
-                string urlTarget = (basePath == "/" ? String.Empty : basePath) + restMethod.RelativePath;
+                var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new Dictionary<string, string>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
 
-                for(int i=0; i < paramList.Length; i++) {
+                for(var i=0; i < paramList.Length; i++) {
                     // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.ContainsKey(i)) {
                         urlTarget = Regex.Replace(
@@ -98,22 +92,34 @@ namespace Refit
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item2 == i) {
                         var streamParam = paramList[i] as Stream;
                         var stringParam = paramList[i] as string;
-                        var httpContentParam = paramList[i] as HttpContent;
 
-                        if (httpContentParam != null) {
+                        if (paramList[i] is HttpContent httpContentParam)
+                        {
                             ret.Content = httpContentParam;
-                        } else if (streamParam != null) {
+                        }
+                        else if (streamParam != null)
+                        {
                             ret.Content = new StreamContent(streamParam);
-                        } else if (stringParam != null) {
+                        }
+                        else if (stringParam != null)
+                        {
                             ret.Content = new StringContent(stringParam);
-                        } else {
-                            switch (restMethod.BodyParameterInfo.Item1) {
-                            case BodySerializationMethod.UrlEncoded:
-                                ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
-                                break;
-                            case BodySerializationMethod.Json:
-                                ret.Content = new StringContent(JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
-                                break;
+                        }
+                        else
+                        {
+                            switch (restMethod.BodyParameterInfo.Item1)
+                            {
+                                case BodySerializationMethod.UrlEncoded:
+                                    ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
+                                    break;
+                                case BodySerializationMethod.Json:
+                                    var param = paramList[i];
+                                    ret.Content = new PushStreamContent((stream, _, __) => {
+                                        using(var writer = new JsonTextWriter(new StreamWriter(stream))) {
+                                            serializer.Serialize(writer, param);
+                                        }
+                                    }, "application/json");
+                                    break;
                             }
                         }
 
@@ -122,9 +128,7 @@ namespace Refit
 
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.ContainsKey(i)) {
-                        headersToAdd[restMethod.HeaderParameterMap[i]] = paramList[i] != null 
-                            ? paramList[i].ToString() 
-                            : null;
+                        headersToAdd[restMethod.HeaderParameterMap[i]] = paramList[i]?.ToString();
                         continue;
                     }
 
@@ -143,15 +147,16 @@ namespace Refit
                     string itemName;
                     string parameterName;
 
-                    Tuple<string, string> attachment;
-                    if (!restMethod.AttachmentNameMap.TryGetValue(i, out attachment)) {
+                    if (!restMethod.AttachmentNameMap.TryGetValue(i, out var attachment))
+                    {
                         itemName = restMethod.QueryParameterMap[i];
                         parameterName = itemName;
-                    } else {
+                    }
+                    else
+                    {
                         itemName = attachment.Item1;
                         parameterName = attachment.Item2;
                     }
-
 
                     // Check to see if it's an IEnumerable
                     var itemValue = paramList[i];
@@ -171,11 +176,12 @@ namespace Refit
                         // FileInfo, Stream, string or byte[]
                         if (tType == typeof(Stream) ||
                             tType == typeof(string) ||
-                            tType == typeof(byte[])
-#if !NETFX_CORE
+                            tType == typeof(byte[]) ||
+                            tType.GetTypeInfo().IsSubclassOf(typeof(MultipartItem))
                             || tType == typeof(FileInfo)
-#endif
-                        ) {
+
+                        )
+                        {
                             typeIsCollection = true;
                         }
 
@@ -184,10 +190,10 @@ namespace Refit
 
                     if (typeIsCollection) {
                         foreach (var item in enumerable) {
-                            addMultipartItem(multiPartContent, itemName, parameterName, item);
+                            AddMultipartItem(multiPartContent, itemName, parameterName, item);
                         }
                     } else{
-                        addMultipartItem(multiPartContent, itemName, parameterName, itemValue);
+                        AddMultipartItem(multiPartContent, itemName, parameterName, itemValue);
                     }
 
                 }
@@ -195,7 +201,7 @@ namespace Refit
                 // NB: We defer setting headers until the body has been
                 // added so any custom content headers don't get left out.
                 foreach (var header in headersToAdd) {
-                    setHeader(ret, header.Key, header.Value);
+                    SetHeader(ret, header.Key, header.Value);
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this 
@@ -209,7 +215,7 @@ namespace Refit
 
                 if (query.HasKeys()) {
                     var pairs = query.Keys.Cast<string>().Select(x => HttpUtility.UrlEncode(x) + "=" + HttpUtility.UrlEncode(query[x]));
-                    uri.Query = String.Join("&", pairs);
+                    uri.Query = string.Join("&", pairs);
                 } else {
                     uri.Query = null;
                 }
@@ -219,7 +225,7 @@ namespace Refit
             };
         }
 
-        static void setHeader(HttpRequestMessage request, string name, string value) 
+        static void SetHeader(HttpRequestMessage request, string name, string value) 
         {
             // Clear any existing version of this header that might be set, because
             // we want to allow removal/redefinition of headers. 
@@ -246,11 +252,19 @@ namespace Refit
             }
         }
 
-        void addMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
+        void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
+            var multipartItem = itemValue as MultipartItem;
             var streamValue = itemValue as Stream;
             var stringValue = itemValue as string;
             var byteArrayValue = itemValue as byte[];
+
+            if (multipartItem != null)
+            {
+                var httpContent = multipartItem.ToContent();
+                multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
+                return;
+            }
 
             if (streamValue != null) {
                 var streamContent = new StreamContent(streamValue);
@@ -263,14 +277,12 @@ namespace Refit
                 return;
             }
 
-#if !NETFX_CORE
-            var fileInfoValue = itemValue as FileInfo;
-            if (fileInfoValue != null) {
+            if (itemValue is FileInfo fileInfoValue)
+            {
                 var fileContent = new StreamContent(fileInfoValue.OpenRead());
                 multiPartContent.Add(fileContent, parameterName, fileInfoValue.Name);
                 return;
             }
-#endif
 
             if (byteArrayValue != null) {
                 var fileContent = new ByteArrayContent(byteArrayValue);
@@ -290,13 +302,13 @@ namespace Refit
             var restMethod = interfaceHttpMethods[methodName];
 
             if (restMethod.ReturnType == typeof(Task)) {
-                return buildVoidTaskFuncForMethod(restMethod);
+                return BuildVoidTaskFuncForMethod(restMethod);
             } else if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)) {
                 // NB: This jacked up reflection code is here because it's
                 // difficult to upcast Task<object> to an arbitrary T, especially
                 // if you need to AOT everything, so we need to reflectively 
                 // invoke buildTaskFuncForMethod.
-                var taskFuncMi = GetType().GetMethod("buildTaskFuncForMethod", BindingFlags.NonPublic | BindingFlags.Instance);
+                var taskFuncMi = GetType().GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var taskFunc = (MulticastDelegate)taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
                     .Invoke(this, new[] { restMethod });
 
@@ -305,7 +317,7 @@ namespace Refit
                 };
             } else {
                 // Same deal
-                var rxFuncMi = GetType().GetMethod("buildRxFuncForMethod", BindingFlags.NonPublic | BindingFlags.Instance);
+                var rxFuncMi = GetType().GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var rxFunc = (MulticastDelegate)rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
                     .Invoke(this, new[] { restMethod });
 
@@ -315,10 +327,14 @@ namespace Refit
             }
         }
 
-        Func<HttpClient, object[], Task> buildVoidTaskFuncForMethod(RestMethodInfo restMethod)
+        Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(RestMethodInfo restMethod)
         {                      
             return async (client, paramList) => {
+<<<<<<< HEAD
                 var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress?.AbsolutePath, restMethod.CancellationToken != null);
+=======
+                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+>>>>>>> b4e181dff1fd337dea8c25c6ab1e0c8bf496456c
                 var rq = factory(paramList);
 
                 var ct = CancellationToken.None;
@@ -335,9 +351,9 @@ namespace Refit
             };
         }
 
-        Func<HttpClient, object[], Task<T>> buildTaskFuncForMethod<T>(RestMethodInfo restMethod)
+        Func<HttpClient, object[], Task<T>> BuildTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
-            var ret = buildCancellableTaskFuncForMethod<T>(restMethod);
+            var ret = BuildCancellableTaskFuncForMethod<T>(restMethod);
 
             return (client, paramList) => {
                 if(restMethod.CancellationToken != null) {
@@ -347,11 +363,15 @@ namespace Refit
                 return ret(client, CancellationToken.None, paramList);
             };
         }
-
-        Func<HttpClient, CancellationToken, object[], Task<T>> buildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
+        
+        Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
+<<<<<<< HEAD
                 var factory = buildRequestFactoryForMethod(restMethod.Name, client.BaseAddress?.AbsolutePath, restMethod.CancellationToken != null);
+=======
+                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+>>>>>>> b4e181dff1fd337dea8c25c6ab1e0c8bf496456c
                 var rq = factory(paramList);
 
                 var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
@@ -375,20 +395,23 @@ namespace Refit
                 {
                     return (T)(object)await resp.Content.ReadAsStreamAsync();
                 }
+                
+                using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                using (var reader = new StreamReader(stream)) {
+                    if (restMethod.SerializedReturnType == typeof(string)) {
+                        return (T)(object) await reader.ReadToEndAsync().ConfigureAwait(false);
+                    }
 
-                var content = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-                if (restMethod.SerializedReturnType == typeof(string)) {
-                    return (T)(object)content; 
+                    using (var jsonReader = new JsonTextReader(reader)) {
+                        return serializer.Deserialize<T>(jsonReader);
+                    }
                 }
-
-                return JsonConvert.DeserializeObject<T>(content, settings.JsonSerializerSettings);
             };
         }
 
-        Func<HttpClient, object[], IObservable<T>> buildRxFuncForMethod<T>(RestMethodInfo restMethod)
+        Func<HttpClient, object[], IObservable<T>> BuildRxFuncForMethod<T>(RestMethodInfo restMethod)
         {
-            var taskFunc = buildCancellableTaskFuncForMethod<T>(restMethod);
+            var taskFunc = BuildCancellableTaskFuncForMethod<T>(restMethod);
 
             return (client, paramList) => {
                 return new TaskToObservable<T>(ct => {
@@ -403,400 +426,6 @@ namespace Refit
                     return taskFunc(client, cts.Token, paramList);
                 });
             };
-        }
-
-        class TaskToObservable<T> : IObservable<T>
-        {
-            Func<CancellationToken, Task<T>> taskFactory;
-
-            public TaskToObservable(Func<CancellationToken, Task<T>> taskFactory) 
-            {
-                this.taskFactory = taskFactory;
-            }
-
-            public IDisposable Subscribe(IObserver<T> observer)
-            {
-                var cts = new CancellationTokenSource();
-                taskFactory(cts.Token).ContinueWith(t => {
-                    if (cts.IsCancellationRequested) return;
-
-                    if (t.Exception != null) {
-                        observer.OnError(t.Exception.InnerExceptions.First());
-                        return;
-                    }
-
-                    try {
-                        observer.OnNext(t.Result);
-                    } catch (Exception ex) {
-                        observer.OnError(ex);
-                    }
-                        
-                    observer.OnCompleted();
-                });
-
-                return new AnonymousDisposable(cts.Cancel);
-            }
-        }
-    }
-
-    sealed class AnonymousDisposable : IDisposable
-    {
-        readonly Action block;
-
-        public AnonymousDisposable(Action block)
-        {
-            this.block = block;
-        }
-
-        public void Dispose()
-        {
-            block();
-        }
-    }
-
-    public class RestMethodInfo
-    {
-        public string Name { get; set; }
-        public Type Type { get; set; }
-        public MethodInfo MethodInfo { get; set; }
-        public HttpMethod HttpMethod { get; set; }
-        public string RelativePath { get; set; }
-        public bool IsMultipart { get; private set; }
-        public Dictionary<int, string> ParameterMap { get; set; }
-        public ParameterInfo CancellationToken { get; set; }
-        public Dictionary<string, string> Headers { get; set; }
-        public Dictionary<int, string> HeaderParameterMap { get; set; }
-        public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
-        public Dictionary<int, string> QueryParameterMap { get; set; }
-        public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
-        public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
-        public Type ReturnType { get; set; }
-        public Type SerializedReturnType { get; set; }
-        public RefitSettings RefitSettings { get; set; }
-
-        static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
-        static readonly HttpMethod patchMethod = new HttpMethod("PATCH");
-
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
-        {
-            RefitSettings = refitSettings ?? new RefitSettings();
-            Type = targetInterface;
-            Name = methodInfo.Name;
-            MethodInfo = methodInfo;
-
-            var hma = methodInfo.GetCustomAttributes(true)
-                .OfType<HttpMethodAttribute>()
-                .First();
-
-            HttpMethod = hma.Method;
-            RelativePath = hma.Path;
-
-            IsMultipart = methodInfo.GetCustomAttributes(true)
-                .OfType<MultipartAttribute>()
-                .Any();
-
-            verifyUrlPathIsSane(RelativePath);
-            determineReturnTypeInfo(methodInfo);
-
-            // Exclude cancellation token parameters from this list
-            var parameterList = methodInfo.GetParameters().Where(p => p.ParameterType != typeof(CancellationToken)).ToList();
-            ParameterInfoMap = parameterList
-                .Select((parameter, index) => new { index, parameter })
-                .ToDictionary(x => x.index, x => x.parameter);
-            ParameterMap = buildParameterMap(RelativePath, parameterList);
-            BodyParameterInfo = findBodyParameter(parameterList, IsMultipart, hma.Method);
-
-            Headers = parseHeaders(methodInfo);
-            HeaderParameterMap = buildHeaderParameterMap(parameterList);
-
-            // get names for multipart attachments
-            AttachmentNameMap = new Dictionary<int, Tuple<string, string>>();
-            if (IsMultipart) {
-                for (int i = 0; i < parameterList.Count; i++) {
-                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i)) {
-                        continue;
-                    }
-
-                    var attachmentName = getAttachmentNameForParameter(parameterList[i]);
-                    if (attachmentName == null)
-                        continue;
-
-                    AttachmentNameMap[i] = Tuple.Create(attachmentName, getUrlNameForParameter(parameterList[i]).ToLowerInvariant());
-                }
-            }
-
-            QueryParameterMap = new Dictionary<int, string>();
-            for (int i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i) || AttachmentNameMap.ContainsKey(i)) {
-                    continue;
-                }
-
-                QueryParameterMap[i] = getUrlNameForParameter(parameterList[i]);
-            }
-
-            var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
-            if(ctParams.Count > 1) {
-                throw new ArgumentException("Argument list can only contain a single CancellationToken");
-            }
-
-            CancellationToken = ctParams.FirstOrDefault();
-        }
-
-        void verifyUrlPathIsSane(string relativePath) 
-        {
-            if (relativePath == "")
-                return;
-
-            if (!relativePath.StartsWith("/")) {
-                goto bogusPath;
-            }
-
-            var parts = relativePath.Split('/');
-            if (parts.Length == 0) {
-                goto bogusPath;
-            }
-
-            return;
-
-        bogusPath:
-            throw new ArgumentException("URL path must be of the form '/foo/bar/baz'");
-        }
-
-        Dictionary<int, string> buildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
-        {
-            var ret = new Dictionary<int, string>();
-
-            var parameterizedParts = relativePath.Split('/', '?')
-                .SelectMany(x => parameterRegex.Matches(x).Cast<Match>())
-                .ToList();
-
-            if (parameterizedParts.Count == 0) {
-                return ret;
-            }
-
-            var paramValidationDict = parameterInfo.ToDictionary(k => getUrlNameForParameter(k).ToLowerInvariant(), v => v);
-
-            foreach (var match in parameterizedParts) {
-                var name = match.Groups[1].Value.ToLowerInvariant();
-                if (!paramValidationDict.ContainsKey(name)) {
-                    throw new ArgumentException(String.Format("URL has parameter {0}, but no method parameter matches", name));
-                }
-
-                ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), name);
-            }
-
-            return ret;
-        }
-
-        string getUrlNameForParameter(ParameterInfo paramInfo)
-        {
-            var aliasAttr = paramInfo.GetCustomAttributes(true)
-                .OfType<AliasAsAttribute>()
-                .FirstOrDefault();
-            return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
-        }
-
-        string getAttachmentNameForParameter(ParameterInfo paramInfo)
-        {
-            var nameAttr = paramInfo.GetCustomAttributes(true)
-                .OfType<AttachmentNameAttribute>()
-                .FirstOrDefault();
-            return nameAttr != null ? nameAttr.Name : null;
-        }
-
-        static Tuple<BodySerializationMethod, int> findBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
-        {
-
-            // The body parameter is found using the following logic / order of precedence:
-            // 1) [Body] attribute
-            // 2) POST/PUT/PATCH: Reference type other than string
-            // 3) If there are two reference types other than string, without the body attribute, throw
-
-            var bodyParams = parameterList
-                .Select(x => new { Parameter = x, BodyAttribute = x.GetCustomAttributes(true).OfType<BodyAttribute>().FirstOrDefault() })
-                .Where(x => x.BodyAttribute != null)
-                .ToList();
-
-            // multipart requests may not contain a body, implicit or explicit
-            if (isMultipart) {
-                if (bodyParams.Count > 0) {
-                    throw new ArgumentException("Multipart requests may not contain a Body parameter");
-                }
-                return null;
-            }
-
-            if (bodyParams.Count > 1) {
-                throw new ArgumentException("Only one parameter can be a Body parameter");
-            }
-
-            // #1, body attribute wins
-            if (bodyParams.Count == 1) {
-                var ret = bodyParams[0];
-                return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
-            }
-
-            // Not in post/put/patch? bail
-            if (!method.Equals(HttpMethod.Post) && !method.Equals(HttpMethod.Put) && !method.Equals(patchMethod)) {
-                return null;
-            }
-         
-            // see if we're a post/put/patch
-            var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
-            
-            // Check for rule #3
-            if (refParams.Count > 1) {
-                throw new ArgumentException("Multiple complex types found. Specify one parameter as the body using BodyAttribute");
-            } 
-            
-            if (refParams.Count == 1) {
-                return Tuple.Create(BodySerializationMethod.Json, parameterList.IndexOf(refParams[0]));
-            }
-
-            return null;
-        }
-
-        Dictionary<string, string> parseHeaders(MethodInfo methodInfo) 
-        {
-            var ret = new Dictionary<string, string>();
-
-            var declaringTypeAttributes = methodInfo.DeclaringType != null
-                ? methodInfo.DeclaringType.GetCustomAttributes(true)
-                : new Attribute[0];
-
-            // Headers set on the declaring type have to come first, 
-            // so headers set on the method can replace them. Switching
-            // the order here will break stuff.
-            var headers = declaringTypeAttributes.Concat(methodInfo.GetCustomAttributes(true))
-                .OfType<HeadersAttribute>()
-                .SelectMany(ha => ha.Headers);
-
-            foreach (var header in headers) {
-                if (string.IsNullOrWhiteSpace(header)) continue;
-
-            // NB: Silverlight doesn't have an overload for String.Split()
-            // with a count parameter, but header values can contain
-            // ':' so we have to re-join all but the first part to get the
-            // value.
-                var parts = header.Split(':');
-                ret[parts[0].Trim()] = parts.Length > 1 ? 
-                    String.Join(":", parts.Skip(1)).Trim() : null;
-            }
-
-            return ret;
-        }
-
-        Dictionary<int, string> buildHeaderParameterMap(List<ParameterInfo> parameterList) 
-        {
-            var ret = new Dictionary<int, string>();
-
-            for (int i = 0; i < parameterList.Count; i++) {
-                var header = parameterList[i].GetCustomAttributes(true)
-                    .OfType<HeaderAttribute>()
-                    .Select(ha => ha.Header)
-                    .FirstOrDefault();
-
-                if (!string.IsNullOrWhiteSpace(header)) {
-                    ret[i] = header.Trim();
-                }
-            }
-
-            return ret;
-        }
-
-        void determineReturnTypeInfo(MethodInfo methodInfo)
-        {
-            if (methodInfo.ReturnType.IsGenericType() == false) {
-                if (methodInfo.ReturnType != typeof (Task)) {
-                    goto bogusMethod;
-                }
-
-                ReturnType = methodInfo.ReturnType;
-                SerializedReturnType = typeof(void);
-                return;
-            }
-
-            var genericType = methodInfo.ReturnType.GetGenericTypeDefinition();
-            if (genericType != typeof(Task<>) && genericType != typeof(IObservable<>)) {
-                goto bogusMethod;
-            }
-
-            ReturnType = methodInfo.ReturnType;
-            SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
-            return;
-
-        bogusMethod:
-            throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
-        }
-    }
-
-    class FormValueDictionary : Dictionary<string, string>
-    {
-        static readonly Dictionary<Type, PropertyInfo[]> propertyCache
-            = new Dictionary<Type, PropertyInfo[]>();
-
-        public FormValueDictionary(object source) 
-        {
-            if (source == null) return;
-            var dictionary = source as IDictionary;
-
-            if (dictionary != null) {
-                foreach (var key in dictionary.Keys) {
-                    Add(key.ToString(), string.Format("{0}", dictionary[key]));
-                }
-                
-                return;
-            }
-
-            var type = source.GetType();
-
-            lock (propertyCache) {
-                if (!propertyCache.ContainsKey(type)) {
-                    propertyCache[type] = getProperties(type);
-                }
-
-                foreach (var property in propertyCache[type]) {
-                    Add(getFieldNameForProperty(property), string.Format("{0}", property.GetValue(source, null)));
-                }
-            }
-        }
-
-        PropertyInfo[] getProperties(Type type) 
-        {
-            return type.GetProperties()
-                .Where(p => p.CanRead)
-                .ToArray();
-        }
-
-        string getFieldNameForProperty(PropertyInfo propertyInfo)
-        {
-            var aliasAttr = propertyInfo.GetCustomAttributes(true)
-                .OfType<AliasAsAttribute>()
-                .FirstOrDefault();
-            return aliasAttr != null ? aliasAttr.Name : propertyInfo.Name;
-        }
-    }
-
-    class AuthenticatedHttpClientHandler : DelegatingHandler
-    {
-        readonly Func<Task<string>> getToken;
-
-        public AuthenticatedHttpClientHandler(Func<Task<string>> getToken, HttpMessageHandler innerHandler = null) 
-            : base(innerHandler ?? new HttpClientHandler())
-        {
-            if (getToken == null) throw new ArgumentNullException("getToken");
-            this.getToken = getToken;
-        }
-
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            // See if the request has an authorize header
-            var auth = request.Headers.Authorization;
-            if (auth != null) {
-                var token = await getToken().ConfigureAwait(false);
-                request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
-            }
-
-            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
     }
 }

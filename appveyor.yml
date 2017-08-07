@@ -1,29 +1,34 @@
-configuration: Release
-
+image: Visual Studio 2017 Preview
+configuration: Release  
+  
 init:
-  - cmd: set
+  - git config --global core.autocrlf input
+
+install:
+  - cmd: curl -O https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/2.0.0-preview2/dotnet-sdk-latest-win-x64.exe
+  - cmd: dotnet-sdk-latest-win-x64.exe /install /quiet /norestart /log install.log 
   
-install: 
-  - cmd: appveyor DownloadFile https://dist.nuget.org/win-x86-commandline/v3.5.0-beta2/NuGet.exe
-  - cmd: nuget install GitVersion.CommandLine -SolutionDir %APPVEYOR_BUILD_FOLDER% -Verbosity quiet -ExcludeVersion -pre
-  - cmd: nuget install gitlink -SolutionDir %APPVEYOR_BUILD_FOLDER% -Verbosity quiet -ExcludeVersion -pre
-     
-before_build:
-  - cmd: nuget restore Refit.sln
-  - cmd: '.\packages\GitVersion.CommandLine\tools\GitVersion.exe /l console /output buildserver /updateAssemblyInfo'
+skip_branch_with_pr: true
+       
+build_script:
+  - cmd: dotnet restore Refit.sln 
+  - cmd: dotnet build Refit\Refit.csproj -c Release 
+  - cmd: dotnet pack Refit\Refit.csproj -c Release --no-build -o %APPVEYOR_BUILD_FOLDER%
+  - cmd: dotnet test Refit.Tests\Refit.Tests.csproj -c Release 
   
-build:
-  verbosity: normal
-  parallel: true
-  project: Refit.sln
-  
-after_build:
-  - cmd: nuget pack Refit\Refit.nuspec -version "%GitVersion_NuGetVersionV2%" -prop "target=%CONFIGURATION%" -NoPackageAnalysis
-  - cmd: appveyor PushArtifact "Refit.%GitVersion_NuGetVersion%.nupkg"  
+artifacts:
+  - path: '*.nupkg'
+    name: Package
+    
+  - path: '*.log'
+    name: CLI install log
   
 deploy:
   provider: NuGet
   server: https://www.myget.org/F/refit/api/v2/package
+  symbol_server: https://www.myget.org/F/refit/symbols/api/v2/package
+  on:
+    branch: master  
   api_key:
     secure: bmqlJK8a5HYiUXOT99HXT1j7JiM5+fpR4kHhxIC30oaaEXbv94f0fKdiKlU1QC/l
   artifact: /.*\.nupkg/

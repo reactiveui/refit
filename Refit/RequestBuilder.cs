@@ -10,11 +10,6 @@ namespace Refit
         Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName);
     }
 
-    interface IRequestBuilderFactory
-    {
-        IRequestBuilder Create(Type interfaceType, RefitSettings settings);
-    }
-
     public static class RequestBuilder
     {
         static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
@@ -40,7 +35,7 @@ namespace Refit
         }
     }
 
-#if PORTABLE
+#if NETSTANDARD1_1
     class RequestBuilderFactory : IRequestBuilderFactory
     {
         public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)
