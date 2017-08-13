@@ -19,7 +19,7 @@
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.1.2" PrivateAssets="All" /> 
   </ItemGroup>
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.3.23" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.3.83" PrivateAssets="All" />
   </ItemGroup>
   
   <PropertyGroup>

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.2.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="2.3.1" />
     <PackageReference Include="Nustache" Version="1.16.0.4" />
     <Reference Condition="'$(TargetFramework)' == 'net46' " Include="System.Net.Http" />
 
