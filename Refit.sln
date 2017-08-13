@@ -1,11 +1,12 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26608.5
+VisualStudioVersion = 15.0.26730.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4F1C8991-7097-4471-A9A6-A72005AB594D}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		appveyor.yml = appveyor.yml
 		Directory.build.props = Directory.build.props
 		Refit.ruleset = Refit.ruleset
 		version.json = version.json
@@ -124,5 +125,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{EB833B36-D3CA-4308-A776-8D574F2ADF64} = {0E99249A-FB80-4C60-8FD3-13820E853FF7}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {6E9C2873-AFF9-4D32-A784-1BA094814054}
 	EndGlobalSection
 EndGlobal

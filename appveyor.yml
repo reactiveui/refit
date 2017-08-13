@@ -15,7 +15,9 @@ build_script:
 artifacts:
   - path: '*.nupkg'
     name: Package
-  
+
+test: off
+
 deploy:
   provider: NuGet
   server: https://www.myget.org/F/refit/api/v2/package
