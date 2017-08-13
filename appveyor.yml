@@ -4,10 +4,6 @@ configuration: Release
 init:
   - git config --global core.autocrlf input
 
-install:
-  - cmd: curl -O https://dotnetcli.blob.core.windows.net/dotnet/Sdk/release/2.0.0-preview2/dotnet-sdk-latest-win-x64.exe
-  - cmd: dotnet-sdk-latest-win-x64.exe /install /quiet /norestart /log install.log 
-  
 skip_branch_with_pr: true
        
 build_script:
@@ -19,9 +15,6 @@ build_script:
 artifacts:
   - path: '*.nupkg'
     name: Package
-    
-  - path: '*.log'
-    name: CLI install log
   
 deploy:
   provider: NuGet
