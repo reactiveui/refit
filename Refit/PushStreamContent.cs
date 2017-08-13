@@ -90,12 +90,7 @@ namespace System.Net.Http
         /// </summary>
         public PushStreamContent(Func<Stream, HttpContent, TransportContext, Task> onStreamAvailable, MediaTypeHeaderValue mediaType)
         {
-            if (onStreamAvailable == null)
-            {
-                throw new ArgumentNullException(nameof(onStreamAvailable));
-            }
-
-            _onStreamAvailable = onStreamAvailable;
+            _onStreamAvailable = onStreamAvailable ?? throw new ArgumentNullException(nameof(onStreamAvailable));
             Headers.ContentType = mediaType ?? new MediaTypeHeaderValue("application/octet-stream");
         }
 
@@ -134,7 +129,7 @@ namespace System.Net.Http
         [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception is passed as task result.")]
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
-            TaskCompletionSource<bool> serializeToStreamTask = new TaskCompletionSource<bool>();
+            var serializeToStreamTask = new TaskCompletionSource<bool>();
 
             Stream wrappedStream = new CompleteTaskOnCloseStream(stream, serializeToStreamTask);
             await _onStreamAvailable(wrappedStream, this, context);
@@ -186,127 +181,123 @@ namespace System.Net.Http
     // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/Internal/DelegatingStream.cs
     internal abstract class DelegatingStream : Stream
     {
-        private Stream _innerStream;
+        Stream innerStream;
 
         protected DelegatingStream(Stream innerStream)
         {
-            if (innerStream == null)
-            {
-                throw new ArgumentNullException(nameof(innerStream));
-            }
-            _innerStream = innerStream;
+            this.innerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
         }
 
         protected Stream InnerStream
         {
-            get { return _innerStream; }
+            get { return innerStream; }
         }
 
         public override bool CanRead
         {
-            get { return _innerStream.CanRead; }
+            get { return innerStream.CanRead; }
         }
 
         public override bool CanSeek
         {
-            get { return _innerStream.CanSeek; }
+            get { return innerStream.CanSeek; }
         }
 
         public override bool CanWrite
         {
-            get { return _innerStream.CanWrite; }
+            get { return innerStream.CanWrite; }
         }
 
         public override long Length
         {
-            get { return _innerStream.Length; }
+            get { return innerStream.Length; }
         }
 
         public override long Position
         {
-            get { return _innerStream.Position; }
-            set { _innerStream.Position = value; }
+            get { return innerStream.Position; }
+            set { innerStream.Position = value; }
         }
 
         public override int ReadTimeout
         {
-            get { return _innerStream.ReadTimeout; }
-            set { _innerStream.ReadTimeout = value; }
+            get { return innerStream.ReadTimeout; }
+            set { innerStream.ReadTimeout = value; }
         }
 
         public override bool CanTimeout
         {
-            get { return _innerStream.CanTimeout; }
+            get { return innerStream.CanTimeout; }
         }
 
         public override int WriteTimeout
         {
-            get { return _innerStream.WriteTimeout; }
-            set { _innerStream.WriteTimeout = value; }
+            get { return innerStream.WriteTimeout; }
+            set { innerStream.WriteTimeout = value; }
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                _innerStream.Dispose();
+                innerStream.Dispose();
             }
             base.Dispose(disposing);
         }
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return _innerStream.Seek(offset, origin);
+            return innerStream.Seek(offset, origin);
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return _innerStream.Read(buffer, offset, count);
+            return innerStream.Read(buffer, offset, count);
         }
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            return _innerStream.ReadAsync(buffer, offset, count, cancellationToken);
+            return innerStream.ReadAsync(buffer, offset, count, cancellationToken);
         }
 
         public override int ReadByte()
         {
-            return _innerStream.ReadByte();
+            return innerStream.ReadByte();
         }
 
         public override void Flush()
         {
-            _innerStream.Flush();
+            innerStream.Flush();
         }
 
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
         {
-            return _innerStream.CopyToAsync(destination, bufferSize, cancellationToken);
+            return innerStream.CopyToAsync(destination, bufferSize, cancellationToken);
         }
 
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
-            return _innerStream.FlushAsync(cancellationToken);
+            return innerStream.FlushAsync(cancellationToken);
         }
 
         public override void SetLength(long value)
         {
-            _innerStream.SetLength(value);
+            innerStream.SetLength(value);
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            _innerStream.Write(buffer, offset, count);
+            innerStream.Write(buffer, offset, count);
         }
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            return _innerStream.WriteAsync(buffer, offset, count, cancellationToken);
+            return innerStream.WriteAsync(buffer, offset, count, cancellationToken);
         }
 
         public override void WriteByte(byte value)
         {
-            _innerStream.WriteByte(value);
+            innerStream.WriteByte(value);
         }
     }
 }
