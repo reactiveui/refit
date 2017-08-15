@@ -23,22 +23,17 @@ var octocat = await gitHubApi.GetUser("octocat");
 
 ### Where does this work?
 
-Refit currently supports the following platforms and any .NET Standard 1.3 target:
+Refit currently supports the following platforms and any .NET Standard 1.4 target:
 
+* UWP
 * Xamarin.Android
 * Xamarin.Mac
-* Xamarin.iOS 64-bit (Unified API)
+* Xamarin.iOS 
 * Desktop .NET 4.5 
-* Windows Store 8.1+
-* Windows Phone 8.1 Universal Apps
 * .NET Core
 
-The following platforms are not supported:
-
-* Xamarin.iOS 32-bit - build system doesn't support targets files
-
 #### Note about .NET Core
-For .NET Core support, you must use a `csproj` type of project to host your Refit interfaces. This is because `xproj` cannot do compile-time code generation that's not included in the project file. If you are using `xproj` for either a website, class library, or application, you can still use Refit by creating a `netstandard` `csproj` and then using a project-to-project reference from your `xproj` to your `csproj`. This workaround won't be necessary once "VS 15" and the final .NET Core tooling ships.
+For .NET Core build-time support, you must use the .NET Core 2 SDK. You can target any supported platform in your library, long as the 2.0+ SDK is used at build-time.
 
 ### API Attributes
 
