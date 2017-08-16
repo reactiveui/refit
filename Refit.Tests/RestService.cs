@@ -408,5 +408,16 @@ namespace Refit.Tests
 
             Assert.Equal(true, result);
         }
+
+        [Fact]
+        public async void MissingBaseUrlThrowsArgumentException()
+        {
+            var client = new HttpClient(); // No BaseUrl specified
+
+            var fixture = RestService.For<IGitHubApi>(client);
+
+            // We should get an InvalidOperationException if we call a method without a base address set
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.GetUser(null));
+        }
     }
 }

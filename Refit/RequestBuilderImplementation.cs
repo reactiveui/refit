@@ -330,6 +330,9 @@ namespace Refit
         Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(RestMethodInfo restMethod)
         {                      
             return async (client, paramList) => {
+                if (client.BaseAddress == null)
+                    throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
@@ -363,6 +366,10 @@ namespace Refit
         Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) => {
+
+                if (client.BaseAddress == null)
+                    throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+
                 var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 

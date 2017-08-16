@@ -114,7 +114,7 @@ namespace Refit.Tests
             var result = fixture.GenerateTemplateInfoForInterfaceList(new List<InterfaceDeclarationSyntax>(interfaceDefinition));
 
             var usingList = result.UsingList.Select(x => x.Item).ToList();
-            Assert.Contains("SomeType = CollisionA.SomeType", usingList);
+            Assert.Contains("SomeType =  CollisionA.SomeType", usingList);
             Assert.Contains("CollisionB", usingList);
         }
     }
