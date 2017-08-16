@@ -14,13 +14,14 @@ using Nustache;
 using Nustache.Core;
 using Refit;
 using Refit.Generator;
-using Task = System.Threading.Tasks.Task;
+using Task =  System.Threading.Tasks.Task;
 using System.Net;
 using System.Reactive.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using RichardSzalay.MockHttp;
-using SomeType = CollisionA.SomeType;
+using static System.Math;
+using SomeType =  CollisionA.SomeType;
 using CollisionB;
 using System.Reflection;
 

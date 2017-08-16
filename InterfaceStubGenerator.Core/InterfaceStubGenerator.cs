@@ -92,7 +92,7 @@ namespace Refit.Generator
 
                     return rootNode.DescendantNodes()
                         .OfType<UsingDirectiveSyntax>()
-                        .Select(x => string.Format("{0} {1}", x.Alias, x.Name).TrimStart());
+                        .Select(x => $"{x.Alias} {x.StaticKeyword} {x.Name}".TrimStart());
                 })
                 .Distinct()
                 .Where(x => x != "System" && x != "System.Net.Http" && x != "System.Collections.Generic" && x != "System.Linq")
