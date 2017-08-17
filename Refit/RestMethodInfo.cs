@@ -26,6 +26,7 @@ namespace Refit
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
+		public Type CustomDeserializerType { get; set; }
         public Type SerializedReturnType { get; set; }
         public RefitSettings RefitSettings { get; set; }
 
@@ -52,6 +53,7 @@ namespace Refit
 
             VerifyUrlPathIsSane(RelativePath);
             DetermineReturnTypeInfo(methodInfo);
+			DetermineDeserializer(methodInfo);
 
             // Exclude cancellation token parameters from this list
             var parameterList = methodInfo.GetParameters().Where(p => p.ParameterType != typeof(CancellationToken)).ToList();
@@ -283,6 +285,24 @@ namespace Refit
 
         bogusMethod:
             throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
+        }
+
+        void DetermineDeserializer(MethodInfo methodInfo)
+        {
+            var declaringTypeAttributes = methodInfo.DeclaringType != null
+                ? methodInfo.DeclaringType.GetCustomAttributes(true)
+                : new Attribute[0];
+
+            //use either a deserializer specified by class or method. Method deserializer takes precidence over class deserializer
+            var deserializers = declaringTypeAttributes.Concat(methodInfo.GetCustomAttributes(true))
+                .OfType<DeserializerAttribute>()
+                .Select(a => a.Deserializer);
+
+            foreach (var deserializer in deserializers) {
+                if (deserializer == null) continue;
+
+                CustomDeserializerType = deserializer;
+            }	
         }
     }
 }

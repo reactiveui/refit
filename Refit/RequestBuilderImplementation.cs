@@ -375,6 +375,11 @@ namespace Refit
 
                 var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
 
+				if(restMethod.CustomDeserializerType != null){
+					var deserializer = (ICustomDeserializer<T>)Activator.CreateInstance(restMethod.CustomDeserializerType);
+					return await deserializer.Deserialize(resp);
+				}
+
                 if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
                     // NB: This double-casting manual-boxing hate crime is the only way to make 
                     // this work without a 'class' generic constraint. It could blow up at runtime 

@@ -148,4 +148,17 @@ namespace Refit
         {
         }
     }
+
+
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
+    public class DeserializerAttribute : Attribute
+    {
+        public Type Deserializer { get; private set; }
+
+        public DeserializerAttribute(Type deserializer)
+        {
+            Deserializer = deserializer;
+        }
+    }
+
 }
