@@ -18,7 +18,7 @@ namespace Refit
     partial class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
-        readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
+        readonly Dictionary<string, RestMethodInfoList> interfaceHttpMethods = new Dictionary<string, RestMethodInfoList>();
         readonly RefitSettings settings;
         readonly JsonSerializer serializer;
 
@@ -32,27 +32,36 @@ namespace Refit
             }
 
             targetType = targetInterface;
-            interfaceHttpMethods = targetInterface.GetMethods()
-                .SelectMany(x => {
-                    var attrs = x.GetCustomAttributes(true);
-                    var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
-                    if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
 
-                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x, settings));
-                })
-                .ToDictionary(k => k.Name, v => v);
+            foreach (var methodInfo in targetInterface.GetMethods()) {
+                var attrs = methodInfo.GetCustomAttributes(true);
+                var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
+                if (hasHttpMethod)
+                {
+
+                    if (!interfaceHttpMethods.ContainsKey(methodInfo.Name))
+                    {
+                        var list = new RestMethodInfoList();
+                        interfaceHttpMethods.Add(methodInfo.Name, list);
+                    }
+                    
+                    interfaceHttpMethods[methodInfo.Name].AddRestMethodInfo(new RestMethodInfo(targetInterface, methodInfo, settings));
+ 
+                }
+            }
         }
 
         public IEnumerable<string> InterfaceHttpMethods {
             get { return interfaceHttpMethods.Keys; }
         }
 
-        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
+        public RestMethodInfoList GetRestMethodInfoList(string key)
         {
-            if (!interfaceHttpMethods.ContainsKey(methodName)) {
-                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
-            }
-            var restMethod = interfaceHttpMethods[methodName];
+            return interfaceHttpMethods[key];
+        }
+
+        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
+        {
 
             return paramList => {
                 // make sure we strip out any cancelation tokens
@@ -293,38 +302,53 @@ namespace Refit
             throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, and Byte array", nameof(itemValue));
         }
 
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(RestMethodInfo restMethod)
         {
-            if (!interfaceHttpMethods.ContainsKey(methodName)) {
-                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
-            }
 
-            var restMethod = interfaceHttpMethods[methodName];
-
-            if (restMethod.ReturnType == typeof(Task)) {
+            if (restMethod.ReturnType == typeof(Task))
+            {
                 return BuildVoidTaskFuncForMethod(restMethod);
-            } else if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)) {
+            }
+            else if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+            {
                 // NB: This jacked up reflection code is here because it's
                 // difficult to upcast Task<object> to an arbitrary T, especially
                 // if you need to AOT everything, so we need to reflectively 
                 // invoke buildTaskFuncForMethod.
                 var taskFuncMi = GetType().GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var taskFunc = (MulticastDelegate)taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
-                    .Invoke(this, new[] { restMethod });
+                    .Invoke(this, new object[] { restMethod });
 
                 return (client, args) => {
-                    return taskFunc.DynamicInvoke(new object[] { client, args } );
+                    return taskFunc.DynamicInvoke(new object[] { client, args });
                 };
-            } else {
+            }
+            else
+            {
                 // Same deal
                 var rxFuncMi = GetType().GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var rxFunc = (MulticastDelegate)rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
-                    .Invoke(this, new[] { restMethod });
+                    .Invoke(this, new object[] { restMethod });
 
                 return (client, args) => {
                     return rxFunc.DynamicInvoke(new object[] { client, args });
                 };
             }
+
+        }
+
+
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, IEnumerable<Type> parameterTypes = null)
+        {
+            if (!interfaceHttpMethods.ContainsKey(methodName)) {
+                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
+            }
+
+            var restMethodlist = interfaceHttpMethods[methodName];
+
+            var restMethod = restMethodlist.Get(parameterTypes);
+
+            return BuildRestResultFuncForMethod(restMethod);
         }
 
         Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(RestMethodInfo restMethod)
@@ -333,7 +357,7 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
                 var ct = CancellationToken.None;
@@ -370,7 +394,7 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
                 var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);

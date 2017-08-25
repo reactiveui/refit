@@ -285,4 +285,65 @@ namespace Refit
             throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
         }
     }
+
+    public class RestMethodInfoList
+    {
+        readonly List<RestMethodInfo> restMethodInfos = new List<RestMethodInfo>();
+
+        public void AddRestMethodInfo(RestMethodInfo restMethodInfo)
+        {
+            restMethodInfos.Add(restMethodInfo);
+        }
+
+        public RestMethodInfo Get(IEnumerable<object> parameters)
+        {
+            var parameterTypes = parameters?.Select(p => p?.GetType() ?? typeof(object));
+            return Get(parameterTypes);
+        }
+
+        public RestMethodInfo Get(IEnumerable<Type> parameterTypes)
+        {
+            
+            if (parameterTypes == null)
+            {
+                if (restMethodInfos.Count > 1)
+                {
+                    throw new ArgumentException("MethodName exists more than once, ParameterTypes mut be defined");
+                }
+                return restMethodInfos.FirstOrDefault();
+            }
+
+            var possibleMethods = restMethodInfos.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count()).ToList();
+            
+            if(possibleMethods.Count == 1)
+                return possibleMethods.FirstOrDefault();
+
+            var parameterTypesArray = parameterTypes.ToArray();
+            foreach (var method in possibleMethods)
+            {
+                var match = true;
+                var parameters = method.MethodInfo.GetParameters();
+
+                for (var i = 0; i < parameterTypesArray.Length; i++)
+                {
+                    var arg = parameterTypesArray[i];
+                    var paramType = parameters[i].ParameterType;
+
+                    if (arg != paramType)
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+
+                if (match)
+                {
+                    return method;
+                }
+            }
+
+            throw new Exception("No suitable Method found...");
+        }
+
+    }
 }
