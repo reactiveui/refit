@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace Refit
     partial class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
-        readonly Dictionary<string, RestMethodInfoList> interfaceHttpMethods = new Dictionary<string, RestMethodInfoList>();
+        readonly ConcurrentDictionary<string, List<RestMethodInfo>> interfaceHttpMethods = new ConcurrentDictionary<string, List<RestMethodInfo>>();
         readonly RefitSettings settings;
         readonly JsonSerializer serializer;
 
@@ -38,15 +39,20 @@ namespace Refit
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                 if (hasHttpMethod)
                 {
-
-                    if (!interfaceHttpMethods.ContainsKey(methodInfo.Name))
+                    var restinfo = new RestMethodInfo(targetInterface, methodInfo, settings);
+                    interfaceHttpMethods.AddOrUpdate(methodInfo.Name, s =>
                     {
-                        var list = new RestMethodInfoList();
-                        interfaceHttpMethods.Add(methodInfo.Name, list);
-                    }
-                    
-                    interfaceHttpMethods[methodInfo.Name].AddRestMethodInfo(new RestMethodInfo(targetInterface, methodInfo, settings));
- 
+                        return new List<RestMethodInfo>()
+                        {
+                            restinfo
+                        };
+                    }, (s, list) =>
+                    {
+                        return new List<RestMethodInfo>(list)
+                        {
+                            restinfo
+                        };
+                    });
                 }
             }
         }
@@ -55,10 +61,63 @@ namespace Refit
             get { return interfaceHttpMethods.Keys; }
         }
 
-        public RestMethodInfoList GetRestMethodInfoList(string key)
+        public Func<HttpClient, object[], object> GetHttpMethod(string key, object[] parameters = null)
         {
-            return interfaceHttpMethods[key];
+            var parameterTypes = parameters?.Select(p => p?.GetType() ?? typeof(object)).ToArray();
+            return BuildRestResultFuncForMethod(key, parameterTypes);
         }
+
+        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes)
+        {
+            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods))
+            {
+                if (parameterTypes == null)
+                {
+                    if (httpMethods.Count > 1)
+                    {
+                        throw new ArgumentException("MethodName exists more than once, ParameterTypes mut be defined");
+                    }
+                    return httpMethods[0];
+                }
+
+                var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count()).ToList();
+
+                if (possibleMethods.Count == 1) return possibleMethods[0];
+
+                var parameterTypesArray = parameterTypes.ToArray();
+                foreach (var method in possibleMethods)
+                {
+                    var match = true;
+                    var parameters = method.MethodInfo.GetParameters();
+
+                    for (var i = 0; i < parameterTypesArray.Length; i++)
+                    {
+                        var arg = parameterTypesArray[i];
+                        var paramType = parameters[i].ParameterType;
+
+                        if (arg != paramType)
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match)
+                    {
+                        return method;
+                    }
+                }
+
+                throw new Exception("No suitable Method found...");
+
+            }
+            else
+            {
+                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
+            }
+
+        }
+
 
         Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
         {
@@ -302,8 +361,14 @@ namespace Refit
             throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, and Byte array", nameof(itemValue));
         }
 
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(RestMethodInfo restMethod)
+       
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null)
         {
+            if (!interfaceHttpMethods.ContainsKey(methodName)) {
+                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
+            }
+
+            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes);
 
             if (restMethod.ReturnType == typeof(Task))
             {
@@ -335,20 +400,6 @@ namespace Refit
                 };
             }
 
-        }
-
-
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, IEnumerable<Type> parameterTypes = null)
-        {
-            if (!interfaceHttpMethods.ContainsKey(methodName)) {
-                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
-            }
-
-            var restMethodlist = interfaceHttpMethods[methodName];
-
-            var restMethod = restMethodlist.Get(parameterTypes);
-
-            return BuildRestResultFuncForMethod(restMethod);
         }
 
         Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(RestMethodInfo restMethod)
