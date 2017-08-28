@@ -447,37 +447,60 @@ namespace Refit
 
                 var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
+                HttpResponseMessage resp = null;
+                var disposeResponse = true;
+                try
+                {
+                    resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+                    if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
+                    {
+                        disposeResponse = false; // caller has to dispose
 
-                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-
-                if (restMethod.SerializedReturnType == typeof(HttpResponseMessage)) {
-                    // NB: This double-casting manual-boxing hate crime is the only way to make 
-                    // this work without a 'class' generic constraint. It could blow up at runtime 
-                    // and would be A Bad Idea if we hadn't already vetted the return type.
-                    return (T)(object)resp; 
-                }
-
-                if (!resp.IsSuccessStatusCode) {
-                    throw await ApiException.Create(rq.RequestUri, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
-                }
-
-                if (restMethod.SerializedReturnType == typeof(HttpContent)) {
-                    return (T)(object)resp.Content;
-                }
-
-                if (restMethod.SerializedReturnType == typeof(Stream)) {
-                    return (T)(object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                }
-                
-                using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                using (var reader = new StreamReader(stream)) {
-                    if (restMethod.SerializedReturnType == typeof(string)) {
-                        return (T)(object) await reader.ReadToEndAsync().ConfigureAwait(false);
+                        // NB: This double-casting manual-boxing hate crime is the only way to make 
+                        // this work without a 'class' generic constraint. It could blow up at runtime 
+                        // and would be A Bad Idea if we hadn't already vetted the return type.
+                        return (T)(object)resp;
                     }
 
-                    using (var jsonReader = new JsonTextReader(reader)) {
-                        return serializer.Deserialize<T>(jsonReader);
+                    if (!resp.IsSuccessStatusCode)
+                    {
+                        disposeResponse = false;
+                        throw await ApiException.Create(rq.RequestUri, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
+
+                    if (restMethod.SerializedReturnType == typeof(HttpContent))
+                    {
+                        disposeResponse = false; // caller has to clean up the content
+                        return (T)(object)resp.Content;
+                    }
+
+                    if (restMethod.SerializedReturnType == typeof(Stream))
+                    {
+                        disposeResponse = false; // caller has to dispose
+                        return (T)(object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                    }
+
+                    using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                    using (var reader = new StreamReader(stream))
+                    {
+                        if (restMethod.SerializedReturnType == typeof(string))
+                        {
+                            return (T)(object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                        }
+
+                        using (var jsonReader = new JsonTextReader(reader))
+                        {
+                            return serializer.Deserialize<T>(jsonReader);
+                        }
+                    }
+                }
+                finally
+                {
+                    // Ensure we clean up the request
+                    // Especially important if it has open files/streams
+                    rq.Dispose();
+                    if (disposeResponse)
+                        resp?.Dispose();
                 }
             };
         }
