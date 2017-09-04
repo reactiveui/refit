@@ -145,7 +145,7 @@ namespace Refit
                         }
                         else
                         {
-                            foreach (var kvp in ToQueryMap(paramList[i], attr.Delimiter))
+                            foreach (var kvp in BuildQueryMap(paramList[i], attr.Delimiter))
                             {
                                 var path = !String.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
                                 queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
@@ -442,16 +442,14 @@ namespace Refit
             };
         }
 
-        public static bool DoNotConvertToQueryMap(object value)
+        static bool DoNotConvertToQueryMap(object value)
         {
 
-            if (value == null)
-                return false;
+            if (value == null) return false;
 
             var type = value.GetType().GetTypeInfo();
 
-            if (type.IsPrimitive)
-                return true;
+            if (type.IsPrimitive) return true;
 
             switch (value)
             {
@@ -466,15 +464,15 @@ namespace Refit
             return false;
         }
 
-        private List<KeyValuePair<string, object>> ToQueryMap(object @object, string delimiter = null)
+        List<KeyValuePair<string, object>> BuildQueryMap(object @object, string delimiter = null)
         {
-            if (@object is IDictionary idictionary)
-                return ToQueryMap(idictionary, delimiter);
+            if (@object is IDictionary idictionary) return BuildQueryMap(idictionary, delimiter);
 
             var kvps = new List<KeyValuePair<string, object>>();
 
             var bindingFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public;
             var props = @object.GetType().GetProperties(bindingFlags);
+
             foreach (var propertyInfo in props)
             {
                 var obj = propertyInfo.GetValue(@object);
@@ -484,8 +482,7 @@ namespace Refit
                 var key = propertyInfo.Name;
 
                 var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
-                if (aliasAttribute != null)
-                    key = aliasAttribute.Name;
+                if (aliasAttribute != null) key = aliasAttribute.Name;
 
                 if (DoNotConvertToQueryMap(obj))
                 {
@@ -496,7 +493,7 @@ namespace Refit
                 switch (obj)
                 {
                     case IDictionary idict:
-                        foreach (var keyValuePair in ToQueryMap(idict, delimiter))
+                        foreach (var keyValuePair in BuildQueryMap(idict, delimiter))
                         {
                             kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
                         }
@@ -510,7 +507,7 @@ namespace Refit
                         break;
 
                     default:
-                        foreach (var keyValuePair in ToQueryMap(obj, delimiter))
+                        foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
                         {
                             kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
                         }
@@ -520,7 +517,7 @@ namespace Refit
             return kvps;
         }
 
-        private List<KeyValuePair<string, object>> ToQueryMap(IDictionary dictionary, string delimiter = null)
+        List<KeyValuePair<string, object>> BuildQueryMap(IDictionary dictionary, string delimiter = null)
         {
             var kvps = new List<KeyValuePair<string, object>>();
 
@@ -528,8 +525,7 @@ namespace Refit
             foreach (string key in props)
             {
                 var obj = dictionary[key];
-                if (obj == null)
-                    continue;
+                if (obj == null) continue;
 
                 if (DoNotConvertToQueryMap(obj))
                 {
@@ -537,7 +533,7 @@ namespace Refit
                 }
                 else
                 {
-                    foreach (var keyValuePair in ToQueryMap(obj, delimiter))
+                    foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
                     {
                         kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
                     }

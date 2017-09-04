@@ -79,6 +79,39 @@ GroupList(4, "desc");
 >>> "/group/4/users?sort=desc"
 ```
 
+If you specify an `object` as query parameter, all public properties which are not null, where used as query parameters. 
+Use the `Query` attribute the change the behavior of 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used for 'flatten' the object.
+
+```csharp
+public class MyQueryParams
+{
+    [AliasAs("order")]
+    public string SortOrder { get; set; }
+
+    public int Limit { get; set; }
+}
+
+
+[Get("/group/{id}/users")]
+Task<List<User>> GroupList([AliasAs("id")] int groupId, MyQueryParams params);
+
+[Get("/group/{id}/users")]
+Task<List<User>> GroupListWithAttribute([AliasAs("id")] int groupId, [Query(".","search")] MyQueryParams params);
+
+
+params.SortOrder = "desc";
+params.Limit = 10;
+
+GroupList(4, params)
+>>> "/group/4/users?order=desc&Limit=10"
+
+GroupListWithAttribute(4, params)
+>>> "/group/4/users?search.order=desc&search.Limit=10"
+```
+
+A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no intellisense and/or type safety.
+
+
 ### Body content
 
 One of the parameters in your method can be used as the body, by using the
