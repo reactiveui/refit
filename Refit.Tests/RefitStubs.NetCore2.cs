@@ -20,6 +20,7 @@ using System.Reactive.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using RichardSzalay.MockHttp;
+using Newtonsoft.Json.Linq;
 using static System.Math;
 using SomeType =  CollisionA.SomeType;
 using CollisionB;
@@ -290,6 +291,18 @@ namespace Refit.Tests
         {
             var arguments = new object[] { param,header };
             return (Task<TResponse>) methodImpls["Get"](Client, arguments);
+        }
+
+        public virtual Task<TResponse> GetQuery(TParam param)
+        {
+            var arguments = new object[] { param };
+            return (Task<TResponse>) methodImpls["GetQuery"](Client, arguments);
+        }
+
+        public virtual Task<TResponse> GetQueryWithIncludeParameterName(TParam param)
+        {
+            var arguments = new object[] { param };
+            return (Task<TResponse>) methodImpls["GetQueryWithIncludeParameterName"](Client, arguments);
         }
 
     }
