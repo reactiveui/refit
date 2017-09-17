@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace Refit
     partial class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Type targetType;
-        readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
+        readonly ConcurrentDictionary<string, List<RestMethodInfo>> interfaceHttpMethods = new ConcurrentDictionary<string, List<RestMethodInfo>>();
         readonly RefitSettings settings;
         readonly JsonSerializer serializer;
 
@@ -32,15 +33,18 @@ namespace Refit
             }
 
             targetType = targetInterface;
-            interfaceHttpMethods = targetInterface.GetMethods()
-                .SelectMany(x => {
-                    var attrs = x.GetCustomAttributes(true);
-                    var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
-                    if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
 
-                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x, settings));
-                })
-                .ToDictionary(k => k.Name, v => v);
+            foreach (var methodInfo in targetInterface.GetMethods()) {
+                var attrs = methodInfo.GetCustomAttributes(true);
+                var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
+                if (hasHttpMethod) {
+                    var restinfo = new RestMethodInfo(targetInterface, methodInfo, settings);
+                    interfaceHttpMethods.AddOrUpdate(methodInfo.Name, s => new[] { restinfo }.ToList(), (s, list) => {
+                        list.Add(restinfo);
+                        return list;
+                    });
+                }
+            }
         }
 
         public IEnumerable<string> InterfaceHttpMethods
@@ -48,12 +52,57 @@ namespace Refit
             get { return interfaceHttpMethods.Keys; }
         }
 
-        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
+        public Func<HttpClient, object[], object> GetHttpMethod(string key, object[] parameters = null)
         {
-            if (!interfaceHttpMethods.ContainsKey(methodName)) {
+            var parameterTypes = parameters?.Select(p => p?.GetType() ?? typeof(object)).ToArray();
+            return BuildRestResultFuncForMethod(key, parameterTypes);
+        }
+
+        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes)
+        {
+            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) {
+                if (parameterTypes == null) {
+                    if (httpMethods.Count > 1) {
+                        throw new ArgumentException("MethodName exists more than once, ParameterTypes mut be defined");
+                    }
+                    return httpMethods[0];
+                }
+
+                var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count()).ToList();
+
+                if (possibleMethods.Count == 1)
+                    return possibleMethods[0];
+
+                var parameterTypesArray = parameterTypes.ToArray();
+                foreach (var method in possibleMethods) {
+                    var match = true;
+                    var parameters = method.MethodInfo.GetParameters();
+
+                    for (var i = 0; i < parameterTypesArray.Length; i++) {
+                        var arg = parameterTypesArray[i];
+                        var paramType = parameters[i].ParameterType;
+
+                        if (arg != paramType) {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match) {
+                        return method;
+                    }
+                }
+
+                throw new Exception("No suitable Method found...");
+            } else {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
-            var restMethod = interfaceHttpMethods[methodName];
+
+        }
+
+
+        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
+        {
 
             return paramList => {
                 // make sure we strip out any cancelation tokens
@@ -328,14 +377,15 @@ namespace Refit
             throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, and Byte array", nameof(itemValue));
         }
 
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
+       
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName))
             {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
 
-            var restMethod = interfaceHttpMethods[methodName];
+            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes);
 
             if (restMethod.ReturnType == typeof(Task))
             {
@@ -351,8 +401,7 @@ namespace Refit
                 var taskFunc = (MulticastDelegate)taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
                     .Invoke(this, new[] { restMethod });
 
-                return (client, args) =>
-                {
+                return (client, args) => {
                     return taskFunc.DynamicInvoke(new object[] { client, args });
                 };
             }
@@ -368,6 +417,7 @@ namespace Refit
                     return rxFunc.DynamicInvoke(new object[] { client, args });
                 };
             }
+
         }
 
         Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(RestMethodInfo restMethod)
@@ -377,7 +427,7 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
                 var ct = CancellationToken.None;
@@ -420,46 +470,62 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
-
-                var resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-
-                if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
+                HttpResponseMessage resp = null;
+                var disposeResponse = true;
+                try
                 {
-                    // NB: This double-casting manual-boxing hate crime is the only way to make 
-                    // this work without a 'class' generic constraint. It could blow up at runtime 
-                    // and would be A Bad Idea if we hadn't already vetted the return type.
-                    return (T)(object)resp;
-                }
-
-                if (!resp.IsSuccessStatusCode)
-                {
-                    throw await ApiException.Create(rq.RequestUri, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
-                }
-
-                if (restMethod.SerializedReturnType == typeof(HttpContent))
-                {
-                    return (T)(object)resp.Content;
-                }
-
-                if (restMethod.SerializedReturnType == typeof(Stream))
-                {
-                    return (T)(object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                }
-
-                using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                using (var reader = new StreamReader(stream))
-                {
-                    if (restMethod.SerializedReturnType == typeof(string))
+                    resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+                    if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
                     {
-                        return (T)(object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                        disposeResponse = false; // caller has to dispose
+
+                        // NB: This double-casting manual-boxing hate crime is the only way to make 
+                        // this work without a 'class' generic constraint. It could blow up at runtime 
+                        // and would be A Bad Idea if we hadn't already vetted the return type.
+                        return (T)(object)resp;
                     }
 
-                    using (var jsonReader = new JsonTextReader(reader))
+                    if (!resp.IsSuccessStatusCode)
                     {
-                        return serializer.Deserialize<T>(jsonReader);
+                        disposeResponse = false;
+                        throw await ApiException.Create(rq.RequestUri, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
+
+                    if (restMethod.SerializedReturnType == typeof(HttpContent))
+                    {
+                        disposeResponse = false; // caller has to clean up the content
+                        return (T)(object)resp.Content;
+                    }
+
+                    if (restMethod.SerializedReturnType == typeof(Stream))
+                    {
+                        disposeResponse = false; // caller has to dispose
+                        return (T)(object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                    }
+
+                    using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                    using (var reader = new StreamReader(stream))
+                    {
+                        if (restMethod.SerializedReturnType == typeof(string))
+                        {
+                            return (T)(object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                        }
+
+                        using (var jsonReader = new JsonTextReader(reader))
+                        {
+                            return serializer.Deserialize<T>(jsonReader);
+                        }
+                    }
+                }
+                finally
+                {
+                    // Ensure we clean up the request
+                    // Especially important if it has open files/streams
+                    rq.Dispose();
+                    if (disposeResponse)
+                        resp?.Dispose();
                 }
             };
         }
