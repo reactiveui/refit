@@ -21,7 +21,7 @@ namespace Refit
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
-        public Tuple<BodySerializationMethod, int> BodyParameterInfo { get; set; }
+        public Tuple<BodySerializationMethod, StreamMethod, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
@@ -82,7 +82,7 @@ namespace Refit
 
             QueryParameterMap = new Dictionary<int, string>();
             for (var i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item2 == i)) {
+                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item3 == i)) {
                     continue;
                 }
 
@@ -161,7 +161,7 @@ namespace Refit
             return nameAttr?.Name;
         }
 
-        static Tuple<BodySerializationMethod, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
+        static Tuple<BodySerializationMethod, StreamMethod, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
         {
 
             // The body parameter is found using the following logic / order of precedence:
@@ -189,24 +189,25 @@ namespace Refit
             // #1, body attribute wins
             if (bodyParams.Count == 1) {
                 var ret = bodyParams[0];
-                return Tuple.Create(ret.BodyAttribute.SerializationMethod, parameterList.IndexOf(ret.Parameter));
+                return Tuple.Create(ret.BodyAttribute.SerializationMethod, ret.BodyAttribute.StreamMethod, 
+                    parameterList.IndexOf(ret.Parameter));
             }
 
             // Not in post/put/patch? bail
             if (!method.Equals(HttpMethod.Post) && !method.Equals(HttpMethod.Put) && !method.Equals(patchMethod)) {
                 return null;
             }
-         
+
             // see if we're a post/put/patch
             var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
-            
+
             // Check for rule #3
             if (refParams.Count > 1) {
                 throw new ArgumentException("Multiple complex types found. Specify one parameter as the body using BodyAttribute");
-            } 
-            
+            }
+
             if (refParams.Count == 1) {
-                return Tuple.Create(BodySerializationMethod.Json, parameterList.IndexOf(refParams[0]));
+                return Tuple.Create(BodySerializationMethod.Json, StreamMethod.Push, parameterList.IndexOf(refParams[0]));
             }
 
             return null;

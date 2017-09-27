@@ -87,14 +87,32 @@ namespace Refit
         Json, UrlEncoded
     }
 
+    public enum StreamMethod {
+        Push, Pull
+    }
+
     [AttributeUsage(AttributeTargets.Parameter)]
     public class BodyAttribute : Attribute
     {
         public BodySerializationMethod SerializationMethod { get; protected set; }
 
-        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Json)
+        public StreamMethod StreamMethod { get; protected set; }
+
+        public BodyAttribute(BodySerializationMethod serializationMethod)
+            : this(serializationMethod, StreamMethod.Push)
+        {
+        }
+
+        public BodyAttribute(StreamMethod streamMethod)
+            : this(BodySerializationMethod.Json, streamMethod)
+        {
+        }
+
+        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Json,
+            StreamMethod streamMethod = StreamMethod.Push)
         {
             SerializationMethod = serializationMethod;
+            StreamMethod = streamMethod;
         }
     }
 
