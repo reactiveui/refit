@@ -21,7 +21,7 @@ namespace Refit
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
-        public Tuple<BodySerializationMethod, StreamMethod, int> BodyParameterInfo { get; set; }
+        public Tuple<BodySerializationMethod, bool, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
@@ -161,7 +161,7 @@ namespace Refit
             return nameAttr?.Name;
         }
 
-        static Tuple<BodySerializationMethod, StreamMethod, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
+        static Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
         {
 
             // The body parameter is found using the following logic / order of precedence:
@@ -189,7 +189,7 @@ namespace Refit
             // #1, body attribute wins
             if (bodyParams.Count == 1) {
                 var ret = bodyParams[0];
-                return Tuple.Create(ret.BodyAttribute.SerializationMethod, ret.BodyAttribute.StreamMethod, 
+                return Tuple.Create(ret.BodyAttribute.SerializationMethod, ret.BodyAttribute.Buffered, 
                     parameterList.IndexOf(ret.Parameter));
             }
 
@@ -207,7 +207,7 @@ namespace Refit
             }
 
             if (refParams.Count == 1) {
-                return Tuple.Create(BodySerializationMethod.Json, StreamMethod.Push, parameterList.IndexOf(refParams[0]));
+                return Tuple.Create(BodySerializationMethod.Json, false, parameterList.IndexOf(refParams[0]));
             }
 
             return null;

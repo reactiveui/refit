@@ -116,14 +116,14 @@ namespace Refit
                                 case BodySerializationMethod.Json:
                                     var param = paramList[i];
                                     switch (restMethod.BodyParameterInfo.Item2) {
-                                        case StreamMethod.Push:
+                                        case false:
                                             ret.Content = new PushStreamContent((stream, _, __) => {
                                                 using (var writer = new JsonTextWriter(new StreamWriter(stream))) {
                                                     serializer.Serialize(writer, param);
                                                 }
                                             }, "application/json");
                                             break;
-                                        case StreamMethod.Pull:
+                                        case true:
                                             ret.Content = new StringContent(
                                                 JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings),
                                                 Encoding.UTF8, "application/json");

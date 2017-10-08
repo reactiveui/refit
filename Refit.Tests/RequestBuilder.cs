@@ -52,7 +52,7 @@ namespace Refit.Tests
         Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
 
         [Post("/foo/{id}")]
-        Task<bool> PullStreamMethod(int id, [Body(StreamMethod.Pull)] Dictionary<int, string> theData);
+        Task<bool> PullStreamMethod(int id, [Body(buffered: true)] Dictionary<int, string> theData);
 
         [Post("/foo/{id}")]
         Task VoidPost(int id);
@@ -294,7 +294,7 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0]);
             Assert.Equal(0, fixture.QueryParameterMap.Count);
             Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
-            Assert.Equal(StreamMethod.Push, fixture.BodyParameterInfo.Item2);
+            Assert.False(fixture.BodyParameterInfo.Item2);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
             Assert.Equal(typeof(bool), fixture.SerializedReturnType);
@@ -306,9 +306,9 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PullStreamMethod"));
             Assert.Equal("id", fixture.ParameterMap[0]);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
-            Assert.Equal(StreamMethod.Pull, fixture.BodyParameterInfo.Item2);
+            Assert.True(fixture.BodyParameterInfo.Item2);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
             Assert.Equal(typeof(bool), fixture.SerializedReturnType);
