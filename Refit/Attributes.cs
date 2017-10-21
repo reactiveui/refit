@@ -92,9 +92,13 @@ namespace Refit
     {
         public BodySerializationMethod SerializationMethod { get; protected set; }
 
-        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Json)
+        public bool Buffered { get; protected set; }
+
+        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Json,
+            bool buffered = false)
         {
             SerializationMethod = serializationMethod;
+            Buffered = buffered;
         }
     }
 
