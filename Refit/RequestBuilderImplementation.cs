@@ -39,7 +39,14 @@ namespace Refit
                     var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                     if (!hasHttpMethod) return Enumerable.Empty<RestMethodInfo>();
 
-                    return EnumerableEx.Return(new RestMethodInfo(targetInterface, x, settings));
+                    var unsuccessfulFilters = attrs.OfType<UnsuccessfulResponseFilterAttribute>();
+
+                    var restMethod = new RestMethodInfo(targetInterface, x, settings);
+
+                    if (unsuccessfulFilters.Any())
+                        restMethod.UnsuccessfulResponseFilters = unsuccessfulFilters.OrderBy(f => f.Order).Select(f => f.CreateFilter(restMethod)).ToArray();
+
+                    return EnumerableEx.Return(restMethod);
                 })
                 .ToDictionary(k => k.Name, v => v);
         }
@@ -399,6 +406,29 @@ namespace Refit
 
                     if (!resp.IsSuccessStatusCode)
                     {
+                        if (restMethod.UnsuccessfulResponseFilters != null)
+                        {
+                            object filteredResponse = null;
+                            var responseIsSet = false;
+
+                            var ctx = new UnsuccessfulResponseFilterContext
+                            {
+                                HttpResponse = resp,
+                                SetMethodResponse = (o) => {
+                                    filteredResponse = o;
+                                    responseIsSet = true;
+                                }
+                            };
+
+                            foreach (var filter in restMethod.UnsuccessfulResponseFilters)
+                            {
+                                filter(ctx);
+
+                                if (responseIsSet)
+                                    return (T)filteredResponse;
+                            }
+                        }
+
                         disposeResponse = false;
                         throw await ApiException.Create(rq.RequestUri, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }

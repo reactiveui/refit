@@ -28,6 +28,7 @@ namespace Refit
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
         public RefitSettings RefitSettings { get; set; }
+        public Action<UnsuccessfulResponseFilterContext>[] UnsuccessfulResponseFilters { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
         static readonly HttpMethod patchMethod = new HttpMethod("PATCH");

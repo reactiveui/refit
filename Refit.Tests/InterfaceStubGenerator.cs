@@ -27,6 +27,7 @@ namespace Refit.Tests
             var result = fixture.GenerateInterfaceStubs(new[] {
                 IntegrationTestHelper.GetPath("RestService.cs"),
                 IntegrationTestHelper.GetPath("GitHubApi.cs"),
+                IntegrationTestHelper.GetPath("DefaultOn404Api.cs"),
             });
 
             Assert.True(result.Contains("IGitHubApi"));

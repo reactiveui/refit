@@ -1,5 +1,8 @@
 using System;
+using System.Net;
 using System.Net.Http;
+using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Refit
 {
@@ -150,6 +153,35 @@ namespace Refit
         public AuthorizeAttribute(string scheme = "Bearer")
             : base("Authorization: " + scheme)
         {
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public abstract class UnsuccessfulResponseFilterAttribute : Attribute
+    {
+        public int Order { get; set; }
+        public abstract Action<UnsuccessfulResponseFilterContext> CreateFilter(RestMethodInfo restMethod);
+    }
+
+    /// <summary>
+    /// Causes the method to return the default return value when HTTP 404 is returned from the server
+    /// instead of throwing an ApiException.
+    /// </summary>
+    public class DefaultOn404 : UnsuccessfulResponseFilterAttribute
+    {
+        public override Action<UnsuccessfulResponseFilterContext> CreateFilter(RestMethodInfo restMethod)
+        {
+            var t = restMethod.ReturnType;
+            var isTask = t.IsGenericType() && t.GetGenericTypeDefinition() == typeof(Task<>);
+            var actualReturnType = isTask ? restMethod.ReturnType.GetGenericArguments()[0] : t;
+            var isValueType = actualReturnType.GetTypeInfo().IsValueType;
+            var defaultValue = isValueType ? Activator.CreateInstance(actualReturnType) : null;
+
+            return ctx =>
+            {
+                if (ctx.HttpResponse.StatusCode == HttpStatusCode.NotFound)
+                    ctx.SetMethodResponse(defaultValue);
+            };
         }
     }
 }
