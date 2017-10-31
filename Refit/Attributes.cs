@@ -152,4 +152,27 @@ namespace Refit
         {
         }
     }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class QueryAttribute : Attribute
+    {
+        public string Delimiter { get; protected set; } = ".";
+        public string Prefix { get; protected set; }
+
+        public QueryAttribute()
+        {
+        }
+
+        public QueryAttribute(string delimiter)
+        {
+            Delimiter = delimiter;
+        }
+
+        public QueryAttribute(string delimiter, string prefix)
+        {
+            Delimiter = delimiter;
+            Prefix = prefix;
+        }
+
+    }
 }
