@@ -78,9 +78,10 @@ Task<List<User>> GroupList([AliasAs("id")] int groupId, [AliasAs("sort")] string
 GroupList(4, "desc");
 >>> "/group/4/users?sort=desc"
 ```
+### Dynamic Querystring Parameters
 
-If you specify an `object` as query parameter, all public properties which are not null, where used as query parameters. 
-Use the `Query` attribute the change the behavior of 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used for 'flatten' the object.
+If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters. 
+Use the `Query` attribute the change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
 public class MyQueryParams
