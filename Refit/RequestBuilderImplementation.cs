@@ -73,7 +73,7 @@ namespace Refit
                 }
 
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
-                var queryParamsToAdd = new Dictionary<string, string>();
+                var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
 
                 for(var i=0; i < paramList.Length; i++) {
@@ -148,7 +148,15 @@ namespace Refit
                     // for anything that fell through to here, if this is not
                     // a multipart method, add the parameter to the query string
                     if (!restMethod.IsMultipart) {
-                        queryParamsToAdd[restMethod.QueryParameterMap[i]] = settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i]);
+                        var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
+                        if (DoNotConvertToQueryMap(paramList[i])) {
+                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
+                        } else {
+                            foreach (var kvp in BuildQueryMap(paramList[i], attr.Delimiter)) {
+                                var path = !String.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
+                                queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
+                            }
+                        }
                         continue;
                     }
 
@@ -219,12 +227,12 @@ namespace Refit
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
-                foreach(var kvp in queryParamsToAdd) {
-                    query.Add(kvp.Key, kvp.Value);
+                foreach (string key in query.AllKeys) {
+                    queryParamsToAdd.Insert(0, new KeyValuePair<string, string>(key, query[key]));
                 }
 
-                if (query.HasKeys()) {
-                    var pairs = query.Keys.Cast<string>().Select(x => HttpUtility.UrlEncode(x) + "=" + HttpUtility.UrlEncode(query[x]));
+                if (queryParamsToAdd.Any()) {
+                    var pairs = queryParamsToAdd.Select(x => HttpUtility.UrlEncode(x.Key) + "=" + HttpUtility.UrlEncode(x.Value));
                     uri.Query = string.Join("&", pairs);
                 } else {
                     uri.Query = null;
@@ -458,5 +466,100 @@ namespace Refit
                 });
             };
         }
+
+        static bool DoNotConvertToQueryMap(object value)
+        {
+            if (value == null)
+                return false;
+
+            var type = value.GetType().GetTypeInfo();
+
+            if (type.IsPrimitive)
+                return true;
+
+            switch (value) {
+                case String str:
+                case DateTime dt:
+                case TimeSpan ts:
+                case Guid g:
+                case Uri uri:
+                    return true;
+            }
+
+            return false;
+        }
+
+        List<KeyValuePair<string, object>> BuildQueryMap(object @object, string delimiter = null)
+        {
+            if (@object is IDictionary idictionary)
+                return BuildQueryMap(idictionary, delimiter);
+
+            var kvps = new List<KeyValuePair<string, object>>();
+
+            var bindingFlags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public;
+            var props = @object.GetType().GetProperties(bindingFlags);
+
+            foreach (var propertyInfo in props)
+            {
+                var obj = propertyInfo.GetValue(@object);
+                if (obj == null)
+                    continue;
+
+                var key = propertyInfo.Name;
+
+                var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
+                if (aliasAttribute != null)
+                    key = aliasAttribute.Name;
+
+                if (DoNotConvertToQueryMap(obj)) {
+                    kvps.Add(new KeyValuePair<string, object>(key, obj));
+                    continue;
+                }
+
+                switch (obj)
+                {
+                    case IDictionary idict:
+                        foreach (var keyValuePair in BuildQueryMap(idict, delimiter)) {
+                            kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                        }
+                        break;
+
+                    case IEnumerable ienu:
+                        foreach (var o in ienu) {
+                            kvps.Add(new KeyValuePair<string, object>(key, o));
+                        }
+                        break;
+
+                    default:
+                        foreach (var keyValuePair in BuildQueryMap(obj, delimiter)) {
+                            kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                        }
+                        break;
+                }
+            }
+            return kvps;
+        }
+
+        List<KeyValuePair<string, object>> BuildQueryMap(IDictionary dictionary, string delimiter = null)
+        {
+            var kvps = new List<KeyValuePair<string, object>>();
+
+            var props = dictionary.Keys;
+            foreach (string key in props) {
+                var obj = dictionary[key];
+                if (obj == null)
+                    continue;
+
+                if (DoNotConvertToQueryMap(obj)) {
+                    kvps.Add(new KeyValuePair<string, object>(key, obj));
+                } else {
+                    foreach (var keyValuePair in BuildQueryMap(obj, delimiter)) {
+                        kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                    }
+                }
+            }
+            return kvps;
+        }
+
     }
 }

@@ -55,6 +55,12 @@ namespace Refit.Tests
     {
         [Get("")]
         Task<TResponse> Get(TParam param, [Header("X-Refit")] THeader header);
+
+        [Get("/get?hardcoded=true")]
+        Task<TResponse> GetQuery([Query("_")]TParam param);
+
+        [Get("")]
+        Task<TResponse> GetQueryWithIncludeParameterName([Query(".", "search")]TParam param);
     }
 
     public interface IBrokenWebApi
@@ -77,7 +83,7 @@ namespace Refit.Tests
 
     public class HttpBinGet
     {
-        public Dictionary<string, string> Args { get; set; }
+        public Dictionary<string, object> Args { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public string Origin { get; set; }
         public string Url { get; set; }
@@ -419,5 +425,92 @@ namespace Refit.Tests
             // We should get an InvalidOperationException if we call a method without a base address set
             await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.GetUser(null));
         }
+
+        [Fact]
+        public async Task SimpleDynamicQueryparametersTest()
+        {
+
+            var myParams = new MySimpleQueryParams();
+            myParams.FirstName = "John";
+            myParams.LastName = "Rambo";
+
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MySimpleQueryParams, int>>("https://httpbin.org/get");
+
+            var resp = await fixture.Get(myParams, 99);
+
+            Assert.Equal("John", resp.Args["FirstName"]);
+            Assert.Equal("Rambo", resp.Args["lName"]);
+        }
+
+        [Fact]
+        public async Task ComplexDynamicQueryparametersTest()
+        {
+
+            var myParams = new MyComplexQueryParams();
+            myParams.FirstName = "John";
+            myParams.LastName = "Rambo";
+            myParams.Address.Postcode = 9999;
+            myParams.Address.Street = "HomeStreet 99";
+
+            myParams.MetaData.Add("Age", 99);
+            myParams.MetaData.Add("Initials", "JR");
+            myParams.MetaData.Add("Birthday", DateTime.Now.AddYears(-99));
+
+            myParams.Other.Add(12345);
+            myParams.Other.Add(DateTime.Now);
+            myParams.Other.Add(Guid.NewGuid());
+
+
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org");
+
+            var resp = await fixture.GetQuery(myParams);
+
+            Assert.Equal("John", resp.Args["FirstName"]);
+            Assert.Equal("Rambo", resp.Args["LastName"]);
+            Assert.Equal("9999", resp.Args["Addr_Zip"]);
+        }
+
+        [Fact]
+        public async Task DictionaryDynamicQueryparametersTest()
+        {
+
+            var myParams = new Dictionary<string, object>();
+            myParams["FirstName"] = "John";
+            myParams["LastName"] = "Rambo";
+            myParams["Address"] = new
+            {
+                Zip = 9999,
+                Street = "HomeStreet 99"
+            };
+
+
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>("https://httpbin.org");
+
+            var resp = await fixture.GetQuery(myParams);
+
+            Assert.Equal("John", resp.Args["FirstName"]);
+            Assert.Equal("Rambo", resp.Args["LastName"]);
+            Assert.Equal("9999", resp.Args["Address_Zip"]);
+        }
+
+        [Fact]
+        public async Task ComplexDynamicQueryparametersTestWithIncludeParameterName()
+        {
+
+            var myParams = new MyComplexQueryParams();
+            myParams.FirstName = "John";
+            myParams.LastName = "Rambo";
+            myParams.Address.Postcode = 9999;
+            myParams.Address.Street = "HomeStreet 99";
+
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org/get");
+
+            var resp = await fixture.GetQueryWithIncludeParameterName(myParams);
+
+            Assert.Equal("John", resp.Args["search.FirstName"]);
+            Assert.Equal("Rambo", resp.Args["search.LastName"]);
+            Assert.Equal("9999", resp.Args["search.Addr.Zip"]);
+        }
+
     }
 }
