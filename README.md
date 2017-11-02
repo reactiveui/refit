@@ -132,7 +132,7 @@ type of the parameter:
   the content will be URL-encoded (see [form posts](#form-posts) below)
 * For all other types, the object will be serialized as JSON.
 
-#### Bufferering and the `Content-Length` header
+#### Buffering and the `Content-Length` header
 
 By default, Refit streams the body content without buffering it. This means you can
 stream a file from disk, for example, without incuring the overhead of loading 
