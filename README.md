@@ -132,6 +132,19 @@ type of the parameter:
   the content will be URL-encoded (see [form posts](#form-posts) below)
 * For all other types, the object will be serialized as JSON.
 
+#### Bufferering and the `Content-Length` header
+
+By default, Refit streams the body content without buffering it. This means you can
+stream a file from disk, for example, without incuring the overhead of loading 
+the whole file into memory. The downside of this is that no `Content-Length` header 
+is set _on the request_. If your API needs you to send a `Content-Length` header with
+the request, you can disable this streaming behavior by setting the `buffered` argument 
+of the `[Body]` attribute to `true`:
+
+```csharp
+Task CreateUser([Body(buffered: true)] User user);
+```
+
 #### JSON content
 
 JSON requests and responses are serialized/deserialized using Json.NET. 
