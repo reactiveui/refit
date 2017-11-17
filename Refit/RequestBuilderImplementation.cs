@@ -337,6 +337,7 @@ namespace Refit
         {
             var multipartItem = itemValue as MultipartItem;
             var streamValue = itemValue as Stream;
+            var stringContent = itemValue as StringContent;
             var stringValue = itemValue as string;
             var byteArrayValue = itemValue as byte[];
 
@@ -351,6 +352,12 @@ namespace Refit
             {
                 var streamContent = new StreamContent(streamValue);
                 multiPartContent.Add(streamContent, parameterName, fileName);
+                return;
+            }
+
+            if (stringContent != null)
+            {
+                multiPartContent.Add(stringContent, parameterName, fileName);
                 return;
             }
 
