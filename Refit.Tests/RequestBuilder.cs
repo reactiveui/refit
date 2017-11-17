@@ -47,9 +47,12 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
-        
+
         [Post("/foo/{id}")]
         Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
+
+        [Post("/foo/{id}")]
+        Task<bool> PullStreamMethod(int id, [Body(buffered: true)] Dictionary<int, string> theData);
 
         [Post("/foo/{id}")]
         Task VoidPost(int id);
@@ -104,7 +107,7 @@ namespace Refit.Tests
 
             Assert.Equal(1, fixture.QueryParameterMap.Count);
             Assert.NotNull(fixture.BodyParameterInfo);
-            Assert.Equal(1, fixture.BodyParameterInfo.Item2);
+            Assert.Equal(1, fixture.BodyParameterInfo.Item3);
         }
 
         [Fact]
@@ -237,7 +240,7 @@ namespace Refit.Tests
 
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Equal(0, fixture.QueryParameterMap.Count);
-            Assert.Equal(1, fixture.BodyParameterInfo.Item2);
+            Assert.Equal(1, fixture.BodyParameterInfo.Item3);
         }
 
         [Fact]
@@ -291,7 +294,22 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0]);
             Assert.Equal(0, fixture.QueryParameterMap.Count);
             Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
-            Assert.Equal(1, fixture.BodyParameterInfo.Item2);
+            Assert.False(fixture.BodyParameterInfo.Item2);
+            Assert.Equal(1, fixture.BodyParameterInfo.Item3);
+
+            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
+        }
+
+        [Fact]
+        public void StreamMethodPullWorks()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PullStreamMethod"));
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
+            Assert.True(fixture.BodyParameterInfo.Item2);
+            Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
             Assert.Equal(typeof(bool), fixture.SerializedReturnType);
         }

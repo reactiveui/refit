@@ -92,9 +92,13 @@ namespace Refit
     {
         public BodySerializationMethod SerializationMethod { get; protected set; }
 
-        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Json)
+        public bool Buffered { get; protected set; }
+
+        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Json,
+            bool buffered = false)
         {
             SerializationMethod = serializationMethod;
+            Buffered = buffered;
         }
     }
 
@@ -147,5 +151,28 @@ namespace Refit
             : base("Authorization: " + scheme)
         {
         }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class QueryAttribute : Attribute
+    {
+        public string Delimiter { get; protected set; } = ".";
+        public string Prefix { get; protected set; }
+
+        public QueryAttribute()
+        {
+        }
+
+        public QueryAttribute(string delimiter)
+        {
+            Delimiter = delimiter;
+        }
+
+        public QueryAttribute(string delimiter, string prefix)
+        {
+            Delimiter = delimiter;
+            Prefix = prefix;
+        }
+
     }
 }
