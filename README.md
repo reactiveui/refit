@@ -78,9 +78,10 @@ Task<List<User>> GroupList([AliasAs("id")] int groupId, [AliasAs("sort")] string
 GroupList(4, "desc");
 >>> "/group/4/users?sort=desc"
 ```
+### Dynamic Querystring Parameters
 
-If you specify an `object` as query parameter, all public properties which are not null, where used as query parameters. 
-Use the `Query` attribute the change the behavior of 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used for 'flatten' the object.
+If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters. 
+Use the `Query` attribute the change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
 public class MyQueryParams
@@ -130,6 +131,19 @@ type of the parameter:
 * If the parameter has the attribute `[Body(BodySerializationMethod.UrlEncoded)]`, 
   the content will be URL-encoded (see [form posts](#form-posts) below)
 * For all other types, the object will be serialized as JSON.
+
+#### Buffering and the `Content-Length` header
+
+By default, Refit streams the body content without buffering it. This means you can
+stream a file from disk, for example, without incuring the overhead of loading 
+the whole file into memory. The downside of this is that no `Content-Length` header 
+is set _on the request_. If your API needs you to send a `Content-Length` header with
+the request, you can disable this streaming behavior by setting the `buffered` argument 
+of the `[Body]` attribute to `true`:
+
+```csharp
+Task CreateUser([Body(buffered: true)] User user);
+```
 
 #### JSON content
 

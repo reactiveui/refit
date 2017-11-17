@@ -430,12 +430,22 @@ namespace Refit.Tests
         [Fact]
         public async Task SimpleDynamicQueryparametersTest()
         {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .WithHeaders("X-Refit", "99")
+                .Respond("application/json", "{'url': 'https://httpbin.org/get?FirstName=John&LastName=Rambo', 'args': {'FirstName': 'John', 'lName': 'Rambo'}}");
 
             var myParams = new MySimpleQueryParams();
             myParams.FirstName = "John";
             myParams.LastName = "Rambo";
 
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MySimpleQueryParams, int>>("https://httpbin.org/get");
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MySimpleQueryParams, int>>("https://httpbin.org/get", settings);
 
             var resp = await fixture.Get(myParams, 99);
 
@@ -446,6 +456,15 @@ namespace Refit.Tests
         [Fact]
         public async Task ComplexDynamicQueryparametersTest()
         {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", "{'url': 'https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo&Addr_Zip=9999&Addr_Street=HomeStreet 99&MetaData_Age=99&MetaData_Initials=JR&MetaData_Birthday=10%2F31%2F1918 4%3A21%3A16 PM&Other=12345&Other=10%2F31%2F2017 4%3A21%3A17 PM&Other=696e8653-6671-4484-a65f-9485af95fd3a', 'args': { 'Addr_Street': 'HomeStreet 99', 'Addr_Zip': '9999', 'FirstName': 'John', 'LastName': 'Rambo', 'MetaData_Age': '99', 'MetaData_Birthday': '10/31/1981 4:32:59 PM', 'MetaData_Initials': 'JR', 'Other': ['12345','10/31/2017 4:32:59 PM','60282dd2-f79a-4400-be01-bcb0e86e7bc6'], 'hardcoded': 'true'}}");
 
             var myParams = new MyComplexQueryParams();
             myParams.FirstName = "John";
@@ -455,14 +474,14 @@ namespace Refit.Tests
 
             myParams.MetaData.Add("Age", 99);
             myParams.MetaData.Add("Initials", "JR");
-            myParams.MetaData.Add("Birthday", DateTime.Now.AddYears(-99));
+            myParams.MetaData.Add("Birthday", new DateTime(1981, 10, 31, 16, 24, 59));
 
             myParams.Other.Add(12345);
-            myParams.Other.Add(DateTime.Now);
-            myParams.Other.Add(Guid.NewGuid());
+            myParams.Other.Add(new DateTime(2017, 10, 31, 16, 24, 59));
+            myParams.Other.Add(new Guid("60282dd2-f79a-4400-be01-bcb0e86e7bc6"));
 
 
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org");
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org", settings);
 
             var resp = await fixture.GetQuery(myParams);
 
@@ -474,8 +493,18 @@ namespace Refit.Tests
         [Fact]
         public async Task DictionaryDynamicQueryparametersTest()
         {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", "{'url': 'https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo&Address_Zip=9999&Address_Street=HomeStreet 99', 'args': {'Address_Street': 'HomeStreet 99','Address_Zip': '9999','FirstName': 'John','LastName': 'Rambo','hardcoded': 'true'}}");
 
             var myParams = new Dictionary<string, object>();
+
             myParams["FirstName"] = "John";
             myParams["LastName"] = "Rambo";
             myParams["Address"] = new
@@ -484,8 +513,7 @@ namespace Refit.Tests
                 Street = "HomeStreet 99"
             };
 
-
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>("https://httpbin.org");
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>("https://httpbin.org", settings);
 
             var resp = await fixture.GetQuery(myParams);
 
@@ -497,6 +525,15 @@ namespace Refit.Tests
         [Fact]
         public async Task ComplexDynamicQueryparametersTestWithIncludeParameterName()
         {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", "{'url': 'https://httpbin.org/get?search.FirstName=John&search.LastName=Rambo&search.Addr.Zip=9999&search.Addr.Street=HomeStreet 99', 'args': {'search.Addr.Street': 'HomeStreet 99','search.Addr.Zip': '9999','search.FirstName': 'John','search.LastName': 'Rambo'}}");
 
             var myParams = new MyComplexQueryParams();
             myParams.FirstName = "John";
@@ -504,7 +541,7 @@ namespace Refit.Tests
             myParams.Address.Postcode = 9999;
             myParams.Address.Street = "HomeStreet 99";
 
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org/get");
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org/get", settings);
 
             var resp = await fixture.GetQueryWithIncludeParameterName(myParams);
 

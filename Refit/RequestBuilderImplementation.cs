@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using System.IO;
+using System.Text;
 using System.Threading;
 
 using HttpUtility = System.Web.HttpUtility;
@@ -139,7 +140,7 @@ namespace Refit
                     }
 
                     // if marked as body, add to content
-                    if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item2 == i) {
+                    if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item3 == i) {
                         var streamParam = paramList[i] as Stream;
                         var stringParam = paramList[i] as string;
 
@@ -156,13 +157,20 @@ namespace Refit
                                     break;
                                 case BodySerializationMethod.Json:
                                     var param = paramList[i];
-                                    ret.Content = new PushStreamContent((stream, _, __) =>
-                                    {
-                                        using (var writer = new JsonTextWriter(new StreamWriter(stream)))
-                                        {
-                                            serializer.Serialize(writer, param);
-                                        }
-                                    }, "application/json");
+                                    switch (restMethod.BodyParameterInfo.Item2) {
+                                        case false:
+                                            ret.Content = new PushStreamContent((stream, _, __) => {
+                                                using (var writer = new JsonTextWriter(new StreamWriter(stream))) {
+                                                    serializer.Serialize(writer, param);
+                                                }
+                                            }, "application/json");
+                                            break;
+                                        case true:
+                                            ret.Content = new StringContent(
+                                                JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings),
+                                                Encoding.UTF8, "application/json");
+                                            break;
+                                    }
                                     break;
                             }
                         }
