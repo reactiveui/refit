@@ -39,10 +39,10 @@
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd>$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\net46\InterfaceStubGenerator.App.exe "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\net46\InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>mono $(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/net46/InterfaceStubGenerator.App.exe "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/net46/InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     <Message Text="Executing: $(RefitExecCmd)" />
     <Exec Command="$(RefitExecCmd)" />
@@ -57,10 +57,10 @@
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd>dotnet $(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\netcoreapp2.0\InterfaceStubGenerator.App.dll "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>dotnet "$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\netcoreapp2.0\InterfaceStubGenerator.App.dll" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>dotnet $(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/netcoreapp2.0/InterfaceStubGenerator.App.dll "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
+      <RefitExecCmd>dotnet "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/netcoreapp2.0/InterfaceStubGenerator.App.dll" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
     <Message Text="Executing: $(RefitExecCmd)" />
     <Exec Command="$(RefitExecCmd)" />

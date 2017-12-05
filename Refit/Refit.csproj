@@ -38,12 +38,12 @@
 
   <Target Name="BuildAndPublishStubGenerator" BeforeTargets="CoreBuild" Condition="'$(TargetFramework)' == 'netstandard1.4'">
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd46>dotnet publish $(MSBuildThisFileDirectory)..\InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj -c $(Configuration) -f net46</RefitExecCmd46>
-      <RefitExecCmd20>dotnet publish $(MSBuildThisFileDirectory)..\InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj -c $(Configuration) -f netcoreapp2.0</RefitExecCmd20>
+      <RefitExecCmd46>dotnet publish "$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj" -c $(Configuration) -f net46</RefitExecCmd46>
+      <RefitExecCmd20>dotnet publish "$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj" -c $(Configuration) -f netcoreapp2.0</RefitExecCmd20>
     </PropertyGroup>
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd46>dotnet publish $(MSBuildThisFileDirectory)../InterfaceStubGenerator.BuildTasks/InterfaceStubGenerator.BuildTasks.csproj -c $(Configuration) -f net46</RefitExecCmd46>
-      <RefitExecCmd20>dotnet publish $(MSBuildThisFileDirectory)../InterfaceStubGenerator.BuildTasks/InterfaceStubGenerator.BuildTasks.csproj -c $(Configuration) -f netcoreapp2.0</RefitExecCmd20>
+      <RefitExecCmd46>dotnet publish "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.BuildTasks/InterfaceStubGenerator.BuildTasks.csproj" -c $(Configuration) -f net46</RefitExecCmd46>
+      <RefitExecCmd20>dotnet publish "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.BuildTasks/InterfaceStubGenerator.BuildTasks.csproj" -c $(Configuration) -f netcoreapp2.0</RefitExecCmd20>
     </PropertyGroup>
     <Exec Command="$(RefitExecCmd46)" />
     <Exec Command="$(RefitExecCmd20)" />
