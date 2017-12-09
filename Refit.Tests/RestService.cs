@@ -11,6 +11,7 @@ using Xunit;
 using Refit; // InterfaceStubGenerator looks for this
 using RichardSzalay.MockHttp;
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace Refit.Tests
 {
@@ -54,7 +55,7 @@ namespace Refit.Tests
         where THeader : struct
     {
         [Get("")]
-        Task<TResponse> Get(TParam param, [Header("X-Refit")] THeader header);
+        Task<TResponse> Get([Query]TParam param, [Header("X-Refit")] THeader header);
 
         [Get("/get?hardcoded=true")]
         Task<TResponse> GetQuery([Query("_")]TParam param);
@@ -547,6 +548,23 @@ namespace Refit.Tests
             Assert.Equal("John", resp.Args["search.FirstName"]);
             Assert.Equal("Rambo", resp.Args["search.LastName"]);
             Assert.Equal("9999", resp.Args["search.Addr.Zip"]);
+        }
+
+        [Fact]
+        public async Task DynamicArrayQueryparametersTest()
+        {
+
+            var strings = new List<string>{ "First", "Second", "All" };
+
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, List<string>, int>>("https://httpbin.org/get");
+
+            var resp = await fixture.GetQueryWithIncludeParameterName(strings);
+
+            var list = ((JArray)resp.Args["search"]).ToObject<List<string>>();
+
+            Assert.Equal("First", list[0]);
+            Assert.Equal("Second", list[1]);
+            Assert.Equal("All", list[2]);
         }
 
     }
