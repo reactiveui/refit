@@ -9,9 +9,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
-    <PackageReference Include="xunit" Version="2.3.0-beta4-build3742" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.0-beta4-build3742" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
     <PackageReference Include="RichardSzalay.MockHttp" Version="1.5.0" />
     <ProjectReference Include="..\InterfaceStubGenerator.App\InterfaceStubGenerator.App.csproj" />
@@ -25,10 +25,6 @@
     <None Include="RefitStubs.*.cs" />
     <Compile Condition="'$(TargetFramework)' == 'net46' " Remove="RefitStubs.NetCore2.cs" />
     <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.0' " Remove="RefitStubs.Net46.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
   </ItemGroup>
 
   <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' " BeforeTargets="CoreCompile">

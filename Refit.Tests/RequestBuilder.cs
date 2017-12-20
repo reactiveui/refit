@@ -912,6 +912,20 @@ namespace Refit.Tests
         }
 
         [Fact]
+        [UseCulture("es-ES")] // Spain uses a , instead of a .
+        public void DefaultParmeterFormatterIsInvariant()
+        {
+            var settings = new RefitSettings();
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
+            var output = factory(new object[] { 5.4 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/foo/bar/5.4", uri.PathAndQuery);
+        }
+
+        [Fact]
         public void ICanPostAValueTypeIfIWantYoureNotTheBossOfMe()
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));

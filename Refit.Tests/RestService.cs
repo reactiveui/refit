@@ -157,7 +157,7 @@ namespace Refit.Tests
             var result = await fixture.GetOrgMembers("github");
 
             Assert.True(result.Count > 0);
-            Assert.True(result.Any(member => member.Type == "User"));
+            Assert.Contains(result, member => member.Type == "User");
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
@@ -181,7 +181,7 @@ namespace Refit.Tests
             var result = await fixture.FindUsers("tom repos:>42 followers:>1000");
 
             Assert.True(result.TotalCount > 0);
-            Assert.True(result.Items.Any(member => member.Type == "User"));
+            Assert.Contains(result.Items, member => member.Type == "User");
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -261,8 +261,8 @@ namespace Refit.Tests
             Assert.Equal(2, input.MessagesSent);
 
             // NB: TestHttpMessageHandler returns what we tell it to ('test' by default)
-            Assert.True(result1.Contains("test"));
-            Assert.True(result2.Contains("test"));
+            Assert.Contains("test", result1);
+            Assert.Contains("test", result2);
         }
 
         [Fact]
@@ -412,7 +412,7 @@ namespace Refit.Tests
 
             var result = await fixture.PostAValue("Does this work?");
 
-            Assert.Equal(true, result);
+            Assert.True(result);
         }
 
         [Fact]
@@ -548,6 +548,5 @@ namespace Refit.Tests
             Assert.Equal("Rambo", resp.Args["search.LastName"]);
             Assert.Equal("9999", resp.Args["search.Addr.Zip"]);
         }
-
     }
 }
