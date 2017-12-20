@@ -77,4 +77,35 @@ namespace Refit.Tests
         [Get("/give-me-some-404-action")]
         Task NothingToSeeHere();
     }
+
+    public class TestNested
+    {
+        [Headers("User-Agent: Refit Integration Tests")]
+        public interface INestedGitHubApi
+        {
+            [Get("/users/{username}")]
+            Task<User> GetUser(string userName);
+
+            [Get("/users/{username}")]
+            IObservable<User> GetUserObservable(string userName);
+
+            [Get("/users/{userName}")]
+            IObservable<User> GetUserCamelCase(string userName);
+            
+            [Get("/orgs/{orgname}/members")]
+            Task<List<User>> GetOrgMembers(string orgName);
+
+            [Get("/search/users")]
+            Task<UserSearchResult> FindUsers(string q);
+
+            [Get("/")]
+            Task<HttpResponseMessage> GetIndex();
+
+            [Get("/")]
+            IObservable<string> GetIndexObservable();
+
+            [Get("/give-me-some-404-action")]
+            Task NothingToSeeHere();
+        }
+    }
 }

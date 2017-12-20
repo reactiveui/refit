@@ -39,7 +39,7 @@ namespace Refit.Tests
             var fixture = new InterfaceStubGenerator();
 
             var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
-            Assert.Equal(1, result.Count);
+            Assert.Equal(2, result.Count);
             Assert.True(result.Any(x => x.Identifier.ValueText == "IGitHubApi"));
 
             input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
@@ -88,8 +88,29 @@ namespace Refit.Tests
             Assert.Equal(8, result.MethodList.Count);
             Assert.Equal("GetUser", result.MethodList[0].Name);
             Assert.Equal("string userName", result.MethodList[0].ArgumentListWithTypes);
+            Assert.Equal("IGitHubApi", result.InterfaceName);
+            Assert.Equal("IGitHubApi", result.GeneratedClassSuffix);
         }
+        
+        [Fact]
+        public void GenerateClassInfoForNestedInterfaceSmokeTest()
+        {
+            var file = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs")));
+            var fixture = new InterfaceStubGenerator();
 
+            var input = file.GetRoot().DescendantNodes()
+                .OfType<InterfaceDeclarationSyntax>()
+                .First(x => x.Identifier.ValueText == "INestedGitHubApi");
+
+            var result = fixture.GenerateClassInfoForInterface(input);
+            
+            Assert.Equal("TestNested.INestedGitHubApi",result.InterfaceName);
+            Assert.Equal("TestNestedINestedGitHubApi",result.GeneratedClassSuffix);
+            Assert.Equal(8, result.MethodList.Count);
+            Assert.Equal("GetUser", result.MethodList[0].Name);
+            Assert.Equal("string userName", result.MethodList[0].ArgumentListWithTypes);
+        }
+        
         [Fact]
         public void GenerateTemplateInfoForInterfaceListSmokeTest()
         {
@@ -165,4 +186,5 @@ namespace Refit.Tests
         [Delete("/{key}")]
         Task Delete(TKey key);
     }
+
 }
