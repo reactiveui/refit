@@ -35,6 +35,10 @@ bin/**/*.pdb
 *.vspscc
 .builds
 
+# Idea cache files
+
+.idea/
+
 # Visual C++ cache files
 ipch/
 *.aps
