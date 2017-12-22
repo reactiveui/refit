@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace Refit
     {
         public virtual string Format(object parameterValue, ParameterInfo parameterInfo)
         {
-            return parameterValue?.ToString();
+            return parameterValue == null ? null : string.Format(CultureInfo.InvariantCulture, "{0}", parameterValue);
         }
     }
 }
