@@ -106,6 +106,20 @@ namespace Refit.Generator
             return ret;
         }
 
+        private String getInterfaceName(SyntaxToken identifier)
+        {
+            if (identifier == null) return "";
+            var interfaceParent = identifier.Parent != null ? identifier.Parent.Parent : identifier.Parent;
+
+            if ((interfaceParent as ClassDeclarationSyntax) != null)
+            {
+                var classParent = (interfaceParent as ClassDeclarationSyntax).Identifier;
+                return classParent + "." + identifier.ValueText;
+            }
+
+            return identifier.ValueText;
+        }
+        
         public ClassTemplateInfo GenerateClassInfoForInterface(InterfaceDeclarationSyntax interfaceTree)
         {
             var ret = new ClassTemplateInfo();
@@ -114,7 +128,8 @@ namespace Refit.Generator
 
             var ns = parent as NamespaceDeclarationSyntax;
             ret.Namespace = ns.Name.ToString();
-            ret.InterfaceName = interfaceTree.Identifier.ValueText;
+            ret.InterfaceName = getInterfaceName(interfaceTree.Identifier);
+            ret.GeneratedClassSuffix = ret.InterfaceName.Replace(".", "");
             ret.Modifiers = interfaceTree.Modifiers.Select(t => t.ValueText).FirstOrDefault(m => m == "public" || m == "internal");
 
             if (interfaceTree.TypeParameterList != null) {
@@ -188,10 +203,12 @@ namespace Refit.Generator
     {
         public string Modifiers { get; set; }
         public string Namespace { get; set; }
+        public string GeneratedClassSuffix { get; set; }
         public string InterfaceName { get; set; }
         public string TypeParameters { get; set; }
         public string ConstraintClauses { get; set; }
         public List<MethodTemplateInfo> MethodList { get; set; }
+        
     }
 
     public class MethodTemplateInfo
