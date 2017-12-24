@@ -135,7 +135,7 @@ type of the parameter:
 #### Buffering and the `Content-Length` header
 
 By default, Refit streams the body content without buffering it. This means you can
-stream a file from disk, for example, without incuring the overhead of loading 
+stream a file from disk, for example, without incurring the overhead of loading 
 the whole file into memory. The downside of this is that no `Content-Length` header 
 is set _on the request_. If your API needs you to send a `Content-Length` header with
 the request, you can disable this streaming behavior by setting the `buffered` argument 
@@ -361,7 +361,7 @@ class LoginViewModel
 	AuthenticationContext context = new AuthenticationContext(...);
 	private async Task<string> GetToken()
     {
-		// The AquireTokenAsync call will prompt with a UI if necessary
+		// The AcquireTokenAsync call will prompt with a UI if necessary
 		// Or otherwise silently use a refresh token to return
 		// a valid access token	
         var token = await context.AcquireTokenAsync("http://my.service.uri/app", "clientId", new Uri("callback://complete"));
@@ -538,7 +538,7 @@ When using something like ASP.NET Web API, it's a fairly common pattern to have 
 public interface IReallyExcitingCrudApi<T, in TKey> where T : class
 {
     [Post("")]
-    Task<T> Create([Body] T paylod);
+    Task<T> Create([Body] T payload);
 
     [Get("")]
     Task<List<T>> ReadAll();
