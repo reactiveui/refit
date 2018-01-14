@@ -10,7 +10,7 @@
   <ItemGroup>
 
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
-    <PackageReference Condition="'$(TargetFramework)' != 'net45' " Include="System.Net.Http" Version="4.3.2" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net45' " Include="System.Net.Http" Version="4.3.3" />
     <Compile Remove="Features\**\*.*" />
     <None Include="Features\**\*.*" />
   </ItemGroup>
@@ -18,6 +18,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.4' ">
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="1.1.2" />
     <PackageReference Include="System.Text.Encodings.Web" Version="4.4.0" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.4.0" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
@@ -30,10 +31,6 @@
     <None Include="targets\refit.targets" PackagePath="build\netstandard1.4" Pack="true" />
     <None Include="..\InterfaceStubGenerator.BuildTasks\bin\$(Configuration)\net46\publish\**\*.*" LinkBase="build\MSBuildFull46" PackagePath="build\MSBuildFull46" Pack="true" />
     <None Include="..\InterfaceStubGenerator.BuildTasks\bin\$(Configuration)\netcoreapp2.0\publish\**\*.*" LinkBase="build\MSBuildCore20" PackagePath="build\MSBuildCore20" Pack="true" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="15.3.83" />
   </ItemGroup>
 
   <Target Name="BuildAndPublishStubGenerator" BeforeTargets="CoreBuild" Condition="'$(TargetFramework)' == 'netstandard1.4'">
