@@ -1,12 +1,8 @@
-image: Visual Studio 2017 Preview
+image: Visual Studio 2017
 configuration: Release  
   
 init:
   - git config --global core.autocrlf input
-
-install:
-  - cmd: curl -O https://download.microsoft.com/download/0/F/D/0FD852A4-7EA1-4E2A-983A-0484AC19B92C/dotnet-sdk-2.0.0-win-x64.exe
-  - cmd: dotnet-sdk-2.0.0-win-x64.exe /install /quiet /norestart /log install.log 
 
 skip_branch_with_pr: true
        
