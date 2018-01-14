@@ -285,7 +285,28 @@ namespace Refit.Tests
             Assert.NotNull(result);
             Assert.True(result.IsSuccessStatusCode);
         }
+        
+        [Fact]
+        public async Task ShouldRetHttpResponseMessageWithNestedInterface()
+        {
+            var mockHttp = new MockHttpMessageHandler();
 
+            var settings = new RefitSettings {
+                HttpMessageHandlerFactory = () => mockHttp,
+                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+            };
+
+            mockHttp.When(HttpMethod.Get, "https://api.github.com/")
+                .Respond(HttpStatusCode.OK);
+
+
+            var fixture = RestService.For<TestNested.INestedGitHubApi>("https://api.github.com", settings);
+            var result = await fixture.GetIndex();
+
+            Assert.NotNull(result);
+            Assert.True(result.IsSuccessStatusCode);
+        }
+        
         [Fact]
         public async Task HitTheNpmJs()
         {
