@@ -165,7 +165,7 @@ namespace Refit.Tests
         [Fact]
         public void MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName()
         {
-            Assert.Throws(typeof(ArgumentNullException), () =>
+            Assert.Throws<ArgumentNullException>(() =>
             {
                 var byteArrayPart = new ByteArrayPart(new byte[0], null, "application/pdf");
             });
@@ -174,7 +174,7 @@ namespace Refit.Tests
         [Fact]
         public void FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo()
         {
-            Assert.Throws(typeof(ArgumentNullException), () =>
+            Assert.Throws<ArgumentNullException>(() =>
             {
                 var fileInfoPart = new FileInfoPart(null, "file.pdf", "application/pdf");
             });

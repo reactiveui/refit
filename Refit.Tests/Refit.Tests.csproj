@@ -13,7 +13,7 @@
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
     <PackageReference Include="System.Reactive" Version="3.1.1" />
-    <PackageReference Include="RichardSzalay.MockHttp" Version="1.5.0" />
+    <PackageReference Include="RichardSzalay.MockHttp" Version="3.2.1" />
     <ProjectReference Include="..\InterfaceStubGenerator.App\InterfaceStubGenerator.App.csproj" />
     <ProjectReference Include="..\Refit\Refit.csproj" />
   </ItemGroup>

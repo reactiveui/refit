@@ -29,7 +29,7 @@ namespace Refit.Tests
                 IntegrationTestHelper.GetPath("GitHubApi.cs"),
             });
 
-            Assert.True(result.Contains("IGitHubApi"));
+            Assert.Contains("IGitHubApi", result);
         }
 
         [Fact]
@@ -40,14 +40,14 @@ namespace Refit.Tests
 
             var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
             Assert.Equal(2, result.Count);
-            Assert.True(result.Any(x => x.Identifier.ValueText == "IGitHubApi"));
+            Assert.Contains(result, x => x.Identifier.ValueText == "IGitHubApi");
 
             input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
 
             result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
             Assert.Equal(2, result.Count);
-            Assert.True(result.Any(x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe"));
-            Assert.True(result.Any(x => x.Identifier.ValueText == "IBoringCrudApi"));
+            Assert.Contains(result, x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe");
+            Assert.Contains(result, x => x.Identifier.ValueText == "IBoringCrudApi");
             Assert.True(result.All(x => x.Identifier.ValueText != "IAmNotARefitInterface"));
         }
 

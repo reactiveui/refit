@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -105,7 +105,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "ManyComplexTypes"));
 
-            Assert.Equal(1, fixture.QueryParameterMap.Count);
+            Assert.Single(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
         }
@@ -116,7 +116,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithBodyDetected"));
 
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
         }
 
@@ -126,7 +126,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PutWithBodyDetected"));
 
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
         }
 
@@ -136,7 +136,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchWithBodyDetected"));
 
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
         }
 
@@ -146,7 +146,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GetWithBodyDetected"));
 
-            Assert.Equal(1, fixture.QueryParameterMap.Count);
+            Assert.Single(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
@@ -186,7 +186,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
             Assert.Equal("id", fixture.ParameterMap[0]);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
@@ -206,7 +206,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedQueryParam"));
             Assert.Equal("id", fixture.ParameterMap[0]);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
@@ -216,7 +216,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
             Assert.Equal("id", fixture.ParameterMap[0]);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
@@ -227,7 +227,7 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchAnImage"));
             Assert.Equal("width", fixture.ParameterMap[0]);
             Assert.Equal("height", fixture.ParameterMap[1]);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
@@ -239,7 +239,7 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0]);
 
             Assert.NotNull(fixture.BodyParameterInfo);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
         }
 
@@ -251,7 +251,7 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0]);
 
             Assert.NotNull(fixture.BodyParameterInfo);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.UrlEncoded, fixture.BodyParameterInfo.Item1);
         }
 
@@ -261,7 +261,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedHeaders"));
             Assert.Equal("id", fixture.ParameterMap[0]);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
             Assert.True(fixture.Headers.ContainsKey("Api-Version"), "Headers include Api-Version header");
@@ -277,7 +277,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeader"));
             Assert.Equal("id", fixture.ParameterMap[0]);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
             Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
@@ -292,7 +292,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypes"));
             Assert.Equal("id", fixture.ParameterMap[0]);
-            Assert.Equal(0, fixture.QueryParameterMap.Count);
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
             Assert.False(fixture.BodyParameterInfo.Item2);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
