@@ -23,7 +23,7 @@ namespace Refit
         public RefitSettings RefitSettings { get; set; }
 
         ApiException(Uri uri, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
-            base(createMessage(statusCode, reasonPhrase))
+            base(CreateMessage(statusCode, reasonPhrase))
         {
             Uri = uri;
             HttpMethod = httpMethod;
@@ -33,12 +33,9 @@ namespace Refit
             RefitSettings = refitSettings;
         }
 
-        public T GetContentAs<T>()
-        {
-            return HasContent ?
+        public T GetContentAs<T>() => HasContent ?
                 JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) :
                 default(T);
-        }
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
         public static async Task<ApiException> Create(Uri uri, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
@@ -62,9 +59,7 @@ namespace Refit
             return exception;
         }
 
-        static string createMessage(HttpStatusCode statusCode, string reasonPhrase)
-        {
-            return string.Format("Response status code does not indicate success: {0} ({1}).", (int)statusCode, reasonPhrase);
-        }
+        static string CreateMessage(HttpStatusCode statusCode, string reasonPhrase) => 
+            $"Response status code does not indicate success: {(int)statusCode} ({reasonPhrase}).";
     }
 }

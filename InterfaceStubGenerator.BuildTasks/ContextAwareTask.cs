@@ -1,13 +1,14 @@
-﻿
-    using System;
-    using System.IO;
-    using System.Linq;
-    using System.Reflection;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Linq;
+using System.Threading.Tasks;
+using Task = Microsoft.Build.Utilities.Task;
 #if NETCOREAPP2_0
-    using System.Runtime.Loader;
+using Microsoft.Build.Framework;
+using System.Runtime.Loader;
 #endif
-    using Microsoft.Build.Framework;
-    using Microsoft.Build.Utilities;
 
 namespace Refit.Generator.Tasks
 {

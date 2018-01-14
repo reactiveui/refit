@@ -218,7 +218,7 @@ namespace Refit
             var ret = new Dictionary<string, string>();
 
             var declaringTypeAttributes = methodInfo.DeclaringType != null
-                ? methodInfo.DeclaringType.GetCustomAttributes(true)
+                ? methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true)
                 : new Attribute[0];
 
             // Headers set on the declaring type have to come first, 
@@ -263,7 +263,7 @@ namespace Refit
 
         void DetermineReturnTypeInfo(MethodInfo methodInfo)
         {
-            if (methodInfo.ReturnType.IsGenericType() == false) {
+            if (methodInfo.ReturnType.GetTypeInfo().IsGenericType == false) {
                 if (methodInfo.ReturnType != typeof (Task)) {
                     goto bogusMethod;
                 }

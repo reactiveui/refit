@@ -12,13 +12,13 @@ namespace Refit.Generator.Tasks
     public class GenerateStubsTask : ContextAwareTask
     {
         [Required]
-        public ITaskItem[] SourceFiles  { get; set; }
-
-        [Required]
         public string BaseDirectory { get; set; }
 
         [Required]
         public string OutputFile { get; set; }
+
+        [Required]
+        public ITaskItem[] SourceFiles { get; set; }
 
 
         protected override bool ExecuteInner()
@@ -41,10 +41,10 @@ namespace Refit.Generator.Tasks
 
                 var targetDir = new DirectoryInfo(BaseDirectory);
 
-                var files =  SourceFiles.Select(item => item.ItemSpec).Distinct()
-                                        .Select(x => new FileInfo(Path.Combine(targetDir.FullName, x)))
-                                        .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
-                                        .ToArray();
+                var files = SourceFiles.Select(item => item.ItemSpec).Distinct()
+                                       .Select(x => new FileInfo(Path.Combine(targetDir.FullName, x)))
+                                       .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
+                                       .ToArray();
 
                 var generator = new InterfaceStubGenerator(msg => Log.LogWarning(msg));
                 var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray()).Trim();
@@ -99,7 +99,7 @@ namespace Refit.Generator.Tasks
                         goto retry;
                     }
 
-                    using (var sw = new StreamWriter(file, Encoding.UTF8))
+                    using(var sw = new StreamWriter(file, Encoding.UTF8))
                     {
                         sw.WriteLine(template);
                     }

@@ -1,5 +1,4 @@
 ﻿#if NETSTANDARD1_4
-using Microsoft.AspNetCore.WebUtilities;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -7,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace System.Web
 {
@@ -18,17 +18,22 @@ namespace System.Web
 
             var all = from kvp in parsed
                       from val in kvp.Value
-                      select new { kvp.Key, Value = val };
+                      select new
+                      {
+                          kvp.Key,
+                          Value = val
+                      };
 
             var nvc = new NameValueCollection();
-            foreach(var item in all) {
+            foreach (var item in all)
+            {
                 nvc.Add(item.Key, item.Value);
             }
 
             return nvc;
         }
 
-        internal static string UrlEncode(string x) => UrlEncoder.Default.Encode(x);        
+        internal static string UrlEncode(string x) => UrlEncoder.Default.Encode(x);
     }
 }
 #endif

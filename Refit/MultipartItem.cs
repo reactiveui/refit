@@ -17,8 +17,9 @@ namespace Refit
             ContentType = contentType;
         }
 
-        public string FileName { get; private set; }
-        public string ContentType { get; private set; }
+        public string ContentType { get; }
+
+        public string FileName { get; }
 
         public HttpContent ToContent()
         {
@@ -27,6 +28,7 @@ namespace Refit
             {
                 content.Headers.ContentType = new MediaTypeHeaderValue(ContentType);
             }
+
             return content;
         }
 
@@ -41,7 +43,7 @@ namespace Refit
             Value = value ?? throw new ArgumentNullException("value");
         }
 
-        public Stream Value { get; private set; }
+        public Stream Value { get; }
 
         protected override HttpContent CreateContent()
         {
@@ -57,7 +59,7 @@ namespace Refit
             Value = value ?? throw new ArgumentNullException("value");
         }
 
-        public byte[] Value { get; private set; }
+        public byte[] Value { get; }
 
         protected override HttpContent CreateContent()
         {
@@ -73,7 +75,7 @@ namespace Refit
             Value = value ?? throw new ArgumentNullException("value");
         }
 
-        public FileInfo Value { get; private set; }
+        public FileInfo Value { get; }
 
         protected override HttpContent CreateContent()
         {

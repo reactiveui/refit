@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Refit.Generator.App
 {
@@ -11,7 +12,6 @@ namespace Refit.Generator.App
     {
         static int Main(string[] args)
         {
-
             // NB: @Compile passes us a list of files relative to the project
             // directory - pass in the project and use its dir 
             var generator = new InterfaceStubGenerator(msg => Console.Out.WriteLine(msg));
@@ -20,20 +20,20 @@ namespace Refit.Generator.App
 
             var files = default(FileInfo[]);
 
-            if (args.Length ==3)
+            if (args.Length == 3)
             {
                 // We get a file with each line being a file
                 files = File.ReadLines(args[2])
-                    .Distinct()
-                    .Select(x => File.Exists(x) ? new FileInfo(x) : new FileInfo(Path.Combine(targetDir.FullName, x)))
-                    .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
-                    .ToArray();
+                            .Distinct()
+                            .Select(x => File.Exists(x) ? new FileInfo(x) : new FileInfo(Path.Combine(targetDir.FullName, x)))
+                            .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
+                            .ToArray();
             }
             else
             {
                 return -1;
             }
-           
+
             var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray()).Trim();
 
             string contents = null;
@@ -63,7 +63,7 @@ namespace Refit.Generator.App
             {
                 var retryCount = 3;
 
-            retry:
+                retry:
                 var file = default(FileStream);
 
                 // NB: Parallel build weirdness means that we might get >1 person 
@@ -84,7 +84,7 @@ namespace Refit.Generator.App
                     goto retry;
                 }
 
-                using (var sw = new StreamWriter(file, Encoding.UTF8))
+                using(var sw = new StreamWriter(file, Encoding.UTF8))
                 {
                     sw.WriteLine(template);
                 }

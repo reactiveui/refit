@@ -1,27 +1,52 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Refit.Generator
 {
     public class Diagnostic
     {
-        public string Type { get; private set; }
-        public string Code { get; private set; }
-        public string File { get; protected set; }
-        public int? Line { get; protected set; }
-        public int? Character { get; protected set; }
-        public string Message { get; protected set; }
-
         public Diagnostic(string type, string code)
         {
             Type = type;
             Code = code;
+        }
+
+        public int? Character { get; protected set; }
+        public string Code { get; }
+        public string File { get; protected set; }
+        public int? Line { get; protected set; }
+        public string Message { get; protected set; }
+        public string Type { get; }
+
+        public override string ToString()
+        {
+            var builder = new StringBuilder();
+
+            if (!string.IsNullOrWhiteSpace(File))
+            {
+                builder.Append(File);
+                if (Line.HasValue)
+                {
+                    builder.AppendFormat("({0}", Line);
+                    if (Character.HasValue)
+                        builder.AppendFormat(",{0}", Character);
+                    builder.Append(")");
+                }
+
+                builder.Append(": ");
+            }
+
+            builder.AppendFormat("{0} {1}", Type, Code);
+            if (!string.IsNullOrWhiteSpace(Message))
+                builder.AppendFormat(": {0}", Message);
+
+            return builder.ToString();
         }
 
         protected void setLocation(Location location)
@@ -31,27 +56,6 @@ namespace Refit.Generator
             File = location.GetMappedLineSpan().Path;
             Line = line.Line + 1;
             Character = line.Character + 1;
-        }
-
-        public override string ToString()
-        {
-            var builder = new StringBuilder();
-
-            if (!string.IsNullOrWhiteSpace(File)) {
-                builder.Append(File);
-                if (Line.HasValue) {
-                    builder.AppendFormat("({0}", Line);
-                    if (Character.HasValue)
-                        builder.AppendFormat(",{0}", Character);
-                    builder.Append(")");
-                }
-                builder.Append(": ");
-            }
-            builder.AppendFormat("{0} {1}", Type, Code);
-            if (!string.IsNullOrWhiteSpace(Message))
-                builder.AppendFormat(": {0}", Message);
-
-            return builder.ToString();
         }
     }
 
@@ -68,9 +72,6 @@ namespace Refit.Generator
 
     public class MissingRefitAttributeWarning : Warning
     {
-        public string InterfaceName { get; private set; }
-        public string MethodName { get; private set; }
-
         public MissingRefitAttributeWarning(InterfaceDeclarationSyntax @interface, MethodDeclarationSyntax method)
             : base("RF001")
         {
@@ -81,15 +82,16 @@ namespace Refit.Generator
 
             Message = string.Format(
                 "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
-                InterfaceName, MethodName);
+                InterfaceName,
+                MethodName);
         }
+
+        public string InterfaceName { get; }
+        public string MethodName { get; }
     }
 
     public class MultipleRefitMethodSameNameWarning : Warning
     {
-        public string InterfaceName { get; private set; }
-        public string MethodName { get; private set; }
-
         public MultipleRefitMethodSameNameWarning(InterfaceDeclarationSyntax @interface, MethodDeclarationSyntax method)
             : base("RF002")
         {
@@ -100,8 +102,12 @@ namespace Refit.Generator
 
             Message = string.Format(
                 "Method {0}.{1} has been declared multiple times. Refit doesn't support overloading.",
-                InterfaceName, MethodName);
+                InterfaceName,
+                MethodName);
         }
+
+        public string InterfaceName { get; }
+        public string MethodName { get; }
     }
 
     public class ReadOnlyFileError : Error
