@@ -338,6 +338,20 @@ namespace Refit.Tests
             return (Task) methodImpls["NothingToSeeHere()"](Client, arguments);
         }
 
+        /// <inheritdoc />
+        public virtual Task<RefitResponse<User>> GetUserWithMetadata(string userName)
+        {
+            var arguments = new object[] { userName };
+            return (Task<RefitResponse<User>>) methodImpls["GetUserWithMetadata"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual IObservable<RefitResponse<User>> GetUserObservableWithMetadata(string userName)
+        {
+            var arguments = new object[] { userName };
+            return (IObservable<RefitResponse<User>>) methodImpls["GetUserObservableWithMetadata"](Client, arguments);
+        }
+
     }
 }
 
