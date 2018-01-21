@@ -76,6 +76,12 @@ namespace Refit.Tests
 
         [Get("/give-me-some-404-action")]
         Task NothingToSeeHere();
+
+        [Get("/users/{username}")]
+        Task<RefitResponse<User>> GetUserWithMetadata(string userName);
+
+        [Get("/users/{username}")]
+        IObservable<RefitResponse<User>> GetUserObservableWithMetadata(string userName);
     }
 
     public class TestNested

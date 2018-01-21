@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -91,6 +91,56 @@ namespace Refit.Tests
 
     public class RestServiceIntegrationTests
     {
+        [Fact]
+        public async Task HitTheGitHubUserApiAsRefitResponse()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
+                    .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
+
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+            var result = await fixture.GetUserWithMetadata("octocat");
+
+            Assert.Equal("octocat", result.Content.Login);
+            Assert.False(string.IsNullOrEmpty(result.Content.AvatarUrl));
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task HitTheGitHubUserApiAsObservableRefitResponse()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
+                    .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+            
+            var result = await fixture.GetUserObservableWithMetadata("octocat")
+                .Timeout(TimeSpan.FromSeconds(10));
+
+            Assert.Equal("octocat", result.Content.Login);
+            Assert.False(string.IsNullOrEmpty(result.Content.AvatarUrl));
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
         [Fact]
         public async Task HitTheGitHubUserApi()
         {
