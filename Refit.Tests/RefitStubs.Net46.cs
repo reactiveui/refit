@@ -339,17 +339,17 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
-        public virtual Task<RefitResponse<User>> GetUserWithMetadata(string userName)
+        public virtual Task<ApiResponse<User>> GetUserWithMetadata(string userName)
         {
             var arguments = new object[] { userName };
-            return (Task<RefitResponse<User>>) methodImpls["GetUserWithMetadata"](Client, arguments);
+            return (Task<ApiResponse<User>>) methodImpls["GetUserWithMetadata"](Client, arguments);
         }
 
         /// <inheritdoc />
-        public virtual IObservable<RefitResponse<User>> GetUserObservableWithMetadata(string userName)
+        public virtual IObservable<ApiResponse<User>> GetUserObservableWithMetadata(string userName)
         {
             var arguments = new object[] { userName };
-            return (IObservable<RefitResponse<User>>) methodImpls["GetUserObservableWithMetadata"](Client, arguments);
+            return (IObservable<ApiResponse<User>>) methodImpls["GetUserObservableWithMetadata"](Client, arguments);
         }
 
     }

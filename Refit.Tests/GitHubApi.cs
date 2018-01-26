@@ -78,10 +78,10 @@ namespace Refit.Tests
         Task NothingToSeeHere();
 
         [Get("/users/{username}")]
-        Task<RefitResponse<User>> GetUserWithMetadata(string userName);
+        Task<ApiResponse<User>> GetUserWithMetadata(string userName);
 
         [Get("/users/{username}")]
-        IObservable<RefitResponse<User>> GetUserObservableWithMetadata(string userName);
+        IObservable<ApiResponse<User>> GetUserObservableWithMetadata(string userName);
     }
 
     public class TestNested

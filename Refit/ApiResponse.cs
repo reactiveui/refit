@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 
 namespace Refit
 {
-    public class RefitResponse<T> : IRefitResponse<T>
+    public struct ApiResponse<T>
     {
         public HttpResponseHeaders Headers { get; }
         public bool IsSuccessStatusCode { get; }
@@ -15,7 +15,7 @@ namespace Refit
         public Version Version { get; }
         public T Content { get; }
 
-        public RefitResponse(HttpResponseMessage response,
+        public ApiResponse(HttpResponseMessage response,
                              T content)
         {
             Headers = response.Headers;
@@ -27,7 +27,7 @@ namespace Refit
             Content = content;
         }
 
-        internal RefitResponse(HttpResponseMessage response,
+        internal ApiResponse(HttpResponseMessage response,
                                object content) : this(response, (T)content)
         {
         }

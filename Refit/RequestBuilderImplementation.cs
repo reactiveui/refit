@@ -230,7 +230,7 @@ namespace Refit
                         using (var jsonReader = new JsonTextReader(reader))
                         {
                             if (restMethod.SerializedReturnType.IsConstructedGenericType &&
-                                restMethod.SerializedReturnType.GetGenericTypeDefinition() == typeof(RefitResponse<>).GetGenericTypeDefinition())
+                                restMethod.SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>))
                             {
                                 var type = restMethod.SerializedReturnType.GetGenericArguments()[0];
                                 var deserializedObject = serializer.Deserialize(jsonReader, type);
