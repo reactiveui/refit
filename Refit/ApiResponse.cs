@@ -26,10 +26,5 @@ namespace Refit
             Version = response.Version;
             Content = content;
         }
-
-        internal ApiResponse(HttpResponseMessage response,
-                               object content) : this(response, (T)content)
-        {
-        }
     }
 }
