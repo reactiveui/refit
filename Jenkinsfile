@@ -7,13 +7,13 @@ node('Slave-Azure'){
     }
     
     stage ('Change Version'){
-        sh """sed -i 's/1.0.0/2.0.${BUILD_NUMBER}/' ${WORKSPACE}/Refit/VV-refit.csproj"""
+        sh """sed -i 's/1.0.0/2.0.${BUILD_NUMBER}/' ${WORKSPACE}/Refit/VV-Refit.csproj"""
 	    
     }
        
     
     stage('Deploy Nugget'){
-        sh "dotnet pack ./Refit/VV-refit.csproj --output ${WORKSPACE}"       
+        sh "dotnet pack ./Refit/VV-Refit.csproj --output ${WORKSPACE}"       
         
     }    
     
