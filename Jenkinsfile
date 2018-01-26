@@ -22,7 +22,7 @@ node('Slave-Azure'){
             sh 'var=$(ls -q *.nupkg) && echo $var > env.txt'           
             int max= sh (returnStdout: true, script: ''' ls -1 *.nupkg | wc -l ''').toInteger()
             for (int i=1; i<=max; ++i) {
-                sh "PKG=\$(cat env.txt  | cut -d' ' -f" + i + ") && curl -u $NEX_User:$NEX_Pass -X PUT -v -include -F package=@${WORKSPACE}/\$PKG http://ab669e0edf94311e7a4fa16e33787931-2103240931.us-east-1.elb.amazonaws.com:8081/repository/refit/\$PKG"
+                sh "PKG=\$(cat env.txt  | cut -d' ' -f" + i + ") && curl -u $NEX_User:$NEX_Pass -X PUT -v -include -F package=@${WORKSPACE}/\$PKG http://ab669e0edf94311e7a4fa16e33787931-2103240931.us-east-1.elb.amazonaws.com:8081/repository/nugget-poc/\$PKG"
             }             
         }
         
