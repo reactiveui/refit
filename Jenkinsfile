@@ -7,7 +7,7 @@ node('Slave-Azure'){
     }
     
     stage ('Change Version'){
-        sh """sed -i 's/1.0.0/2.0.${BUILD_NUMBER}/' ${WORKSPACE}/Refit/Refit.csproj"""
+        sh """sed -i 's/1.0.0/2.0.${BUILD_NUMBER}/' ${WORKSPACE}/Refit/VV-refit.csproj"""
 	    
     }
        
