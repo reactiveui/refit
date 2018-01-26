@@ -13,7 +13,7 @@ node('Slave-Azure'){
        
     
     stage('Deploy Nugget'){
-        sh "dotnet pack ./Refit/Refit.csproj --output ${WORKSPACE}"       
+        sh "dotnet pack ./Refit/VV-refit.csproj --output ${WORKSPACE}"       
         
     }    
     
