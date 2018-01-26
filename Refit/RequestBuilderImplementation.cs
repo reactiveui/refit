@@ -170,8 +170,16 @@ namespace Refit
                             return (T)(object)await reader.ReadToEndAsync().ConfigureAwait(false);
                         }
 
-                        using(var jsonReader = new JsonTextReader(reader))
+                        using (var jsonReader = new JsonTextReader(reader))
                         {
+                            if (restMethod.SerializedReturnType.IsConstructedGenericType &&
+                                restMethod.SerializedReturnType.GetGenericTypeDefinition() == typeof(RefitResponse<>).GetGenericTypeDefinition())
+                            {
+                                var type = restMethod.SerializedReturnType.GetGenericArguments()[0];
+                                var deserializedObject = serializer.Deserialize(jsonReader, type);
+
+                                return (T)(object)Activator.CreateInstance(typeof(T), resp, deserializedObject);
+                            }
                             return serializer.Deserialize<T>(jsonReader);
                         }
                     }
