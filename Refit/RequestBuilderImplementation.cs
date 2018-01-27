@@ -201,7 +201,7 @@ namespace Refit
                         return (T)(object)resp;
                     }
 
-                    var isApiResponse = (restMethod.SerializedReturnType.GetTypeInfo().BaseType == typeof(ApiResponse));
+                    var isApiResponse = restMethod.SerializedBaseType == typeof(ApiResponse);
 
                     if (!resp.IsSuccessStatusCode && !isApiResponse)
                     {
@@ -209,40 +209,42 @@ namespace Refit
                         throw await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
 
-                    if (restMethod.SerializedReturnType == typeof(HttpContent))
+                    var serializedReturnType = (isApiResponse) ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;                    
+
+                    if (serializedReturnType == typeof(HttpContent))
                     {
                         disposeResponse = false; // caller has to clean up the content
-                        var content = (T)(object)resp.Content;
+                        var content = (object)resp.Content;
                         if (isApiResponse)
-                            content = await ApiResponse.Create<T>(resp, content).ConfigureAwait(false);
-                        return content;
+                            content = ApiResponse.Create<T>(resp, content);
+                        return (T)content;
                     }
 
-                    if (restMethod.SerializedReturnType == typeof(Stream))
+                    if (serializedReturnType == typeof(Stream))
                     {
                         disposeResponse = false; // caller has to dispose
-                        var stream = (T)(object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                        var stream = (object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
                         if (isApiResponse)
-                            stream = await ApiResponse.Create<T>(resp, stream).ConfigureAwait(false);
-                        return stream;
+                            stream = ApiResponse.Create<T>(resp, stream);
+                        return (T)stream;
                     }
 
                     using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
                     using (var reader = new StreamReader(stream))
                     {
-                        if (restMethod.SerializedReturnType == typeof(string))
+                        if (serializedReturnType == typeof(string))
                         {
-                            var str = (T)(object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                            var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
                             if (isApiResponse)
-                                str = await ApiResponse.Create<T>(resp, str).ConfigureAwait(false);
-                            return str;
+                                str = ApiResponse.Create<T>(resp, str);
+                            return (T)str;
                         }
 
                         using (var jsonReader = new JsonTextReader(reader))
                         {
-                            var json = serializer.Deserialize(jsonReader, isApiResponse ? restMethod.SerializedReturnType.GenericTypeArguments[0] : typeof(T));
+                            var json = serializer.Deserialize(jsonReader, isApiResponse ? restMethod.SerializedGenericArgument : typeof(T));
                             if (isApiResponse)
-                                json = await ApiResponse.Create<T>(resp, json).ConfigureAwait(false);
+                                json = ApiResponse.Create<T>(resp, json);
                             return (T)json;
                         }
                     }

@@ -27,7 +27,9 @@ namespace Refit
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
+        public Type SerializedBaseType { get; set; }
         public RefitSettings RefitSettings { get; set; }
+        public Type SerializedGenericArgument { get; set; }
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
         static readonly HttpMethod patchMethod = new HttpMethod("PATCH");
@@ -280,10 +282,16 @@ namespace Refit
 
             ReturnType = methodInfo.ReturnType;
             SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
+
+            var serializedReturnTypeInfo = SerializedReturnType.GetTypeInfo();
+            SerializedBaseType = serializedReturnTypeInfo.BaseType;
+            if (serializedReturnTypeInfo.IsGenericType)
+                SerializedGenericArgument = SerializedReturnType.GetGenericArguments()[0];
+
             return;
 
         bogusMethod:
             throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
-        }
+        }     
     }
 }

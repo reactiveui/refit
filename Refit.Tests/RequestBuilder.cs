@@ -354,6 +354,9 @@ namespace Refit.Tests
     public interface IDummyHttpApi
     {
         [Get("/foo/bar/{id}")]
+        Task<ApiResponse<string>> FetchSomeStringWithMetadata(int id);
+
+        [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuff(int id);
 
         [Get("/foo/bar/{id}?baz=bamf")]
@@ -527,6 +530,30 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void HttpContentAsApiResponseTest()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IHttpContentApi));
+            var factory = fixture.BuildRestResultFuncForMethod("PostFileUploadWithMetadata");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+            var retContent = new StreamContent(new MemoryStream());
+            testHttpMessageHandler.Content = retContent;
+
+            var mpc = new MultipartContent("foosubtype");
+
+            var task = (Task<ApiResponse<HttpContent>>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { mpc });
+            task.Wait();
+
+            Assert.NotNull(task.Result.Headers);
+            Assert.True(task.Result.IsSuccessStatusCode);
+            Assert.NotNull(task.Result.ReasonPhrase);
+            Assert.False(task.Result.StatusCode == default(HttpStatusCode));
+            Assert.NotNull(task.Result.Version);
+
+            Assert.Equal(testHttpMessageHandler.RequestMessage.Content, mpc);
+            Assert.Equal(retContent, task.Result.Content);
+        }
+
+        [Fact]
         public void HttpContentTest()
         {
             var fixture = new RequestBuilderImplementation(typeof(IHttpContentApi));
@@ -542,6 +569,34 @@ namespace Refit.Tests
 
             Assert.Equal(testHttpMessageHandler.RequestMessage.Content, mpc);
             Assert.Equal(retContent, task.Result);
+        }
+
+        [Fact]
+        public void StreamResponseAsApiResponseTest()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IStreamApi));
+            var factory = fixture.BuildRestResultFuncForMethod("GetRemoteFileWithMetadata");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+            var streamResponse = new MemoryStream();
+            var reponseContent = "A remote file";
+            testHttpMessageHandler.Content = new StreamContent(streamResponse);
+
+            var writer = new StreamWriter(streamResponse);
+            writer.Write(reponseContent);
+            writer.Flush();
+            streamResponse.Seek(0L, SeekOrigin.Begin);
+
+            var task = (Task<ApiResponse<Stream>>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { "test-file" });
+            task.Wait();
+
+            Assert.NotNull(task.Result.Headers);
+            Assert.True(task.Result.IsSuccessStatusCode);
+            Assert.NotNull(task.Result.ReasonPhrase);
+            Assert.False(task.Result.StatusCode == default(HttpStatusCode));
+            Assert.NotNull(task.Result.Version);
+
+            using (var reader = new StreamReader(task.Result.Content))
+                Assert.Equal(reponseContent, reader.ReadToEnd());
         }
 
         [Fact]
@@ -745,6 +800,25 @@ namespace Refit.Tests
             Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", output.Headers.UserAgent.ToString());
             Assert.False(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+        }
+
+        [Fact]
+        public void ReadStringContentWithMetadata()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStringWithMetadata");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var task = (Task<ApiResponse<string>>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
+            task.Wait();
+
+            Assert.NotNull(task.Result.Headers);
+            Assert.True(task.Result.IsSuccessStatusCode);
+            Assert.NotNull(task.Result.ReasonPhrase);
+            Assert.False(task.Result.StatusCode == default(HttpStatusCode));
+            Assert.NotNull(task.Result.Version);
+
+            Assert.Equal("test", task.Result.Content);
         }
 
         [Fact]

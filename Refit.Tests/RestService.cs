@@ -73,12 +73,18 @@ namespace Refit.Tests
     {
         [Post("/blah")]
         Task<HttpContent> PostFileUpload([Body] HttpContent content);
+
+        [Post("/blah")]
+        Task<ApiResponse<HttpContent>> PostFileUploadWithMetadata([Body] HttpContent content);
     }
     
     public interface IStreamApi
     {
         [Post("/{filename}")]
         Task<Stream> GetRemoteFile(string filename);
+
+        [Post("/{filename}")]
+        Task<ApiResponse<Stream>> GetRemoteFileWithMetadata(string filename);
     }
 
     public interface IApiWithDecimal
@@ -158,7 +164,7 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public async Task HitTheGitHubUserApiAsObservableRefitResponse()
+        public async Task HitTheGitHubUserApiAsObservableApiResponse()
         {
             var mockHttp = new MockHttpMessageHandler();
 
