@@ -34,11 +34,14 @@ namespace Refit
             targetType = targetInterface;
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
-            foreach (var methodInfo in targetInterface.GetMethods()) {
+            foreach (var methodInfo in targetInterface.GetMethods()) 
+            {
                 var attrs = methodInfo.GetCustomAttributes(true);
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
-                if (hasHttpMethod) {
-                    if (!dict.ContainsKey(methodInfo.Name)) {
+                if (hasHttpMethod) 
+                {
+                    if (!dict.ContainsKey(methodInfo.Name)) 
+                    {
                         dict.Add(methodInfo.Name, new List<RestMethodInfo>());
                     }
                     var restinfo = new RestMethodInfo(targetInterface, methodInfo, settings);
@@ -49,52 +52,58 @@ namespace Refit
             interfaceHttpMethods = dict;
         }
 
-        public IEnumerable<string> InterfaceHttpMethods => interfaceHttpMethods.Keys;
-
-
         RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes)
         {
-            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) {
-                if (parameterTypes == null) {
-                    if (httpMethods.Count > 1) {
+            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) 
+            {
+                if (parameterTypes == null) 
+                {
+                    if (httpMethods.Count > 1) 
+                    {
                         throw new ArgumentException($"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
                     }
                     return httpMethods[0];
                 }
 
-                var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count()).ToList();
+                var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count())
+                                                 .ToList();
 
                 if (possibleMethods.Count == 1)
                     return possibleMethods[0];
 
                 var parameterTypesArray = parameterTypes.ToArray();
-                foreach (var method in possibleMethods) {
+                foreach (var method in possibleMethods) 
+                {
                     var match = true;
                     var parameters = method.MethodInfo.GetParameters();
 
-                    for (var i = 0; i < parameterTypesArray.Length; i++) {
+                    for (var i = 0; i < parameterTypesArray.Length; i++) 
+                    {
                         var arg = parameterTypesArray[i];
                         var paramType = parameters[i].ParameterType;
 
-                        if (arg != paramType) {
+                        if (arg != paramType) 
+                        {
                             match = false;
                             break;
                         }
                     }
 
-                    if (match) {
+                    if (match) 
+                    {
                         return method;
                     }
                 }
 
                 throw new Exception("No suitable Method found...");
-            } else {
+            }
+            else 
+            {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
 
         }
-
-
+        
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName))
@@ -103,7 +112,6 @@ namespace Refit
             }
 
             var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes);
-
             if (restMethod.ReturnType == typeof(Task))
             {
                 return BuildVoidTaskFuncForMethod(restMethod);
@@ -119,7 +127,7 @@ namespace Refit
                 var taskFunc = (MulticastDelegate)taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
                                                             .Invoke(this, new[] { restMethod });
 
-                return (client, args) => { return taskFunc.DynamicInvoke(client, args); };
+                return (client, args) => taskFunc.DynamicInvoke(client, args);
             }
 
             // Same deal
@@ -127,7 +135,7 @@ namespace Refit
             var rxFunc = (MulticastDelegate)rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
                                                     .Invoke(this, new[] { restMethod });
 
-            return (client, args) => { return rxFunc.DynamicInvoke(client, args); };
+            return (client, args) => rxFunc.DynamicInvoke(client, args); 
         }
 
         void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
