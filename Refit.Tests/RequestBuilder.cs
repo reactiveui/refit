@@ -153,7 +153,7 @@ namespace Refit.Tests
         [Fact]
         public void GarbagePathsShouldThrow()
         {
-            bool shouldDie = true;
+            var shouldDie = true;
 
             try {
                 var input = typeof(IRestMethodInfoTests);
@@ -168,7 +168,7 @@ namespace Refit.Tests
         [Fact]
         public void MissingParametersShouldBlowUp()
         {
-            bool shouldDie = true;
+            var shouldDie = true;
 
             try {
                 var input = typeof(IRestMethodInfoTests);
@@ -328,7 +328,7 @@ namespace Refit.Tests
         [Fact]
         public void SyncMethodsShouldThrow()
         {
-            bool shouldDie = true;
+            var shouldDie = true;
 
             try {
                 var input = typeof(IRestMethodInfoTests);
@@ -424,9 +424,9 @@ namespace Refit.Tests
     interface ICancellableMethods
     {
         [Get("/foo")]
-        Task GetWithCancellation(CancellationToken token = default (CancellationToken));
+        Task GetWithCancellation(CancellationToken token = default);
         [Get("/foo")]
-        Task<string> GetWithCancellationAndReturn(CancellationToken token = default (CancellationToken));
+        Task<string> GetWithCancellationAndReturn(CancellationToken token = default);
     }
 
   
@@ -577,7 +577,7 @@ namespace Refit.Tests
             };
 
             foreach (var v in failureMethods) {
-                bool shouldDie = true;
+                var shouldDie = true;
 
                 try {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
@@ -589,7 +589,7 @@ namespace Refit.Tests
             }
 
             foreach (var v in successMethods) {
-                bool shouldDie = false;
+                var shouldDie = false;
 
                 try {
                     var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));

@@ -16,7 +16,7 @@ namespace Refit
 {
     partial class RequestBuilderImplementation : IRequestBuilder
     {
-        readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
+        readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
         readonly JsonSerializer serializer;
         readonly RefitSettings settings;
         readonly Type targetType;
@@ -32,24 +32,86 @@ namespace Refit
             }
 
             targetType = targetInterface;
-            interfaceHttpMethods = targetInterface.GetMethods()
-                                                  .Where(x => x.GetCustomAttributes(true)
-                                                               .OfType<HttpMethodAttribute>().Any())
-                                                  .Select(x => new RestMethodInfo(targetInterface, x, settings))
-                                                  .ToDictionary(k => k.Name, v => v);
+            var dict = new Dictionary<string, List<RestMethodInfo>>();
+
+            foreach (var methodInfo in targetInterface.GetMethods()) 
+            {
+                var attrs = methodInfo.GetCustomAttributes(true);
+                var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
+                if (hasHttpMethod) 
+                {
+                    if (!dict.ContainsKey(methodInfo.Name)) 
+                    {
+                        dict.Add(methodInfo.Name, new List<RestMethodInfo>());
+                    }
+                    var restinfo = new RestMethodInfo(targetInterface, methodInfo, settings);
+                    dict[methodInfo.Name].Add(restinfo);
+                }
+            }
+
+            interfaceHttpMethods = dict;
         }
 
-        public IEnumerable<string> InterfaceHttpMethods => interfaceHttpMethods.Keys;
+        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes)
+        {
+            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) 
+            {
+                if (parameterTypes == null) 
+                {
+                    if (httpMethods.Count > 1) 
+                    {
+                        throw new ArgumentException($"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
+                    }
+                    return httpMethods[0];
+                }
 
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
+                var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count())
+                                                 .ToList();
+
+                if (possibleMethods.Count == 1)
+                    return possibleMethods[0];
+
+                var parameterTypesArray = parameterTypes.ToArray();
+                foreach (var method in possibleMethods) 
+                {
+                    var match = true;
+                    var parameters = method.MethodInfo.GetParameters();
+
+                    for (var i = 0; i < parameterTypesArray.Length; i++) 
+                    {
+                        var arg = parameterTypesArray[i];
+                        var paramType = parameters[i].ParameterType;
+
+                        if (arg != paramType) 
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match) 
+                    {
+                        return method;
+                    }
+                }
+
+                throw new Exception("No suitable Method found...");
+            }
+            else 
+            {
+                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
+            }
+
+        }
+        
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName))
             {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
 
-            var restMethod = interfaceHttpMethods[methodName];
-
+            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes);
             if (restMethod.ReturnType == typeof(Task))
             {
                 return BuildVoidTaskFuncForMethod(restMethod);
@@ -65,7 +127,7 @@ namespace Refit
                 var taskFunc = (MulticastDelegate)taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
                                                             .Invoke(this, new[] { restMethod });
 
-                return (client, args) => { return taskFunc.DynamicInvoke(client, args); };
+                return (client, args) => taskFunc.DynamicInvoke(client, args);
             }
 
             // Same deal
@@ -73,31 +135,27 @@ namespace Refit
             var rxFunc = (MulticastDelegate)rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
                                                     .Invoke(this, new[] { restMethod });
 
-            return (client, args) => { return rxFunc.DynamicInvoke(client, args); };
+            return (client, args) => rxFunc.DynamicInvoke(client, args); 
         }
 
         void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
-            var multipartItem = itemValue as MultipartItem;
-            var streamValue = itemValue as Stream;
-            var stringValue = itemValue as string;
-            var byteArrayValue = itemValue as byte[];
 
-            if (multipartItem != null)
+            if (itemValue is MultipartItem multipartItem) 
             {
                 var httpContent = multipartItem.ToContent();
                 multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
                 return;
             }
 
-            if (streamValue != null)
+            if (itemValue is Stream streamValue)
             {
                 var streamContent = new StreamContent(streamValue);
                 multiPartContent.Add(streamContent, parameterName, fileName);
                 return;
             }
 
-            if (stringValue != null)
+            if (itemValue is string stringValue) 
             {
                 multiPartContent.Add(new StringContent(stringValue), parameterName, fileName);
                 return;
@@ -110,8 +168,7 @@ namespace Refit
                 return;
             }
 
-            if (byteArrayValue != null)
-            {
+            if (itemValue is byte[] byteArrayValue) {
                 var fileContent = new ByteArrayContent(byteArrayValue);
                 multiPartContent.Add(fileContent, parameterName, fileName);
                 return;
@@ -127,7 +184,7 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
                 HttpResponseMessage resp = null;
                 var disposeResponse = true;
@@ -271,15 +328,9 @@ namespace Refit
             return kvps;
         }
 
-        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
+        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
         {
-            if (!interfaceHttpMethods.ContainsKey(methodName))
-            {
-                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
-            }
-
-            var restMethod = interfaceHttpMethods[methodName];
-
+           
             return paramList =>
             {
                 // make sure we strip out any cancelation tokens
@@ -470,7 +521,7 @@ namespace Refit
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
-                foreach (string key in query.AllKeys)
+                foreach (var key in query.AllKeys)
                 {
                     queryParamsToAdd.Insert(0, new KeyValuePair<string, string>(key, query[key]));
                 }
@@ -533,7 +584,7 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
                 var ct = CancellationToken.None;

@@ -80,7 +80,7 @@ namespace Refit.Generator
 
             var ns = parent as NamespaceDeclarationSyntax;
             ret.Namespace = ns.Name.ToString();
-            ret.InterfaceName = getInterfaceName(interfaceTree.Identifier);
+            ret.InterfaceName = GetInterfaceName(interfaceTree.Identifier);
             ret.GeneratedClassSuffix = ret.InterfaceName.Replace(".", "");
             ret.Modifiers = interfaceTree.Modifiers.Select(t => t.ValueText).FirstOrDefault(m => m == "public" || m == "internal");
 
@@ -107,6 +107,8 @@ namespace Refit.Generator
                                               ArgumentListWithTypes = string.Join(",",
                                                                                   x.ParameterList.Parameters
                                                                                    .Select(y => $"{y.Type.ToString()} {y.Identifier.Text}")),
+                                              ArgumentTypesList = string.Join(",", x.ParameterList.Parameters
+                                                                                  .Select(y => $"typeof({y.Type.ToString()})")),
                                               IsRefitMethod = HasRefitHttpMethodAttribute(x)
                                           })
                                           .ToList();
@@ -165,22 +167,8 @@ namespace Refit.Generator
                                            .Where(x => !HasRefitHttpMethodAttribute(x.Method))
                                            .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
 
-            var overloadWarnings = interfacesToGenerate
-                                   .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new
-                                   {
-                                       Interface = i,
-                                       Method = m
-                                   }))
-                                   .Where(x => HasRefitHttpMethodAttribute(x.Method))
-                                   .GroupBy(x => new
-                                   {
-                                       x.Interface,
-                                       MethodName = x.Method.Identifier.Text
-                                   })
-                                   .Where(g => g.Count() > 1)
-                                   .SelectMany(g => g.Select(x => new MultipleRefitMethodSameNameWarning(x.Interface, x.Method)));
-
-            var diagnostics = missingAttributeWarnings.Concat<Diagnostic>(overloadWarnings);
+           
+            var diagnostics = missingAttributeWarnings;
 
             foreach (var diagnostic in diagnostics)
             {
@@ -199,7 +187,7 @@ namespace Refit.Generator
                                    a.ArgumentList.Arguments[0].Expression.Kind() == SyntaxKind.StringLiteralExpression);
         }
 
-        private string getInterfaceName(SyntaxToken identifier)
+        private string GetInterfaceName(SyntaxToken identifier)
         {
             if (identifier == null) return "";
             var interfaceParent = identifier.Parent != null ? identifier.Parent.Parent : identifier.Parent;
@@ -234,6 +222,7 @@ namespace Refit.Generator
     {
         public string ArgumentList { get; set; }
         public string ArgumentListWithTypes { get; set; }
+        public string ArgumentTypesList { get; set; }
         public bool IsRefitMethod { get; set; }
         public string Name { get; set; }
         public string ReturnType { get; set; }

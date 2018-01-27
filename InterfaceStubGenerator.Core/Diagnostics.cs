@@ -90,25 +90,6 @@ namespace Refit.Generator
         public string MethodName { get; }
     }
 
-    public class MultipleRefitMethodSameNameWarning : Warning
-    {
-        public MultipleRefitMethodSameNameWarning(InterfaceDeclarationSyntax @interface, MethodDeclarationSyntax method)
-            : base("RF002")
-        {
-            setLocation(method.GetLocation());
-
-            InterfaceName = @interface.Identifier.Text;
-            MethodName = method.Identifier.Text;
-
-            Message = string.Format(
-                "Method {0}.{1} has been declared multiple times. Refit doesn't support overloading.",
-                InterfaceName,
-                MethodName);
-        }
-
-        public string InterfaceName { get; }
-        public string MethodName { get; }
-    }
 
     public class ReadOnlyFileError : Error
     {
