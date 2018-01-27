@@ -10,7 +10,6 @@ namespace Refit
     {
         IEnumerable<string> InterfaceHttpMethods { get; }
         Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null);
-        Func<HttpClient, object[], object> GetHttpMethod(string key, object[] parameterTypes);
     }
 
     public static class RequestBuilder

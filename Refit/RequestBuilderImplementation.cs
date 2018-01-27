@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Reflection;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +16,7 @@ namespace Refit
 {
     partial class RequestBuilderImplementation : IRequestBuilder
     {
-        readonly ConcurrentDictionary<string, List<RestMethodInfo>> interfaceHttpMethods = new ConcurrentDictionary<string, List<RestMethodInfo>>();
+        readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
         readonly JsonSerializer serializer;
         readonly RefitSettings settings;
         readonly Type targetType;
@@ -33,35 +32,32 @@ namespace Refit
             }
 
             targetType = targetInterface;
+            var dict = new Dictionary<string, List<RestMethodInfo>>();
 
             foreach (var methodInfo in targetInterface.GetMethods()) {
                 var attrs = methodInfo.GetCustomAttributes(true);
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                 if (hasHttpMethod) {
+                    if (!dict.ContainsKey(methodInfo.Name)) {
+                        dict.Add(methodInfo.Name, new List<RestMethodInfo>());
+                    }
                     var restinfo = new RestMethodInfo(targetInterface, methodInfo, settings);
-                    interfaceHttpMethods.AddOrUpdate(methodInfo.Name, s => new[] { restinfo }.ToList(), (s, list) => {
-                        list.Add(restinfo);
-                        return list;
-                    });
+                    dict[methodInfo.Name].Add(restinfo);
                 }
             }
 
+            interfaceHttpMethods = dict;
         }
 
         public IEnumerable<string> InterfaceHttpMethods => interfaceHttpMethods.Keys;
 
-        public Func<HttpClient, object[], object> GetHttpMethod(string key, object[] parameters = null)
-        {
-            var parameterTypes = parameters?.Select(p => p?.GetType() ?? typeof(object)).ToArray();
-            return BuildRestResultFuncForMethod(key, parameterTypes);
-        }
 
         RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes)
         {
             if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) {
                 if (parameterTypes == null) {
                     if (httpMethods.Count > 1) {
-                        throw new ArgumentException("MethodName exists more than once, ParameterTypes mut be defined");
+                        throw new ArgumentException($"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
                     }
                     return httpMethods[0];
                 }

@@ -70,14 +70,14 @@ namespace Refit.Tests
         public virtual Task RefitMethod()
         {
             var arguments = new object[] {  };
-            return (Task) _requestBuilder.GetHttpMethod("RefitMethod", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("RefitMethod", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task AnotherRefitMethod()
         {
             var arguments = new object[] {  };
-            return (Task) _requestBuilder.GetHttpMethod("AnotherRefitMethod", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("AnotherRefitMethod", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
@@ -90,14 +90,14 @@ namespace Refit.Tests
         public virtual Task SpacesShouldntBreakMe()
         {
             var arguments = new object[] {  };
-            return (Task) _requestBuilder.GetHttpMethod("SpacesShouldntBreakMe", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("SpacesShouldntBreakMe", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task ReservedWordsForParameterNames(int @int,string @string,float @long)
         {
             var arguments = new object[] { @int,@string,@long };
-            return (Task) _requestBuilder.GetHttpMethod("ReservedWordsForParameterNames", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("ReservedWordsForParameterNames", new Type[] { typeof(int),typeof(string),typeof(float) })(Client, arguments);
         }
 
     }
@@ -125,7 +125,7 @@ namespace Refit.Tests
         public virtual Task Post()
         {
             var arguments = new object[] {  };
-            return (Task) _requestBuilder.GetHttpMethod("Post", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("Post", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
@@ -160,35 +160,35 @@ namespace Refit.Tests
         public virtual Task<T> Create(T paylod)
         {
             var arguments = new object[] { paylod };
-            return (Task<T>) _requestBuilder.GetHttpMethod("Create", arguments)(Client, arguments);
+            return (Task<T>) _requestBuilder.BuildRestResultFuncForMethod("Create", new Type[] { typeof(T) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<List<T>> ReadAll()
         {
             var arguments = new object[] {  };
-            return (Task<List<T>>) _requestBuilder.GetHttpMethod("ReadAll", arguments)(Client, arguments);
+            return (Task<List<T>>) _requestBuilder.BuildRestResultFuncForMethod("ReadAll", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<T> ReadOne(TKey key)
         {
             var arguments = new object[] { key };
-            return (Task<T>) _requestBuilder.GetHttpMethod("ReadOne", arguments)(Client, arguments);
+            return (Task<T>) _requestBuilder.BuildRestResultFuncForMethod("ReadOne", new Type[] { typeof(TKey) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task Update(TKey key,T payload)
         {
             var arguments = new object[] { key,payload };
-            return (Task) _requestBuilder.GetHttpMethod("Update", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("Update", new Type[] { typeof(TKey),typeof(T) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task Delete(TKey key)
         {
             var arguments = new object[] { key };
-            return (Task) _requestBuilder.GetHttpMethod("Delete", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("Delete", new Type[] { typeof(TKey) })(Client, arguments);
         }
 
     }
@@ -216,7 +216,7 @@ namespace Refit.Tests
         public virtual Task<bool> PostAValue(string derp)
         {
             var arguments = new object[] { derp };
-            return (Task<bool>) _requestBuilder.GetHttpMethod("PostAValue", arguments)(Client, arguments);
+            return (Task<bool>) _requestBuilder.BuildRestResultFuncForMethod("PostAValue", new Type[] { typeof(string) })(Client, arguments);
         }
 
     }
@@ -244,56 +244,56 @@ namespace Refit.Tests
         public virtual Task<User> GetUser(string userName)
         {
             var arguments = new object[] { userName };
-            return (Task<User>) _requestBuilder.GetHttpMethod("GetUser", arguments)(Client, arguments);
+            return (Task<User>) _requestBuilder.BuildRestResultFuncForMethod("GetUser", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual IObservable<User> GetUserObservable(string userName)
         {
             var arguments = new object[] { userName };
-            return (IObservable<User>) _requestBuilder.GetHttpMethod("GetUserObservable", arguments)(Client, arguments);
+            return (IObservable<User>) _requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual IObservable<User> GetUserCamelCase(string userName)
         {
             var arguments = new object[] { userName };
-            return (IObservable<User>) _requestBuilder.GetHttpMethod("GetUserCamelCase", arguments)(Client, arguments);
+            return (IObservable<User>) _requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<List<User>> GetOrgMembers(string orgName)
         {
             var arguments = new object[] { orgName };
-            return (Task<List<User>>) _requestBuilder.GetHttpMethod("GetOrgMembers", arguments)(Client, arguments);
+            return (Task<List<User>>) _requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<UserSearchResult> FindUsers(string q)
         {
             var arguments = new object[] { q };
-            return (Task<UserSearchResult>) _requestBuilder.GetHttpMethod("FindUsers", arguments)(Client, arguments);
+            return (Task<UserSearchResult>) _requestBuilder.BuildRestResultFuncForMethod("FindUsers", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> GetIndex()
         {
             var arguments = new object[] {  };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("GetIndex", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("GetIndex", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual IObservable<string> GetIndexObservable()
         {
             var arguments = new object[] {  };
-            return (IObservable<string>) _requestBuilder.GetHttpMethod("GetIndexObservable", arguments)(Client, arguments);
+            return (IObservable<string>) _requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task NothingToSeeHere()
         {
             var arguments = new object[] {  };
-            return (Task) _requestBuilder.GetHttpMethod("NothingToSeeHere", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", new Type[] {  })(Client, arguments);
         }
 
     }
@@ -323,21 +323,21 @@ namespace Refit.Tests
         public virtual Task<TResponse> Get(TParam param,THeader header)
         {
             var arguments = new object[] { param,header };
-            return (Task<TResponse>) _requestBuilder.GetHttpMethod("Get", arguments)(Client, arguments);
+            return (Task<TResponse>) _requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TParam),typeof(THeader) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<TResponse> GetQuery(TParam param)
         {
             var arguments = new object[] { param };
-            return (Task<TResponse>) _requestBuilder.GetHttpMethod("GetQuery", arguments)(Client, arguments);
+            return (Task<TResponse>) _requestBuilder.BuildRestResultFuncForMethod("GetQuery", new Type[] { typeof(TParam) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<TResponse> GetQueryWithIncludeParameterName(TParam param)
         {
             var arguments = new object[] { param };
-            return (Task<TResponse>) _requestBuilder.GetHttpMethod("GetQueryWithIncludeParameterName", arguments)(Client, arguments);
+            return (Task<TResponse>) _requestBuilder.BuildRestResultFuncForMethod("GetQueryWithIncludeParameterName", new Type[] { typeof(TParam) })(Client, arguments);
         }
 
     }
@@ -365,7 +365,7 @@ namespace Refit.Tests
         public virtual Task<HttpContent> PostFileUpload(HttpContent content)
         {
             var arguments = new object[] { content };
-            return (Task<HttpContent>) _requestBuilder.GetHttpMethod("PostFileUpload", arguments)(Client, arguments);
+            return (Task<HttpContent>) _requestBuilder.BuildRestResultFuncForMethod("PostFileUpload", new Type[] { typeof(HttpContent) })(Client, arguments);
         }
 
     }
@@ -393,7 +393,7 @@ namespace Refit.Tests
         public virtual Task<SomeType> SomeRequest()
         {
             var arguments = new object[] {  };
-            return (Task<SomeType>) _requestBuilder.GetHttpMethod("SomeRequest", arguments)(Client, arguments);
+            return (Task<SomeType>) _requestBuilder.BuildRestResultFuncForMethod("SomeRequest", new Type[] {  })(Client, arguments);
         }
 
     }
@@ -421,56 +421,56 @@ namespace Refit.Tests
         public virtual Task<User> GetUser(string userName)
         {
             var arguments = new object[] { userName };
-            return (Task<User>) _requestBuilder.GetHttpMethod("GetUser", arguments)(Client, arguments);
+            return (Task<User>) _requestBuilder.BuildRestResultFuncForMethod("GetUser", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual IObservable<User> GetUserObservable(string userName)
         {
             var arguments = new object[] { userName };
-            return (IObservable<User>) _requestBuilder.GetHttpMethod("GetUserObservable", arguments)(Client, arguments);
+            return (IObservable<User>) _requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual IObservable<User> GetUserCamelCase(string userName)
         {
             var arguments = new object[] { userName };
-            return (IObservable<User>) _requestBuilder.GetHttpMethod("GetUserCamelCase", arguments)(Client, arguments);
+            return (IObservable<User>) _requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<List<User>> GetOrgMembers(string orgName)
         {
             var arguments = new object[] { orgName };
-            return (Task<List<User>>) _requestBuilder.GetHttpMethod("GetOrgMembers", arguments)(Client, arguments);
+            return (Task<List<User>>) _requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<UserSearchResult> FindUsers(string q)
         {
             var arguments = new object[] { q };
-            return (Task<UserSearchResult>) _requestBuilder.GetHttpMethod("FindUsers", arguments)(Client, arguments);
+            return (Task<UserSearchResult>) _requestBuilder.BuildRestResultFuncForMethod("FindUsers", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> GetIndex()
         {
             var arguments = new object[] {  };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("GetIndex", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("GetIndex", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual IObservable<string> GetIndexObservable()
         {
             var arguments = new object[] {  };
-            return (IObservable<string>) _requestBuilder.GetHttpMethod("GetIndexObservable", arguments)(Client, arguments);
+            return (IObservable<string>) _requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task NothingToSeeHere()
         {
             var arguments = new object[] {  };
-            return (Task) _requestBuilder.GetHttpMethod("NothingToSeeHere", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", new Type[] {  })(Client, arguments);
         }
 
     }
@@ -498,7 +498,7 @@ namespace Refit.Tests
         public virtual Task<RootObject> GetCongruence()
         {
             var arguments = new object[] {  };
-            return (Task<RootObject>) _requestBuilder.GetHttpMethod("GetCongruence", arguments)(Client, arguments);
+            return (Task<RootObject>) _requestBuilder.BuildRestResultFuncForMethod("GetCongruence", new Type[] {  })(Client, arguments);
         }
 
     }
@@ -526,7 +526,7 @@ namespace Refit.Tests
         public virtual Task Post()
         {
             var arguments = new object[] {  };
-            return (Task) _requestBuilder.GetHttpMethod("Post", arguments)(Client, arguments);
+            return (Task) _requestBuilder.BuildRestResultFuncForMethod("Post", new Type[] {  })(Client, arguments);
         }
 
     }
@@ -554,49 +554,49 @@ namespace Refit.Tests
         public virtual Task<HttpResponseMessage> UploadStream(Stream stream)
         {
             var arguments = new object[] { stream };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("UploadStream", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("UploadStream", new Type[] { typeof(Stream) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> UploadStreamPart(StreamPart stream)
         {
             var arguments = new object[] { stream };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("UploadStreamPart", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("UploadStreamPart", new Type[] { typeof(StreamPart) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> UploadBytes(byte[] bytes)
         {
             var arguments = new object[] { bytes };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("UploadBytes", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("UploadBytes", new Type[] { typeof(byte[]) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> UploadBytesPart(ByteArrayPart bytes)
         {
             var arguments = new object[] { bytes };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("UploadBytesPart", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("UploadBytesPart", new Type[] { typeof(ByteArrayPart) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> UploadString(string someString)
         {
             var arguments = new object[] { someString };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("UploadString", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("UploadString", new Type[] { typeof(string) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> UploadFileInfo(IEnumerable<FileInfo> fileInfos,FileInfo anotherFile)
         {
             var arguments = new object[] { fileInfos,anotherFile };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("UploadFileInfo", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("UploadFileInfo", new Type[] { typeof(IEnumerable<FileInfo>),typeof(FileInfo) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> UploadFileInfoPart(IEnumerable<FileInfoPart> fileInfos,FileInfoPart anotherFile)
         {
             var arguments = new object[] { fileInfos,anotherFile };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("UploadFileInfoPart", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("UploadFileInfoPart", new Type[] { typeof(IEnumerable<FileInfoPart>),typeof(FileInfoPart) })(Client, arguments);
         }
 
     }
@@ -624,7 +624,7 @@ namespace Refit.Tests
         public virtual Task<Stream> GetRemoteFile(string filename)
         {
             var arguments = new object[] { filename };
-            return (Task<Stream>) _requestBuilder.GetHttpMethod("GetRemoteFile", arguments)(Client, arguments);
+            return (Task<Stream>) _requestBuilder.BuildRestResultFuncForMethod("GetRemoteFile", new Type[] { typeof(string) })(Client, arguments);
         }
 
     }
@@ -654,28 +654,28 @@ namespace Refit.Tests
         public virtual Task<string> Get()
         {
             var arguments = new object[] {  };
-            return (Task<string>) _requestBuilder.GetHttpMethod("Get", arguments)(Client, arguments);
+            return (Task<string>) _requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<TResponse> Get(TParam param,THeader header)
         {
             var arguments = new object[] { param,header };
-            return (Task<TResponse>) _requestBuilder.GetHttpMethod("Get", arguments)(Client, arguments);
+            return (Task<TResponse>) _requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TParam),typeof(THeader) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<TResponse> Get(THeader param,TParam header)
         {
             var arguments = new object[] { param,header };
-            return (Task<TResponse>) _requestBuilder.GetHttpMethod("Get", arguments)(Client, arguments);
+            return (Task<TResponse>) _requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(THeader),typeof(TParam) })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> Get(int httpstatuscode)
         {
             var arguments = new object[] { httpstatuscode };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("Get", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(int) })(Client, arguments);
         }
 
     }
@@ -703,14 +703,14 @@ namespace Refit.Tests
         public virtual Task<string> Get()
         {
             var arguments = new object[] {  };
-            return (Task<string>) _requestBuilder.GetHttpMethod("Get", arguments)(Client, arguments);
+            return (Task<string>) _requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  })(Client, arguments);
         }
 
         /// <inheritdoc />
         public virtual Task<HttpResponseMessage> Get(int httpstatuscode)
         {
             var arguments = new object[] { httpstatuscode };
-            return (Task<HttpResponseMessage>) _requestBuilder.GetHttpMethod("Get", arguments)(Client, arguments);
+            return (Task<HttpResponseMessage>) _requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(int) })(Client, arguments);
         }
 
     }

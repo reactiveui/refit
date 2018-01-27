@@ -58,7 +58,7 @@ namespace {{Namespace}}
         {
 {{#IsRefitMethod}}    
             var arguments = new object[] { {{ArgumentList}} };
-            return ({{ReturnType}}) _requestBuilder.GetHttpMethod("{{Name}}", arguments)(Client, arguments);
+            return ({{ReturnType}}) _requestBuilder.BuildRestResultFuncForMethod("{{Name}}", new Type[] { {{ArgumentTypesList}} })(Client, arguments);
 {{/IsRefitMethod}}
 {{^IsRefitMethod}}
             throw new NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
