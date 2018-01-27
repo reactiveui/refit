@@ -106,7 +106,7 @@ namespace System.Net.Http
             {
                 onStreamAvailable(stream, content, transportContext);
                 // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L10
-                return Task.FromResult<AsyncVoid>(default(AsyncVoid));
+                return Task.FromResult<AsyncVoid>(default);
             };
         }
 

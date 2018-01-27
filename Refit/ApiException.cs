@@ -35,7 +35,7 @@ namespace Refit
 
         public T GetContentAs<T>() => HasContent ?
                 JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) :
-                default(T);
+                default;
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
         public static async Task<ApiException> Create(Uri uri, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)

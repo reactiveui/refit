@@ -80,7 +80,7 @@ namespace Refit.Generator
 
             var ns = parent as NamespaceDeclarationSyntax;
             ret.Namespace = ns.Name.ToString();
-            ret.InterfaceName = getInterfaceName(interfaceTree.Identifier);
+            ret.InterfaceName = GetInterfaceName(interfaceTree.Identifier);
             ret.GeneratedClassSuffix = ret.InterfaceName.Replace(".", "");
             ret.Modifiers = interfaceTree.Modifiers.Select(t => t.ValueText).FirstOrDefault(m => m == "public" || m == "internal");
 
@@ -187,7 +187,7 @@ namespace Refit.Generator
                                    a.ArgumentList.Arguments[0].Expression.Kind() == SyntaxKind.StringLiteralExpression);
         }
 
-        private string getInterfaceName(SyntaxToken identifier)
+        private string GetInterfaceName(SyntaxToken identifier)
         {
             if (identifier == null) return "";
             var interfaceParent = identifier.Parent != null ? identifier.Parent.Parent : identifier.Parent;

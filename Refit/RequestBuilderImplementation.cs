@@ -140,26 +140,22 @@ namespace Refit
 
         void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
-            var multipartItem = itemValue as MultipartItem;
-            var streamValue = itemValue as Stream;
-            var stringValue = itemValue as string;
-            var byteArrayValue = itemValue as byte[];
 
-            if (multipartItem != null)
+            if (itemValue is MultipartItem multipartItem) 
             {
                 var httpContent = multipartItem.ToContent();
                 multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
                 return;
             }
 
-            if (streamValue != null)
+            if (itemValue is Stream streamValue)
             {
                 var streamContent = new StreamContent(streamValue);
                 multiPartContent.Add(streamContent, parameterName, fileName);
                 return;
             }
 
-            if (stringValue != null)
+            if (itemValue is string stringValue) 
             {
                 multiPartContent.Add(new StringContent(stringValue), parameterName, fileName);
                 return;
@@ -172,8 +168,7 @@ namespace Refit
                 return;
             }
 
-            if (byteArrayValue != null)
-            {
+            if (itemValue is byte[] byteArrayValue) {
                 var fileContent = new ByteArrayContent(byteArrayValue);
                 multiPartContent.Add(fileContent, parameterName, fileName);
                 return;
@@ -526,7 +521,7 @@ namespace Refit
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
-                foreach (string key in query.AllKeys)
+                foreach (var key in query.AllKeys)
                 {
                     queryParamsToAdd.Insert(0, new KeyValuePair<string, string>(key, query[key]));
                 }
