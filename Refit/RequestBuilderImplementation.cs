@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Collections.Generic;
 using System.IO;
@@ -16,7 +17,7 @@ namespace Refit
 {
     partial class RequestBuilderImplementation : IRequestBuilder
     {
-        readonly Dictionary<string, RestMethodInfo> interfaceHttpMethods;
+        readonly ConcurrentDictionary<string, List<RestMethodInfo>> interfaceHttpMethods = new ConcurrentDictionary<string, List<RestMethodInfo>>();
         readonly JsonSerializer serializer;
         readonly RefitSettings settings;
         readonly Type targetType;
@@ -32,23 +33,80 @@ namespace Refit
             }
 
             targetType = targetInterface;
-            interfaceHttpMethods = targetInterface.GetMethods()
-                                                  .Where(x => x.GetCustomAttributes(true)
-                                                               .OfType<HttpMethodAttribute>().Any())
-                                                  .Select(x => new RestMethodInfo(targetInterface, x, settings))
-                                                  .ToDictionary(k => k.Name, v => v);
+
+            foreach (var methodInfo in targetInterface.GetMethods()) {
+                var attrs = methodInfo.GetCustomAttributes(true);
+                var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
+                if (hasHttpMethod) {
+                    var restinfo = new RestMethodInfo(targetInterface, methodInfo, settings);
+                    interfaceHttpMethods.AddOrUpdate(methodInfo.Name, s => new[] { restinfo }.ToList(), (s, list) => {
+                        list.Add(restinfo);
+                        return list;
+                    });
+                }
+            }
+
         }
 
         public IEnumerable<string> InterfaceHttpMethods => interfaceHttpMethods.Keys;
 
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName)
+        public Func<HttpClient, object[], object> GetHttpMethod(string key, object[] parameters = null)
+        {
+            var parameterTypes = parameters?.Select(p => p?.GetType() ?? typeof(object)).ToArray();
+            return BuildRestResultFuncForMethod(key, parameterTypes);
+        }
+
+        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes)
+        {
+            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) {
+                if (parameterTypes == null) {
+                    if (httpMethods.Count > 1) {
+                        throw new ArgumentException("MethodName exists more than once, ParameterTypes mut be defined");
+                    }
+                    return httpMethods[0];
+                }
+
+                var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count()).ToList();
+
+                if (possibleMethods.Count == 1)
+                    return possibleMethods[0];
+
+                var parameterTypesArray = parameterTypes.ToArray();
+                foreach (var method in possibleMethods) {
+                    var match = true;
+                    var parameters = method.MethodInfo.GetParameters();
+
+                    for (var i = 0; i < parameterTypesArray.Length; i++) {
+                        var arg = parameterTypesArray[i];
+                        var paramType = parameters[i].ParameterType;
+
+                        if (arg != paramType) {
+                            match = false;
+                            break;
+                        }
+                    }
+
+                    if (match) {
+                        return method;
+                    }
+                }
+
+                throw new Exception("No suitable Method found...");
+            } else {
+                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
+            }
+
+        }
+
+
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName))
             {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
 
-            var restMethod = interfaceHttpMethods[methodName];
+            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes);
 
             if (restMethod.ReturnType == typeof(Task))
             {
@@ -127,7 +185,7 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
                 HttpResponseMessage resp = null;
                 var disposeResponse = true;
@@ -271,15 +329,9 @@ namespace Refit
             return kvps;
         }
 
-        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(string methodName, string basePath, bool paramsContainsCancellationToken)
+        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
         {
-            if (!interfaceHttpMethods.ContainsKey(methodName))
-            {
-                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
-            }
-
-            var restMethod = interfaceHttpMethods[methodName];
-
+           
             return paramList =>
             {
                 // make sure we strip out any cancelation tokens
@@ -533,7 +585,7 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod.Name, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
 
                 var ct = CancellationToken.None;
