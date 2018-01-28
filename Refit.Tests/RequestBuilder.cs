@@ -419,6 +419,9 @@ namespace Refit.Tests
 
         [Patch("/foo/bar/{id}")]
         IObservable<string> PatchSomething(int id, [Body] string someAttribute);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithQueryFormat([Query(Format= "0.0")] int id);
     }
 
     interface ICancellableMethods
@@ -622,6 +625,17 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryParamShouldFormat()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithQueryFormat");
+            var output = factory(new object[] { 6 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/foo/bar/6.0", uri.PathAndQuery);
         }
 
         [Fact]

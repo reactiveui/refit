@@ -39,7 +39,16 @@ namespace Refit
     {
         public virtual string Format(object parameterValue, ParameterInfo parameterInfo)
         {
-            return parameterValue == null ? null : string.Format(CultureInfo.InvariantCulture, "{0}", parameterValue);
+            // See if we have a format
+            var formatString = parameterInfo.GetCustomAttribute<QueryAttribute>(true)?.Format;
+
+            return parameterValue == null
+                       ? null
+                       : string.Format(CultureInfo.InvariantCulture,
+                                       string.IsNullOrWhiteSpace(formatString)
+                                           ? "{0}"
+                                           : $"{{0:{formatString}}}",
+                                       parameterValue);
         }
     }
 
