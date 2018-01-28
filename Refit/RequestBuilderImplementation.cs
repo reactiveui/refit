@@ -246,7 +246,9 @@ namespace Refit
         List<KeyValuePair<string, object>> BuildQueryMap(object @object, string delimiter = null)
         {
             if (@object is IDictionary idictionary)
+            {
                 return BuildQueryMap(idictionary, delimiter);
+            }
 
             var kvps = new List<KeyValuePair<string, object>>();
 
@@ -440,7 +442,8 @@ namespace Refit
                         if (DoNotConvertToQueryMap(paramList[i]))
                         {
                             queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
-                        } else
+                        }
+                        else
                         {
                             foreach (var kvp in BuildQueryMap(paramList[i], attr.Delimiter))
                             {
@@ -617,9 +620,7 @@ namespace Refit
             switch (value)
             {
             case string str:
-            case DateTime dt:
-            case TimeSpan ts:
-            case Guid g:
+            case IFormattable f:
             case Uri uri:
                 return true;
             }
