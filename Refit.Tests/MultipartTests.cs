@@ -10,6 +10,7 @@ using Refit;
 
 namespace Refit.Tests
 {
+#pragma warning disable xUnit1004 // Test methods should not be skipped
     public interface IRunscopeApi
     {
         [Multipart]
@@ -117,6 +118,7 @@ namespace Refit.Tests
             }
         }
 
+
         [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
         public async Task MultipartUploadShouldWorkWithByteArrayPart()
         {
@@ -209,4 +211,5 @@ namespace Refit.Tests
             return stream;
         }
     }
+#pragma warning restore xUnit1004 // Test methods should not be skipped
 }
