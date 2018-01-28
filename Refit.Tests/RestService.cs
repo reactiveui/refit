@@ -81,6 +81,12 @@ namespace Refit.Tests
         Task<Stream> GetRemoteFile(string filename);
     }
 
+    public interface IApiWithDecimal
+    {
+        [Get("/withDecimal")]
+        Task<string> GetWithDecimal(decimal value);
+    }
+
     public class HttpBinGet
     {
         public Dictionary<string, object> Args { get; set; }
@@ -91,6 +97,30 @@ namespace Refit.Tests
 
     public class RestServiceIntegrationTests
     {
+        [Fact]
+        public async Task GetWithDecimal()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "http://foo/withDecimal")
+                    .WithExactQueryString(new[] { new KeyValuePair<string, string>("value", "3.456") })
+                    .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IApiWithDecimal>("http://foo", settings);
+
+            const decimal val = 3.456M;
+
+
+            var result = await fixture.GetWithDecimal(val);
+
+            mockHttp.VerifyNoOutstandingExpectation();            
+        }
+
+
         [Fact]
         public async Task HitTheGitHubUserApi()
         {
