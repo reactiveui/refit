@@ -17,27 +17,27 @@
   </PropertyGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(SourceLinkEnabled)' != 'false'">
-    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.7.4" PrivateAssets="All" /> 
+    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.7.6" PrivateAssets="All" /> 
   </ItemGroup>
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.5.24" PrivateAssets="All" />
   </ItemGroup>
   
   <PropertyGroup>
-    <NerdbankGitVersioningVersion>2.1.11</NerdbankGitVersioningVersion>
+    <NerdbankGitVersioningVersion>2.1.16</NerdbankGitVersioningVersion>
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.11" PrivateAssets="all" />
+    <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.16" PrivateAssets="all" />
   </ItemGroup>
 
   <!-- https://github.com/NuGet/Home/issues/4337 -->
   <ImportGroup Condition=" '$(ExcludeRestorePackageImports)' == 'true' ">
-    <Import Project="$(UserProfile)\.nuget\packages\nerdbank.gitversioning\$(NerdbankGitVersioningVersion)\buildCrossTargeting\Nerdbank.GitVersioning.targets"
-            Condition="Exists('$(UserProfile)\.nuget\packages\nerdbank.gitversioning\$(NerdbankGitVersioningVersion)\buildCrossTargeting\Nerdbank.GitVersioning.targets')" />
+    <Import Project="$(NuGetPackageRoot)nerdbank.gitversioning\$(NerdbankGitVersioningVersion)\buildCrossTargeting\Nerdbank.GitVersioning.targets"
+            Condition="Exists('$(NuGetPackageRoot)nerdbank.gitversioning\$(NerdbankGitVersioningVersion)\buildCrossTargeting\Nerdbank.GitVersioning.targets')" />
   </ImportGroup>
   <Target Name="FixUpVersion"
-      BeforeTargets="_GenerateRestoreProjectSpec"
-      DependsOnTargets="GetBuildVersion"
-      Condition=" '$(NerdbankGitVersioningTasksPath)' != '' " />
+          BeforeTargets="_GenerateRestoreProjectSpec"
+          DependsOnTargets="GetBuildVersion"
+          Condition=" '$(NerdbankGitVersioningTasksPath)' != '' " />
 </Project>
