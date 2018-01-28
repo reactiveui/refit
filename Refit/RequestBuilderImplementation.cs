@@ -393,7 +393,7 @@ namespace Refit
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
                             case BodySerializationMethod.UrlEncoded:
-                                ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i]));
+                                ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
                                 break;
                             case BodySerializationMethod.Json:
                                 var param = paramList[i];
