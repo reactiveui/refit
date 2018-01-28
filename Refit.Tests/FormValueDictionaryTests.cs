@@ -6,10 +6,12 @@ namespace Refit.Tests
 {
     public class FormValueDictionaryTests
     {
+        readonly RefitSettings settings = new RefitSettings();
+
         [Fact]
         public void EmptyIfNullPassedIn()
         {
-            var target = new FormValueDictionary(null);
+            var target = new FormValueDictionary(null, settings);
             Assert.Empty(target);
         }
 
@@ -22,7 +24,7 @@ namespace Refit.Tests
                 { "xyz", "123" }
             };
 
-            var target = new FormValueDictionary(source);
+            var target = new FormValueDictionary(source, settings);
 
             Assert.Equal(source, target);
         }
@@ -39,10 +41,9 @@ namespace Refit.Tests
             {
                 { "A", "1" },
                 { "B", "2" },
-                { "C", "" }
             };
 
-            var actual = new FormValueDictionary(source);
+            var actual = new FormValueDictionary(source, settings);
 
             Assert.Equal(expected, actual);
         }
@@ -69,7 +70,7 @@ namespace Refit.Tests
                 { "xyz", "123" }
             };
 
-            var actual = new FormValueDictionary(source);
+            var actual = new FormValueDictionary(source, settings);
 
 
             Assert.Equal(expected, actual);
@@ -83,7 +84,7 @@ namespace Refit.Tests
                 Foo = "abc"
             };
 
-            var target = new FormValueDictionary(source);
+            var target = new FormValueDictionary(source, settings);
 
             Assert.DoesNotContain("Foo", target.Keys);
             Assert.Contains("f", target.Keys);
@@ -98,7 +99,7 @@ namespace Refit.Tests
                 Bar = "xyz"
             };
 
-            var target = new FormValueDictionary(source);
+            var target = new FormValueDictionary(source, settings);
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.Contains("b", target.Keys);
@@ -113,7 +114,7 @@ namespace Refit.Tests
                 Baz = "123"
             };
 
-            var target = new FormValueDictionary(source);
+            var target = new FormValueDictionary(source, settings);
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.DoesNotContain("z", target.Keys);
@@ -121,6 +122,20 @@ namespace Refit.Tests
             Assert.Equal("123", target["a"]);
         }
 
+
+        [Fact]
+        public void SkipsNullValuesFromDictionary()
+        {
+            var source = new Dictionary<string, string> {
+                { "foo", "bar" },
+                { "xyz", null }
+            };
+
+            var target = new FormValueDictionary(source, settings);
+
+            Assert.Single(target);
+            Assert.Contains("foo", target.Keys);
+        }
 
         public class AliasingTestClass
         {

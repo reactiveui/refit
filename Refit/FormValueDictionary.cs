@@ -13,7 +13,7 @@ namespace Refit
         static readonly Dictionary<Type, PropertyInfo[]> propertyCache
             = new Dictionary<Type, PropertyInfo[]>();
 
-        public FormValueDictionary(object source)
+        public FormValueDictionary(object source, RefitSettings settings)
         {
             if (source == null) return;
 
@@ -21,7 +21,11 @@ namespace Refit
             {
                 foreach (var key in dictionary.Keys)
                 {
-                    Add(key.ToString(), $"{dictionary[key]}");
+                    var value = dictionary[key];
+                    if (value != null && key != null)
+                    {
+                        Add(key.ToString(),  settings.UrlParameterFormatter.Format(value, null));
+                    }
                 }
 
                 return;
@@ -38,7 +42,11 @@ namespace Refit
 
                 foreach (var property in propertyCache[type])
                 {
-                    Add(GetFieldNameForProperty(property), $"{property.GetValue(source, null)}");
+                    var value = property.GetValue(source, null);
+                    if (value != null)
+                    {
+                        Add(GetFieldNameForProperty(property), settings.UrlParameterFormatter.Format(value, null));
+                    }
                 }
             }
         }

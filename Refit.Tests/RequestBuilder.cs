@@ -873,7 +873,7 @@ namespace Refit.Tests
                     new {
                         Foo = "Something", 
                         Bar = 100, 
-                        Baz = default(string)
+                        Baz = "" // explicitly use blank to preserve value that would be stripped if null
                     }
                 });
 
