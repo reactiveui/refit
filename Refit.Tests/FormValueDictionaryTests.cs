@@ -107,6 +107,22 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void UsesQueryPropertyAttribute()
+        {
+            var source = new AliasingTestClass
+            {
+                Frob = 4
+            };
+
+            var target = new FormValueDictionary(source, settings);
+
+            Assert.DoesNotContain("Bar", target.Keys);
+            Assert.Contains("prefix-fr", target.Keys);
+            Assert.Equal("4.0", target["prefix-fr"]);
+        }
+
+
+        [Fact]
         public void GivesPrecedenceToAliasAs()
         {
             var source = new AliasingTestClass
@@ -148,6 +164,11 @@ namespace Refit.Tests
             [AliasAs("a")]
             [JsonProperty(PropertyName = "z")]
             public string Baz { get; set; }
+
+
+            [Query("-", "prefix", "0.0")]
+            [AliasAs("fr")]
+            public int? Frob { get; set; }
         }
     }
 }

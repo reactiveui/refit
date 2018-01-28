@@ -165,7 +165,8 @@ namespace Refit
             : base("Authorization: " + scheme) { }
     }
 
-    [AttributeUsage(AttributeTargets.Parameter)]
+    [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)] // Property is to allow for form url encoded data
+
     public class QueryAttribute : Attribute
     {
         public QueryAttribute() { }
@@ -181,7 +182,16 @@ namespace Refit
             Prefix = prefix;
         }
 
+        public QueryAttribute(string delimiter, string prefix, string format)
+        {
+            Delimiter = delimiter;
+            Prefix = prefix;
+            Format = format;
+        }
+
         public string Delimiter { get; protected set; } = ".";
         public string Prefix { get; protected set; }
+
+        public string Format { get; set; }
     }
 }

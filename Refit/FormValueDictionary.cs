@@ -24,7 +24,7 @@ namespace Refit
                     var value = dictionary[key];
                     if (value != null && key != null)
                     {
-                        Add(key.ToString(),  settings.UrlParameterFormatter.Format(value, null));
+                        Add(key.ToString(),  settings.FormUrlEncodedParameterFormatter.Format(value, null));
                     }
                 }
 
@@ -45,7 +45,10 @@ namespace Refit
                     var value = property.GetValue(source, null);
                     if (value != null)
                     {
-                        Add(GetFieldNameForProperty(property), settings.UrlParameterFormatter.Format(value, null));
+                        // see if there's a query attribute
+                        var attrib = property.GetCustomAttribute<QueryAttribute>(true);
+
+                        Add(GetFieldNameForProperty(property), settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
                     }
                 }
             }
@@ -53,13 +56,19 @@ namespace Refit
 
         string GetFieldNameForProperty(PropertyInfo propertyInfo)
         {
-            return propertyInfo.GetCustomAttributes<AliasAsAttribute>(true)
+            var name = propertyInfo.GetCustomAttributes<AliasAsAttribute>(true)
                                .Select(a => a.Name)
                                .FirstOrDefault()
                    ?? propertyInfo.GetCustomAttributes<JsonPropertyAttribute>(true)
                                   .Select(a => a.PropertyName)
                                   .FirstOrDefault()
                    ?? propertyInfo.Name;
+
+            var qattrib = propertyInfo.GetCustomAttributes<QueryAttribute>(true)
+                           .Select(attr => !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{name}" : name)
+                           .FirstOrDefault();
+
+            return qattrib ?? name;
         }
 
         PropertyInfo[] GetProperties(Type type)
