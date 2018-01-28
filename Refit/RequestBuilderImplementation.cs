@@ -204,7 +204,7 @@ namespace Refit
                     if (!resp.IsSuccessStatusCode)
                     {
                         disposeResponse = false;
-                        throw await ApiException.Create(rq.RequestUri, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
+                        throw await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
 
                     if (restMethod.SerializedReturnType == typeof(HttpContent))
@@ -601,7 +601,7 @@ namespace Refit
                 {
                     if (!resp.IsSuccessStatusCode)
                     {
-                        throw await ApiException.Create(rq.RequestUri, restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
+                        throw await ApiException.Create(rq, restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
                     }
                 }
             };

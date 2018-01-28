@@ -9,11 +9,12 @@ namespace Refit
 {
     public class ApiException : Exception
     {
-        public HttpStatusCode StatusCode { get; private set; }
-        public string ReasonPhrase { get; private set; }
-        public HttpResponseHeaders Headers { get; private set; }
-        public HttpMethod HttpMethod { get; private set; }
-        public Uri Uri { get; private set; }
+        public HttpStatusCode StatusCode { get; }
+        public string ReasonPhrase { get; }
+        public HttpResponseHeaders Headers { get; }
+        public HttpMethod HttpMethod { get; }
+        public Uri Uri => RequestMessage.RequestUri;
+        public HttpRequestMessage RequestMessage { get; }
 
         public HttpContentHeaders ContentHeaders { get; private set; }
 
@@ -22,10 +23,10 @@ namespace Refit
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
         public RefitSettings RefitSettings { get; set; }
 
-        ApiException(Uri uri, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
+        ApiException(HttpRequestMessage message, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
             base(CreateMessage(statusCode, reasonPhrase))
         {
-            Uri = uri;
+            RequestMessage = message;
             HttpMethod = httpMethod;
             StatusCode = statusCode;
             ReasonPhrase = reasonPhrase;
@@ -38,19 +39,22 @@ namespace Refit
                 default;
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
-        public static async Task<ApiException> Create(Uri uri, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
+        public static async Task<ApiException> Create(HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
-            var exception = new ApiException(uri, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
+            var exception = new ApiException(message, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
             if (response.Content == null)
                 return exception;
 
-            try {
+            try
+            {
                 exception.ContentHeaders = response.Content.Headers;
                 exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 response.Content.Dispose();
-            } catch {
+            }
+            catch
+            {
                 // NB: We're already handling an exception at this point, 
                 // so we want to make sure we don't throw another one 
                 // that hides the real error.
