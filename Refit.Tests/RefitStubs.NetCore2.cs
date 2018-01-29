@@ -280,6 +280,8 @@ namespace Refit.Tests
             methodImpls.Add("GetIndex()", requestBuilder.BuildRestResultFuncForMethod("GetIndex", new Type[] {  }));
             methodImpls.Add("GetIndexObservable()", requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", new Type[] {  }));
             methodImpls.Add("NothingToSeeHere()", requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", new Type[] {  }));
+            methodImpls.Add("GetUserWithMetadata(string userName)", requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", new Type[] { typeof(string) }));
+            methodImpls.Add("GetUserObservableWithMetadata(string userName)", requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", new Type[] { typeof(string) }));
         }
 
         /// <inheritdoc />
@@ -336,6 +338,20 @@ namespace Refit.Tests
         {
             var arguments = new object[] {  };
             return (Task) methodImpls["NothingToSeeHere()"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<ApiResponse<User>> GetUserWithMetadata(string userName)
+        {
+            var arguments = new object[] { userName };
+            return (Task<ApiResponse<User>>) methodImpls["GetUserWithMetadata(string userName)"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual IObservable<ApiResponse<User>> GetUserObservableWithMetadata(string userName)
+        {
+            var arguments = new object[] { userName };
+            return (IObservable<ApiResponse<User>>) methodImpls["GetUserObservableWithMetadata(string userName)"](Client, arguments);
         }
 
     }
@@ -403,6 +419,7 @@ namespace Refit.Tests
         {
             Client = client;
             methodImpls.Add("PostFileUpload(HttpContent content)", requestBuilder.BuildRestResultFuncForMethod("PostFileUpload", new Type[] { typeof(HttpContent) }));
+            methodImpls.Add("PostFileUploadWithMetadata(HttpContent content)", requestBuilder.BuildRestResultFuncForMethod("PostFileUploadWithMetadata", new Type[] { typeof(HttpContent) }));
         }
 
         /// <inheritdoc />
@@ -410,6 +427,13 @@ namespace Refit.Tests
         {
             var arguments = new object[] { content };
             return (Task<HttpContent>) methodImpls["PostFileUpload(HttpContent content)"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<ApiResponse<HttpContent>> PostFileUploadWithMetadata(HttpContent content)
+        {
+            var arguments = new object[] { content };
+            return (Task<ApiResponse<HttpContent>>) methodImpls["PostFileUploadWithMetadata(HttpContent content)"](Client, arguments);
         }
 
     }
@@ -675,6 +699,7 @@ namespace Refit.Tests
         {
             Client = client;
             methodImpls.Add("GetRemoteFile(string filename)", requestBuilder.BuildRestResultFuncForMethod("GetRemoteFile", new Type[] { typeof(string) }));
+            methodImpls.Add("GetRemoteFileWithMetadata(string filename)", requestBuilder.BuildRestResultFuncForMethod("GetRemoteFileWithMetadata", new Type[] { typeof(string) }));
         }
 
         /// <inheritdoc />
@@ -682,6 +707,13 @@ namespace Refit.Tests
         {
             var arguments = new object[] { filename };
             return (Task<Stream>) methodImpls["GetRemoteFile(string filename)"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<ApiResponse<Stream>> GetRemoteFileWithMetadata(string filename)
+        {
+            var arguments = new object[] { filename };
+            return (Task<ApiResponse<Stream>>) methodImpls["GetRemoteFileWithMetadata(string filename)"](Client, arguments);
         }
 
     }

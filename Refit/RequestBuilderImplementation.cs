@@ -201,38 +201,55 @@ namespace Refit
                         return (T)(object)resp;
                     }
 
-                    if (!resp.IsSuccessStatusCode)
+                    var isApiResponse = restMethod.SerializedReturnType.GetTypeInfo().IsGenericType && 
+                                        restMethod.SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
+               
+                    if (!resp.IsSuccessStatusCode && !isApiResponse)
                     {
                         disposeResponse = false;
                         throw await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
 
-                    if (restMethod.SerializedReturnType == typeof(HttpContent))
+                    var serializedReturnType = (isApiResponse) ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;                    
+
+                    if (serializedReturnType == typeof(HttpContent))
                     {
                         disposeResponse = false; // caller has to clean up the content
+                        if (isApiResponse)
+                            return ApiResponse.Create<T>(resp, resp.Content);
                         return (T)(object)resp.Content;
                     }
 
-                    if (restMethod.SerializedReturnType == typeof(Stream))
+                    if (serializedReturnType == typeof(Stream))
                     {
                         disposeResponse = false; // caller has to dispose
-                        return (T)(object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                        var stream = (object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                        if (isApiResponse)
+                            return ApiResponse.Create<T>(resp, stream);
+                        return (T)stream;
                     }
 
-                    using(var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
-                    using(var reader = new StreamReader(stream))
+                    using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                    using (var reader = new StreamReader(stream))
                     {
-                        if (restMethod.SerializedReturnType == typeof(string))
+                        if (serializedReturnType == typeof(string))
                         {
-                            return (T)(object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                            var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                            if (isApiResponse)
+                                return ApiResponse.Create<T>(resp, str);
+                            return (T)str;
                         }
 
-                        using(var jsonReader = new JsonTextReader(reader))
+                        using (var jsonReader = new JsonTextReader(reader))
                         {
-                            return serializer.Deserialize<T>(jsonReader);
+                            var json = serializer.Deserialize(jsonReader, serializedReturnType);
+                            if (isApiResponse)
+                                return ApiResponse.Create<T>(resp, json);
+                            return (T)json;
                         }
                     }
-                } finally
+                }
+                finally
                 {
                     // Ensure we clean up the request
                     // Especially important if it has open files/streams
@@ -275,29 +292,29 @@ namespace Refit
 
                 switch (obj)
                 {
-                case IDictionary idict:
-                    foreach (var keyValuePair in BuildQueryMap(idict, delimiter))
-                    {
-                        kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
-                    }
+                    case IDictionary idict:
+                        foreach (var keyValuePair in BuildQueryMap(idict, delimiter))
+                        {
+                            kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                        }
 
-                    break;
+                        break;
 
-                case IEnumerable ienu:
-                    foreach (var o in ienu)
-                    {
-                        kvps.Add(new KeyValuePair<string, object>(key, o));
-                    }
+                    case IEnumerable ienu:
+                        foreach (var o in ienu)
+                        {
+                            kvps.Add(new KeyValuePair<string, object>(key, o));
+                        }
 
-                    break;
+                        break;
 
-                default:
-                    foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
-                    {
-                        kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
-                    }
+                    default:
+                        foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
+                        {
+                            kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                        }
 
-                    break;
+                        break;
                 }
             }
 
@@ -318,7 +335,8 @@ namespace Refit
                 if (DoNotConvertToQueryMap(obj))
                 {
                     kvps.Add(new KeyValuePair<string, object>(key, obj));
-                } else
+                }
+                else
                 {
                     foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
                     {
@@ -382,42 +400,45 @@ namespace Refit
                         if (paramList[i] is HttpContent httpContentParam)
                         {
                             ret.Content = httpContentParam;
-                        } else if (streamParam != null)
+                        }
+                        else if (streamParam != null)
                         {
                             ret.Content = new StreamContent(streamParam);
-                        } else if (stringParam != null)
+                        }
+                        else if (stringParam != null)
                         {
                             ret.Content = new StringContent(stringParam);
-                        } else
+                        }
+                        else
                         {
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
-                            case BodySerializationMethod.UrlEncoded:
-                                ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
-                                break;
-                            case BodySerializationMethod.Json:
-                                var param = paramList[i];
-                                switch (restMethod.BodyParameterInfo.Item2)
-                                {
-                                case false:
-                                    ret.Content = new PushStreamContent((stream, _, __) =>
-                                                                        {
-                                                                            using(var writer = new JsonTextWriter(new StreamWriter(stream)))
-                                                                            {
-                                                                                serializer.Serialize(writer, param);
-                                                                            }
-                                                                        },
-                                                                        "application/json");
+                                case BodySerializationMethod.UrlEncoded:
+                                    ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
                                     break;
-                                case true:
-                                    ret.Content = new StringContent(
-                                        JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings),
-                                        Encoding.UTF8,
-                                        "application/json");
-                                    break;
-                                }
+                                case BodySerializationMethod.Json:
+                                    var param = paramList[i];
+                                    switch (restMethod.BodyParameterInfo.Item2)
+                                    {
+                                        case false:
+                                            ret.Content = new PushStreamContent((stream, _, __) =>
+                                                                                {
+                                                                                    using (var writer = new JsonTextWriter(new StreamWriter(stream)))
+                                                                                    {
+                                                                                        serializer.Serialize(writer, param);
+                                                                                    }
+                                                                                },
+                                                                                "application/json");
+                                            break;
+                                        case true:
+                                            ret.Content = new StringContent(
+                                                JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings),
+                                                Encoding.UTF8,
+                                                "application/json");
+                                            break;
+                                    }
 
-                                break;
+                                    break;
                             }
                         }
 
@@ -464,7 +485,8 @@ namespace Refit
                     {
                         itemName = restMethod.QueryParameterMap[i];
                         parameterName = itemName;
-                    } else
+                    }
+                    else
                     {
                         itemName = attachment.Item1;
                         parameterName = attachment.Item2;
@@ -482,7 +504,8 @@ namespace Refit
                         if (eType.GetTypeInfo().ContainsGenericParameters)
                         {
                             tType = eType.GenericTypeArguments[0];
-                        } else if (eType.IsArray)
+                        }
+                        else if (eType.IsArray)
                         {
                             tType = eType.GetElementType();
                         }
@@ -506,7 +529,8 @@ namespace Refit
                         {
                             AddMultipartItem(multiPartContent, itemName, parameterName, item);
                         }
-                    } else
+                    }
+                    else
                     {
                         AddMultipartItem(multiPartContent, itemName, parameterName, itemValue);
                     }
@@ -533,7 +557,8 @@ namespace Refit
                 {
                     var pairs = queryParamsToAdd.Select(x => HttpUtility.UrlEncode(x.Key) + "=" + HttpUtility.UrlEncode(x.Value));
                     uri.Query = string.Join("&", pairs);
-                } else
+                }
+                else
                 {
                     uri.Query = null;
                 }
@@ -597,7 +622,7 @@ namespace Refit
                     ct = paramList.OfType<CancellationToken>().FirstOrDefault();
                 }
 
-                using(var resp = await client.SendAsync(rq, ct).ConfigureAwait(false))
+                using (var resp = await client.SendAsync(rq, ct).ConfigureAwait(false))
                 {
                     if (!resp.IsSuccessStatusCode)
                     {
