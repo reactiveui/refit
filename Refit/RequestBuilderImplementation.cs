@@ -68,8 +68,17 @@ namespace Refit
                     return CloseGenericMethodIfNeeded(httpMethods[0], genericArgumentTypes);
                 }
 
-                var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count())
-                                                 .ToList();
+                var isGeneric = genericArgumentTypes?.Length > 0;
+
+                var possibleMethodsList = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count());
+
+                // If it's a generic method, add that filter
+                if (isGeneric)
+                    possibleMethodsList = possibleMethodsList.Where(method => method.MethodInfo.IsGenericMethod && method.MethodInfo.GetGenericArguments().Length == genericArgumentTypes.Length);
+                else // exclude generic methods
+                    possibleMethodsList = possibleMethodsList.Where(method => !method.MethodInfo.IsGenericMethod);
+
+                var possibleMethods = possibleMethodsList.ToList();
 
                 if (possibleMethods.Count == 1)
                     return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
@@ -78,6 +87,8 @@ namespace Refit
                 foreach (var method in possibleMethods) 
                 {
                     var match = true;
+
+                    // Look for it by method parameter type first
                     var parameters = method.MethodInfo.GetParameters();
 
                     for (var i = 0; i < parameterTypesArray.Length; i++) 
@@ -92,8 +103,10 @@ namespace Refit
                         }
                     }
 
-                    if (match) 
+                    if (match)
                     {
+                        // Now look by type parameters
+
                         return CloseGenericMethodIfNeeded(method, genericArgumentTypes);
                     }
                 }

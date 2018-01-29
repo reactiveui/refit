@@ -488,6 +488,9 @@ namespace Refit.Tests
 
             mockHttp.ResetExpectations();
 
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
+                    .Respond(HttpStatusCode.OK);
+
             await fixture.PostGeneric("4");
 
             mockHttp.VerifyNoOutstandingExpectation();

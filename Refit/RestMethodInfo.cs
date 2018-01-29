@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using System.Threading;
 
 namespace Refit
 {
+    [DebuggerDisplay("{MethodInfo}")]
     public class RestMethodInfo
     {
         public string Name { get; set; }

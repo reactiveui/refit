@@ -857,6 +857,22 @@ namespace Refit.Tests
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
+        /// <inheritdoc />
+        public virtual Task<TValue> Get<TValue>(int someVal)
+        {
+            var arguments = new object[] { someVal };
+            var func = methodImpls.GetOrAdd("Get<TValue>(int someVal)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(int) }, new Type[] { typeof(TValue) }));
+            return (Task<TValue>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<TValue> Get<TValue, TInput>(TInput input)
+        {
+            var arguments = new object[] { input };
+            var func = methodImpls.GetOrAdd("Get<TValue, TInput>(TInput input)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TInput) }, new Type[] { typeof(TValue), typeof(TInput) }));
+            return (Task<TValue>)func(Client, arguments);
+        }
+
     }
 }
 
