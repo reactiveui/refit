@@ -415,6 +415,14 @@ namespace Refit.Tests
             return (Task<TResponse>)func(Client, arguments);
         }
 
+        /// <inheritdoc />
+        public virtual Task<TValue> GetQuery1<TValue>(TParam param)
+        {
+            var arguments = new object[] { param };
+            var func = methodImpls.GetOrAdd("GetQuery1(TParam param)", _ => requestBuilder.BuildRestResultFuncForMethod("GetQuery1", new Type[] { typeof(TParam) }));
+            return (Task<TValue>)func(Client, arguments);
+        }
+
     }
 }
 

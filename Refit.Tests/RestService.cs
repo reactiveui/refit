@@ -61,6 +61,9 @@ namespace Refit.Tests
 
         [Get("")]
         Task<TResponse> GetQueryWithIncludeParameterName([Query(".", "search")]TParam param);
+
+        [Get("/get?hardcoded=true")]
+        Task<TValue> GetQuery1<TValue>([Query("_")]TParam param);
     }
 
     public interface IBrokenWebApi
@@ -621,6 +624,40 @@ namespace Refit.Tests
             Assert.Equal("John", resp.Args["FirstName"]);
             Assert.Equal("Rambo", resp.Args["LastName"]);
             Assert.Equal("9999", resp.Args["Addr_Zip"]);
+        }
+
+        [Fact]
+        public async Task GenericMethodTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            const string response = "{'url': 'https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo&Address_Zip=9999&Address_Street=HomeStreet 99', 'args': {'Address_Street': 'HomeStreet 99','Address_Zip': '9999','FirstName': 'John','LastName': 'Rambo','hardcoded': 'true'}}";
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                    .Respond("application/json", response);
+
+            var myParams = new Dictionary<string, object>
+            {
+                ["FirstName"] = "John",
+                ["LastName"] = "Rambo",
+                ["Address"] = new
+                {
+                    Zip = 9999,
+                    Street = "HomeStreet 99"
+                }
+            };
+
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>("https://httpbin.org", settings);
+
+            // Use the generic to get it as an ApiResponse of string
+            var resp = await fixture.GetQuery1<ApiResponse<string>>(myParams);
+
+
+            Assert.Equal(response, resp.Content);
         }
 
         [Fact]
