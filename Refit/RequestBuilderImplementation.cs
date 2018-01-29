@@ -384,9 +384,8 @@ namespace Refit
                         urlTarget = Regex.Replace(
                             urlTarget,
                             "{" + restMethod.ParameterMap[i] + "}",
-                            settings.UrlParameterFormatter
-                                    .Format(paramList[i], restMethod.ParameterInfoMap[i])
-                                    .Replace("/", "%2F"),
+                            Uri.EscapeDataString(settings.UrlParameterFormatter
+                                    .Format(paramList[i], restMethod.ParameterInfoMap[i])),
                             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                         continue;
                     }

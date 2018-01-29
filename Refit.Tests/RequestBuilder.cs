@@ -701,11 +701,8 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, "push!=pull&push" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-#if NETCOREAPP2_0
+
             Assert.Equal("/foo/bar/6?baz=bamf&search_for=push%21%3Dpull%26push", uri.PathAndQuery);
-#else
-            Assert.Equal("/foo/bar/6?baz=bamf&search_for=push%21%3dpull%26push", uri.PathAndQuery);
-#endif
         }
 
         [Fact]
@@ -713,14 +710,11 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
-            var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
+            var output = factory(new object[] { "6 & 7/8", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-#if NETCOREAPP2_0
-            Assert.Equal("/void/6/path?a=test%40example.com&b=push%21%3Dpull", uri.PathAndQuery);
-#else
-            Assert.Equal("/void/6/path?a=test%40example.com&b=push%21%3dpull", uri.PathAndQuery);
-#endif
+
+            Assert.Equal("/void/6%20%26%207%2F8/path?a=test%40example.com&b=push%21%3Dpull", uri.PathAndQuery);
         }
 
         [Fact]
@@ -731,11 +725,8 @@ namespace Refit.Tests
             var output = factory(new object[] { "6/6", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-#if NETCOREAPP2_0
+
             Assert.Equal("/void/6%2F6/path?a=test%40example.com&b=push%21%3Dpull", uri.PathAndQuery);
-#else
-            Assert.Equal("/void/6%2F6/path?a=test%40example.com&b=push%21%3dpull", uri.PathAndQuery);
-#endif
         }
 
         [Fact]
@@ -746,11 +737,8 @@ namespace Refit.Tests
             var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-#if NETCOREAPP2_0
+
             Assert.Equal("/void/6/path?a=test%40example.com&b=push%21%3Dpull", uri.PathAndQuery);
-#else
-            Assert.Equal("/void/6/path?a=test%40example.com&b=push%21%3dpull", uri.PathAndQuery);
-#endif
         }
 
         [Fact]
