@@ -64,14 +64,14 @@ namespace Refit.Tests
                 .ToList();
 
             var result = input
-                .ToDictionary(m => m.Identifier.ValueText, fixture.HasRefitHttpMethodAttribute);
+                .ToLookup(m => m.Identifier.ValueText, fixture.HasRefitHttpMethodAttribute);
 
-            Assert.True(result["RefitMethod"]);
-            Assert.True(result["AnotherRefitMethod"]);
-            Assert.False(result["NoConstantsAllowed"]);
-            Assert.False(result["NotARefitMethod"]);
-            Assert.True(result["ReadOne"]);
-            Assert.True(result["SpacesShouldntBreakMe"]);
+            Assert.True(result["RefitMethod"].All(m => m));
+            Assert.True(result["AnotherRefitMethod"].All(m => m));
+            Assert.False(result["NoConstantsAllowed"].All(m => m));
+            Assert.False(result["NotARefitMethod"].All(m => m));
+            Assert.True(result["ReadOne"].All(m => m));
+            Assert.True(result["SpacesShouldntBreakMe"].All(m => m));
         }
 
         [Fact]
