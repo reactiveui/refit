@@ -34,6 +34,15 @@ namespace Refit.Tests
     {
         [Post("/1h3a5jm1")]
         Task Post();
+
+        [Post("/foo")]
+        Task PostRawStringDefault([Body] string str);
+
+        [Post("/foo")]
+        Task PostRawStringJson([Body(BodySerializationMethod.Json)] string str);
+
+        [Post("/foo")]
+        Task PostRawStringUrlEncoded([Body(BodySerializationMethod.UrlEncoded)] string str);
     }
 
     public interface INoRefitHereBuddy
@@ -459,6 +468,74 @@ namespace Refit.Tests
             
             
             await fixture.Post();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostStringDefaultToRequestBin()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                    .WithContent("raw string")
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+
+            await fixture.PostRawStringDefault("raw string");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostStringJsonToRequestBin()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                    .WithContent("\"json string\"")
+                    .WithHeaders("Content-Type", "application/json")
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+
+            await fixture.PostRawStringJson("json string");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostStringUrlToRequestBin()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                    .WithContent("url%26string")
+                    //.WithHeaders("Content-Type", "application/json")
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+
+            await fixture.PostRawStringUrlEncoded ("url&string");
 
             mockHttp.VerifyNoOutstandingExpectation();
         }

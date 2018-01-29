@@ -393,18 +393,17 @@ namespace Refit
                     // if marked as body, add to content
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item3 == i)
                     {
-                        var streamParam = paramList[i] as Stream;
-                        var stringParam = paramList[i] as string;
-
                         if (paramList[i] is HttpContent httpContentParam)
                         {
                             ret.Content = httpContentParam;
                         }
-                        else if (streamParam != null)
+                        else if (paramList[i] is Stream streamParam)
                         {
                             ret.Content = new StreamContent(streamParam);
                         }
-                        else if (stringParam != null)
+                        // Default sends raw strings
+                        else if (restMethod.BodyParameterInfo.Item1 == BodySerializationMethod.Default &&
+                                 paramList[i] is string stringParam)
                         {
                             ret.Content = new StringContent(stringParam);
                         }
@@ -413,8 +412,9 @@ namespace Refit
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
                                 case BodySerializationMethod.UrlEncoded:
-                                    ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
+                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str)) :  new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
                                     break;
+                                case BodySerializationMethod.Default:
                                 case BodySerializationMethod.Json:
                                     var param = paramList[i];
                                     switch (restMethod.BodyParameterInfo.Item2)

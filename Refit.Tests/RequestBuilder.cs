@@ -293,7 +293,7 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypes"));
             Assert.Equal("id", fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
-            Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
+            Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.False(fixture.BodyParameterInfo.Item2);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
@@ -307,7 +307,7 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PullStreamMethod"));
             Assert.Equal("id", fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
-            Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
+            Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.True(fixture.BodyParameterInfo.Item2);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 

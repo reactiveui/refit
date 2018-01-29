@@ -603,6 +603,9 @@ namespace Refit.Tests
         {
             Client = client;
             methodImpls.Add("Post()", requestBuilder.BuildRestResultFuncForMethod("Post", new Type[] {  }));
+            methodImpls.Add("PostRawStringDefault(string str)", requestBuilder.BuildRestResultFuncForMethod("PostRawStringDefault", new Type[] { typeof(string) }));
+            methodImpls.Add("PostRawStringJson(string str)", requestBuilder.BuildRestResultFuncForMethod("PostRawStringJson", new Type[] { typeof(string) }));
+            methodImpls.Add("PostRawStringUrlEncoded(string str)", requestBuilder.BuildRestResultFuncForMethod("PostRawStringUrlEncoded", new Type[] { typeof(string) }));
         }
 
         /// <inheritdoc />
@@ -610,6 +613,27 @@ namespace Refit.Tests
         {
             var arguments = new object[] {  };
             return (Task) methodImpls["Post()"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task PostRawStringDefault(string str)
+        {
+            var arguments = new object[] { str };
+            return (Task) methodImpls["PostRawStringDefault(string str)"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task PostRawStringJson(string str)
+        {
+            var arguments = new object[] { str };
+            return (Task) methodImpls["PostRawStringJson(string str)"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task PostRawStringUrlEncoded(string str)
+        {
+            var arguments = new object[] { str };
+            return (Task) methodImpls["PostRawStringUrlEncoded(string str)"](Client, arguments);
         }
 
     }
