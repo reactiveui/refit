@@ -555,7 +555,7 @@ namespace Refit
 
                 if (queryParamsToAdd.Any())
                 {
-                    var pairs = queryParamsToAdd.Select(x => HttpUtility.UrlEncode(x.Key) + "=" + HttpUtility.UrlEncode(x.Value));
+                    var pairs = queryParamsToAdd.Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value));
                     uri.Query = string.Join("&", pairs);
                 }
                 else

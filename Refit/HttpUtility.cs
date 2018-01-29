@@ -3,9 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace System.Web
@@ -32,8 +29,6 @@ namespace System.Web
 
             return nvc;
         }
-
-        internal static string UrlEncode(string x) => UrlEncoder.Default.Encode(x);
     }
 }
 #endif
