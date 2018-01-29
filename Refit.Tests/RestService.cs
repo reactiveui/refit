@@ -49,6 +49,11 @@ namespace Refit.Tests
         Task Get();
     }
 
+    public class ErrorResponse
+    {
+        public string[] Errors { get; set; }
+    }
+
     public interface IHttpBinApi<TResponse, in TParam, in THeader>
         where TResponse : class
         where THeader : struct
@@ -484,6 +489,37 @@ namespace Refit.Tests
                 Assert.NotNull(content["documentation_url"]);
             }
         }
+
+
+        [Fact]
+        public async Task ErrorsFromApiReturnErrorContent()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
+                    .Respond(HttpStatusCode.BadRequest, "application/json", "{ 'errors': [ 'error1', 'message' ]}");
+
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+
+            var result = await Assert.ThrowsAsync<ApiException>(async () => await fixture.CreateUser(new User{Name = "foo"}));
+         
+            
+            var errors = result.GetContentAs<ErrorResponse>();
+
+            Assert.Contains("error1", errors.Errors);
+            Assert.Contains("message", errors.Errors);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
 
         [Fact]
         public void NonRefitInterfacesThrowMeaningfulExceptions() 

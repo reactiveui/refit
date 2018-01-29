@@ -282,6 +282,7 @@ namespace Refit.Tests
             methodImpls.Add("NothingToSeeHere()", requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", new Type[] {  }));
             methodImpls.Add("GetUserWithMetadata(string userName)", requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", new Type[] { typeof(string) }));
             methodImpls.Add("GetUserObservableWithMetadata(string userName)", requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", new Type[] { typeof(string) }));
+            methodImpls.Add("CreateUser(User user)", requestBuilder.BuildRestResultFuncForMethod("CreateUser", new Type[] { typeof(User) }));
         }
 
         /// <inheritdoc />
@@ -352,6 +353,13 @@ namespace Refit.Tests
         {
             var arguments = new object[] { userName };
             return (IObservable<ApiResponse<User>>) methodImpls["GetUserObservableWithMetadata(string userName)"](Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<User> CreateUser(User user)
+        {
+            var arguments = new object[] { user };
+            return (Task<User>) methodImpls["CreateUser(User user)"](Client, arguments);
         }
 
     }

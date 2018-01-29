@@ -82,6 +82,9 @@ namespace Refit.Tests
 
         [Get("/users/{username}")]
         IObservable<ApiResponse<User>> GetUserObservableWithMetadata(string userName);
+
+        [Post("/users")]
+        Task<User> CreateUser(User user);
     }
 
     public class TestNested
