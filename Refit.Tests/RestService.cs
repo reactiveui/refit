@@ -34,6 +34,9 @@ namespace Refit.Tests
     {
         [Post("/1h3a5jm1")]
         Task Post();
+
+        [Post("/1h3a5jm1")]
+        Task PostGeneric<T>(T param);
     }
 
     public interface INoRefitHereBuddy
@@ -64,6 +67,8 @@ namespace Refit.Tests
 
         [Get("/get?hardcoded=true")]
         Task<TValue> GetQuery1<TValue>([Query("_")]TParam param);
+
+
     }
 
     public interface IBrokenWebApi
@@ -462,6 +467,33 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task PostToRequestBinWithGenerics()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+
+            await fixture.PostGeneric(5);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+
+            mockHttp.ResetExpectations();
+
+            await fixture.PostGeneric("4");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
         public async Task CanGetDataOutOfErrorResponses() 
         {
             var mockHttp = new MockHttpMessageHandler();
@@ -636,7 +668,7 @@ namespace Refit.Tests
                 HttpMessageHandlerFactory = () => mockHttp
             };
 
-            const string response = "{'url': 'https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo&Address_Zip=9999&Address_Street=HomeStreet 99', 'args': {'Address_Street': 'HomeStreet 99','Address_Zip': '9999','FirstName': 'John','LastName': 'Rambo','hardcoded': 'true'}}";
+            const string response = "4";
             mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
                     .Respond("application/json", response);
 
@@ -655,9 +687,16 @@ namespace Refit.Tests
 
             // Use the generic to get it as an ApiResponse of string
             var resp = await fixture.GetQuery1<ApiResponse<string>>(myParams);
-
-
             Assert.Equal(response, resp.Content);
+
+
+            // Get as string
+            var resp1 = await fixture.GetQuery1<string>(myParams);
+
+            Assert.Equal(response, resp1);
+
+            var resp2 = await fixture.GetQuery1<int>(myParams);
+            Assert.Equal(4, resp2);
         }
 
         [Fact]

@@ -677,6 +677,14 @@ namespace Refit.Tests
             return (Task)func(Client, arguments);
         }
 
+        /// <inheritdoc />
+        public virtual Task PostGeneric<T>(T param)
+        {
+            var arguments = new object[] { param };
+            var func = methodImpls.GetOrAdd("PostGeneric<T>(T param)", _ => requestBuilder.BuildRestResultFuncForMethod("PostGeneric", new Type[] { typeof(T) }, new Type[] { typeof(T) }));
+            return (Task)func(Client, arguments);
+        }
+
     }
 }
 
