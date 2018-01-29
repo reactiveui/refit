@@ -93,6 +93,21 @@ namespace Refit.Tests
         Task<string> GetWithDecimal(decimal value);
     }
 
+    public interface IBodylessApi
+    {
+        [Post("/nobody")]
+        [Headers("Content-Type: application/x-www-form-urlencoded; charset=UTF-8")]
+        Task Post();
+
+        [Get("/nobody")]
+        [Headers("Content-Type: application/x-www-form-urlencoded; charset=UTF-8")]
+        Task Get();
+
+        [Head("/nobody")]
+        [Headers("Content-Type: application/x-www-form-urlencoded; charset=UTF-8")]
+        Task Head();
+    }
+
     public class HttpBinGet
     {
         public Dictionary<string, object> Args { get; set; }
@@ -103,6 +118,77 @@ namespace Refit.Tests
 
     public class RestServiceIntegrationTests
     {
+        [Fact]
+        public async Task CanAddContentHeadersToPostWithoutBody()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://foo/nobody")
+                // The content length header is set automatically by the HttpContent instance,
+                // so checking the header as a string doesn't work
+                .With(r => r.Content?.Headers.ContentLength == 0) 
+                // But we added content type ourselves, so this should work
+                .WithHeaders("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+                .WithContent("")
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+
+            await fixture.Post();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task DoesntAddAutoAddContentToGetRequest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "http://foo/nobody")
+                // We can't add HttpContent to a GET request, 
+                // because HttpClient doesn't allow it and it will
+                // blow up at runtime
+                .With(r => r.Content == null)
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+
+            await fixture.Get();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task DoesntAddAutoAddContentToHeadRequest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Head, "http://foo/nobody")
+                // We can't add HttpContent to a HEAD request, 
+                // because HttpClient doesn't allow it and it will
+                // blow up at runtime
+                .With(r => r.Content == null)
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+
+            await fixture.Head();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
         [Fact]
         public async Task GetWithDecimal()
         {
