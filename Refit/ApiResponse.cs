@@ -1,14 +1,14 @@
 ﻿using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 
 namespace Refit
 {
-    public abstract class ApiResponse
+    static class ApiResponse
     {
         internal static T Create<T>(HttpResponseMessage resp, object content)
         {
@@ -16,25 +16,53 @@ namespace Refit
         }
     }
 
-    public class ApiResponse<T> : ApiResponse
+    public sealed class ApiResponse<T> : IDisposable
     {
-        public HttpResponseHeaders Headers { get; }
-        public bool IsSuccessStatusCode { get; }
-        public string ReasonPhrase { get; }
-        public HttpRequestMessage RequestMessage { get; }
-        public HttpStatusCode StatusCode { get; }
-        public Version Version { get; }
-        public T Content { get; }
-        
+        private readonly HttpResponseMessage response;
+
+        bool disposed;
+
         public ApiResponse(HttpResponseMessage response, T content)
         {
-            Headers = response.Headers;
-            IsSuccessStatusCode = response.IsSuccessStatusCode;
-            ReasonPhrase = response.ReasonPhrase;
-            RequestMessage = response.RequestMessage;
-            StatusCode = response.StatusCode;
-            Version = response.Version;
+            this.response = response ?? throw new ArgumentNullException(nameof(response));
             Content = content;
+        }
+
+        public T Content { get; }
+        public HttpResponseHeaders Headers => response.Headers;
+        public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
+        public string ReasonPhrase => response.ReasonPhrase;
+        public HttpRequestMessage RequestMessage => response.RequestMessage;
+        public HttpStatusCode StatusCode => response.StatusCode;
+        public Version Version => response.Version;
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        
+        public async Task<ApiResponse<T>> EnsureSuccessStatusCodeAsync()
+        {
+            if (!IsSuccessStatusCode)
+            {
+                var exception = await ApiException.Create(response.RequestMessage, response.RequestMessage.Method, response).ConfigureAwait(false);
+
+                Dispose();
+
+                throw exception;
+            }
+
+            return this;
+        }
+
+        void Dispose(bool disposing)
+        {
+            if (!disposing || disposed)
+                return;
+
+            disposed = true;
+
+            response.Dispose();
         }
     }
 }

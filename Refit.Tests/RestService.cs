@@ -128,7 +128,7 @@ namespace Refit.Tests
 
 
         [Fact]
-        public async Task HitTheGitHubUserApiAsRefitResponse()
+        public async Task HitTheGitHubUserApiAsApiResponse()
         {
             var mockHttp = new MockHttpMessageHandler();
 
