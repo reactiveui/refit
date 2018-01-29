@@ -11,12 +11,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
 
 namespace Refit
 {
     partial class RequestBuilderImplementation : IRequestBuilder
     {
         readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
+        readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
         readonly JsonSerializer serializer;
         readonly RefitSettings settings;
         readonly Type targetType;
@@ -25,6 +27,7 @@ namespace Refit
         {
             settings = refitSettings ?? new RefitSettings();
             serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
+            interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();
 
             if (targetInterface == null || !targetInterface.GetTypeInfo().IsInterface)
             {
@@ -52,7 +55,7 @@ namespace Refit
             interfaceHttpMethods = dict;
         }
 
-        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes)
+        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes, Type[] genericArgumentTypes)
         {
             if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) 
             {
@@ -62,14 +65,14 @@ namespace Refit
                     {
                         throw new ArgumentException($"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
                     }
-                    return httpMethods[0];
+                    return CloseGenericMethodIfNeeded(httpMethods[0], genericArgumentTypes);
                 }
 
                 var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count())
                                                  .ToList();
 
                 if (possibleMethods.Count == 1)
-                    return possibleMethods[0];
+                    return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
 
                 var parameterTypesArray = parameterTypes.ToArray();
                 foreach (var method in possibleMethods) 
@@ -91,7 +94,7 @@ namespace Refit
 
                     if (match) 
                     {
-                        return method;
+                        return CloseGenericMethodIfNeeded(method, genericArgumentTypes);
                     }
                 }
 
@@ -103,15 +106,25 @@ namespace Refit
             }
 
         }
-        
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null)
+
+        private RestMethodInfo CloseGenericMethodIfNeeded(RestMethodInfo restMethodInfo, Type[] genericArgumentTypes)
+        {
+            if (genericArgumentTypes != null)
+            {
+                return interfaceGenericHttpMethods.GetOrAdd(new CloseGenericMethodKey(restMethodInfo.MethodInfo, genericArgumentTypes),
+                    new RestMethodInfo(restMethodInfo.Type, restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes), restMethodInfo.RefitSettings));
+            }
+            return restMethodInfo;
+        }
+
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName))
             {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
 
-            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes);
+            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes, genericArgumentTypes);
             if (restMethod.ReturnType == typeof(Task))
             {
                 return BuildVoidTaskFuncForMethod(restMethod);

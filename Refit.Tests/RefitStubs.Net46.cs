@@ -419,7 +419,7 @@ namespace Refit.Tests
         public virtual Task<TValue> GetQuery1<TValue>(TParam param)
         {
             var arguments = new object[] { param };
-            var func = methodImpls.GetOrAdd("GetQuery1(TParam param)", _ => requestBuilder.BuildRestResultFuncForMethod("GetQuery1", new Type[] { typeof(TParam) }));
+            var func = methodImpls.GetOrAdd("GetQuery1(TParam param)", _ => requestBuilder.BuildRestResultFuncForMethod("GetQuery1", new Type[] { typeof(TParam) }, new Type[] { typeof(TValue) }));
             return (Task<TValue>)func(Client, arguments);
         }
 
@@ -604,7 +604,7 @@ namespace Refit.Tests
             where T : IMessage
         {
             var arguments = new object[] { message };
-            var func = methodImpls.GetOrAdd("PostMessage(T message)", _ => requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T) }));
+            var func = methodImpls.GetOrAdd("PostMessage(T message)", _ => requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T) }, new Type[] { typeof(T) }));
             return (Task)func(Client, arguments);
         }
 
@@ -613,7 +613,7 @@ namespace Refit.Tests
             where T : IMessage where U : T
         {
             var arguments = new object[] { message,param1,param2 };
-            var func = methodImpls.GetOrAdd("PostMessage(T message,U param1,V param2)", _ => requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T),typeof(U),typeof(V) }));
+            var func = methodImpls.GetOrAdd("PostMessage(T message,U param1,V param2)", _ => requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T),typeof(U),typeof(V) }, new Type[] { typeof(T), typeof(U), typeof(V) }));
             return (Task)func(Client, arguments);
         }
 

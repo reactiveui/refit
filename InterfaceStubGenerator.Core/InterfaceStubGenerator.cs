@@ -119,6 +119,7 @@ namespace Refit.Generator
                                                   if (typeParameters.Any())
                                                   {
                                                       mti.MethodTypeParameters = string.Join(", ", typeParameters.Select(p => p.Identifier.ValueText));
+                                                      mti.MethodTypeParameterList = string.Join(", ", typeParameters.Select(p => $"typeof({p.Identifier.ValueText})"));
                                                   }
                                                   mti.MethodConstraintClauses = x.ConstraintClauses.ToFullString().Trim();
                                               }
@@ -242,6 +243,7 @@ namespace Refit.Generator
         public string ReturnType { get; set; }
         public string MethodTypeParameters { get; set; }
         public string MethodConstraintClauses { get; set; }
+        public string MethodTypeParameterList { get; set; }
     }
 
     public class TemplateInformation
