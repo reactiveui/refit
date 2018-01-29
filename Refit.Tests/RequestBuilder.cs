@@ -698,13 +698,13 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
-            var output = factory(new object[] { 6, "push!=pull" });
+            var output = factory(new object[] { 6, "push!=pull&push" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 #if NETCOREAPP2_0
-            Assert.Equal("/foo/bar/6?baz=bamf&search_for=push!%3Dpull", uri.PathAndQuery);
+            Assert.Equal("/foo/bar/6?baz=bamf&search_for=push!%3Dpull%26push", uri.PathAndQuery);
 #else
-            Assert.Equal("/foo/bar/6?baz=bamf&search_for=push!%3dpull", uri.PathAndQuery);
+            Assert.Equal("/foo/bar/6?baz=bamf&search_for=push!%3dpull%26push", uri.PathAndQuery);
 #endif
         }
 
