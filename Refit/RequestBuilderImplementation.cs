@@ -412,7 +412,7 @@ namespace Refit
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
                                 case BodySerializationMethod.UrlEncoded:
-                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str)) :  new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
+                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") :  new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
                                     break;
                                 case BodySerializationMethod.Default:
                                 case BodySerializationMethod.Json:

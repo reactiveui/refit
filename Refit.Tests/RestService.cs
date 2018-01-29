@@ -529,7 +529,7 @@ namespace Refit.Tests
 
             mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
                     .WithContent("url%26string")
-                    //.WithHeaders("Content-Type", "application/json")
+                    .WithHeaders("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
                     .Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
