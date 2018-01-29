@@ -873,6 +873,14 @@ namespace Refit.Tests
             return (Task<TValue>)func(Client, arguments);
         }
 
+        /// <inheritdoc />
+        public virtual Task Get<TInput1, TInput2>(TInput1 input1,TInput2 input2)
+        {
+            var arguments = new object[] { input1,input2 };
+            var func = methodImpls.GetOrAdd("Get<TInput1, TInput2>(TInput1 input1,TInput2 input2)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TInput1),typeof(TInput2) }, new Type[] { typeof(TInput1), typeof(TInput2) }));
+            return (Task)func(Client, arguments);
+        }
+
     }
 }
 

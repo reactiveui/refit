@@ -39,6 +39,9 @@ namespace Refit.Tests
 
         [Get("/get")]
         Task<TValue> Get<TValue, TInput>(TInput input);
+
+        [Get("/get")]
+        Task Get<TInput1, TInput2>(TInput1 input1, TInput2 input2);
     }
 
 
@@ -198,6 +201,32 @@ namespace Refit.Tests
             var result = await fixture.Get<string, int>(99);
 
             Assert.Equal("generic-output", result);
+        }
+
+        [Fact]
+        public async Task GenericMethodOverloadTest7()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                    .WithQueryString(new Dictionary<string, string>()
+                    {
+                        { "input1", "str" },
+                        { "input2", "3" }
+                     })
+                    .Respond("application/json", "Ok");
+
+
+            var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>("https://httpbin.org/", settings);
+
+            await fixture.Get<string, int>("str", 3); 
+
+            mockHttp.VerifyNoOutstandingExpectation();
         }
     }
 }
