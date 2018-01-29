@@ -45,9 +45,10 @@ namespace Refit.Tests
             input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
 
             result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
-            Assert.Equal(2, result.Count);
+            Assert.Equal(3, result.Count);
             Assert.Contains(result, x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe");
             Assert.Contains(result, x => x.Identifier.ValueText == "IBoringCrudApi");
+            Assert.Contains(result, x => x.Identifier.ValueText == "INonGenericInterfaceWithGenericMethod");
             Assert.True(result.All(x => x.Identifier.ValueText != "IAmNotARefitInterface"));
         }
 
@@ -186,5 +187,16 @@ namespace Refit.Tests
         [Delete("/{key}")]
         Task Delete(TKey key);
     }
+
+    public interface INonGenericInterfaceWithGenericMethod
+    {
+        [Post("")]
+        Task PostMessage<T>([Body] T message) where T : IMessage;
+
+        [Post("")]
+        Task PostMessage<T, U, V>([Body] T message, U param1, V param2) where T : IMessage where U : T;
+    }
+
+    public interface IMessage { }
 
 }

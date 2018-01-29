@@ -97,19 +97,33 @@ namespace Refit.Generator
 
             ret.MethodList = interfaceTree.Members
                                           .OfType<MethodDeclarationSyntax>()
-                                          .Select(x => new MethodTemplateInfo
+                                          .Select(x =>
                                           {
-                                              Name = x.Identifier.Text,
-                                              ReturnType = x.ReturnType.ToString(),
-                                              ArgumentList = string.Join(",",
-                                                                         x.ParameterList.Parameters
-                                                                          .Select(y => y.Identifier.Text)),
-                                              ArgumentListWithTypes = string.Join(",",
-                                                                                  x.ParameterList.Parameters
-                                                                                   .Select(y => $"{y.Type.ToString()} {y.Identifier.Text}")),
-                                              ArgumentTypesList = string.Join(",", x.ParameterList.Parameters
-                                                                                  .Select(y => $"typeof({y.Type.ToString()})")),
-                                              IsRefitMethod = HasRefitHttpMethodAttribute(x)
+                                              var mti = new MethodTemplateInfo
+                                              {
+                                                  Name = x.Identifier.Text,
+                                                  ReturnType = x.ReturnType.ToString(),
+                                                  ArgumentList = string.Join(",",
+                                                                             x.ParameterList.Parameters
+                                                                              .Select(y => y.Identifier.Text)),
+                                                  ArgumentListWithTypes = string.Join(",",
+                                                                                      x.ParameterList.Parameters
+                                                                                       .Select(y => $"{y.Type.ToString()} {y.Identifier.Text}")),
+                                                  ArgumentTypesList = string.Join(",", x.ParameterList.Parameters
+                                                                                        .Select(y => $"typeof({y.Type.ToString()})")),
+                                                  IsRefitMethod = HasRefitHttpMethodAttribute(x)
+                                              };
+                                              if (x.TypeParameterList != null)
+                                              {
+                                                  var typeParameters = x.TypeParameterList.Parameters;
+                                                  if (typeParameters.Any())
+                                                  {
+                                                      mti.MethodTypeParameters = string.Join(", ", typeParameters.Select(p => p.Identifier.ValueText));
+                                                  }
+                                                  mti.MethodConstraintClauses = x.ConstraintClauses.ToFullString().Trim();
+                                              }
+
+                                              return mti;
                                           })
                                           .ToList();
 
@@ -226,6 +240,8 @@ namespace Refit.Generator
         public bool IsRefitMethod { get; set; }
         public string Name { get; set; }
         public string ReturnType { get; set; }
+        public string MethodTypeParameters { get; set; }
+        public string MethodConstraintClauses { get; set; }
     }
 
     public class TemplateInformation
