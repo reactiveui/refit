@@ -48,7 +48,7 @@ namespace Refit.Generator
                 return File.ReadAllText(ourPath, Encoding.UTF8);
             }
 
-            using(var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache"))
+            using (var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache"))
             {
                 var ms = new MemoryStream();
                 src.CopyTo(ms);
@@ -120,6 +120,7 @@ namespace Refit.Generator
                                                   {
                                                       mti.MethodTypeParameters = string.Join(", ", typeParameters.Select(p => p.Identifier.ValueText));
                                                       mti.MethodTypeParameterList = string.Join(", ", typeParameters.Select(p => $"typeof({p.Identifier.ValueText})"));
+                                                      mti.MethodTypeParameterNames = $"{string.Join(", ", typeParameters.Select(p => $"{{typeof({p.Identifier.ValueText}).Name}}"))}";
                                                   }
                                                   mti.MethodConstraintClauses = x.ConstraintClauses.ToFullString().Trim();
                                               }
@@ -182,7 +183,7 @@ namespace Refit.Generator
                                            .Where(x => !HasRefitHttpMethodAttribute(x.Method))
                                            .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
 
-           
+
             var diagnostics = missingAttributeWarnings;
 
             foreach (var diagnostic in diagnostics)
@@ -244,6 +245,7 @@ namespace Refit.Generator
         public string MethodTypeParameters { get; set; }
         public string MethodConstraintClauses { get; set; }
         public string MethodTypeParameterList { get; set; }
+        public string MethodTypeParameterNames { get; set; }
     }
 
     public class TemplateInformation

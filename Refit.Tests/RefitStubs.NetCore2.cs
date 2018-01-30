@@ -419,7 +419,7 @@ namespace Refit.Tests
         public virtual Task<TValue> GetQuery1<TValue>(TParam param)
         {
             var arguments = new object[] { param };
-            var func = methodImpls.GetOrAdd("GetQuery1<TValue>(TParam param)", _ => requestBuilder.BuildRestResultFuncForMethod("GetQuery1", new Type[] { typeof(TParam) }, new Type[] { typeof(TValue) }));
+            var func = methodImpls.GetOrAdd($"GetQuery1<{typeof(TValue).Name}>(TParam param)", _ => requestBuilder.BuildRestResultFuncForMethod("GetQuery1", new Type[] { typeof(TParam) }, new Type[] { typeof(TValue) }));
             return (Task<TValue>)func(Client, arguments);
         }
 
@@ -604,7 +604,7 @@ namespace Refit.Tests
             where T : IMessage
         {
             var arguments = new object[] { message };
-            var func = methodImpls.GetOrAdd("PostMessage<T>(T message)", _ => requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T) }, new Type[] { typeof(T) }));
+            var func = methodImpls.GetOrAdd($"PostMessage<{typeof(T).Name}>(T message)", _ => requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T) }, new Type[] { typeof(T) }));
             return (Task)func(Client, arguments);
         }
 
@@ -613,7 +613,7 @@ namespace Refit.Tests
             where T : IMessage where U : T
         {
             var arguments = new object[] { message,param1,param2 };
-            var func = methodImpls.GetOrAdd("PostMessage<T, U, V>(T message,U param1,V param2)", _ => requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T),typeof(U),typeof(V) }, new Type[] { typeof(T), typeof(U), typeof(V) }));
+            var func = methodImpls.GetOrAdd($"PostMessage<{typeof(T).Name}, {typeof(U).Name}, {typeof(V).Name}>(T message,U param1,V param2)", _ => requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T),typeof(U),typeof(V) }, new Type[] { typeof(T), typeof(U), typeof(V) }));
             return (Task)func(Client, arguments);
         }
 
@@ -681,7 +681,7 @@ namespace Refit.Tests
         public virtual Task PostGeneric<T>(T param)
         {
             var arguments = new object[] { param };
-            var func = methodImpls.GetOrAdd("PostGeneric<T>(T param)", _ => requestBuilder.BuildRestResultFuncForMethod("PostGeneric", new Type[] { typeof(T) }, new Type[] { typeof(T) }));
+            var func = methodImpls.GetOrAdd($"PostGeneric<{typeof(T).Name}>(T param)", _ => requestBuilder.BuildRestResultFuncForMethod("PostGeneric", new Type[] { typeof(T) }, new Type[] { typeof(T) }));
             return (Task)func(Client, arguments);
         }
 
@@ -861,7 +861,7 @@ namespace Refit.Tests
         public virtual Task<TValue> Get<TValue>(int someVal)
         {
             var arguments = new object[] { someVal };
-            var func = methodImpls.GetOrAdd("Get<TValue>(int someVal)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(int) }, new Type[] { typeof(TValue) }));
+            var func = methodImpls.GetOrAdd($"Get<{typeof(TValue).Name}>(int someVal)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(int) }, new Type[] { typeof(TValue) }));
             return (Task<TValue>)func(Client, arguments);
         }
 
@@ -869,7 +869,7 @@ namespace Refit.Tests
         public virtual Task<TValue> Get<TValue, TInput>(TInput input)
         {
             var arguments = new object[] { input };
-            var func = methodImpls.GetOrAdd("Get<TValue, TInput>(TInput input)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TInput) }, new Type[] { typeof(TValue), typeof(TInput) }));
+            var func = methodImpls.GetOrAdd($"Get<{typeof(TValue).Name}, {typeof(TInput).Name}>(TInput input)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TInput) }, new Type[] { typeof(TValue), typeof(TInput) }));
             return (Task<TValue>)func(Client, arguments);
         }
 
@@ -877,7 +877,7 @@ namespace Refit.Tests
         public virtual Task Get<TInput1, TInput2>(TInput1 input1,TInput2 input2)
         {
             var arguments = new object[] { input1,input2 };
-            var func = methodImpls.GetOrAdd("Get<TInput1, TInput2>(TInput1 input1,TInput2 input2)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TInput1),typeof(TInput2) }, new Type[] { typeof(TInput1), typeof(TInput2) }));
+            var func = methodImpls.GetOrAdd($"Get<{typeof(TInput1).Name}, {typeof(TInput2).Name}>(TInput1 input1,TInput2 input2)", _ => requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TInput1),typeof(TInput2) }, new Type[] { typeof(TInput1), typeof(TInput2) }));
             return (Task)func(Client, arguments);
         }
 

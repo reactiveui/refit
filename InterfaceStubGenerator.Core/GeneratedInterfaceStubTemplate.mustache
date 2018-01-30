@@ -63,7 +63,7 @@ namespace {{Namespace}}
         {
 {{#IsRefitMethod}}    
             var arguments = new object[] { {{ArgumentList}} };
-            var func = methodImpls.GetOrAdd("{{Name}}{{#MethodTypeParameters}}<{{.}}>{{/MethodTypeParameters}}({{ArgumentListWithTypes}})", _ => requestBuilder.BuildRestResultFuncForMethod("{{Name}}", new Type[] { {{ArgumentTypesList}} }{{#MethodTypeParameterList}}, new Type[] { {{.}} }{{/MethodTypeParameterList}}));
+            var func = methodImpls.GetOrAdd({{#MethodTypeParameterNames}}${{/MethodTypeParameterNames}}"{{Name}}{{#MethodTypeParameterNames}}<{{.}}>{{/MethodTypeParameterNames}}({{ArgumentListWithTypes}})", _ => requestBuilder.BuildRestResultFuncForMethod("{{Name}}", new Type[] { {{ArgumentTypesList}} }{{#MethodTypeParameterList}}, new Type[] { {{.}} }{{/MethodTypeParameterList}}));
             return ({{ReturnType}})func(Client, arguments);
 {{/IsRefitMethod}}
 {{^IsRefitMethod}}
