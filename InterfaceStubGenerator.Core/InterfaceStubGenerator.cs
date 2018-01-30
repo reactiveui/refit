@@ -48,7 +48,7 @@ namespace Refit.Generator
                 return File.ReadAllText(ourPath, Encoding.UTF8);
             }
 
-            using(var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache"))
+            using (var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache"))
             {
                 var ms = new MemoryStream();
                 src.CopyTo(ms);
@@ -97,19 +97,34 @@ namespace Refit.Generator
 
             ret.MethodList = interfaceTree.Members
                                           .OfType<MethodDeclarationSyntax>()
-                                          .Select(x => new MethodTemplateInfo
+                                          .Select(x =>
                                           {
-                                              Name = x.Identifier.Text,
-                                              ReturnType = x.ReturnType.ToString(),
-                                              ArgumentList = string.Join(",",
-                                                                         x.ParameterList.Parameters
-                                                                          .Select(y => y.Identifier.Text)),
-                                              ArgumentListWithTypes = string.Join(",",
-                                                                                  x.ParameterList.Parameters
-                                                                                   .Select(y => $"{y.Type.ToString()} {y.Identifier.Text}")),
-                                              ArgumentTypesList = string.Join(",", x.ParameterList.Parameters
-                                                                                  .Select(y => $"typeof({y.Type.ToString()})")),
-                                              IsRefitMethod = HasRefitHttpMethodAttribute(x)
+                                              var mti = new MethodTemplateInfo
+                                              {
+                                                  Name = x.Identifier.Text,
+                                                  ReturnType = x.ReturnType.ToString(),
+                                                  ArgumentList = string.Join(",",
+                                                                             x.ParameterList.Parameters
+                                                                              .Select(y => y.Identifier.Text)),
+                                                  ArgumentListWithTypes = string.Join(",",
+                                                                                      x.ParameterList.Parameters
+                                                                                       .Select(y => $"{y.Type.ToString()} {y.Identifier.Text}")),
+                                                  ArgumentTypesList = string.Join(",", x.ParameterList.Parameters
+                                                                                        .Select(y => $"typeof({y.Type.ToString()})")),
+                                                  IsRefitMethod = HasRefitHttpMethodAttribute(x)
+                                              };
+                                              if (x.TypeParameterList != null)
+                                              {
+                                                  var typeParameters = x.TypeParameterList.Parameters;
+                                                  if (typeParameters.Any())
+                                                  {
+                                                      mti.MethodTypeParameters = string.Join(", ", typeParameters.Select(p => p.Identifier.ValueText));
+                                                      mti.MethodTypeParameterList = string.Join(", ", typeParameters.Select(p => $"typeof({p.Identifier.ValueText})"));
+                                                      mti.MethodTypeParameterNames = $"{string.Join(", ", typeParameters.Select(p => $"{{typeof({p.Identifier.ValueText}).AssemblyQualifiedName}}"))}";
+                                                  }
+                                                  mti.MethodConstraintClauses = x.ConstraintClauses.ToFullString().Trim();
+                                              }
+                                              return mti;
                                           })
                                           .ToList();
 
@@ -167,7 +182,7 @@ namespace Refit.Generator
                                            .Where(x => !HasRefitHttpMethodAttribute(x.Method))
                                            .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
 
-           
+
             var diagnostics = missingAttributeWarnings;
 
             foreach (var diagnostic in diagnostics)
@@ -226,6 +241,10 @@ namespace Refit.Generator
         public bool IsRefitMethod { get; set; }
         public string Name { get; set; }
         public string ReturnType { get; set; }
+        public string MethodTypeParameters { get; set; }
+        public string MethodConstraintClauses { get; set; }
+        public string MethodTypeParameterList { get; set; }
+        public string MethodTypeParameterNames { get; set; }
     }
 
     public class TemplateInformation

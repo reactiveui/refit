@@ -43,6 +43,9 @@ namespace Refit.Tests
 
         [Post("/foo")]
         Task PostRawStringUrlEncoded([Body(BodySerializationMethod.UrlEncoded)] string str);
+
+        [Post("/1h3a5jm1")]
+        Task PostGeneric<T>(T param);
     }
 
     public interface INoRefitHereBuddy
@@ -75,6 +78,11 @@ namespace Refit.Tests
 
         [Get("")]
         Task<TResponse> GetQueryWithIncludeParameterName([Query(".", "search")]TParam param);
+
+        [Get("/get?hardcoded=true")]
+        Task<TValue> GetQuery1<TValue>([Query("_")]TParam param);
+
+
     }
 
     public interface IBrokenWebApi
@@ -627,6 +635,36 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task PostToRequestBinWithGenerics()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+
+            await fixture.PostGeneric(5);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+
+            mockHttp.ResetExpectations();
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
+                    .Respond(HttpStatusCode.OK);
+
+            await fixture.PostGeneric("4");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
         public async Task CanGetDataOutOfErrorResponses() 
         {
             var mockHttp = new MockHttpMessageHandler();
@@ -820,6 +858,59 @@ namespace Refit.Tests
             Assert.Equal("John", resp.Args["FirstName"]);
             Assert.Equal("Rambo", resp.Args["LastName"]);
             Assert.Equal("9999", resp.Args["Addr_Zip"]);
+        }
+
+        [Fact]
+        public async Task GenericMethodTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            const string response = "4";
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                    .Respond("application/json", response);
+
+            var myParams = new Dictionary<string, object>
+            {
+                ["FirstName"] = "John",
+                ["LastName"] = "Rambo",
+                ["Address"] = new
+                {
+                    Zip = 9999,
+                    Street = "HomeStreet 99"
+                }
+            };
+
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>("https://httpbin.org", settings);
+
+            // Use the generic to get it as an ApiResponse of string
+            var resp = await fixture.GetQuery1<ApiResponse<string>>(myParams);
+            Assert.Equal(response, resp.Content);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                    .Respond("application/json", response);
+
+            // Get as string
+            var resp1 = await fixture.GetQuery1<string>(myParams);
+
+            Assert.Equal(response, resp1);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                    .Respond("application/json", response);
+
+
+            var resp2 = await fixture.GetQuery1<int>(myParams);
+            Assert.Equal(4, resp2);
+
+            mockHttp.VerifyNoOutstandingExpectation();
         }
 
         [Fact]
