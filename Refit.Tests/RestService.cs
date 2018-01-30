@@ -891,14 +891,26 @@ namespace Refit.Tests
             var resp = await fixture.GetQuery1<ApiResponse<string>>(myParams);
             Assert.Equal(response, resp.Content);
 
+            mockHttp.VerifyNoOutstandingExpectation();
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                    .Respond("application/json", response);
 
             // Get as string
             var resp1 = await fixture.GetQuery1<string>(myParams);
 
             Assert.Equal(response, resp1);
 
+            mockHttp.VerifyNoOutstandingExpectation();
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                    .Respond("application/json", response);
+
+
             var resp2 = await fixture.GetQuery1<int>(myParams);
             Assert.Equal(4, resp2);
+
+            mockHttp.VerifyNoOutstandingExpectation();
         }
 
         [Fact]
