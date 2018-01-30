@@ -91,27 +91,11 @@ namespace Refit
                 var parameterTypesArray = parameterTypes.ToArray();
                 foreach (var method in possibleMethods) 
                 {
-                    var match = true;
-
-                    // Look for it by method parameter type first
-                    var parameters = method.MethodInfo.GetParameters();
-
-                    for (var i = 0; i < parameterTypesArray.Length; i++) 
-                    {
-                        var arg = parameterTypesArray[i];
-                        var paramType = parameters[i].ParameterType;
-
-                        if (arg != paramType) 
-                        {
-                            match = false;
-                            break;
-                        }
-                    }
-
+                    var match = method.MethodInfo.GetParameters()
+                                      .Select(p => p.ParameterType)
+                                      .SequenceEqual(parameterTypesArray);
                     if (match)
                     {
-                        // Now look by type parameters
-
                         return CloseGenericMethodIfNeeded(method, genericArgumentTypes);
                     }
                 }

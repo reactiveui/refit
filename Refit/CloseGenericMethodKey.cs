@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Refit
 {
-    internal struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKey>
+    struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKey>
     {
         internal CloseGenericMethodKey(MethodInfo openMethodInfo, Type[] types)
         {
