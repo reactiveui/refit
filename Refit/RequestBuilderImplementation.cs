@@ -162,7 +162,7 @@ namespace Refit
 
             if (itemValue is string stringValue) 
             {
-                multiPartContent.Add(new StringContent(stringValue), parameterName, fileName);
+                multiPartContent.Add(new StringContent(stringValue), parameterName);
                 return;
             }
 
@@ -184,7 +184,7 @@ namespace Refit
             try
             {
                 var stringContent = new StringContent(JsonConvert.SerializeObject(itemValue, settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
-                multiPartContent.Add(stringContent, parameterName, fileName);
+                multiPartContent.Add(stringContent, parameterName);
                 return;
             }
             catch(Exception ex)
