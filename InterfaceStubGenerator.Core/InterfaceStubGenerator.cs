@@ -120,11 +120,10 @@ namespace Refit.Generator
                                                   {
                                                       mti.MethodTypeParameters = string.Join(", ", typeParameters.Select(p => p.Identifier.ValueText));
                                                       mti.MethodTypeParameterList = string.Join(", ", typeParameters.Select(p => $"typeof({p.Identifier.ValueText})"));
-                                                      mti.MethodTypeParameterNames = $"{string.Join(", ", typeParameters.Select(p => $"{{typeof({p.Identifier.ValueText}).Name}}"))}";
+                                                      mti.MethodTypeParameterNames = $"{string.Join(", ", typeParameters.Select(p => $"{{typeof({p.Identifier.ValueText}).AssemblyQualifiedName}}"))}";
                                                   }
                                                   mti.MethodConstraintClauses = x.ConstraintClauses.ToFullString().Trim();
                                               }
-
                                               return mti;
                                           })
                                           .ToList();
