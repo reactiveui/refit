@@ -35,6 +35,15 @@ namespace Refit.Tests
         [Post("/1h3a5jm1")]
         Task Post();
 
+        [Post("/foo")]
+        Task PostRawStringDefault([Body] string str);
+
+        [Post("/foo")]
+        Task PostRawStringJson([Body(BodySerializationMethod.Json)] string str);
+
+        [Post("/foo")]
+        Task PostRawStringUrlEncoded([Body(BodySerializationMethod.UrlEncoded)] string str);
+
         [Post("/1h3a5jm1")]
         Task PostGeneric<T>(T param);
     }
@@ -50,6 +59,11 @@ namespace Refit.Tests
         Task Post();
 
         Task Get();
+    }
+
+    public class ErrorResponse
+    {
+        public string[] Errors { get; set; }
     }
 
     public interface IHttpBinApi<TResponse, in TParam, in THeader>
@@ -101,6 +115,21 @@ namespace Refit.Tests
         Task<string> GetWithDecimal(decimal value);
     }
 
+    public interface IBodylessApi
+    {
+        [Post("/nobody")]
+        [Headers("Content-Type: application/x-www-form-urlencoded; charset=UTF-8")]
+        Task Post();
+
+        [Get("/nobody")]
+        [Headers("Content-Type: application/x-www-form-urlencoded; charset=UTF-8")]
+        Task Get();
+
+        [Head("/nobody")]
+        [Headers("Content-Type: application/x-www-form-urlencoded; charset=UTF-8")]
+        Task Head();
+    }
+
     public class HttpBinGet
     {
         public Dictionary<string, object> Args { get; set; }
@@ -111,6 +140,77 @@ namespace Refit.Tests
 
     public class RestServiceIntegrationTests
     {
+        [Fact]
+        public async Task CanAddContentHeadersToPostWithoutBody()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://foo/nobody")
+                // The content length header is set automatically by the HttpContent instance,
+                // so checking the header as a string doesn't work
+                .With(r => r.Content?.Headers.ContentLength == 0) 
+                // But we added content type ourselves, so this should work
+                .WithHeaders("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+                .WithContent("")
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+
+            await fixture.Post();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task DoesntAddAutoAddContentToGetRequest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "http://foo/nobody")
+                // We can't add HttpContent to a GET request, 
+                // because HttpClient doesn't allow it and it will
+                // blow up at runtime
+                .With(r => r.Content == null)
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+
+            await fixture.Get();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task DoesntAddAutoAddContentToHeadRequest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Head, "http://foo/nobody")
+                // We can't add HttpContent to a HEAD request, 
+                // because HttpClient doesn't allow it and it will
+                // blow up at runtime
+                .With(r => r.Content == null)
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+
+            await fixture.Head();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
         [Fact]
         public async Task GetWithDecimal()
         {
@@ -467,6 +567,74 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task PostStringDefaultToRequestBin()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                    .WithContent("raw string")
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+
+            await fixture.PostRawStringDefault("raw string");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostStringJsonToRequestBin()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                    .WithContent("\"json string\"")
+                    .WithHeaders("Content-Type", "application/json")
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+
+            await fixture.PostRawStringJson("json string");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostStringUrlToRequestBin()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                    .WithContent("url%26string")
+                    .WithHeaders("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+
+            await fixture.PostRawStringUrlEncoded ("url&string");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
         public async Task PostToRequestBinWithGenerics()
         {
             var mockHttp = new MockHttpMessageHandler();
@@ -522,6 +690,37 @@ namespace Refit.Tests
                 Assert.NotNull(content["documentation_url"]);
             }
         }
+
+
+        [Fact]
+        public async Task ErrorsFromApiReturnErrorContent()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
+                    .Respond(HttpStatusCode.BadRequest, "application/json", "{ 'errors': [ 'error1', 'message' ]}");
+
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+
+            var result = await Assert.ThrowsAsync<ApiException>(async () => await fixture.CreateUser(new User{Name = "foo"}));
+         
+            
+            var errors = result.GetContentAs<ErrorResponse>();
+
+            Assert.Contains("error1", errors.Errors);
+            Assert.Contains("message", errors.Errors);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
 
         [Fact]
         public void NonRefitInterfacesThrowMeaningfulExceptions() 

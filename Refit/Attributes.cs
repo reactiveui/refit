@@ -95,14 +95,26 @@ namespace Refit
 
     public enum BodySerializationMethod
     {
+        /// <summary>
+        /// JSON encodes data except for strings. Strings are set as-is
+        /// </summary>
+        Default,
+
+        /// <summary>
+        /// Json encodes everything, including strings
+        /// </summary>
         Json,
+
+        /// <summary>
+        /// Form-UrlEncode's the values
+        /// </summary>
         UrlEncoded
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
     public class BodyAttribute : Attribute
     {
-        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Json,
+        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Default,
                              bool buffered = false)
         {
             SerializationMethod = serializationMethod;
