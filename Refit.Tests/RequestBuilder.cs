@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Threading;
 using Xunit;
+using System.Collections;
 
 namespace Refit.Tests
 {
@@ -425,6 +426,9 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithQueryFormat([Query(Format= "0.0")] int id);
+
+        [Get("/query")]
+        Task QueryWithEnumerable(IEnumerable<int> numbers);
     }
 
     interface ICancellableMethods
@@ -483,6 +487,23 @@ namespace Refit.Tests
         public string Format(object value, ParameterInfo parameterInfo)
         {
             return constantParameterOutput;
+        }
+    }
+
+    public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
+    {
+        public override string Format(object parameterValue, ParameterInfo parameterInfo)
+        {
+            if (parameterValue is IEnumerable<object> enu)
+            {
+                return string.Join(",", enu.Select(o => base.Format(o, parameterInfo)));
+            }
+            if (parameterValue is IEnumerable en)
+            {
+                return string.Join(",", en.Cast<object>().Select(o => base.Format(o, parameterInfo)));
+            }
+
+            return base.Format(parameterValue, parameterInfo);
         }
     }
 
@@ -986,6 +1007,39 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/foo/bar/custom-parameter", uri.PathAndQuery);
         }
+
+        [Fact]
+        public void QueryStringWithEnumerablesCanBeFormatted()
+        {
+            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
+            var output = factory(new object[] { new int[] {1,2,3} });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringWithEnumerablesCanBeFormattedEnumerable()
+        {
+            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
+
+            var list = new List<int>
+            {
+                1, 2, 3
+            };
+
+            var output = factory(new object[] { list });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
 
         [Fact]
         [UseCulture("es-ES")] // Spain uses a , instead of a .
