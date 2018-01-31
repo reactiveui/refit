@@ -53,18 +53,19 @@ namespace Refit.Tests
         [Fact]
         public async Task MultipartUploadShouldWorkWithStream()
         {
-            var handler = new MockHttpMessageHandler();
-
-            handler.Asserts = content =>
+            var handler = new MockHttpMessageHandler
             {
-                var parts = content.ToList();
+                Asserts = content =>
+                {
+                    var parts = content.ToList();
 
-                Assert.Single(parts);
+                    Assert.Single(parts);
 
-                Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
-                Assert.Equal("stream", parts[0].Headers.ContentDisposition.FileName);
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.FileName);
 
-                return Task.CompletedTask;
+                    return Task.CompletedTask;
+                }
             };
 
             var settings = new RefitSettings()
