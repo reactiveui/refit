@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Xunit;
 using Refit;
+using System.Threading;
 
 namespace Refit.Tests
 {
@@ -46,16 +48,34 @@ namespace Refit.Tests
     {
         // To test: sign up for a Runscope account (it's free, despite them implying that's its only good for 30 days)
         // and then insert your bucket URI here in order to run tests and verify success via the Runscope UI
-        const string runscopeUri = "https://.runscope.net/";
+        const string runscopeUri = "https://api/";
 
-        [Fact(Skip = "Set runscopeUri field to your Runscope key in order to test this function.")]
+        [Fact]
         public async Task MultipartUploadShouldWorkWithStream()
         {
-            using (var stream = GetTestFileStream("Test Files/Test.pdf")) {
-                var fixture = RestService.For<IRunscopeApi>(runscopeUri);
-                var result = await fixture.UploadStream(stream);
+            var handler = new MockHttpMessageHandler();
 
-                Assert.True(result.IsSuccessStatusCode);
+            handler.Asserts = content =>
+            {
+                var parts = content.ToList();
+
+                Assert.Single(parts);
+
+                Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
+                Assert.Equal("stream", parts[0].Headers.ContentDisposition.FileName);
+
+                return Task.CompletedTask;
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+            {
+                var fixture = RestService.For<IRunscopeApi>(runscopeUri, settings);
+                var result = await fixture.UploadStream(stream);
             }
         }
 
@@ -209,6 +229,22 @@ namespace Refit.Tests
             }
 
             return stream;
+        }
+
+        class MockHttpMessageHandler : HttpMessageHandler
+        {
+            public Func<MultipartFormDataContent, Task> Asserts { get; set; }
+
+            protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                var content = request.Content as MultipartFormDataContent;
+                Assert.IsType<MultipartFormDataContent>(content);
+                Assert.NotNull(Asserts);
+
+                await Asserts(content);
+
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }
         }
     }
 #pragma warning restore xUnit1004 // Test methods should not be skipped
