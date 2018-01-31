@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Refit;
 using System.Threading;
+using Newtonsoft.Json;
 
 namespace Refit.Tests
 {
@@ -41,6 +42,36 @@ namespace Refit.Tests
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadFileInfoPart(IEnumerable<FileInfoPart> fileInfos, FileInfoPart anotherFile);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadJsonObject(ModelObject theObject);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadJsonObjects(IEnumerable<ModelObject> theObjects);
+
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadMixedObjects(IEnumerable<ModelObject> theObjects, AnotherModel anotherModel, FileInfo aFile, AnEnum anEnum, string aString, int anInt);
+    }
+
+    public class ModelObject
+    {
+        public string Property1 { get; set; }
+        public string Property2 { get; set; }
+    }
+
+    public class AnotherModel
+    {
+        public string[] Foos { get; set; }
+    }
+
+    public enum AnEnum
+    {
+        Val1,
+        Val2
     }
 
     public class MultipartTests
@@ -203,9 +234,7 @@ namespace Refit.Tests
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal("text/plain", parts[0].Headers.ContentType.MediaType);
                     Assert.Equal("utf-8", parts[0].Headers.ContentType.CharSet);
-
                     var str = await parts[0].ReadAsStringAsync();
-
                     Assert.Equal(text, str);
                 }
             };
@@ -358,6 +387,198 @@ namespace Refit.Tests
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart.pdf", "application/pdf"),
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart2.pdf", contentType: null)
                     }, new FileInfoPart(new FileInfo(fileName), fileName: "additionalfile.pdf", contentType: "application/pdf"));
+                }
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        }
+
+        [Fact]
+        public async Task MultipartUploadShouldWorkWithAnObject()
+        {
+            var model1 = new ModelObject
+            {
+                Property1 = "M1.prop1",
+                Property2 = "M1.prop2"
+            };
+            
+            var handler = new MockHttpMessageHandler
+            {
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Single(parts);
+
+                    Assert.Equal("theObject", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[0].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/json", parts[0].Headers.ContentType.MediaType);
+                    var result0 = JsonConvert.DeserializeObject<ModelObject>(await parts[0].ReadAsStringAsync());
+                    Assert.Equal(model1.Property1, result0.Property1);
+                    Assert.Equal(model1.Property2, result0.Property2);
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadJsonObject(model1);
+        }
+
+        [Fact]
+        public async Task MultipartUploadShouldWorkWithObjects()
+        {
+            var model1 = new ModelObject
+            {
+                Property1 = "M1.prop1",
+                Property2 = "M1.prop2"
+            };
+
+            var model2 = new ModelObject
+            {
+                Property1 = "M2.prop1"
+            };
+
+
+            var handler = new MockHttpMessageHandler
+            {
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Equal(2, parts.Count);
+
+                    Assert.Equal("theObjects", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[0].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/json", parts[0].Headers.ContentType.MediaType);
+                    var result0 = JsonConvert.DeserializeObject<ModelObject>(await parts[0].ReadAsStringAsync());
+                    Assert.Equal(model1.Property1, result0.Property1);
+                    Assert.Equal(model1.Property2, result0.Property2);
+
+
+                    Assert.Equal("theObjects", parts[1].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[1].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/json", parts[1].Headers.ContentType.MediaType);
+                    var result1 = JsonConvert.DeserializeObject<ModelObject>(await parts[1].ReadAsStringAsync());
+                    Assert.Equal(model2.Property1, result1.Property1);
+                    Assert.Equal(model2.Property2, result1.Property2);
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadJsonObjects(new[] { model1, model2 });
+        }
+
+        [Fact]
+        public async Task MultipartUploadShouldWorkWithMixedTypes()
+        {
+            var fileName = Path.GetTempFileName();
+            var name = Path.GetFileName(fileName);
+
+            var model1 = new ModelObject
+            {
+                Property1 = "M1.prop1",
+                Property2 = "M1.prop2"
+            };
+
+            var model2 = new ModelObject
+            {
+                Property1 = "M2.prop1"
+            };
+
+            var anotherModel = new AnotherModel
+            {
+                Foos = new []{"bar1", "bar2"}
+            };
+
+            var handler = new MockHttpMessageHandler
+            {
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Equal(7, parts.Count);
+
+                    Assert.Equal("theObjects", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[0].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/json", parts[0].Headers.ContentType.MediaType);
+                    var result0 = JsonConvert.DeserializeObject<ModelObject>(await parts[0].ReadAsStringAsync());
+                    Assert.Equal(model1.Property1, result0.Property1);
+                    Assert.Equal(model1.Property2, result0.Property2);
+
+
+                    Assert.Equal("theObjects", parts[1].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[1].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/json", parts[1].Headers.ContentType.MediaType);
+                    var result1 = JsonConvert.DeserializeObject<ModelObject>(await parts[1].ReadAsStringAsync());
+                    Assert.Equal(model2.Property1, result1.Property1);
+                    Assert.Equal(model2.Property2, result1.Property2);
+
+                    Assert.Equal("anotherModel", parts[2].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[2].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/json", parts[2].Headers.ContentType.MediaType);
+                    var result2 = JsonConvert.DeserializeObject<AnotherModel>(await parts[2].ReadAsStringAsync());
+                    Assert.Equal(2, result2.Foos.Length);
+                    Assert.Equal("bar1", result2.Foos[0]);
+                    Assert.Equal("bar2", result2.Foos[1]);
+
+
+                    Assert.Equal("aFile", parts[3].Headers.ContentDisposition.Name);
+                    Assert.Equal(name, parts[3].Headers.ContentDisposition.FileName);
+                    Assert.Null(parts[3].Headers.ContentType);
+                    using (var str = await parts[3].ReadAsStreamAsync())
+                    using (var src = GetTestFileStream("Test Files/Test.pdf"))
+                    {
+                        Assert.True(StreamsEqual(src, str));
+                    }
+
+                    Assert.Equal("anEnum", parts[4].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[4].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/json", parts[4].Headers.ContentType.MediaType);
+                    var result4 = JsonConvert.DeserializeObject<AnEnum>(await parts[4].ReadAsStringAsync());
+                    Assert.Equal(AnEnum.Val2, result4);
+
+                    Assert.Equal("aString", parts[5].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[5].Headers.ContentDisposition.FileName);
+                    Assert.Equal("text/plain", parts[5].Headers.ContentType.MediaType);
+                    Assert.Equal("utf-8", parts[5].Headers.ContentType.CharSet);
+                    Assert.Equal("frob", await parts[5].ReadAsStringAsync());
+
+                    Assert.Equal("anInt", parts[6].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[6].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/json", parts[6].Headers.ContentType.MediaType);
+                    var result6 = JsonConvert.DeserializeObject<int>(await parts[6].ReadAsStringAsync());
+                    Assert.Equal(42, result6);
+
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            try
+            {
+                using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+                using (var outStream = File.OpenWrite(fileName))
+                {
+                    await stream.CopyToAsync(outStream);
+                    await outStream.FlushAsync();
+                    outStream.Close();
+
+                    var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+                    var result = await fixture.UploadMixedObjects(new[] { model1, model2 }, anotherModel, new FileInfo(fileName), AnEnum.Val2, "frob", 42);
                 }
             }
             finally

@@ -842,6 +842,30 @@ namespace Refit.Tests
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
+        /// <inheritdoc />
+        public virtual Task<HttpResponseMessage> UploadJsonObject(ModelObject theObject)
+        {
+            var arguments = new object[] { theObject };
+            var func = methodImpls.GetOrAdd("UploadJsonObject(ModelObject theObject)", _ => requestBuilder.BuildRestResultFuncForMethod("UploadJsonObject", new Type[] { typeof(ModelObject) }));
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<HttpResponseMessage> UploadJsonObjects(IEnumerable<ModelObject> theObjects)
+        {
+            var arguments = new object[] { theObjects };
+            var func = methodImpls.GetOrAdd("UploadJsonObjects(IEnumerable<ModelObject> theObjects)", _ => requestBuilder.BuildRestResultFuncForMethod("UploadJsonObjects", new Type[] { typeof(IEnumerable<ModelObject>) }));
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<HttpResponseMessage> UploadMixedObjects(IEnumerable<ModelObject> theObjects,AnotherModel anotherModel,FileInfo aFile,AnEnum anEnum,string aString,int anInt)
+        {
+            var arguments = new object[] { theObjects,anotherModel,aFile,anEnum,aString,anInt };
+            var func = methodImpls.GetOrAdd("UploadMixedObjects(IEnumerable<ModelObject> theObjects,AnotherModel anotherModel,FileInfo aFile,AnEnum anEnum,string aString,int anInt)", _ => requestBuilder.BuildRestResultFuncForMethod("UploadMixedObjects", new Type[] { typeof(IEnumerable<ModelObject>),typeof(AnotherModel),typeof(FileInfo),typeof(AnEnum),typeof(string),typeof(int) }));
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
     }
 }
 
