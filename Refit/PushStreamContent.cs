@@ -19,6 +19,7 @@
 // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/PushStreamContent.cs
 // to work on NET Standard 1.4
 
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
@@ -34,6 +35,7 @@ namespace System.Net.Http
     /// <see cref="StreamContent"/> where data is pulled and not pushed.
     /// </summary>
     // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/PushStreamContent.cs
+    [ExcludeFromCodeCoverage]
     public class PushStreamContent : HttpContent
     {
         private readonly Func<Stream, HttpContent, TransportContext, Task> _onStreamAvailable;
@@ -179,6 +181,7 @@ namespace System.Net.Http
     /// This is taken from System.Net.Http
     /// </summary>
     // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/Internal/DelegatingStream.cs
+    [ExcludeFromCodeCoverage]
     internal abstract class DelegatingStream : Stream
     {
         Stream innerStream;

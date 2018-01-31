@@ -55,6 +55,7 @@ namespace Refit.Tests
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadMixedObjects(IEnumerable<ModelObject> theObjects, AnotherModel anotherModel, FileInfo aFile, AnEnum anEnum, string aString, int anInt);
+
     }
 
     public class ModelObject
