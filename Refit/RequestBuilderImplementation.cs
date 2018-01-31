@@ -172,7 +172,7 @@ namespace Refit
 
             if (itemValue is string stringValue) 
             {
-                multiPartContent.Add(new StringContent(stringValue), parameterName, fileName);
+                multiPartContent.Add(new StringContent(stringValue), parameterName);
                 return;
             }
 
@@ -189,7 +189,21 @@ namespace Refit
                 return;
             }
 
-            throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, and Byte array", nameof(itemValue));
+            // Fallback to Json
+            Exception e = null;
+            try
+            {
+                var stringContent = new StringContent(JsonConvert.SerializeObject(itemValue, settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
+                multiPartContent.Add(stringContent, parameterName);
+                return;
+            }
+            catch(Exception ex)
+            {
+                // Eat this since we're about to throw as a fallback anyway
+                e = ex;
+            }
+
+            throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, Byte array and anything that's JSON serializable", nameof(itemValue), e);
         }
 
         Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
@@ -513,28 +527,7 @@ namespace Refit
 
                     if (enumerable != null)
                     {
-                        Type tType = null;
-                        var eType = enumerable.GetType();
-                        if (eType.GetTypeInfo().ContainsGenericParameters)
-                        {
-                            tType = eType.GenericTypeArguments[0];
-                        }
-                        else if (eType.IsArray)
-                        {
-                            tType = eType.GetElementType();
-                        }
-
-                        // check to see if it's one of the types we support for multipart:
-                        // FileInfo, Stream, string or byte[]
-                        if (tType == typeof(Stream) ||
-                            tType == typeof(string) ||
-                            tType == typeof(byte[]) ||
-                            tType.GetTypeInfo().IsSubclassOf(typeof(MultipartItem))
-                            || tType == typeof(FileInfo)
-                        )
-                        {
-                            typeIsCollection = true;
-                        }
+                        typeIsCollection = true;
                     }
 
                     if (typeIsCollection)
