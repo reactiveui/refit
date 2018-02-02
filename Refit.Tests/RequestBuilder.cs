@@ -429,6 +429,10 @@ namespace Refit.Tests
 
         [Get("/query")]
         Task QueryWithEnumerable(IEnumerable<int> numbers);
+
+
+        [Get("/query")]
+        Task QueryWithArray(int[] numbers);
     }
 
     interface ICancellableMethods
@@ -1016,6 +1020,19 @@ namespace Refit.Tests
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
             var output = factory(new object[] { new int[] {1,2,3} });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringWithArrayCanBeFormatted()
+        {
+            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArray");
+            var output = factory(new object[] { new int[] { 1, 2, 3 } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
