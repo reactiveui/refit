@@ -653,20 +653,33 @@ namespace Refit
             if (value == null)
                 return false;
 
-            var type = value.GetType().GetTypeInfo();
+            var type = value.GetType();
 
-            if (type.IsPrimitive)
+            bool ShouldReturn() => type == typeof(string) ||
+                                  typeof(IFormattable).IsAssignableFrom(type) ||
+                                  type == typeof(Uri);
+
+            // Bail out early & match string
+            if (ShouldReturn())
                 return true;
 
-            switch (value)
+            // Get the element type for enumerables
+            if (value is IEnumerable enu)
             {
-            case string str:
-            case IFormattable f:
-            case Uri uri:
-                return true;
+                var ienu = typeof(IEnumerable<>);
+                // We don't want to enumerate to get the type, so we'll just look for IEnumerable<T>
+                var intType = type.GetInterfaces()
+                                     .FirstOrDefault(i => i.GetTypeInfo().IsGenericType &&
+                                                          i.GetGenericTypeDefinition() == ienu);
+
+                if (intType != null)
+                {
+                    type = intType.GetGenericArguments()[0];
+                }
+
             }
 
-            return false;
+            return ShouldReturn();
         }
 
         static void SetHeader(HttpRequestMessage request, string name, string value)
