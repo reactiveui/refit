@@ -11,49 +11,49 @@ using Xunit;
 
 namespace Refit.Tests
 {
-    public interface IActionParameterTest
+    public interface IActionOrFuncParameterTest
     {
         [Get("")]
-        Task<HttpResponseMessage> Get([Body]ActionParameterTestOptions options);
+        Task<HttpResponseMessage> Get([Body]ActionOrFuncOptions options);
 
         [Get("")]
-        Task<HttpResponseMessage> Get([Body]Action<ActionParameterTestOptions> options);
+        Task<HttpResponseMessage> Get([Body]Action<ActionOrFuncOptions> options);
 
         [Get("")]
-        Task<HttpResponseMessage> Get([Body]Func<ActionParameterTestOptions> builder);
+        Task<HttpResponseMessage> Get([Body]Func<ActionOrFuncOptions> builder);
     }
 
-    public class ActionParameterTestOptions
+    public class ActionOrFuncOptions
     {
         public string Text { get; set; }
         public int Number { get; set; }
         public Boolean Enabled { get; set; }
     }
 
-    public class ActionParameterTestOptionsBuilder
+    public class ActionOrFuncOptionsBuilder
     {
-        private ActionParameterTestOptions options = new ActionParameterTestOptions();
+        private ActionOrFuncOptions options = new ActionOrFuncOptions();
 
-        public ActionParameterTestOptionsBuilder WithText(string text)
+        public ActionOrFuncOptionsBuilder WithText(string text)
         {
             options.Text = text;
             return this;
         }
 
-        public ActionParameterTestOptionsBuilder WithNumber(int number)
+        public ActionOrFuncOptionsBuilder WithNumber(int number)
         {
             options.Number = number;
             return this;
         }
 
-        public ActionParameterTestOptionsBuilder Enabled(bool value)
+        public ActionOrFuncOptionsBuilder Enabled(bool value)
         {
             options.Enabled = value;
             return this;
         }
 
 
-        public static implicit operator ActionParameterTestOptions(ActionParameterTestOptionsBuilder builder)
+        public static implicit operator ActionOrFuncOptions(ActionOrFuncOptionsBuilder builder)
         {
             return builder.options;
         }
@@ -65,7 +65,7 @@ namespace Refit.Tests
     public class ActionParameterTests
     {
 
-        private ActionParameterTestOptions _options { get; } = new ActionParameterTestOptions
+        private ActionOrFuncOptions _options { get; } = new ActionOrFuncOptions
         {
             Text = "TextValue",
             Number = 7,
@@ -89,7 +89,7 @@ namespace Refit.Tests
                 .Respond(HttpStatusCode.OK, "text/html", "OK");
 
             
-            var fixture = RestService.For<IActionParameterTest>("https://httpbin.org/", settings);
+            var fixture = RestService.For<IActionOrFuncParameterTest>("https://httpbin.org/", settings);
 
             var response = await fixture.Get(_options);
 
@@ -113,7 +113,7 @@ namespace Refit.Tests
                 .Respond(HttpStatusCode.OK, "text/html", "OK");
 
 
-            var fixture = RestService.For<IActionParameterTest>("https://httpbin.org/", settings);
+            var fixture = RestService.For<IActionOrFuncParameterTest>("https://httpbin.org/", settings);
 
             var response = await fixture.Get(testOptions =>
             {
@@ -141,10 +141,10 @@ namespace Refit.Tests
                 .WithContent(JsonConvert.SerializeObject(_options))
                 .Respond(HttpStatusCode.OK, "text/html", "OK");
 
+            
+            var fixture = RestService.For<IActionOrFuncParameterTest>("https://httpbin.org/", settings);
 
-            var fixture = RestService.For<IActionParameterTest>("https://httpbin.org/", settings);
-
-            var response = await fixture.Get(() => new ActionParameterTestOptionsBuilder().WithNumber(7).WithText("TextValue").Enabled(true));
+            var response = await fixture.Get(() => new ActionOrFuncOptionsBuilder().WithNumber(7).WithText("TextValue").Enabled(true));
 
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
