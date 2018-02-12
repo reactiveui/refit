@@ -407,6 +407,19 @@ namespace Refit
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
+
+                    var currentParam = paramList[i];
+
+                    if (currentParam?.GetType().IsGenericTypeOf(typeof(Action<>)) == true)
+                    {
+                        currentParam = ExtractObjectfromAction(currentParam);
+                    }
+
+                    if (currentParam?.GetType().IsGenericTypeOf(typeof(Func<>)) == true)
+                    {
+                        currentParam = ExtractObjectfromFunc(currentParam);
+                    }
+
                     // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.ContainsKey(i))
                     {
@@ -414,7 +427,7 @@ namespace Refit
                             urlTarget,
                             "{" + restMethod.ParameterMap[i] + "}",
                             Uri.EscapeDataString(settings.UrlParameterFormatter
-                                    .Format(paramList[i], restMethod.ParameterInfoMap[i])),
+                                    .Format(currentParam, restMethod.ParameterInfoMap[i])),
                             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                         continue;
                     }
@@ -422,17 +435,17 @@ namespace Refit
                     // if marked as body, add to content
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item3 == i)
                     {
-                        if (paramList[i] is HttpContent httpContentParam)
+                        if (currentParam is HttpContent httpContentParam)
                         {
                             ret.Content = httpContentParam;
                         }
-                        else if (paramList[i] is Stream streamParam)
+                        else if (currentParam is Stream streamParam)
                         {
                             ret.Content = new StreamContent(streamParam);
                         }
                         // Default sends raw strings
                         else if (restMethod.BodyParameterInfo.Item1 == BodySerializationMethod.Default &&
-                                 paramList[i] is string stringParam)
+                                 currentParam is string stringParam)
                         {
                             ret.Content = new StringContent(stringParam);
                         }
@@ -441,11 +454,11 @@ namespace Refit
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
                                 case BodySerializationMethod.UrlEncoded:
-                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") :  new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
+                                    ret.Content = currentParam is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") :  new FormUrlEncodedContent(new FormValueDictionary(currentParam, settings));
                                     break;
                                 case BodySerializationMethod.Default:
                                 case BodySerializationMethod.Json:
-                                    var param = paramList[i];
+                                    var param = currentParam;
                                     switch (restMethod.BodyParameterInfo.Item2)
                                     {
                                         case false:
@@ -460,7 +473,7 @@ namespace Refit
                                             break;
                                         case true:
                                             ret.Content = new StringContent(
-                                                JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings),
+                                                JsonConvert.SerializeObject(currentParam, settings.JsonSerializerSettings),
                                                 Encoding.UTF8,
                                                 "application/json");
                                             break;
@@ -476,25 +489,25 @@ namespace Refit
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.ContainsKey(i))
                     {
-                        headersToAdd[restMethod.HeaderParameterMap[i]] = paramList[i]?.ToString();
+                        headersToAdd[restMethod.HeaderParameterMap[i]] = currentParam?.ToString();
                         continue;
                     }
 
                     // ignore nulls
-                    if (paramList[i] == null) continue;
+                    if (currentParam == null) continue;
 
                     // for anything that fell through to here, if this is not
                     // a multipart method, add the parameter to the query string
                     if (!restMethod.IsMultipart)
                     {
                         var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
-                        if (DoNotConvertToQueryMap(paramList[i]))
+                        if (DoNotConvertToQueryMap(currentParam))
                         {
-                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
+                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(currentParam, restMethod.ParameterInfoMap[i])));
                         }
                         else
                         {
-                            foreach (var kvp in BuildQueryMap(paramList[i], attr.Delimiter))
+                            foreach (var kvp in BuildQueryMap(currentParam, attr.Delimiter))
                             {
                                 var path = !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
                                 queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
@@ -521,7 +534,7 @@ namespace Refit
                     }
 
                     // Check to see if it's an IEnumerable
-                    var itemValue = paramList[i];
+                    var itemValue = currentParam;
                     var enumerable = itemValue as IEnumerable<object>;
                     var typeIsCollection = false;
 
@@ -711,6 +724,23 @@ namespace Refit
             {
                 request.Content.Headers.TryAddWithoutValidation(name, value);
             }
+        }
+
+        static object ExtractObjectfromAction(object value)
+        {
+            var innerType = value.GetType().GenericTypeArguments[0];
+            var invokeMethod = typeof(Action<>).MakeGenericType(innerType).GetMethod("Invoke");
+
+            var instance = Activator.CreateInstance(innerType);
+            invokeMethod.Invoke(value, new object[] { instance });
+            return instance;
+        }
+
+        static object ExtractObjectfromFunc(object value)
+        {
+            var innerType = value.GetType().GenericTypeArguments[0];
+            var invokeMethod = typeof(Func<>).MakeGenericType(innerType).GetMethod("Invoke");
+            return invokeMethod.Invoke(value, new object[] { });
         }
     }
 }
