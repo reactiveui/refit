@@ -561,3 +561,84 @@ Which can be used like this:
 // than one type (unless you have a different domain for each type)
 var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
 ``` 
+
+
+### Using Action/Func Parameters
+
+It's possible to use simple Action<T> or Func<T> as Parameters. This enables a more functional programming.
+
+ ```csharp
+public interface IActionOrFuncParameterTest
+{
+    [Get("")]
+    Task<HttpResponseMessage> Get([Body]ActionOrFuncOptions options);
+    [Get("")]
+    Task<HttpResponseMessage> Get([Body]Action<ActionOrFuncOptions> options);
+    [Get("")]
+    Task<HttpResponseMessage> Get([Body]Func<ActionOrFuncOptions> builder);
+}
+
+public class ActionOrFuncOptions
+{
+    public string Text { get; set; }
+    public int Number { get; set; }
+    public Boolean Enabled { get; set; }
+}
+
+public class ActionOrFuncOptionsBuilder
+{
+    private ActionOrFuncOptions options = new ActionOrFuncOptions();
+    
+    public ActionOrFuncOptionsBuilder WithText(string text) {
+        options.Text = text;
+        return this;
+    }
+
+    public ActionOrFuncOptionsBuilder WithNumber(int number) {
+        options.Number = number;
+        return this;
+    }
+
+    public ActionOrFuncOptionsBuilder Enabled(bool value) {
+        options.Enabled = value;
+        return this;
+    }
+
+    public static implicit operator ActionOrFuncOptions(ActionOrFuncOptionsBuilder builder) {
+        return builder.options;
+    }
+}
+
+
+ ```
+
+ Can be used like this:
+```csharp
+
+var api = RestService.For<IActionOrFuncParameterTest("http://api.example.com/");
+
+// build optionObject for standard Method Parameter
+var optionObject = new ActionOrFuncOptions();
+optionObject.Text = "TextValue";
+optionObject.Number = 7;
+optionObject.Enabled = true;
+
+var objectResponse = await api.Get(optionObject);
+
+
+// use Action for building the Options
+var actionResponse = await api.Get(options => {
+                options.Text = "TextValue";
+                options.Enabled = true;
+                options.Number = 7;
+            });
+
+
+// use Func which returns the Options.
+// int this case, the ActionOrFuncOptionsBuilder will be casted to ActionOrFuncOptions
+var funcResponse = await api.Get(() => new ActionOrFuncOptionsBuilder()
+                                            .WithNumber(7)
+                                            .WithText("TextValue")
+                                            .Enabled(true));
+
+``` 
