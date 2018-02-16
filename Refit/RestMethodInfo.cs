@@ -164,7 +164,7 @@ namespace Refit
             return nameAttr?.Name;
         }
 
-        static Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
+        Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
         {
 
             // The body parameter is found using the following logic / order of precedence:
@@ -192,7 +192,7 @@ namespace Refit
             // #1, body attribute wins
             if (bodyParams.Count == 1) {
                 var ret = bodyParams[0];
-                return Tuple.Create(ret.BodyAttribute.SerializationMethod, ret.BodyAttribute.Buffered, 
+                return Tuple.Create(ret.BodyAttribute.SerializationMethod, ret.BodyAttribute.Buffered ?? RefitSettings.Buffered, 
                     parameterList.IndexOf(ret.Parameter));
             }
 

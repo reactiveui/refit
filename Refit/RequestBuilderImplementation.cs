@@ -12,6 +12,7 @@ using System.Threading;
 using System.Web;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
+using System.Net.Http.Headers;
 
 namespace Refit
 {
@@ -456,7 +457,7 @@ namespace Refit
                                                                                         serializer.Serialize(writer, param);
                                                                                     }
                                                                                 },
-                                                                                "application/json");
+                                                                                new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" });
                                             break;
                                         case true:
                                             ret.Content = new StringContent(

@@ -23,6 +23,7 @@ namespace Refit
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
+        public bool Buffered { get; set; } = true;
     }
 
     public interface IUrlParameterFormatter

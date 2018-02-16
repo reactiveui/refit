@@ -114,15 +114,30 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Parameter)]
     public class BodyAttribute : Attribute
     {
-        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Default,
-                             bool buffered = false)
+        public BodyAttribute()
+        {
+
+        }
+        public BodyAttribute(bool buffered)
+        {
+            Buffered = buffered;
+        }
+
+        public BodyAttribute(BodySerializationMethod serializationMethod, bool buffered)
         {
             SerializationMethod = serializationMethod;
             Buffered = buffered;
         }
 
-        public bool Buffered { get; protected set; }
-        public BodySerializationMethod SerializationMethod { get; protected set; }
+        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Default)
+        {
+            SerializationMethod = serializationMethod;
+        }
+
+
+
+        public bool? Buffered { get; set; }
+        public BodySerializationMethod SerializationMethod { get; protected set; } = BodySerializationMethod.Default;
     }
 
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
