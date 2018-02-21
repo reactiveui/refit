@@ -657,6 +657,8 @@ namespace Refit
             var type = value.GetType();
 
             bool ShouldReturn() => type == typeof(string) ||
+                                  type == typeof(bool) ||
+                                  type == typeof(char) ||
                                   typeof(IFormattable).IsAssignableFrom(type) ||
                                   type == typeof(Uri);
 
