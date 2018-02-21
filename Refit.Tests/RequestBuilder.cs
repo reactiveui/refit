@@ -421,6 +421,9 @@ namespace Refit.Tests
         [Get("/void/{id}/path")]
         Task FetchSomeStuffWithVoidAndQueryAlias(string id, [AliasAs("a")] string valueA, [AliasAs("b")] string valueB);
 
+        [Get("/foo")]
+        Task FetchSomeStuffWithNonFormattableQueryParams(bool b, char c);
+
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] object content);
 
@@ -781,6 +784,18 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/void/6/path?a=test%40example.com&b=push%21%3Dpull", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void NonFormattableQueryParamsShouldBeIncluded()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithNonFormattableQueryParams");
+            var output = factory(new object[] { true, 'x' });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?b=True&c=x", uri.PathAndQuery);
         }
 
         [Fact]
