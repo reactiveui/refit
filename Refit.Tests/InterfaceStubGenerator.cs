@@ -120,6 +120,7 @@ namespace Refit.Tests
 
             var input = file.GetRoot().DescendantNodes()
                 .OfType<InterfaceDeclarationSyntax>()
+                .Cast<TypeDeclarationSyntax>()
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
@@ -133,7 +134,7 @@ namespace Refit.Tests
 
             var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("NamespaceCollisionApi.cs")));
             var interfaceDefinition = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
-            var result = fixture.GenerateTemplateInfoForInterfaceList(new List<InterfaceDeclarationSyntax>(interfaceDefinition));
+            var result = fixture.GenerateTemplateInfoForInterfaceList(new List<TypeDeclarationSyntax>(interfaceDefinition));
 
             var usingList = result.UsingList.Select(x => x.Item).ToList();
             Assert.Contains("SomeType =  CollisionA.SomeType", usingList);

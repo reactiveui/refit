@@ -35,15 +35,15 @@ namespace Refit
             serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
             interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();
 
-            if (targetInterface == null || !targetInterface.GetTypeInfo().IsInterface)
-            {
-                throw new ArgumentException("targetInterface must be an Interface");
-            }
+            //if (targetInterface == null || !targetInterface.GetTypeInfo().IsInterface)
+            //{
+            //    throw new ArgumentException("targetInterface must be an Interface");
+            //}
 
             targetType = targetInterface;
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
-            foreach (var methodInfo in targetInterface.GetMethods()) 
+            foreach (var methodInfo in targetInterface.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)) 
             {
                 var attrs = methodInfo.GetCustomAttributes(true);
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();

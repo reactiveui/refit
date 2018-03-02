@@ -56,7 +56,7 @@ namespace {{Namespace}}
 
 {{#MethodList}}
         /// <inheritdoc />
-        public virtual {{ReturnType}} {{Name}}{{#MethodTypeParameters}}<{{.}}>{{/MethodTypeParameters}}({{ArgumentListWithTypes}})
+        {{Modifier}} {{ReturnType}} {{Name}}{{#MethodTypeParameters}}<{{.}}>{{/MethodTypeParameters}}({{ArgumentListWithTypes}})
         {{#MethodConstraintClauses}}
             {{.}}
         {{/MethodConstraintClauses}}
@@ -67,7 +67,7 @@ namespace {{Namespace}}
             return ({{ReturnType}})func(Client, arguments);
 {{/IsRefitMethod}}
 {{^IsRefitMethod}}
-            throw new NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
+            {{InnerCode}}
 {{/IsRefitMethod}}
         }
 

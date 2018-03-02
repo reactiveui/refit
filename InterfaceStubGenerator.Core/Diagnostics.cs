@@ -72,7 +72,7 @@ namespace Refit.Generator
 
     public class MissingRefitAttributeWarning : Warning
     {
-        public MissingRefitAttributeWarning(InterfaceDeclarationSyntax @interface, MethodDeclarationSyntax method)
+        public MissingRefitAttributeWarning(TypeDeclarationSyntax @interface, MethodDeclarationSyntax method)
             : base("RF001")
         {
             setLocation(method.GetLocation());
