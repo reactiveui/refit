@@ -56,7 +56,7 @@ namespace Refit.Generator
             }
         }
 
-        public List<InterfaceDeclarationSyntax> FindInterfacesToGenerate(SyntaxTree tree)
+        public List<TypeDeclarationSyntax> FindInterfacesToGenerate(SyntaxTree tree)
         {
             var nodes = tree.GetRoot().DescendantNodes().ToList();
 
@@ -65,14 +65,30 @@ namespace Refit.Generator
             // NB: This falls down in the tests unless we add an explicit "using Refit;",
             // but we can rely on this being there in any other file
             if (nodes.OfType<UsingDirectiveSyntax>().All(u => u.Name.ToFullString() != "Refit"))
-                return new List<InterfaceDeclarationSyntax>();
+                return new List<TypeDeclarationSyntax>();
 
-            return nodes.OfType<InterfaceDeclarationSyntax>()
-                        .Where(i => i.Members.OfType<MethodDeclarationSyntax>().Any(HasRefitHttpMethodAttribute))
-                        .ToList();
+            var modifiers = new List<SyntaxToken>();
+            modifiers.Add(SyntaxFactory.Token(SyntaxKind.AbstractKeyword));
+
+            
+
+            var abstracts = nodes.OfType<ClassDeclarationSyntax>()
+                .Where(c => c.Modifiers.Select(m => m.ValueText).Contains("abstract"))
+                .Where(i => i.Members.OfType<MethodDeclarationSyntax>().Any(HasRefitHttpMethodAttribute))
+                .Cast<TypeDeclarationSyntax>();
+
+
+
+            var interfaces = nodes.OfType<InterfaceDeclarationSyntax>()
+                .Where(i => i.Members.OfType<MethodDeclarationSyntax>().Any(HasRefitHttpMethodAttribute))
+                .Cast<TypeDeclarationSyntax>();
+
+            return abstracts.Concat(interfaces).ToList();
+
+            
         }
 
-        public ClassTemplateInfo GenerateClassInfoForInterface(InterfaceDeclarationSyntax interfaceTree)
+        public ClassTemplateInfo GenerateClassInfoForInterface(TypeDeclarationSyntax interfaceTree)
         {
             var ret = new ClassTemplateInfo();
             var parent = interfaceTree.Parent;
@@ -111,8 +127,12 @@ namespace Refit.Generator
                                                                                        .Select(y => $"{y.Type.ToString()} {y.Identifier.Text}")),
                                                   ArgumentTypesList = string.Join(",", x.ParameterList.Parameters
                                                                                         .Select(y => $"typeof({y.Type.ToString()})")),
-                                                  IsRefitMethod = HasRefitHttpMethodAttribute(x)
+                                                  IsRefitMethod = HasRefitHttpMethodAttribute(x),
+                                                  FromAbstractClass = interfaceTree is ClassDeclarationSyntax,
+                                                  FromInterface = interfaceTree is InterfaceDeclarationSyntax
                                               };
+
+                                              
                                               if (x.TypeParameterList != null)
                                               {
                                                   var typeParameters = x.TypeParameterList.Parameters;
@@ -124,12 +144,84 @@ namespace Refit.Generator
                                                   }
                                                   mti.MethodConstraintClauses = x.ConstraintClauses.ToFullString().Trim();
                                               }
+
+                                              if (mti.FromAbstractClass) {
+                                                  mti.Modifier = BuildModifierForAbstractMethod(x, mti.IsRefitMethod);
+                                              }
+                                              
+                                              if (mti.FromInterface) {
+                                                  mti.Modifier = "public";
+                                              }
+                                              
+                                              var b = $"base.{mti.Name}({mti.ArgumentList});";
+                                              
+                                              if (ModifiersContains(x.Modifiers, "async"))
+                                              {
+                                                  mti.Modifier += " async";
+                                                  b = $"await {b}";
+                                              }
+
+                                              if (mti.ReturnType != "void")
+                                              {
+                                                  b = $"return {b}";
+                                              }
+
+                                              //mti.InnerCode = mti.FromAbstractClass ? b : "throw new NotImplementedException(\"Either this method has no Refit HTTP method attribute or you\'ve used something other than a string literal for the \'path\' argument.\");";
+                                              
+                                              mti.InnerCode = x.Body?.Statements.ToFullString().Trim() ?? "throw new NotImplementedException(\"Either this method has no Refit HTTP method attribute or you\'ve used something other than a string literal for the \'path\' argument.\");";
+
                                               return mti;
                                           })
                                           .ToList();
 
             return ret;
         }
+
+        private string BuildModifierForAbstractMethod(MethodDeclarationSyntax methodDeclarationSyntax, bool isRefitMethod)
+        {
+            var modifier = GetAccessModifier(methodDeclarationSyntax);
+
+            if (!isRefitMethod)
+            {
+                modifier += " new";
+            }
+
+            modifier += methodDeclarationSyntax.Modifiers.Any(m => m.ValueText == "abstract") ? " override" : " virtual";
+
+            return modifier;
+        }
+
+        private string GetAccessModifier(MethodDeclarationSyntax methodDeclarationSyntax)
+        {
+
+            var modifiers = methodDeclarationSyntax.Modifiers;
+
+            var str = string.Empty;
+
+            if (ModifiersContains(modifiers, "public"))
+            {
+                str = "public";
+            }
+
+            if (ModifiersContains(modifiers, "protected"))
+            {
+                str += " protected";
+            }
+
+            if (ModifiersContains(modifiers, "internal"))
+            {
+                str += " internal";
+            }
+            
+
+            return str.Trim();
+        }
+
+        private bool ModifiersContains(SyntaxTokenList modifiers, string modifier)
+        {
+            return modifiers.Select(m => m.ValueText).Contains(modifier);
+        }
+
 
         public string GenerateInterfaceStubs(string[] paths)
         {
@@ -146,7 +238,7 @@ namespace Refit.Generator
             return text;
         }
 
-        public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList)
+        public TemplateInformation GenerateTemplateInfoForInterfaceList(List<TypeDeclarationSyntax> interfaceList)
         {
             var usings = interfaceList
                          .SelectMany(interfaceTree =>
@@ -171,7 +263,7 @@ namespace Refit.Generator
             return ret;
         }
 
-        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate)
+        public void GenerateWarnings(List<TypeDeclarationSyntax> interfacesToGenerate)
         {
             var missingAttributeWarnings = interfacesToGenerate
                                            .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new
@@ -245,6 +337,11 @@ namespace Refit.Generator
         public string MethodConstraintClauses { get; set; }
         public string MethodTypeParameterList { get; set; }
         public string MethodTypeParameterNames { get; set; }
+        public string Modifier { get; set; }
+        public string AccessModifier { get; set; }
+        public string InnerCode { get; set; }
+        public bool FromAbstractClass { get; set; }
+        public bool FromInterface { get; set; }
     }
 
     public class TemplateInformation

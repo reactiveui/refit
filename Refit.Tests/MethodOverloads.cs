@@ -9,13 +9,18 @@ using Xunit;
 
 namespace Refit.Tests
 {
-    public interface IUseOverloadedMethods
+    public abstract class OverloadedMethodsApi
     {
         [Get("")]
-        Task<string> Get();
+        public abstract Task<string> Get();
 
         [Get("/status/{httpstatuscode}")]
-        Task<HttpResponseMessage> Get(int httpstatuscode);
+        protected abstract Task<HttpResponseMessage> GetInternal(int httpstatuscode);
+
+        public Task<HttpResponseMessage> Get(int statusCode)
+        {
+            return GetInternal(statusCode);
+        }
     }
 
     public interface IUseOverloadedGenericMethods<TResponse, in TParam, in THeader>
@@ -64,7 +69,7 @@ namespace Refit.Tests
             mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/status/403")
                 .Respond(HttpStatusCode.Forbidden);
 
-            var fixture = RestService.For<IUseOverloadedMethods>("https://httpbin.org/", settings);
+            var fixture = RestService.For<OverloadedMethodsApi>("https://httpbin.org/", settings);
             var plainText = await fixture.Get();
 
             var resp = await fixture.Get(403);
