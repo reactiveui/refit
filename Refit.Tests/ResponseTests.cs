@@ -52,15 +52,20 @@ namespace Refit.Tests {
             Assert.Equal("World", result.ShortNameForJsonProperty);
         }
 
+        /// <summary>
+        /// Even though it may seem like AliasAs and JsonProperty are used interchangeably in some places,
+        /// when serializing responses, AliasAs will not work -- only JsonProperty will.
+        /// </summary>
         [Fact]
-        public async Task AliasAsCanBeUsedToAliasFieldNamesInResponses()
+        public async Task AliasAsCannotBeUsedToAliasFieldNamesInResponses()
         {
+
             mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
                 .Respond("application/json", "{FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS: 'Hello', FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY: 'World'}");
 
             var result = await fixture.GetTestObject();
 
-            Assert.Equal("Hello", result.ShortNameForAlias);
+            Assert.Null(result.ShortNameForAlias);
         }
 
     }
