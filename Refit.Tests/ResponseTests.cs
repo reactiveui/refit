@@ -19,11 +19,11 @@ namespace Refit.Tests {
         public string ShortNameForJsonProperty { get; set; }
     }
 
-    public class AliasAsResponseTests
+    public class ResponseTests
     {
         private readonly MockHttpMessageHandler mockHandler;
         private readonly IMyAliasService fixture;
-        public AliasAsResponseTests()
+        public ResponseTests()
         {
             mockHandler = new MockHttpMessageHandler();
 
