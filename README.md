@@ -278,6 +278,8 @@ public class SomeObject
 
 ```
 
+**NOTE:** Though the above example shows `[AliasAs]` being used, this applies to querystring parameters and form body posts, but not to response objects; for aliasing fields on response objects, you'll need to use `[JsonProperty("full-property-name")]`.
+
 ### Setting request headers
 
 #### Static headers
