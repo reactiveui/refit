@@ -46,5 +46,26 @@ namespace Refit.Tests {
 
             Assert.Equal("World", result.ShortNameForJsonProperty);
         }
+
+        [Fact]
+        public async Task AliasAsCanBeUsedToAliasFieldNames()
+        {
+            var mockHandler = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHandler
+            };
+
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                .Respond("application/json", "{FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS: 'Hello', FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY: 'World'}");
+
+            var fixture = RestService.For<IMyAliasService>("http://api", settings);
+
+            var result = await fixture.GetTestObject();
+
+            Assert.Equal("Hello", result.ShortNameForAlias);
+        }
+
     }
 }
