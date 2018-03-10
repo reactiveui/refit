@@ -44,7 +44,7 @@ namespace Refit.Tests {
 
             var result = await fixture.GetTestObject();
 
-            Assert.Equal("World", result.ShortNameForJsonProperty);
+            Assert.Equal("Hello", result.ShortNameForJsonProperty);
         }
     }
 }
