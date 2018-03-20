@@ -453,6 +453,9 @@ namespace Refit.Tests
 
         [Get("/query")]
         Task QueryWithArray(int[] numbers);
+
+        [Get("/query")]
+        Task QueryWithArrayFormattedAsMulti([Query(CollectionFormat.Multi)]int[] numbers);
     }
 
     interface ICancellableMethods
@@ -1068,6 +1071,19 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringWithArrayFormattedAsMulti()
+        {
+            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsMulti");
+            var output = factory(new object[] { new int[] { 1, 2, 3 } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=1&numbers=2&numbers=3", uri.PathAndQuery);
         }
 
         [Fact]

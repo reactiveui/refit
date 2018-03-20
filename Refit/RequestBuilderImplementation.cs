@@ -491,6 +491,20 @@ namespace Refit
                         var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
                         if (DoNotConvertToQueryMap(paramList[i]))
                         {
+                            if (paramList[i] is IEnumerable paramValues)
+                            {
+                                switch (attr.CollectionFormat)
+                                {
+                                    case CollectionFormat.Multi:
+                                        foreach (var paramValue in paramValues)
+                                        {
+                                            queryParamsToAdd.Add(new KeyValuePair<string, string>(
+                                                restMethod.QueryParameterMap[i],
+                                                settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i])));
+                                        }
+                                        continue;
+                                }
+                            }
                             queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
                         }
                         else
