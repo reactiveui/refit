@@ -197,13 +197,33 @@ namespace Refit
     /// </summary>
     public enum CollectionFormat
     {
-        Csv,
-        Ssv,
-        Tsv,
-        Pipes,
-        Multi,
         /// <summary>
-        /// formats collection using RefitSettings.UrlParameterFormatter
+        /// Comma-separated values
+        /// </summary>
+        Csv,
+
+        /// <summary>
+        /// Space-separated values
+        /// </summary>
+        Ssv,
+
+        /// <summary>
+        /// Tab-separated values
+        /// </summary>
+        Tsv,
+
+        /// <summary>
+        /// Pipe-separated values
+        /// </summary>
+        Pipes,
+
+        /// <summary>
+        /// Multiple parameter instances
+        /// </summary>
+        Multi,
+
+        /// <summary>
+        /// Values formatted wiht RefitSettings.UrlParameterFormatter
         /// </summary>
         RefitParameterFormatter
     }
