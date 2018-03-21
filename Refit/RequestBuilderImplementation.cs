@@ -511,9 +511,13 @@ namespace Refit
                                             : attr.CollectionFormat == CollectionFormat.Ssv ? " "
                                             : attr.CollectionFormat == CollectionFormat.Tsv ? "\t" : "|";
 
+                                        var formattedValues = paramValues
+                                            .Cast<object>()
+                                            .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i]));
+
                                         queryParamsToAdd.Add(new KeyValuePair<string, string>(
                                             restMethod.QueryParameterMap[i],
-                                            string.Join(delimiter, paramValues.Cast<object>())));
+                                            string.Join(delimiter, formattedValues)));
                                         continue;
                                 }
                             }

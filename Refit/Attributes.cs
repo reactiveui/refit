@@ -198,6 +198,11 @@ namespace Refit
     public enum CollectionFormat
     {
         /// <summary>
+        /// Values formatted wiht RefitSettings.UrlParameterFormatter
+        /// </summary>
+        RefitParameterFormatter,
+
+        /// <summary>
         /// Comma-separated values
         /// </summary>
         Csv,
@@ -220,12 +225,7 @@ namespace Refit
         /// <summary>
         /// Multiple parameter instances
         /// </summary>
-        Multi,
-
-        /// <summary>
-        /// Values formatted wiht RefitSettings.UrlParameterFormatter
-        /// </summary>
-        RefitParameterFormatter
+        Multi
     }
 
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)] // Property is to allow for form url encoded data

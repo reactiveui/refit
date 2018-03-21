@@ -1116,6 +1116,19 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()
+        {
+            var settings = new RefitSettings{ UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter")};
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsSsv");
+            var output = factory(new object[] { new int[] { 1, 2, 3 } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=custom-parameter%20custom-parameter%20custom-parameter", uri.PathAndQuery);
+        }
+
+        [Fact]
         public void QueryStringWithEnumerablesCanBeFormattedEnumerable()
         {
             var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
