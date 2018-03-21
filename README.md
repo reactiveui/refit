@@ -112,6 +112,23 @@ GroupListWithAttribute(4, params)
 
 A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no intellisense and/or type safety.
 
+### Collections as Querystring parameters
+
+Use the `Query` attribute to specify format in which collections should be formatted in query string
+
+```csharp
+[Get("/users/list")]
+Task Search([Query(CollectionFormat.Multi)]int[] ages);
+
+Search(new [] {10, 20, 30})
+>>> "/users/list?ages=10&ages=20&ages=30"
+
+[Get("/users/list")]
+Task Search([Query(CollectionFormat.Csv)]int[] ages);
+
+Search(new [] {10, 20, 30})
+>>> "/users/list?ages=10%2C2%2C30"
+```
 
 ### Body content
 
