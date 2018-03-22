@@ -462,6 +462,12 @@ namespace Refit.Tests
         
         [Get("/query")]
         Task QueryWithArrayFormattedAsSsv([Query(CollectionFormat.Ssv)]int[] numbers);
+
+        [Get("/query")]
+        Task QueryWithArrayFormattedAsTsv([Query(CollectionFormat.Tsv)]int[] numbers);
+        
+        [Get("/query")]
+        Task QueryWithArrayFormattedAsPipes([Query(CollectionFormat.Pipes)]int[] numbers);
     }
 
     interface ICancellableMethods
@@ -1079,41 +1085,23 @@ namespace Refit.Tests
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
         }
 
-        [Fact]
-        public void QueryStringWithArrayFormattedAsMulti()
+        [Theory]
+        [InlineData("QueryWithArrayFormattedAsMulti", "/query?numbers=1&numbers=2&numbers=3")]
+        [InlineData("QueryWithArrayFormattedAsCsv", "/query?numbers=1%2C2%2C3")]
+        [InlineData("QueryWithArrayFormattedAsSsv", "/query?numbers=1%202%203")]
+        [InlineData("QueryWithArrayFormattedAsTsv", "/query?numbers=1%092%093")]
+        [InlineData("QueryWithArrayFormattedAsPipes", "/query?numbers=1%7C2%7C3")]
+        public void QueryStringWithArrayFormatted(string apiMethodName, string expectedQuery)
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
 
-            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsMulti");
-            var output = factory(new object[] { new int[] { 1, 2, 3 } });
+            var factory = fixture.BuildRequestFactoryForMethod(apiMethodName);
+            var output = factory(new object[] { new [] { 1, 2, 3 } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.Equal("/query?numbers=1&numbers=2&numbers=3", uri.PathAndQuery);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
         }
 
-        [Fact]
-        public void QueryStringWithArrayFormattedAsCsv()
-        {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-
-            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsCsv");
-            var output = factory(new object[] { new int[] { 1, 2, 3 } });
-
-            var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
-        }
-
-        [Fact]
-        public void QueryStringWithArrayFormattedAsSsv()
-        {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-
-            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsSsv");
-            var output = factory(new object[] { new int[] { 1, 2, 3 } });
-
-            var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.Equal("/query?numbers=1%202%203", uri.PathAndQuery);
-        }
 
         [Fact]
         public void QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()
