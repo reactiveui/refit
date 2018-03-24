@@ -127,7 +127,7 @@ Search(new [] {10, 20, 30})
 Task Search([Query(CollectionFormat.Csv)]int[] ages);
 
 Search(new [] {10, 20, 30})
->>> "/users/list?ages=10%2C2%2C30"
+>>> "/users/list?ages=10%2C20%2C30"
 ```
 
 ### Body content
