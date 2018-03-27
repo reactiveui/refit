@@ -75,7 +75,10 @@ namespace Refit.Tests
         IObservable<string> GetIndexObservable();
 
         [Get("/give-me-some-404-action")]
-        Task NothingToSeeHere();
+        Task<User> NothingToSeeHere();
+
+        [Get("/give-me-some-404-action")]
+        Task<ApiResponse<User>> NothingToSeeHereWithMetadata();
 
         [Get("/users/{username}")]
         Task<ApiResponse<User>> GetUserWithMetadata(string userName);

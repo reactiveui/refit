@@ -217,10 +217,13 @@ namespace Refit
                 var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
                 var rq = factory(paramList);
                 HttpResponseMessage resp = null;
+                HttpContent content = null;
                 var disposeResponse = true;
                 try
                 {
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+                    content = resp.Content ?? new StringContent(string.Empty);
+                    
                     if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
                     {
                         disposeResponse = false; // caller has to dispose
@@ -246,20 +249,20 @@ namespace Refit
                     {
                         disposeResponse = false; // caller has to clean up the content
                         if (isApiResponse)
-                            return ApiResponse.Create<T>(resp, resp.Content);
-                        return (T)(object)resp.Content;
+                            return ApiResponse.Create<T>(resp, content);
+                        return (T)(object)content;
                     }
 
                     if (serializedReturnType == typeof(Stream))
                     {
                         disposeResponse = false; // caller has to dispose
-                        var stream = (object)await resp.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                        var stream = (object)await content.ReadAsStreamAsync().ConfigureAwait(false);
                         if (isApiResponse)
                             return ApiResponse.Create<T>(resp, stream);
                         return (T)stream;
                     }
 
-                    using (var stream = await resp.Content.ReadAsStreamAsync().ConfigureAwait(false))
+                    using (var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
                     using (var reader = new StreamReader(stream))
                     {
                         if (serializedReturnType == typeof(string))
@@ -285,7 +288,10 @@ namespace Refit
                     // Especially important if it has open files/streams
                     rq.Dispose();
                     if (disposeResponse)
+                    { 
                         resp?.Dispose();
+                        content?.Dispose();
+                    }
                 }
             };
         }
