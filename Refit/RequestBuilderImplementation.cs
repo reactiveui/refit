@@ -11,12 +11,20 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using Newtonsoft.Json;
+using System.Collections.Concurrent;
+using System.Net.Http.Headers;
 
 namespace Refit
 {
     partial class RequestBuilderImplementation : IRequestBuilder
     {
+        static readonly ISet<HttpMethod> bodylessMethods = new HashSet<HttpMethod>
+        {
+            HttpMethod.Get,
+            HttpMethod.Head
+        };
         readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
+        readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
         readonly JsonSerializer serializer;
         readonly RefitSettings settings;
         readonly Type targetType;
@@ -25,6 +33,7 @@ namespace Refit
         {
             settings = refitSettings ?? new RefitSettings();
             serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
+            interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();
 
             if (targetInterface == null || !targetInterface.GetTypeInfo().IsInterface)
             {
@@ -52,7 +61,7 @@ namespace Refit
             interfaceHttpMethods = dict;
         }
 
-        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes)
+        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes, Type[] genericArgumentTypes)
         {
             if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) 
             {
@@ -62,36 +71,33 @@ namespace Refit
                     {
                         throw new ArgumentException($"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
                     }
-                    return httpMethods[0];
+                    return CloseGenericMethodIfNeeded(httpMethods[0], genericArgumentTypes);
                 }
 
-                var possibleMethods = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count())
-                                                 .ToList();
+                var isGeneric = genericArgumentTypes?.Length > 0;
+
+                var possibleMethodsList = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count());
+
+                // If it's a generic method, add that filter
+                if (isGeneric)
+                    possibleMethodsList = possibleMethodsList.Where(method => method.MethodInfo.IsGenericMethod && method.MethodInfo.GetGenericArguments().Length == genericArgumentTypes.Length);
+                else // exclude generic methods
+                    possibleMethodsList = possibleMethodsList.Where(method => !method.MethodInfo.IsGenericMethod);
+
+                var possibleMethods = possibleMethodsList.ToList();
 
                 if (possibleMethods.Count == 1)
-                    return possibleMethods[0];
+                    return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
 
                 var parameterTypesArray = parameterTypes.ToArray();
                 foreach (var method in possibleMethods) 
                 {
-                    var match = true;
-                    var parameters = method.MethodInfo.GetParameters();
-
-                    for (var i = 0; i < parameterTypesArray.Length; i++) 
+                    var match = method.MethodInfo.GetParameters()
+                                      .Select(p => p.ParameterType)
+                                      .SequenceEqual(parameterTypesArray);
+                    if (match)
                     {
-                        var arg = parameterTypesArray[i];
-                        var paramType = parameters[i].ParameterType;
-
-                        if (arg != paramType) 
-                        {
-                            match = false;
-                            break;
-                        }
-                    }
-
-                    if (match) 
-                    {
-                        return method;
+                        return CloseGenericMethodIfNeeded(method, genericArgumentTypes);
                     }
                 }
 
@@ -103,15 +109,25 @@ namespace Refit
             }
 
         }
-        
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null)
+
+        private RestMethodInfo CloseGenericMethodIfNeeded(RestMethodInfo restMethodInfo, Type[] genericArgumentTypes)
+        {
+            if (genericArgumentTypes != null)
+            {
+                return interfaceGenericHttpMethods.GetOrAdd(new CloseGenericMethodKey(restMethodInfo.MethodInfo, genericArgumentTypes),
+                    _ => new RestMethodInfo(restMethodInfo.Type, restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes), restMethodInfo.RefitSettings));
+            }
+            return restMethodInfo;
+        }
+
+        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {
             if (!interfaceHttpMethods.ContainsKey(methodName))
             {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
 
-            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes);
+            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes, genericArgumentTypes);
             if (restMethod.ReturnType == typeof(Task))
             {
                 return BuildVoidTaskFuncForMethod(restMethod);
@@ -157,7 +173,7 @@ namespace Refit
 
             if (itemValue is string stringValue) 
             {
-                multiPartContent.Add(new StringContent(stringValue), parameterName, fileName);
+                multiPartContent.Add(new StringContent(stringValue), parameterName);
                 return;
             }
 
@@ -174,7 +190,21 @@ namespace Refit
                 return;
             }
 
-            throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, and Byte array", nameof(itemValue));
+            // Fallback to Json
+            Exception e = null;
+            try
+            {
+                var stringContent = new StringContent(JsonConvert.SerializeObject(itemValue, settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
+                multiPartContent.Add(stringContent, parameterName);
+                return;
+            }
+            catch(Exception ex)
+            {
+                // Eat this since we're about to throw as a fallback anyway
+                e = ex;
+            }
+
+            throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, Byte array and anything that's JSON serializable", nameof(itemValue), e);
         }
 
         Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
@@ -384,9 +414,8 @@ namespace Refit
                         urlTarget = Regex.Replace(
                             urlTarget,
                             "{" + restMethod.ParameterMap[i] + "}",
-                            settings.UrlParameterFormatter
-                                    .Format(paramList[i], restMethod.ParameterInfoMap[i])
-                                    .Replace("/", "%2F"),
+                            Uri.EscapeDataString(settings.UrlParameterFormatter
+                                    .Format(paramList[i], restMethod.ParameterInfoMap[i])),
                             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                         continue;
                     }
@@ -394,18 +423,17 @@ namespace Refit
                     // if marked as body, add to content
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item3 == i)
                     {
-                        var streamParam = paramList[i] as Stream;
-                        var stringParam = paramList[i] as string;
-
                         if (paramList[i] is HttpContent httpContentParam)
                         {
                             ret.Content = httpContentParam;
                         }
-                        else if (streamParam != null)
+                        else if (paramList[i] is Stream streamParam)
                         {
                             ret.Content = new StreamContent(streamParam);
                         }
-                        else if (stringParam != null)
+                        // Default sends raw strings
+                        else if (restMethod.BodyParameterInfo.Item1 == BodySerializationMethod.Default &&
+                                 paramList[i] is string stringParam)
                         {
                             ret.Content = new StringContent(stringParam);
                         }
@@ -414,8 +442,9 @@ namespace Refit
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
                                 case BodySerializationMethod.UrlEncoded:
-                                    ret.Content = new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
+                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") :  new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
                                     break;
+                                case BodySerializationMethod.Default:
                                 case BodySerializationMethod.Json:
                                     var param = paramList[i];
                                     switch (restMethod.BodyParameterInfo.Item2)
@@ -428,7 +457,7 @@ namespace Refit
                                                                                         serializer.Serialize(writer, param);
                                                                                     }
                                                                                 },
-                                                                                "application/json");
+                                                                                new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" });
                                             break;
                                         case true:
                                             ret.Content = new StringContent(
@@ -499,28 +528,7 @@ namespace Refit
 
                     if (enumerable != null)
                     {
-                        Type tType = null;
-                        var eType = enumerable.GetType();
-                        if (eType.GetTypeInfo().ContainsGenericParameters)
-                        {
-                            tType = eType.GenericTypeArguments[0];
-                        }
-                        else if (eType.IsArray)
-                        {
-                            tType = eType.GetElementType();
-                        }
-
-                        // check to see if it's one of the types we support for multipart:
-                        // FileInfo, Stream, string or byte[]
-                        if (tType == typeof(Stream) ||
-                            tType == typeof(string) ||
-                            tType == typeof(byte[]) ||
-                            tType.GetTypeInfo().IsSubclassOf(typeof(MultipartItem))
-                            || tType == typeof(FileInfo)
-                        )
-                        {
-                            typeIsCollection = true;
-                        }
+                        typeIsCollection = true;
                     }
 
                     if (typeIsCollection)
@@ -538,9 +546,18 @@ namespace Refit
 
                 // NB: We defer setting headers until the body has been
                 // added so any custom content headers don't get left out.
-                foreach (var header in headersToAdd)
+                if (headersToAdd.Count > 0)
                 {
-                    SetHeader(ret, header.Key, header.Value);
+                    // We could have content headers, so we need to make
+                    // sure we have an HttpContent object to add them to,
+                    // provided the HttpClient will allow it for the method
+                    if (ret.Content == null && !bodylessMethods.Contains(ret.Method))
+                        ret.Content = new ByteArrayContent(new byte[0]);
+
+                    foreach (var header in headersToAdd)
+                    {
+                        SetHeader(ret, header.Key, header.Value);
+                    }
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this 
@@ -555,7 +572,7 @@ namespace Refit
 
                 if (queryParamsToAdd.Any())
                 {
-                    var pairs = queryParamsToAdd.Select(x => HttpUtility.UrlEncode(x.Key) + "=" + HttpUtility.UrlEncode(x.Value));
+                    var pairs = queryParamsToAdd.Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value));
                     uri.Query = string.Join("&", pairs);
                 }
                 else
@@ -637,20 +654,35 @@ namespace Refit
             if (value == null)
                 return false;
 
-            var type = value.GetType().GetTypeInfo();
+            var type = value.GetType();
 
-            if (type.IsPrimitive)
+            bool ShouldReturn() => type == typeof(string) ||
+                                  type == typeof(bool) ||
+                                  type == typeof(char) ||
+                                  typeof(IFormattable).IsAssignableFrom(type) ||
+                                  type == typeof(Uri);
+
+            // Bail out early & match string
+            if (ShouldReturn())
                 return true;
 
-            switch (value)
+            // Get the element type for enumerables
+            if (value is IEnumerable enu)
             {
-            case string str:
-            case IFormattable f:
-            case Uri uri:
-                return true;
+                var ienu = typeof(IEnumerable<>);
+                // We don't want to enumerate to get the type, so we'll just look for IEnumerable<T>
+                var intType = type.GetInterfaces()
+                                     .FirstOrDefault(i => i.GetTypeInfo().IsGenericType &&
+                                                          i.GetGenericTypeDefinition() == ienu);
+
+                if (intType != null)
+                {
+                    type = intType.GetGenericArguments()[0];
+                }
+
             }
 
-            return false;
+            return ShouldReturn();
         }
 
         static void SetHeader(HttpRequestMessage request, string name, string value)

@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using System.Threading;
 using Xunit;
+using System.Collections;
 
 namespace Refit.Tests
 {
@@ -50,6 +51,9 @@ namespace Refit.Tests
 
         [Post("/foo/{id}")]
         Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
+
+        [Post("/foo/{id}")]
+        Task<bool> OhYeahValueTypesUnbuffered(int id, [Body(buffered: false)] int whatever);
 
         [Post("/foo/{id}")]
         Task<bool> PullStreamMethod(int id, [Body(buffered: true)] Dictionary<int, string> theData);
@@ -287,14 +291,28 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void ValueTypesDontBlowUp()
+        public void ValueTypesDontBlowUpBuffered()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypes"));
             Assert.Equal("id", fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
-            Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
-            Assert.False(fixture.BodyParameterInfo.Item2);
+            Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
+            Assert.True(fixture.BodyParameterInfo.Item2); // buffered default
+            Assert.Equal(1, fixture.BodyParameterInfo.Item3);
+
+            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
+        }
+
+        [Fact]
+        public void ValueTypesDontBlowUpUnBuffered()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypesUnbuffered"));
+            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
+            Assert.False(fixture.BodyParameterInfo.Item2); // unbuffered specified
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
             Assert.Equal(typeof(bool), fixture.SerializedReturnType);
@@ -307,7 +325,7 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PullStreamMethod"));
             Assert.Equal("id", fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
-            Assert.Equal(BodySerializationMethod.Json, fixture.BodyParameterInfo.Item1);
+            Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.True(fixture.BodyParameterInfo.Item2);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
@@ -403,6 +421,9 @@ namespace Refit.Tests
         [Get("/void/{id}/path")]
         Task FetchSomeStuffWithVoidAndQueryAlias(string id, [AliasAs("a")] string valueA, [AliasAs("b")] string valueB);
 
+        [Get("/foo")]
+        Task FetchSomeStuffWithNonFormattableQueryParams(bool b, char c);
+
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] object content);
 
@@ -425,6 +446,13 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithQueryFormat([Query(Format= "0.0")] int id);
+
+        [Get("/query")]
+        Task QueryWithEnumerable(IEnumerable<int> numbers);
+
+
+        [Get("/query")]
+        Task QueryWithArray(int[] numbers);
     }
 
     interface ICancellableMethods
@@ -483,6 +511,23 @@ namespace Refit.Tests
         public string Format(object value, ParameterInfo parameterInfo)
         {
             return constantParameterOutput;
+        }
+    }
+
+    public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
+    {
+        public override string Format(object parameterValue, ParameterInfo parameterInfo)
+        {
+            if (parameterValue is IEnumerable<object> enu)
+            {
+                return string.Join(",", enu.Select(o => base.Format(o, parameterInfo)));
+            }
+            if (parameterValue is IEnumerable en)
+            {
+                return string.Join(",", en.Cast<object>().Select(o => base.Format(o, parameterInfo)));
+            }
+
+            return base.Format(parameterValue, parameterInfo);
         }
     }
 
@@ -698,14 +743,11 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
-            var output = factory(new object[] { 6, "push!=pull" });
+            var output = factory(new object[] { 6, "push!=pull&push" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-#if NETCOREAPP2_0
-            Assert.Equal("/foo/bar/6?baz=bamf&search_for=push!%3Dpull", uri.PathAndQuery);
-#else
-            Assert.Equal("/foo/bar/6?baz=bamf&search_for=push!%3dpull", uri.PathAndQuery);
-#endif
+
+            Assert.Equal("/foo/bar/6?baz=bamf&search_for=push%21%3Dpull%26push", uri.PathAndQuery);
         }
 
         [Fact]
@@ -713,14 +755,11 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
-            var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
+            var output = factory(new object[] { "6 & 7/8", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-#if NETCOREAPP2_0
-            Assert.Equal("/void/6/path?a=test@example.com&b=push!%3Dpull", uri.PathAndQuery);
-#else
-            Assert.Equal("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
-#endif
+
+            Assert.Equal("/void/6%20%26%207%2F8/path?a=test%40example.com&b=push%21%3Dpull", uri.PathAndQuery);
         }
 
         [Fact]
@@ -731,11 +770,8 @@ namespace Refit.Tests
             var output = factory(new object[] { "6/6", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-#if NETCOREAPP2_0
-            Assert.Equal("/void/6%2F6/path?a=test@example.com&b=push!%3Dpull", uri.PathAndQuery);
-#else
-            Assert.Equal("/void/6%2F6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
-#endif
+
+            Assert.Equal("/void/6%2F6/path?a=test%40example.com&b=push%21%3Dpull", uri.PathAndQuery);
         }
 
         [Fact]
@@ -746,11 +782,20 @@ namespace Refit.Tests
             var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-#if NETCOREAPP2_0
-            Assert.Equal("/void/6/path?a=test@example.com&b=push!%3Dpull", uri.PathAndQuery);
-#else
-            Assert.Equal("/void/6/path?a=test%40example.com&b=push!%3dpull", uri.PathAndQuery);
-#endif
+
+            Assert.Equal("/void/6/path?a=test%40example.com&b=push%21%3Dpull", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void NonFormattableQueryParamsShouldBeIncluded()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithNonFormattableQueryParams");
+            var output = factory(new object[] { true, 'x' });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?b=True&c=x", uri.PathAndQuery);
         }
 
         [Fact]
@@ -998,6 +1043,52 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/foo/bar/custom-parameter", uri.PathAndQuery);
         }
+
+        [Fact]
+        public void QueryStringWithEnumerablesCanBeFormatted()
+        {
+            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
+            var output = factory(new object[] { new int[] {1,2,3} });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringWithArrayCanBeFormatted()
+        {
+            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArray");
+            var output = factory(new object[] { new int[] { 1, 2, 3 } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringWithEnumerablesCanBeFormattedEnumerable()
+        {
+            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
+
+            var list = new List<int>
+            {
+                1, 2, 3
+            };
+
+            var output = factory(new object[] { list });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
 
         [Fact]
         [UseCulture("es-ES")] // Spain uses a , instead of a .
