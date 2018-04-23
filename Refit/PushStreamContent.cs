@@ -23,11 +23,13 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.IO;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Http;
 
-namespace System.Net.Http
+namespace Refit.Net.Http
 {
     /// <summary>
     /// Provides an <see cref="HttpContent"/> implementation that exposes an output <see cref="Stream"/>

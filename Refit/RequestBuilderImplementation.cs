@@ -13,6 +13,7 @@ using System.Web;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
+using Refit.Net.Http;
 
 namespace Refit
 {
