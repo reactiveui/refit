@@ -468,6 +468,9 @@ namespace Refit.Tests
         
         [Get("/query")]
         Task QueryWithArrayFormattedAsPipes([Query(CollectionFormat.Pipes)]int[] numbers);
+
+        [Get("/query")]
+        Task QueryWithObjectWithPrivateGetters(Person person);
     }
 
     interface ICancellableMethods
@@ -483,6 +486,13 @@ namespace Refit.Tests
     {
         [AliasAs("rpn")]
         public int ReadablePropertyName { get; set; }
+    }
+
+    public class Person
+    {
+        public string FirstName { private get; set; }
+        public string LastName { private get; set; }
+        public string FullName => $"{FirstName} {LastName}";
     }
 
     public class TestHttpMessageHandler : HttpMessageHandler
@@ -1133,6 +1143,25 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringExcludesPropertiesWithPrivateGetters()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithObjectWithPrivateGetters");
+
+            var person = new Person
+            {
+                FirstName = "Mickey",
+                LastName = "Mouse"
+            };
+
+            var output = factory(new object[] { person });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?FullName=Mickey%20Mouse", uri.PathAndQuery);
         }
 
 
