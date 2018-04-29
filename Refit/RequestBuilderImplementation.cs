@@ -299,7 +299,7 @@ namespace Refit
 
             var kvps = new List<KeyValuePair<string, object>>();
 
-            var props = @object.GetType().GetProperties()
+            var props = @object.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .Where(p => p.CanRead && p.GetMethod.IsPublic);
 
             foreach (var propertyInfo in props)

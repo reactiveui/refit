@@ -73,7 +73,7 @@ namespace Refit
 
         PropertyInfo[] GetProperties(Type type)
         {
-            return type.GetProperties()
+            return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                        .Where(p => p.CanRead && p.GetMethod.IsPublic)
                        .ToArray();
         }
