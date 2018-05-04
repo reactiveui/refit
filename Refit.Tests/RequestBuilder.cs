@@ -453,6 +453,21 @@ namespace Refit.Tests
 
         [Get("/query")]
         Task QueryWithArray(int[] numbers);
+
+        [Get("/query")]
+        Task QueryWithArrayFormattedAsMulti([Query(CollectionFormat.Multi)]int[] numbers);
+
+        [Get("/query")]
+        Task QueryWithArrayFormattedAsCsv([Query(CollectionFormat.Csv)]int[] numbers);
+        
+        [Get("/query")]
+        Task QueryWithArrayFormattedAsSsv([Query(CollectionFormat.Ssv)]int[] numbers);
+
+        [Get("/query")]
+        Task QueryWithArrayFormattedAsTsv([Query(CollectionFormat.Tsv)]int[] numbers);
+        
+        [Get("/query")]
+        Task QueryWithArrayFormattedAsPipes([Query(CollectionFormat.Pipes)]int[] numbers);
     }
 
     interface ICancellableMethods
@@ -1068,6 +1083,37 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData("QueryWithArrayFormattedAsMulti", "/query?numbers=1&numbers=2&numbers=3")]
+        [InlineData("QueryWithArrayFormattedAsCsv", "/query?numbers=1%2C2%2C3")]
+        [InlineData("QueryWithArrayFormattedAsSsv", "/query?numbers=1%202%203")]
+        [InlineData("QueryWithArrayFormattedAsTsv", "/query?numbers=1%092%093")]
+        [InlineData("QueryWithArrayFormattedAsPipes", "/query?numbers=1%7C2%7C3")]
+        public void QueryStringWithArrayFormatted(string apiMethodName, string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+
+            var factory = fixture.BuildRequestFactoryForMethod(apiMethodName);
+            var output = factory(new object[] { new [] { 1, 2, 3 } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
+
+        [Fact]
+        public void QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()
+        {
+            var settings = new RefitSettings{ UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter")};
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsSsv");
+            var output = factory(new object[] { new int[] { 1, 2, 3 } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?numbers=custom-parameter%20custom-parameter%20custom-parameter", uri.PathAndQuery);
         }
 
         [Fact]

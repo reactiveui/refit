@@ -497,6 +497,36 @@ namespace Refit
                         var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
                         if (DoNotConvertToQueryMap(paramList[i]))
                         {
+                            if (paramList[i] is IEnumerable paramValues)
+                            {
+                                switch (attr.CollectionFormat)
+                                {
+                                    case CollectionFormat.Multi:
+                                        foreach (var paramValue in paramValues)
+                                        {
+                                            queryParamsToAdd.Add(new KeyValuePair<string, string>(
+                                                restMethod.QueryParameterMap[i],
+                                                settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i])));
+                                        }
+                                        continue;
+                                    case CollectionFormat.Csv:
+                                    case CollectionFormat.Ssv:
+                                    case CollectionFormat.Tsv:
+                                    case CollectionFormat.Pipes:
+                                        var delimiter = attr.CollectionFormat == CollectionFormat.Csv ?  ","
+                                            : attr.CollectionFormat == CollectionFormat.Ssv ? " "
+                                            : attr.CollectionFormat == CollectionFormat.Tsv ? "\t" : "|";
+
+                                        var formattedValues = paramValues
+                                            .Cast<object>()
+                                            .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i]));
+
+                                        queryParamsToAdd.Add(new KeyValuePair<string, string>(
+                                            restMethod.QueryParameterMap[i],
+                                            string.Join(delimiter, formattedValues)));
+                                        continue;
+                                }
+                            }
                             queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
                         }
                         else

@@ -192,6 +192,42 @@ namespace Refit
             : base("Authorization: " + scheme) { }
     }
 
+    /// <summary>
+    /// Collection format defined in https://swagger.io/docs/specification/2-0/describing-parameters/ 
+    /// </summary>
+    public enum CollectionFormat
+    {
+        /// <summary>
+        /// Values formatted wiht RefitSettings.UrlParameterFormatter
+        /// </summary>
+        RefitParameterFormatter,
+
+        /// <summary>
+        /// Comma-separated values
+        /// </summary>
+        Csv,
+
+        /// <summary>
+        /// Space-separated values
+        /// </summary>
+        Ssv,
+
+        /// <summary>
+        /// Tab-separated values
+        /// </summary>
+        Tsv,
+
+        /// <summary>
+        /// Pipe-separated values
+        /// </summary>
+        Pipes,
+
+        /// <summary>
+        /// Multiple parameter instances
+        /// </summary>
+        Multi
+    }
+
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)] // Property is to allow for form url encoded data
 
     public class QueryAttribute : Attribute
@@ -216,9 +252,16 @@ namespace Refit
             Format = format;
         }
 
+        public QueryAttribute(CollectionFormat collectionFormat)
+        {
+            CollectionFormat = collectionFormat;
+        }
+
         public string Delimiter { get; protected set; } = ".";
         public string Prefix { get; protected set; }
 
         public string Format { get; set; }
+
+        public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
     }
 }
