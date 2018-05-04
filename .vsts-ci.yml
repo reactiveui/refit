@@ -20,6 +20,13 @@ steps:
     projects: Refit/Refit.csproj
     arguments: -c $(BuildConfiguration)   
   displayName: Build
+  
+- task: DotNetCoreCLI@2
+  inputs:
+    command: pack
+    projects: Refit/Refit.csproj
+    arguments: -c $(BuildConfiguration) --no-build -o .\artifacts
+  displayName: Pack
 
 - task: DotNetCoreCLI@2
   inputs:
