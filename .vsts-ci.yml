@@ -24,8 +24,11 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: pack
-    projects: Refit/Refit.csproj
-    arguments: -c $(BuildConfiguration) -o .\artifacts
+    packagesToPack: Refit/Refit.csproj
+    configuration: $(BuildConfiguration)
+    packDirectory: $(Build.ArtifactStagingDirectory)\artifacts
+    nobuild: true
+    verbosityPack: Minimal
   displayName: Pack
 
 - task: DotNetCoreCLI@2
@@ -38,7 +41,7 @@ steps:
 - task: PublishBuildArtifacts@1
   displayName: Publish Package Artifacts
   inputs:
-    pathToPublish: .\artifacts
+    pathToPublish: $(Build.ArtifactStagingDirectory)\artifacts
     artifactType: container
     artifactName: Packages
   condition: eq(variables['system.pullrequest.isfork'], false)
