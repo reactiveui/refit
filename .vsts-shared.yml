@@ -1,0 +1,50 @@
+parameters: 
+  signStep: []
+  
+steps:
+- task: NuGetToolInstaller@0
+  displayName: Use NuGet 4.6.2
+  inputs:
+    versionSpec: 4.6.2
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: build
+    projects: build/setversion.csproj
+    arguments: -c $(BuildConfiguration)   
+  displayName: Set Version
+  condition: eq(variables['system.pullrequest.isfork'], false)
+    
+- task: DotNetCoreCLI@2
+  inputs:
+    command: build
+    projects: Refit/Refit.csproj
+    arguments: -c $(BuildConfiguration)   
+  displayName: Build
+  
+- task: DotNetCoreCLI@2
+  inputs:
+    command: pack
+    packagesToPack: Refit/Refit.csproj
+    configuration: $(BuildConfiguration)
+    packDirectory: $(Build.ArtifactStagingDirectory)\artifacts
+    nobuild: true
+    verbosityPack: Minimal
+  displayName: Pack
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: test
+    projects: Refit.Tests/Refit.Tests.csproj
+    arguments: -c $(BuildConfiguration) 
+  displayName: Run Tests
+
+- ${{ parameters.signStep }}
+
+- task: PublishBuildArtifacts@1
+  displayName: Publish Package Artifacts
+  inputs:
+    pathToPublish: $(Build.ArtifactStagingDirectory)\artifacts
+    artifactType: container
+    artifactName: Packages
+  condition: eq(variables['system.pullrequest.isfork'], false)
