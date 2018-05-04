@@ -24,7 +24,7 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: test
-    projects: Refit/Refit.csproj
+    projects: Refit.Tests/Refit.Tests.csproj
     arguments: -c $(BuildConfiguration) 
   displayName: Run Tests
 
