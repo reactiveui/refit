@@ -33,7 +33,7 @@ steps:
     command: pack
     projects: Refit/Refit.csproj
     arguments: -c $(BuildConfiguration) --no-build -o .\artifacts
-  displayName: Build
+  displayName: Pack
 
 - task: PublishBuildArtifacts@1
   displayName: Publish Package Artifacts
