@@ -56,6 +56,31 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void ExcludesPropertiesWithInaccessibleGetters()
+        {
+            var source = new ClassWithInaccessibleGetters
+            {
+                A = "Foo",
+                B = "Bar"
+            };
+            var expected = new Dictionary<string, string>
+            {
+                { "C", "FooBar" }
+            };
+
+            var actual = new FormValueDictionary(source, settings);
+
+            Assert.Equal(expected, actual);
+        }
+
+        public class ClassWithInaccessibleGetters
+        {
+            public string A { internal get; set; }
+            public string B { private get; set; }
+            public string C => A + B;
+        }
+
+        [Fact]
         public void LoadsFromAnonymousType()
         {
             var source = new
