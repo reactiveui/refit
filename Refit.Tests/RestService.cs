@@ -272,6 +272,68 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task HitTheNonExistentApiAsApiResponse()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+            };
+
+            var responseMessage = new HttpResponseMessage()
+            {
+                StatusCode = HttpStatusCode.NotFound,
+                Content = null,
+            };
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+            var result = await fixture.NothingToSeeHereWithMetadata();
+
+            Assert.False(result.IsSuccessStatusCode);
+            Assert.NotNull(result.ReasonPhrase);
+            Assert.NotNull(result.RequestMessage);
+            Assert.True(result.StatusCode == HttpStatusCode.NotFound);
+            Assert.NotNull(result.Version);
+            Assert.Null(result.Content);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task HitTheNonExistentApi()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+            };
+
+            var responseMessage = new HttpResponseMessage()
+            {
+                StatusCode = HttpStatusCode.NotFound,
+                Content = null,
+            };
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+            try
+            {
+                var result = await fixture.NothingToSeeHere();
+            }
+            catch (Exception ex)
+            {
+                Assert.IsType<ApiException>(ex);
+            }
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
         public async Task HitTheGitHubUserApiAsObservableApiResponse()
         {
             var mockHttp = new MockHttpMessageHandler();
