@@ -391,11 +391,19 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
-        public virtual Task NothingToSeeHere()
+        public virtual Task<User> NothingToSeeHere()
         {
             var arguments = new object[] {  };
             var func = methodImpls.GetOrAdd("NothingToSeeHere()", _ => requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", new Type[] {  }));
-            return (Task)func(Client, arguments);
+            return (Task<User>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<ApiResponse<User>> NothingToSeeHereWithMetadata()
+        {
+            var arguments = new object[] {  };
+            var func = methodImpls.GetOrAdd("NothingToSeeHereWithMetadata()", _ => requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHereWithMetadata", new Type[] {  }));
+            return (Task<ApiResponse<User>>)func(Client, arguments);
         }
 
         /// <inheritdoc />

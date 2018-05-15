@@ -29,7 +29,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
 
-namespace Refit.Net.Http
+namespace System.Net.Http
 {
     /// <summary>
     /// Provides an <see cref="HttpContent"/> implementation that exposes an output <see cref="Stream"/>
@@ -38,7 +38,7 @@ namespace Refit.Net.Http
     /// </summary>
     // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/PushStreamContent.cs
     [ExcludeFromCodeCoverage]
-    public class PushStreamContent : HttpContent
+    class PushStreamContent : HttpContent
     {
         private readonly Func<Stream, HttpContent, TransportContext, Task> _onStreamAvailable;
 
@@ -184,7 +184,7 @@ namespace Refit.Net.Http
     /// </summary>
     // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/Internal/DelegatingStream.cs
     [ExcludeFromCodeCoverage]
-    internal abstract class DelegatingStream : Stream
+    abstract class DelegatingStream : Stream
     {
         Stream innerStream;
 
