@@ -351,7 +351,7 @@ class AuthenticatedHttpClientHandler : HttpClientHandler
 
     public AuthenticatedHttpClientHandler(Func<Task<string>> getToken)
     {
-        if (getToken == null) throw new ArgumentNullException("getToken");
+        if (getToken == null) throw new ArgumentNullException(nameof(getToken));
         this.getToken = getToken;
     }
 
