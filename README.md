@@ -29,7 +29,7 @@ Refit currently supports the following platforms and any .NET Standard 1.4 targe
 * Xamarin.Android
 * Xamarin.Mac
 * Xamarin.iOS 
-* Desktop .NET 4.5 
+* Desktop .NET 4.6.1 
 * .NET Core
 
 #### Note about .NET Core
