@@ -2,7 +2,7 @@
   "version": "4.6",
   "publicReleaseRefSpec": [
     "^refs/heads/master$", // we release out of master
-    "^refs/tags/v\\d+\\.\\d+" // we also release tags starting with vN.N
+    "^refs/heads/rel/v\\d+\\.\\d+" // we also release tags starting with vN.N
   ],
   "nugetPackageVersion":{
     "semVer": 2

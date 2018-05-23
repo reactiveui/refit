@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Package">
-    <None Include="targets\refit.targets" PackagePath="build\net45" Pack="true" />
+    <None Include="targets\refit.targets" PackagePath="build\net461" Pack="true" />
     <None Include="targets\refit.targets" PackagePath="build\netstandard1.4" Pack="true" />
     <None Include="..\InterfaceStubGenerator.BuildTasks\bin\$(Configuration)\net46\publish\**\*.*" LinkBase="build\MSBuildFull46" PackagePath="build\MSBuildFull46" Pack="true" />
     <None Include="..\InterfaceStubGenerator.BuildTasks\bin\$(Configuration)\netcoreapp2.0\publish\**\*.*" LinkBase="build\MSBuildCore20" PackagePath="build\MSBuildCore20" Pack="true" />
