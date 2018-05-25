@@ -110,7 +110,11 @@ namespace System.Net.Http
             {
                 onStreamAvailable(stream, content, transportContext);
                 // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L10
+#if NET403
+                return TaskEx.FromResult<AsyncVoid>(default);
+#else
                 return Task.FromResult<AsyncVoid>(default);
+#endif
             };
         }
 
@@ -260,7 +264,11 @@ namespace System.Net.Http
             return innerStream.Read(buffer, offset, count);
         }
 
+#if NET403
+        public Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+#else
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+#endif
         {
             return innerStream.ReadAsync(buffer, offset, count, cancellationToken);
         }
@@ -275,12 +283,21 @@ namespace System.Net.Http
             innerStream.Flush();
         }
 
+#if NET403
+
+        public Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+#else
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+#endif
         {
             return innerStream.CopyToAsync(destination, bufferSize, cancellationToken);
         }
+#if NET403
 
+        public Task FlushAsync(CancellationToken cancellationToken)
+#else
         public override Task FlushAsync(CancellationToken cancellationToken)
+#endif
         {
             return innerStream.FlushAsync(cancellationToken);
         }
@@ -295,7 +312,11 @@ namespace System.Net.Http
             innerStream.Write(buffer, offset, count);
         }
 
+#if NET403
+        public Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+#else
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+#endif
         {
             return innerStream.WriteAsync(buffer, offset, count, cancellationToken);
         }
