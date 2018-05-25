@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
-    <TargetFrameworks>netstandard1.4;net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net403;netstandard1.4;net461;netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
@@ -25,7 +25,14 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net403'">
+    <Reference Include="System.Web" />
+    <PackageReference Include="Microsoft.Net.Http" Version="2.2.29" />
+    <PackageReference Include="Microsoft.Bcl.Async" Version="1.0.168" />
+  </ItemGroup>
+
   <ItemGroup Label="Package">
+    <None Include="targets\refit.targets" PackagePath="build\net403" Pack="true" />
     <None Include="targets\refit.targets" PackagePath="build\net461" Pack="true" />
     <None Include="targets\refit.targets" PackagePath="build\netstandard1.4" Pack="true" />
     <None Include="..\InterfaceStubGenerator.BuildTasks\bin\$(Configuration)\net46\publish\**\*.*" LinkBase="build\MSBuildFull46" PackagePath="build\MSBuildFull46" Pack="true" />
