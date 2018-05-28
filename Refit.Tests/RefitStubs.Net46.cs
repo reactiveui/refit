@@ -26,6 +26,7 @@ using SomeType =  CollisionA.SomeType;
 using CollisionB;
 using System.Reflection;
 using System.Threading;
+using System.Net.Http.Headers;
 
 /* ******** Hey You! *********
  *
@@ -939,6 +940,14 @@ namespace Refit.Tests
         {
             var arguments = new object[] { theObjects,anotherModel,aFile,anEnum,aString,anInt };
             var func = methodImpls.GetOrAdd("UploadMixedObjects(IEnumerable<ModelObject> theObjects,AnotherModel anotherModel,FileInfo aFile,AnEnum anEnum,string aString,int anInt)", _ => requestBuilder.BuildRestResultFuncForMethod("UploadMixedObjects", new Type[] { typeof(IEnumerable<ModelObject>),typeof(AnotherModel),typeof(FileInfo),typeof(AnEnum),typeof(string),typeof(int) }));
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        public virtual Task<HttpResponseMessage> UploadHttpContent(HttpContent content)
+        {
+            var arguments = new object[] { content };
+            var func = methodImpls.GetOrAdd("UploadHttpContent(HttpContent content)", _ => requestBuilder.BuildRestResultFuncForMethod("UploadHttpContent", new Type[] { typeof(HttpContent) }));
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
