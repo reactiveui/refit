@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -43,13 +44,22 @@ namespace Refit
             // See if we have a format
             var formatString = parameterInfo.GetCustomAttribute<QueryAttribute>(true)?.Format;
 
+            EnumMemberAttribute enummember = null;
+            if (parameterValue != null && parameterInfo.ParameterType.GetTypeInfo().IsEnum)
+            {
+                enummember = parameterInfo.ParameterType
+                    .GetMember(parameterValue.ToString())
+                    .FirstOrDefault()?
+                    .GetCustomAttribute<EnumMemberAttribute>();
+            }
+
             return parameterValue == null
                        ? null
                        : string.Format(CultureInfo.InvariantCulture,
                                        string.IsNullOrWhiteSpace(formatString)
                                            ? "{0}"
                                            : $"{{0:{formatString}}}",
-                                       parameterValue);
+                                       enummember?.Value ?? parameterValue);
         }
     }
 
@@ -57,13 +67,25 @@ namespace Refit
     {
         public virtual string Format(object parameterValue, string formatString)
         {
-            return parameterValue == null 
-                       ? null 
-                       : string.Format(CultureInfo.InvariantCulture, 
-                                       string.IsNullOrWhiteSpace(formatString)
-                                                                     ? "{0}"
-                                                                     : $"{{0:{formatString}}}", 
-                                       parameterValue);
+            if (parameterValue == null)
+                return null;
+
+            var parameterType = parameterValue.GetType();
+
+            EnumMemberAttribute enummember = null;
+            if (parameterValue != null && parameterType.GetTypeInfo().IsEnum)
+            {
+                enummember = parameterType
+                    .GetMember(parameterValue.ToString())
+                    .FirstOrDefault()?
+                    .GetCustomAttribute<EnumMemberAttribute>();
+            }
+
+            return string.Format(CultureInfo.InvariantCulture, 
+                                 string.IsNullOrWhiteSpace(formatString)
+                                     ? "{0}"
+                                     : $"{{0:{formatString}}}",
+                                 enummember?.Value ?? parameterValue);
         }
     }
 }
