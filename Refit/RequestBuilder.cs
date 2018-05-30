@@ -9,6 +9,7 @@ namespace Refit
     public interface IRequestBuilder
     {
         Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null);
+        Type targetType { get; }
     }
 
     public static class RequestBuilder

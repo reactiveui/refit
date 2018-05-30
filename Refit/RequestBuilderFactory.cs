@@ -14,7 +14,7 @@ namespace Refit
     {
         public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)
         {
-            return new RequestBuilderImplementation(interfaceType, settings);
+            return new CachedRequestBuilderImplementation(new RequestBuilderImplementation(interfaceType, settings));
         }
     }
 }

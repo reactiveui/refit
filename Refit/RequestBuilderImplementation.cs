@@ -27,7 +27,7 @@ namespace Refit
         readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
         readonly JsonSerializer serializer;
         readonly RefitSettings settings;
-        readonly Type targetType;
+        public Type targetType { get; }
 
         public RequestBuilderImplementation(Type targetInterface, RefitSettings refitSettings = null)
         {
