@@ -2,10 +2,9 @@ parameters:
   signStep: []
   
 steps:
-- task: NuGetToolInstaller@0
-  displayName: Use NuGet 4.6.2
+- task: DotNetCoreInstaller@0
   inputs:
-    versionSpec: 4.6.2
+    version: '2.1.300'
 
 - task: DotNetCoreCLI@2
   inputs:
