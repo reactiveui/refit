@@ -157,6 +157,11 @@ namespace Refit
         void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
 
+            if (itemValue is HttpContent content)
+            {
+                multiPartContent.Add(content);
+                return;
+            }
             if (itemValue is MultipartItem multipartItem) 
             {
                 var httpContent = multipartItem.ToContent();
