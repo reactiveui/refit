@@ -27,7 +27,7 @@ namespace Refit
         readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
         readonly JsonSerializer serializer;
         readonly RefitSettings settings;
-        public Type targetType { get; }
+        public Type TargetType { get; }
 
         public RequestBuilderImplementation(Type targetInterface, RefitSettings refitSettings = null)
         {
@@ -40,7 +40,7 @@ namespace Refit
                 throw new ArgumentException("targetInterface must be an Interface");
             }
 
-            targetType = targetInterface;
+            TargetType = targetInterface;
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
             foreach (var methodInfo in targetInterface.GetMethods()) 

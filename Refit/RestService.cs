@@ -91,7 +91,7 @@ namespace Refit
                 throw new ArgumentNullException(nameof(builder));
             }
 
-            if (builder.targetType != typeof(T))
+            if (builder.TargetType != typeof(T))
             {
                 throw new InvalidOperationException($"The supplied IRequestBuilder is not configured to build requests for {typeof(T).Name}");
             }

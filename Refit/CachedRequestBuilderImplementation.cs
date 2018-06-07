@@ -23,7 +23,7 @@ namespace Refit
             return func;
         }
 
-        public Type targetType => innerBuilder.targetType;
+        public Type TargetType => innerBuilder.TargetType;
 
         string GetCacheKey(string methodName, Type[] parameterTypes, Type[] genericArgumentTypes)
         {
