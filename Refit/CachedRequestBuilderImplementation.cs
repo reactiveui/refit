@@ -1,21 +1,19 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 
 namespace Refit
 {
     public class CachedRequestBuilderImplementation : IRequestBuilder
     {
-        readonly IRequestBuilder innerBuilder;
-        readonly ConcurrentDictionary<string, Func<HttpClient, object[], object>> methodDictionary = new ConcurrentDictionary<string, Func<HttpClient, object[], object>>();
-
         public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
         {
             this.innerBuilder = innerBuilder;
         }
+
+        readonly IRequestBuilder innerBuilder;
+        readonly ConcurrentDictionary<string, Func<HttpClient, object[], object>> methodDictionary = new ConcurrentDictionary<string, Func<HttpClient, object[], object>>();
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {
@@ -24,6 +22,8 @@ namespace Refit
 
             return func;
         }
+
+        public Type targetType => innerBuilder.targetType;
 
         string GetCacheKey(string methodName, Type[] parameterTypes, Type[] genericArgumentTypes)
         {
@@ -40,9 +40,9 @@ namespace Refit
                 return "";
             }
 
-            return parameterTypes.Select(t => t.Name).Aggregate((s1, s2) => s1 + ", " + s2);
+            return string.Join(", ", parameterTypes.Select(t => t.Name));
         }
-    
+
         string GetGenericString(Type[] genericArgumentTypes)
         {
             if (genericArgumentTypes == null || genericArgumentTypes.Length == 0)
@@ -50,9 +50,7 @@ namespace Refit
                 return "";
             }
 
-            return "<" + genericArgumentTypes.Select(t => t.Name).Aggregate((s1, s2) => s1 + ", " + s2) + ">";
+            return "<" + string.Join(", ", genericArgumentTypes.Select(t => t.Name)) + ">";
         }
-
-        public Type targetType => innerBuilder.targetType;
     }
 }

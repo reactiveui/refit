@@ -930,7 +930,7 @@ namespace Refit.Tests
         public virtual Task<HttpResponseMessage> UploadHttpContent(HttpContent content)
         {
             var arguments = new object[] { content };
-            var func = methodImpls.GetOrAdd("UploadHttpContent(HttpContent content)", _ => requestBuilder.BuildRestResultFuncForMethod("UploadHttpContent", new Type[] { typeof(HttpContent) }));
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadHttpContent", new Type[] { typeof(HttpContent) });
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
