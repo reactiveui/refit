@@ -10,6 +10,8 @@ using Xunit;
 using Refit;
 using System.Threading;
 using Newtonsoft.Json;
+using System.Text;
+using System.Net.Http.Headers;
 
 namespace Refit.Tests
 {
@@ -55,6 +57,10 @@ namespace Refit.Tests
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadMixedObjects(IEnumerable<ModelObject> theObjects, AnotherModel anotherModel, FileInfo aFile, AnEnum anEnum, string aString, int anInt);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadHttpContent(HttpContent content);
 
     }
 
@@ -586,6 +592,41 @@ namespace Refit.Tests
             {
                 File.Delete(fileName);
             }
+        }
+
+        [Fact]
+        public async Task MultipartUploadShouldWorkWithHttpContent()
+        {
+            var httpContent = new StringContent("some text", Encoding.ASCII, "application/custom");
+            httpContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+            {
+                Name = "myName",
+                FileName = "myFileName",
+            };
+
+            var handler = new MockHttpMessageHandler
+            {
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Single(parts);
+
+                    Assert.Equal("myName", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Equal("myFileName", parts[0].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/custom", parts[0].Headers.ContentType.MediaType);
+                    var result0 = await parts[0].ReadAsStringAsync();
+                    Assert.Equal("some text", result0);
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadHttpContent(httpContent);
         }
 
         [Fact]

@@ -29,7 +29,7 @@ Refit currently supports the following platforms and any .NET Standard 1.4 targe
 * Xamarin.Android
 * Xamarin.Mac
 * Xamarin.iOS 
-* Desktop .NET 4.5 
+* Desktop .NET 4.6.1 
 * .NET Core
 
 #### Note about .NET Core
@@ -351,7 +351,7 @@ class AuthenticatedHttpClientHandler : HttpClientHandler
 
     public AuthenticatedHttpClientHandler(Func<Task<string>> getToken)
     {
-        if (getToken == null) throw new ArgumentNullException("getToken");
+        if (getToken == null) throw new ArgumentNullException(nameof(getToken));
         this.getToken = getToken;
     }
 
@@ -377,35 +377,34 @@ This class is used like so (example uses the [ADAL](http://msdn.microsoft.com/en
 ```csharp
 class LoginViewModel
 {
-	AuthenticationContext context = new AuthenticationContext(...);
-	private async Task<string> GetToken()
+    AuthenticationContext context = new AuthenticationContext(...);
+    
+    private async Task<string> GetToken()
     {
-		// The AcquireTokenAsync call will prompt with a UI if necessary
-		// Or otherwise silently use a refresh token to return
-		// a valid access token	
+        // The AcquireTokenAsync call will prompt with a UI if necessary
+        // Or otherwise silently use a refresh token to return
+        // a valid access token	
         var token = await context.AcquireTokenAsync("http://my.service.uri/app", "clientId", new Uri("callback://complete"));
-
+        
         return token;
     }
 
-	public async void LoginAndCallApi()
-	{
-		var api = RestService.For<IMyRestService>(new HttpClient(new AuthenticatedHttpClientHandler(GetToken)) { BaseAddress = new Uri("https://the.end.point/") });
-
-		var location = await api.GetLocationOfRebelBase();
-	}
+    public async void LoginAndCallApi()
+    {
+        var api = RestService.For<IMyRestService>(new HttpClient(new AuthenticatedHttpClientHandler(GetToken)) { BaseAddress = new Uri("https://the.end.point/") });
+        var location = await api.GetLocationOfRebelBase();
+    }
 }
 
 interface IMyRestService
 {
-	[Get("/getPublicInfo")]
-	Task<Foobar> SomePublicMethod();
+    [Get("/getPublicInfo")]
+    Task<Foobar> SomePublicMethod();
 
-	[Get("/secretStuff")]
+    [Get("/secretStuff")]
     [Headers("Authorization: Bearer")]
-	Task<Location> GetLocationOfRebelBase();
+    Task<Location> GetLocationOfRebelBase();
 }
-
 ```
 
 In the above example, any time a method that requires authentication is called, the `AuthenticatedHttpClientHandler` will try to get a fresh access token. It's up to the app to provide one, checking the expiration time of an existing access token and obtaining a new one if needed. 
