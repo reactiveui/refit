@@ -17,7 +17,7 @@ namespace Refit
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {
-            string cacheKey = GetCacheKey(methodName, parameterTypes, genericArgumentTypes);
+            var cacheKey = GetCacheKey(methodName, parameterTypes, genericArgumentTypes);
             var func = methodDictionary.GetOrAdd(cacheKey, _ => innerBuilder.BuildRestResultFuncForMethod(methodName, parameterTypes, genericArgumentTypes));
 
             return func;
@@ -27,8 +27,8 @@ namespace Refit
 
         string GetCacheKey(string methodName, Type[] parameterTypes, Type[] genericArgumentTypes)
         {
-            string genericDefinition = GetGenericString(genericArgumentTypes);
-            string argumentString = GetArgumentString(parameterTypes);
+            var genericDefinition = GetGenericString(genericArgumentTypes);
+            var argumentString = GetArgumentString(parameterTypes);
 
             return $"{methodName}{genericDefinition}({argumentString})";
         }
