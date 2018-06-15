@@ -16,7 +16,7 @@ using System.Net.Http.Headers;
 
 namespace Refit
 {
-    partial class RequestBuilderImplementation : IRequestBuilder
+    partial class RequestBuilderImplementation : IRequestBuilderInternal
     {
         static readonly ISet<HttpMethod> bodylessMethods = new HashSet<HttpMethod>
         {

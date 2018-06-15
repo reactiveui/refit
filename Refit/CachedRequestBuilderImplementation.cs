@@ -5,14 +5,14 @@ using System.Net.Http;
 
 namespace Refit
 {
-    public class CachedRequestBuilderImplementation : IRequestBuilder
+    class CachedRequestBuilderImplementation : IRequestBuilderInternal
     {
-        public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
+        public CachedRequestBuilderImplementation(IRequestBuilderInternal innerBuilder)
         {
             this.innerBuilder = innerBuilder;
         }
 
-        readonly IRequestBuilder innerBuilder;
+        readonly IRequestBuilderInternal innerBuilder;
         readonly ConcurrentDictionary<string, Func<HttpClient, object[], object>> methodDictionary = new ConcurrentDictionary<string, Func<HttpClient, object[], object>>();
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)

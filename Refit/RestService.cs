@@ -18,16 +18,16 @@ namespace Refit
 
         public static T For<T>(HttpClient client, IRequestBuilder builder)
         {
-            Type generatedType = typeMapping.GetOrAdd(typeof(T), RestService.GetGeneratedType<T>());
+            var generatedType = typeMapping.GetOrAdd(typeof(T), GetGeneratedType<T>());
 
-            EnsureBuilderTypeIsCorrect<T>(builder);
+            EnsureBuilderTypeIsCorrect<T>((IRequestBuilderInternal)builder);
 
             return (T)Activator.CreateInstance(generatedType, client, builder);
         }
         
         public static T For<T>(HttpClient client, RefitSettings settings)
         {
-            IRequestBuilder requestBuilder = RequestBuilder.ForType<T>(settings);
+            var requestBuilder = RequestBuilder.ForType<T>(settings);
 
             return For<T>(client, requestBuilder);
         }
@@ -84,7 +84,7 @@ namespace Refit
             return generatedType;
         }
 
-        static void EnsureBuilderTypeIsCorrect<T>(IRequestBuilder builder)
+        static void EnsureBuilderTypeIsCorrect<T>(IRequestBuilderInternal builder)
         {
             if (builder == null)
             {
