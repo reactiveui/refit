@@ -565,12 +565,7 @@ namespace Refit
                     // Check to see if it's an IEnumerable
                     var itemValue = paramList[i];
                     var enumerable = itemValue as IEnumerable<object>;
-                    var typeIsCollection = false;
-
-                    if (enumerable != null)
-                    {
-                        typeIsCollection = true;
-                    }
+                    var typeIsCollection = enumerable != null;
 
                     if (typeIsCollection)
                     {
