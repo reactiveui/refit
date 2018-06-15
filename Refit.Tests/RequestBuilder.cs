@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Xunit;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Refit.Tests
 {
@@ -761,10 +762,10 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
             var factory = fixture.BuildRequestFactoryForMethod("PostWithQueryStringParameters");
-            var output = factory(new object[] { null, null });
+            var output = factory(new object[] {new FileInfo(typeof(RequestBuilderTests).Assembly.Location), null });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.Equal("/foo&name=", uri.PathAndQuery);
+            Assert.Equal("/foo?name=", uri.PathAndQuery);
         }
 
         [Fact]
