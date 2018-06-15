@@ -471,6 +471,10 @@ namespace Refit.Tests
 
         [Get("/query")]
         Task QueryWithObjectWithPrivateGetters(Person person);
+
+        [Multipart]
+        [Post("/foo?&name={name}")]
+        Task<HttpResponseMessage> PostWithQueryStringParameters(FileInfo source, string name);
     }
 
     interface ICancellableMethods
@@ -750,6 +754,17 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ParameterizedNullQueryParamsShouldBeBlankInUrl()
+        {
+            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var factory = fixture.BuildRequestFactoryForMethod("PostWithQueryStringParameters");
+            var output = factory(new object[] {new FileInfo(typeof(RequestBuilderTests).Assembly.Location), null });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/foo?name=", uri.PathAndQuery);
         }
 
         [Fact]
