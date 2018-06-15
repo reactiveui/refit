@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Threading;
 using Xunit;
 using System.Collections;
-using System.Runtime.CompilerServices;
 
 namespace Refit.Tests
 {
