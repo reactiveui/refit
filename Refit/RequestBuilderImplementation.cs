@@ -426,7 +426,7 @@ namespace Refit
                             urlTarget,
                             "{" + restMethod.ParameterMap[i] + "}",
                             Uri.EscapeDataString(settings.UrlParameterFormatter
-                                    .Format(paramList[i], restMethod.ParameterInfoMap[i])),
+                                    .Format(paramList[i], restMethod.ParameterInfoMap[i]) ?? string.Empty),
                             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                         continue;
                     }
@@ -608,7 +608,8 @@ namespace Refit
 
                 if (queryParamsToAdd.Any())
                 {
-                    var pairs = queryParamsToAdd.Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value));
+                    var pairs = queryParamsToAdd.Where(x => x.Key != null && x.Value != null)
+                                                .Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value));
                     uri.Query = string.Join("&", pairs);
                 }
                 else
