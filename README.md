@@ -591,7 +591,7 @@ services.AddHttpClient("api", c => c.BaseAddress = new Uri("https://api.where.ev
         .AddTypedClient((client, serviceProvider) => RestService.For<IWebApi>(client, serviceProvider.GetService<IRequestBuilder>()));
 ```
 
-You can then inject the api interface into via constructor injection:
+You can then get the api interface using constructor injection:
 
 ```csharp
     public class HomeController : Controller
