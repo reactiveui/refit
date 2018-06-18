@@ -579,3 +579,15 @@ Which can be used like this:
 // than one type (unless you have a different domain for each type)
 var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
 ``` 
+
+### Using HttpClientFactory
+
+Refit can be easily combined with the ASP.Net Core 2.1 HttpClientFactory. Simply create a registration for IRequestBuilder that will allow Refit to share the method cache between instances, then register your HttpClient to use it, as so:
+
+```csharp
+
+services.AddSingleton(provider => RequestBuilder.ForType<IWebApi>());
+
+services.AddHttpClient("api", c => c.BaseAddress = new Uri("https://api.where.ever.com"))
+        .AddTypedClient((client, serviceProvider) => RestService.For<IWebApi>(client, serviceProvider.GetService<IRequestBuilder>()));
+```
