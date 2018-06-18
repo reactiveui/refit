@@ -585,9 +585,29 @@ var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.exam
 Refit can be easily combined with the ASP.Net Core 2.1 HttpClientFactory. Simply create a registration for IRequestBuilder that will allow Refit to share the method cache between instances, then register your HttpClient to use it, as so:
 
 ```csharp
-
 services.AddSingleton(provider => RequestBuilder.ForType<IWebApi>());
 
 services.AddHttpClient("api", c => c.BaseAddress = new Uri("https://api.where.ever.com"))
         .AddTypedClient((client, serviceProvider) => RestService.For<IWebApi>(client, serviceProvider.GetService<IRequestBuilder>()));
+```
+
+You can then inject the api interface into via constructor injection:
+
+```csharp
+    public class HomeController : Controller
+    {
+        public HomeController(IWebApi webApi)
+        {
+            _webApi = webApi;
+        }
+
+        private readonly IWebApi _webApi;
+
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
+        {
+            var thing = await _webApi.GetSomethingWeNeed(cancellationToken);
+
+            return View(thing);
+        }
+    }
 ```
