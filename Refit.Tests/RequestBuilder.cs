@@ -86,7 +86,7 @@ namespace Refit.Tests
         [Post("/foo")]
         Task ManyComplexTypes(Dictionary<int, string> theData, [Body] Dictionary<int, string> theData1);
     }
-    
+
     public class RestMethodInfoTests
     {
 
@@ -97,7 +97,7 @@ namespace Refit.Tests
 
             Assert.Throws<ArgumentException>(() => {
                 var fixture = new RestMethodInfo(
-                    input, 
+                    input,
                     input.GetMethods().First(x => x.Name == "TooManyComplexTypes"));
             });
 
@@ -159,10 +159,13 @@ namespace Refit.Tests
         {
             var shouldDie = true;
 
-            try {
+            try
+            {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
-            } catch (ArgumentException) {
+            }
+            catch (ArgumentException)
+            {
                 shouldDie = false;
             }
 
@@ -174,10 +177,13 @@ namespace Refit.Tests
         {
             var shouldDie = true;
 
-            try {
+            try
+            {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffMissingParameters"));
-            } catch (ArgumentException) {
+            }
+            catch (ArgumentException)
+            {
                 shouldDie = false;
             }
 
@@ -348,10 +354,13 @@ namespace Refit.Tests
         {
             var shouldDie = true;
 
-            try {
+            try
+            {
                 var input = typeof(IRestMethodInfoTests);
                 var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "AsyncOnlyBuddy"));
-            } catch (ArgumentException) {
+            }
+            catch (ArgumentException)
+            {
                 shouldDie = false;
             }
 
@@ -428,7 +437,7 @@ namespace Refit.Tests
         Task<string> PostSomeUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] object content);
 
         [Post("/foo/bar/{id}")]
-        Task<string> PostSomeAliasedUrlEncodedStuff(int id,[Body(BodySerializationMethod.UrlEncoded)] SomeRequestData content);
+        Task<string> PostSomeAliasedUrlEncodedStuff(int id, [Body(BodySerializationMethod.UrlEncoded)] SomeRequestData content);
 
         string SomeOtherMethod();
 
@@ -445,7 +454,7 @@ namespace Refit.Tests
         IObservable<string> PatchSomething(int id, [Body] string someAttribute);
 
         [Get("/foo/bar/{id}")]
-        Task<string> FetchSomeStuffWithQueryFormat([Query(Format= "0.0")] int id);
+        Task<string> FetchSomeStuffWithQueryFormat([Query(Format = "0.0")] int id);
 
         [Get("/query")]
         Task QueryWithEnumerable(IEnumerable<int> numbers);
@@ -459,13 +468,13 @@ namespace Refit.Tests
 
         [Get("/query")]
         Task QueryWithArrayFormattedAsCsv([Query(CollectionFormat.Csv)]int[] numbers);
-        
+
         [Get("/query")]
         Task QueryWithArrayFormattedAsSsv([Query(CollectionFormat.Ssv)]int[] numbers);
 
         [Get("/query")]
         Task QueryWithArrayFormattedAsTsv([Query(CollectionFormat.Tsv)]int[] numbers);
-        
+
         [Get("/query")]
         Task QueryWithArrayFormattedAsPipes([Query(CollectionFormat.Pipes)]int[] numbers);
 
@@ -485,7 +494,7 @@ namespace Refit.Tests
         Task<string> GetWithCancellationAndReturn(CancellationToken token = default);
     }
 
-  
+
     public class SomeRequestData
     {
         [AliasAs("rpn")]
@@ -517,7 +526,8 @@ namespace Refit.Tests
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             RequestMessage = request;
-            if (request.Content != null) {
+            if (request.Content != null)
+            {
                 SendContent = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
             }
 
@@ -566,7 +576,7 @@ namespace Refit.Tests
         [Fact]
         public void MethodsShouldBeCancellableDefault()
         {
-            var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
+            var fixture = new RequestBuilderImplementation<ICancellableMethods>();
             var factory = fixture.RunRequest("GetWithCancellation");
             var output = factory(new object[0]);
 
@@ -578,12 +588,12 @@ namespace Refit.Tests
         [Fact]
         public void MethodsShouldBeCancellableWithToken()
         {
-            var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
+            var fixture = new RequestBuilderImplementation<ICancellableMethods>();
             var factory = fixture.RunRequest("GetWithCancellation");
 
             var cts = new CancellationTokenSource();
 
-            var output = factory(new object[]{cts.Token});
+            var output = factory(new object[] { cts.Token });
 
             var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
             Assert.Equal("/foo", uri.PathAndQuery);
@@ -593,7 +603,7 @@ namespace Refit.Tests
         [Fact]
         public void MethodsShouldBeCancellableWithTokenDoesCancel()
         {
-            var fixture = new RequestBuilderImplementation(typeof(ICancellableMethods));
+            var fixture = new RequestBuilderImplementation<ICancellableMethods>();
             var factory = fixture.RunRequest("GetWithCancellation");
 
             var cts = new CancellationTokenSource();
@@ -606,7 +616,7 @@ namespace Refit.Tests
         [Fact]
         public void HttpContentAsApiResponseTest()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IHttpContentApi));
+            var fixture = new RequestBuilderImplementation<IHttpContentApi>();
             var factory = fixture.BuildRestResultFuncForMethod("PostFileUploadWithMetadata");
             var testHttpMessageHandler = new TestHttpMessageHandler();
             var retContent = new StreamContent(new MemoryStream());
@@ -630,7 +640,7 @@ namespace Refit.Tests
         [Fact]
         public void HttpContentTest()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IHttpContentApi));
+            var fixture = new RequestBuilderImplementation<IHttpContentApi>();
             var factory = fixture.BuildRestResultFuncForMethod("PostFileUpload");
             var testHttpMessageHandler = new TestHttpMessageHandler();
             var retContent = new StreamContent(new MemoryStream());
@@ -648,7 +658,7 @@ namespace Refit.Tests
         [Fact]
         public void StreamResponseAsApiResponseTest()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IStreamApi));
+            var fixture = new RequestBuilderImplementation<IStreamApi>();
             var factory = fixture.BuildRestResultFuncForMethod("GetRemoteFileWithMetadata");
             var testHttpMessageHandler = new TestHttpMessageHandler();
             var streamResponse = new MemoryStream();
@@ -676,7 +686,7 @@ namespace Refit.Tests
         [Fact]
         public void StreamResponseTest()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IStreamApi));
+            var fixture = new RequestBuilderImplementation<IStreamApi>();
             var factory = fixture.BuildRestResultFuncForMethod("GetRemoteFile");
             var testHttpMessageHandler = new TestHttpMessageHandler();
             var streamResponse = new MemoryStream();
@@ -690,7 +700,7 @@ namespace Refit.Tests
 
             var task = (Task<Stream>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { "test-file" });
             task.Wait();
-            
+
             using (var reader = new StreamReader(task.Result))
                 Assert.Equal(reponseContent, reader.ReadToEnd());
         }
@@ -698,7 +708,7 @@ namespace Refit.Tests
         [Fact]
         public void MethodsThatDontHaveAnHttpMethodShouldFail()
         {
-            var failureMethods = new[] { 
+            var failureMethods = new[] {
                 "SomeOtherMethod",
                 "weofjwoeijfwe",
                 null,
@@ -708,25 +718,33 @@ namespace Refit.Tests
                 "FetchSomeStuff",
             };
 
-            foreach (var v in failureMethods) {
+            foreach (var v in failureMethods)
+            {
                 var shouldDie = true;
 
-                try {
-                    var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+                try
+                {
+                    var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
                     fixture.BuildRequestFactoryForMethod(v);
-                } catch (Exception) {
+                }
+                catch (Exception)
+                {
                     shouldDie = false;
                 }
                 Assert.False(shouldDie);
             }
 
-            foreach (var v in successMethods) {
+            foreach (var v in successMethods)
+            {
                 var shouldDie = false;
 
-                try {
-                    var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+                try
+                {
+                    var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
                     fixture.BuildRequestFactoryForMethod(v);
-                } catch (Exception) {
+                }
+                catch (Exception)
+                {
                     shouldDie = true;
                 }
 
@@ -737,7 +755,7 @@ namespace Refit.Tests
         [Fact]
         public void HardcodedQueryParamShouldBeInUrl()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedQueryParameter");
             var output = factory(new object[] { 6 });
 
@@ -748,7 +766,7 @@ namespace Refit.Tests
         [Fact]
         public void ParameterizedQueryParamsShouldBeInUrl()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
             var output = factory(new object[] { 6, "foo" });
 
@@ -759,9 +777,9 @@ namespace Refit.Tests
         [Fact]
         public void ParameterizedNullQueryParamsShouldBeBlankInUrl()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("PostWithQueryStringParameters");
-            var output = factory(new object[] {new FileInfo(typeof(RequestBuilderTests).Assembly.Location), null });
+            var output = factory(new object[] { new FileInfo(typeof(RequestBuilderTests).Assembly.Location), null });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/foo?name=", uri.PathAndQuery);
@@ -770,7 +788,7 @@ namespace Refit.Tests
         [Fact]
         public void QueryParamShouldFormat()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithQueryFormat");
             var output = factory(new object[] { 6 });
 
@@ -781,7 +799,7 @@ namespace Refit.Tests
         [Fact]
         public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncoded()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedAndOtherQueryParameters");
             var output = factory(new object[] { 6, "push!=pull&push" });
 
@@ -793,7 +811,7 @@ namespace Refit.Tests
         [Fact]
         public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQuery()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
             var output = factory(new object[] { "6 & 7/8", "test@example.com", "push!=pull" });
 
@@ -805,7 +823,7 @@ namespace Refit.Tests
         [Fact]
         public void QueryParamWithPathDelimiterShouldBeEncoded()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
             var output = factory(new object[] { "6/6", "test@example.com", "push!=pull" });
 
@@ -817,7 +835,7 @@ namespace Refit.Tests
         [Fact]
         public void ParameterizedQueryParamsShouldBeInUrlAndValuesEncodedWhenMixedReplacementAndQueryBadId()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithVoidAndQueryAlias");
             var output = factory(new object[] { "6", "test@example.com", "push!=pull" });
 
@@ -829,7 +847,7 @@ namespace Refit.Tests
         [Fact]
         public void NonFormattableQueryParamsShouldBeIncluded()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithNonFormattableQueryParams");
             var output = factory(new object[] { true, 'x' });
 
@@ -841,7 +859,7 @@ namespace Refit.Tests
         [Fact]
         public void MultipleParametersInTheSameSegmentAreGeneratedProperly()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomethingWithMultipleParametersPerSegment");
             var output = factory(new object[] { 6, 1024, 768 });
 
@@ -852,8 +870,8 @@ namespace Refit.Tests
         [Fact]
         public void HardcodedHeadersShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
-            
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedHeader");
             var output = factory(new object[] { 6 });
 
@@ -866,7 +884,7 @@ namespace Refit.Tests
         [Fact]
         public void EmptyHardcodedHeadersShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithEmptyHardcodedHeader");
             var output = factory(new object[] { 6 });
 
@@ -878,7 +896,7 @@ namespace Refit.Tests
         [Fact]
         public void NullHardcodedHeadersShouldNotBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithNullHardcodedHeader");
             var output = factory(new object[] { 6 });
 
@@ -890,7 +908,7 @@ namespace Refit.Tests
         [Fact]
         public void ReadStringContentWithMetadata()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStringWithMetadata");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
@@ -909,7 +927,7 @@ namespace Refit.Tests
         [Fact]
         public void ContentHeadersCanBeHardcoded()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("PostSomeStuffWithHardCodedContentTypeHeader");
             var output = factory(new object[] { 6, "stuff" });
 
@@ -920,7 +938,7 @@ namespace Refit.Tests
         [Fact]
         public void DynamicHeaderShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
             var output = factory(new object[] { 6, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
 
@@ -931,7 +949,7 @@ namespace Refit.Tests
         [Fact]
         public void CustomDynamicHeaderShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
             var output = factory(new object[] { 6, ":joy_cat:" });
 
@@ -942,7 +960,7 @@ namespace Refit.Tests
         [Fact]
         public void EmptyDynamicHeaderShouldBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
             var output = factory(new object[] { 6, "" });
 
@@ -953,7 +971,7 @@ namespace Refit.Tests
         [Fact]
         public void NullDynamicHeaderShouldNotBeInHeaders()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
             var output = factory(new object[] { 6, null });
 
@@ -963,7 +981,7 @@ namespace Refit.Tests
         [Fact]
         public void AddCustomHeadersToRequestHeadersOnly()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("PostSomeStuffWithCustomHeader");
             var output = factory(new object[] { 6, new { Foo = "bar" }, ":smile_cat:" });
 
@@ -976,7 +994,7 @@ namespace Refit.Tests
         [Fact]
         public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithoutFullPath");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
@@ -989,7 +1007,7 @@ namespace Refit.Tests
         [Fact]
         public void HttpClientForVoidMethodShouldPrefixedAbsolutePathToTheRequestUri()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithVoid");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
@@ -1002,20 +1020,20 @@ namespace Refit.Tests
         [Fact]
         public void HttpClientShouldNotPrefixEmptyAbsolutePathToTheRequestUri()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuff");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
             var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { 42 });
             task.Wait();
 
-            Assert.Equal("http://api/foo/bar/42", testHttpMessageHandler.RequestMessage.RequestUri.ToString());            
+            Assert.Equal("http://api/foo/bar/42", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
         }
 
         [Fact]
-        public void DontBlowUpWithDynamicAuthorizationHeaderAndContent() 
+        public void DontBlowUpWithDynamicAuthorizationHeaderAndContent()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("PutSomeContentWithAuthorization");
             var output = factory(new object[] { 7, new { Octocat = "Dunetocat" }, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
 
@@ -1026,7 +1044,7 @@ namespace Refit.Tests
         [Fact]
         public void SuchFlexibleContentTypeWow()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("PutSomeStuffWithDynamicContentType");
             var output = factory(new object[] { 7, "such \"refit\" is \"amaze\" wow", "text/dson" });
 
@@ -1036,16 +1054,16 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void BodyContentGetsUrlEncoded() 
+        public void BodyContentGetsUrlEncoded()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.RunRequest("PostSomeUrlEncodedStuff");
             var output = factory(
                 new object[] {
-                    6, 
+                    6,
                     new {
-                        Foo = "Something", 
-                        Bar = 100, 
+                        Foo = "Something",
+                        Bar = 100,
                         Baz = "" // explicitly use blank to preserve value that would be stripped if null
                     }
                 });
@@ -1056,11 +1074,11 @@ namespace Refit.Tests
         [Fact]
         public void FormFieldGetsAliased()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.RunRequest("PostSomeAliasedUrlEncodedStuff");
             var output = factory(
                 new object[] {
-                    6, 
+                    6,
                     new SomeRequestData {
                         ReadablePropertyName = 99
                     }
@@ -1075,7 +1093,7 @@ namespace Refit.Tests
         public void CustomParmeterFormatter()
         {
             var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
             var output = factory(new object[] { 5 });
@@ -1088,10 +1106,10 @@ namespace Refit.Tests
         public void QueryStringWithEnumerablesCanBeFormatted()
         {
             var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
-            var output = factory(new object[] { new int[] {1,2,3} });
+            var output = factory(new object[] { new int[] { 1, 2, 3 } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
@@ -1101,7 +1119,7 @@ namespace Refit.Tests
         public void QueryStringWithArrayCanBeFormatted()
         {
             var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithArray");
             var output = factory(new object[] { new int[] { 1, 2, 3 } });
@@ -1118,10 +1136,10 @@ namespace Refit.Tests
         [InlineData("QueryWithArrayFormattedAsPipes", "/query?numbers=1%7C2%7C3")]
         public void QueryStringWithArrayFormatted(string apiMethodName, string expectedQuery)
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
 
             var factory = fixture.BuildRequestFactoryForMethod(apiMethodName);
-            var output = factory(new object[] { new [] { 1, 2, 3 } });
+            var output = factory(new object[] { new[] { 1, 2, 3 } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal(expectedQuery, uri.PathAndQuery);
@@ -1131,8 +1149,8 @@ namespace Refit.Tests
         [Fact]
         public void QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()
         {
-            var settings = new RefitSettings{ UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter")};
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+            var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsSsv");
             var output = factory(new object[] { new int[] { 1, 2, 3 } });
@@ -1145,7 +1163,7 @@ namespace Refit.Tests
         public void QueryStringWithEnumerablesCanBeFormattedEnumerable()
         {
             var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
 
@@ -1163,7 +1181,7 @@ namespace Refit.Tests
         [Fact]
         public void QueryStringExcludesPropertiesWithPrivateGetters()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithObjectWithPrivateGetters");
 
@@ -1185,7 +1203,7 @@ namespace Refit.Tests
         public void DefaultParmeterFormatterIsInvariant()
         {
             var settings = new RefitSettings();
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi), settings);
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
             var output = factory(new object[] { 5.4 });
@@ -1197,7 +1215,7 @@ namespace Refit.Tests
         [Fact]
         public void ICanPostAValueTypeIfIWantYoureNotTheBossOfMe()
         {
-            var fixture = new RequestBuilderImplementation(typeof(IDummyHttpApi));
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.RunRequest("PostAValueType", "true");
             var guid = Guid.NewGuid();
             var expected = string.Format("\"{0}\"", guid);
@@ -1217,18 +1235,19 @@ namespace Refit.Tests
 
 
             return paramList => {
-               var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/")}, paramList);
-               task.Wait();
-               return testHttpMessageHandler.RequestMessage;
-           };
+                var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, paramList);
+                task.Wait();
+                return testHttpMessageHandler.RequestMessage;
+            };
         }
 
-       
+
         public static Func<object[], TestHttpMessageHandler> RunRequest(this IRequestBuilder builder, string methodName, string returnContent = null)
         {
             var factory = builder.BuildRestResultFuncForMethod(methodName);
             var testHttpMessageHandler = new TestHttpMessageHandler();
-            if (returnContent != null) {
+            if (returnContent != null)
+            {
                 testHttpMessageHandler.Content = new StringContent(returnContent);
             }
 

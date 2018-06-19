@@ -5,14 +5,14 @@ using System.Net.Http;
 
 namespace Refit
 {
-    class CachedRequestBuilderImplementation : IRequestBuilderInternal
+    class CachedRequestBuilderImplementation<T> : IRequestBuilder<T>
     {
-        public CachedRequestBuilderImplementation(IRequestBuilderInternal innerBuilder)
+        public CachedRequestBuilderImplementation(IRequestBuilder<T> innerBuilder)
         {
             this.innerBuilder = innerBuilder;
         }
 
-        readonly IRequestBuilderInternal innerBuilder;
+        readonly IRequestBuilder<T> innerBuilder;
         readonly ConcurrentDictionary<string, Func<HttpClient, object[], object>> methodDictionary = new ConcurrentDictionary<string, Func<HttpClient, object[], object>>();
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
@@ -22,8 +22,6 @@ namespace Refit
 
             return func;
         }
-
-        public Type TargetType => innerBuilder.TargetType;
 
         string GetCacheKey(string methodName, Type[] parameterTypes, Type[] genericArgumentTypes)
         {

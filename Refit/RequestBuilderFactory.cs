@@ -7,14 +7,14 @@ namespace Refit
 {
     interface IRequestBuilderFactory
     {
-        IRequestBuilder Create(Type interfaceType, RefitSettings settings);
+        IRequestBuilder<T> Create<T>(RefitSettings settings);
     }
 
     class RequestBuilderFactory : IRequestBuilderFactory
     {
-        public IRequestBuilder Create(Type interfaceType, RefitSettings settings = null)
+        public IRequestBuilder<T> Create<T>(RefitSettings settings = null)
         {
-            return new CachedRequestBuilderImplementation(new RequestBuilderImplementation(interfaceType, settings));
+            return new CachedRequestBuilderImplementation<T>(new RequestBuilderImplementation<T>(settings));
         }
     }
 }

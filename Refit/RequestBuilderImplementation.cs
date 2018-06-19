@@ -16,7 +16,7 @@ using System.Net.Http.Headers;
 
 namespace Refit
 {
-    partial class RequestBuilderImplementation : IRequestBuilderInternal
+    partial class RequestBuilderImplementation<TApi> : IRequestBuilder<TApi>
     {
         static readonly ISet<HttpMethod> bodylessMethods = new HashSet<HttpMethod>
         {
@@ -29,8 +29,10 @@ namespace Refit
         readonly RefitSettings settings;
         public Type TargetType { get; }
 
-        public RequestBuilderImplementation(Type targetInterface, RefitSettings refitSettings = null)
+        public RequestBuilderImplementation(RefitSettings refitSettings = null)
         {
+            Type targetInterface = typeof(TApi);
+
             settings = refitSettings ?? new RefitSettings();
             serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
             interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();

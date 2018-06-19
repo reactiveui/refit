@@ -11,33 +11,22 @@ namespace Refit
         Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null);
     }
 
-    interface IRequestBuilderInternal : IRequestBuilder
+    public interface IRequestBuilder<T> : IRequestBuilder
     {
-        Type TargetType { get; }
     }
 
     public static class RequestBuilder
     {
         static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
 
-        public static IRequestBuilder ForType(Type interfaceType, RefitSettings settings)
+        public static IRequestBuilder<T> ForType<T>(RefitSettings settings)
         {
-            return platformRequestBuilderFactory.Create(interfaceType, settings);
+            return platformRequestBuilderFactory.Create<T>(settings);
         }
 
-        public static IRequestBuilder ForType(Type interfaceType)
+        public static IRequestBuilder<T> ForType<T>()
         {
-            return platformRequestBuilderFactory.Create(interfaceType, null);
-        }
-
-        public static IRequestBuilder ForType<T>(RefitSettings settings)
-        {
-            return ForType(typeof(T), settings);
-        }
-
-        public static IRequestBuilder ForType<T>()
-        {
-            return ForType(typeof(T), null);
+            return platformRequestBuilderFactory.Create<T>(null);
         }
     }
 }

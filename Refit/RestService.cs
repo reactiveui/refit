@@ -16,18 +16,16 @@ namespace Refit
     {
         static readonly ConcurrentDictionary<Type, Type> typeMapping = new ConcurrentDictionary<Type, Type>();
 
-        public static T For<T>(HttpClient client, IRequestBuilder builder)
+        public static T For<T>(HttpClient client, IRequestBuilder<T> builder)
         {
             var generatedType = typeMapping.GetOrAdd(typeof(T), GetGeneratedType<T>());
-
-            EnsureBuilderTypeIsCorrect<T>((IRequestBuilderInternal)builder);
 
             return (T)Activator.CreateInstance(generatedType, client, builder);
         }
         
         public static T For<T>(HttpClient client, RefitSettings settings)
         {
-            var requestBuilder = RequestBuilder.ForType<T>(settings);
+            IRequestBuilder<T> requestBuilder = RequestBuilder.ForType<T>(settings);
 
             return For<T>(client, requestBuilder);
         }
@@ -82,19 +80,6 @@ namespace Refit
             }
 
             return generatedType;
-        }
-
-        static void EnsureBuilderTypeIsCorrect<T>(IRequestBuilderInternal builder)
-        {
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
-
-            if (builder.TargetType != typeof(T))
-            {
-                throw new InvalidOperationException($"The supplied IRequestBuilder is not configured to build requests for {typeof(T).Name}");
-            }
         }
     }
 }
