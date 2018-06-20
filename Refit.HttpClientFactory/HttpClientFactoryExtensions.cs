@@ -1,5 +1,4 @@
-﻿#if NETSTANDARD2_0
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace Refit
 {
@@ -14,4 +13,3 @@ namespace Refit
         }
     }
 }
-#endif

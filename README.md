@@ -582,7 +582,8 @@ var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.exam
 
 ### Using HttpClientFactory
 
-Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Simply call the provided extension method in your `ConfigureServices` method to configure your Refit interface:
+Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Add a reference to `Refit.HttpClientFactory` and call 
+the provided extension method in your `ConfigureServices` method to configure your Refit interface:
 
 ```csharp
 services.AddRefitClient<IWebApi>()
