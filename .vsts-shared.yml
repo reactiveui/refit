@@ -17,14 +17,18 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: build
-    projects: Refit/Refit.csproj
+    projects: |      
+      Refit/Refit.HttpClientFactory.csproj
+      Refit/Refit.csproj
     arguments: -c $(BuildConfiguration)   
   displayName: Build
   
 - task: DotNetCoreCLI@2
   inputs:
     command: pack
-    packagesToPack: Refit/Refit.csproj
+    packagesToPack: |
+      Refit/Refit.csproj
+      Refit/Refit.HttpClientFactory.csproj
     configuration: $(BuildConfiguration)
     packDirectory: $(Build.ArtifactStagingDirectory)\artifacts
     nobuild: true
