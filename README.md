@@ -579,3 +579,49 @@ Which can be used like this:
 // than one type (unless you have a different domain for each type)
 var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
 ``` 
+
+### Using HttpClientFactory
+
+Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Simply call the provided extension method in your `ConfigureServices` method to configure your Refit interface:
+
+```csharp
+services.AddRefitClient<IWebApi>()
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+        // Add additional IHttpClientBuilder chained methods as required here:
+        // .AddHttpMessageHandler<MyHandler>()
+        // .SetHandlerLifetime(TimeSpan.FromMinutes(2));
+```
+
+Optionally, a `RefitSettings` object can be included: 
+```csharp
+var settings = new RefitSettings(); 
+// Configure refit settings here
+
+services.AddRefitClient<IWebApi>(settings)
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+        // Add additional IHttpClientBuilder chained methods as required here:
+        // .AddHttpMessageHandler<MyHandler>()
+        // .SetHandlerLifetime(TimeSpan.FromMinutes(2));
+```
+Note that some of the properties of `RefitSettings` will be ignored because the `HttpClient` and `HttpClientHandlers` will be managed by the `HttpClientFactory` instead of Refit.
+
+You can then get the api interface using constructor injection:
+
+```csharp
+    public class HomeController : Controller
+    {
+        public HomeController(IWebApi webApi)
+        {
+            _webApi = webApi;
+        }
+
+        private readonly IWebApi _webApi;
+
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
+        {
+            var thing = await _webApi.GetSomethingWeNeed(cancellationToken);
+
+            return View(thing);
+        }
+    }
+```
