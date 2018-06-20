@@ -7,7 +7,6 @@
     <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/reactiveui/refit/blob/master/COPYING</PackageLicenseUrl>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <IncludeSymbols>false</IncludeSymbols>
     <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
     <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
     <NoWarn>$(NoWarn);1701;1702;CS1591;NU1701</NoWarn>

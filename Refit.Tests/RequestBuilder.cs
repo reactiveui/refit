@@ -630,7 +630,7 @@ namespace Refit.Tests
             Assert.NotNull(task.Result.Headers);
             Assert.True(task.Result.IsSuccessStatusCode);
             Assert.NotNull(task.Result.ReasonPhrase);
-            Assert.False(task.Result.StatusCode == default(HttpStatusCode));
+            Assert.False(task.Result.StatusCode == default);
             Assert.NotNull(task.Result.Version);
 
             Assert.Equal(testHttpMessageHandler.RequestMessage.Content, mpc);
@@ -676,7 +676,7 @@ namespace Refit.Tests
             Assert.NotNull(task.Result.Headers);
             Assert.True(task.Result.IsSuccessStatusCode);
             Assert.NotNull(task.Result.ReasonPhrase);
-            Assert.False(task.Result.StatusCode == default(HttpStatusCode));
+            Assert.False(task.Result.StatusCode == default);
             Assert.NotNull(task.Result.Version);
 
             using (var reader = new StreamReader(task.Result.Content))
@@ -918,7 +918,7 @@ namespace Refit.Tests
             Assert.NotNull(task.Result.Headers);
             Assert.True(task.Result.IsSuccessStatusCode);
             Assert.NotNull(task.Result.ReasonPhrase);
-            Assert.False(task.Result.StatusCode == default(HttpStatusCode));
+            Assert.False(task.Result.StatusCode == default);
             Assert.NotNull(task.Result.Version);
 
             Assert.Equal("test", task.Result.Content);
