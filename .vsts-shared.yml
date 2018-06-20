@@ -24,12 +24,21 @@ steps:
 - task: DotNetCoreCLI@2
   inputs:
     command: pack
-    packagesToPack: '**/Refit.*.csproj;-:**/*.Tests.csproj'
+    packagesToPack: Refit/Refit.csproj
     configuration: $(BuildConfiguration)
     packDirectory: $(Build.ArtifactStagingDirectory)\artifacts
     nobuild: true
     verbosityPack: Minimal
   displayName: Pack
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: pack
+    packagesToPack: Refit.HttpClientFactory/Refit.HttpClientFactory.csproj
+    configuration: $(BuildConfiguration)
+    packDirectory: $(Build.ArtifactStagingDirectory)\artifacts    
+    verbosityPack: Minimal
+  displayName: Pack Extensions
 
 - task: DotNetCoreCLI@2
   inputs:
