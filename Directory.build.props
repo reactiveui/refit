@@ -4,27 +4,37 @@
     <MinClientVersion>2.12</MinClientVersion>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <Authors>Paul Betts,Refit contributors</Authors>
-    <PackageProjectUrl>https://github.com/paulcbetts/refit</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/paulcbetts/refit/blob/master/COPYING</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/reactiveui/refit/blob/master/COPYING</PackageLicenseUrl>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <IncludeSymbols>false</IncludeSymbols>
     <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
     <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
     <NoWarn>$(NoWarn);1701;1702;CS1591;NU1701</NoWarn>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Refit.ruleset</CodeAnalysisRuleSet>
     <LangVersion>latest</LangVersion>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
   </PropertyGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(SourceLinkEnabled)' != 'false'">
-    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.1" PrivateAssets="All" /> 
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-62925-02" PrivateAssets="All"/>
   </ItemGroup>
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.7.18" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.7.21" PrivateAssets="All" />
   </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.23" PrivateAssets="all" />
   </ItemGroup>
+
+  <Target Name="AddCommitHashToAssemblyAttributes" BeforeTargets="GetAssemblyAttributes">
+    <ItemGroup>
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute" Condition=" '$(SourceRevisionId)' != '' ">
+        <_Parameter1>CommitHash</_Parameter1>
+        <_Parameter2>$(SourceRevisionId)</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
 
 </Project>
