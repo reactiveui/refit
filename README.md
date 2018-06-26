@@ -609,20 +609,19 @@ Note that some of the properties of `RefitSettings` will be ignored because the 
 You can then get the api interface using constructor injection:
 
 ```csharp
-    public class HomeController : Controller
+public class HomeController : Controller
+{
+    public HomeController(IWebApi webApi)
     {
-        public HomeController(IWebApi webApi)
-        {
-            _webApi = webApi;
-        }
-
-        private readonly IWebApi _webApi;
-
-        public async Task<IActionResult> Index(CancellationToken cancellationToken)
-        {
-            var thing = await _webApi.GetSomethingWeNeed(cancellationToken);
-
-            return View(thing);
-        }
+        _webApi = webApi;
     }
+
+    private readonly IWebApi _webApi;
+
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
+    {
+        var thing = await _webApi.GetSomethingWeNeed(cancellationToken);
+        return View(thing);
+    }
+}
 ```
