@@ -254,13 +254,13 @@ public interface IMeasurementProtocolApi
 public class Measurement
 {
     // Properties can be read-only and [AliasAs] isn't required
-    public int v { get { return 1; }
+    public int v { get { return 1; } }
  
     [AliasAs("tid")]
     public string WebPropertyId { get; set; }
 
     [AliasAs("cid")]
-    public Guid ClientId { get;set; }
+    public Guid ClientId { get; set; }
 
     [AliasAs("t")] 
     public string Type { get; set; }
