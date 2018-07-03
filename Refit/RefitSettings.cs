@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -39,6 +40,9 @@ namespace Refit
 
     public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     {
+        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> enumMemberCache
+            = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>>();
+
         public virtual string Format(object parameterValue, ParameterInfo parameterInfo)
         {
             // See if we have a format
@@ -47,10 +51,8 @@ namespace Refit
             EnumMemberAttribute enummember = null;
             if (parameterValue != null && parameterInfo.ParameterType.GetTypeInfo().IsEnum)
             {
-                enummember = parameterInfo.ParameterType
-                    .GetMember(parameterValue.ToString())
-                    .FirstOrDefault()?
-                    .GetCustomAttribute<EnumMemberAttribute>();
+                var cached = enumMemberCache.GetOrAdd(parameterInfo.ParameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterInfo.ParameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
             }
 
             return parameterValue == null
@@ -65,6 +67,9 @@ namespace Refit
 
     public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
     {
+        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> enumMemberCache
+            = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>>();
+
         public virtual string Format(object parameterValue, string formatString)
         {
             if (parameterValue == null)
@@ -75,13 +80,11 @@ namespace Refit
             EnumMemberAttribute enummember = null;
             if (parameterValue != null && parameterType.GetTypeInfo().IsEnum)
             {
-                enummember = parameterType
-                    .GetMember(parameterValue.ToString())
-                    .FirstOrDefault()?
-                    .GetCustomAttribute<EnumMemberAttribute>();
+                var cached = enumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
             }
 
-            return string.Format(CultureInfo.InvariantCulture, 
+            return string.Format(CultureInfo.InvariantCulture,
                                  string.IsNullOrWhiteSpace(formatString)
                                      ? "{0}"
                                      : $"{{0:{formatString}}}",
