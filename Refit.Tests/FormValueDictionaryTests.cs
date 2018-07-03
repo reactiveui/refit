@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Xunit;
 
@@ -178,6 +179,29 @@ namespace Refit.Tests
             Assert.Contains("foo", target.Keys);
         }
 
+
+        [Fact]
+        public void SerializesEnumWithEnumMemberAttribute()
+        {
+            var source = new Dictionary<string, EnumWithEnumMember>()
+            {
+                { "A", EnumWithEnumMember.A },
+                { "B", EnumWithEnumMember.B }
+            };
+
+            var expected = new Dictionary<string, string>
+            {
+                { "A", "A" },
+                { "B", "b" }
+            };
+
+
+            var actual = new FormValueDictionary(source, settings);
+
+            Assert.Equal(expected, actual);
+        }
+
+
         public class AliasingTestClass
         {
             [AliasAs("f")]
@@ -194,6 +218,14 @@ namespace Refit.Tests
             [Query("-", "prefix", "0.0")]
             [AliasAs("fr")]
             public int? Frob { get; set; }
+        }
+
+        public enum EnumWithEnumMember
+        {
+            A,
+
+            [EnumMember(Value = "b")]
+            B
         }
     }
 }
