@@ -1037,5 +1037,47 @@ namespace Refit.Tests
             Assert.Equal("Rambo", resp.Args["search.LastName"]);
             Assert.Equal("9999", resp.Args["search.Addr.Zip"]);
         }
+        
+        [Fact]
+        public async Task ServiceOutsideNamespaceGetRequest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "http://foo/")
+                // We can't add HttpContent to a GET request, 
+                // because HttpClient doesn't allow it and it will
+                // blow up at runtime
+                .With(r => r.Content == null)
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IServiceWithoutNamespace>("http://foo", settings);
+
+            await fixture.GetRoot();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task ServiceOutsideNamespacePostRequest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://foo/")
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IServiceWithoutNamespace>("http://foo", settings);
+
+            await fixture.PostRoot();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
     }
 }

@@ -7,5 +7,8 @@ using Refit;
 interface IServiceWithoutNamespace
 {
     [Get("/")]
-    Task<string> GetRoot();
+    Task GetRoot();
+    
+    [Post("/")]
+    Task PostRoot();
 }

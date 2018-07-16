@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.0;net46</TargetFrameworks>
@@ -40,7 +40,7 @@
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
       <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/net46/InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
-    <Message Text="Executing: $(RefitExecCmd)" Importance="High"   />
+    <Message Text="Executing: $(RefitExecCmd)" Importance="High" />
     <Exec Command="$(RefitExecCmd)" />
     <Message Text="Processed Refit Stubs" />
   </Target>
@@ -58,7 +58,7 @@
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
       <RefitExecCmd>dotnet "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/netcoreapp2.0/InterfaceStubGenerator.App.dll" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)"</RefitExecCmd>
     </PropertyGroup>
-    <Message Text="Executing: $(RefitExecCmd)" Importance="High"  />
+    <Message Text="Executing: $(RefitExecCmd)" Importance="High" />
     <Exec Command="$(RefitExecCmd)" />
     <Message Text="Processed Refit Stubs" />
   </Target>
