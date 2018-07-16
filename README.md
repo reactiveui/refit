@@ -29,7 +29,7 @@ Refit currently supports the following platforms and any .NET Standard 1.4 targe
 * Xamarin.Android
 * Xamarin.Mac
 * Xamarin.iOS 
-* Desktop .NET 4.5 
+* Desktop .NET 4.6.1 
 * .NET Core
 
 #### Note about .NET Core
@@ -254,13 +254,13 @@ public interface IMeasurementProtocolApi
 public class Measurement
 {
     // Properties can be read-only and [AliasAs] isn't required
-    public int v { get { return 1; }
+    public int v { get { return 1; } }
  
     [AliasAs("tid")]
     public string WebPropertyId { get; set; }
 
     [AliasAs("cid")]
-    public Guid ClientId { get;set; }
+    public Guid ClientId { get; set; }
 
     [AliasAs("t")] 
     public string Type { get; set; }
@@ -351,7 +351,7 @@ class AuthenticatedHttpClientHandler : HttpClientHandler
 
     public AuthenticatedHttpClientHandler(Func<Task<string>> getToken)
     {
-        if (getToken == null) throw new ArgumentNullException("getToken");
+        if (getToken == null) throw new ArgumentNullException(nameof(getToken));
         this.getToken = getToken;
     }
 
@@ -377,35 +377,34 @@ This class is used like so (example uses the [ADAL](http://msdn.microsoft.com/en
 ```csharp
 class LoginViewModel
 {
-	AuthenticationContext context = new AuthenticationContext(...);
-	private async Task<string> GetToken()
+    AuthenticationContext context = new AuthenticationContext(...);
+    
+    private async Task<string> GetToken()
     {
-		// The AcquireTokenAsync call will prompt with a UI if necessary
-		// Or otherwise silently use a refresh token to return
-		// a valid access token	
+        // The AcquireTokenAsync call will prompt with a UI if necessary
+        // Or otherwise silently use a refresh token to return
+        // a valid access token	
         var token = await context.AcquireTokenAsync("http://my.service.uri/app", "clientId", new Uri("callback://complete"));
-
+        
         return token;
     }
 
-	public async void LoginAndCallApi()
-	{
-		var api = RestService.For<IMyRestService>(new HttpClient(new AuthenticatedHttpClientHandler(GetToken)) { BaseAddress = new Uri("https://the.end.point/") });
-
-		var location = await api.GetLocationOfRebelBase();
-	}
+    public async void LoginAndCallApi()
+    {
+        var api = RestService.For<IMyRestService>(new HttpClient(new AuthenticatedHttpClientHandler(GetToken)) { BaseAddress = new Uri("https://the.end.point/") });
+        var location = await api.GetLocationOfRebelBase();
+    }
 }
 
 interface IMyRestService
 {
-	[Get("/getPublicInfo")]
-	Task<Foobar> SomePublicMethod();
+    [Get("/getPublicInfo")]
+    Task<Foobar> SomePublicMethod();
 
-	[Get("/secretStuff")]
+    [Get("/secretStuff")]
     [Headers("Authorization: Bearer")]
-	Task<Location> GetLocationOfRebelBase();
+    Task<Location> GetLocationOfRebelBase();
 }
-
 ```
 
 In the above example, any time a method that requires authentication is called, the `AuthenticatedHttpClientHandler` will try to get a fresh access token. It's up to the app to provide one, checking the expiration time of an existing access token and obtaining a new one if needed. 
@@ -580,3 +579,50 @@ Which can be used like this:
 // than one type (unless you have a different domain for each type)
 var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
 ``` 
+
+### Using HttpClientFactory
+
+Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Add a reference to `Refit.HttpClientFactory` and call 
+the provided extension method in your `ConfigureServices` method to configure your Refit interface:
+
+```csharp
+services.AddRefitClient<IWebApi>()
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+        // Add additional IHttpClientBuilder chained methods as required here:
+        // .AddHttpMessageHandler<MyHandler>()
+        // .SetHandlerLifetime(TimeSpan.FromMinutes(2));
+```
+
+Optionally, a `RefitSettings` object can be included: 
+```csharp
+var settings = new RefitSettings(); 
+// Configure refit settings here
+
+services.AddRefitClient<IWebApi>(settings)
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+        // Add additional IHttpClientBuilder chained methods as required here:
+        // .AddHttpMessageHandler<MyHandler>()
+        // .SetHandlerLifetime(TimeSpan.FromMinutes(2));
+```
+Note that some of the properties of `RefitSettings` will be ignored because the `HttpClient` and `HttpClientHandlers` will be managed by the `HttpClientFactory` instead of Refit.
+
+You can then get the api interface using constructor injection:
+
+```csharp
+    public class HomeController : Controller
+    {
+        public HomeController(IWebApi webApi)
+        {
+            _webApi = webApi;
+        }
+
+        private readonly IWebApi _webApi;
+
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
+        {
+            var thing = await _webApi.GetSomethingWeNeed(cancellationToken);
+
+            return View(thing);
+        }
+    }
+```

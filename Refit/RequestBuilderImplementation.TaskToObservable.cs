@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
-    partial class RequestBuilderImplementation
+    partial class RequestBuilderImplementation<TApi>
     {
         sealed class TaskToObservable<T> : IObservable<T>
         {

@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Product>Refit HTTP Client Factory Extensions</Product>
+    <Description>Refit HTTP Client Factory Extensions</Description>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Refit\Refit.csproj" PrivateAssets="Analyzers" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.0" />
+  </ItemGroup>
+
+</Project>

@@ -7,21 +7,19 @@ if([string]::IsNullOrEmpty($Env:SignClientSecret)){
 	return;
 }
 
-& nuget install SignClient -Version 0.9.1 -SolutionDir "$currentDirectory\..\" -Verbosity quiet -ExcludeVersion
+dotnet tool install --tool-path . SignClient
 
 # Setup Variables we need to pass into the sign client tool
 
 $appSettings = "$currentDirectory\appsettings.json"
 $fileList = "$currentDirectory\filelist.txt"
 
-$appPath = "$currentDirectory\..\packages\SignClient\tools\netcoreapp2.0\SignClient.dll"
-
 $nupkgs = gci $Env:ArtifactDirectory\*.nupkg -recurse | Select -ExpandProperty FullName
 
 foreach ($nupkg in $nupkgs){
 	Write-Host "Submitting $nupkg for signing"
 
-	dotnet $appPath 'sign' -c $appSettings -i $nupkg -f $fileList -r $Env:SignClientUser -s $Env:SignClientSecret -n 'Refit' -d 'Refit' -u 'https://github.com/ReactiveUI/refit' 
+	.\SignClient 'sign' -c $appSettings -i $nupkg -f $fileList -r $Env:SignClientUser -s $Env:SignClientSecret -n 'Refit' -d 'Refit' -u 'https://github.com/ReactiveUI/refit' 
 
 	Write-Host "Finished signing $nupkg"
 }

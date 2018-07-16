@@ -16,7 +16,7 @@ using System.Net.Http.Headers;
 
 namespace Refit
 {
-    partial class RequestBuilderImplementation : IRequestBuilder
+    partial class RequestBuilderImplementation<TApi> : IRequestBuilder<TApi>
     {
         static readonly ISet<HttpMethod> bodylessMethods = new HashSet<HttpMethod>
         {
@@ -27,10 +27,12 @@ namespace Refit
         readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
         readonly JsonSerializer serializer;
         readonly RefitSettings settings;
-        readonly Type targetType;
+        public Type TargetType { get; }
 
-        public RequestBuilderImplementation(Type targetInterface, RefitSettings refitSettings = null)
+        public RequestBuilderImplementation(RefitSettings refitSettings = null)
         {
+            Type targetInterface = typeof(TApi);
+
             settings = refitSettings ?? new RefitSettings();
             serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
             interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();
@@ -40,7 +42,7 @@ namespace Refit
                 throw new ArgumentException("targetInterface must be an Interface");
             }
 
-            targetType = targetInterface;
+            TargetType = targetInterface;
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
             foreach (var methodInfo in targetInterface.GetMethods()) 
@@ -157,6 +159,11 @@ namespace Refit
         void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
 
+            if (itemValue is HttpContent content)
+            {
+                multiPartContent.Add(content);
+                return;
+            }
             if (itemValue is MultipartItem multipartItem) 
             {
                 var httpContent = multipartItem.ToContent();
@@ -421,7 +428,7 @@ namespace Refit
                             urlTarget,
                             "{" + restMethod.ParameterMap[i] + "}",
                             Uri.EscapeDataString(settings.UrlParameterFormatter
-                                    .Format(paramList[i], restMethod.ParameterInfoMap[i])),
+                                    .Format(paramList[i], restMethod.ParameterInfoMap[i]) ?? string.Empty),
                             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                         continue;
                     }
@@ -560,12 +567,7 @@ namespace Refit
                     // Check to see if it's an IEnumerable
                     var itemValue = paramList[i];
                     var enumerable = itemValue as IEnumerable<object>;
-                    var typeIsCollection = false;
-
-                    if (enumerable != null)
-                    {
-                        typeIsCollection = true;
-                    }
+                    var typeIsCollection = enumerable != null;
 
                     if (typeIsCollection)
                     {
@@ -608,7 +610,8 @@ namespace Refit
 
                 if (queryParamsToAdd.Any())
                 {
-                    var pairs = queryParamsToAdd.Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value));
+                    var pairs = queryParamsToAdd.Where(x => x.Key != null && x.Value != null)
+                                                .Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value));
                     uri.Query = string.Join("&", pairs);
                 }
                 else

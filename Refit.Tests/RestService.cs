@@ -263,7 +263,7 @@ namespace Refit.Tests
             Assert.True(result.IsSuccessStatusCode);
             Assert.NotNull(result.ReasonPhrase);
             Assert.NotNull(result.RequestMessage);
-            Assert.False(result.StatusCode == default(HttpStatusCode));
+            Assert.False(result.StatusCode == default);
             Assert.NotNull(result.Version);
             Assert.Equal("octocat", result.Content.Login);
             Assert.False(string.IsNullOrEmpty(result.Content.AvatarUrl));
@@ -362,7 +362,7 @@ namespace Refit.Tests
             Assert.True(result.IsSuccessStatusCode);
             Assert.NotNull(result.ReasonPhrase);
             Assert.NotNull(result.RequestMessage);
-            Assert.False(result.StatusCode == default(HttpStatusCode));
+            Assert.False(result.StatusCode == default);
             Assert.NotNull(result.Version);
             Assert.Equal("octocat", result.Content.Login);
             Assert.False(string.IsNullOrEmpty(result.Content.AvatarUrl));

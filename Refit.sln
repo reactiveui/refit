@@ -6,8 +6,11 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4F1C8991-7097-4471-A9A6-A72005AB594D}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		appveyor.yml = appveyor.yml
+		.vsts-ci.yml = .vsts-ci.yml
+		.vsts-pr.yml = .vsts-pr.yml
+		.vsts-shared.yml = .vsts-shared.yml
 		Directory.build.props = Directory.build.props
+		README.md = README.md
 		Refit.ruleset = Refit.ruleset
 		version.json = version.json
 	EndProjectSection
@@ -26,6 +29,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.App", "InterfaceStubGenerator.App\InterfaceStubGenerator.App.csproj", "{5E4AD5DF-55E5-4C3D-855E-919FC72F53BA}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.BuildTasks", "InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj", "{DE66466A-4912-4352-B973-E544D3073DDC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit.HttpClientFactory", "Refit.HttpClientFactory\Refit.HttpClientFactory.csproj", "{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -119,6 +124,22 @@ Global
 		{DE66466A-4912-4352-B973-E544D3073DDC}.Release|x64.Build.0 = Release|Any CPU
 		{DE66466A-4912-4352-B973-E544D3073DDC}.Release|x86.ActiveCfg = Release|Any CPU
 		{DE66466A-4912-4352-B973-E544D3073DDC}.Release|x86.Build.0 = Release|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Debug|ARM.Build.0 = Debug|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Debug|x64.Build.0 = Debug|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Debug|x86.Build.0 = Debug|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|ARM.ActiveCfg = Release|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|ARM.Build.0 = Release|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|x64.ActiveCfg = Release|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|x64.Build.0 = Release|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|x86.ActiveCfg = Release|Any CPU
+		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
