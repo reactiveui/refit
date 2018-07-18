@@ -168,20 +168,18 @@ namespace Refit.Generator
                 UsingList = usings.ToList()
             };
 
-            ret = AddInheritedMethods(ret);
+            AddInheritedMethods(ret);
 
             return ret;
         }
 
-        private TemplateInformation AddInheritedMethods(TemplateInformation ret)
+        private static void AddInheritedMethods(TemplateInformation ret)
         {
             foreach (var c in ret.ClassList.Where(c => c.BaseClassNames != null && c.BaseClassNames.Any()))
             {
                 var methodsToAdd = ret.ClassList.Where(oc => c.BaseClassNames.Contains(oc.InterfaceName)).SelectMany(oc => oc.MethodList);
                 c.MethodList.AddRange(methodsToAdd);
             }
-
-            return ret;
         }
 
         public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate)
