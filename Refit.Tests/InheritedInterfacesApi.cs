@@ -7,21 +7,21 @@ namespace Refit.Tests
     [Headers("User-Agent: Refit Integration Tests")]
     public interface IAmInterfaceA
     {
-        [Get("/ping")]
+        [Get("/get?result=Ping")]
         Task<string> Ping();
     }
 
     [Headers("User-Agent: Refit Integration Tests")]
     public interface IAmInterfaceB
     {
-        [Get("/pong")]
+        [Get("/get?result=Pong")]
         Task<string> Pong();
     }
 
     [Headers("User-Agent: Refit Integration Tests")]
     public interface IAmInterfaceC : IAmInterfaceB, IAmInterfaceA
     {
-        [Get("/pang")]
+        [Get("/get?result=Pang")]
         Task<string> Pang();
     }
 }
