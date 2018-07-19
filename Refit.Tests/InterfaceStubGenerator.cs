@@ -167,6 +167,18 @@ namespace Refit.Tests
             Assert.Contains("SomeType =  CollisionA.SomeType", usingList);
             Assert.Contains("CollisionB", usingList);
         }
+
+        [Fact]
+        public void GenerateInterfaceStubsWithoutNamespaceSmokeTest()
+        {
+            var fixture = new InterfaceStubGenerator();
+
+            var result = fixture.GenerateInterfaceStubs(new[] {
+                IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
+            });
+
+            Assert.Contains("IServiceWithoutNamespace", result);
+        }
     }
 
     public static class ThisIsDumbButMightHappen
