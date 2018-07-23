@@ -38,7 +38,7 @@ For .NET Core build-time support, you must use the .NET Core 2 SDK. You can targ
 ### API Attributes
 
 Every method must have an HTTP attribute that provides the request method and
-relative URL. There are five built-in annotations: Get, Post, Put, Delete, and
+relative URL. There are six built-in annotations: Get, Post, Put, Delete, Patch and
 Head. The relative URL of the resource is specified in the annotation.
 
 ```csharp
