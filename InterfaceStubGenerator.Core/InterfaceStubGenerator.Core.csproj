@@ -22,6 +22,11 @@
     </EmbeddedResource>
   </ItemGroup>
 
-
+  <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">
+    <PropertyGroup>      
+      <Version>$(BuildVersion)</Version>
+      <AssemblyVersion>$(BuildVersionSimple)</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
 
 </Project>
