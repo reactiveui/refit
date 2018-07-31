@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
     <RootNamespace>Refit.Generator.Tasks</RootNamespace>
+    <AssemblyOriginatorKeyFile>..\buildtask.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,4 +15,11 @@
   <ItemGroup>
     <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" PrivateAssets="all" />
   </ItemGroup>
+  
+  <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">
+    <PropertyGroup>      
+      <Version>$(BuildVersion)</Version>
+      <AssemblyVersion>$(BuildVersionSimple)</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
 </Project>
