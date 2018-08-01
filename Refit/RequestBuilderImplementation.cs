@@ -244,9 +244,15 @@ namespace Refit
                     var isApiResponse = restMethod.SerializedReturnType.GetTypeInfo().IsGenericType && 
                                         restMethod.SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
                
-                    if (!resp.IsSuccessStatusCode && !isApiResponse)
+                    if (!resp.IsSuccessStatusCode)
                     {
                         disposeResponse = false;
+                        
+                        if (isApiResponse)
+                        {
+                            return ApiResponse.Create<T>(resp, null);
+                        }
+                        
                         throw await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
 
