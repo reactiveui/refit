@@ -45,13 +45,13 @@ namespace Refit
             TargetType = targetInterface;
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
-            foreach (var methodInfo in targetInterface.GetMethods()) 
+            foreach (var methodInfo in targetInterface.GetMethods())
             {
                 var attrs = methodInfo.GetCustomAttributes(true);
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
-                if (hasHttpMethod) 
+                if (hasHttpMethod)
                 {
-                    if (!dict.ContainsKey(methodInfo.Name)) 
+                    if (!dict.ContainsKey(methodInfo.Name))
                     {
                         dict.Add(methodInfo.Name, new List<RestMethodInfo>());
                     }
@@ -65,11 +65,11 @@ namespace Refit
 
         RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes, Type[] genericArgumentTypes)
         {
-            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) 
+            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods))
             {
-                if (parameterTypes == null) 
+                if (parameterTypes == null)
                 {
-                    if (httpMethods.Count > 1) 
+                    if (httpMethods.Count > 1)
                     {
                         throw new ArgumentException($"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
                     }
@@ -92,7 +92,7 @@ namespace Refit
                     return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
 
                 var parameterTypesArray = parameterTypes.ToArray();
-                foreach (var method in possibleMethods) 
+                foreach (var method in possibleMethods)
                 {
                     var match = method.MethodInfo.GetParameters()
                                       .Select(p => p.ParameterType)
@@ -105,7 +105,7 @@ namespace Refit
 
                 throw new Exception("No suitable Method found...");
             }
-            else 
+            else
             {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
@@ -153,7 +153,7 @@ namespace Refit
             var rxFunc = (MulticastDelegate)rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
                                                     .Invoke(this, new[] { restMethod });
 
-            return (client, args) => rxFunc.DynamicInvoke(client, args); 
+            return (client, args) => rxFunc.DynamicInvoke(client, args);
         }
 
         void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
@@ -164,7 +164,7 @@ namespace Refit
                 multiPartContent.Add(content);
                 return;
             }
-            if (itemValue is MultipartItem multipartItem) 
+            if (itemValue is MultipartItem multipartItem)
             {
                 var httpContent = multipartItem.ToContent();
                 multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
@@ -178,7 +178,7 @@ namespace Refit
                 return;
             }
 
-            if (itemValue is string stringValue) 
+            if (itemValue is string stringValue)
             {
                 multiPartContent.Add(new StringContent(stringValue), parameterName);
                 return;
@@ -191,7 +191,8 @@ namespace Refit
                 return;
             }
 
-            if (itemValue is byte[] byteArrayValue) {
+            if (itemValue is byte[] byteArrayValue)
+            {
                 var fileContent = new ByteArrayContent(byteArrayValue);
                 multiPartContent.Add(fileContent, parameterName, fileName);
                 return;
@@ -205,7 +206,7 @@ namespace Refit
                 multiPartContent.Add(stringContent, parameterName);
                 return;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 // Eat this since we're about to throw as a fallback anyway
                 e = ex;
@@ -230,7 +231,7 @@ namespace Refit
                 {
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
-                    
+
                     if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
                     {
                         disposeResponse = false; // caller has to dispose
@@ -241,16 +242,16 @@ namespace Refit
                         return (T)(object)resp;
                     }
 
-                    var isApiResponse = restMethod.SerializedReturnType.GetTypeInfo().IsGenericType && 
+                    var isApiResponse = restMethod.SerializedReturnType.GetTypeInfo().IsGenericType &&
                                         restMethod.SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
-               
+
                     if (!resp.IsSuccessStatusCode && !isApiResponse)
                     {
                         disposeResponse = false;
                         throw await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
 
-                    var serializedReturnType = (isApiResponse) ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;                    
+                    var serializedReturnType = (isApiResponse) ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;
 
                     if (serializedReturnType == typeof(HttpContent))
                     {
@@ -295,7 +296,7 @@ namespace Refit
                     // Especially important if it has open files/streams
                     rq.Dispose();
                     if (disposeResponse)
-                    { 
+                    {
                         resp?.Dispose();
                         content?.Dispose();
                     }
@@ -393,7 +394,7 @@ namespace Refit
 
         Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
         {
-           
+
             return paramList =>
             {
                 // make sure we strip out any cancelation tokens
@@ -455,7 +456,7 @@ namespace Refit
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
                                 case BodySerializationMethod.UrlEncoded:
-                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") :  new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
+                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") : new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
                                     break;
                                 case BodySerializationMethod.Default:
                                 case BodySerializationMethod.Json:
@@ -512,7 +513,7 @@ namespace Refit
                                         foreach (var paramValue in paramValues)
                                         {
                                             queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                                restMethod.QueryParameterMap[i],
+                                                settings.UrlArgumentFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
                                                 settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i])));
                                         }
                                         continue;
@@ -520,7 +521,7 @@ namespace Refit
                                     case CollectionFormat.Ssv:
                                     case CollectionFormat.Tsv:
                                     case CollectionFormat.Pipes:
-                                        var delimiter = attr.CollectionFormat == CollectionFormat.Csv ?  ","
+                                        var delimiter = attr.CollectionFormat == CollectionFormat.Csv ? ","
                                             : attr.CollectionFormat == CollectionFormat.Ssv ? " "
                                             : attr.CollectionFormat == CollectionFormat.Tsv ? "\t" : "|";
 
@@ -529,19 +530,23 @@ namespace Refit
                                             .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i]));
 
                                         queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                            restMethod.QueryParameterMap[i],
+                                            settings.UrlArgumentFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
                                             string.Join(delimiter, formattedValues)));
                                         continue;
                                 }
                             }
-                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
+                            queryParamsToAdd.Add(new KeyValuePair<string, string>(
+                                settings.UrlArgumentFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
+                                settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
                         }
                         else
                         {
                             foreach (var kvp in BuildQueryMap(paramList[i], attr.Delimiter))
                             {
                                 var path = !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
-                                queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
+                                queryParamsToAdd.Add(new KeyValuePair<string, string>(
+                                    settings.UrlArgumentFormatter.Format(path, restMethod.ParameterInfoMap[i]),
+                                    settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
                             }
                         }
 

@@ -1,15 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
-using System.Threading.Tasks;
-using System.Threading;
-using Xunit;
-using System.Collections;
 using System.Runtime.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Refit.Tests
 {
@@ -483,6 +483,9 @@ namespace Refit.Tests
         [Get("/query")]
         Task QueryWithObjectWithPrivateGetters(Person person);
 
+        [Get("/query")]
+        Task QueryWithComplexObject(Range range);
+
         [Multipart]
         [Post("/foo?&name={name}")]
         Task<HttpResponseMessage> PostWithQueryStringParameters(FileInfo source, string name);
@@ -519,6 +522,12 @@ namespace Refit.Tests
         public string FirstName { private get; set; }
         public string LastName { private get; set; }
         public string FullName => $"{FirstName} {LastName}";
+    }
+
+    public class Range
+    {
+        public int Min { get; set; }
+        public int Max { get; set; }
     }
 
     public class TestHttpMessageHandler : HttpMessageHandler
@@ -564,6 +573,11 @@ namespace Refit.Tests
         {
             return constantParameterOutput;
         }
+    }
+
+    class TestUrlArgumentFormatter : IUrlArgumentFormatter
+    {
+        public string Format(string argument, ParameterInfo parameterInfo) => $"{parameterInfo.Name}.{argument}";
     }
 
     public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
@@ -1158,6 +1172,18 @@ namespace Refit.Tests
             Assert.Equal(expectedQuery, uri.PathAndQuery);
         }
 
+        [Fact]
+        public void CustomArgumentFormatter()
+        {
+            var settings = new RefitSettings { UrlArgumentFormatter = new TestUrlArgumentFormatter() };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithComplexObject");
+            var output = factory(new object[] { new Range { Min = 1, Max = 10 } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?range.Min=1&range.Max=10", uri.PathAndQuery);
+        }
 
         [Fact]
         public void QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()

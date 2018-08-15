@@ -15,6 +15,7 @@ namespace Refit
     {
         public RefitSettings()
         {
+            UrlArgumentFormatter = new DefaultUrlArgumentFormatter();
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
         }
@@ -24,8 +25,14 @@ namespace Refit
 
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
+        public IUrlArgumentFormatter UrlArgumentFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
         public bool Buffered { get; set; } = true;
+    }
+
+    public interface IUrlArgumentFormatter
+    {
+        string Format(string argument, ParameterInfo parameterInfo);
     }
 
     public interface IUrlParameterFormatter
@@ -36,6 +43,11 @@ namespace Refit
     public interface IFormUrlEncodedParameterFormatter
     {
         string Format(object value, string formatString);
+    }
+
+    public class DefaultUrlArgumentFormatter : IUrlArgumentFormatter
+    {
+        public virtual string Format(string argument, ParameterInfo parameterInfo) => argument;
     }
 
     public class DefaultUrlParameterFormatter : IUrlParameterFormatter
