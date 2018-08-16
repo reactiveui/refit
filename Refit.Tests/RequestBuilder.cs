@@ -580,6 +580,11 @@ namespace Refit.Tests
         public string Format(string argument, ParameterInfo parameterInfo) => $"{parameterInfo.Name}.{argument}";
     }
 
+    class TestArrayUrlParameterNameFormatter : IUrlParameterNameFormatter
+    {
+        public string Format(string argument, ParameterInfo parameterInfo) => $"{argument}[]";
+    }
+
     public class TestEnumerableUrlArgumentValueFormatter : DefaultUrlArgumentValueFormatter
     {
         public override string Format(object parameterValue, ParameterInfo parameterInfo)
@@ -1117,7 +1122,35 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void CustomParmeterFormatter()
+        public void UseCustomParameterNameFormatter()
+        {
+            var settings = new RefitSettings { UrlParameterNameFormatter = new TestUrlParameterNameFormatter() };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithComplexObject");
+            var output = factory(new object[] { new Range { Min = 1, Max = 10 } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?range.Min=1&range.Max=10", uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData("QueryWithArrayFormattedAsMulti", "/query?numbers%5B%5D=1&numbers%5B%5D=2&numbers%5B%5D=3")]
+        [InlineData("QueryWithArrayFormattedAsPipes", "/query?numbers%5B%5D=1%7C2%7C3")]
+        public void FormattingArrayQueryArgsUsesParameterNameFormatter(string apiMethodName, string expectedQuery)
+        {
+            var settings = new RefitSettings { UrlParameterNameFormatter = new TestArrayUrlParameterNameFormatter() };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod(apiMethodName);
+            var output = factory(new object[] { new[] { 1, 2, 3 } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void UseCustomArgumentValueFormatter()
         {
             var settings = new RefitSettings { UrlArgumentValueFormatter = new TestUrlArgumentValueFormatter("custom-parameter") };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
@@ -1170,19 +1203,6 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal(expectedQuery, uri.PathAndQuery);
-        }
-
-        [Fact]
-        public void CustomArgumentFormatter()
-        {
-            var settings = new RefitSettings { UrlParameterNameFormatter = new TestUrlParameterNameFormatter() };
-            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
-
-            var factory = fixture.BuildRequestFactoryForMethod("QueryWithComplexObject");
-            var output = factory(new object[] { new Range { Min = 1, Max = 10 } });
-
-            var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.Equal("/query?range.Min=1&range.Max=10", uri.PathAndQuery);
         }
 
         [Fact]
