@@ -89,3 +89,7 @@ packages/
 *.userprefs
 Refit-Tests/test-results
 /InterfaceStubGenerator.App/Properties/launchSettings.json
+
+# generated files
+Refit.Tests/RefitStubs.Net46.cs
+Refit.Tests/RefitStubs.NetCore2.cs
