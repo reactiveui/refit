@@ -428,7 +428,7 @@ namespace Refit
                         urlTarget = Regex.Replace(
                             urlTarget,
                             "{" + restMethod.ParameterMap[i] + "}",
-                            Uri.EscapeDataString(settings.UrlParameterFormatter
+                            Uri.EscapeDataString(settings.UrlArgumentValueFormatter
                                     .Format(paramList[i], restMethod.ParameterInfoMap[i]) ?? string.Empty),
                             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                         continue;
@@ -513,8 +513,8 @@ namespace Refit
                                         foreach (var paramValue in paramValues)
                                         {
                                             queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                                settings.UrlArgumentFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
-                                                settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i])));
+                                                settings.UrlParameterNameFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
+                                                settings.UrlArgumentValueFormatter.Format(paramValue, restMethod.ParameterInfoMap[i])));
                                         }
                                         continue;
                                     case CollectionFormat.Csv:
@@ -527,17 +527,17 @@ namespace Refit
 
                                         var formattedValues = paramValues
                                             .Cast<object>()
-                                            .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i]));
+                                            .Select(v => settings.UrlArgumentValueFormatter.Format(v, restMethod.ParameterInfoMap[i]));
 
                                         queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                            settings.UrlArgumentFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
+                                            settings.UrlParameterNameFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
                                             string.Join(delimiter, formattedValues)));
                                         continue;
                                 }
                             }
                             queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                settings.UrlArgumentFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
-                                settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
+                                settings.UrlParameterNameFormatter.Format(restMethod.QueryParameterMap[i], restMethod.ParameterInfoMap[i]),
+                                settings.UrlArgumentValueFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
                         }
                         else
                         {
@@ -545,8 +545,8 @@ namespace Refit
                             {
                                 var path = !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
                                 queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                    settings.UrlArgumentFormatter.Format(path, restMethod.ParameterInfoMap[i]),
-                                    settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
+                                    settings.UrlParameterNameFormatter.Format(path, restMethod.ParameterInfoMap[i]),
+                                    settings.UrlArgumentValueFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
                             }
                         }
 

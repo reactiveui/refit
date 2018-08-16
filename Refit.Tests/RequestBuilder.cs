@@ -560,11 +560,11 @@ namespace Refit.Tests
         }
     }
 
-    public class TestUrlParameterFormatter : IUrlParameterFormatter
+    public class TestUrlArgumentValueFormatter : IUrlArgumentValueFormatter
     {
         readonly string constantParameterOutput;
 
-        public TestUrlParameterFormatter(string constantOutput)
+        public TestUrlArgumentValueFormatter(string constantOutput)
         {
             constantParameterOutput = constantOutput;
         }
@@ -575,12 +575,12 @@ namespace Refit.Tests
         }
     }
 
-    class TestUrlArgumentFormatter : IUrlArgumentFormatter
+    class TestUrlParameterNameFormatter : IUrlParameterNameFormatter
     {
         public string Format(string argument, ParameterInfo parameterInfo) => $"{parameterInfo.Name}.{argument}";
     }
 
-    public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
+    public class TestEnumerableUrlArgumentValueFormatter : DefaultUrlArgumentValueFormatter
     {
         public override string Format(object parameterValue, ParameterInfo parameterInfo)
         {
@@ -1119,7 +1119,7 @@ namespace Refit.Tests
         [Fact]
         public void CustomParmeterFormatter()
         {
-            var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
+            var settings = new RefitSettings { UrlArgumentValueFormatter = new TestUrlArgumentValueFormatter("custom-parameter") };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
@@ -1132,7 +1132,7 @@ namespace Refit.Tests
         [Fact]
         public void QueryStringWithEnumerablesCanBeFormatted()
         {
-            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var settings = new RefitSettings { UrlArgumentValueFormatter = new TestEnumerableUrlArgumentValueFormatter() };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
@@ -1145,7 +1145,7 @@ namespace Refit.Tests
         [Fact]
         public void QueryStringWithArrayCanBeFormatted()
         {
-            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var settings = new RefitSettings { UrlArgumentValueFormatter = new TestEnumerableUrlArgumentValueFormatter() };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithArray");
@@ -1175,7 +1175,7 @@ namespace Refit.Tests
         [Fact]
         public void CustomArgumentFormatter()
         {
-            var settings = new RefitSettings { UrlArgumentFormatter = new TestUrlArgumentFormatter() };
+            var settings = new RefitSettings { UrlParameterNameFormatter = new TestUrlParameterNameFormatter() };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithComplexObject");
@@ -1188,7 +1188,7 @@ namespace Refit.Tests
         [Fact]
         public void QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()
         {
-            var settings = new RefitSettings { UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter") };
+            var settings = new RefitSettings { UrlArgumentValueFormatter = new TestUrlArgumentValueFormatter("custom-parameter") };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsSsv");
@@ -1201,7 +1201,7 @@ namespace Refit.Tests
         [Fact]
         public void QueryStringWithEnumerablesCanBeFormattedEnumerable()
         {
-            var settings = new RefitSettings { UrlParameterFormatter = new TestEnumerableUrlParameterFormatter() };
+            var settings = new RefitSettings { UrlArgumentValueFormatter = new TestEnumerableUrlArgumentValueFormatter() };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");

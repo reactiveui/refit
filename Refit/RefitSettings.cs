@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq;
@@ -15,8 +14,8 @@ namespace Refit
     {
         public RefitSettings()
         {
-            UrlArgumentFormatter = new DefaultUrlArgumentFormatter();
-            UrlParameterFormatter = new DefaultUrlParameterFormatter();
+            UrlParameterNameFormatter = new DefaultUrlParameterNameFormatter();
+            UrlArgumentValueFormatter = new DefaultUrlArgumentValueFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
         }
 
@@ -24,18 +23,25 @@ namespace Refit
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
 
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
-        public IUrlParameterFormatter UrlParameterFormatter { get; set; }
-        public IUrlArgumentFormatter UrlArgumentFormatter { get; set; }
+        public IUrlParameterNameFormatter UrlParameterNameFormatter { get; set; }
+        public IUrlArgumentValueFormatter UrlArgumentValueFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
         public bool Buffered { get; set; } = true;
+
+        [Obsolete("Use UrlArgumentValueFormatter instead")]
+        public IUrlArgumentValueFormatter UrlParameterFormatter
+        {
+            get => UrlArgumentValueFormatter;
+            set => UrlArgumentValueFormatter = value;
+        }
     }
 
-    public interface IUrlArgumentFormatter
+    public interface IUrlParameterNameFormatter
     {
         string Format(string argument, ParameterInfo parameterInfo);
     }
 
-    public interface IUrlParameterFormatter
+    public interface IUrlArgumentValueFormatter
     {
         string Format(object value, ParameterInfo parameterInfo);
     }
@@ -45,12 +51,12 @@ namespace Refit
         string Format(object value, string formatString);
     }
 
-    public class DefaultUrlArgumentFormatter : IUrlArgumentFormatter
+    public class DefaultUrlParameterNameFormatter : IUrlParameterNameFormatter
     {
         public virtual string Format(string argument, ParameterInfo parameterInfo) => argument;
     }
 
-    public class DefaultUrlParameterFormatter : IUrlParameterFormatter
+    public class DefaultUrlArgumentValueFormatter : IUrlArgumentValueFormatter
     {
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> enumMemberCache
             = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>>();
@@ -103,4 +109,9 @@ namespace Refit
                                  enummember?.Value ?? parameterValue);
         }
     }
+
+    [Obsolete("Use IUrlArgumentValueFormatter instead")]
+    public interface IUrlParameterFormatter : IUrlArgumentValueFormatter { }
+    [Obsolete("Use DefaultUrlArgumentValueFormatter instead")]
+    public class DefaultParameterFormatter : DefaultUrlArgumentValueFormatter, IUrlParameterFormatter { }
 }
