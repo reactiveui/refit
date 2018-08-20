@@ -15,7 +15,7 @@ namespace Refit
         {
             services.AddSingleton(provider => RequestBuilder.ForType<T>(settings));
 
-            return services.AddHttpClient(typeof(T).Name)
+            return services.AddHttpClient(typeof(T).GetFriendlyName())
                            .AddTypedClient((client, serviceProvider) => RestService.For<T>(client, serviceProvider.GetService<IRequestBuilder<T>>()));
         }
     }
