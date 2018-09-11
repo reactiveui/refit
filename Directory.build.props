@@ -23,7 +23,7 @@
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="15.7.21" PrivateAssets="All" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Version="2.1.23" PrivateAssets="all" />
   </ItemGroup>
