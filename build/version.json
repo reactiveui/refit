@@ -1,8 +1,0 @@
-{
-  "inherit": true,
-  "cloudBuild": {
-    "buildNumber": {
-      "enabled": true
-    }
-  }
-}

@@ -1,18 +1,22 @@
-parameters: 
-  signStep: []
+trigger:
+- master
+- rel/*
+
+variables: 
+  BuildConfiguration: Release
   
 steps:
-- task: DotNetCoreInstaller@0
+- task: DotNetCoreCLI@2  
   inputs:
-    version: '2.1.400-preview-008975'
+    command: custom
+    custom: tool
+    arguments: install --tool-path . nbgv
+  displayName: Install NBGV tool
+  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: build
-    projects: build/setversion.csproj
-    arguments: -c $(BuildConfiguration)   
+- script: nbgv cloud
   displayName: Set Version
-  condition: eq(variables['system.pullrequest.isfork'], false)
+  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
     
 - task: DotNetCoreCLI@2
   inputs:
@@ -47,7 +51,15 @@ steps:
     arguments: -c $(BuildConfiguration) --collect:"Code Coverage" -s $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings /p:DebugType=portable
   displayName: Run Tests
 
-- ${{ parameters.signStep }}
+- task: PowerShell@2
+  displayName: Authenticode Sign Packages
+  inputs:
+    filePath: build/Sign-Package.ps1
+  env:
+    SignClientUser: $(SignClientUser)
+    SignClientSecret: $(SignClientSecret)
+    ArtifactDirectory: $(Build.ArtifactStagingDirectory)\artifacts
+  condition: and(succeeded(), not(eq(variables['build.reason'], 'PullRequest')), not(eq(variables['SignClientSecret'], '')), not(eq(variables['SignClientUser'], '')))
 
 - task: PublishBuildArtifacts@1
   displayName: Publish Package Artifacts
@@ -55,4 +67,4 @@ steps:
     pathToPublish: $(Build.ArtifactStagingDirectory)\artifacts
     artifactType: container
     artifactName: Packages
-  condition: eq(variables['system.pullrequest.isfork'], false)
+  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
