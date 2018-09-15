@@ -2,6 +2,9 @@ trigger:
 - master
 - rel/*
 
+pool:
+  vmImage: vs2017-win2016
+
 variables: 
   BuildConfiguration: Release
   
