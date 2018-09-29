@@ -88,6 +88,9 @@ namespace Refit.Tests
 
         [Post("/users")]
         Task<User> CreateUser(User user);
+
+        [Post("/users")]
+        Task<ApiResponse<User>> CreateUserWithMetadata(User user);
     }
 
     public class TestNested

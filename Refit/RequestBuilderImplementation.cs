@@ -248,12 +248,14 @@ namespace Refit
                     {
                         disposeResponse = false;
                         
+                        var exception = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
+
                         if (isApiResponse)
                         {
-                            return ApiResponse.Create<T>(resp, default(T));
+                            return ApiResponse.Create<T>(resp, default(T), exception);
                         }
-                        
-                        throw await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
+
+                        throw exception;
                     }
 
                     var serializedReturnType = (isApiResponse) ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;                    
