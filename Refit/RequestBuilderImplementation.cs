@@ -250,7 +250,7 @@ namespace Refit
                         
                         if (isApiResponse)
                         {
-                            return ApiResponse.Create<T>(resp, null);
+                            return ApiResponse.Create<T>(resp, default(T));
                         }
                         
                         throw await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
