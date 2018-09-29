@@ -21,7 +21,7 @@ Included items must then not match any entries in the exclude list to remain inc
                 <ModulePath>.*Refit.*\.dll$</ModulePath>
               </Include>
               <Exclude>
-                <ModulePath>.*Tests.*</ModulePath>
+                <ModulePath>.*Tests.dll$</ModulePath>
               </Exclude>
             </ModulePaths>
 
