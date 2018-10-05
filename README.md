@@ -1,5 +1,9 @@
 ## Refit: The automatic type-safe REST library for .NET Core, Xamarin and .NET
 
+[![Build Status](https://dev.azure.com/dotnet/ReactiveUI/_apis/build/status/Refit-CI?branchName=master)](https://dev.azure.com/dotnet/ReactiveUI/_build/latest?definitionId=17)
+
+CI Feed: `https://www.myget.org/F/refit/api/v3/index.json `
+
 Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
 API into a live interface:
