@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 
 namespace Refit
 {
+
+    [Serializable]
     public class ApiException : Exception
     {
         public HttpStatusCode StatusCode { get; }
