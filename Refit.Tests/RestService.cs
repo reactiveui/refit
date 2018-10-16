@@ -11,6 +11,7 @@ using Xunit;
 using Refit; // InterfaceStubGenerator looks for this
 using RichardSzalay.MockHttp;
 using System.IO;
+using System.Text;
 
 namespace Refit.Tests
 {
@@ -1104,6 +1105,34 @@ namespace Refit.Tests
             var fixture = RestService.For<IServiceWithoutNamespace>("http://foo", settings);
 
             await fixture.PostRoot();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task CanSerializeContentAsXml()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var contentSerializer = new XmlContentSerializer();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = contentSerializer
+            };
+
+            mockHttp
+                .Expect(HttpMethod.Post, "/users")
+                .WithHeaders("Content-Type:application/xml; charset=utf-8")
+                .Respond(req => new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("<User><Name>Created</Name></User>", Encoding.UTF8, "application/xml")
+                });
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+            var result = await fixture.CreateUser(new User()).ConfigureAwait(false);
+
+            Assert.Equal("Created", result.Name);
 
             mockHttp.VerifyNoOutstandingExpectation();
         }

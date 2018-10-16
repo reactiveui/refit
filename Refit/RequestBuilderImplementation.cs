@@ -10,7 +10,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
-using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 
@@ -25,7 +24,7 @@ namespace Refit
         };
         readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
         readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
-        readonly JsonSerializer serializer;
+        readonly IContentSerializer serializer;
         readonly RefitSettings settings;
         public Type TargetType { get; }
 
@@ -34,7 +33,7 @@ namespace Refit
             Type targetInterface = typeof(TApi);
 
             settings = refitSettings ?? new RefitSettings();
-            serializer = JsonSerializer.Create(settings.JsonSerializerSettings);
+            serializer = settings.ContentSerializer;
             interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();
 
             if (targetInterface == null || !targetInterface.GetTypeInfo().IsInterface)
@@ -201,8 +200,7 @@ namespace Refit
             Exception e = null;
             try
             {
-                var stringContent = new StringContent(JsonConvert.SerializeObject(itemValue, settings.JsonSerializerSettings), Encoding.UTF8, "application/json");
-                multiPartContent.Add(stringContent, parameterName);
+                multiPartContent.Add(settings.ContentSerializer.Serialize(itemValue), parameterName);
                 return;
             }
             catch(Exception ex)
@@ -277,25 +275,26 @@ namespace Refit
                         return (T)stream;
                     }
 
-                    using (var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
-                    using (var reader = new StreamReader(stream))
+                    if (serializedReturnType == typeof(string))
                     {
-                        if (serializedReturnType == typeof(string))
+                        using(var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
+                        using(var reader = new StreamReader(stream))
                         {
-                            var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
-                            if (isApiResponse)
-                                return ApiResponse.Create<T>(resp, str);
-                            return (T)str;
-                        }
+                            if (serializedReturnType == typeof(string))
+                            {
+                                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                                if (isApiResponse)
+                                    return ApiResponse.Create<T>(resp, str);
+                                return (T)str;
+                            }
 
-                        using (var jsonReader = new JsonTextReader(reader))
-                        {
-                            var json = serializer.Deserialize(jsonReader, serializedReturnType);
-                            if (isApiResponse)
-                                return ApiResponse.Create<T>(resp, json);
-                            return (T)json;
                         }
                     }
+
+                    var json = await serializer.DeserializeAsync(content, serializedReturnType);
+                    if (isApiResponse)
+                        return ApiResponse.Create<T>(resp, json);
+                    return (T)json;
                 }
                 finally
                 {
@@ -467,24 +466,15 @@ namespace Refit
                                     break;
                                 case BodySerializationMethod.Default:
                                 case BodySerializationMethod.Json:
-                                    var param = paramList[i];
+                                    var content = serializer.Serialize(paramList[i]);
                                     switch (restMethod.BodyParameterInfo.Item2)
                                     {
                                         case false:
-                                            ret.Content = new PushStreamContent((stream, _, __) =>
-                                                                                {
-                                                                                    using (var writer = new JsonTextWriter(new StreamWriter(stream)))
-                                                                                    {
-                                                                                        serializer.Serialize(writer, param);
-                                                                                    }
-                                                                                },
-                                                                                new MediaTypeHeaderValue("application/json") { CharSet = "utf-8" });
+                                            ret.Content = new PushStreamContent(
+                                                async (stream, _, __) => { await content.CopyToAsync(stream).ConfigureAwait(false); }, content.Headers.ContentType);
                                             break;
                                         case true:
-                                            ret.Content = new StringContent(
-                                                JsonConvert.SerializeObject(paramList[i], settings.JsonSerializerSettings),
-                                                Encoding.UTF8,
-                                                "application/json");
+                                            ret.Content = content;
                                             break;
                                     }
 

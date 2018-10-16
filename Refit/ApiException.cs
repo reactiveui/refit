@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -17,11 +18,8 @@ namespace Refit
         public HttpMethod HttpMethod { get; }
         public Uri Uri => RequestMessage.RequestUri;
         public HttpRequestMessage RequestMessage { get; }
-
         public HttpContentHeaders ContentHeaders { get; private set; }
-
         public string Content { get; private set; }
-
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
         public RefitSettings RefitSettings { get; set; }
 
@@ -37,7 +35,7 @@ namespace Refit
         }
 
         public T GetContentAs<T>() => HasContent ?
-                JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) :
+                RefitSettings.ContentSerializer.Deserialize<T>(Content) :
                 default;
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
