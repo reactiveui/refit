@@ -7,6 +7,15 @@ trigger:
     exclude:
     - '**/*.md'
 
+pr:
+  branches:
+    include:
+    - master
+    - rel/*
+  paths:
+    exclude:
+    - '**/*.md'
+
 pool:
   vmImage: vs2017-win2016
 
@@ -20,11 +29,9 @@ steps:
     custom: tool
     arguments: install --tool-path . nbgv
   displayName: Install NBGV tool
-  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
 
 - script: nbgv cloud
   displayName: Set Version
-  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
     
 - task: DotNetCoreCLI@2
   inputs:
@@ -75,4 +82,3 @@ steps:
     pathToPublish: $(Build.ArtifactStagingDirectory)\artifacts
     artifactType: container
     artifactName: Packages
-  condition: and(succeeded(), eq(variables['system.pullrequest.isfork'], false))
