@@ -25,7 +25,7 @@ namespace Refit
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
         public RefitSettings RefitSettings { get; set; }
 
-        ApiException(HttpRequestMessage message, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
+        protected ApiException(HttpRequestMessage message, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
             base(CreateMessage(statusCode, reasonPhrase))
         {
             RequestMessage = message;
@@ -47,10 +47,16 @@ namespace Refit
             var exception = new ApiException(message, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
             if (response.Content == null)
+            {
                 return exception;
+            }
 
             try
             {
+                if (response.Content.Headers.ContentType.MediaType.Equals("application/problem+json"))
+                {
+                    exception = ValidationApiException.Create(exception);
+                }
                 exception.ContentHeaders = response.Content.Headers;
                 exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 response.Content.Dispose();
