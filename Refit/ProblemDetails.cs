@@ -2,6 +2,9 @@
 
 namespace Refit
 {
+    /// <summary>
+    /// The object representing the details about a ValidationException caught by a service implementing RFC 7807.
+    /// </summary>
     public class ProblemDetails
     {
         /// <summary>
