@@ -14,13 +14,20 @@ namespace Refit.Generator.App
         {
             // NB: @Compile passes us a list of files relative to the project
             // directory - pass in the project and use its dir 
-            var generator = new InterfaceStubGenerator(msg => Console.Out.WriteLine(msg));
+
+            string refitInternalNamespace = null;
+            if (args.Length >= 4)
+            {
+                refitInternalNamespace = args[3];
+            }
+
+            var generator = new InterfaceStubGenerator(refitInternalNamespace, msg => Console.Out.WriteLine(msg));
             var target = new FileInfo(args[0]);
             var targetDir = new DirectoryInfo(args[1]);
 
             var files = default(FileInfo[]);
 
-            if (args.Length == 3)
+            if (args.Length >= 3)
             {
                 // We get a file with each line being a file
                 files = File.ReadLines(args[2])
