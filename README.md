@@ -634,3 +634,25 @@ public class HomeController : Controller
     }
 }
 ```
+
+### Handling exceptions
+
+To encapsulate any exceptions that may come from a service, you can catch an `ApiException` which contains request- and response information. Refit also supports the catching of validation exceptions that are thrown by a service implementing the RFC 7807 specification for problem details due to bad requests. For specific information on the problem details of the validation exception, simply catch `ValidationApiException`:
+
+```csharp
+// ...
+try
+{
+   var result = await awesomeApi.GetFooAsync("bar");
+}
+catch (ValidationApiException validationException)
+{
+   // handle validation here by using validationException.Content, 
+   // which is type of ProblemDetails according to RFC 7807
+}
+catch (ApiException exception)
+{
+   // other exception handling
+}
+// ...
+```
