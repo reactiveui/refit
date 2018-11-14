@@ -465,7 +465,10 @@ namespace Refit
                                     ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") :  new FormUrlEncodedContent(new FormValueDictionary(paramList[i], settings));
                                     break;
                                 case BodySerializationMethod.Default:
+#pragma warning disable CS0618 // Type or member is obsolete
                                 case BodySerializationMethod.Json:
+#pragma warning restore CS0618 // Type or member is obsolete
+                                case BodySerializationMethod.Serialized:
                                     var content = serializer.Serialize(paramList[i]);
                                     switch (restMethod.BodyParameterInfo.Item2)
                                     {

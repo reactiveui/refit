@@ -5,29 +5,38 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace Refit {
-
+namespace Refit
+{
     public class JsonContentSerializer : IContentSerializer
     {
-        private readonly JsonSerializerSettings jsonSerializerSettings;
+        private readonly Lazy<JsonSerializerSettings> jsonSerializerSettings;
 
-        public JsonContentSerializer() : this(new JsonSerializerSettings())
-        {
-        }
+        public JsonContentSerializer() : this(null) { }
 
         public JsonContentSerializer(JsonSerializerSettings jsonSerializerSettings)
         {
-            this.jsonSerializerSettings = jsonSerializerSettings ?? throw new ArgumentNullException(nameof(jsonSerializerSettings));
+            this.jsonSerializerSettings = new Lazy<JsonSerializerSettings>(() =>
+            {
+                if (jsonSerializerSettings == null)
+                {
+                    if(JsonConvert.DefaultSettings == null)
+                    {
+                        return new JsonSerializerSettings();
+                    }
+                    return JsonConvert.DefaultSettings();
+                }
+                return jsonSerializerSettings;
+            });
         }
 
         public HttpContent Serialize(object item)
         {
-            return new StringContent(JsonConvert.SerializeObject(item, jsonSerializerSettings), Encoding.UTF8, "application/json");
+            return new StringContent(JsonConvert.SerializeObject(item, jsonSerializerSettings.Value), Encoding.UTF8, "application/json");
         }
 
         public async Task<object> DeserializeAsync(HttpContent content, Type objectType)
         {
-            var serializer = JsonSerializer.Create(jsonSerializerSettings);
+            var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
             using (var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
             using (var reader = new StreamReader(stream))
@@ -37,7 +46,7 @@ namespace Refit {
 
         public T Deserialize<T>(string content)
         {
-            var serializer = JsonSerializer.Create(jsonSerializerSettings);
+            var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
             using (var reader = new StringReader(content))
             using (var jsonTextReader = new JsonTextReader(reader))

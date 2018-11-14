@@ -210,7 +210,7 @@ namespace Refit
             }
 
             if (refParams.Count == 1) {
-                return Tuple.Create(BodySerializationMethod.Json, false, parameterList.IndexOf(refParams[0]));
+                return Tuple.Create(BodySerializationMethod.Serialized, false, parameterList.IndexOf(refParams[0]));
             }
 
             return null;
