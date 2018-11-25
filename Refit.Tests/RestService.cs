@@ -735,14 +735,13 @@ namespace Refit.Tests
             mockHttp.When(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
                     .Respond(HttpStatusCode.NotFound, "application/json", "{'message': 'Not Found', 'documentation_url': 'http://foo/bar'}");
 
-
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
             try {
                 await fixture.NothingToSeeHere();
                 Assert.True(false);
             } catch (ApiException exception) {
                 Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
-                var content = exception.GetContentAs<Dictionary<string, string>>();
+                var content = await exception.GetContentAsAsync<Dictionary<string, string>>();
 
                 Assert.Equal("Not Found", content["message"]);
                 Assert.NotNull(content["documentation_url"]);
@@ -771,7 +770,7 @@ namespace Refit.Tests
             var result = await Assert.ThrowsAsync<ApiException>(async () => await fixture.CreateUser(new User{Name = "foo"}));
          
             
-            var errors = result.GetContentAs<ErrorResponse>();
+            var errors = await result.GetContentAsAsync<ErrorResponse>();
 
             Assert.Contains("error1", errors.Errors);
             Assert.Contains("message", errors.Errors);
@@ -803,7 +802,7 @@ namespace Refit.Tests
                 Assert.False(response.IsSuccessStatusCode);
                 Assert.NotNull(response.Error);
 
-                var errors = response.Error.GetContentAs<ErrorResponse>();
+                var errors = await response.Error.GetContentAsAsync<ErrorResponse>();
 
                 Assert.Contains("error1", errors.Errors);
                 Assert.Contains("message", errors.Errors);
@@ -811,6 +810,37 @@ namespace Refit.Tests
                 mockHttp.VerifyNoOutstandingExpectation();
 
             }   
+        }
+
+        [Fact]
+        public async Task ErrorsFromApiReturnErrorContentNonAsync()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
+                    .Respond(HttpStatusCode.BadRequest, "application/json", "{ 'errors': [ 'error1', 'message' ]}");
+
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+
+            var result = await Assert.ThrowsAsync<ApiException>(async () => await fixture.CreateUser(new User { Name = "foo" }));
+
+
+#pragma warning disable CS0618 // Ensure that this code continues to be tested until it is removed
+            var errors = result.GetContentAs<ErrorResponse>();
+#pragma warning restore CS0618
+
+            Assert.Contains("error1", errors.Errors);
+            Assert.Contains("message", errors.Errors);
+
+            mockHttp.VerifyNoOutstandingExpectation();
         }
 
         [Fact]

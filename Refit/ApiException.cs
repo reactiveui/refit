@@ -34,8 +34,11 @@ namespace Refit
             RefitSettings = refitSettings;
         }
 
-        public T GetContentAs<T>() => HasContent ?
-                RefitSettings.ContentSerializer.Deserialize<T>(Content) :
+        [Obsolete("Use GetContentAsAsync<T>() instead", false)]
+        public T GetContentAs<T>() => GetContentAsAsync<T>().ConfigureAwait(false).GetAwaiter().GetResult();
+
+        public async Task<T> GetContentAsAsync<T>() => HasContent ?
+                await RefitSettings.ContentSerializer.DeserializeAsync<T>(new StringContent(Content)).ConfigureAwait(false) :
                 default;
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods

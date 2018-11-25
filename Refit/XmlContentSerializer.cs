@@ -21,7 +21,7 @@ namespace Refit {
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
 
-        public HttpContent Serialize(object item)
+        public Task<HttpContent> SerializeAsync(object item)
         {
             var xmlSerializer = new XmlSerializer(item.GetType(), settings.XmlAttributeOverrides);
 
@@ -30,35 +30,19 @@ namespace Refit {
                 using(var writer = XmlWriter.Create(output, settings.XmlReaderWriterSettings.WriterSettings))
                 {
                     xmlSerializer.Serialize(writer, item, settings.XmlNamespaces);
-                    return new StringContent(output.ToString(), Encoding.UTF8, "application/xml");
+                    var content = new StringContent(output.ToString(), Encoding.UTF8, "application/xml");
+                    return Task.FromResult((HttpContent)content);
                 }
             }            
         }
 
-        public async Task<object> DeserializeAsync(HttpContent content, Type objectType)
-        {
-            var xmlSerializer = new XmlSerializer(objectType, settings.XmlAttributeOverrides);
-
-            using (var input = new StringReader(await content.ReadAsStringAsync().ConfigureAwait(false)))
-            {
-                using (var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings))
-                {
-                    return xmlSerializer.Deserialize(reader);
-                }
-            }
-        }
-
-        public T Deserialize<T>(string content)
+        public async Task<T> DeserializeAsync<T>(HttpContent content)
         {
             var xmlSerializer = new XmlSerializer(typeof(T), settings.XmlAttributeOverrides);
 
-            using (var input = new StringReader(content))
-            {
-                using (var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings))
-                {
-                    return (T)(object)xmlSerializer.Deserialize(reader);
-                }
-            }
+            using (var input = new StringReader(await content.ReadAsStringAsync().ConfigureAwait(false)))
+            using (var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings))
+                return (T)xmlSerializer.Deserialize(reader);
         }
     }
 

@@ -27,7 +27,6 @@ namespace Refit
         /// <summary>
         /// The problem details of the RFC 7807 validation exception.
         /// </summary>
-        public new ProblemDetails Content => GetContentAs<ProblemDetails>();
-
+        public new ProblemDetails Content => GetContentAsAsync<ProblemDetails>().ConfigureAwait(false).GetAwaiter().GetResult();
     }
 }

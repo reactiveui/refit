@@ -43,11 +43,9 @@ namespace Refit
 
     public interface IContentSerializer
     {
-        HttpContent Serialize(object item);
+        Task<HttpContent> SerializeAsync(object item);
 
-        Task<object> DeserializeAsync(HttpContent content, Type objectType);
-
-        T Deserialize<T>(string content);
+        Task<T> DeserializeAsync<T>(HttpContent content);
     }
 
     public interface IUrlParameterFormatter

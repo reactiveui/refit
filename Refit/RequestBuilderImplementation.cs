@@ -141,21 +141,23 @@ namespace Refit
                 // if you need to AOT everything, so we need to reflectively 
                 // invoke buildTaskFuncForMethod.
                 var taskFuncMi = GetType().GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
-                var taskFunc = (MulticastDelegate)taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
-                                                            .Invoke(this, new[] { restMethod });
+                var taskFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
+                    taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
+                    taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
 
                 return (client, args) => taskFunc.DynamicInvoke(client, args);
             }
 
             // Same deal
             var rxFuncMi = GetType().GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
-            var rxFunc = (MulticastDelegate)rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType)
-                                                    .Invoke(this, new[] { restMethod });
+            var rxFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
+                    rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
+                    rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
 
-            return (client, args) => rxFunc.DynamicInvoke(client, args); 
+            return (client, args) => rxFunc.DynamicInvoke(client, args);
         }
 
-        void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
+        async Task AddMultipartItemAsync(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
 
             if (itemValue is HttpContent content)
@@ -196,11 +198,11 @@ namespace Refit
                 return;
             }
 
-            // Fallback to Json
+            // Fallback to serializer
             Exception e = null;
             try
             {
-                multiPartContent.Add(settings.ContentSerializer.Serialize(itemValue), parameterName);
+                multiPartContent.Add(await settings.ContentSerializer.SerializeAsync(itemValue).ConfigureAwait(false), parameterName);
                 return;
             }
             catch(Exception ex)
@@ -212,7 +214,7 @@ namespace Refit
             throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, Byte array and anything that's JSON serializable", nameof(itemValue), e);
         }
 
-        Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T>(RestMethodInfo restMethod)
+        Func<HttpClient, CancellationToken, object[], Task<T>> BuildCancellableTaskFuncForMethod<T, TBody>(RestMethodInfo restMethod)
         {
             return async (client, ct, paramList) =>
             {
@@ -220,7 +222,7 @@ namespace Refit
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
                 var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
-                var rq = factory(paramList);
+                var rq = await factory(paramList);
                 HttpResponseMessage resp = null;
                 HttpContent content = null;
                 var disposeResponse = true;
@@ -228,7 +230,7 @@ namespace Refit
                 {
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
-                    
+
                     if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
                     {
                         disposeResponse = false; // caller has to dispose
@@ -239,16 +241,13 @@ namespace Refit
                         return (T)(object)resp;
                     }
 
-                    var isApiResponse = restMethod.SerializedReturnType.GetTypeInfo().IsGenericType && 
-                                        restMethod.SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
-               
                     if (!resp.IsSuccessStatusCode)
                     {
                         disposeResponse = false;
-                        
+
                         var exception = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
 
-                        if (isApiResponse)
+                        if (restMethod.IsApiResponse)
                         {
                             return ApiResponse.Create<T>(resp, default(T), exception);
                         }
@@ -256,12 +255,12 @@ namespace Refit
                         throw exception;
                     }
 
-                    var serializedReturnType = (isApiResponse) ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;                    
+                    var serializedReturnType = restMethod.IsApiResponse ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;
 
                     if (serializedReturnType == typeof(HttpContent))
                     {
                         disposeResponse = false; // caller has to clean up the content
-                        if (isApiResponse)
+                        if (restMethod.IsApiResponse)
                             return ApiResponse.Create<T>(resp, content);
                         return (T)(object)content;
                     }
@@ -270,31 +269,33 @@ namespace Refit
                     {
                         disposeResponse = false; // caller has to dispose
                         var stream = (object)await content.ReadAsStreamAsync().ConfigureAwait(false);
-                        if (isApiResponse)
+                        if (restMethod.IsApiResponse)
                             return ApiResponse.Create<T>(resp, stream);
                         return (T)stream;
                     }
 
                     if (serializedReturnType == typeof(string))
                     {
-                        using(var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
-                        using(var reader = new StreamReader(stream))
+                        using (var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
+                        using (var reader = new StreamReader(stream))
                         {
-                            if (serializedReturnType == typeof(string))
-                            {
-                                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
-                                if (isApiResponse)
-                                    return ApiResponse.Create<T>(resp, str);
-                                return (T)str;
-                            }
-
+                            var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                            if (restMethod.IsApiResponse)
+                                return ApiResponse.Create<T>(resp, str);
+                            return (T)str;
                         }
                     }
 
-                    var json = await serializer.DeserializeAsync(content, serializedReturnType);
-                    if (isApiResponse)
-                        return ApiResponse.Create<T>(resp, json);
-                    return (T)json;
+                    var body = await serializer.DeserializeAsync<TBody>(content);
+                    if (restMethod.IsApiResponse)
+                    {
+                        return ApiResponse.Create<T>(resp, body);
+                    }
+
+                    //  Unfortunate side-effect of having no 'class' or 'T : TBody' constraints.
+                    //  However, we know that T must be the same as TBody because IsApiResponse != true so 
+                    //  this code is safe at runtime.
+                    return (T)(object)body;
                 }
                 finally
                 {
@@ -302,7 +303,7 @@ namespace Refit
                     // Especially important if it has open files/streams
                     rq.Dispose();
                     if (disposeResponse)
-                    { 
+                    {
                         resp?.Dispose();
                         content?.Dispose();
                     }
@@ -398,10 +399,10 @@ namespace Refit
             return kvps;
         }
 
-        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
+        Func<object[], Task<HttpRequestMessage>> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
         {
            
-            return paramList =>
+            return async paramList =>
             {
                 // make sure we strip out any cancelation tokens
                 if (paramsContainsCancellationToken)
@@ -469,7 +470,7 @@ namespace Refit
                                 case BodySerializationMethod.Json:
 #pragma warning restore CS0618 // Type or member is obsolete
                                 case BodySerializationMethod.Serialized:
-                                    var content = serializer.Serialize(paramList[i]);
+                                    var content = await serializer.SerializeAsync(paramList[i]).ConfigureAwait(false);
                                     switch (restMethod.BodyParameterInfo.Item2)
                                     {
                                         case false:
@@ -574,12 +575,12 @@ namespace Refit
                     {
                         foreach (var item in enumerable)
                         {
-                            AddMultipartItem(multiPartContent, itemName, parameterName, item);
+                            await AddMultipartItemAsync(multiPartContent, itemName, parameterName, item);
                         }
                     }
                     else
                     {
-                        AddMultipartItem(multiPartContent, itemName, parameterName, itemValue);
+                        await AddMultipartItemAsync(multiPartContent, itemName, parameterName, itemValue);
                     }
                 }
 
@@ -625,9 +626,9 @@ namespace Refit
             };
         }
 
-        Func<HttpClient, object[], IObservable<T>> BuildRxFuncForMethod<T>(RestMethodInfo restMethod)
+        Func<HttpClient, object[], IObservable<T>> BuildRxFuncForMethod<T, TBody>(RestMethodInfo restMethod)
         {
-            var taskFunc = BuildCancellableTaskFuncForMethod<T>(restMethod);
+            var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
             return (client, paramList) =>
             {
@@ -647,9 +648,9 @@ namespace Refit
             };
         }
 
-        Func<HttpClient, object[], Task<T>> BuildTaskFuncForMethod<T>(RestMethodInfo restMethod)
+        Func<HttpClient, object[], Task<T>> BuildTaskFuncForMethod<T, TBody>(RestMethodInfo restMethod)
         {
-            var ret = BuildCancellableTaskFuncForMethod<T>(restMethod);
+            var ret = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
             return (client, paramList) =>
             {
@@ -670,7 +671,7 @@ namespace Refit
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
                 var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
-                var rq = factory(paramList);
+                var rq = await factory(paramList);
 
                 var ct = CancellationToken.None;
 

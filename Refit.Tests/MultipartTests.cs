@@ -429,7 +429,7 @@ namespace Refit.Tests
                     Assert.Equal("theObject", parts[0].Headers.ContentDisposition.Name);
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal(mediaType, parts[0].Headers.ContentType.MediaType);
-                    var result0 = serializer.Deserialize<ModelObject>(await parts[0].ReadAsStringAsync());
+                    var result0 = await serializer.DeserializeAsync<ModelObject>(parts[0]);
                     Assert.Equal(model1.Property1, result0.Property1);
                     Assert.Equal(model1.Property2, result0.Property2);
                 }
@@ -477,7 +477,7 @@ namespace Refit.Tests
                     Assert.Equal("theObjects", parts[0].Headers.ContentDisposition.Name);
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal(mediaType, parts[0].Headers.ContentType.MediaType);
-                    var result0 = serializer.Deserialize<ModelObject>(await parts[0].ReadAsStringAsync());
+                    var result0 = await serializer.DeserializeAsync<ModelObject>( parts[0]);
                     Assert.Equal(model1.Property1, result0.Property1);
                     Assert.Equal(model1.Property2, result0.Property2);
 
@@ -485,7 +485,7 @@ namespace Refit.Tests
                     Assert.Equal("theObjects", parts[1].Headers.ContentDisposition.Name);
                     Assert.Null(parts[1].Headers.ContentDisposition.FileName);
                     Assert.Equal(mediaType, parts[1].Headers.ContentType.MediaType);
-                    var result1 = serializer.Deserialize<ModelObject>(await parts[1].ReadAsStringAsync());
+                    var result1 = await serializer.DeserializeAsync<ModelObject>(parts[1]);
                     Assert.Equal(model2.Property1, result1.Property1);
                     Assert.Equal(model2.Property2, result1.Property2);
                 }

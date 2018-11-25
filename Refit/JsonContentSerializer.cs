@@ -29,26 +29,18 @@ namespace Refit
             });
         }
 
-        public HttpContent Serialize(object item)
+        public Task<HttpContent> SerializeAsync(object item)
         {
-            return new StringContent(JsonConvert.SerializeObject(item, jsonSerializerSettings.Value), Encoding.UTF8, "application/json");
+            var content = new StringContent(JsonConvert.SerializeObject(item, jsonSerializerSettings.Value), Encoding.UTF8, "application/json");
+            return Task.FromResult((HttpContent)content);
         }
 
-        public async Task<object> DeserializeAsync(HttpContent content, Type objectType)
+        public async Task<T> DeserializeAsync<T>(HttpContent content)
         {
             var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
             using (var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
             using (var reader = new StreamReader(stream))
-            using (var jsonTextReader = new JsonTextReader(reader))
-                return serializer.Deserialize(jsonTextReader, objectType);
-        }
-
-        public T Deserialize<T>(string content)
-        {
-            var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
-
-            using (var reader = new StringReader(content))
             using (var jsonTextReader = new JsonTextReader(reader))
                 return serializer.Deserialize<T>(jsonTextReader);
         }
