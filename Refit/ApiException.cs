@@ -54,12 +54,14 @@ namespace Refit
 
             try
             {
-                if (response.Content.Headers.ContentType.MediaType.Equals("application/problem+json"))
-                {
-                    exception = ValidationApiException.Create(exception);
-                }
                 exception.ContentHeaders = response.Content.Headers;
                 exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (response.Content.Headers.ContentType.MediaType.Equals("application/problem+json"))
+                {
+                    exception = await ValidationApiException.Create(exception).ConfigureAwait(false);
+                }
+
                 response.Content.Dispose();
             }
             catch

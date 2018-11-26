@@ -222,7 +222,7 @@ namespace Refit
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
                 var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
-                var rq = await factory(paramList);
+                var rq = await factory(paramList).ConfigureAwait(false);
                 HttpResponseMessage resp = null;
                 HttpContent content = null;
                 var disposeResponse = true;
@@ -575,12 +575,12 @@ namespace Refit
                     {
                         foreach (var item in enumerable)
                         {
-                            await AddMultipartItemAsync(multiPartContent, itemName, parameterName, item);
+                            await AddMultipartItemAsync(multiPartContent, itemName, parameterName, item).ConfigureAwait(false);
                         }
                     }
                     else
                     {
-                        await AddMultipartItemAsync(multiPartContent, itemName, parameterName, itemValue);
+                        await AddMultipartItemAsync(multiPartContent, itemName, parameterName, itemValue).ConfigureAwait(false);
                     }
                 }
 
@@ -671,7 +671,7 @@ namespace Refit
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
                 var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
-                var rq = await factory(paramList);
+                var rq = await factory(paramList).ConfigureAwait(false);
 
                 var ct = CancellationToken.None;
 
