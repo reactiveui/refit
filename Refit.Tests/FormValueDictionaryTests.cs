@@ -49,11 +49,54 @@ namespace Refit.Tests
             Assert.Equal(expected, actual);
         }
 
+        [Fact]
+        public void LoadFromObjectWithCollections()
+        {
+            var source = new ObjectWithRepeatedFieldsTestClass
+            {
+                A = new List<string> { "list1", "list2" },
+                B = new HashSet<string> { "set1", "set2" },
+                C = new HashSet<int> { 1, 2 },
+                D = new List<double> { 0.1, 1.0 },
+                E = new List<bool> { true, false }
+            };
+            var expected = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("A", "list1"),
+                new KeyValuePair<string, string>("A", "list2"),
+                new KeyValuePair<string, string>("B", "set1,set2"),
+                new KeyValuePair<string, string>("C", "1 2"),
+
+                // The default behavior is to truncate perfectly round doubles. This is not a requirement.
+                new KeyValuePair<string, string>("D", "0.1\t1"),
+
+                // The default behavior is to capitalize booleans. This is not a requirement.
+                new KeyValuePair<string, string>("E", "True|False")
+            };
+
+            var actual = new FormValueDictionary(source, settings);
+
+            Assert.Equal(expected, actual);
+        }
+
         public class ObjectTestClass
         {
             public string A { get; set; }
             public string B { get; set; }
             public string C { get; set; }
+        }
+
+        public class ObjectWithRepeatedFieldsTestClass
+        {
+            [Query(CollectionFormat.Multi)]
+            public IList<string> A { get; set; }
+            [Query(CollectionFormat.Csv)]
+            public ISet<string> B { get; set; }
+            [Query(CollectionFormat.Ssv)]
+            public HashSet<int> C { get; set; }
+            [Query(CollectionFormat.Tsv)]
+            public IList<double> D { get; set; }
+            [Query(CollectionFormat.Pipes)]
+            public IList<bool> E { get; set; }
         }
 
         [Fact]
