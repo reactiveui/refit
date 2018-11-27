@@ -26,7 +26,7 @@ namespace Refit
         {
             return new ValidationApiException(exception)
             {
-                Content = await exception.GetContentAsAsync<ProblemDetails>()
+                Content = await exception.GetContentAsAsync<ProblemDetails>().ConfigureAwait(false)
             };
         }
 
