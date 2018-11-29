@@ -29,7 +29,7 @@ namespace Refit
             });
         }
 
-        public Task<HttpContent> SerializeAsync(object item)
+        public Task<HttpContent> SerializeAsync<T>(T item)
         {
             var content = new StringContent(JsonConvert.SerializeObject(item, jsonSerializerSettings.Value), Encoding.UTF8, "application/json");
             return Task.FromResult((HttpContent)content);

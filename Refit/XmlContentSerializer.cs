@@ -21,7 +21,7 @@ namespace Refit {
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
 
-        public Task<HttpContent> SerializeAsync(object item)
+        public Task<HttpContent> SerializeAsync<T>(T item)
         {
             var xmlSerializer = new XmlSerializer(item.GetType(), settings.XmlAttributeOverrides);
 

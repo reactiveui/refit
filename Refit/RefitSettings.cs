@@ -43,7 +43,7 @@ namespace Refit
 
     public interface IContentSerializer
     {
-        Task<HttpContent> SerializeAsync(object item);
+        Task<HttpContent> SerializeAsync<T>(T item);
 
         Task<T> DeserializeAsync<T>(HttpContent content);
     }
