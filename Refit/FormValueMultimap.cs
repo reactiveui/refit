@@ -11,16 +11,16 @@ namespace Refit
     /// Transforms a form source from a .NET representation to the appropriate HTTP form encoded representation.
     /// </summary>
     /// <remarks>Performs field renaming and value formatting as specified in <see cref="QueryAttribute"/>s and
-    /// <see cref="RefitSettings.FormUrlEncodedParameterFormatter"/>. Note that this is not a true dictionary, rather, a
-    /// form of MultiMap. A given key may appear multiple times with the same or different values.</remarks>
-    class FormValueDictionary : IEnumerable<KeyValuePair<string, string>>
+    /// <see cref="RefitSettings.FormUrlEncodedParameterFormatter"/>. A given key may appear multiple times with the
+    /// same or different values.</remarks>
+    class FormValueMultimap : IEnumerable<KeyValuePair<string, string>>
     {
         static readonly Dictionary<Type, PropertyInfo[]> propertyCache
             = new Dictionary<Type, PropertyInfo[]>();
 
         private readonly IList<KeyValuePair<string, string>> formEntries = new List<KeyValuePair<string, string>>();
 
-        public FormValueDictionary(object source, RefitSettings settings)
+        public FormValueMultimap(object source, RefitSettings settings)
         {
             if (source == null) return;
 
@@ -56,10 +56,13 @@ namespace Refit
                         // see if there's a query attribute
                         var attrib = property.GetCustomAttribute<QueryAttribute>(true);
 
-                        if (value is IEnumerable enumerable) {
-                            switch (attrib?.CollectionFormat) {
+                        if (value is IEnumerable enumerable)
+                        {
+                            switch (attrib?.CollectionFormat)
+                            {
                                 case CollectionFormat.Multi:
-                                    foreach (var item in enumerable) {
+                                    foreach (var item in enumerable)
+                                    {
                                         Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib.Format));
                                     }
                                     break;

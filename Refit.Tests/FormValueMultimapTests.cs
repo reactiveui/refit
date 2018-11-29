@@ -5,14 +5,14 @@ using Xunit;
 
 namespace Refit.Tests
 {
-    public class FormValueDictionaryTests
+    public class FormValueMultimapTests
     {
         readonly RefitSettings settings = new RefitSettings();
 
         [Fact]
         public void EmptyIfNullPassedIn()
         {
-            var target = new FormValueDictionary(null, settings);
+            var target = new FormValueMultimap(null, settings);
             Assert.Empty(target);
         }
 
@@ -25,7 +25,7 @@ namespace Refit.Tests
                 { "xyz", "123" }
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.Equal(source, target);
         }
@@ -44,7 +44,7 @@ namespace Refit.Tests
                 { "B", "2" },
             };
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
 
             Assert.Equal(expected, actual);
         }
@@ -71,7 +71,7 @@ namespace Refit.Tests
                 new KeyValuePair<string, string>("E", "True|False")
             };
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
 
             Assert.Equal(expected, actual);
         }
@@ -110,7 +110,7 @@ namespace Refit.Tests
                 { "C", "FooBar" }
             };
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
 
             Assert.Equal(expected, actual);
         }
@@ -137,7 +137,7 @@ namespace Refit.Tests
                 { "xyz", "123" }
             };
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
 
 
             Assert.Equal(expected, actual);
@@ -151,7 +151,7 @@ namespace Refit.Tests
                 Foo = "abc"
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.DoesNotContain("Foo", target.Keys);
             Assert.Contains("f", target.Keys);
@@ -166,7 +166,7 @@ namespace Refit.Tests
                 Bar = "xyz"
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.Contains("b", target.Keys);
@@ -181,7 +181,7 @@ namespace Refit.Tests
                 Frob = 4
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.Contains("prefix-fr", target.Keys);
@@ -197,7 +197,7 @@ namespace Refit.Tests
                 Baz = "123"
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.DoesNotContain("z", target.Keys);
@@ -214,7 +214,7 @@ namespace Refit.Tests
                 { "xyz", null }
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.Single(target);
             Assert.Contains("foo", target.Keys);
@@ -237,7 +237,7 @@ namespace Refit.Tests
             };
 
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
 
             Assert.Equal(expected, actual);
         }
