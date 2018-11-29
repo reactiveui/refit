@@ -7,6 +7,12 @@ using Newtonsoft.Json;
 
 namespace Refit
 {
+    /// <summary>
+    /// Transforms a form source from a .NET representation to the appropriate HTTP form encoded representation.
+    /// </summary>
+    /// <remarks>Performs field renaming and value formatting as specified in <see cref="QueryAttribute"/>s and
+    /// <see cref="RefitSettings.FormUrlEncodedParameterFormatter"/>. Note that this is not a true dictionary, rather, a
+    /// form of MultiMap. A given key may appear multiple times with the same or different values.</remarks>
     class FormValueDictionary : IEnumerable<KeyValuePair<string, string>>
     {
         static readonly Dictionary<Type, PropertyInfo[]> propertyCache
@@ -54,7 +60,7 @@ namespace Refit
                             switch (attrib?.CollectionFormat) {
                                 case CollectionFormat.Multi:
                                     foreach (var item in enumerable) {
-                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, null));
+                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib.Format));
                                     }
                                     break;
                                 case CollectionFormat.Csv:
@@ -67,7 +73,7 @@ namespace Refit
 
                                     var formattedValues = enumerable
                                         .Cast<object>()
-                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, null));
+                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib.Format));
                                     Add(fieldName, string.Join(delimiter, formattedValues));
                                     break;
                                 default:

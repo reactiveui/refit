@@ -54,20 +54,18 @@ namespace Refit.Tests
         {
             var source = new ObjectWithRepeatedFieldsTestClass
             {
-                A = new List<string> { "list1", "list2" },
+                A = new List<int> { 1, 2 },
                 B = new HashSet<string> { "set1", "set2" },
                 C = new HashSet<int> { 1, 2 },
                 D = new List<double> { 0.1, 1.0 },
                 E = new List<bool> { true, false }
             };
             var expected = new List<KeyValuePair<string, string>> {
-                new KeyValuePair<string, string>("A", "list1"),
-                new KeyValuePair<string, string>("A", "list2"),
+                new KeyValuePair<string, string>("A", "01"),
+                new KeyValuePair<string, string>("A", "02"),
                 new KeyValuePair<string, string>("B", "set1,set2"),
-                new KeyValuePair<string, string>("C", "1 2"),
-
-                // The default behavior is to truncate perfectly round doubles. This is not a requirement.
-                new KeyValuePair<string, string>("D", "0.1\t1"),
+                new KeyValuePair<string, string>("C", "01 02"),
+                new KeyValuePair<string, string>("D", "0.10\t1.00"),
 
                 // The default behavior is to capitalize booleans. This is not a requirement.
                 new KeyValuePair<string, string>("E", "True|False")
@@ -87,13 +85,13 @@ namespace Refit.Tests
 
         public class ObjectWithRepeatedFieldsTestClass
         {
-            [Query(CollectionFormat.Multi)]
-            public IList<string> A { get; set; }
+            [Query(CollectionFormat.Multi, Format = "00")]
+            public IList<int> A { get; set; }
             [Query(CollectionFormat.Csv)]
             public ISet<string> B { get; set; }
-            [Query(CollectionFormat.Ssv)]
+            [Query(CollectionFormat.Ssv, Format = "00")]
             public HashSet<int> C { get; set; }
-            [Query(CollectionFormat.Tsv)]
+            [Query(CollectionFormat.Tsv, Format = "0.00")]
             public IList<double> D { get; set; }
             [Query(CollectionFormat.Pipes)]
             public IList<bool> E { get; set; }
