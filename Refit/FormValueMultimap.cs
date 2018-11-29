@@ -99,24 +99,6 @@ namespace Refit
         /// </summary>
         public IEnumerable<string> Keys => this.Select(it => it.Key);
 
-        /// <summary>
-        /// Returns the value of the first entry found with the matching key. Multiple additional entries may use the
-        /// same key, but will not be considered. Returns <c>null</c> if no matching entry is found.
-        /// </summary>
-        public string this[string key]
-        {
-            get
-            {
-                foreach (var item in this) {
-                    if (key == item.Key) {
-                        return item.Value;
-                    }
-                }
-
-                return null;
-            }
-        }
-
         private void Add(string key, string value)
         {
             formEntries.Add(new KeyValuePair<string, string>(key, value));

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Xunit;
@@ -155,7 +156,7 @@ namespace Refit.Tests
 
             Assert.DoesNotContain("Foo", target.Keys);
             Assert.Contains("f", target.Keys);
-            Assert.Equal("abc", target["f"]);
+            Assert.Equal("abc", target.FirstOrDefault(entry => entry.Key == "f").Value);
         }
 
         [Fact]
@@ -170,7 +171,7 @@ namespace Refit.Tests
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.Contains("b", target.Keys);
-            Assert.Equal("xyz", target["b"]);
+            Assert.Equal("xyz", target.FirstOrDefault(entry => entry.Key == "b").Value);
         }
 
         [Fact]
@@ -185,7 +186,7 @@ namespace Refit.Tests
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.Contains("prefix-fr", target.Keys);
-            Assert.Equal("4.0", target["prefix-fr"]);
+            Assert.Equal("4.0", target.FirstOrDefault(entry => entry.Key == "prefix-fr").Value);
         }
 
 
@@ -202,7 +203,7 @@ namespace Refit.Tests
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.DoesNotContain("z", target.Keys);
             Assert.Contains("a", target.Keys);
-            Assert.Equal("123", target["a"]);
+            Assert.Equal("123", target.FirstOrDefault(entry => entry.Key == "a").Value);
         }
 
 
