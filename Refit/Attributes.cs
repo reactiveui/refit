@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -289,8 +289,24 @@ namespace Refit
         /// </example>
         public string Prefix { get; protected set; }
 
+        /// <summary>
+        /// Used to customize the formatting of the encoded value.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// interface IServerApi
+        /// {
+        ///   [Get("/expenses")]
+        ///   Task addExpense([Query(Format="0.00")] double expense);
+        /// }
+        /// </code>
+        /// Calling <c>serverApi.addExpense(5)</c> will result in a URI of <c>{baseUri}/expenses?expense=5.00</c>.
+        /// </example>
         public string Format { get; set; }
 
+        /// <summary>
+        /// Specifies how the collection should be encoded. The default behavior is <c>RefitParameterFormatter</c>.
+        /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
     }
 }

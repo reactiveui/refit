@@ -98,7 +98,7 @@ namespace Refit
             var parameterType = parameterValue.GetType();
 
             EnumMemberAttribute enummember = null;
-            if (parameterValue != null && parameterType.GetTypeInfo().IsEnum)
+            if (parameterType.GetTypeInfo().IsEnum)
             {
                 var cached = enumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
                 enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
