@@ -402,9 +402,16 @@ namespace Refit.Tests
             }
         }
 
-        [Fact]
-        public async Task MultipartUploadShouldWorkWithAnObject()
+        [Theory]
+        [InlineData(typeof(JsonContentSerializer), "application/json")]
+        [InlineData(typeof(XmlContentSerializer), "application/xml")]
+        public async Task MultipartUploadShouldWorkWithAnObject(Type contentSerializerType, string mediaType)
         {
+            if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
+            {
+                throw new ArithmeticException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
+            }
+
             var model1 = new ModelObject
             {
                 Property1 = "M1.prop1",
@@ -421,8 +428,8 @@ namespace Refit.Tests
 
                     Assert.Equal("theObject", parts[0].Headers.ContentDisposition.Name);
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
-                    Assert.Equal("application/json", parts[0].Headers.ContentType.MediaType);
-                    var result0 = JsonConvert.DeserializeObject<ModelObject>(await parts[0].ReadAsStringAsync());
+                    Assert.Equal(mediaType, parts[0].Headers.ContentType.MediaType);
+                    var result0 = await serializer.DeserializeAsync<ModelObject>(parts[0]).ConfigureAwait(false);
                     Assert.Equal(model1.Property1, result0.Property1);
                     Assert.Equal(model1.Property2, result0.Property2);
                 }
@@ -430,16 +437,24 @@ namespace Refit.Tests
 
             var settings = new RefitSettings()
             {
-                HttpMessageHandlerFactory = () => handler
+                HttpMessageHandlerFactory = () => handler,
+                ContentSerializer = serializer
             };
 
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             var result = await fixture.UploadJsonObject(model1);
         }
 
-        [Fact]
-        public async Task MultipartUploadShouldWorkWithObjects()
+        [Theory]
+        [InlineData(typeof(JsonContentSerializer), "application/json")]
+        [InlineData(typeof(XmlContentSerializer), "application/xml")]
+        public async Task MultipartUploadShouldWorkWithObjects(Type contentSerializerType, string mediaType)
         {
+            if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
+            {
+                throw new ArithmeticException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
+            }
+
             var model1 = new ModelObject
             {
                 Property1 = "M1.prop1",
@@ -451,7 +466,6 @@ namespace Refit.Tests
                 Property1 = "M2.prop1"
             };
 
-
             var handler = new MockHttpMessageHandler
             {
                 Asserts = async content =>
@@ -462,16 +476,16 @@ namespace Refit.Tests
 
                     Assert.Equal("theObjects", parts[0].Headers.ContentDisposition.Name);
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
-                    Assert.Equal("application/json", parts[0].Headers.ContentType.MediaType);
-                    var result0 = JsonConvert.DeserializeObject<ModelObject>(await parts[0].ReadAsStringAsync());
+                    Assert.Equal(mediaType, parts[0].Headers.ContentType.MediaType);
+                    var result0 = await serializer.DeserializeAsync<ModelObject>( parts[0]).ConfigureAwait(false);
                     Assert.Equal(model1.Property1, result0.Property1);
                     Assert.Equal(model1.Property2, result0.Property2);
 
 
                     Assert.Equal("theObjects", parts[1].Headers.ContentDisposition.Name);
                     Assert.Null(parts[1].Headers.ContentDisposition.FileName);
-                    Assert.Equal("application/json", parts[1].Headers.ContentType.MediaType);
-                    var result1 = JsonConvert.DeserializeObject<ModelObject>(await parts[1].ReadAsStringAsync());
+                    Assert.Equal(mediaType, parts[1].Headers.ContentType.MediaType);
+                    var result1 = await serializer.DeserializeAsync<ModelObject>(parts[1]).ConfigureAwait(false);
                     Assert.Equal(model2.Property1, result1.Property1);
                     Assert.Equal(model2.Property2, result1.Property2);
                 }
@@ -479,7 +493,8 @@ namespace Refit.Tests
 
             var settings = new RefitSettings()
             {
-                HttpMessageHandlerFactory = () => handler
+                HttpMessageHandlerFactory = () => handler,
+                ContentSerializer = serializer
             };
 
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
@@ -519,7 +534,7 @@ namespace Refit.Tests
                     Assert.Equal("theObjects", parts[0].Headers.ContentDisposition.Name);
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/json", parts[0].Headers.ContentType.MediaType);
-                    var result0 = JsonConvert.DeserializeObject<ModelObject>(await parts[0].ReadAsStringAsync());
+                    var result0 = JsonConvert.DeserializeObject<ModelObject>(await parts[0].ReadAsStringAsync().ConfigureAwait(false));
                     Assert.Equal(model1.Property1, result0.Property1);
                     Assert.Equal(model1.Property2, result0.Property2);
 
@@ -527,14 +542,14 @@ namespace Refit.Tests
                     Assert.Equal("theObjects", parts[1].Headers.ContentDisposition.Name);
                     Assert.Null(parts[1].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/json", parts[1].Headers.ContentType.MediaType);
-                    var result1 = JsonConvert.DeserializeObject<ModelObject>(await parts[1].ReadAsStringAsync());
+                    var result1 = JsonConvert.DeserializeObject<ModelObject>(await parts[1].ReadAsStringAsync().ConfigureAwait(false));
                     Assert.Equal(model2.Property1, result1.Property1);
                     Assert.Equal(model2.Property2, result1.Property2);
 
                     Assert.Equal("anotherModel", parts[2].Headers.ContentDisposition.Name);
                     Assert.Null(parts[2].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/json", parts[2].Headers.ContentType.MediaType);
-                    var result2 = JsonConvert.DeserializeObject<AnotherModel>(await parts[2].ReadAsStringAsync());
+                    var result2 = JsonConvert.DeserializeObject<AnotherModel>(await parts[2].ReadAsStringAsync().ConfigureAwait(false));
                     Assert.Equal(2, result2.Foos.Length);
                     Assert.Equal("bar1", result2.Foos[0]);
                     Assert.Equal("bar2", result2.Foos[1]);
@@ -552,7 +567,7 @@ namespace Refit.Tests
                     Assert.Equal("anEnum", parts[4].Headers.ContentDisposition.Name);
                     Assert.Null(parts[4].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/json", parts[4].Headers.ContentType.MediaType);
-                    var result4 = JsonConvert.DeserializeObject<AnEnum>(await parts[4].ReadAsStringAsync());
+                    var result4 = JsonConvert.DeserializeObject<AnEnum>(await parts[4].ReadAsStringAsync().ConfigureAwait(false));
                     Assert.Equal(AnEnum.Val2, result4);
 
                     Assert.Equal("aString", parts[5].Headers.ContentDisposition.Name);
@@ -564,7 +579,7 @@ namespace Refit.Tests
                     Assert.Equal("anInt", parts[6].Headers.ContentDisposition.Name);
                     Assert.Null(parts[6].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/json", parts[6].Headers.ContentType.MediaType);
-                    var result6 = JsonConvert.DeserializeObject<int>(await parts[6].ReadAsStringAsync());
+                    var result6 = JsonConvert.DeserializeObject<int>(await parts[6].ReadAsStringAsync().ConfigureAwait(false));
                     Assert.Equal(42, result6);
 
                 }
@@ -615,7 +630,7 @@ namespace Refit.Tests
                     Assert.Equal("myName", parts[0].Headers.ContentDisposition.Name);
                     Assert.Equal("myFileName", parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/custom", parts[0].Headers.ContentType.MediaType);
-                    var result0 = await parts[0].ReadAsStringAsync();
+                    var result0 = await parts[0].ReadAsStringAsync().ConfigureAwait(false);
                     Assert.Equal("some text", result0);
                 }
             };

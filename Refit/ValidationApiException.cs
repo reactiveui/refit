@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Refit
 {
@@ -14,20 +15,24 @@ namespace Refit
         {
         }
 
+#pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
         /// <summary>
         /// Creates a new instance of a ValidationException from an existing ApiException.
         /// </summary>
         /// <param name="exception">An instance of an ApiException to use to build a ValidationException.</param>
         /// <returns>ValidationApiException</returns>
-        public static ValidationApiException Create(ApiException exception)
+        public static async Task<ValidationApiException> Create(ApiException exception)
+#pragma warning restore VSTHRD200
         {
-            return new ValidationApiException(exception);
+            return new ValidationApiException(exception)
+            {
+                Content = await exception.GetContentAsAsync<ProblemDetails>().ConfigureAwait(false)
+            };
         }
 
         /// <summary>
         /// The problem details of the RFC 7807 validation exception.
         /// </summary>
-        public new ProblemDetails Content => GetContentAs<ProblemDetails>();
-
+        public new ProblemDetails Content { get; private set; }
     }
 }

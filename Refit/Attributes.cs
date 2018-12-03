@@ -96,19 +96,25 @@ namespace Refit
     public enum BodySerializationMethod
     {
         /// <summary>
-        /// JSON encodes data except for strings. Strings are set as-is
+        /// Encodes everything using the ContentSerializer in RefitSettings except for strings. Strings are set as-is
         /// </summary>
         Default,
 
         /// <summary>
         /// Json encodes everything, including strings
         /// </summary>
+        [Obsolete("Use BodySerializationMethod.Serialized instead", false)]
         Json,
 
         /// <summary>
         /// Form-UrlEncode's the values
         /// </summary>
-        UrlEncoded
+        UrlEncoded,
+
+        /// <summary>
+        /// Encodes everything using the ContentSerializer in RefitSettings 
+        /// </summary>
+        Serialized
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]

@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -17,11 +18,8 @@ namespace Refit
         public HttpMethod HttpMethod { get; }
         public Uri Uri => RequestMessage.RequestUri;
         public HttpRequestMessage RequestMessage { get; }
-
         public HttpContentHeaders ContentHeaders { get; private set; }
-
         public string Content { get; private set; }
-
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
         public RefitSettings RefitSettings { get; set; }
 
@@ -36,8 +34,11 @@ namespace Refit
             RefitSettings = refitSettings;
         }
 
-        public T GetContentAs<T>() => HasContent ?
-                JsonConvert.DeserializeObject<T>(Content, RefitSettings.JsonSerializerSettings) :
+        [Obsolete("Use GetContentAsAsync<T>() instead", false)]
+        public T GetContentAs<T>() => GetContentAsAsync<T>().ConfigureAwait(false).GetAwaiter().GetResult();
+
+        public async Task<T> GetContentAsAsync<T>() => HasContent ?
+                await RefitSettings.ContentSerializer.DeserializeAsync<T>(new StringContent(Content)).ConfigureAwait(false) :
                 default;
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
@@ -53,12 +54,14 @@ namespace Refit
 
             try
             {
-                if (response.Content.Headers.ContentType.MediaType.Equals("application/problem+json"))
-                {
-                    exception = ValidationApiException.Create(exception);
-                }
                 exception.ContentHeaders = response.Content.Headers;
                 exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                if (response.Content.Headers.ContentType.MediaType.Equals("application/problem+json"))
+                {
+                    exception = await ValidationApiException.Create(exception).ConfigureAwait(false);
+                }
+
                 response.Content.Dispose();
             }
             catch

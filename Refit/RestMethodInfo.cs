@@ -31,6 +31,7 @@ namespace Refit
         public Type SerializedReturnType { get; set; }
         public RefitSettings RefitSettings { get; set; }
         public Type SerializedGenericArgument { get; set; }
+        public bool IsApiResponse { get; }
 
         static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
         static readonly HttpMethod patchMethod = new HttpMethod("PATCH");
@@ -98,6 +99,9 @@ namespace Refit
             }
 
             CancellationToken = ctParams.FirstOrDefault();
+
+            IsApiResponse = SerializedReturnType.GetTypeInfo().IsGenericType &&
+                                SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
         }
 
         void VerifyUrlPathIsSane(string relativePath) 
@@ -210,7 +214,7 @@ namespace Refit
             }
 
             if (refParams.Count == 1) {
-                return Tuple.Create(BodySerializationMethod.Json, false, parameterList.IndexOf(refParams[0]));
+                return Tuple.Create(BodySerializationMethod.Serialized, false, parameterList.IndexOf(refParams[0]));
             }
 
             return null;
