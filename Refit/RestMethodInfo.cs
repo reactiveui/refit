@@ -95,7 +95,7 @@ namespace Refit
 
             var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
             if(ctParams.Count > 1) {
-                throw new ArgumentException("Argument list can only contain a single CancellationToken");
+                throw new ArgumentException($"Argument list to method \"{methodInfo.Name}\" can only contain a single CancellationToken");
             }
 
             CancellationToken = ctParams.FirstOrDefault();
@@ -121,7 +121,7 @@ namespace Refit
             return;
 
         bogusPath:
-            throw new ArgumentException("URL path must be of the form '/foo/bar/baz'");
+            throw new ArgumentException($"URL path {relativePath} must be of the form '/foo/bar/baz'");
         }
 
         Dictionary<int, string> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
@@ -141,7 +141,7 @@ namespace Refit
             foreach (var match in parameterizedParts) {
                 var name = match.Groups[1].Value.ToLowerInvariant();
                 if (!paramValidationDict.ContainsKey(name)) {
-                    throw new ArgumentException(string.Format("URL has parameter {0}, but no method parameter matches", name));
+                    throw new ArgumentException($"URL {relativePath} has parameter {name}, but no method parameter matches");
                 }
 
                 ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), name);
@@ -294,7 +294,7 @@ namespace Refit
             return;
 
         bogusMethod:
-            throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
+            throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
         }     
     }
 }
