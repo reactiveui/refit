@@ -475,7 +475,12 @@ namespace Refit
                                     {
                                         case false:
                                             ret.Content = new PushStreamContent(
-                                                async (stream, _, __) => { await content.CopyToAsync(stream).ConfigureAwait(false); }, content.Headers.ContentType);
+                                                async (stream, _, __) => {
+                                                    using (stream)
+                                                    {
+                                                        await content.CopyToAsync(stream).ConfigureAwait(false);
+                                                    }
+                                                }, content.Headers.ContentType);
                                             break;
                                         case true:
                                             ret.Content = content;
