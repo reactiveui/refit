@@ -409,7 +409,7 @@ namespace Refit.Tests
         {
             if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
             {
-                throw new ArithmeticException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
+                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
             }
 
             var model1 = new ModelObject
@@ -452,7 +452,7 @@ namespace Refit.Tests
         {
             if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
             {
-                throw new ArithmeticException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
+                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
             }
 
             var model1 = new ModelObject
