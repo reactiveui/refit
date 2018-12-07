@@ -88,7 +88,7 @@ namespace Refit.Tests
 
             var result = fixture.GenerateClassInfoForInterface(input);
 
-            Assert.Equal(12, result.MethodList.Count);
+            Assert.Equal(13, result.MethodList.Count);
             Assert.Equal("GetUser", result.MethodList[0].Name);
             Assert.Equal("string userName", result.MethodList[0].ArgumentListWithTypes);
             Assert.Equal("IGitHubApi", result.InterfaceName);

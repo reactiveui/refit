@@ -20,6 +20,7 @@ namespace Refit.Generator.Tasks
         [Required]
         public ITaskItem[] SourceFiles { get; set; }
 
+        public string RefitInternalNamespace { get; set; }
 
         protected override bool ExecuteInner()
         {
@@ -46,7 +47,7 @@ namespace Refit.Generator.Tasks
                                        .Where(x => x.Name.Contains("RefitStubs") == false && x.Exists && x.Length > 0)
                                        .ToArray();
 
-                var generator = new InterfaceStubGenerator(msg => Log.LogWarning(msg));
+                var generator = new InterfaceStubGenerator(RefitInternalNamespace, msg => Log.LogWarning(msg));
                 var template = generator.GenerateInterfaceStubs(files.Select(x => x.FullName).ToArray()).Trim();
 
                 string contents = null;

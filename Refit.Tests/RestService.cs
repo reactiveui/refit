@@ -11,6 +11,7 @@ using Xunit;
 using Refit; // InterfaceStubGenerator looks for this
 using RichardSzalay.MockHttp;
 using System.IO;
+using System.Text;
 
 namespace Refit.Tests
 {
@@ -39,7 +40,7 @@ namespace Refit.Tests
         Task PostRawStringDefault([Body] string str);
 
         [Post("/foo")]
-        Task PostRawStringJson([Body(BodySerializationMethod.Json)] string str);
+        Task PostRawStringJson([Body(BodySerializationMethod.Serialized)] string str);
 
         [Post("/foo")]
         Task PostRawStringUrlEncoded([Body(BodySerializationMethod.UrlEncoded)] string str);
@@ -243,7 +244,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             var responseMessage = new HttpResponseMessage()
@@ -279,27 +280,25 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
-            var responseMessage = new HttpResponseMessage()
-            {
-                StatusCode = HttpStatusCode.NotFound,
-                Content = null,
-            };
+            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
+                    .Respond(HttpStatusCode.NotFound);
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-            var result = await fixture.NothingToSeeHereWithMetadata();
+            using(var result = await fixture.NothingToSeeHereWithMetadata())
+            {
+                Assert.False(result.IsSuccessStatusCode);
+                Assert.NotNull(result.ReasonPhrase);
+                Assert.NotNull(result.RequestMessage);
+                Assert.True(result.StatusCode == HttpStatusCode.NotFound);
+                Assert.NotNull(result.Version);
+                Assert.Null(result.Content);
 
-            Assert.False(result.IsSuccessStatusCode);
-            Assert.NotNull(result.ReasonPhrase);
-            Assert.NotNull(result.RequestMessage);
-            Assert.True(result.StatusCode == HttpStatusCode.NotFound);
-            Assert.NotNull(result.Version);
-            Assert.Null(result.Content);
-
-            mockHttp.VerifyNoOutstandingExpectation();
+                mockHttp.VerifyNoOutstandingExpectation();
+            }
         }
 
         [Fact]
@@ -310,14 +309,11 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
-            var responseMessage = new HttpResponseMessage()
-            {
-                StatusCode = HttpStatusCode.NotFound,
-                Content = null,
-            };
+            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
+                    .Respond(HttpStatusCode.NotFound);
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -341,7 +337,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             var responseMessage = new HttpResponseMessage()
@@ -377,7 +373,7 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -401,7 +397,7 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -424,7 +420,7 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
@@ -448,7 +444,7 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/search/users")
@@ -471,7 +467,7 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -496,7 +492,7 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -551,7 +547,7 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/")
@@ -572,11 +568,11 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/")
-                .Respond(HttpStatusCode.OK);
+                    .Respond(HttpStatusCode.OK);
 
 
             var fixture = RestService.For<TestNested.INestedGitHubApi>("https://api.github.com", settings);
@@ -733,12 +729,11 @@ namespace Refit.Tests
 
             var settings = new RefitSettings {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
                     .Respond(HttpStatusCode.NotFound, "application/json", "{'message': 'Not Found', 'documentation_url': 'http://foo/bar'}");
-
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
             try {
@@ -746,7 +741,7 @@ namespace Refit.Tests
                 Assert.True(false);
             } catch (ApiException exception) {
                 Assert.Equal(HttpStatusCode.NotFound, exception.StatusCode);
-                var content = exception.GetContentAs<Dictionary<string, string>>();
+                var content = await exception.GetContentAsAsync<Dictionary<string, string>>();
 
                 Assert.Equal("Not Found", content["message"]);
                 Assert.NotNull(content["documentation_url"]);
@@ -762,7 +757,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                JsonSerializerSettings = new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() }
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
@@ -775,7 +770,7 @@ namespace Refit.Tests
             var result = await Assert.ThrowsAsync<ApiException>(async () => await fixture.CreateUser(new User{Name = "foo"}));
          
             
-            var errors = result.GetContentAs<ErrorResponse>();
+            var errors = await result.GetContentAsAsync<ErrorResponse>();
 
             Assert.Contains("error1", errors.Errors);
             Assert.Contains("message", errors.Errors);
@@ -783,6 +778,70 @@ namespace Refit.Tests
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
+
+        [Fact]
+        public async Task ErrorsFromApiReturnErrorContentWhenApiResponse()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
+                    .Respond(HttpStatusCode.BadRequest, "application/json", "{ 'errors': [ 'error1', 'message' ]}");
+
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+
+            using(var response = await fixture.CreateUserWithMetadata(new User { Name = "foo" }))
+            {
+                Assert.False(response.IsSuccessStatusCode);
+                Assert.NotNull(response.Error);
+
+                var errors = await response.Error.GetContentAsAsync<ErrorResponse>();
+
+                Assert.Contains("error1", errors.Errors);
+                Assert.Contains("message", errors.Errors);
+
+                mockHttp.VerifyNoOutstandingExpectation();
+
+            }   
+        }
+
+        [Fact]
+        public async Task ErrorsFromApiReturnErrorContentNonAsync()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
+                    .Respond(HttpStatusCode.BadRequest, "application/json", "{ 'errors': [ 'error1', 'message' ]}");
+
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+
+            var result = await Assert.ThrowsAsync<ApiException>(async () => await fixture.CreateUser(new User { Name = "foo" }));
+
+
+#pragma warning disable CS0618 // Ensure that this code continues to be tested until it is removed
+            var errors = result.GetContentAs<ErrorResponse>();
+#pragma warning restore CS0618
+
+            Assert.Contains("error1", errors.Errors);
+            Assert.Contains("message", errors.Errors);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
 
         [Fact]
         public void NonRefitInterfacesThrowMeaningfulExceptions() 
@@ -1106,6 +1165,34 @@ namespace Refit.Tests
             var fixture = RestService.For<IServiceWithoutNamespace>("http://foo", settings);
 
             await fixture.PostRoot();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task CanSerializeContentAsXml()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var contentSerializer = new XmlContentSerializer();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = contentSerializer
+            };
+
+            mockHttp
+                .Expect(HttpMethod.Post, "/users")
+                .WithHeaders("Content-Type:application/xml; charset=utf-8")
+                .Respond(req => new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("<User><Name>Created</Name></User>", Encoding.UTF8, "application/xml")
+                });
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+            var result = await fixture.CreateUser(new User()).ConfigureAwait(false);
+
+            Assert.Equal("Created", result.Name);
 
             mockHttp.VerifyNoOutstandingExpectation();
         }

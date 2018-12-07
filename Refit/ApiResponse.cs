@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -10,31 +8,34 @@ namespace Refit
 {
     static class ApiResponse
     {
-        internal static T Create<T>(HttpResponseMessage resp, object content)
+        internal static T Create<T>(HttpResponseMessage resp, object content, ApiException error = null)
         {
-            return (T)Activator.CreateInstance(typeof(T), resp, content);
+            return (T)Activator.CreateInstance(typeof(T), resp, content, error);
         }
     }
 
     public sealed class ApiResponse<T> : IDisposable
     {
         private readonly HttpResponseMessage response;
-
         bool disposed;
 
-        public ApiResponse(HttpResponseMessage response, T content)
+        public ApiResponse(HttpResponseMessage response, T content, ApiException error = null)
         {
             this.response = response ?? throw new ArgumentNullException(nameof(response));
+            Error = error;
             Content = content;
         }
 
         public T Content { get; }
         public HttpResponseHeaders Headers => response.Headers;
+        public HttpContentHeaders ContentHeaders => response.Content?.Headers;
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
         public string ReasonPhrase => response.ReasonPhrase;
         public HttpRequestMessage RequestMessage => response.RequestMessage;
         public HttpStatusCode StatusCode => response.StatusCode;
         public Version Version => response.Version;
+        public ApiException Error { get; private set; }
+
 
         public void Dispose()
         {

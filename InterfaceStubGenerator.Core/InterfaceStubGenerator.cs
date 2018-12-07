@@ -27,12 +27,23 @@ namespace Refit.Generator
             new[] { "Get", "Head", "Post", "Put", "Delete", "Patch" }
                 .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
 
-        public InterfaceStubGenerator() : this(null) { }
+        public InterfaceStubGenerator() : this(null, null) { }
 
-        public InterfaceStubGenerator(Action<string> logWarning)
+        public InterfaceStubGenerator(Action<string> logWarning) : this(null, logWarning) { }
+
+        public InterfaceStubGenerator(string refitInternalNamespace) : this(refitInternalNamespace, null) { }
+
+        public InterfaceStubGenerator(string refitInternalNamespace, Action<string> logWarning)
         {
             Log = logWarning;
+
+            if (!string.IsNullOrWhiteSpace(refitInternalNamespace))
+            {
+                RefitInternalNamespace = $"{refitInternalNamespace.Trim().TrimEnd('.')}.";
+            }
         }
+
+        public string RefitInternalNamespace { get; }
 
         public Action<string> Log { get; }
 
@@ -165,6 +176,7 @@ namespace Refit.Generator
 
             var ret = new TemplateInformation
             {
+                RefitInternalNamespace = RefitInternalNamespace ?? string.Empty,
                 ClassList = interfaceList.Select(GenerateClassInfoForInterface).ToList(),
                 UsingList = usings.ToList()
             };
@@ -262,6 +274,7 @@ namespace Refit.Generator
 
     public class TemplateInformation
     {
+        public string RefitInternalNamespace { get; set; }
         public List<ClassTemplateInfo> ClassList;
         public List<UsingDeclaration> UsingList { get; set; }
     }

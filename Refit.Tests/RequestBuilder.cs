@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using Xunit;
 using System.Collections;
+using System.Runtime.Serialization;
 
 namespace Refit.Tests
 {
@@ -67,6 +68,11 @@ namespace Refit.Tests
         [Patch("/foo/{id}")]
         IObservable<string> PatchSomething(int id, [Body] string someAttribute);
 
+        [Post("/foo/{id}")]
+        Task<ApiResponse<bool>> PostReturnsApiResponse(int id);
+
+        [Post("/foo/{id}")]
+        Task<bool> PostReturnsNonApiResponse(int id);
 
         [Post("/foo")]
         Task PostWithBodyDetected(Dictionary<int, string> theData);
@@ -95,7 +101,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
 
-            Assert.Throws<ArgumentException>(() => {
+            Assert.Throws<ArgumentException>(() =>
+            {
                 var fixture = new RestMethodInfo(
                     input,
                     input.GetMethods().First(x => x.Name == "TooManyComplexTypes"));
@@ -375,6 +382,24 @@ namespace Refit.Tests
 
             Assert.Equal("PATCH", fixture.HttpMethod.Method);
         }
+
+        [Fact]
+        public void ApiResponseShouldBeSet()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsApiResponse)));
+
+            Assert.True(fixture.IsApiResponse);
+        }
+
+        [Fact]
+        public void ApiResponseShouldNotBeSet()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsNonApiResponse)));
+
+            Assert.False(fixture.IsApiResponse);
+        }
     }
 
     [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
@@ -484,6 +509,9 @@ namespace Refit.Tests
         [Multipart]
         [Post("/foo?&name={name}")]
         Task<HttpResponseMessage> PostWithQueryStringParameters(FileInfo source, string name);
+
+        [Get("/query")]
+        Task QueryWithEnum(FooWithEnumMember foo);
     }
 
     interface ICancellableMethods
@@ -494,6 +522,14 @@ namespace Refit.Tests
         Task<string> GetWithCancellationAndReturn(CancellationToken token = default);
     }
 
+
+    public enum FooWithEnumMember
+    {
+        A,
+
+        [EnumMember(Value = "b")]
+        B
+    }
 
     public class SomeRequestData
     {
@@ -1197,10 +1233,24 @@ namespace Refit.Tests
             Assert.Equal("/query?FullName=Mickey%20Mouse", uri.PathAndQuery);
         }
 
+        [Theory]
+        [InlineData(FooWithEnumMember.A, "/query?foo=A")]
+        [InlineData(FooWithEnumMember.B, "/query?foo=b")]
+        public void QueryStringUsesEnumMemberAttribute(FooWithEnumMember queryParameter, string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnum");
+
+            var output = factory(new object[] { queryParameter });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
 
         [Fact]
         [UseCulture("es-ES")] // Spain uses a , instead of a .
-        public void DefaultParmeterFormatterIsInvariant()
+        public void DefaultParameterFormatterIsInvariant()
         {
             var settings = new RefitSettings();
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
@@ -1234,7 +1284,8 @@ namespace Refit.Tests
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
 
-            return paramList => {
+            return paramList =>
+            {
                 var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, paramList);
                 task.Wait();
                 return testHttpMessageHandler.RequestMessage;
@@ -1251,7 +1302,8 @@ namespace Refit.Tests
                 testHttpMessageHandler.Content = new StringContent(returnContent);
             }
 
-            return paramList => {
+            return paramList =>
+            {
                 var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, paramList);
                 task.Wait();
                 return testHttpMessageHandler;

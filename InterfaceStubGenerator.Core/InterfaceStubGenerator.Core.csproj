@@ -4,6 +4,8 @@
     <TargetFrameworks>net46;netstandard2.0</TargetFrameworks>
     <RootNamespace>Refit.Generator</RootNamespace>
     <IsPackable>false</IsPackable>
+    <AssemblyOriginatorKeyFile>..\buildtask.snk</AssemblyOriginatorKeyFile>
+    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +22,11 @@
     </EmbeddedResource>
   </ItemGroup>
 
-
+  <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">
+    <PropertyGroup>      
+      <Version>$(BuildVersion)</Version>
+      <AssemblyVersion>$(BuildVersionSimple)</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
 
 </Project>

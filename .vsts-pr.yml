@@ -1,6 +1,0 @@
-trigger: none
-variables: 
-  BuildConfiguration: Release
-  
-steps:
-- template: .vsts-shared.yml
