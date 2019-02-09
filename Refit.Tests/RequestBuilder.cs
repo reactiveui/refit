@@ -89,9 +89,6 @@ namespace Refit.Tests
         [Patch("/foo")]
         Task PatchWithBodyDetected(Dictionary<int, string> theData);
 
-        [Options("/foo")]
-        Task OptionsWithBodyDetected(Dictionary<int, string> theData);
-
         [Post("/foo")]
         Task TooManyComplexTypes(Dictionary<int, string> theData, Dictionary<int, string> theData1);
 
