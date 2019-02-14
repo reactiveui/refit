@@ -68,6 +68,11 @@ namespace Refit.Tests
         [Patch("/foo/{id}")]
         IObservable<string> PatchSomething(int id, [Body] string someAttribute);
 
+        [Post("/foo/{id}")]
+        Task<ApiResponse<bool>> PostReturnsApiResponse(int id);
+
+        [Post("/foo/{id}")]
+        Task<bool> PostReturnsNonApiResponse(int id);
 
         [Post("/foo")]
         Task PostWithBodyDetected(Dictionary<int, string> theData);
@@ -376,6 +381,24 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchSomething"));
 
             Assert.Equal("PATCH", fixture.HttpMethod.Method);
+        }
+
+        [Fact]
+        public void ApiResponseShouldBeSet()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsApiResponse)));
+
+            Assert.True(fixture.IsApiResponse);
+        }
+
+        [Fact]
+        public void ApiResponseShouldNotBeSet()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsNonApiResponse)));
+
+            Assert.False(fixture.IsApiResponse);
         }
     }
 

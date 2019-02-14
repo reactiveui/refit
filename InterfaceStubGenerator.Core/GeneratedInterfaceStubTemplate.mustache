@@ -16,7 +16,7 @@ using {{Item}};
  * in the Refit package */
 
 #pragma warning disable
-namespace RefitInternalGenerated
+namespace {{RefitInternalNamespace}}RefitInternalGenerated
 {
     [ExcludeFromCodeCoverage]
     [AttributeUsage (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Interface | AttributeTargets.Delegate)]
@@ -36,7 +36,7 @@ namespace RefitInternalGenerated
 {{#ClassList}}
 namespace {{Namespace}}
 {
-    using RefitInternalGenerated;
+    using {{RefitInternalNamespace}}RefitInternalGenerated;
 
     /// <inheritdoc />
     [ExcludeFromCodeCoverage]

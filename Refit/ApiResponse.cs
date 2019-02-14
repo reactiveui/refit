@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -30,6 +28,7 @@ namespace Refit
 
         public T Content { get; }
         public HttpResponseHeaders Headers => response.Headers;
+        public HttpContentHeaders ContentHeaders => response.Content?.Headers;
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
         public string ReasonPhrase => response.ReasonPhrase;
         public HttpRequestMessage RequestMessage => response.RequestMessage;

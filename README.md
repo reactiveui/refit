@@ -156,7 +156,8 @@ type of the parameter:
 * If the type is `string`, the string will be used directly as the content
 * If the parameter has the attribute `[Body(BodySerializationMethod.UrlEncoded)]`, 
   the content will be URL-encoded (see [form posts](#form-posts) below)
-* For all other types, the object will be serialized as JSON.
+* For all other types, the object will be serialized using the content serializer specified in 
+RefitSettings (JSON is the default).
 
 #### Buffering and the `Content-Length` header
 
@@ -198,17 +199,19 @@ APIs:
 ```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     new RefitSettings {
-        JsonSerializerSettings = new JsonSerializerSettings {
-            ContractResolver = new SnakeCasePropertyNamesContractResolver()
+        ContentSerializer = new JsonContentSerializer( 
+            new JsonSerializerSettings {
+                ContractResolver = new SnakeCasePropertyNamesContractResolver()
         }
-    });
+    )});
 
 var otherApi = RestService.For<IOtherApi>("https://api.example.com",
     new RefitSettings {
-        JsonSerializerSettings = new JsonSerializerSettings {
-            ContractResolver = new CamelCasePropertyNamesContractResolver()
+        ContentSerializer = new JsonContentSerializer( 
+            new JsonSerializerSettings {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
         }
-    });
+    )});
 ```
 
 Property serialization/deserialization can be customised using Json.NET's 
@@ -221,6 +224,48 @@ public class Foo
     [JsonProperty(PropertyName="b")] 
     public string Bar { get; set; }
 } 
+```
+
+#### XML Content
+
+XML requests and responses are serialized/deserialized using _System.Xml.Serialization.XmlSerializer_. 
+By default, Refit will use JSON content serialization, to use XML content configure the ContentSerializer to use the `XmlContentSerializer`:
+
+```csharp
+var gitHubApi = RestService.For<IXmlApi>("https://www.w3.org/XML",
+    new RefitSettings {
+        ContentSerializer = new XmlContentSerializer()
+    });
+```
+
+Property serialization/deserialization can be customised using   attributes found in the _System.Xml.Serialization_ namespace:
+
+```csharp
+    public class Foo
+    {
+        [XmlElement(Namespace = "https://www.w3.org/XML")]
+        public string Bar { get; set; }
+    }
+```
+
+The _System.Xml.Serialization.XmlSerializer_ provides many options for serializing, those options can be set by providing an `XmlContentSerializerSettings` to the `XmlContentSerializer` constructor:
+
+```csharp
+var gitHubApi = RestService.For<IXmlApi>("https://www.w3.org/XML",
+    new RefitSettings {
+        ContentSerializer = new XmlContentSerializer(
+            new XmlContentSerializerSettings
+            {
+                XmlReaderWriterSettings = new XmlReaderWriterSettings()
+                {
+                    ReaderSettings = new XmlReaderSettings
+                    {
+                        IgnoreWhitespace = true
+                    }
+                }
+            }
+        )
+    });
 ```
 
 #### <a name="form-posts"></a>Form posts
@@ -633,4 +678,26 @@ public class HomeController : Controller
         return View(thing);
     }
 }
+```
+
+### Handling exceptions
+
+To encapsulate any exceptions that may come from a service, you can catch an `ApiException` which contains request- and response information. Refit also supports the catching of validation exceptions that are thrown by a service implementing the RFC 7807 specification for problem details due to bad requests. For specific information on the problem details of the validation exception, simply catch `ValidationApiException`:
+
+```csharp
+// ...
+try
+{
+   var result = await awesomeApi.GetFooAsync("bar");
+}
+catch (ValidationApiException validationException)
+{
+   // handle validation here by using validationException.Content, 
+   // which is type of ProblemDetails according to RFC 7807
+}
+catch (ApiException exception)
+{
+   // other exception handling
+}
+// ...
 ```

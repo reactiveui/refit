@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Linq;
@@ -13,19 +12,40 @@ namespace Refit
 {
     public class RefitSettings
     {
+        JsonSerializerSettings jsonSerializerSettings;
+
         public RefitSettings()
         {
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
+            ContentSerializer = new JsonContentSerializer();
         }
 
         public Func<Task<string>> AuthorizationHeaderValueGetter { get; set; }
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
 
-        public JsonSerializerSettings JsonSerializerSettings { get; set; }
+        [Obsolete("Set RefitSettings.ContentSerializer = new JsonContentSerializer(JsonSerializerSettings) instead.", false)]
+        public JsonSerializerSettings JsonSerializerSettings
+        {
+            get => jsonSerializerSettings;
+            set
+            {
+                jsonSerializerSettings = value;
+                ContentSerializer = new JsonContentSerializer(value);
+            }
+        }
+
+        public IContentSerializer ContentSerializer { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
         public bool Buffered { get; set; } = true;
+    }
+
+    public interface IContentSerializer
+    {
+        Task<HttpContent> SerializeAsync<T>(T item);
+
+        Task<T> DeserializeAsync<T>(HttpContent content);
     }
 
     public interface IUrlParameterFormatter
@@ -78,7 +98,7 @@ namespace Refit
             var parameterType = parameterValue.GetType();
 
             EnumMemberAttribute enummember = null;
-            if (parameterValue != null && parameterType.GetTypeInfo().IsEnum)
+            if (parameterType.GetTypeInfo().IsEnum)
             {
                 var cached = enumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
                 enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
