@@ -35,7 +35,7 @@ namespace Refit.Tests
         {
             var dto = BuildDto();
             var sut = new XmlContentSerializer();
-            
+
             var content = await sut.SerializeAsync(dto);
             var document = new XmlDocument();
             document.LoadXml(await content.ReadAsStringAsync());
@@ -94,7 +94,8 @@ namespace Refit.Tests
 
         private static Dto BuildDto()
         {
-            var dto = new Dto {
+            var dto = new Dto
+            {
                 CreatedOn = DateTime.UtcNow,
                 Identifier = Guid.NewGuid().ToString(),
                 Name = "Test Dto Object"

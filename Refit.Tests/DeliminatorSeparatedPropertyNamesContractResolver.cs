@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using System;
 using System.Globalization;
@@ -20,8 +20,10 @@ namespace Refit.Tests
             var parts = new List<string>();
             var currentWord = new StringBuilder();
 
-            foreach (var c in propertyName.ToCharArray()) {
-                if (Char.IsUpper(c) && currentWord.Length > 0) {
+            foreach (var c in propertyName.ToCharArray())
+            {
+                if (Char.IsUpper(c) && currentWord.Length > 0)
+                {
                     parts.Add(currentWord.ToString());
                     currentWord.Clear();
                 }
@@ -29,7 +31,8 @@ namespace Refit.Tests
                 currentWord.Append(char.ToLower(c));
             }
 
-            if (currentWord.Length > 0) {
+            if (currentWord.Length > 0)
+            {
                 parts.Add(currentWord.ToString());
             }
 

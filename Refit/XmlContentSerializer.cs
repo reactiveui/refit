@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace Refit {
+namespace Refit
+{
 
     public class XmlContentSerializer : IContentSerializer
     {
@@ -25,15 +26,15 @@ namespace Refit {
         {
             var xmlSerializer = new XmlSerializer(item.GetType(), settings.XmlAttributeOverrides);
 
-            using(var output = new StringWriter())
+            using (var output = new StringWriter())
             {
-                using(var writer = XmlWriter.Create(output, settings.XmlReaderWriterSettings.WriterSettings))
+                using (var writer = XmlWriter.Create(output, settings.XmlReaderWriterSettings.WriterSettings))
                 {
                     xmlSerializer.Serialize(writer, item, settings.XmlNamespaces);
                     var content = new StringContent(output.ToString(), Encoding.UTF8, "application/xml");
                     return Task.FromResult((HttpContent)content);
                 }
-            }            
+            }
         }
 
         public async Task<T> DeserializeAsync<T>(HttpContent content)

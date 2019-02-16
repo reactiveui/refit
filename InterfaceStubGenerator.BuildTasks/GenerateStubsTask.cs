@@ -78,7 +78,7 @@ namespace Refit.Generator.Tasks
                 {
                     var retryCount = 3;
 
-                    retry:
+retry:
 
                     FileStream file;
 
@@ -100,7 +100,7 @@ namespace Refit.Generator.Tasks
                         goto retry;
                     }
 
-                    using(var sw = new StreamWriter(file, Encoding.UTF8))
+                    using (var sw = new StreamWriter(file, Encoding.UTF8))
                     {
                         sw.WriteLine(template);
                     }

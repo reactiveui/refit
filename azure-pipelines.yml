@@ -32,7 +32,11 @@ steps:
 
 - script: nbgv cloud
   displayName: Set Version
-    
+
+- task: DotNetCoreInstaller@0
+  inputs:
+    version: '3.0.100-preview-010184'
+
 - task: DotNetCoreCLI@2
   inputs:
     command: build
@@ -63,7 +67,7 @@ steps:
   inputs:
     command: test
     projects: Refit.Tests/Refit.Tests.csproj
-    arguments: -c $(BuildConfiguration) --collect:"Code Coverage" -s $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings /p:DebugType=portable
+    arguments: -c $(BuildConfiguration) --collect:"Code Coverage" -s $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings
   displayName: Run Tests
 
 - task: PowerShell@2

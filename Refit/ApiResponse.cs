@@ -41,7 +41,7 @@ namespace Refit
         {
             Dispose(true);
         }
-        
+
         public async Task<ApiResponse<T>> EnsureSuccessStatusCodeAsync()
         {
             if (!IsSuccessStatusCode)

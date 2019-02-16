@@ -19,7 +19,7 @@ namespace Refit
             {
                 if (jsonSerializerSettings == null)
                 {
-                    if(JsonConvert.DefaultSettings == null)
+                    if (JsonConvert.DefaultSettings == null)
                     {
                         return new JsonSerializerSettings();
                     }
