@@ -67,7 +67,7 @@ steps:
   inputs:
     command: test
     projects: Refit.Tests/Refit.Tests.csproj
-    arguments: -c $(BuildConfiguration) --collect:"Code Coverage" -s $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings /p:DebugType=portable
+    arguments: -c $(BuildConfiguration) --collect:"Code Coverage" -s $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings
   displayName: Run Tests
 
 - task: PowerShell@2
