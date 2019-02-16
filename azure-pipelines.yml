@@ -32,7 +32,11 @@ steps:
 
 - script: nbgv cloud
   displayName: Set Version
-    
+
+- task: DotNetCoreInstaller@0
+  inputs:
+    version: '3.0.100-preview-010184'
+
 - task: DotNetCoreCLI@2
   inputs:
     command: build
