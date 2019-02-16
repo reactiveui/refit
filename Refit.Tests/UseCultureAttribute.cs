@@ -8,7 +8,7 @@ using Xunit.Sdk;
 
 namespace Refit.Tests
 {
-   
+
     /// <summary>
     /// Apply this attribute to your test method to replace the
     /// <see cref="Thread.CurrentThread" /> <see cref="CultureInfo.CurrentCulture" /> and

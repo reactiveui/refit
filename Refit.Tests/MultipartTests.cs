@@ -99,8 +99,8 @@ namespace Refit.Tests
                     Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
                     Assert.Equal("stream", parts[0].Headers.ContentDisposition.FileName);
 
-                    using(var str = await parts[0].ReadAsStreamAsync())
-                    using(var src = GetTestFileStream("Test Files/Test.pdf"))
+                    using (var str = await parts[0].ReadAsStreamAsync())
+                    using (var src = GetTestFileStream("Test Files/Test.pdf"))
                     {
                         Assert.True(StreamsEqual(src, str));
                     }
@@ -178,7 +178,7 @@ namespace Refit.Tests
                     {
                         Assert.True(StreamsEqual(src, str));
                     }
-                    
+
                     Assert.Equal("fileInfos", parts[1].Headers.ContentDisposition.Name);
                     Assert.Equal(name, parts[1].Headers.ContentDisposition.FileName);
                     Assert.Null(parts[1].Headers.ContentType);
@@ -204,7 +204,7 @@ namespace Refit.Tests
             {
                 HttpMessageHandlerFactory = () => handler
             };
-            
+
             try
             {
                 using (var stream = GetTestFileStream("Test Files/Test.pdf"))
@@ -213,7 +213,7 @@ namespace Refit.Tests
                     await stream.CopyToAsync(outStream);
                     await outStream.FlushAsync();
                     outStream.Close();
-                    
+
                     var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
                     var result = await fixture.UploadFileInfo(new[] { new FileInfo(fileName), new FileInfo(fileName) }, new FileInfo(fileName));
                 }
@@ -251,7 +251,7 @@ namespace Refit.Tests
                 HttpMessageHandlerFactory = () => handler
             };
 
-            
+
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             var result = await fixture.UploadString(text);
         }
@@ -389,7 +389,7 @@ namespace Refit.Tests
                     outStream.Close();
 
                     var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
-                    var result = await fixture.UploadFileInfoPart(new[] 
+                    var result = await fixture.UploadFileInfoPart(new[]
                     {
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart.pdf", "application/pdf"),
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart2.pdf", contentType: null)
@@ -417,7 +417,7 @@ namespace Refit.Tests
                 Property1 = "M1.prop1",
                 Property2 = "M1.prop2"
             };
-            
+
             var handler = new MockHttpMessageHandler
             {
                 Asserts = async content =>
@@ -477,7 +477,7 @@ namespace Refit.Tests
                     Assert.Equal("theObjects", parts[0].Headers.ContentDisposition.Name);
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal(mediaType, parts[0].Headers.ContentType.MediaType);
-                    var result0 = await serializer.DeserializeAsync<ModelObject>( parts[0]).ConfigureAwait(false);
+                    var result0 = await serializer.DeserializeAsync<ModelObject>(parts[0]).ConfigureAwait(false);
                     Assert.Equal(model1.Property1, result0.Property1);
                     Assert.Equal(model1.Property2, result0.Property2);
 
@@ -520,7 +520,7 @@ namespace Refit.Tests
 
             var anotherModel = new AnotherModel
             {
-                Foos = new []{"bar1", "bar2"}
+                Foos = new[] { "bar1", "bar2" }
             };
 
             var handler = new MockHttpMessageHandler
@@ -679,12 +679,14 @@ namespace Refit.Tests
             var fullName = assembly
                 .GetManifestResourceNames()
                 .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture));
-            if (fullName == null) {
+            if (fullName == null)
+            {
                 throw new Exception($"Unable to find resource for path \"{relativeFilePath}\". Resource with name ending on \"{relativeName}\" was not found in assembly.");
             }
 
             var stream = assembly.GetManifestResourceStream(fullName);
-            if (stream == null) {
+            if (stream == null)
+            {
                 throw new Exception($"Unable to find resource for path \"{relativeFilePath}\". Resource named \"{fullName}\" was not found in assembly.");
             }
 
@@ -702,7 +704,7 @@ namespace Refit.Tests
                 throw new ArgumentNullException(
                     a == null ? "a" : "b");
             }
-            
+
             if (a.Length < b.Length)
                 return false;
             if (a.Length > b.Length)

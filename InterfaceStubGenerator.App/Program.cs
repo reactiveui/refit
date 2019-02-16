@@ -70,7 +70,7 @@ namespace Refit.Generator.App
             {
                 var retryCount = 3;
 
-                retry:
+retry:
                 var file = default(FileStream);
 
                 // NB: Parallel build weirdness means that we might get >1 person 
@@ -91,7 +91,7 @@ namespace Refit.Generator.App
                     goto retry;
                 }
 
-                using(var sw = new StreamWriter(file, Encoding.UTF8))
+                using (var sw = new StreamWriter(file, Encoding.UTF8))
                 {
                     sw.WriteLine(template);
                 }

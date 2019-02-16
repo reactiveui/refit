@@ -166,8 +166,8 @@ namespace System.Net.Http
             }
 
             [SuppressMessage(
-                "Microsoft.Usage", 
-                "CA2215:Dispose methods should call base class dispose", 
+                "Microsoft.Usage",
+                "CA2215:Dispose methods should call base class dispose",
                 Justification = "See comments, this is intentional.")]
             protected override void Dispose(bool disposing)
             {

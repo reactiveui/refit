@@ -17,16 +17,16 @@ namespace Refit
 
     public static class RequestBuilder
     {
-        static readonly IRequestBuilderFactory platformRequestBuilderFactory = new RequestBuilderFactory();
+        static readonly IRequestBuilderFactory PlatformRequestBuilderFactory = new RequestBuilderFactory();
 
         public static IRequestBuilder<T> ForType<T>(RefitSettings settings)
         {
-            return platformRequestBuilderFactory.Create<T>(settings);
+            return PlatformRequestBuilderFactory.Create<T>(settings);
         }
 
         public static IRequestBuilder<T> ForType<T>()
         {
-            return platformRequestBuilderFactory.Create<T>(null);
+            return PlatformRequestBuilderFactory.Create<T>(null);
         }
     }
 }

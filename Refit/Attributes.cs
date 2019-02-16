@@ -8,8 +8,6 @@ namespace Refit
 {
     public abstract class HttpMethodAttribute : Attribute
     {
-        protected string path;
-
         public HttpMethodAttribute(string path)
         {
             Path = path;
@@ -19,8 +17,8 @@ namespace Refit
 
         public virtual string Path
         {
-            get { return path; }
-            protected set { path = value; }
+            get;
+            protected set;
         }
     }
 

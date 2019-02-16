@@ -74,7 +74,7 @@ namespace Refit
             return exception;
         }
 
-        static string CreateMessage(HttpStatusCode statusCode, string reasonPhrase) => 
+        static string CreateMessage(HttpStatusCode statusCode, string reasonPhrase) =>
             $"Response status code does not indicate success: {(int)statusCode} ({reasonPhrase}).";
     }
 }

@@ -6,7 +6,7 @@
       GenerateRefitStubs;
     </CoreCompileDependsOn>
   </PropertyGroup>
-  
+
   <PropertyGroup>
     <IntermediateOutputPath Condition="$(IntermediateOutputPath) == '' Or $(IntermediateOutputPath) == '*Undefined*'">$(MSBuildProjectDirectory)obj\$(Configuration)\</IntermediateOutputPath>
     <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\MSBuildCore20\InterfaceStubGenerator.BuildTasks.dll</RefitTaskAssemblyFile>
@@ -16,22 +16,22 @@
     <!-- Our default CLI version for error checking purposes -->
     <RefitNetCoreAppVersion>$(BundledNETCoreAppTargetFrameworkVersion)</RefitNetCoreAppVersion>
     <RefitNetCoreAppVersion Condition="'$(RefitNetCoreAppVersion)' == ''">1.0</RefitNetCoreAppVersion>
-    
+
     <!--
     Refit internal namespace to be added to internally generated Refit code. 
     Can be overriden by user in case of namespace clashes.
     -->
     <RefitInternalNamespace Condition=" '$(RefitInternalNamespace)' == '' ">$(RootNamespace)</RefitInternalNamespace>
   </PropertyGroup>
-  
+
   <UsingTask TaskName="Refit.Generator.Tasks.GenerateStubsTask" AssemblyFile="$(RefitTaskAssemblyFile)" />
-  
+
   <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile">
     <Error Condition="'$(MSBuildRuntimeType)' == 'Core' and '$(RefitMinCoreVersionRequired)' > '$(RefitNetCoreAppVersion)' "
            Text="Refit requires at least the .NET Core SDK v2.1 to run with 'dotnet build'"
            ContinueOnError="false"
            />
-    
+
     <GenerateStubsTask SourceFiles="@(Compile)"
                        BaseDirectory="$(MSBuildProjectDirectory)"
                        OutputFile="$(IntermediateOutputPath)\RefitStubs.g.cs"
@@ -39,10 +39,10 @@
                        />
 
     <Message Text="Processed Refit Stubs" />
-   
+
     <ItemGroup Condition="Exists('$(IntermediateOutputPath)\RefitStubs.g.cs')">
-        <Compile Include="$(IntermediateOutputPath)\RefitStubs.g.cs" />
-    </ItemGroup>    
+      <Compile Include="$(IntermediateOutputPath)\RefitStubs.g.cs" />
+    </ItemGroup>
   </Target>
 
 </Project>
