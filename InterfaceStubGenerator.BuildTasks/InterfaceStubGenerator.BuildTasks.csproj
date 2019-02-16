@@ -1,15 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <RootNamespace>Refit.Generator.Tasks</RootNamespace>
     <AssemblyOriginatorKeyFile>..\buildtask.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Condition="'$(TargetFramework)' == 'net46' " Include="Microsoft.Build.Tasks.Core" Version="14.3" PrivateAssets="all" />
-    <PackageReference Condition="'$(TargetFramework)' == 'netcoreapp2.0' " Include="Microsoft.Build.Tasks.Core" Version="15.1.548" PrivateAssets="all" />
+    <PackageReference Condition="'$(TargetFramework)' == 'net461' " Include="Microsoft.Build.Tasks.Core" Version="14.3" PrivateAssets="all" />
+    <PackageReference Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Include="Microsoft.Build.Tasks.Core" Version="15.1.548" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

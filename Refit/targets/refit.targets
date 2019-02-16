@@ -12,7 +12,7 @@
     <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' == 'Core'">$(MSBuildThisFileDirectory)..\MSBuildCore20\InterfaceStubGenerator.BuildTasks.dll</RefitTaskAssemblyFile>
     <RefitTaskAssemblyFile Condition="'$(MSBuildRuntimeType)' != 'Core'">$(MSBuildThisFileDirectory)..\MSBuildFull46\InterfaceStubGenerator.BuildTasks.dll</RefitTaskAssemblyFile>
 
-    <RefitMinCoreVersionRequired>2.0</RefitMinCoreVersionRequired>
+    <RefitMinCoreVersionRequired>2.1</RefitMinCoreVersionRequired>
     <!-- Our default CLI version for error checking purposes -->
     <RefitNetCoreAppVersion>$(BundledNETCoreAppTargetFrameworkVersion)</RefitNetCoreAppVersion>
     <RefitNetCoreAppVersion Condition="'$(RefitNetCoreAppVersion)' == ''">1.0</RefitNetCoreAppVersion>
@@ -28,7 +28,7 @@
   
   <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile">
     <Error Condition="'$(MSBuildRuntimeType)' == 'Core' and '$(RefitMinCoreVersionRequired)' > '$(RefitNetCoreAppVersion)' "
-           Text="Refit requires at least the .NET Core SDK v2.0 to run with 'dotnet build'"
+           Text="Refit requires at least the .NET Core SDK v2.1 to run with 'dotnet build'"
            ContinueOnError="false"
            />
     
