@@ -37,10 +37,10 @@
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
     <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\net46\InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)" "$(RootNamespace)"</RefitExecCmd>
+      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\net461\InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)" "$(RootNamespace)"</RefitExecCmd>
     </PropertyGroup>
     <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/net46/InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)" "$(RootNamespace)"</RefitExecCmd>
+      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/net461/InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)" "$(RootNamespace)"</RefitExecCmd>
     </PropertyGroup>
     <Message Text="Executing: $(RefitExecCmd)" Importance="High" />
     <Exec Command="$(RefitExecCmd)" />
