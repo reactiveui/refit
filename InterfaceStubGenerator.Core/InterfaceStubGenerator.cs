@@ -25,7 +25,7 @@ namespace Refit.Generator
     public class InterfaceStubGenerator
     {
         static readonly HashSet<string> httpMethodAttributeNames = new HashSet<string>(
-            new[] { "Get", "Head", "Post", "Put", "Delete", "Patch" }
+            new[] { "Get", "Head", "Post", "Put", "Delete", "Patch", "Options" }
                 .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
 
         public InterfaceStubGenerator() : this(null, null) { }

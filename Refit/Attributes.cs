@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -76,6 +76,17 @@ namespace Refit
         public override HttpMethod Method
         {
             get { return new HttpMethod("PATCH"); }
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class OptionsAttribute : HttpMethodAttribute
+    {
+        public OptionsAttribute(string path) : base(path) { }
+
+        public override HttpMethod Method
+        {
+            get { return new HttpMethod("OPTIONS"); }
         }
     }
 
