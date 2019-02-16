@@ -103,9 +103,9 @@ namespace Refit.Generator.App
 
     static class ConcatExtension
     {
-        public static IEnumerable<T> Concat<T>(this IEnumerable<T> This, params IEnumerable<T>[] others)
+        public static IEnumerable<T> Concat<T>(this IEnumerable<T> @this, params IEnumerable<T>[] others)
         {
-            foreach (var t in This)
+            foreach (var t in @this)
             {
                 yield return t;
             }
