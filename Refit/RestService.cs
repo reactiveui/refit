@@ -49,7 +49,7 @@ namespace Refit
                 }
             }
 
-            var client = new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
+            var client = new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl?.TrimEnd('/')) };
             return For<T>(client, settings);
         }
 
