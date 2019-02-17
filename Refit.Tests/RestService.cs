@@ -139,6 +139,12 @@ namespace Refit.Tests
         Task Get();
     }
 
+    public interface IValidApi
+    {
+        [Get("/someendpoint")]
+        Task Get();
+    }
+
     public class HttpBinGet
     {
         public Dictionary<string, object> Args { get; set; }
@@ -1205,6 +1211,54 @@ namespace Refit.Tests
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>(inputBaseAddress);
 
             Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
+        }
+
+        [Fact]
+        public void ShouldThrowArgumentExceptionIfHostUrlIsNull()
+        {
+            try
+            {
+                RestService.For<IValidApi>(hostUrl: null);
+            }
+            catch (ArgumentException ex)
+            {
+                Assert.Equal("hostUrl", ex.ParamName);
+                return;
+            }
+
+            Assert.False(true, "Exception not thrown.");
+        }
+
+        [Fact]
+        public void ShouldThrowArgumentExceptionIfHostUrlIsEmpty()
+        {
+            try
+            {
+                RestService.For<IValidApi>(hostUrl: "");
+            }
+            catch (ArgumentException ex)
+            {
+                Assert.Equal("hostUrl", ex.ParamName);
+                return;
+            }
+
+            Assert.False(true, "Exception not thrown.");
+        }
+
+        [Fact]
+        public void ShouldThrowArgumentExceptionIfHostUrlIsWhitespace()
+        {
+            try
+            {
+                RestService.For<IValidApi>(hostUrl: " ");
+            }
+            catch (ArgumentException ex)
+            {
+                Assert.Equal("hostUrl", ex.ParamName);
+                return;
+            }
+
+            Assert.False(true, "Exception not thrown.");
         }
     }
 }
