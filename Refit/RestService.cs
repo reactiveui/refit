@@ -34,6 +34,13 @@ namespace Refit
 
         public static T For<T>(string hostUrl, RefitSettings settings)
         {
+            if (string.IsNullOrWhiteSpace(hostUrl))
+            {
+                throw new ArgumentException(
+                    $"`{nameof(hostUrl)}` must not be null or whitespace.",
+                    nameof(hostUrl));
+            }
+
             // check to see if user provided custom auth token
             HttpMessageHandler innerHandler = null;
             if (settings != null)
@@ -49,7 +56,7 @@ namespace Refit
                 }
             }
 
-            var client = new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl?.TrimEnd('/')) };
+            var client = new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
             return For<T>(client, settings);
         }
 
