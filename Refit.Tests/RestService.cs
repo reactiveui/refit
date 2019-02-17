@@ -131,6 +131,14 @@ namespace Refit.Tests
         Task Head();
     }
 
+    public interface ITrimTrailingForwardSlashApi
+    {
+        HttpClient Client { get; }
+
+        [Get("/someendpoint")]
+        Task Get();
+    }
+
     public class HttpBinGet
     {
         public Dictionary<string, object> Args { get; set; }
@@ -1186,6 +1194,17 @@ namespace Refit.Tests
             Assert.Equal("Created", result.Name);
 
             mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public void ShouldTrimTrailingForwardSlashFromBaseUrl()
+        {
+            var expectedBaseAddress = "http://example.com/api";
+            var inputBaseAddress = "http://example.com/api/";
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(inputBaseAddress);
+
+            Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
         }
     }
 }
