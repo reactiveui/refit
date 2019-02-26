@@ -9,7 +9,8 @@ using RichardSzalay.MockHttp;
 using Refit; // for the code gen
 using Xunit;
 
-namespace Refit.Tests {
+namespace Refit.Tests
+{
     public class TestAliasObject
     {
         [AliasAs("FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS")]
@@ -68,5 +69,37 @@ namespace Refit.Tests {
             Assert.Null(result.ShortNameForAlias);
         }
 
+        /// <summary>
+        /// Test to verify if a ValidationException is thrown for a Bad Request in terms of RFC 7807
+        /// </summary>
+        [Fact]
+        public async Task ThrowsValidationException()
+        {
+            var expectedContent = new ProblemDetails
+            {
+                Detail = "detail",
+                Errors = { { "Field1", new string[] { "Problem1" } }, { "Field2", new string[] { "Problem2" } } },
+                Instance = "instance",
+                Status = 1,
+                Title = "title",
+                Type = "type"
+            };
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest);
+            expectedResponse.Content = new StringContent(JsonConvert.SerializeObject(expectedContent));
+            expectedResponse.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/problem+json");
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                .Respond(req => expectedResponse);
+
+            var actualException = await Assert.ThrowsAsync<ValidationApiException>(() => fixture.GetTestObject());
+            Assert.NotNull(actualException.Content);
+            Assert.Equal("detail", actualException.Content.Detail);
+            Assert.Equal("Problem1", actualException.Content.Errors["Field1"][0]);
+            Assert.Equal("Problem2", actualException.Content.Errors["Field2"][0]);
+            Assert.Equal("instance", actualException.Content.Instance);
+            Assert.Equal(1, actualException.Content.Status);
+            Assert.Equal("title", actualException.Content.Title);
+            Assert.Equal("type", actualException.Content.Type);
+
+        }
     }
 }

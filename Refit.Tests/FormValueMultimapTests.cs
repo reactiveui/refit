@@ -1,18 +1,19 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using Xunit;
 
 namespace Refit.Tests
 {
-    public class FormValueDictionaryTests
+    public class FormValueMultimapTests
     {
         readonly RefitSettings settings = new RefitSettings();
 
         [Fact]
         public void EmptyIfNullPassedIn()
         {
-            var target = new FormValueDictionary(null, settings);
+            var target = new FormValueMultimap(null, settings);
             Assert.Empty(target);
         }
 
@@ -25,7 +26,7 @@ namespace Refit.Tests
                 { "xyz", "123" }
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.Equal(source, target);
         }
@@ -44,7 +45,34 @@ namespace Refit.Tests
                 { "B", "2" },
             };
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Fact]
+        public void LoadFromObjectWithCollections()
+        {
+            var source = new ObjectWithRepeatedFieldsTestClass
+            {
+                A = new List<int> { 1, 2 },
+                B = new HashSet<string> { "set1", "set2" },
+                C = new HashSet<int> { 1, 2 },
+                D = new List<double> { 0.1, 1.0 },
+                E = new List<bool> { true, false }
+            };
+            var expected = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("A", "01"),
+                new KeyValuePair<string, string>("A", "02"),
+                new KeyValuePair<string, string>("B", "set1,set2"),
+                new KeyValuePair<string, string>("C", "01 02"),
+                new KeyValuePair<string, string>("D", "0.10\t1.00"),
+
+                // The default behavior is to capitalize booleans. This is not a requirement.
+                new KeyValuePair<string, string>("E", "True|False")
+            };
+
+            var actual = new FormValueMultimap(source, settings);
 
             Assert.Equal(expected, actual);
         }
@@ -54,6 +82,20 @@ namespace Refit.Tests
             public string A { get; set; }
             public string B { get; set; }
             public string C { get; set; }
+        }
+
+        public class ObjectWithRepeatedFieldsTestClass
+        {
+            [Query(CollectionFormat.Multi, Format = "00")]
+            public IList<int> A { get; set; }
+            [Query(CollectionFormat.Csv)]
+            public ISet<string> B { get; set; }
+            [Query(CollectionFormat.Ssv, Format = "00")]
+            public HashSet<int> C { get; set; }
+            [Query(CollectionFormat.Tsv, Format = "0.00")]
+            public IList<double> D { get; set; }
+            [Query(CollectionFormat.Pipes)]
+            public IList<bool> E { get; set; }
         }
 
         [Fact]
@@ -69,7 +111,7 @@ namespace Refit.Tests
                 { "C", "FooBar" }
             };
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
 
             Assert.Equal(expected, actual);
         }
@@ -96,7 +138,7 @@ namespace Refit.Tests
                 { "xyz", "123" }
             };
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
 
 
             Assert.Equal(expected, actual);
@@ -110,11 +152,11 @@ namespace Refit.Tests
                 Foo = "abc"
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.DoesNotContain("Foo", target.Keys);
             Assert.Contains("f", target.Keys);
-            Assert.Equal("abc", target["f"]);
+            Assert.Equal("abc", target.FirstOrDefault(entry => entry.Key == "f").Value);
         }
 
         [Fact]
@@ -125,11 +167,11 @@ namespace Refit.Tests
                 Bar = "xyz"
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.Contains("b", target.Keys);
-            Assert.Equal("xyz", target["b"]);
+            Assert.Equal("xyz", target.FirstOrDefault(entry => entry.Key == "b").Value);
         }
 
         [Fact]
@@ -140,11 +182,11 @@ namespace Refit.Tests
                 Frob = 4
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.Contains("prefix-fr", target.Keys);
-            Assert.Equal("4.0", target["prefix-fr"]);
+            Assert.Equal("4.0", target.FirstOrDefault(entry => entry.Key == "prefix-fr").Value);
         }
 
 
@@ -156,12 +198,12 @@ namespace Refit.Tests
                 Baz = "123"
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.DoesNotContain("Bar", target.Keys);
             Assert.DoesNotContain("z", target.Keys);
             Assert.Contains("a", target.Keys);
-            Assert.Equal("123", target["a"]);
+            Assert.Equal("123", target.FirstOrDefault(entry => entry.Key == "a").Value);
         }
 
 
@@ -173,7 +215,7 @@ namespace Refit.Tests
                 { "xyz", null }
             };
 
-            var target = new FormValueDictionary(source, settings);
+            var target = new FormValueMultimap(source, settings);
 
             Assert.Single(target);
             Assert.Contains("foo", target.Keys);
@@ -196,7 +238,7 @@ namespace Refit.Tests
             };
 
 
-            var actual = new FormValueDictionary(source, settings);
+            var actual = new FormValueMultimap(source, settings);
 
             Assert.Equal(expected, actual);
         }

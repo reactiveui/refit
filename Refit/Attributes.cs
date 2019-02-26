@@ -8,8 +8,6 @@ namespace Refit
 {
     public abstract class HttpMethodAttribute : Attribute
     {
-        protected string path;
-
         public HttpMethodAttribute(string path)
         {
             Path = path;
@@ -19,8 +17,8 @@ namespace Refit
 
         public virtual string Path
         {
-            get { return path; }
-            protected set { path = value; }
+            get;
+            protected set;
         }
     }
 
@@ -80,6 +78,17 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Method)]
+    public class OptionsAttribute : HttpMethodAttribute
+    {
+        public OptionsAttribute(string path) : base(path) { }
+
+        public override HttpMethod Method
+        {
+            get { return new HttpMethod("OPTIONS"); }
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
     public class HeadAttribute : HttpMethodAttribute
     {
         public HeadAttribute(string path) : base(path) { }
@@ -96,19 +105,25 @@ namespace Refit
     public enum BodySerializationMethod
     {
         /// <summary>
-        /// JSON encodes data except for strings. Strings are set as-is
+        /// Encodes everything using the ContentSerializer in RefitSettings except for strings. Strings are set as-is
         /// </summary>
         Default,
 
         /// <summary>
         /// Json encodes everything, including strings
         /// </summary>
+        [Obsolete("Use BodySerializationMethod.Serialized instead", false)]
         Json,
 
         /// <summary>
         /// Form-UrlEncode's the values
         /// </summary>
-        UrlEncoded
+        UrlEncoded,
+
+        /// <summary>
+        /// Encodes everything using the ContentSerializer in RefitSettings 
+        /// </summary>
+        Serialized
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
@@ -198,7 +213,8 @@ namespace Refit
     public enum CollectionFormat
     {
         /// <summary>
-        /// Values formatted wiht RefitSettings.UrlParameterFormatter
+        /// Values formatted with <see cref="RefitSettings.UrlParameterFormatter"/> or
+        /// <see cref="RefitSettings.FormUrlEncodedParameterFormatter"/>.
         /// </summary>
         RefitParameterFormatter,
 
@@ -257,11 +273,49 @@ namespace Refit
             CollectionFormat = collectionFormat;
         }
 
+        /// <summary>
+        /// Used to customize the name of either the query parameter pair or of the form field when form encoding.
+        /// </summary>
+        /// <seealso cref="Prefix"/>
         public string Delimiter { get; protected set; } = ".";
+
+        /// <summary>
+        /// Used to customize the name of the encoded value.  
+        /// </summary>
+        /// <remarks>
+        /// Gets combined with <see cref="Delimiter"/> in the format <code>var name = $"{Prefix}{Delimiter}{originalFieldName}"</code>
+        /// where <c>originalFieldName</c> is the name of the object property or method parameter.
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// class Form
+        /// {
+        ///   [Query("-", "dontlog")]
+        ///   public string password { get; }
+        /// }
+        /// </code>
+        /// will result in the encoded form having a field named <c>dontlog-password</c>.
+        /// </example>
         public string Prefix { get; protected set; }
 
+        /// <summary>
+        /// Used to customize the formatting of the encoded value.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// interface IServerApi
+        /// {
+        ///   [Get("/expenses")]
+        ///   Task addExpense([Query(Format="0.00")] double expense);
+        /// }
+        /// </code>
+        /// Calling <c>serverApi.addExpense(5)</c> will result in a URI of <c>{baseUri}/expenses?expense=5.00</c>.
+        /// </example>
         public string Format { get; set; }
 
+        /// <summary>
+        /// Specifies how the collection should be encoded. The default behavior is <c>RefitParameterFormatter</c>.
+        /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
     }
 }

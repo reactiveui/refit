@@ -68,6 +68,14 @@ namespace Refit.Tests
         [Patch("/foo/{id}")]
         IObservable<string> PatchSomething(int id, [Body] string someAttribute);
 
+        [Options("/foo/{id}")]
+        Task<string> SendOptions(int id, [Body] string someAttribute);
+
+        [Post("/foo/{id}")]
+        Task<ApiResponse<bool>> PostReturnsApiResponse(int id);
+
+        [Post("/foo/{id}")]
+        Task<bool> PostReturnsNonApiResponse(int id);
 
         [Post("/foo")]
         Task PostWithBodyDetected(Dictionary<int, string> theData);
@@ -377,6 +385,33 @@ namespace Refit.Tests
 
             Assert.Equal("PATCH", fixture.HttpMethod.Method);
         }
+
+        [Fact]
+        public void UsingOptionsAttribute()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IDummyHttpApi.SendOptions)));
+
+            Assert.Equal("OPTIONS", fixture.HttpMethod.Method);
+        }
+
+        [Fact]
+        public void ApiResponseShouldBeSet()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsApiResponse)));
+
+            Assert.True(fixture.IsApiResponse);
+        }
+
+        [Fact]
+        public void ApiResponseShouldNotBeSet()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsNonApiResponse)));
+
+            Assert.False(fixture.IsApiResponse);
+        }
     }
 
     [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
@@ -454,6 +489,9 @@ namespace Refit.Tests
 
         [Patch("/foo/bar/{id}")]
         IObservable<string> PatchSomething(int id, [Body] string someAttribute);
+
+        [Options("/foo/bar/{id}")]
+        Task<string> SendOptions(int id, [Body] string someAttribute);
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithQueryFormat([Query(Format = "0.0")] int id);
@@ -1247,7 +1285,6 @@ namespace Refit.Tests
             var guid = Guid.NewGuid();
             var expected = string.Format("\"{0}\"", guid);
             var output = factory(new object[] { 7, guid });
-
 
             Assert.Equal(expected, output.SendContent);
         }

@@ -31,9 +31,10 @@ namespace Refit
         public Type SerializedReturnType { get; set; }
         public RefitSettings RefitSettings { get; set; }
         public Type SerializedGenericArgument { get; set; }
+        public bool IsApiResponse { get; }
 
-        static readonly Regex parameterRegex = new Regex(@"{(.*?)}");
-        static readonly HttpMethod patchMethod = new HttpMethod("PATCH");
+        static readonly Regex ParameterRegex = new Regex(@"{(.*?)}");
+        static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
 
         public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
         {
@@ -69,9 +70,12 @@ namespace Refit
 
             // get names for multipart attachments
             AttachmentNameMap = new Dictionary<int, Tuple<string, string>>();
-            if (IsMultipart) {
-                for (var i = 0; i < parameterList.Count; i++) {
-                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i)) {
+            if (IsMultipart)
+            {
+                for (var i = 0; i < parameterList.Count; i++)
+                {
+                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i))
+                    {
                         continue;
                     }
 
@@ -84,8 +88,10 @@ namespace Refit
             }
 
             QueryParameterMap = new Dictionary<int, string>();
-            for (var i=0; i < parameterList.Count; i++) {
-                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item3 == i)) {
+            for (var i = 0; i < parameterList.Count; i++)
+            {
+                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item3 == i))
+                {
                     continue;
                 }
 
@@ -93,31 +99,37 @@ namespace Refit
             }
 
             var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
-            if(ctParams.Count > 1) {
-                throw new ArgumentException("Argument list can only contain a single CancellationToken");
+            if (ctParams.Count > 1)
+            {
+                throw new ArgumentException($"Argument list to method \"{methodInfo.Name}\" can only contain a single CancellationToken");
             }
 
             CancellationToken = ctParams.FirstOrDefault();
+
+            IsApiResponse = SerializedReturnType.GetTypeInfo().IsGenericType &&
+                                SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
         }
 
-        void VerifyUrlPathIsSane(string relativePath) 
+        void VerifyUrlPathIsSane(string relativePath)
         {
             if (relativePath == "")
                 return;
 
-            if (!relativePath.StartsWith("/")) {
+            if (!relativePath.StartsWith("/"))
+            {
                 goto bogusPath;
             }
 
             var parts = relativePath.Split('/');
-            if (parts.Length == 0) {
+            if (parts.Length == 0)
+            {
                 goto bogusPath;
             }
 
             return;
 
-        bogusPath:
-            throw new ArgumentException("URL path must be of the form '/foo/bar/baz'");
+bogusPath:
+            throw new ArgumentException($"URL path {relativePath} must be of the form '/foo/bar/baz'");
         }
 
         Dictionary<int, string> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
@@ -125,19 +137,22 @@ namespace Refit
             var ret = new Dictionary<int, string>();
 
             var parameterizedParts = relativePath.Split('/', '?')
-                .SelectMany(x => parameterRegex.Matches(x).Cast<Match>())
+                .SelectMany(x => ParameterRegex.Matches(x).Cast<Match>())
                 .ToList();
 
-            if (parameterizedParts.Count == 0) {
+            if (parameterizedParts.Count == 0)
+            {
                 return ret;
             }
 
             var paramValidationDict = parameterInfo.ToDictionary(k => GetUrlNameForParameter(k).ToLowerInvariant(), v => v);
 
-            foreach (var match in parameterizedParts) {
+            foreach (var match in parameterizedParts)
+            {
                 var name = match.Groups[1].Value.ToLowerInvariant();
-                if (!paramValidationDict.ContainsKey(name)) {
-                    throw new ArgumentException(string.Format("URL has parameter {0}, but no method parameter matches", name));
+                if (!paramValidationDict.ContainsKey(name))
+                {
+                    throw new ArgumentException($"URL {relativePath} has parameter {name}, but no method parameter matches");
                 }
 
                 ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), name);
@@ -178,26 +193,31 @@ namespace Refit
                 .ToList();
 
             // multipart requests may not contain a body, implicit or explicit
-            if (isMultipart) {
-                if (bodyParams.Count > 0) {
+            if (isMultipart)
+            {
+                if (bodyParams.Count > 0)
+                {
                     throw new ArgumentException("Multipart requests may not contain a Body parameter");
                 }
                 return null;
             }
 
-            if (bodyParams.Count > 1) {
+            if (bodyParams.Count > 1)
+            {
                 throw new ArgumentException("Only one parameter can be a Body parameter");
             }
 
             // #1, body attribute wins
-            if (bodyParams.Count == 1) {
+            if (bodyParams.Count == 1)
+            {
                 var ret = bodyParams[0];
-                return Tuple.Create(ret.BodyAttribute.SerializationMethod, ret.BodyAttribute.Buffered ?? RefitSettings.Buffered, 
+                return Tuple.Create(ret.BodyAttribute.SerializationMethod, ret.BodyAttribute.Buffered ?? RefitSettings.Buffered,
                     parameterList.IndexOf(ret.Parameter));
             }
 
             // Not in post/put/patch? bail
-            if (!method.Equals(HttpMethod.Post) && !method.Equals(HttpMethod.Put) && !method.Equals(patchMethod)) {
+            if (!method.Equals(HttpMethod.Post) && !method.Equals(HttpMethod.Put) && !method.Equals(PatchMethod))
+            {
                 return null;
             }
 
@@ -205,18 +225,20 @@ namespace Refit
             var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
 
             // Check for rule #3
-            if (refParams.Count > 1) {
+            if (refParams.Count > 1)
+            {
                 throw new ArgumentException("Multiple complex types found. Specify one parameter as the body using BodyAttribute");
             }
 
-            if (refParams.Count == 1) {
-                return Tuple.Create(BodySerializationMethod.Json, false, parameterList.IndexOf(refParams[0]));
+            if (refParams.Count == 1)
+            {
+                return Tuple.Create(BodySerializationMethod.Serialized, false, parameterList.IndexOf(refParams[0]));
             }
 
             return null;
         }
 
-        Dictionary<string, string> ParseHeaders(MethodInfo methodInfo) 
+        Dictionary<string, string> ParseHeaders(MethodInfo methodInfo)
         {
             var ret = new Dictionary<string, string>();
 
@@ -231,13 +253,14 @@ namespace Refit
                 .OfType<HeadersAttribute>()
                 .SelectMany(ha => ha.Headers);
 
-            foreach (var header in headers) {
+            foreach (var header in headers)
+            {
                 if (string.IsNullOrWhiteSpace(header)) continue;
 
-            // NB: Silverlight doesn't have an overload for String.Split()
-            // with a count parameter, but header values can contain
-            // ':' so we have to re-join all but the first part to get the
-            // value.
+                // NB: Silverlight doesn't have an overload for String.Split()
+                // with a count parameter, but header values can contain
+                // ':' so we have to re-join all but the first part to get the
+                // value.
                 var parts = header.Split(':');
                 ret[parts[0].Trim()] = parts.Length > 1 ?
                     string.Join(":", parts.Skip(1)).Trim() : null;
@@ -246,17 +269,19 @@ namespace Refit
             return ret;
         }
 
-        Dictionary<int, string> BuildHeaderParameterMap(List<ParameterInfo> parameterList) 
+        Dictionary<int, string> BuildHeaderParameterMap(List<ParameterInfo> parameterList)
         {
             var ret = new Dictionary<int, string>();
 
-            for (var i = 0; i < parameterList.Count; i++) {
+            for (var i = 0; i < parameterList.Count; i++)
+            {
                 var header = parameterList[i].GetCustomAttributes(true)
                     .OfType<HeaderAttribute>()
                     .Select(ha => ha.Header)
                     .FirstOrDefault();
 
-                if (!string.IsNullOrWhiteSpace(header)) {
+                if (!string.IsNullOrWhiteSpace(header))
+                {
                     ret[i] = header.Trim();
                 }
             }
@@ -266,8 +291,10 @@ namespace Refit
 
         void DetermineReturnTypeInfo(MethodInfo methodInfo)
         {
-            if (methodInfo.ReturnType.GetTypeInfo().IsGenericType == false) {
-                if (methodInfo.ReturnType != typeof (Task)) {
+            if (methodInfo.ReturnType.GetTypeInfo().IsGenericType == false)
+            {
+                if (methodInfo.ReturnType != typeof(Task))
+                {
                     goto bogusMethod;
                 }
 
@@ -277,7 +304,8 @@ namespace Refit
             }
 
             var genericType = methodInfo.ReturnType.GetGenericTypeDefinition();
-            if (genericType != typeof(Task<>) && genericType != typeof(IObservable<>)) {
+            if (genericType != typeof(Task<>) && genericType != typeof(IObservable<>))
+            {
                 goto bogusMethod;
             }
 
@@ -289,8 +317,8 @@ namespace Refit
 
             return;
 
-        bogusMethod:
-            throw new ArgumentException("All REST Methods must return either Task<T> or IObservable<T>");
-        }     
+bogusMethod:
+            throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
+        }
     }
 }

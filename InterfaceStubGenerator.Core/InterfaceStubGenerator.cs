@@ -24,16 +24,27 @@ namespace Refit.Generator
     // What if the Interface is in another module? (since we copy usings, should be fine)
     public class InterfaceStubGenerator
     {
-        static readonly HashSet<string> httpMethodAttributeNames = new HashSet<string>(
-            new[] { "Get", "Head", "Post", "Put", "Delete", "Patch" }
+        static readonly HashSet<string> HttpMethodAttributeNames = new HashSet<string>(
+            new[] { "Get", "Head", "Post", "Put", "Delete", "Patch", "Options" }
                 .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
 
-        public InterfaceStubGenerator() : this(null) { }
+        public InterfaceStubGenerator() : this(null, null) { }
 
-        public InterfaceStubGenerator(Action<string> logWarning)
+        public InterfaceStubGenerator(Action<string> logWarning) : this(null, logWarning) { }
+
+        public InterfaceStubGenerator(string refitInternalNamespace) : this(refitInternalNamespace, null) { }
+
+        public InterfaceStubGenerator(string refitInternalNamespace, Action<string> logWarning)
         {
             Log = logWarning;
+
+            if (!string.IsNullOrWhiteSpace(refitInternalNamespace))
+            {
+                RefitInternalNamespace = $"{refitInternalNamespace.Trim().TrimEnd('.')}.";
+            }
         }
+
+        public string RefitInternalNamespace { get; }
 
         public Action<string> Log { get; }
 
@@ -165,6 +176,7 @@ namespace Refit.Generator
 
             var ret = new TemplateInformation
             {
+                RefitInternalNamespace = RefitInternalNamespace ?? string.Empty,
                 ClassList = interfaceList.Select(GenerateClassInfoForInterface).ToList(),
                 UsingList = usings.ToList()
             };
@@ -198,7 +210,7 @@ namespace Refit.Generator
             // but what if somebody is dumb and uses a constant?
             // Could be turtles all the way down.
             return method.AttributeLists.SelectMany(a => a.Attributes)
-                         .Any(a => httpMethodAttributeNames.Contains(a.Name.ToString().Split('.').Last()) &&
+                         .Any(a => HttpMethodAttributeNames.Contains(a.Name.ToString().Split('.').Last()) &&
                                    a.ArgumentList.Arguments.Count == 1 &&
                                    a.ArgumentList.Arguments[0].Expression.Kind() == SyntaxKind.StringLiteralExpression);
         }
@@ -250,6 +262,7 @@ namespace Refit.Generator
 
     public class TemplateInformation
     {
+        public string RefitInternalNamespace { get; set; }
         public List<ClassTemplateInfo> ClassList;
         public List<UsingDeclaration> UsingList { get; set; }
     }

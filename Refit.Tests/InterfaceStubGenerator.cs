@@ -92,7 +92,7 @@ namespace Refit.Tests
             Assert.Equal("IGitHubApi", result.InterfaceName);
             Assert.Equal("IGitHubApi", result.GeneratedClassSuffix);
         }
-        
+
         [Fact]
         public void GenerateClassInfoForNestedInterfaceSmokeTest()
         {
@@ -104,14 +104,14 @@ namespace Refit.Tests
                 .First(x => x.Identifier.ValueText == "INestedGitHubApi");
 
             var result = fixture.GenerateClassInfoForInterface(input);
-            
-            Assert.Equal("TestNested.INestedGitHubApi",result.InterfaceName);
-            Assert.Equal("TestNestedINestedGitHubApi",result.GeneratedClassSuffix);
+
+            Assert.Equal("TestNested.INestedGitHubApi", result.InterfaceName);
+            Assert.Equal("TestNestedINestedGitHubApi", result.GeneratedClassSuffix);
             Assert.Equal(8, result.MethodList.Count);
             Assert.Equal("GetUser", result.MethodList[0].Name);
             Assert.Equal("string userName", result.MethodList[0].ArgumentListWithTypes);
         }
-        
+
         [Fact]
         public void GenerateTemplateInfoForInterfaceListSmokeTest()
         {
@@ -123,7 +123,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.Equal(10, result.ClassList.Count);
+            Assert.Equal(12, result.ClassList.Count);
         }
 
         [Fact]
@@ -169,7 +169,7 @@ namespace Refit.Tests
         [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
         Task NoConstantsAllowed();
 
-        [Get  ("spaces-shouldnt-break-me")]
+        [Get("spaces-shouldnt-break-me")]
         Task SpacesShouldntBreakMe();
 
         // We don't need an explicit test for this because if it isn't supported we can't compile

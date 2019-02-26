@@ -14,13 +14,20 @@ namespace Refit.Generator.App
         {
             // NB: @Compile passes us a list of files relative to the project
             // directory - pass in the project and use its dir 
-            var generator = new InterfaceStubGenerator(msg => Console.Out.WriteLine(msg));
+
+            string refitInternalNamespace = null;
+            if (args.Length >= 4)
+            {
+                refitInternalNamespace = args[3];
+            }
+
+            var generator = new InterfaceStubGenerator(refitInternalNamespace, msg => Console.Out.WriteLine(msg));
             var target = new FileInfo(args[0]);
             var targetDir = new DirectoryInfo(args[1]);
 
             var files = default(FileInfo[]);
 
-            if (args.Length == 3)
+            if (args.Length >= 3)
             {
                 // We get a file with each line being a file
                 files = File.ReadLines(args[2])
@@ -63,7 +70,7 @@ namespace Refit.Generator.App
             {
                 var retryCount = 3;
 
-                retry:
+retry:
                 var file = default(FileStream);
 
                 // NB: Parallel build weirdness means that we might get >1 person 
@@ -84,7 +91,7 @@ namespace Refit.Generator.App
                     goto retry;
                 }
 
-                using(var sw = new StreamWriter(file, Encoding.UTF8))
+                using (var sw = new StreamWriter(file, Encoding.UTF8))
                 {
                     sw.WriteLine(template);
                 }
@@ -96,9 +103,9 @@ namespace Refit.Generator.App
 
     static class ConcatExtension
     {
-        public static IEnumerable<T> Concat<T>(this IEnumerable<T> This, params IEnumerable<T>[] others)
+        public static IEnumerable<T> Concat<T>(this IEnumerable<T> @this, params IEnumerable<T>[] others)
         {
-            foreach (var t in This)
+            foreach (var t in @this)
             {
                 yield return t;
             }

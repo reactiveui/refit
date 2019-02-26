@@ -25,7 +25,7 @@ namespace Refit.Tests
         {
             var name1 = UniqueName.ForType<System.Int32>();
             var name2 = UniqueName.ForType<int>();
-            
+
             Assert.Equal(name1, name2);
         }
 

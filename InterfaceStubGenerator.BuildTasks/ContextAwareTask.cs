@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Linq;
 using System.Threading.Tasks;
 using Task = Microsoft.Build.Utilities.Task;
-#if NETCOREAPP2_0
+#if NETCOREAPP2_1
 using Microsoft.Build.Framework;
 using System.Runtime.Loader;
 #endif
@@ -20,7 +20,7 @@ namespace Refit.Generator.Tasks
 
         public override bool Execute()
         {
-#if NETCOREAPP2_0
+#if NETCOREAPP2_1
             var taskAssemblyPath = new Uri(GetType().GetTypeInfo().Assembly.CodeBase).LocalPath;
             var ctxt = new CustomAssemblyLoader(this);
             var inContextAssembly = ctxt.LoadFromAssemblyPath(taskAssemblyPath);
@@ -43,7 +43,7 @@ namespace Refit.Generator.Tasks
             }
 
             var executeInnerMethod = innerTaskType.GetMethod(nameof(ExecuteInner), BindingFlags.Instance | BindingFlags.NonPublic);
-            bool result = (bool)executeInnerMethod.Invoke(innerTask, new object[0]);
+            var result = (bool)executeInnerMethod.Invoke(innerTask, new object[0]);
 
             foreach (var propertyPair in outputPropertiesMap)
             {
@@ -70,7 +70,7 @@ namespace Refit.Generator.Tasks
 
         protected abstract bool ExecuteInner();
 
-#if NETCOREAPP2_0
+#if NETCOREAPP2_1
         private class CustomAssemblyLoader : AssemblyLoadContext
         {
             private readonly ContextAwareTask loaderTask;
