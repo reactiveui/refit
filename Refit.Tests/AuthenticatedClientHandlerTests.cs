@@ -27,7 +27,7 @@ namespace Refit.Tests
         [Fact]
         public void DefaultHandlerIsHttpClientHandler()
         {
-            var handler = new AuthenticatedHttpClientHandler((() => Task.FromResult(string.Empty)));
+            var handler = new AuthenticatedHttpClientHandler(((rqMsg) => Task.FromResult(string.Empty)));
 
             Assert.IsType<HttpClientHandler>(handler.InnerHandler);
         }
@@ -44,7 +44,7 @@ namespace Refit.Tests
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings()
             {
-                AuthorizationHeaderValueGetter = () => Task.FromResult("tokenValue"),
+                AuthorizationHeaderValueGetter = (rqMsg) => Task.FromResult("tokenValue"),
                 HttpMessageHandlerFactory = () => handler
             };
 
@@ -67,7 +67,7 @@ namespace Refit.Tests
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings()
             {
-                AuthorizationHeaderValueGetter = () => Task.FromResult("tokenValue"),
+                AuthorizationHeaderValueGetter = (rqMsg) => Task.FromResult("tokenValue"),
                 HttpMessageHandlerFactory = () => handler
             };
 
