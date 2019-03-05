@@ -443,7 +443,7 @@ class LoginViewModel
         return token;
     }
 
-    public async void LoginAndCallApi()
+    public async Task LoginAndCallApi()
     {
         var api = RestService.For<IMyRestService>(new HttpClient(new AuthenticatedHttpClientHandler(GetToken)) { BaseAddress = new Uri("https://the.end.point/") });
         var location = await api.GetLocationOfRebelBase();
