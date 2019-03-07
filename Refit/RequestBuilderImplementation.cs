@@ -61,7 +61,8 @@ namespace Refit
                 var attrs = methodInfo.GetCustomAttributes(true);
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                 if (hasHttpMethod) {
-                    if (!methods.ContainsKey(methodInfo.Name)) {
+                    if (!methods.ContainsKey(methodInfo.Name))
+                    {
                         methods.Add(methodInfo.Name, new List<RestMethodInfo>());
                     }
 
