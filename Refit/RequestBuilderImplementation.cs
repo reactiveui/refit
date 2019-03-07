@@ -46,7 +46,8 @@ namespace Refit
 
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
-            foreach (var methodInfo in targetInterface.GetMethods())
+            AddInterfaceHttpMethods(targetInterface, dict);
+            foreach (var inheritedInterface in targetInterfaceInheritedInterfaces)
             {
                 AddInterfaceHttpMethods(inheritedInterface, dict);
             }
@@ -56,12 +57,13 @@ namespace Refit
 
         private void AddInterfaceHttpMethods(Type interfaceType, Dictionary<string, List<RestMethodInfo>> methods)
         {
-            foreach (var methodInfo in interfaceType.GetMethods()) {
+            foreach (var methodInfo in interfaceType.GetMethods())
+            {
                 var attrs = methodInfo.GetCustomAttributes(true);
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                 if (hasHttpMethod)
                 {
-                    if (!dict.ContainsKey(methodInfo.Name))
+                    if (!methods.ContainsKey(methodInfo.Name))
                     {
                         methods.Add(methodInfo.Name, new List<RestMethodInfo>());
                     }
