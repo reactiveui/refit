@@ -156,7 +156,7 @@ namespace System.Net.Http
 
         internal class CompleteTaskOnCloseStream : DelegatingStream
         {
-            private TaskCompletionSource<bool> _serializeToStreamTask;
+            readonly TaskCompletionSource<bool> _serializeToStreamTask;
 
             public CompleteTaskOnCloseStream(Stream innerStream, TaskCompletionSource<bool> serializeToStreamTask)
                 : base(innerStream)
@@ -166,8 +166,8 @@ namespace System.Net.Http
             }
 
             [SuppressMessage(
-                "Microsoft.Usage", 
-                "CA2215:Dispose methods should call base class dispose", 
+                "Microsoft.Usage",
+                "CA2215:Dispose methods should call base class dispose",
                 Justification = "See comments, this is intentional.")]
             protected override void Dispose(bool disposing)
             {
@@ -186,123 +186,118 @@ namespace System.Net.Http
     [ExcludeFromCodeCoverage]
     abstract class DelegatingStream : Stream
     {
-        Stream innerStream;
-
         protected DelegatingStream(Stream innerStream)
         {
-            this.innerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
+            InnerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
         }
 
-        protected Stream InnerStream
-        {
-            get { return innerStream; }
-        }
+        protected Stream InnerStream { get; private set; }
 
         public override bool CanRead
         {
-            get { return innerStream.CanRead; }
+            get { return InnerStream.CanRead; }
         }
 
         public override bool CanSeek
         {
-            get { return innerStream.CanSeek; }
+            get { return InnerStream.CanSeek; }
         }
 
         public override bool CanWrite
         {
-            get { return innerStream.CanWrite; }
+            get { return InnerStream.CanWrite; }
         }
 
         public override long Length
         {
-            get { return innerStream.Length; }
+            get { return InnerStream.Length; }
         }
 
         public override long Position
         {
-            get { return innerStream.Position; }
-            set { innerStream.Position = value; }
+            get { return InnerStream.Position; }
+            set { InnerStream.Position = value; }
         }
 
         public override int ReadTimeout
         {
-            get { return innerStream.ReadTimeout; }
-            set { innerStream.ReadTimeout = value; }
+            get { return InnerStream.ReadTimeout; }
+            set { InnerStream.ReadTimeout = value; }
         }
 
         public override bool CanTimeout
         {
-            get { return innerStream.CanTimeout; }
+            get { return InnerStream.CanTimeout; }
         }
 
         public override int WriteTimeout
         {
-            get { return innerStream.WriteTimeout; }
-            set { innerStream.WriteTimeout = value; }
+            get { return InnerStream.WriteTimeout; }
+            set { InnerStream.WriteTimeout = value; }
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                innerStream.Dispose();
+                InnerStream.Dispose();
             }
             base.Dispose(disposing);
         }
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return innerStream.Seek(offset, origin);
+            return InnerStream.Seek(offset, origin);
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            return innerStream.Read(buffer, offset, count);
+            return InnerStream.Read(buffer, offset, count);
         }
 
         public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            return innerStream.ReadAsync(buffer, offset, count, cancellationToken);
+            return InnerStream.ReadAsync(buffer, offset, count, cancellationToken);
         }
 
         public override int ReadByte()
         {
-            return innerStream.ReadByte();
+            return InnerStream.ReadByte();
         }
 
         public override void Flush()
         {
-            innerStream.Flush();
+            InnerStream.Flush();
         }
 
         public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
         {
-            return innerStream.CopyToAsync(destination, bufferSize, cancellationToken);
+            return InnerStream.CopyToAsync(destination, bufferSize, cancellationToken);
         }
 
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
-            return innerStream.FlushAsync(cancellationToken);
+            return InnerStream.FlushAsync(cancellationToken);
         }
 
         public override void SetLength(long value)
         {
-            innerStream.SetLength(value);
+            InnerStream.SetLength(value);
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            innerStream.Write(buffer, offset, count);
+            InnerStream.Write(buffer, offset, count);
         }
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            return innerStream.WriteAsync(buffer, offset, count, cancellationToken);
+            return InnerStream.WriteAsync(buffer, offset, count, cancellationToken);
         }
 
         public override void WriteByte(byte value)
         {
-            innerStream.WriteByte(value);
+            InnerStream.WriteByte(value);
         }
     }
 }

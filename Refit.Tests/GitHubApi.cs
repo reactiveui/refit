@@ -61,7 +61,7 @@ namespace Refit.Tests
 
         [Get("/users/{userName}")]
         IObservable<User> GetUserCamelCase(string userName);
-            
+
         [Get("/orgs/{orgname}/members")]
         Task<List<User>> GetOrgMembers(string orgName);
 
@@ -106,7 +106,7 @@ namespace Refit.Tests
 
             [Get("/users/{userName}")]
             IObservable<User> GetUserCamelCase(string userName);
-            
+
             [Get("/orgs/{orgname}/members")]
             Task<List<User>> GetOrgMembers(string orgName);
 

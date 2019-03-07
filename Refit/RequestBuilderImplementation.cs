@@ -17,7 +17,7 @@ namespace Refit
 {
     partial class RequestBuilderImplementation<TApi> : IRequestBuilder<TApi>
     {
-        static readonly ISet<HttpMethod> bodylessMethods = new HashSet<HttpMethod>
+        static readonly ISet<HttpMethod> BodylessMethods = new HashSet<HttpMethod>
         {
             HttpMethod.Get,
             HttpMethod.Head
@@ -46,8 +46,7 @@ namespace Refit
 
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
-            AddInterfaceHttpMethods(targetInterface, dict);
-            foreach (var inheritedInterface in targetInterfaceInheritedInterfaces)
+            foreach (var methodInfo in targetInterface.GetMethods())
             {
                 AddInterfaceHttpMethods(inheritedInterface, dict);
             }
@@ -60,8 +59,9 @@ namespace Refit
             foreach (var methodInfo in interfaceType.GetMethods()) {
                 var attrs = methodInfo.GetCustomAttributes(true);
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
-                if (hasHttpMethod) {
-                    if (!methods.ContainsKey(methodInfo.Name))
+                if (hasHttpMethod)
+                {
+                    if (!dict.ContainsKey(methodInfo.Name))
                     {
                         methods.Add(methodInfo.Name, new List<RestMethodInfo>());
                     }
@@ -74,11 +74,11 @@ namespace Refit
 
         RestMethodInfo FindMatchingRestMethodInfo(string key, Type[] parameterTypes, Type[] genericArgumentTypes)
         {
-            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods)) 
+            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods))
             {
-                if (parameterTypes == null) 
+                if (parameterTypes == null)
                 {
-                    if (httpMethods.Count > 1) 
+                    if (httpMethods.Count > 1)
                     {
                         throw new ArgumentException($"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
                     }
@@ -101,7 +101,7 @@ namespace Refit
                     return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
 
                 var parameterTypesArray = parameterTypes.ToArray();
-                foreach (var method in possibleMethods) 
+                foreach (var method in possibleMethods)
                 {
                     var match = method.MethodInfo.GetParameters()
                                       .Select(p => p.ParameterType)
@@ -114,7 +114,7 @@ namespace Refit
 
                 throw new Exception("No suitable Method found...");
             }
-            else 
+            else
             {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
@@ -175,7 +175,7 @@ namespace Refit
                 multiPartContent.Add(content);
                 return;
             }
-            if (itemValue is MultipartItem multipartItem) 
+            if (itemValue is MultipartItem multipartItem)
             {
                 var httpContent = multipartItem.ToContent();
                 multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
@@ -189,7 +189,7 @@ namespace Refit
                 return;
             }
 
-            if (itemValue is string stringValue) 
+            if (itemValue is string stringValue)
             {
                 multiPartContent.Add(new StringContent(stringValue), parameterName);
                 return;
@@ -202,7 +202,8 @@ namespace Refit
                 return;
             }
 
-            if (itemValue is byte[] byteArrayValue) {
+            if (itemValue is byte[] byteArrayValue)
+            {
                 var fileContent = new ByteArrayContent(byteArrayValue);
                 multiPartContent.Add(fileContent, parameterName, fileName);
                 return;
@@ -215,7 +216,7 @@ namespace Refit
                 multiPartContent.Add(await settings.ContentSerializer.SerializeAsync(itemValue).ConfigureAwait(false), parameterName);
                 return;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 // Eat this since we're about to throw as a fallback anyway
                 e = ex;
@@ -411,7 +412,7 @@ namespace Refit
 
         Func<object[], Task<HttpRequestMessage>> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
         {
-           
+
             return async paramList =>
             {
                 // make sure we strip out any cancelation tokens
@@ -473,7 +474,7 @@ namespace Refit
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
                                 case BodySerializationMethod.UrlEncoded:
-                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") :  new FormUrlEncodedContent(new FormValueMultimap(paramList[i], settings));
+                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") : new FormUrlEncodedContent(new FormValueMultimap(paramList[i], settings));
                                     break;
                                 case BodySerializationMethod.Default:
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -485,7 +486,8 @@ namespace Refit
                                     {
                                         case false:
                                             ret.Content = new PushStreamContent(
-                                                async (stream, _, __) => {
+                                                async (stream, _, __) =>
+                                                {
                                                     using (stream)
                                                     {
                                                         await content.CopyToAsync(stream).ConfigureAwait(false);
@@ -537,7 +539,7 @@ namespace Refit
                                     case CollectionFormat.Ssv:
                                     case CollectionFormat.Tsv:
                                     case CollectionFormat.Pipes:
-                                        var delimiter = attr.CollectionFormat == CollectionFormat.Csv ?  ","
+                                        var delimiter = attr.CollectionFormat == CollectionFormat.Csv ? ","
                                             : attr.CollectionFormat == CollectionFormat.Ssv ? " "
                                             : attr.CollectionFormat == CollectionFormat.Tsv ? "\t" : "|";
 
@@ -606,7 +608,7 @@ namespace Refit
                     // We could have content headers, so we need to make
                     // sure we have an HttpContent object to add them to,
                     // provided the HttpClient will allow it for the method
-                    if (ret.Content == null && !bodylessMethods.Contains(ret.Method))
+                    if (ret.Content == null && !BodylessMethods.Contains(ret.Method))
                         ret.Content = new ByteArrayContent(new byte[0]);
 
                     foreach (var header in headersToAdd)

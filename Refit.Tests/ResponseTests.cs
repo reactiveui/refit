@@ -9,7 +9,8 @@ using RichardSzalay.MockHttp;
 using Refit; // for the code gen
 using Xunit;
 
-namespace Refit.Tests {
+namespace Refit.Tests
+{
     public class TestAliasObject
     {
         [AliasAs("FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS")]
@@ -88,7 +89,7 @@ namespace Refit.Tests {
             expectedResponse.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/problem+json");
             mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
                 .Respond(req => expectedResponse);
-    
+
             var actualException = await Assert.ThrowsAsync<ValidationApiException>(() => fixture.GetTestObject());
             Assert.NotNull(actualException.Content);
             Assert.Equal("detail", actualException.Content.Detail);
@@ -98,7 +99,7 @@ namespace Refit.Tests {
             Assert.Equal(1, actualException.Content.Status);
             Assert.Equal("title", actualException.Content.Title);
             Assert.Equal("type", actualException.Content.Type);
-         
+
         }
     }
 }

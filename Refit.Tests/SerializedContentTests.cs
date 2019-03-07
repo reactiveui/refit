@@ -18,7 +18,7 @@ namespace Refit.Tests
         {
             if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
             {
-                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}"); 
+                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
             }
 
             var handler = new MockPushStreamContentHttpMessageHandler

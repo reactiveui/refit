@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -8,8 +8,6 @@ namespace Refit
 {
     public abstract class HttpMethodAttribute : Attribute
     {
-        protected string path;
-
         public HttpMethodAttribute(string path)
         {
             Path = path;
@@ -19,8 +17,8 @@ namespace Refit
 
         public virtual string Path
         {
-            get { return path; }
-            protected set { path = value; }
+            get;
+            protected set;
         }
     }
 
@@ -76,6 +74,17 @@ namespace Refit
         public override HttpMethod Method
         {
             get { return new HttpMethod("PATCH"); }
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public class OptionsAttribute : HttpMethodAttribute
+    {
+        public OptionsAttribute(string path) : base(path) { }
+
+        public override HttpMethod Method
+        {
+            get { return new HttpMethod("OPTIONS"); }
         }
     }
 

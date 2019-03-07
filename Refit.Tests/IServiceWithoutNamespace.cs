@@ -8,7 +8,7 @@ interface IServiceWithoutNamespace
 {
     [Get("/")]
     Task GetRoot();
-    
+
     [Post("/")]
     Task PostRoot();
 }

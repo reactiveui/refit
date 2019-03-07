@@ -23,8 +23,8 @@ namespace Refit.Generator
     // What if the Interface is in another module? (since we copy usings, should be fine)
     public class InterfaceStubGenerator
     {
-        static readonly HashSet<string> httpMethodAttributeNames = new HashSet<string>(
-            new[] { "Get", "Head", "Post", "Put", "Delete", "Patch" }
+        static readonly HashSet<string> HttpMethodAttributeNames = new HashSet<string>(
+            new[] { "Get", "Head", "Post", "Put", "Delete", "Patch", "Options" }
                 .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
 
         public InterfaceStubGenerator() : this(null, null) { }
@@ -222,7 +222,7 @@ namespace Refit.Generator
             // but what if somebody is dumb and uses a constant?
             // Could be turtles all the way down.
             return method.AttributeLists.SelectMany(a => a.Attributes)
-                         .Any(a => httpMethodAttributeNames.Contains(a.Name.ToString().Split('.').Last()) &&
+                         .Any(a => HttpMethodAttributeNames.Contains(a.Name.ToString().Split('.').Last()) &&
                                    a.ArgumentList.Arguments.Count == 1 &&
                                    a.ArgumentList.Arguments[0].Expression.Kind() == SyntaxKind.StringLiteralExpression);
         }

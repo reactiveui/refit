@@ -15,7 +15,7 @@ namespace Refit
     /// same or different values.</remarks>
     class FormValueMultimap : IEnumerable<KeyValuePair<string, string>>
     {
-        static readonly Dictionary<Type, PropertyInfo[]> propertyCache
+        static readonly Dictionary<Type, PropertyInfo[]> PropertyCache
             = new Dictionary<Type, PropertyInfo[]>();
 
         private readonly IList<KeyValuePair<string, string>> formEntries = new List<KeyValuePair<string, string>>();
@@ -29,7 +29,8 @@ namespace Refit
                 foreach (var key in dictionary.Keys)
                 {
                     var value = dictionary[key];
-                    if (value != null) {
+                    if (value != null)
+                    {
                         Add(key.ToString(), settings.FormUrlEncodedParameterFormatter.Format(value, null));
                     }
                 }
@@ -39,14 +40,14 @@ namespace Refit
 
             var type = source.GetType();
 
-            lock (propertyCache)
+            lock (PropertyCache)
             {
-                if (!propertyCache.ContainsKey(type))
+                if (!PropertyCache.ContainsKey(type))
                 {
-                    propertyCache[type] = GetProperties(type);
+                    PropertyCache[type] = GetProperties(type);
                 }
 
-                foreach (var property in propertyCache[type])
+                foreach (var property in PropertyCache[type])
                 {
                     var value = property.GetValue(source, null);
                     if (value != null)
@@ -70,7 +71,7 @@ namespace Refit
                                 case CollectionFormat.Ssv:
                                 case CollectionFormat.Tsv:
                                 case CollectionFormat.Pipes:
-                                    var delimiter = attrib.CollectionFormat == CollectionFormat.Csv ?  ","
+                                    var delimiter = attrib.CollectionFormat == CollectionFormat.Csv ? ","
                                         : attrib.CollectionFormat == CollectionFormat.Ssv ? " "
                                         : attrib.CollectionFormat == CollectionFormat.Tsv ? "\t" : "|";
 

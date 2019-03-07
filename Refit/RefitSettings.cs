@@ -60,7 +60,7 @@ namespace Refit
 
     public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     {
-        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> enumMemberCache
+        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> EnumMemberCache
             = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>>();
 
         public virtual string Format(object parameterValue, ParameterInfo parameterInfo)
@@ -71,7 +71,7 @@ namespace Refit
             EnumMemberAttribute enummember = null;
             if (parameterValue != null && parameterInfo.ParameterType.GetTypeInfo().IsEnum)
             {
-                var cached = enumMemberCache.GetOrAdd(parameterInfo.ParameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                var cached = EnumMemberCache.GetOrAdd(parameterInfo.ParameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
                 enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterInfo.ParameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
             }
 
@@ -87,7 +87,7 @@ namespace Refit
 
     public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
     {
-        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> enumMemberCache
+        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> EnumMemberCache
             = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>>();
 
         public virtual string Format(object parameterValue, string formatString)
@@ -100,7 +100,7 @@ namespace Refit
             EnumMemberAttribute enummember = null;
             if (parameterType.GetTypeInfo().IsEnum)
             {
-                var cached = enumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                var cached = EnumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
                 enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
             }
 

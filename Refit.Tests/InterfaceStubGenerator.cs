@@ -125,7 +125,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.Equal(10, result.ClassList.Count);
+            Assert.Equal(12, result.ClassList.Count);
         }
 
         [Fact]
@@ -197,7 +197,7 @@ namespace Refit.Tests
         [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
         Task NoConstantsAllowed();
 
-        [Get  ("spaces-shouldnt-break-me")]
+        [Get("spaces-shouldnt-break-me")]
         Task SpacesShouldntBreakMe();
 
         // We don't need an explicit test for this because if it isn't supported we can't compile
