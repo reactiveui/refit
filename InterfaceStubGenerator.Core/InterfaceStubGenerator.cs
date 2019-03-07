@@ -114,6 +114,8 @@ namespace Refit.Generator
                                               var mti = new MethodTemplateInfo
                                               {
                                                   Name = x.Identifier.Text,
+                                                  InterfaceName = ret.InterfaceName,
+                                                  TypeParameters = ret.TypeParameters,
                                                   ReturnType = x.ReturnType.ToString(),
                                                   ArgumentList = string.Join(",",
                                                                              x.ParameterList.Parameters
@@ -134,7 +136,6 @@ namespace Refit.Generator
                                                       mti.MethodTypeParameterList = string.Join(", ", typeParameters.Select(p => $"typeof({p.Identifier.ValueText})"));
                                                       mti.MethodTypeParameterNames = $"{string.Join(", ", typeParameters.Select(p => $"{{typeof({p.Identifier.ValueText}).AssemblyQualifiedName}}"))}";
                                                   }
-                                                  mti.MethodConstraintClauses = x.ConstraintClauses.ToFullString().Trim();
                                               }
                                               return mti;
                                           })
@@ -267,9 +268,10 @@ namespace Refit.Generator
         public string Name { get; set; }
         public string ReturnType { get; set; }
         public string MethodTypeParameters { get; set; }
-        public string MethodConstraintClauses { get; set; }
         public string MethodTypeParameterList { get; set; }
         public string MethodTypeParameterNames { get; set; }
+        public string InterfaceName { get; set; }
+        public string TypeParameters { get; set; }
     }
 
     public class TemplateInformation

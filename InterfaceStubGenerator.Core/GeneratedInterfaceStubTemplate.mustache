@@ -61,10 +61,7 @@ namespace {{Namespace}}
 
 {{#MethodList}}
         /// <inheritdoc />
-        public virtual {{ReturnType}} {{Name}}{{#MethodTypeParameters}}<{{.}}>{{/MethodTypeParameters}}({{ArgumentListWithTypes}})
-        {{#MethodConstraintClauses}}
-            {{.}}
-        {{/MethodConstraintClauses}}
+        {{ReturnType}} {{InterfaceName}}{{#TypeParameters}}<{{.}}>{{/TypeParameters}}.{{Name}}{{#MethodTypeParameters}}<{{.}}>{{/MethodTypeParameters}}({{ArgumentListWithTypes}})
         {
 {{#IsRefitMethod}}
             var arguments = new object[] { {{ArgumentList}} };
