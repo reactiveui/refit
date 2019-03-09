@@ -26,12 +26,14 @@ namespace Refit
         {
             var xmlSerializer = new XmlSerializer(item.GetType(), settings.XmlAttributeOverrides);
 
-            using (var output = new StringWriter())
+            using (var stream = new MemoryStream())
             {
-                using (var writer = XmlWriter.Create(output, settings.XmlReaderWriterSettings.WriterSettings))
+                using (var writer = XmlWriter.Create(stream, settings.XmlReaderWriterSettings.WriterSettings))
                 {
+                    var encoding = settings.XmlReaderWriterSettings.WriterSettings?.Encoding ?? Encoding.Unicode;
                     xmlSerializer.Serialize(writer, item, settings.XmlNamespaces);
-                    var content = new StringContent(output.ToString(), Encoding.UTF8, "application/xml");
+                    var str = encoding.GetString(stream.ToArray());
+                    var content = new StringContent(str, encoding, "application/xml");
                     return Task.FromResult((HttpContent)content);
                 }
             }
