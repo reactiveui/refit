@@ -635,24 +635,29 @@ var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.exam
 ``` 
 ### Interface inheritance
 
-When writing APIs for a web service that supports authentication, it might be useful to have two separate services to perform authorized and unauthorized calls, since a different connection method might be required (eg. the authenticated service might need to set additional headers or access tokens behind the scenes). While the authorized service will expose additional APIs only available to logged in users, the two services might still share a good amount of available APIs.
-In this case, instead of redefining all of those in two separate interfaces, it's possible to use inheritance to make the code more compact:
+When multiple services that need to be kept separate share a number of APIs, it is possible to leverage interface inheritance to avoid having to define the same Refit methods multiple times in different services:
 
 ```csharp
-public interface IUnauthenticatedClient
+public interface IBaseService
 {
     [Get("/resources")]
     Task<Resource> GetResource(string id);
 }
 
-public interface IAuthenticatedClient : IUnauthenticatedClient
+public interface IDerivedServiceA : IBaseService
+{
+    [Delete("/resources")]
+    Task DeleteResource(string id);
+}
+
+public interface IDerivedServiceB : IBaseService
 {
     [Post("/resources")]
     Task<string> AddResource([Body] Resource resource);
 }
 ```
 
-Doing so, the `IAuthenticatedClient` will expose both the `GetResource` and `AddResource` APIs.
+In this example, the `IDerivedServiceA` interface will expose both the `GetResource` and `DeleteResource` APIs, while `IDerivedServiceB` will expose `GetResource` and `AddResource`.
 
 #### Headers inheritance
 
