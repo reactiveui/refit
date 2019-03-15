@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
-    class AuthenticatedHttpClientHandler : DelegatingHandler
+    public class AuthenticatedParameterizedHttpClientHandler : DelegatingHandler
     {
-        readonly Func<Task<string>> getToken;
+        readonly Func<HttpRequestMessage, Task<string>> getToken;
 
-        public AuthenticatedHttpClientHandler(Func<Task<string>> getToken, HttpMessageHandler innerHandler = null)
+        public AuthenticatedParameterizedHttpClientHandler(Func<HttpRequestMessage, Task<string>> getToken, HttpMessageHandler innerHandler = null)
             : base(innerHandler ?? new HttpClientHandler())
         {
             this.getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
@@ -24,7 +24,7 @@ namespace Refit
             var auth = request.Headers.Authorization;
             if (auth != null)
             {
-                var token = await getToken().ConfigureAwait(false);
+                var token = await getToken(request).ConfigureAwait(false);
                 request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
             }
 
