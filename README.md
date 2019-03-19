@@ -153,7 +153,7 @@ There are four possibilities for supplying the body data, depending on the
 type of the parameter:
 
 * If the type is `Stream`, the content will be streamed via `StreamContent`
-* If the type is `string`, the string will be used directly as the content
+* If the type is `string`, the string will be used directly as the content unless `[Body(BodySerializationMethod.Json)]` is set which will send it as a `StringContent`
 * If the parameter has the attribute `[Body(BodySerializationMethod.UrlEncoded)]`, 
   the content will be URL-encoded (see [form posts](#form-posts) below)
 * For all other types, the object will be serialized using the content serializer specified in 
