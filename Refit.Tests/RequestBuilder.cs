@@ -94,6 +94,9 @@ namespace Refit.Tests
 
         [Post("/foo")]
         Task ManyComplexTypes(Dictionary<int, string> theData, [Body] Dictionary<int, string> theData1);
+
+        [Post("/foo")]
+        Task QueryComplexTypes([Query]Dictionary<int, string> theData);
     }
 
     public class RestMethodInfoTests
@@ -142,6 +145,16 @@ namespace Refit.Tests
 
             Assert.Empty(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void ExplicitQueryParameterForPost()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "QueryComplexTypes"));
+
+            Assert.Single(fixture.QueryParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
         }
 
         [Fact]
