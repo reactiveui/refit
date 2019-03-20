@@ -22,6 +22,9 @@ namespace Refit
         }
 
         public Func<Task<string>> AuthorizationHeaderValueGetter { get; set; }
+
+        public Func<HttpRequestMessage, Task<string>> AuthorizationHeaderValueWithParamGetter { get; set; }
+
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
 
         [Obsolete("Set RefitSettings.ContentSerializer = new JsonContentSerializer(JsonSerializerSettings) instead.", false)]

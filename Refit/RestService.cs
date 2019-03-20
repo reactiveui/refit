@@ -54,6 +54,10 @@ namespace Refit
                 {
                     innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, innerHandler);
                 }
+                else if (settings.AuthorizationHeaderValueWithParamGetter != null)
+                {
+                    innerHandler = new AuthenticatedParameterizedHttpClientHandler(settings.AuthorizationHeaderValueWithParamGetter, innerHandler);
+                }
             }
 
             var client = new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
