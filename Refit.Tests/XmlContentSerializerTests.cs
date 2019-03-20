@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 using Xunit;
 
@@ -90,6 +92,29 @@ namespace Refit.Tests
             var dto = await sut.DeserializeAsync<Dto>(new StringContent("<Dto><Identifier>123</Identifier></Dto>"));
 
             Assert.Equal("123", dto.Identifier);
+        }
+
+        [Fact]
+        public async Task XmlEncodingShouldMatchWriterSettingAsync()
+        {
+            var encoding = Encoding.UTF7;
+            var serializerSettings = new XmlContentSerializerSettings
+            {
+                XmlReaderWriterSettings = new XmlReaderWriterSettings()
+                {
+                    WriterSettings = new XmlWriterSettings()
+                    {
+                        Encoding = encoding
+                    }
+                }
+            };
+            var sut = new XmlContentSerializer(serializerSettings);
+
+            var dto = BuildDto();
+            var content = await sut.SerializeAsync(dto);
+            var xml = XDocument.Parse(await content.ReadAsStringAsync());
+            var documentEncoding = xml.Declaration.Encoding;
+            Assert.Equal(encoding.WebName, documentEncoding);
         }
 
         private static Dto BuildDto()

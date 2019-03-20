@@ -443,7 +443,7 @@ class LoginViewModel
         return token;
     }
 
-    public async void LoginAndCallApi()
+    public async Task LoginAndCallApi()
     {
         var api = RestService.For<IMyRestService>(new HttpClient(new AuthenticatedHttpClientHandler(GetToken)) { BaseAddress = new Uri("https://the.end.point/") });
         var location = await api.GetLocationOfRebelBase();
@@ -633,6 +633,69 @@ Which can be used like this:
 // than one type (unless you have a different domain for each type)
 var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
 ``` 
+### Interface inheritance
+
+When multiple services that need to be kept separate share a number of APIs, it is possible to leverage interface inheritance to avoid having to define the same Refit methods multiple times in different services:
+
+```csharp
+public interface IBaseService
+{
+    [Get("/resources")]
+    Task<Resource> GetResource(string id);
+}
+
+public interface IDerivedServiceA : IBaseService
+{
+    [Delete("/resources")]
+    Task DeleteResource(string id);
+}
+
+public interface IDerivedServiceB : IBaseService
+{
+    [Post("/resources")]
+    Task<string> AddResource([Body] Resource resource);
+}
+```
+
+In this example, the `IDerivedServiceA` interface will expose both the `GetResource` and `DeleteResource` APIs, while `IDerivedServiceB` will expose `GetResource` and `AddResource`.
+
+#### Headers inheritance
+
+When using inheritance, existing header attributes will passed along as well, and the inner-most ones will have precedence:
+
+```csharp
+[Headers("User-Agent: AAA")]
+public interface IAmInterfaceA
+{
+    [Get("/get?result=Ping")]
+    Task<string> Ping();
+}
+
+[Headers("User-Agent: BBB")]
+public interface IAmInterfaceB : IAmInterfaceA
+{
+    [Get("/get?result=Pang")]
+    [Headers("User-Agent: PANG")]
+    Task<string> Pang();
+
+    [Get("/get?result=Foo")]
+    Task<string> Foo();
+}
+```
+
+Here, `IAmInterfaceB.Pang()` will use `PANG` as its user agent, while `IAmInterfaceB.Foo` and `IAmInterfaceB.Ping` will use `BBB`.
+Note that if `IAmInterfaceB` didn't have a header attribute, `Foo` would then use the `AAA` value inherited from `IAmInterfaceA`.
+If an interface is inheriting more than one interface, the order of precedence is the same as the one in which the inherited interfaces are declared:
+
+```csharp
+public interface IAmInterfaceC : IAmInterfaceA, IAmInterfaceB
+{
+    [Get("/get?result=Foo")]
+    Task<string> Foo();
+}
+```
+
+Here `IAmInterfaceC.Foo` would use the header attribute inherited from `IAmInterfaceA`, if present, or the one inherited from `IAmInterfaceB`, and so on for all the declared interfaces.
 
 ### Using HttpClientFactory
 

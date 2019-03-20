@@ -27,9 +27,11 @@ namespace Refit.Tests
             var result = fixture.GenerateInterfaceStubs(new[] {
                 IntegrationTestHelper.GetPath("RestService.cs"),
                 IntegrationTestHelper.GetPath("GitHubApi.cs"),
+                IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
             });
 
             Assert.Contains("IGitHubApi", result);
+            Assert.Contains("IAmInterfaceC", result);
         }
 
         [Fact]
@@ -124,6 +126,32 @@ namespace Refit.Tests
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
             Assert.Equal(12, result.ClassList.Count);
+        }
+
+        [Fact]
+        public void GenerateTemplateInfoForInheritedInterfacesListSmokeTest()
+        {
+            var file = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs")));
+            var fixture = new InterfaceStubGenerator();
+
+            var input = file.GetRoot().DescendantNodes()
+                .OfType<InterfaceDeclarationSyntax>()
+                .ToList();
+
+            var result = fixture.GenerateTemplateInfoForInterfaceList(input);
+            Assert.Equal(3, result.ClassList.Count);
+
+            var inherited = result.ClassList.First(c => c.InterfaceName == "IAmInterfaceC");
+
+            Assert.Equal(3, inherited.MethodList.Count);
+            var methodNames = inherited.MethodList.Select(m => m.Name).ToList();
+
+            Assert.Contains("Ping", methodNames);
+            Assert.Contains("Pong", methodNames);
+            Assert.Contains("Pang", methodNames);
+
+            Assert.Equal("IAmInterfaceC", inherited.InterfaceName);
+            Assert.Equal("IAmInterfaceC", inherited.GeneratedClassSuffix);
         }
 
         [Fact]
