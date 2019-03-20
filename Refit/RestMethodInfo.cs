@@ -242,6 +242,10 @@ bogusPath:
         {
             var ret = new Dictionary<string, string>();
 
+            var inheritedAttributes = methodInfo.DeclaringType != null
+                ? methodInfo.DeclaringType.GetInterfaces().SelectMany(i => i.GetTypeInfo().GetCustomAttributes(true)).Reverse()
+                : new Attribute[0];
+
             var declaringTypeAttributes = methodInfo.DeclaringType != null
                 ? methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true)
                 : new Attribute[0];
@@ -249,7 +253,7 @@ bogusPath:
             // Headers set on the declaring type have to come first, 
             // so headers set on the method can replace them. Switching
             // the order here will break stuff.
-            var headers = declaringTypeAttributes.Concat(methodInfo.GetCustomAttributes(true))
+            var headers = inheritedAttributes.Concat(declaringTypeAttributes).Concat(methodInfo.GetCustomAttributes(true))
                 .OfType<HeadersAttribute>()
                 .SelectMany(ha => ha.Headers);
 
