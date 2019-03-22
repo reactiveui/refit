@@ -5,6 +5,13 @@ using static System.Math; // This is here to verify https://github.com/paulcbett
 namespace Refit.Tests
 {
     [Headers("User-Agent: Refit Integration Tests")]
+    public interface IAmInterface : IAmInterfaceB, IAmInterfaceA
+    {
+        [Get("/get?result=Pang")]
+        Task<string> Pang();
+    }
+
+    [Headers("User-Agent: Refit Integration Tests")]
     public interface IAmInterfaceA
     {
         [Get("/get?result=Ping")]
@@ -12,7 +19,7 @@ namespace Refit.Tests
     }
 
     [Headers("User-Agent: Refit Integration Tests")]
-    public interface IAmInterfaceB
+    public interface IAmInterfaceB : IAmInterfaceD
     {
         [Get("/get?result=Pong")]
         Task<string> Pong();
@@ -23,5 +30,11 @@ namespace Refit.Tests
     {
         [Get("/get?result=Pang")]
         Task<string> Pang();
+    }
+
+    public interface IAmInterfaceD
+    {
+        [Get("/get?result=Test")]
+        Task<string> Test();
     }
 }
