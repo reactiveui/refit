@@ -158,7 +158,7 @@ namespace Refit
                 // difficult to upcast Task<object> to an arbitrary T, especially
                 // if you need to AOT everything, so we need to reflectively 
                 // invoke buildTaskFuncForMethod.
-                var taskFuncMi = GetType().GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
+                var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var taskFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
                     taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
                     taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
@@ -167,7 +167,7 @@ namespace Refit
             }
 
             // Same deal
-            var rxFuncMi = GetType().GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
+            var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
             var rxFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
                     rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
                     rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
