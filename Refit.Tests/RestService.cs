@@ -1290,5 +1290,16 @@ namespace Refit.Tests
 
             Assert.False(true, "Exception not thrown.");
         }
+
+        [Fact]
+        public void NonGenericCreate()
+        {
+            var expectedBaseAddress = "http://example.com/api";
+            var inputBaseAddress = "http://example.com/api/";
+
+            var fixture = RestService.For(typeof(ITrimTrailingForwardSlashApi), inputBaseAddress) as ITrimTrailingForwardSlashApi;
+
+            Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
+        }
     }
 }

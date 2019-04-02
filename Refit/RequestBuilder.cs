@@ -28,5 +28,15 @@ namespace Refit
         {
             return PlatformRequestBuilderFactory.Create<T>(null);
         }
+
+        public static IRequestBuilder ForType(Type refitInterfaceType, RefitSettings settings)
+        {
+            return PlatformRequestBuilderFactory.Create(refitInterfaceType, settings);
+        }
+
+        public static IRequestBuilder ForType(Type refitInterfaceType)
+        {
+            return PlatformRequestBuilderFactory.Create(refitInterfaceType, null);
+        }
     }
 }
