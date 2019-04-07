@@ -57,7 +57,7 @@ namespace Refit
                 exception.ContentHeaders = response.Content.Headers;
                 exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                if (response.Content.Headers.ContentType.MediaType.Equals("application/problem+json"))
+                if (response.Content.Headers?.ContentType?.MediaType?.Equals("application/problem+json") ?? false)
                 {
                     exception = await ValidationApiException.Create(exception).ConfigureAwait(false);
                 }
