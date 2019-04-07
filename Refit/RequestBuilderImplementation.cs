@@ -215,7 +215,17 @@ namespace Refit
             Exception e = null;
             try
             {
-                multiPartContent.Add(await settings.ContentSerializer.SerializeAsync(itemValue).ConfigureAwait(false), parameterName);
+                HttpContent cont;
+                if (settings.ContentSerializer is IContentSerializerWithCancellation serializerWithCancellation)
+                {
+                    cont = await serializerWithCancellation.SerializeAsync(itemValue).ConfigureAwait(false);
+                }
+                else
+                {
+                    cont = await settings.ContentSerializer.SerializeAsync(itemValue).ConfigureAwait(false);
+                }
+
+                multiPartContent.Add(cont, parameterName);
                 return;
             }
             catch (Exception ex)
@@ -234,7 +244,7 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null, ct);
                 var rq = await factory(paramList).ConfigureAwait(false);
                 HttpResponseMessage resp = null;
                 HttpContent content = null;
@@ -299,7 +309,16 @@ namespace Refit
                         }
                     }
 
-                    var body = await serializer.DeserializeAsync<TBody>(content);
+                    TBody body;
+                    if (serializer is IContentSerializerWithCancellation serializerWithCancellation)
+                    {
+                        body = await serializerWithCancellation.DeserializeAsync<TBody>(content, ct);
+                    }
+                    else
+                    {
+                        body = await serializer.DeserializeAsync<TBody>(content);
+                    }
+
                     if (restMethod.IsApiResponse)
                     {
                         return ApiResponse.Create<T>(resp, body);
@@ -412,9 +431,9 @@ namespace Refit
             return kvps;
         }
 
-        Func<object[], Task<HttpRequestMessage>> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
+        Func<object[], Task<HttpRequestMessage>> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken, CancellationToken cancellationToken)
         {
-
+            
             return async paramList =>
             {
                 // make sure we strip out any cancelation tokens
@@ -483,7 +502,16 @@ namespace Refit
                                 case BodySerializationMethod.Json:
 #pragma warning restore CS0618 // Type or member is obsolete
                                 case BodySerializationMethod.Serialized:
-                                    var content = await serializer.SerializeAsync(paramList[i]).ConfigureAwait(false);
+                                    HttpContent content;
+                                    if (serializer is IContentSerializerWithCancellation serializerWithCancellation)
+                                    {
+                                        content = await serializerWithCancellation.SerializeAsync(paramList[i], cancellationToken).ConfigureAwait(false);
+                                    }
+                                    else
+                                    {
+                                        content = await serializer.SerializeAsync(paramList[i]).ConfigureAwait(false);
+                                    }
+
                                     switch (restMethod.BodyParameterInfo.Item2)
                                     {
                                         case false:
@@ -689,15 +717,14 @@ namespace Refit
                 if (client.BaseAddress == null)
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
-                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
-                var rq = await factory(paramList).ConfigureAwait(false);
-
                 var ct = CancellationToken.None;
-
                 if (restMethod.CancellationToken != null)
                 {
                     ct = paramList.OfType<CancellationToken>().FirstOrDefault();
                 }
+
+                var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null, ct);
+                var rq = await factory(paramList).ConfigureAwait(false);
 
                 using (var resp = await client.SendAsync(rq, ct).ConfigureAwait(false))
                 {

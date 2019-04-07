@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -46,6 +47,13 @@ namespace Refit
         Task<HttpContent> SerializeAsync<T>(T item);
 
         Task<T> DeserializeAsync<T>(HttpContent content);
+    }
+
+    public interface IContentSerializerWithCancellation : IContentSerializer
+    {
+        Task<HttpContent> SerializeAsync<T>(T item, CancellationToken cancellationToken);
+
+        Task<T> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken);
     }
 
     public interface IUrlParameterFormatter
