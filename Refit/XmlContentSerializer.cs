@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -12,6 +13,7 @@ namespace Refit
     public class XmlContentSerializer : IContentSerializer
     {
         private readonly XmlContentSerializerSettings settings;
+        private readonly ConcurrentDictionary<Type, XmlSerializer> serializerCache = new ConcurrentDictionary<Type, XmlSerializer>();
 
         public XmlContentSerializer() : this(new XmlContentSerializerSettings())
         {
@@ -24,8 +26,8 @@ namespace Refit
 
         public Task<HttpContent> SerializeAsync<T>(T item)
         {
-            var xmlSerializer = new XmlSerializer(item.GetType(), settings.XmlAttributeOverrides);
-
+            var xmlSerializer = serializerCache.GetOrAdd(item.GetType(), t => new XmlSerializer(t, settings.XmlAttributeOverrides));
+            
             using (var stream = new MemoryStream())
             {
                 using (var writer = XmlWriter.Create(stream, settings.XmlReaderWriterSettings.WriterSettings))
@@ -41,8 +43,8 @@ namespace Refit
 
         public async Task<T> DeserializeAsync<T>(HttpContent content)
         {
-            var xmlSerializer = new XmlSerializer(typeof(T), settings.XmlAttributeOverrides);
-
+            var xmlSerializer = serializerCache.GetOrAdd(typeof(T), t => new XmlSerializer(t, settings.XmlAttributeOverrides));
+            
             using (var input = new StringReader(await content.ReadAsStringAsync().ConfigureAwait(false)))
             using (var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings))
                 return (T)xmlSerializer.Deserialize(reader);
