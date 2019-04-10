@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections;
-using System.Reflection;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
-using System.Collections.Concurrent;
-using System.Net.Http.Headers;
 
 namespace Refit
 {
