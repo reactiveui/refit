@@ -168,7 +168,7 @@ namespace Refit
             return (client, args) => rxFunc.DynamicInvoke(client, args);
         }
 
-        async Task AddMultipartItemAsync(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
+        async Task AddMultipartItemAsync(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue, CancellationToken ct)
         {
 
             if (itemValue is HttpContent content)
@@ -217,7 +217,7 @@ namespace Refit
                 HttpContent cont;
                 if (settings.ContentSerializer is IContentSerializerWithCancellation serializerWithCancellation)
                 {
-                    cont = await serializerWithCancellation.SerializeAsync(itemValue).ConfigureAwait(false);
+                    cont = await serializerWithCancellation.SerializeAsync(itemValue, ct).ConfigureAwait(false);
                 }
                 else
                 {
@@ -621,12 +621,12 @@ namespace Refit
                     {
                         foreach (var item in enumerable)
                         {
-                            await AddMultipartItemAsync(multiPartContent, itemName, parameterName, item).ConfigureAwait(false);
+                            await AddMultipartItemAsync(multiPartContent, itemName, parameterName, item, cancellationToken).ConfigureAwait(false);
                         }
                     }
                     else
                     {
-                        await AddMultipartItemAsync(multiPartContent, itemName, parameterName, itemValue).ConfigureAwait(false);
+                        await AddMultipartItemAsync(multiPartContent, itemName, parameterName, itemValue, cancellationToken).ConfigureAwait(false);
                     }
                 }
 
