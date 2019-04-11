@@ -99,7 +99,24 @@ namespace Refit.Tests
             Assert.Equal(1, actualException.Content.Status);
             Assert.Equal("title", actualException.Content.Title);
             Assert.Equal("type", actualException.Content.Type);
+        }
 
+        [Fact]
+        public async Task BadRequestWithEmptyContent_ShouldReturnApiException()
+        {
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("Hello world")
+            };
+            expectedResponse.Content.Headers.Clear();
+
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                .Respond(req => expectedResponse);
+
+            var actualException = await Assert.ThrowsAsync<ApiException>(() => fixture.GetTestObject());
+
+            Assert.NotNull(actualException.Content);
+            Assert.Equal("Hello world", actualException.Content);
         }
     }
 }
