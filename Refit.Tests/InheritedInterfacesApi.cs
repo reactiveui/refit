@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Refit; // InterfaceStubGenerator looks for this
-using static System.Math; // This is here to verify https://github.com/paulcbetts/refit/issues/283
+using static System.Math; // This is here to verify https://github.com/reactiveui/refit/issues/283
 
 namespace Refit.Tests
 {
