@@ -25,6 +25,12 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuff(int id);
 
+        [Get("/foo/bar/{**path}/{id}")]
+        Task<string> FetchSomeStuffWithRoundTrippingParam(string path, int id);
+
+        [Get("/foo/bar/{**path}/{id}")]
+        Task<string> FetchSomeStuffWithNonStringRoundTrippingParam(int path, int id);
+
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedQueryParam(int id);
 
@@ -205,9 +211,33 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void ParameterMappingWithRoundTrippingSmokeTest()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithRoundTrippingParam"));
+            Assert.Equal(Tuple.Create("path", ParameterType.RoundTripping), fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[1]);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void ParameterMappingWithNonStringRoundTrippingShouldThrow()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            Assert.Throws<ArgumentException>(() =>
+            {
+                var fixture = new RestMethodInfo(
+                    input,
+                    input.GetMethods().First(x => x.Name == "FetchSomeStuffWithNonStringRoundTrippingParam")
+                    );
+            });
         }
 
         [Fact]
@@ -215,7 +245,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Equal("search", fixture.QueryParameterMap[1]);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -225,7 +255,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedQueryParam"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -235,7 +265,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -245,8 +275,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchAnImage"));
-            Assert.Equal("width", fixture.ParameterMap[0]);
-            Assert.Equal("height", fixture.ParameterMap[1]);
+            Assert.Equal(Tuple.Create("width", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("height", ParameterType.Normal), fixture.ParameterMap[1]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -256,7 +286,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithBody"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
 
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Empty(fixture.QueryParameterMap);
@@ -268,7 +298,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostSomeUrlEncodedStuff"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
 
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Empty(fixture.QueryParameterMap);
@@ -280,7 +310,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedHeaders"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
@@ -296,7 +326,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeader"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
@@ -311,7 +341,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypes"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.True(fixture.BodyParameterInfo.Item2); // buffered default
@@ -325,7 +355,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypesUnbuffered"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.False(fixture.BodyParameterInfo.Item2); // unbuffered specified
@@ -339,7 +369,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PullStreamMethod"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.True(fixture.BodyParameterInfo.Item2);
@@ -353,7 +383,7 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "VoidPost"));
-            Assert.Equal("id", fixture.ParameterMap[0]);
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
 
             Assert.Equal(typeof(Task), fixture.ReturnType);
             Assert.Equal(typeof(void), fixture.SerializedReturnType);
