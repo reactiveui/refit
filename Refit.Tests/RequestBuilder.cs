@@ -453,6 +453,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuff(int id);
 
+        [Get("/foo/bar/{**path}/{id}")]
+        Task<string> FetchSomeStuffWithRoundTrippingParam(string path, int id);
+
         [Get("/foo/bar/{id}?baz=bamf")]
         Task<string> FetchSomeStuffWithHardcodedQueryParameter(int id);
 
@@ -853,6 +856,22 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData("aaa/bbb", "/foo/bar/aaa/bbb/1")]
+        [InlineData("aaa/bbb/ccc", "/foo/bar/aaa/bbb/ccc/1")]
+        [InlineData("aaa", "/foo/bar/aaa/1")]
+        [InlineData("aa a/bb-b", "/foo/bar/aa%20a/bb-b/1")]
+        public void RoundTrippingParameterizedQueryParamsShouldBeInUrl(string path, string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithRoundTrippingParam");
+            var output = factory(new object[] { path, 1 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
         }
 
         [Fact]
