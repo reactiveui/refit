@@ -87,6 +87,20 @@ Task<List<User>> GroupList([AliasAs("id")] int groupId, [AliasAs("sort")] string
 GroupList(4, "desc");
 >>> "/group/4/users?sort=desc"
 ```
+
+Round-tripping route parameter syntax: Forward slashes aren't encoded when using a double-asterisk (\*\*) catch-all parameter syntax.
+
+During link generation, the routing system encodes the value captured in a double-asterisk (\*\*) catch-all parameter (for example, {**myparametername}) except the forward slashes.
+
+The type of round-tripping route parameter must be string.
+
+```csharp
+[Get("/search/{**page}")]
+Task<List<Page>> Search(string page);
+
+Search("admin/products");
+>>> "/search/admin/products"
+```
 ### Dynamic Querystring Parameters
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters. 
