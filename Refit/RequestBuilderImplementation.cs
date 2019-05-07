@@ -15,7 +15,14 @@ using System.Net.Http.Headers;
 
 namespace Refit
 {
-    partial class RequestBuilderImplementation<TApi> : IRequestBuilder<TApi>
+    class RequestBuilderImplementation<TApi> : RequestBuilderImplementation, IRequestBuilder<TApi>
+    {
+        public RequestBuilderImplementation(RefitSettings refitSettings = null) : base(typeof(TApi), refitSettings)
+        {
+        }
+    }
+
+    partial class RequestBuilderImplementation : IRequestBuilder
     {
         static readonly ISet<HttpMethod> BodylessMethods = new HashSet<HttpMethod>
         {
@@ -28,25 +35,24 @@ namespace Refit
         readonly RefitSettings settings;
         public Type TargetType { get; }
 
-        public RequestBuilderImplementation(RefitSettings refitSettings = null)
+        public RequestBuilderImplementation(Type refitInterfaceType, RefitSettings refitSettings = null)
         {
-            Type targetInterface = typeof(TApi);
-            Type[] targetInterfaceInheritedInterfaces = targetInterface.GetInterfaces();
+            Type[] targetInterfaceInheritedInterfaces = refitInterfaceType.GetInterfaces();
 
             settings = refitSettings ?? new RefitSettings();
             serializer = settings.ContentSerializer;
             interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();
 
-            if (targetInterface == null || !targetInterface.GetTypeInfo().IsInterface)
+            if (refitInterfaceType == null || !refitInterfaceType.GetTypeInfo().IsInterface)
             {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
 
-            TargetType = targetInterface;
+            TargetType = refitInterfaceType;
 
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
-            AddInterfaceHttpMethods(targetInterface, dict);
+            AddInterfaceHttpMethods(refitInterfaceType, dict);
             foreach (var inheritedInterface in targetInterfaceInheritedInterfaces)
             {
                 AddInterfaceHttpMethods(inheritedInterface, dict);
@@ -152,7 +158,7 @@ namespace Refit
                 // difficult to upcast Task<object> to an arbitrary T, especially
                 // if you need to AOT everything, so we need to reflectively 
                 // invoke buildTaskFuncForMethod.
-                var taskFuncMi = GetType().GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
+                var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var taskFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
                     taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
                     taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
@@ -161,7 +167,7 @@ namespace Refit
             }
 
             // Same deal
-            var rxFuncMi = GetType().GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
+            var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
             var rxFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
                     rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
                     rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });

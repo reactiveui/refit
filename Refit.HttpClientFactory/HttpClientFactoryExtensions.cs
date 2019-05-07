@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Refit
 {
@@ -17,6 +18,19 @@ namespace Refit
 
             return services.AddHttpClient(UniqueName.ForType<T>())
                            .AddTypedClient((client, serviceProvider) => RestService.For<T>(client, serviceProvider.GetService<IRequestBuilder<T>>()));
+        }
+
+        /// <summary>
+        /// Adds a Refit client to the DI container
+        /// </summary>
+        /// <param name="services">container</param>
+        /// <param name="refitInterfaceType">Type of the Refit interface</typeparam>
+        /// <param name="settings">Optional. Settings to configure the instance with</param>
+        /// <returns></returns>
+        public static IHttpClientBuilder AddRefitClient(this IServiceCollection services, Type refitInterfaceType, RefitSettings settings = null)
+        {
+            return services.AddHttpClient(UniqueName.ForType(refitInterfaceType))
+                           .AddTypedClient((client, serviceProvider) => RestService.For(refitInterfaceType, client, settings));
         }
     }
 }

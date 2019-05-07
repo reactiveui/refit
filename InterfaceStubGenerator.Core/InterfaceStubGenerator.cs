@@ -373,7 +373,7 @@ namespace Refit.Generator
         public string TypeParameters => TypeParametersInfo != null ? string.Join(", ", TypeParametersInfo) : null;
     }
 
-    public class TypeInfo : ICloneable
+    public class TypeInfo
     {
         public string Name { get; set; }
         public List<TypeInfo> Children { get; set; }
@@ -386,11 +386,6 @@ namespace Refit.Generator
         public TypeInfo Clone()
         {
             return CloneImpl() as TypeInfo;
-        }
-
-        object ICloneable.Clone()
-        {
-            throw new NotImplementedException();
         }
 
         protected virtual object CloneImpl()
