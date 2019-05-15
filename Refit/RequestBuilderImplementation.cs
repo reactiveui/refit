@@ -451,11 +451,33 @@ namespace Refit
                     // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.ContainsKey(i))
                     {
+                        string pattern;
+                        string replacement;
+                        if (restMethod.ParameterMap[i].Item2 == ParameterType.RoundTripping)
+                        {
+                            pattern = $@"{{\*\*{restMethod.ParameterMap[i].Item1}}}";
+                            var paramValue = paramList[i] as string;
+                            replacement = string.Join(
+                                "/",
+                                paramValue.Split('/')
+                                    .Select(s =>
+                                        Uri.EscapeDataString(
+                                            settings.UrlParameterFormatter.Format(s, restMethod.ParameterInfoMap[i]) ?? string.Empty
+                                        )
+                                    )
+                            );
+                        }
+                        else
+                        {
+                            pattern = "{" + restMethod.ParameterMap[i].Item1 + "}";
+                            replacement = Uri.EscapeDataString(settings.UrlParameterFormatter
+                                    .Format(paramList[i], restMethod.ParameterInfoMap[i]) ?? string.Empty);
+                        }
+
                         urlTarget = Regex.Replace(
                             urlTarget,
-                            "{" + restMethod.ParameterMap[i] + "}",
-                            Uri.EscapeDataString(settings.UrlParameterFormatter
-                                    .Format(paramList[i], restMethod.ParameterInfoMap[i]) ?? string.Empty),
+                            pattern,
+                            replacement,
                             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                         continue;
                     }

@@ -10,6 +10,12 @@ using System.Threading;
 
 namespace Refit
 {
+    public enum ParameterType
+    {
+        Normal,
+        RoundTripping
+    }
+
     [DebuggerDisplay("{MethodInfo}")]
     public class RestMethodInfo
     {
@@ -19,7 +25,7 @@ namespace Refit
         public HttpMethod HttpMethod { get; set; }
         public string RelativePath { get; set; }
         public bool IsMultipart { get; private set; }
-        public Dictionary<int, string> ParameterMap { get; set; }
+        public Dictionary<int, Tuple<string, ParameterType>> ParameterMap { get; set; }
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
@@ -132,9 +138,9 @@ bogusPath:
             throw new ArgumentException($"URL path {relativePath} must be of the form '/foo/bar/baz'");
         }
 
-        Dictionary<int, string> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
+        Dictionary<int, Tuple<string, ParameterType>> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
         {
-            var ret = new Dictionary<int, string>();
+            var ret = new Dictionary<int, Tuple<string, ParameterType>>();
 
             var parameterizedParts = relativePath.Split('/', '?')
                 .SelectMany(x => ParameterRegex.Matches(x).Cast<Match>())
@@ -149,13 +155,31 @@ bogusPath:
 
             foreach (var match in parameterizedParts)
             {
-                var name = match.Groups[1].Value.ToLowerInvariant();
-                if (!paramValidationDict.ContainsKey(name))
+                var rawName = match.Groups[1].Value.ToLowerInvariant();
+                var isRoundTripping = rawName.StartsWith("**");
+                string name;
+                if (isRoundTripping)
                 {
-                    throw new ArgumentException($"URL {relativePath} has parameter {name}, but no method parameter matches");
+                    name = rawName.Substring(2);
+                }
+                else
+                {
+                    name = rawName;
                 }
 
-                ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), name);
+                if (!paramValidationDict.ContainsKey(name))
+                {
+                    throw new ArgumentException($"URL {relativePath} has parameter {rawName}, but no method parameter matches");
+                }
+
+                var paramType = paramValidationDict[name].ParameterType;
+                if (isRoundTripping && paramType != typeof(string))
+                {
+                    throw new ArgumentException($"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.FullName}. It must be a string.");
+                }
+
+                var parameterType = isRoundTripping ? ParameterType.RoundTripping : ParameterType.Normal;
+                ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), Tuple.Create(name, parameterType));
             }
 
             return ret;
