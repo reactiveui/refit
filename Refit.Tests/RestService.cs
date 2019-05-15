@@ -139,7 +139,7 @@ namespace Refit.Tests
         Task Get();
     }
 
-    [RefitRestService("/api/Test")]
+    [BaseAddress("/api/Test")]
     public interface IRelativePathApi1
     {
         HttpClient Client { get; }
@@ -148,7 +148,7 @@ namespace Refit.Tests
         Task Get();
     }
 
-    [RefitRestService()]
+    [BaseAddress()]
     public interface IRelativePathApi2
     {
         HttpClient Client { get; }

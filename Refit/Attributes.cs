@@ -320,9 +320,9 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Interface)]
-    public class RefitRestServiceAttribute : Attribute
+    public class BaseAddressAttribute : Attribute
     {
-        public RefitRestServiceAttribute(string relativePath = null)
+        public BaseAddressAttribute(string relativePath = null)
         {
             RelativePath = relativePath;
         }
