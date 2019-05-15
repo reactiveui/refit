@@ -139,6 +139,24 @@ namespace Refit.Tests
         Task Get();
     }
 
+    [RefitRestService("/api/Test")]
+    public interface IRelativePathApi1
+    {
+        HttpClient Client { get; }
+
+        [Get("/someendpoint")]
+        Task Get();
+    }
+
+    [RefitRestService()]
+    public interface IRelativePathApi2
+    {
+        HttpClient Client { get; }
+
+        [Get("/someendpoint")]
+        Task Get();
+    }
+
     public interface IValidApi
     {
         [Get("/someendpoint")]
@@ -1300,6 +1318,21 @@ namespace Refit.Tests
             var fixture = RestService.For(typeof(ITrimTrailingForwardSlashApi), inputBaseAddress) as ITrimTrailingForwardSlashApi;
 
             Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
+        }
+
+        [Fact]
+        public void RelativePathCreate()
+        {
+            var inputBaseAddress = "http://example.com/";
+
+            var expectedBaseAddress1 = "http://example.com/api/Test";
+            var expectedBaseAddress2 = "http://example.com/";
+
+            var fixture1 = RestService.For<IRelativePathApi1>(inputBaseAddress);
+            var fixture2 = RestService.For<IRelativePathApi2>(inputBaseAddress);
+
+            Assert.Equal(fixture1.Client.BaseAddress.AbsoluteUri, expectedBaseAddress1);
+            Assert.Equal(fixture2.Client.BaseAddress.AbsoluteUri, expectedBaseAddress2);
         }
     }
 }

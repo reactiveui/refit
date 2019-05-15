@@ -318,4 +318,15 @@ namespace Refit
         /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
     }
+
+    [AttributeUsage(AttributeTargets.Interface)]
+    public class RefitRestServiceAttribute : Attribute
+    {
+        public RefitRestServiceAttribute(string relativePath = null)
+        {
+            RelativePath = relativePath;
+        }
+
+        public string RelativePath { get; }
+    }
 }
