@@ -43,6 +43,12 @@ namespace Refit
         static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
 
         public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
+            : this(targetInterface,
+                targetInterface.GetTypeInfo().GetCustomAttributes(true).OfType<BaseAddressAttribute>().FirstOrDefault(),
+                methodInfo, refitSettings)
+        {}
+
+        public RestMethodInfo(Type targetInterface, BaseAddressAttribute baseAddressAttr, MethodInfo methodInfo, RefitSettings refitSettings = null)
         {
             RefitSettings = refitSettings ?? new RefitSettings();
             Type = targetInterface;
@@ -54,13 +60,12 @@ namespace Refit
                 .First();
 
             HttpMethod = hma.Method;
-            RelativePath = hma.Path;
+            RelativePath = buildAndValidatePath(baseAddressAttr?.RelativePath ?? string.Empty, hma.Path ?? string.Empty);
 
             IsMultipart = methodInfo.GetCustomAttributes(true)
                 .OfType<MultipartAttribute>()
                 .Any();
 
-            VerifyUrlPathIsSane(RelativePath);
             DetermineReturnTypeInfo(methodInfo);
 
             // Exclude cancellation token parameters from this list
@@ -116,26 +121,19 @@ namespace Refit
                                 SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
         }
 
-        void VerifyUrlPathIsSane(string relativePath)
+        private string buildAndValidatePath(string basePath, string methodPath)
         {
-            if (relativePath == "")
-                return;
-
-            if (!relativePath.StartsWith("/"))
+            if (!string.IsNullOrEmpty(basePath) && !basePath.StartsWith("/"))
             {
-                goto bogusPath;
+                throw new ArgumentException($"Rest service URL path '{basePath}' must be null, an empty string or starts with '/'");
             }
 
-            var parts = relativePath.Split('/');
-            if (parts.Length == 0)
+            if (!string.IsNullOrEmpty(methodPath) && !methodPath.StartsWith("/"))
             {
-                goto bogusPath;
+                throw new ArgumentException($"Method URL path '{methodPath}' must be null, an empty string or starts with '/'");
             }
 
-            return;
-
-bogusPath:
-            throw new ArgumentException($"URL path {relativePath} must be of the form '/foo/bar/baz'");
+            return basePath?.TrimEnd('/') + methodPath;
         }
 
         Dictionary<int, Tuple<string, ParameterType>> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
@@ -274,7 +272,7 @@ bogusPath:
                 ? methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true)
                 : new Attribute[0];
 
-            // Headers set on the declaring type have to come first, 
+            // Headers set on the declaring type have to come first,
             // so headers set on the method can replace them. Switching
             // the order here will break stuff.
             var headers = inheritedAttributes.Concat(declaringTypeAttributes).Concat(methodInfo.GetCustomAttributes(true))

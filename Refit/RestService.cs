@@ -44,13 +44,6 @@ namespace Refit
         {
             var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, type => GetGeneratedType(type));
 
-            var aps = refitInterfaceType.GetTypeInfo().GetCustomAttributes(true).OfType<BaseAddressAttribute>().FirstOrDefault();
-
-            if (aps != null && !string.IsNullOrEmpty(aps.RelativePath))
-            {
-                client.BaseAddress = new Uri(client.BaseAddress, aps.RelativePath);
-            }
-
             return Activator.CreateInstance(generatedType, client, builder);
         }
 

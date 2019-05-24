@@ -102,6 +102,25 @@ namespace Refit.Tests
         Task ManyComplexTypes(Dictionary<int, string> theData, [Body] Dictionary<int, string> theData1);
     }
 
+
+    [BaseAddress("/api/Test")]
+    public interface IRelativePathApi1
+    {
+        HttpClient Client { get; }
+
+        [Get("/someendpoint")]
+        Task Get();
+    }
+
+    [BaseAddress()]
+    public interface IRelativePathApi2
+    {
+        HttpClient Client { get; }
+
+        [Get("/someendpoint")]
+        Task Get();
+    }
+
     public class RestMethodInfoTests
     {
 
@@ -173,37 +192,25 @@ namespace Refit.Tests
         [Fact]
         public void GarbagePathsShouldThrow()
         {
-            var shouldDie = true;
+            var type = typeof(IRestMethodInfoTests);
+            var methodInfo = type.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.GarbagePath));
 
-            try
-            {
-                var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
-            }
-            catch (ArgumentException)
-            {
-                shouldDie = false;
-            }
+            Action action = delegate() { new RestMethodInfo(type, methodInfo); };
 
-            Assert.False(shouldDie);
+            var ex = Assert.Throws<ArgumentException>(action);
+            Assert.True(ex.Message.Contains(methodInfo.GetCustomAttribute<GetAttribute>().Path));
         }
 
         [Fact]
         public void MissingParametersShouldBlowUp()
         {
-            var shouldDie = true;
+            var type = typeof(IRestMethodInfoTests);
+            var methodInfo = type.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffMissingParameters));
 
-            try
-            {
-                var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffMissingParameters"));
-            }
-            catch (ArgumentException)
-            {
-                shouldDie = false;
-            }
+            Action action = delegate() { new RestMethodInfo(type, methodInfo); };
 
-            Assert.False(shouldDie);
+            var ex = Assert.Throws<ArgumentException>(action);
+            Assert.True(ex.Message.Contains(methodInfo.GetCustomAttribute<GetAttribute>().Path));
         }
 
         [Fact]
@@ -1336,6 +1343,21 @@ namespace Refit.Tests
             var output = factory(new object[] { 7, guid });
 
             Assert.Equal(expected, output.SendContent);
+        }
+
+
+        [Theory]
+        [InlineData(typeof(IRestMethodInfoTests), "PostWithBodyDetected", "/foo")]
+        [InlineData(typeof(IRelativePathApi1), "Get", "/api/Test/someendpoint")]
+        [InlineData(typeof(IRelativePathApi2), "Get", "/someendpoint")]
+        public void RefitRestService_RelativePath(Type type, string methodName, string expectedPath)
+        {
+            var methodInfo = type.GetMethods().First(x => x.Name == methodName);
+
+            var restMethodInfo = new RestMethodInfo(type, methodInfo);
+
+            // Assert.Throws<ArgumentException>(action);
+            Assert.Equal(expectedPath, restMethodInfo.RelativePath);
         }
     }
 

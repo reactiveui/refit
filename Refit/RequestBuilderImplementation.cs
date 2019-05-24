@@ -52,16 +52,17 @@ namespace Refit
 
             var dict = new Dictionary<string, List<RestMethodInfo>>();
 
-            AddInterfaceHttpMethods(refitInterfaceType, dict);
+            var baseAddressAttr = refitInterfaceType.GetTypeInfo().GetCustomAttributes(true).OfType<BaseAddressAttribute>().FirstOrDefault();
+            AddInterfaceHttpMethods(refitInterfaceType, baseAddressAttr, dict);
             foreach (var inheritedInterface in targetInterfaceInheritedInterfaces)
             {
-                AddInterfaceHttpMethods(inheritedInterface, dict);
+                AddInterfaceHttpMethods(inheritedInterface, baseAddressAttr, dict);
             }
 
             interfaceHttpMethods = dict;
         }
 
-        private void AddInterfaceHttpMethods(Type interfaceType, Dictionary<string, List<RestMethodInfo>> methods)
+        private void AddInterfaceHttpMethods(Type interfaceType, BaseAddressAttribute baseAddressAttr, Dictionary<string, List<RestMethodInfo>> methods)
         {
             foreach (var methodInfo in interfaceType.GetMethods())
             {
@@ -74,7 +75,7 @@ namespace Refit
                         methods.Add(methodInfo.Name, new List<RestMethodInfo>());
                     }
 
-                    var restinfo = new RestMethodInfo(interfaceType, methodInfo, settings);
+                    var restinfo = new RestMethodInfo(interfaceType, baseAddressAttr, methodInfo, settings);
                     methods[methodInfo.Name].Add(restinfo);
                 }
             }
@@ -156,7 +157,7 @@ namespace Refit
             {
                 // NB: This jacked up reflection code is here because it's
                 // difficult to upcast Task<object> to an arbitrary T, especially
-                // if you need to AOT everything, so we need to reflectively 
+                // if you need to AOT everything, so we need to reflectively
                 // invoke buildTaskFuncForMethod.
                 var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var taskFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
@@ -254,8 +255,8 @@ namespace Refit
                     {
                         disposeResponse = false; // caller has to dispose
 
-                        // NB: This double-casting manual-boxing hate crime is the only way to make 
-                        // this work without a 'class' generic constraint. It could blow up at runtime 
+                        // NB: This double-casting manual-boxing hate crime is the only way to make
+                        // this work without a 'class' generic constraint. It could blow up at runtime
                         // and would be A Bad Idea if we hadn't already vetted the return type.
                         return (T)(object)resp;
                     }
@@ -312,7 +313,7 @@ namespace Refit
                     }
 
                     //  Unfortunate side-effect of having no 'class' or 'T : TBody' constraints.
-                    //  However, we know that T must be the same as TBody because IsApiResponse != true so 
+                    //  However, we know that T must be the same as TBody because IsApiResponse != true so
                     //  this code is safe at runtime.
                     return (T)(object)body;
                 }
@@ -647,8 +648,8 @@ namespace Refit
                     }
                 }
 
-                // NB: The URI methods in .NET are dumb. Also, we do this 
-                // UriBuilder business so that we preserve any hardcoded query 
+                // NB: The URI methods in .NET are dumb. Also, we do this
+                // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
@@ -776,11 +777,11 @@ namespace Refit
         static void SetHeader(HttpRequestMessage request, string name, string value)
         {
             // Clear any existing version of this header that might be set, because
-            // we want to allow removal/redefinition of headers. 
+            // we want to allow removal/redefinition of headers.
             // We also don't want to double up content headers which may have been
             // set for us automatically.
 
-            // NB: We have to enumerate the header names to check existence because 
+            // NB: We have to enumerate the header names to check existence because
             // Contains throws if it's the wrong header type for the collection.
             if (request.Headers.Any(x => x.Key == name))
             {
