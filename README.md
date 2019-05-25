@@ -37,8 +37,8 @@ Refit currently supports the following platforms and any .NET Standard 1.4 targe
 * UWP
 * Xamarin.Android
 * Xamarin.Mac
-* Xamarin.iOS 
-* Desktop .NET 4.6.1 
+* Xamarin.iOS
+* Desktop .NET 4.6.1
 * .NET Core
 
 #### Note about .NET Core
@@ -62,7 +62,7 @@ You can also specify query parameters in the URL:
 
 A request URL can be updated dynamically using replacement blocks and
 parameters on the method. A replacement block is an alphanumeric string
-surrounded by { and }. 
+surrounded by { and }.
 
 If the name of your parameter doesn't match the name in the URL path, use the
 `AliasAs` attribute.
@@ -101,9 +101,34 @@ Task<List<Page>> Search(string page);
 Search("admin/products");
 >>> "/search/admin/products"
 ```
+
+An interface or class may have HTTP attribute that are provided to all of its request method relative URLs by applaying BaseAddress annotations.
+
+```csharp
+interface IExample
+{
+  [Get("/api/item/{id}")]
+  Task<Item> Get(string id);
+}
+
+Get("123");
+>>> "/api/item/123"
+
+
+[BaseAddress("/api/{tenantId}")]
+interface IExampleWithBaseAddress
+{
+  [Get("/item/{id}")]
+  Task<Item> Get(string tenantid, string id);
+}
+
+Get("tid-0087", "123");
+>>> "/api/tid-0087/item/123"
+```
+
 ### Dynamic Querystring Parameters
 
-If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters. 
+If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
 Use the `Query` attribute the change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
@@ -168,18 +193,18 @@ type of the parameter:
 
 * If the type is `Stream`, the content will be streamed via `StreamContent`
 * If the type is `string`, the string will be used directly as the content unless `[Body(BodySerializationMethod.Json)]` is set which will send it as a `StringContent`
-* If the parameter has the attribute `[Body(BodySerializationMethod.UrlEncoded)]`, 
+* If the parameter has the attribute `[Body(BodySerializationMethod.UrlEncoded)]`,
   the content will be URL-encoded (see [form posts](#form-posts) below)
-* For all other types, the object will be serialized using the content serializer specified in 
+* For all other types, the object will be serialized using the content serializer specified in
 RefitSettings (JSON is the default).
 
 #### Buffering and the `Content-Length` header
 
 By default, Refit streams the body content without buffering it. This means you can
-stream a file from disk, for example, without incurring the overhead of loading 
-the whole file into memory. The downside of this is that no `Content-Length` header 
+stream a file from disk, for example, without incurring the overhead of loading
+the whole file into memory. The downside of this is that no `Content-Length` header
 is set _on the request_. If your API needs you to send a `Content-Length` header with
-the request, you can disable this streaming behavior by setting the `buffered` argument 
+the request, you can disable this streaming behavior by setting the `buffered` argument
 of the `[Body]` attribute to `true`:
 
 ```csharp
@@ -188,13 +213,13 @@ Task CreateUser([Body(buffered: true)] User user);
 
 #### JSON content
 
-JSON requests and responses are serialized/deserialized using Json.NET. 
-By default, Refit will use the serializer settings that can be configured 
+JSON requests and responses are serialized/deserialized using Json.NET.
+By default, Refit will use the serializer settings that can be configured
 by setting _Newtonsoft.Json.JsonConvert.DefaultSettings_:
 
 ```csharp
-JsonConvert.DefaultSettings = 
-    () => new JsonSerializerSettings() { 
+JsonConvert.DefaultSettings =
+    () => new JsonSerializerSettings() {
         ContractResolver = new CamelCasePropertyNamesContractResolver(),
         Converters = {new StringEnumConverter()}
     };
@@ -204,16 +229,16 @@ await PostSomeStuff(new { Day = DayOfWeek.Saturday });
 ```
 
 As these are global settings they will affect your entire application. It
-might be beneficial to isolate the settings for calls to a particular API. 
-When creating a Refit generated live interface, you may optionally pass a 
-`RefitSettings` that will allow you to specify what serializer settings you 
+might be beneficial to isolate the settings for calls to a particular API.
+When creating a Refit generated live interface, you may optionally pass a
+`RefitSettings` that will allow you to specify what serializer settings you
 would like. This allows you to have different serializer settings for separate
 APIs:
 
 ```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     new RefitSettings {
-        ContentSerializer = new JsonContentSerializer( 
+        ContentSerializer = new JsonContentSerializer(
             new JsonSerializerSettings {
                 ContractResolver = new SnakeCasePropertyNamesContractResolver()
         }
@@ -221,28 +246,28 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
 
 var otherApi = RestService.For<IOtherApi>("https://api.example.com",
     new RefitSettings {
-        ContentSerializer = new JsonContentSerializer( 
+        ContentSerializer = new JsonContentSerializer(
             new JsonSerializerSettings {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
         }
     )});
 ```
 
-Property serialization/deserialization can be customised using Json.NET's 
+Property serialization/deserialization can be customised using Json.NET's
 JsonProperty attribute:
 
-```csharp 
-public class Foo 
+```csharp
+public class Foo
 {
     // Works like [AliasAs("b")] would in form posts (see below)
-    [JsonProperty(PropertyName="b")] 
+    [JsonProperty(PropertyName="b")]
     public string Bar { get; set; }
-} 
+}
 ```
 
 #### XML Content
 
-XML requests and responses are serialized/deserialized using _System.Xml.Serialization.XmlSerializer_. 
+XML requests and responses are serialized/deserialized using _System.Xml.Serialization.XmlSerializer_.
 By default, Refit will use JSON content serialization, to use XML content configure the ContentSerializer to use the `XmlContentSerializer`:
 
 ```csharp
@@ -297,9 +322,9 @@ public interface IMeasurementProtocolApi
 }
 
 var data = new Dictionary<string, object> {
-    {"v", 1}, 
-    {"tid", "UA-1234-5"}, 
-    {"cid", new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c")}, 
+    {"v", 1},
+    {"tid", "UA-1234-5"},
+    {"cid", new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c")},
     {"t", "event"},
 };
 
@@ -307,8 +332,8 @@ var data = new Dictionary<string, object> {
 await api.Collect(data);
 ```
 
-Or you can just pass any object and all _public, readable_ properties will 
-be serialized as form fields in the request. This approach allows you to alias 
+Or you can just pass any object and all _public, readable_ properties will
+be serialized as form fields in the request. This approach allows you to alias
 property names using `[AliasAs("whatever")]` which can help if the API has
 cryptic field names:
 
@@ -323,30 +348,30 @@ public class Measurement
 {
     // Properties can be read-only and [AliasAs] isn't required
     public int v { get { return 1; } }
- 
+
     [AliasAs("tid")]
     public string WebPropertyId { get; set; }
 
     [AliasAs("cid")]
     public Guid ClientId { get; set; }
 
-    [AliasAs("t")] 
+    [AliasAs("t")]
     public string Type { get; set; }
 
     public object IgnoreMe { private get; set; }
 }
 
-var measurement = new Measurement { 
-    WebPropertyId = "UA-1234-5", 
-    ClientId = new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c"), 
-    Type = "event" 
-}; 
+var measurement = new Measurement {
+    WebPropertyId = "UA-1234-5",
+    ClientId = new Guid("d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c"),
+    Type = "event"
+};
 
 // Serialized as: v=1&tid=UA-1234-5&cid=d1e9ea6b-2e8b-4699-93e0-0bcbd26c206c&t=event
 await api.Collect(measurement);
-``` 
+```
 
-If you have a type that has `[JsonProperty(PropertyName)]` attributes setting property aliases, Refit will use those too (`[AliasAs]` will take precedence where you have both). 
+If you have a type that has `[JsonProperty(PropertyName)]` attributes setting property aliases, Refit will use those too (`[AliasAs]` will take precedence where you have both).
 This means that the following type will serialize as `one=value1&two=value2`:
 
 ```csharp
@@ -369,7 +394,7 @@ public class SomeObject
 
 #### Static headers
 
-You can set one or more static request headers for a request applying a `Headers` 
+You can set one or more static request headers for a request applying a `Headers`
 attribute to the method:
 
 ```csharp
@@ -378,7 +403,7 @@ attribute to the method:
 Task<User> GetUser(string user);
 ```
 
-Static headers can also be added to _every request in the API_ by applying the 
+Static headers can also be added to _every request in the API_ by applying the
 `Headers` attribute to the interface:
 
 ```csharp
@@ -387,7 +412,7 @@ public interface IGitHubApi
 {
     [Get("/users/{user}")]
     Task<User> GetUser(string user);
-    
+
     [Post("/users/new")]
     Task CreateUser([Body] User user);
 }
@@ -403,13 +428,13 @@ with a dynamic value to a request by applying a `Header` attribute to a paramete
 Task<User> GetUser(string user, [Header("Authorization")] string authorization);
 
 // Will add the header "Authorization: token OAUTH-TOKEN" to the request
-var user = await GetUser("octocat", "token OAUTH-TOKEN"); 
+var user = await GetUser("octocat", "token OAUTH-TOKEN");
 ```
 
 #### Authorization (Dynamic Headers redux)
 The most common reason to use headers is for authorization. Today most API's use some flavor of oAuth with access tokens that expire and refresh tokens that are longer lived.
 
-One way to encapsulate these kinds of token usage, a custom `HttpClientHandler` can be inserted instead. 
+One way to encapsulate these kinds of token usage, a custom `HttpClientHandler` can be inserted instead.
 
 For example:
 ```csharp
@@ -446,14 +471,14 @@ This class is used like so (example uses the [ADAL](http://msdn.microsoft.com/en
 class LoginViewModel
 {
     AuthenticationContext context = new AuthenticationContext(...);
-    
+
     private async Task<string> GetToken()
     {
         // The AcquireTokenAsync call will prompt with a UI if necessary
         // Or otherwise silently use a refresh token to return
-        // a valid access token	
+        // a valid access token
         var token = await context.AcquireTokenAsync("http://my.service.uri/app", "clientId", new Uri("callback://complete"));
-        
+
         return token;
     }
 
@@ -475,13 +500,13 @@ interface IMyRestService
 }
 ```
 
-In the above example, any time a method that requires authentication is called, the `AuthenticatedHttpClientHandler` will try to get a fresh access token. It's up to the app to provide one, checking the expiration time of an existing access token and obtaining a new one if needed. 
+In the above example, any time a method that requires authentication is called, the `AuthenticatedHttpClientHandler` will try to get a fresh access token. It's up to the app to provide one, checking the expiration time of an existing access token and obtaining a new one if needed.
 
 #### Redefining headers
 
-Unlike Retrofit, where headers do not overwrite each other and are all added to 
-the request regardless of how many times the same header is defined, Refit takes 
-a similar approach to the approach ASP.NET MVC takes with action filters &mdash; 
+Unlike Retrofit, where headers do not overwrite each other and are all added to
+the request regardless of how many times the same header is defined, Refit takes
+a similar approach to the approach ASP.NET MVC takes with action filters &mdash;
 **redefining a header will replace it**, in the following order of precedence:
 
 * `Headers` attribute on the interface _(lowest priority)_
@@ -494,11 +519,11 @@ public interface IGitHubApi
 {
     [Get("/users/list")]
     Task<List> GetUsers();
-    
+
     [Get("/users/{user}")]
     [Headers("X-Emoji: :smile_cat:")]
     Task<User> GetUser(string user);
-    
+
     [Post("/users/new")]
     [Headers("X-Emoji: :metal:")]
     Task CreateUser([Body] User user, [Header("X-Emoji")] string emoji);
@@ -511,13 +536,13 @@ var users = await GetUsers();
 var user = await GetUser("octocat");
 
 // X-Emoji: :trollface:
-await CreateUser(user, ":trollface:"); 
+await CreateUser(user, ":trollface:");
 ```
 
 #### Removing headers
 
-Headers defined on an interface or method can be removed by redefining 
-a static header without a value (i.e. without `: <value>`) or passing `null` for 
+Headers defined on an interface or method can be removed by redefining
+a static header without a value (i.e. without `: <value>`) or passing `null` for
 a dynamic header. _Empty strings will be included as empty headers._
 
 ```csharp
@@ -527,11 +552,11 @@ public interface IGitHubApi
     [Get("/users/list")]
     [Headers("X-Emoji")] // Remove the X-Emoji header
     Task<List> GetUsers();
-    
+
     [Get("/users/{user}")]
     [Headers("X-Emoji:")] // Redefine the X-Emoji header as empty
     Task<User> GetUser(string user);
-    
+
     [Post("/users/new")]
     Task CreateUser([Body] User user, [Header("X-Emoji")] string emoji);
 }
@@ -539,14 +564,14 @@ public interface IGitHubApi
 // No X-Emoji header
 var users = await GetUsers();
 
-// X-Emoji: 
+// X-Emoji:
 var user = await GetUser("octocat");
 
 // No X-Emoji header
-await CreateUser(user, null); 
+await CreateUser(user, null);
 
-// X-Emoji: 
-await CreateUser(user, ""); 
+// X-Emoji:
+await CreateUser(user, "");
 ```
 
 ### Multipart uploads
@@ -643,10 +668,10 @@ public interface IReallyExcitingCrudApi<T, in TKey> where T : class
 Which can be used like this:
 
 ```csharp
-// The "/users" part here is kind of important if you want it to work for more 
+// The "/users" part here is kind of important if you want it to work for more
 // than one type (unless you have a different domain for each type)
-var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users"); 
-``` 
+var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users");
+```
 ### Interface inheritance
 
 When multiple services that need to be kept separate share a number of APIs, it is possible to leverage interface inheritance to avoid having to define the same Refit methods multiple times in different services:
@@ -713,7 +738,7 @@ Here `IAmInterfaceC.Foo` would use the header attribute inherited from `IAmInter
 
 ### Using HttpClientFactory
 
-Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Add a reference to `Refit.HttpClientFactory` and call 
+Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Add a reference to `Refit.HttpClientFactory` and call
 the provided extension method in your `ConfigureServices` method to configure your Refit interface:
 
 ```csharp
@@ -724,9 +749,9 @@ services.AddRefitClient<IWebApi>()
         // .SetHandlerLifetime(TimeSpan.FromMinutes(2));
 ```
 
-Optionally, a `RefitSettings` object can be included: 
+Optionally, a `RefitSettings` object can be included:
 ```csharp
-var settings = new RefitSettings(); 
+var settings = new RefitSettings();
 // Configure refit settings here
 
 services.AddRefitClient<IWebApi>(settings)
@@ -769,7 +794,7 @@ try
 }
 catch (ValidationApiException validationException)
 {
-   // handle validation here by using validationException.Content, 
+   // handle validation here by using validationException.Content,
    // which is type of ProblemDetails according to RFC 7807
 }
 catch (ApiException exception)
