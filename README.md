@@ -103,7 +103,8 @@ Search("admin/products");
 ```
 ### Dynamic Querystring Parameters
 
-If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters. 
+If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
+This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to Twitter's hybrid API that insists on non-GET requests with querystring parameters.
 Use the `Query` attribute the change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
@@ -134,6 +135,14 @@ GroupListWithAttribute(4, params)
 ```
 
 A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no intellisense and/or type safety.
+
+You can also specify querystring parameters with [Query] and have them flattened in non-GET requests, similar to:
+```csharp
+[Post("/statuses/update.json")]
+Task<Tweet> PostTweet([Query]TweetParams params);
+```
+
+Where `TweetParams` is a POCO, and properties will also support `[AliasAs]` attributes.
 
 ### Collections as Querystring parameters
 
@@ -409,7 +418,9 @@ var user = await GetUser("octocat", "token OAUTH-TOKEN");
 #### Authorization (Dynamic Headers redux)
 The most common reason to use headers is for authorization. Today most API's use some flavor of oAuth with access tokens that expire and refresh tokens that are longer lived.
 
-One way to encapsulate these kinds of token usage, a custom `HttpClientHandler` can be inserted instead. 
+One way to encapsulate these kinds of token usage, a custom `HttpClientHandler` can be inserted instead.  
+There are two classes for doing this: one is `AuthenticatedHttpClientHandler`, which takes a `Func<Task<string>>` parameter, where a signature can be generated without knowing about the request.
+The other is `AuthenticatedParameterizedHttpClientHandler`, which takes a `Func<HttpRequestMessage, Task<string>>` parameter, where the signature requires information about the request (see earlier notes about Twitter's API)
 
 For example:
 ```csharp
@@ -436,6 +447,34 @@ class AuthenticatedHttpClientHandler : HttpClientHandler
         return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
     }
 }
+```
+
+Or:
+
+```csharp
+class AuthenticatedParameterizedHttpClientHandler : DelegatingHandler
+    {
+        readonly Func<HttpRequestMessage, Task<string>> getToken;
+
+        public AuthenticatedParameterizedHttpClientHandler(Func<HttpRequestMessage, Task<string>> getToken, HttpMessageHandler innerHandler = null)
+            : base(innerHandler ?? new HttpClientHandler())
+        {
+            this.getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
+        }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            // See if the request has an authorize header
+            var auth = request.Headers.Authorization;
+            if (auth != null)
+            {
+                var token = await getToken(request).ConfigureAwait(false);
+                request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
+            }
+
+            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        }
+    }
 ```
 
 While HttpClient contains a nearly identical method signature, it is used differently. HttpClient.SendAsync is not called by Refit. The HttpClientHandler must be modified instead.

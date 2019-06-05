@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -96,8 +97,27 @@ namespace Refit
             QueryParameterMap = new Dictionary<int, string>();
             for (var i = 0; i < parameterList.Count; i++)
             {
-                if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || (BodyParameterInfo != null && BodyParameterInfo.Item3 == i))
+                if (ParameterMap.ContainsKey(i) ||
+                    HeaderParameterMap.ContainsKey(i) ||
+                    (BodyParameterInfo != null && BodyParameterInfo.Item3 == i))
                 {
+                    continue;
+                }
+
+                if (parameterList[i].GetCustomAttribute<QueryAttribute>() != null)
+                {
+                    var complexType = parameterList[i].ParameterType;
+                    if (complexType.IsArray || complexType.GetInterfaces().Contains(typeof(IEnumerable)))
+                    {
+                        QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
+                    }
+                    else
+                    {
+                        foreach (var member in complexType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                        {
+                            QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForMember(member));
+                        }
+                    }
                     continue;
                 }
 
@@ -142,46 +162,44 @@ bogusPath:
         {
             var ret = new Dictionary<int, Tuple<string, ParameterType>>();
 
+            // This section handles pattern matching in the URL. We also need it to add parameter key/values for any attribute with a [Query]
             var parameterizedParts = relativePath.Split('/', '?')
                 .SelectMany(x => ParameterRegex.Matches(x).Cast<Match>())
                 .ToList();
 
-            if (parameterizedParts.Count == 0)
+            if (parameterizedParts.Count > 0)
             {
-                return ret;
+                var paramValidationDict = parameterInfo.ToDictionary(k => GetUrlNameForParameter(k).ToLowerInvariant(), v => v);
+
+                foreach (var match in parameterizedParts)
+                {
+                    var rawName = match.Groups[1].Value.ToLowerInvariant();
+                    var isRoundTripping = rawName.StartsWith("**");
+                    string name;
+                    if (isRoundTripping)
+                    {
+                        name = rawName.Substring(2);
+                    }
+                    else
+                    {
+                        name = rawName;
+                    }
+
+                    if (!paramValidationDict.ContainsKey(name))
+                    {
+                        throw new ArgumentException($"URL {relativePath} has parameter {rawName}, but no method parameter matches");
+                    }
+
+                    var paramType = paramValidationDict[name].ParameterType;
+                    if (isRoundTripping && paramType != typeof(string))
+                    {
+                        throw new ArgumentException($"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.FullName}. It must be a string.");
+                    }
+
+                    var parameterType = isRoundTripping ? ParameterType.RoundTripping : ParameterType.Normal;
+                    ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), Tuple.Create(name, parameterType));
+                }
             }
-
-            var paramValidationDict = parameterInfo.ToDictionary(k => GetUrlNameForParameter(k).ToLowerInvariant(), v => v);
-
-            foreach (var match in parameterizedParts)
-            {
-                var rawName = match.Groups[1].Value.ToLowerInvariant();
-                var isRoundTripping = rawName.StartsWith("**");
-                string name;
-                if (isRoundTripping)
-                {
-                    name = rawName.Substring(2);
-                }
-                else
-                {
-                    name = rawName;
-                }
-
-                if (!paramValidationDict.ContainsKey(name))
-                {
-                    throw new ArgumentException($"URL {relativePath} has parameter {rawName}, but no method parameter matches");
-                }
-
-                var paramType = paramValidationDict[name].ParameterType;
-                if (isRoundTripping && paramType != typeof(string))
-                {
-                    throw new ArgumentException($"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.FullName}. It must be a string.");
-                }
-
-                var parameterType = isRoundTripping ? ParameterType.RoundTripping : ParameterType.Normal;
-                ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), Tuple.Create(name, parameterType));
-            }
-
             return ret;
         }
 
@@ -191,6 +209,14 @@ bogusPath:
                 .OfType<AliasAsAttribute>()
                 .FirstOrDefault();
             return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
+        }
+
+        string GetUrlNameForMember(MemberInfo memberInfo)
+        {
+            var aliasAttr = memberInfo.GetCustomAttributes(true)
+                .OfType<AliasAsAttribute>()
+                .FirstOrDefault();
+            return aliasAttr != null ? aliasAttr.Name : memberInfo.Name;
         }
 
         string GetAttachmentNameForParameter(ParameterInfo paramInfo)
@@ -246,7 +272,8 @@ bogusPath:
             }
 
             // see if we're a post/put/patch
-            var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string)).ToList();
+            // BH: explicitly skip [Query]-denoted params
+            var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string) && pi.GetCustomAttribute<QueryAttribute>() == null).ToList();
 
             // Check for rule #3
             if (refParams.Count > 1)
