@@ -103,7 +103,8 @@ Search("admin/products");
 ```
 ### Dynamic Querystring Parameters
 
-If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters. 
+If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
+This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to Twitter's hybrid API that insists on non-GET requests with querystring parameters.
 Use the `Query` attribute the change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
@@ -134,6 +135,14 @@ GroupListWithAttribute(4, params)
 ```
 
 A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no intellisense and/or type safety.
+
+You can also specify querystring parameters with [Query] and have them flattened in non-GET requests, similar to:
+```csharp
+[Post("/statuses/update.json")]
+Task<Tweet> PostTweet([Query]TweetParams params);
+```
+
+Where `TweetParams` is a POCO, and properties will also support `[AliasAs]` attributes.
 
 ### Collections as Querystring parameters
 
