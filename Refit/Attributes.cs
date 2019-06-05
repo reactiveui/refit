@@ -318,15 +318,4 @@ namespace Refit
         /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
     }
-
-    [AttributeUsage(AttributeTargets.Interface)]
-    public class BaseAddressAttribute : Attribute
-    {
-        public BaseAddressAttribute(string relativePath = null)
-        {
-            RelativePath = relativePath;
-        }
-
-        public string RelativePath { get; }
-    }
 }

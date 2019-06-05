@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Refit
@@ -19,7 +18,9 @@ namespace Refit
 
         public static T For<T>(HttpClient client, IRequestBuilder<T> builder)
         {
-            return (T)For(typeof(T), client, builder);
+            var generatedType = TypeMapping.GetOrAdd(typeof(T), GetGeneratedType<T>());
+
+            return (T)Activator.CreateInstance(generatedType, client, builder);
         }
 
         public static T For<T>(HttpClient client, RefitSettings settings)
@@ -42,14 +43,7 @@ namespace Refit
 
         public static object For(Type refitInterfaceType, HttpClient client, IRequestBuilder builder)
         {
-            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, type => GetGeneratedType(type));
-
-            var aps = refitInterfaceType.GetTypeInfo().GetCustomAttributes(true).OfType<BaseAddressAttribute>().FirstOrDefault();
-
-            if (aps != null && !string.IsNullOrEmpty(aps.RelativePath))
-            {
-                client.BaseAddress = new Uri(client.BaseAddress, aps.RelativePath);
-            }
+            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType(refitInterfaceType));
 
             return Activator.CreateInstance(generatedType, client, builder);
         }
@@ -100,9 +94,14 @@ namespace Refit
             return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
         }
 
+        static Type GetGeneratedType<T>()
+        {
+            return GetGeneratedType(typeof(T));
+        }
+
         static Type GetGeneratedType(Type refitInterfaceType)
         {
-            var typeName = UniqueName.ForType(refitInterfaceType);
+            string typeName = UniqueName.ForType(refitInterfaceType);
 
             var generatedType = Type.GetType(typeName);
 
