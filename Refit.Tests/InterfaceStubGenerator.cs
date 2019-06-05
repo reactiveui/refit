@@ -28,6 +28,7 @@ namespace Refit.Tests
                 IntegrationTestHelper.GetPath("RestService.cs"),
                 IntegrationTestHelper.GetPath("GitHubApi.cs"),
                 IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
+                IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs"),
             });
 
             Assert.Contains("IGitHubApi", result);
@@ -139,19 +140,58 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.Equal(3, result.ClassList.Count);
+            Assert.Equal(5, result.ClassList.Count);
 
             var inherited = result.ClassList.First(c => c.InterfaceName == "IAmInterfaceC");
 
-            Assert.Equal(3, inherited.MethodList.Count);
+            Assert.Equal(4, inherited.MethodList.Count);
             var methodNames = inherited.MethodList.Select(m => m.Name).ToList();
 
             Assert.Contains("Ping", methodNames);
             Assert.Contains("Pong", methodNames);
             Assert.Contains("Pang", methodNames);
+            Assert.Contains("Test", methodNames);
 
             Assert.Equal("IAmInterfaceC", inherited.InterfaceName);
             Assert.Equal("IAmInterfaceC", inherited.GeneratedClassSuffix);
+        }
+
+        [Fact]
+        public void GenerateTemplateInfoForInheritedGenericInterfacesListSmokeTest()
+        {
+            var file = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs")));
+            var fixture = new InterfaceStubGenerator();
+
+            var input = file.GetRoot().DescendantNodes()
+                .OfType<InterfaceDeclarationSyntax>()
+                .ToList();
+
+            var result = fixture.GenerateTemplateInfoForInterfaceList(input);
+            Assert.Equal(4, result.ClassList.Count);
+
+            var inherited = result.ClassList.First(c => c.InterfaceName == "IDataApiA");
+
+            Assert.Equal(7, inherited.MethodList.Count);
+
+            var method = inherited.MethodList.FirstOrDefault(a => a.Name == "Create");
+
+            Assert.Equal("DataEntity, long", method.TypeParameters);
+
+            method = inherited.MethodList.FirstOrDefault(a => a.Name == "Copy");
+
+            Assert.NotNull(method);
+
+            inherited = result.ClassList.First(c => c.InterfaceName == "IDataApiB");
+
+            Assert.Equal(6, inherited.MethodList.Count);
+
+            method = inherited.MethodList.FirstOrDefault(a => a.Name == "Create");
+
+            Assert.Equal("DataEntity, int", method.TypeParameters);
+
+            method = inherited.MethodList.FirstOrDefault(a => a.Name == "Copy");
+
+            Assert.Null(method);
         }
 
         [Fact]
@@ -160,8 +200,8 @@ namespace Refit.Tests
             var fixture = new InterfaceStubGenerator();
 
             var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("NamespaceCollisionApi.cs")));
-            var interfaceDefinition = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
-            var result = fixture.GenerateTemplateInfoForInterfaceList(new List<InterfaceDeclarationSyntax>(interfaceDefinition));
+            var input = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToList();
+            var result = fixture.GenerateTemplateInfoForInterfaceList(input);
 
             var usingList = result.UsingList.Select(x => x.Item).ToList();
             Assert.Contains("SomeType =  CollisionA.SomeType", usingList);

@@ -25,14 +25,49 @@ namespace Refit
 
         public static T For<T>(HttpClient client, RefitSettings settings)
         {
-            IRequestBuilder<T> requestBuilder = RequestBuilder.ForType<T>(settings);
+            var requestBuilder = RequestBuilder.ForType<T>(settings);
 
-            return For<T>(client, requestBuilder);
+            return For(client, requestBuilder);
         }
 
         public static T For<T>(HttpClient client) => For<T>(client, (RefitSettings)null);
 
         public static T For<T>(string hostUrl, RefitSettings settings)
+        {
+            var client = CreateHttpClient(hostUrl, settings);
+
+            return For<T>(client, settings);
+        }
+
+        public static T For<T>(string hostUrl) => For<T>(hostUrl, null);
+
+        public static object For(Type refitInterfaceType, HttpClient client, IRequestBuilder builder)
+        {
+            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType(refitInterfaceType));
+
+            return Activator.CreateInstance(generatedType, client, builder);
+        }
+
+        public static object For(Type refitInterfaceType, HttpClient client, RefitSettings settings)
+        {
+            var requestBuilder = RequestBuilder.ForType(refitInterfaceType, settings);
+
+            return For(refitInterfaceType, client, requestBuilder);
+        }
+
+        public static object For(Type refitInterfaceType, HttpClient client) => For(refitInterfaceType, client, (RefitSettings)null);
+
+        public static object For(Type refitInterfaceType, string hostUrl, RefitSettings settings)
+        {
+            var client = CreateHttpClient(hostUrl, settings);
+
+            return For(refitInterfaceType, client, settings);
+        }
+
+        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);
+
+
+        public static HttpClient CreateHttpClient(string hostUrl, RefitSettings settings)
         {
             if (string.IsNullOrWhiteSpace(hostUrl))
             {
@@ -60,21 +95,23 @@ namespace Refit
                 }
             }
 
-            var client = new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
-            return For<T>(client, settings);
+            return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
         }
-
-        public static T For<T>(string hostUrl) => For<T>(hostUrl, null);
 
         static Type GetGeneratedType<T>()
         {
-            string typeName = UniqueName.ForType<T>();
+            return GetGeneratedType(typeof(T));
+        }
+
+        static Type GetGeneratedType(Type refitInterfaceType)
+        {
+            string typeName = UniqueName.ForType(refitInterfaceType);
 
             var generatedType = Type.GetType(typeName);
 
             if (generatedType == null)
             {
-                var message = typeof(T).Name + " doesn't look like a Refit interface. Make sure it has at least one " + "method with a Refit HTTP method attribute and Refit is installed in the project.";
+                var message = refitInterfaceType.Name + " doesn't look like a Refit interface. Make sure it has at least one " + "method with a Refit HTTP method attribute and Refit is installed in the project.";
 
                 throw new InvalidOperationException(message);
             }
