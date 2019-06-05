@@ -3,7 +3,7 @@
   <PropertyGroup>
     <MinClientVersion>2.12</MinClientVersion>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
-    <Authors>Paul Betts,Refit contributors</Authors>
+    <Authors>.NET Foundation and Contributors</Authors>
     <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <DefaultLanguage>en-US</DefaultLanguage>
