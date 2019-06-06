@@ -25,11 +25,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="RefitStubs.*.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'net461' " Remove="RefitStubs.NetCore2.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Remove="RefitStubs.Net46.cs" />
+    <Compile Remove="RefitStubs.*.cs" />
   </ItemGroup>
 
-  <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' " BeforeTargets="CoreCompile">
+  <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' " BeforeTargets="BeforeCompile">
     <PropertyGroup>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net461' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
@@ -45,9 +44,15 @@
     <Message Text="Executing: $(RefitExecCmd)" Importance="High" />
     <Exec Command="$(RefitExecCmd)" />
     <Message Text="Processed Refit Stubs" />
+    <ItemGroup>
+      <Compile Condition="'$(TargetFramework)' == 'net461' " Include="RefitStubs.Net46.cs"
+               Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder);$(BaseIntermediateOutputPath)**;$(BaseOutputPath)**;@(Compile)" />
+      <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Include="RefitStubs.NetCore2.cs"
+               Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder);$(BaseIntermediateOutputPath)**;$(BaseOutputPath)**;@(Compile)" />
+    </ItemGroup>
   </Target>
 
-  <Target Name="GenerateRefitStubsCore" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' == 'Core' " BeforeTargets="CoreCompile">
+  <Target Name="GenerateRefitStubsCore" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' == 'Core' " BeforeTargets="BeforeCompile">
     <PropertyGroup>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net461' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
@@ -63,6 +68,12 @@
     <Message Text="Executing: $(RefitExecCmd)" Importance="High" />
     <Exec Command="$(RefitExecCmd)" />
     <Message Text="Processed Refit Stubs" />
+    <ItemGroup>
+      <Compile Condition="'$(TargetFramework)' == 'net461' " Include="RefitStubs.Net46.cs"
+               Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder);$(BaseIntermediateOutputPath)**;$(BaseOutputPath)**;@(Compile)" />
+      <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Include="RefitStubs.NetCore2.cs"
+               Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder);$(BaseIntermediateOutputPath)**;$(BaseOutputPath)**;@(Compile)" />
+    </ItemGroup>
   </Target>
 
 </Project>
