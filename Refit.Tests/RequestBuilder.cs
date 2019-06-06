@@ -100,6 +100,23 @@ namespace Refit.Tests
 
         [Post("/foo")]
         Task ManyComplexTypes(Dictionary<int, string> theData, [Body] Dictionary<int, string> theData1);
+
+        [Post("/foo")]
+        Task PostWithDictionaryQuery([Query]Dictionary<int, string> theData);
+
+        [Post("/foo")]
+        Task PostWithComplexTypeQuery([Query]ComplexQueryObject queryParams);
+
+        [Post("/foo")]
+        Task ImpliedComplexQueryType(ComplexQueryObject queryParams, [Body] Dictionary<int, string> theData1);
+    }
+
+    public class ComplexQueryObject
+    {
+        [AliasAs("test-query-alias")]
+        public string TestAlias1 {get; set;}
+
+        public string TestAlias2 {get; set;}
     }
 
 
@@ -167,6 +184,27 @@ namespace Refit.Tests
 
             Assert.Empty(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void PostWithDictionaryQueryParameter()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithDictionaryQuery"));
+
+            Assert.Single(fixture.QueryParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameter()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixtureParams = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithComplexTypeQuery"));
+
+            Assert.Equal(2, fixtureParams.QueryParameterMap.Count);
+            Assert.Equal("test-query-alias", fixtureParams.QueryParameterMap[0]);
+            Assert.Null(fixtureParams.BodyParameterInfo);
         }
 
         [Fact]

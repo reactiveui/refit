@@ -3,7 +3,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Refit
@@ -87,6 +86,10 @@ namespace Refit
                 if (settings.AuthorizationHeaderValueGetter != null)
                 {
                     innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, innerHandler);
+                }
+                else if (settings.AuthorizationHeaderValueWithParamGetter != null)
+                {
+                    innerHandler = new AuthenticatedParameterizedHttpClientHandler(settings.AuthorizationHeaderValueWithParamGetter, innerHandler);
                 }
             }
 

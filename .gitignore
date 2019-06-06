@@ -1,5 +1,5 @@
 # Windows image file caches
-Thumbs.db 
+Thumbs.db
 
 # Folder config file
 Desktop.ini
@@ -89,3 +89,5 @@ packages/
 *.userprefs
 Refit-Tests/test-results
 /InterfaceStubGenerator.App/Properties/launchSettings.json
+
+Refit.Tests/RefitStubs.*

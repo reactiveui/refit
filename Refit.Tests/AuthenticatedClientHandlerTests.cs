@@ -33,9 +33,23 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void DefaultHandlerIsHttpClientHandlerWithParam()
+        {
+            var handler = new AuthenticatedParameterizedHttpClientHandler(((request) => Task.FromResult(string.Empty)));
+
+            Assert.IsType<HttpClientHandler>(handler.InnerHandler);
+        }
+
+        [Fact]
         public void NullTokenGetterThrows()
         {
             Assert.Throws<ArgumentNullException>(() => new AuthenticatedHttpClientHandler(null));
+        }
+
+        [Fact]
+        public void NullTokenGetterThrowsWithParam()
+        {
+            Assert.Throws<ArgumentNullException>(() => new AuthenticatedParameterizedHttpClientHandler(null));
         }
 
         [Fact]
@@ -74,6 +88,29 @@ namespace Refit.Tests
             handler.Expect(HttpMethod.Get, "http://api/auth")
                    .WithHeaders("Authorization", "Bearer tokenValue")
                    .Respond("text/plain", "Ok");
+
+            var fixture = RestService.For<IMyAuthenticatedService>("http://api", settings);
+
+            var result = await fixture.GetAuthenticated();
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal("Ok", result);
+        }
+
+        [Fact]
+        public async void AuthenticatedHandlerWithParamUsesAuth()
+        {
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings()
+            {
+                AuthorizationHeaderValueWithParamGetter = (request) => Task.FromResult("tokenValue"),
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            handler.Expect(HttpMethod.Get, "http://api/auth")
+                .WithHeaders("Authorization", "Bearer tokenValue")
+                .Respond("text/plain", "Ok");
 
             var fixture = RestService.For<IMyAuthenticatedService>("http://api", settings);
 
