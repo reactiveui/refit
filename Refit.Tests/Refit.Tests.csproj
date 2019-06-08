@@ -30,16 +30,18 @@
 
   <Target Name="GenerateRefitStubs" Condition="'$(DesignTimeBuild)' != 'true' " BeforeTargets="BeforeCompile">
     <PropertyGroup>
+      <RefitStubExecPlatform Condition="'$(TargetFramework.StartsWith(&quot;net4&quot;))' != 'true' ">netcoreapp2.1</RefitStubExecPlatform>
+      <RefitStubExecPlatform Condition="'$(TargetFramework.StartsWith(&quot;net4&quot;))' == 'true' ">net461</RefitStubExecPlatform>
       <OutputStubsFile>$(MSBuildThisFileDirectory)RefitStubs.$(TargetFramework).cs</OutputStubsFile>
       <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
-      <RefitExecutableBase>$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(ConfigurationName)/$(TargetFramework)/InterfaceStubGenerator.App</RefitExecutableBase>
+      <RefitExecutableBase>$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(ConfigurationName)/$(RefitStubExecPlatform)/InterfaceStubGenerator.App</RefitExecutableBase>
       <RefitExecCmdParams>"$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)" "$(RootNamespace)"</RefitExecCmdParams>
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
     <PropertyGroup>
-      <RefitExecCmd Condition="'$(TargetFramework)' != 'net461' "
+      <RefitExecCmd Condition="'$(TargetFramework.StartsWith(&quot;net4&quot;))' != 'true' "
         >dotnet "$(RefitExecutableBase.Replace('/', $([System.IO.Path]::DirectorySeparatorChar.ToString()))).dll" $(RefitExecCmdParams)</RefitExecCmd>
-      <RefitExecCmd Condition="'$(TargetFramework)' == 'net461' "
+      <RefitExecCmd Condition="'$(TargetFramework.StartsWith(&quot;net4&quot;))' == 'true' "
         >"$(RefitExecutableBase.Replace(`/`, $([System.IO.Path]::DirectorySeparatorChar.ToString()))).exe" $(RefitExecCmdParams)</RefitExecCmd>
     </PropertyGroup>
     <Message Text="Executing: $(RefitExecCmd)" Importance="High" />
