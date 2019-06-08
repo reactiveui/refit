@@ -1,3 +1,5 @@
+![Refit](refit_logo.png)
+
 ## Refit: The automatic type-safe REST library for .NET Core, Xamarin and .NET
 
 [![Build Status](https://dev.azure.com/dotnet/ReactiveUI/_apis/build/status/Refit-CI?branchName=master)](https://dev.azure.com/dotnet/ReactiveUI/_build/latest?definitionId=17)

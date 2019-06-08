@@ -5,6 +5,7 @@
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <Authors>.NET Foundation and Contributors</Authors>
     <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
+    <PackageIconUrl>https://github.com/reactiveui/refit/raw/master/refit_logo.png</PackageIconUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <DefaultLanguage>en-US</DefaultLanguage>
     <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
