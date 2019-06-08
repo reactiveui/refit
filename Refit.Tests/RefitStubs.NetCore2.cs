@@ -1010,6 +1010,14 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
+        Task<TResponse> IHttpBinApi<TResponse, TParam, THeader>.PostQuery(TParam param)
+        {
+            var arguments = new object[] { param };
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostQuery", new Type[] { typeof(TParam) });
+            return (Task<TResponse>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
         Task<TResponse> IHttpBinApi<TResponse, TParam, THeader>.GetQueryWithIncludeParameterName(TParam param)
         {
             var arguments = new object[] { param };
