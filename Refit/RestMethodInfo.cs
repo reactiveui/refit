@@ -106,14 +106,15 @@ namespace Refit
 
                 if (parameterList[i].GetCustomAttribute<QueryAttribute>() != null)
                 {
-                    var complexType = parameterList[i].ParameterType;
-                    if (complexType.IsArray || complexType.GetInterfaces().Contains(typeof(IEnumerable)))
+                    var typeInfo = parameterList[i].ParameterType.GetTypeInfo();
+                    var isValueType = typeInfo.IsValueType && !typeInfo.IsPrimitive && !typeInfo.IsEnum;
+                    if (typeInfo.IsArray || parameterList[i].ParameterType.GetInterfaces().Contains(typeof(IEnumerable)) || isValueType)
                     {
                         QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
                     }
                     else
                     {
-                        foreach (var member in complexType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                        foreach (var member in parameterList[i].ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                         {
                             QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForMember(member));
                         }

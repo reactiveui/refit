@@ -109,6 +109,12 @@ namespace Refit.Tests
 
         [Post("/foo")]
         Task ImpliedComplexQueryType(ComplexQueryObject queryParams, [Body] Dictionary<int, string> theData1);
+
+        [Get("/api/{id}")]
+        Task MultipleQueryAttributes(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+
+        [Get("/api/{id}")]
+        Task NullableValues(int id, string text = null, int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
     }
 
     public class ComplexQueryObject
@@ -186,6 +192,15 @@ namespace Refit.Tests
             Assert.Equal(2, fixtureParams.QueryParameterMap.Count);
             Assert.Equal("test-query-alias", fixtureParams.QueryParameterMap[0]);
             Assert.Null(fixtureParams.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void MultipleQueryAttributesWithNulls()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixtureParams = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "MultipleQueryAttributes"));
+
+            Assert.Equal(3, fixtureParams.QueryParameterMap.Count);
         }
 
         [Fact]
@@ -598,6 +613,9 @@ namespace Refit.Tests
 
         [Get("/query")]
         Task QueryWithEnum(FooWithEnumMember foo);
+
+        [Get("/api/{id}")]
+        Task QueryWithOptionalParameters(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
     }
 
     interface ICancellableMethods
@@ -1344,6 +1362,30 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnum");
 
             var output = factory(new object[] { queryParameter });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData("/api/123?text=title&optionalId=999&filters=A&filters=B")]
+        public void TestNullableQueryStringParams(string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
+            var output = factory(new object[] { 123, "title", 999, new string[] { "A", "B" } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData("/api/123?text=title&filters=A&filters=B")]
+        public void TestNullableQueryStringParamsWithANull(string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
+            var output = factory(new object[] { 123, "title", null, new string[] { "A", "B" } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal(expectedQuery, uri.PathAndQuery);
