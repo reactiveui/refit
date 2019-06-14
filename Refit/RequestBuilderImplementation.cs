@@ -445,6 +445,7 @@ namespace Refit
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
+                var queryParamShift = 0;
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
@@ -479,6 +480,9 @@ namespace Refit
                             pattern,
                             replacement,
                             RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                        queryParamShift++;
+
                         continue;
                     }
 
@@ -553,37 +557,42 @@ namespace Refit
                         var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
                         if (DoNotConvertToQueryMap(paramList[i]))
                         {
-                            if (paramList[i] is IEnumerable paramValues)
+                            var checkArray = paramList[i].GetType();
+                            if (checkArray.IsAssignableFrom(typeof(IEnumerable)) || checkArray.IsArray)
                             {
+                                var paramValues = (IEnumerable)paramList[i];
                                 switch (attr.CollectionFormat)
                                 {
                                     case CollectionFormat.Multi:
                                         foreach (var paramValue in paramValues)
                                         {
                                             queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                                restMethod.QueryParameterMap[i],
+                                                restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value,
                                                 settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i])));
                                         }
                                         continue;
-                                    case CollectionFormat.Csv:
                                     case CollectionFormat.Ssv:
                                     case CollectionFormat.Tsv:
                                     case CollectionFormat.Pipes:
-                                        var delimiter = attr.CollectionFormat == CollectionFormat.Csv ? ","
-                                            : attr.CollectionFormat == CollectionFormat.Ssv ? " "
-                                            : attr.CollectionFormat == CollectionFormat.Tsv ? "\t" : "|";
+                                    default:
+                                        var delimiter = attr.CollectionFormat == CollectionFormat.Ssv ? " "
+                                            : attr.CollectionFormat == CollectionFormat.Tsv ? "\t"
+                                            : attr.CollectionFormat == CollectionFormat.Pipes ? "|"
+                                            : ",";
+                                        // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
 
                                         var formattedValues = paramValues
                                             .Cast<object>()
                                             .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i]));
 
                                         queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                            restMethod.QueryParameterMap[i],
+                                            restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value,
                                             string.Join(delimiter, formattedValues)));
                                         continue;
                                 }
+                            } else {
+                                queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value, settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
                             }
-                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
                         }
                         else
                         {
