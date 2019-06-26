@@ -17,10 +17,11 @@ pr:
     - '**/*.md'
 
 pool:
-  vmImage: vs2017-win2016
+  vmImage: windows-2019
 
 variables: 
   BuildConfiguration: Release
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   
 steps:
 - task: DotNetCoreCLI@2  
@@ -35,7 +36,7 @@ steps:
 
 - task: DotNetCoreInstaller@0
   inputs:
-    version: '3.0.100-preview-010184'
+    version: '3.0.100-preview7-012588'
 
 - task: DotNetCoreCLI@2
   inputs:
@@ -51,7 +52,6 @@ steps:
     configuration: $(BuildConfiguration)
     packDirectory: $(Build.ArtifactStagingDirectory)\artifacts
     nobuild: true
-    verbosityPack: Minimal
   displayName: Pack
 
 - task: DotNetCoreCLI@2
@@ -67,8 +67,24 @@ steps:
   inputs:
     command: test
     projects: Refit.Tests/Refit.Tests.csproj
-    arguments: -c $(BuildConfiguration) --collect:"Code Coverage" -s $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings
+    arguments: -c $(BuildConfiguration) --settings $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings --collect:"XPlat Code Coverage" -- RunConfiguration.DisableAppDomain=true
   displayName: Run Tests
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: custom
+    custom: tool
+    arguments: install --tool-path . dotnet-reportgenerator-globaltool
+  displayName: Install ReportGenerator tool
+  
+- script: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/coverlet/reports -reporttypes:"Cobertura"
+  displayName: Create reports
+  
+- task: PublishCodeCoverageResults@1
+  displayName: 'Publish code coverage'
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml  
 
 - task: PowerShell@2
   displayName: Authenticode Sign Packages
