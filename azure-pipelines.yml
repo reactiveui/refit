@@ -17,10 +17,11 @@ pr:
     - '**/*.md'
 
 pool:
-  vmImage: vs2017-win2016
+  vmImage: windows-2019
 
 variables: 
   BuildConfiguration: Release
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   
 steps:
 - task: DotNetCoreCLI@2  
@@ -35,7 +36,7 @@ steps:
 
 - task: DotNetCoreInstaller@0
   inputs:
-    version: '3.0.100-preview-010184'
+    version: '3.0.100-preview7-012588'
 
 - task: DotNetCoreCLI@2
   inputs:
