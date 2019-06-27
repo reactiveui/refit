@@ -500,7 +500,7 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void Test()
+        public void ParameterMappingWithHeaderQueryParamAndQueryArrayParam()
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam"));
