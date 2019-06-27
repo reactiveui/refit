@@ -302,7 +302,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
             Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
-            Assert.Equal("search", fixture.QueryParameterMap[1]);
+            Assert.Equal("search", fixture.QueryParameterMap[0]);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
