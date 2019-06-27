@@ -56,6 +56,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
 
+        [Get("/foo")]
+        Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray);
+
         [Post("/foo/{id}")]
         Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
 
@@ -494,6 +497,17 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsNonApiResponse)));
 
             Assert.False(fixture.IsApiResponse);
+        }
+
+        [Fact]
+        public void Test()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam"));
+
+            Assert.Equal("GET", fixture.HttpMethod.Method);
+            Assert.Equal(2, fixture.QueryParameterMap.Count);
+            Assert.Equal(1, fixture.HeaderParameterMap.Count);
         }
     }
 
