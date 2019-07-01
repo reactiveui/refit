@@ -122,7 +122,7 @@ namespace Refit
                     continue;
                 }
 
-                QueryParameterMap[i] = GetUrlNameForParameter(parameterList[i]);
+                QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
             }
 
             var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
