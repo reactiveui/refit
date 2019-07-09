@@ -599,6 +599,7 @@ At this time, multipart methods support the following parameter types:
  - FileInfo
 
 The parameter name will be used as the name of the field in the multipart data. This can be overridden with the `AliasAs` attribute.
+A custom boundary can be specified with an optional string parameter to the `Multipart` attribute. If left empty, this defaults to `----MyGreatBoundary`.
 
 To specify the file name and content type for byte array (`byte[]`), `Stream` and `FileInfo` parameters, use of a wrapper class is required.
 The wrapper classes for these types are `ByteArrayPart`, `StreamPart` and `FileInfoPart`.
