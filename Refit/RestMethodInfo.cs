@@ -26,6 +26,8 @@ namespace Refit
         public HttpMethod HttpMethod { get; set; }
         public string RelativePath { get; set; }
         public bool IsMultipart { get; private set; }
+
+        public string MultipartBoundary { get; private set; }
         public Dictionary<int, Tuple<string, ParameterType>> ParameterMap { get; set; }
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
@@ -60,6 +62,8 @@ namespace Refit
             IsMultipart = methodInfo.GetCustomAttributes(true)
                 .OfType<MultipartAttribute>()
                 .Any();
+
+            MultipartBoundary = IsMultipart ? methodInfo.GetCustomAttribute<MultipartAttribute>(true).BoundaryText : string.Empty;
 
             VerifyUrlPathIsSane(RelativePath);
             DetermineReturnTypeInfo(methodInfo);

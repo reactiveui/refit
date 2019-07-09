@@ -21,6 +21,10 @@ namespace Refit.Tests
         [Post("/")]
         Task<HttpResponseMessage> UploadStream(Stream stream);
 
+        [Multipart("-----SomeCustomBoundary")]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadStreamWithCustomBoundary(Stream stream);
+
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadStreamPart(StreamPart stream);
@@ -117,6 +121,44 @@ namespace Refit.Tests
                 var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
                 var result = await fixture.UploadStream(stream);
             }
+        }
+
+        [Fact]
+        public async Task MultipartUploadShouldWorkWithStreamAndCustomBoundary()
+        {
+            var handler = new MockHttpMessageHandler
+            {
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Single(parts);
+
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.FileName);
+
+                    using (var str = await parts[0].ReadAsStreamAsync())
+                    using (var src = GetTestFileStream("Test Files/Test.pdf"))
+                    {
+                        Assert.True(StreamsEqual(src, str));
+                    }
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+            {
+                var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+                var result = await fixture.UploadStreamWithCustomBoundary(stream);
+            }
+
+            var input = typeof(IRunscopeApi);
+            var methodFixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "UploadStreamWithCustomBoundary"));
+            Assert.Equal("-----SomeCustomBoundary", methodFixture.MultipartBoundary);
         }
 
         [Fact]
