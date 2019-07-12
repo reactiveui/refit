@@ -56,6 +56,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
 
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
+
         [Get("/foo")]
         Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray);
 
@@ -123,9 +126,9 @@ namespace Refit.Tests
     public class ComplexQueryObject
     {
         [AliasAs("test-query-alias")]
-        public string TestAlias1 {get; set;}
+        public string TestAlias1 { get; set; }
 
-        public string TestAlias2 {get; set;}
+        public string TestAlias2 { get; set; }
     }
 
     public class RestMethodInfoTests
@@ -393,6 +396,21 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void DynamicHeaderCollectionShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeaderCollection"));
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Equal(Constants.HeaderCollection, fixture.HeaderParameterMap[1]);
+            Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
+            Assert.Equal(2, fixture.Headers.Count);
+        }
+
+        [Fact]
         public void ValueTypesDontBlowUpBuffered()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -551,6 +569,10 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Header1: OldValue1", "Header2: OldValue2")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
@@ -1114,6 +1136,24 @@ namespace Refit.Tests
 
             Assert.NotNull(output.Headers.Authorization);//, "Headers include Authorization header");
             Assert.Equal("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeaderCollection");
+            var headers = new Dictionary<string, string>
+            {
+                { "Header1", "NewValue1" },
+                { "Header2", "NewValue2" },
+            };
+            var output = factory(new object[] { 6, headers });
+
+            Assert.True(output.Headers.Contains("Header1"));//, "Headers include Header1 header");
+            Assert.True(output.Headers.Contains("Header2"));//, "Headers include Header2 header");
+            Assert.Equal("NewValue1", output.Headers.GetValues("Header1").First());
+            Assert.Equal("NewValue2", output.Headers.GetValues("Header2").First());
         }
 
         [Fact]
