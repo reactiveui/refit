@@ -404,6 +404,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
+            // This constant string is used for supporting header collection
             Assert.Equal(Constants.HeaderCollection, fixture.HeaderParameterMap[1]);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
