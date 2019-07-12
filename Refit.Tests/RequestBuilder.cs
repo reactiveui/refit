@@ -59,6 +59,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
 
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAtFirstPlace([HeaderCollection] IDictionary<string, string> headers, int id);
+
         [Get("/foo")]
         Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray);
 
@@ -406,6 +409,22 @@ namespace Refit.Tests
 
             // This constant string is used for supporting header collection
             Assert.Equal(Constants.HeaderCollection, fixture.HeaderParameterMap[1]);
+            Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
+            Assert.Equal(2, fixture.Headers.Count);
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionAtFirstPlaceShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeaderCollectionAtFirstPlace"));
+            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[1]);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            // This constant string is used for supporting header collection
+            Assert.Equal(Constants.HeaderCollection, fixture.HeaderParameterMap[0]);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.Equal(2, fixture.Headers.Count);
