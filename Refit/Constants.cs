@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Refit
+﻿namespace Refit
 {
     internal static class Constants
     {
