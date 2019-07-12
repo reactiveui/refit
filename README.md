@@ -417,6 +417,13 @@ Task<User> GetUser(string user, [Header("Authorization")] string authorization);
 var user = await GetUser("octocat", "token OAUTH-TOKEN"); 
 ```
 
+If you want to set multiple headers dynamically at runtime, you can add a header collection with a dictionary to a request by applying a `HeaderCollection` attribute to a parameter:
+
+```csharp
+[Get("/users/{user}")]
+Task<User> GetUser(string user, [HeaderCollection] IDictionary<string, string> headers);
+```
+
 #### Authorization (Dynamic Headers redux)
 The most common reason to use headers is for authorization. Today most API's use some flavor of oAuth with access tokens that expire and refresh tokens that are longer lived.
 
