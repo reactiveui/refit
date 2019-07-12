@@ -543,7 +543,22 @@ namespace Refit
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.ContainsKey(i))
                     {
-                        headersToAdd[restMethod.HeaderParameterMap[i]] = paramList[i]?.ToString();
+                        var content = restMethod.HeaderParameterMap[i];
+                        if (content == Constants.HeaderCollection)
+                        {
+                            // Handle header collection
+                            if (paramList[i] is IDictionary<string, object> headerCollection)
+                            {
+                                foreach (var header in headerCollection)
+                                {
+                                    headersToAdd[header.Key] = header.Value.ToString();
+                                }
+                            }
+                        }
+                        else
+                        {
+                            headersToAdd[content] = paramList[i]?.ToString();
+                        }
                         continue;
                     }
 
@@ -590,7 +605,9 @@ namespace Refit
                                             string.Join(delimiter, formattedValues)));
                                         continue;
                                 }
-                            } else {
+                            }
+                            else
+                            {
                                 queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value, settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
                             }
                         }

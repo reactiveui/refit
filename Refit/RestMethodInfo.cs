@@ -331,14 +331,21 @@ bogusPath:
 
             for (var i = 0; i < parameterList.Count; i++)
             {
-                var header = parameterList[i].GetCustomAttributes(true)
-                    .OfType<HeaderAttribute>()
-                    .Select(ha => ha.Header)
-                    .FirstOrDefault();
-
-                if (!string.IsNullOrWhiteSpace(header))
+                foreach (var attribute in parameterList[i].GetCustomAttributes(true))
                 {
-                    ret[i] = header.Trim();
+                    if (attribute is HeaderAttribute headerAttribute)
+                    {
+                        if (!string.IsNullOrWhiteSpace(headerAttribute.Header))
+                        {
+                            ret[i] = headerAttribute.Header.Trim();
+                        }
+                        break;
+                    }
+                    else if (attribute is HeaderCollectionAttribute headerCollectionAttribute)
+                    {
+                        ret[i] = Constants.HeaderCollection;
+                        break;
+                    }
                 }
             }
 

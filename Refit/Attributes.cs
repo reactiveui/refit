@@ -201,6 +201,11 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
+    public class HeaderCollectionAttribute : Attribute
+    {
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
     public class AuthorizeAttribute : HeaderAttribute
     {
         public AuthorizeAttribute(string scheme = "Bearer")
