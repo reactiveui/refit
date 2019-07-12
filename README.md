@@ -1,3 +1,5 @@
+![Refit](refit_logo.png)
+
 ## Refit: The automatic type-safe REST library for .NET Core, Xamarin and .NET
 
 [![Build Status](https://dev.azure.com/dotnet/ReactiveUI/_apis/build/status/Refit-CI?branchName=master)](https://dev.azure.com/dotnet/ReactiveUI/_build/latest?definitionId=17)
@@ -550,7 +552,24 @@ var users = await GetUsers();
 var user = await GetUser("octocat");
 
 // X-Emoji: :trollface:
-await CreateUser(user, ":trollface:"); 
+await CreateUser(user, ":trollface:");
+```
+
+**Note:** This redefining behavior only applies to headers _with the same name_. Headers with different names are not replaced. The following code will result in all headers being included:
+
+```csharp
+[Headers("Header-A: 1")]
+public interface ISomeApi
+{
+    [Headers("Header-B: 2")]
+    [Post("/post")]
+    Task PostTheThing([Header("Header-C")] int c);
+}
+
+// Header-A: 1
+// Header-B: 2
+// Header-C: 3
+var user = await api.PostTheThing(3);
 ```
 
 #### Removing headers
