@@ -547,11 +547,11 @@ namespace Refit
                         if (content == Constants.HeaderCollection)
                         {
                             // Handle header collection
-                            if (paramList[i] is IDictionary<string, object> headerCollection)
+                            if (paramList[i] is IDictionary<string, string> headerCollection)
                             {
                                 foreach (var header in headerCollection)
                                 {
-                                    headersToAdd[header.Key] = header.Value.ToString();
+                                    headersToAdd[header.Key] = header.Value;
                                 }
                             }
                         }
