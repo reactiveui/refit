@@ -11,6 +11,19 @@ using System.Threading;
 
 namespace Refit
 {
+    public struct HeaderInfo
+    {
+        public bool IsHeaderCollection { get; }
+
+        public string Name { get; }
+
+        public HeaderInfo(string name, bool isHeaderCollection = false)
+        {
+            Name = name;
+            IsHeaderCollection = isHeaderCollection;
+        }
+    }
+
     public enum ParameterType
     {
         Normal,
@@ -29,7 +42,7 @@ namespace Refit
         public Dictionary<int, Tuple<string, ParameterType>> ParameterMap { get; set; }
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
-        public Dictionary<int, string> HeaderParameterMap { get; set; }
+        public Dictionary<int, HeaderInfo> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, bool, int> BodyParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
@@ -325,9 +338,9 @@ bogusPath:
             return ret;
         }
 
-        Dictionary<int, string> BuildHeaderParameterMap(List<ParameterInfo> parameterList)
+        Dictionary<int, HeaderInfo> BuildHeaderParameterMap(List<ParameterInfo> parameterList)
         {
-            var ret = new Dictionary<int, string>();
+            var ret = new Dictionary<int, HeaderInfo>();
 
             for (var i = 0; i < parameterList.Count; i++)
             {
@@ -337,13 +350,13 @@ bogusPath:
                     {
                         if (!string.IsNullOrWhiteSpace(headerAttribute.Header))
                         {
-                            ret[i] = headerAttribute.Header.Trim();
+                            ret[i] = new HeaderInfo(headerAttribute.Header.Trim());
                         }
                         break;
                     }
                     else if (attribute is HeaderCollectionAttribute headerCollectionAttribute)
                     {
-                        ret[i] = Constants.HeaderCollection;
+                        ret[i] = new HeaderInfo(null, true);
                         break;
                     }
                 }

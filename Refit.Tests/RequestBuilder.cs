@@ -392,7 +392,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
+            Assert.Equal("Authorization", fixture.HeaderParameterMap[1].Name);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.Equal(2, fixture.Headers.Count);
@@ -408,7 +408,8 @@ namespace Refit.Tests
             Assert.Null(fixture.BodyParameterInfo);
 
             // This constant string is used for supporting header collection
-            Assert.Equal(Constants.HeaderCollection, fixture.HeaderParameterMap[1]);
+            Assert.Null(fixture.HeaderParameterMap[1].Name);
+            Assert.True(fixture.HeaderParameterMap[1].IsHeaderCollection);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.Equal(2, fixture.Headers.Count);
@@ -424,7 +425,8 @@ namespace Refit.Tests
             Assert.Null(fixture.BodyParameterInfo);
 
             // This constant string is used for supporting header collection
-            Assert.Equal(Constants.HeaderCollection, fixture.HeaderParameterMap[0]);
+            Assert.Null(fixture.HeaderParameterMap[0].Name);
+            Assert.True(fixture.HeaderParameterMap[0].IsHeaderCollection);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.Equal(2, fixture.Headers.Count);

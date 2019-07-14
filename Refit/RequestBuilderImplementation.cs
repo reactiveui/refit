@@ -543,10 +543,9 @@ namespace Refit
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.ContainsKey(i))
                     {
-                        var content = restMethod.HeaderParameterMap[i];
-                        if (content == Constants.HeaderCollection)
+                        var headerInfo = restMethod.HeaderParameterMap[i];
+                        if (headerInfo.IsHeaderCollection)
                         {
-                            // Handle header collection
                             if (paramList[i] is IDictionary<string, string> headerCollection)
                             {
                                 foreach (var header in headerCollection)
@@ -557,7 +556,7 @@ namespace Refit
                         }
                         else
                         {
-                            headersToAdd[content] = paramList[i]?.ToString();
+                            headersToAdd[headerInfo.Name] = paramList[i]?.ToString();
                         }
                         continue;
                     }
