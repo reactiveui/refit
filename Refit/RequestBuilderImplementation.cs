@@ -546,7 +546,7 @@ namespace Refit
                         var headerInfo = restMethod.HeaderParameterMap[i];
                         if (headerInfo.IsHeaderCollection)
                         {
-                            if (paramList[i] is IDictionary<string, string> headerCollection)
+                            if (paramList[i] is IEnumerable<KeyValuePair<string, string>> headerCollection)
                             {
                                 foreach (var header in headerCollection)
                                 {
