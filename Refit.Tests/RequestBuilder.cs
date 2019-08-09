@@ -1312,10 +1312,10 @@ namespace Refit.Tests
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
 
             var factory = fixture.BuildRequestFactoryForMethod("UnescapedQueryParams");
-            var output = factory(new object[] { "Select+Id+From+Account" });
+            var output = factory(new object[] { "Select+Id,Name+From+Account" });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
-            Assert.Equal("/query?q=Select+Id+From+Account", uri.PathAndQuery);
+            Assert.Equal("/query?q=Select+Id,Name+From+Account", uri.PathAndQuery);
         }
 
         [Fact]
