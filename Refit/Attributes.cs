@@ -121,7 +121,7 @@ namespace Refit
         UrlEncoded,
 
         /// <summary>
-        /// Encodes everything using the ContentSerializer in RefitSettings 
+        /// Encodes everything using the ContentSerializer in RefitSettings
         /// </summary>
         Serialized
     }
@@ -208,7 +208,7 @@ namespace Refit
     }
 
     /// <summary>
-    /// Collection format defined in https://swagger.io/docs/specification/2-0/describing-parameters/ 
+    /// Collection format defined in https://swagger.io/docs/specification/2-0/describing-parameters/
     /// </summary>
     public enum CollectionFormat
     {
@@ -280,7 +280,7 @@ namespace Refit
         public string Delimiter { get; protected set; } = ".";
 
         /// <summary>
-        /// Used to customize the name of the encoded value.  
+        /// Used to customize the name of the encoded value.
         /// </summary>
         /// <remarks>
         /// Gets combined with <see cref="Delimiter"/> in the format <code>var name = $"{Prefix}{Delimiter}{originalFieldName}"</code>
@@ -317,5 +317,20 @@ namespace Refit
         /// Specifies how the collection should be encoded. The default behavior is <c>RefitParameterFormatter</c>.
         /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+
+    public class QueryUriFormatAttribute : Attribute
+    {
+        public QueryUriFormatAttribute(UriFormat uriFormat)
+        {
+            UriFormat = uriFormat;
+        }
+
+        /// <summary>
+        /// Specifies how the Query Params should be encoded.
+        /// </summary>
+        public UriFormat UriFormat { get; }
     }
 }
