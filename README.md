@@ -7,9 +7,9 @@
 ||Refit|Refit.HttpClientFactory|
 |-|-|-|
 |*NuGet*|[![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/)|[![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/)|
-|*MyGet*|![MyGet](https://img.shields.io/myget/refit/v/Refit.svg)|![MyGet](https://img.shields.io/myget/refit/v/Refit.HttpClientFactory.svg)|
+|*Azure<br />Artifacts*|![MyGet](https://img.shields.io/myget/refit/v/Refit.svg)|![MyGet](https://img.shields.io/myget/refit/v/Refit.HttpClientFactory.svg)|
 
-CI Feed: `https://www.myget.org/F/refit/api/v3/index.json `
+CI Feed: `https://pkgs.dev.azure.com/dotnet/ReactiveUI/_packaging/Refit/nuget/v3/index.json`
 
 Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
