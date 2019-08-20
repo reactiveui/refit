@@ -7,9 +7,9 @@
 ||Refit|Refit.HttpClientFactory|
 |-|-|-|
 |*NuGet*|[![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/)|[![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/)|
-|*MyGet*|![MyGet](https://img.shields.io/myget/refit/v/Refit.svg)|![MyGet](https://img.shields.io/myget/refit/v/Refit.HttpClientFactory.svg)|
+|*Azure<br />Artifacts*|[![Refit package in Refit feed in Azure Artifacts](https://feeds.dev.azure.com/dotnet/a5852744-a77d-4d76-a9d2-81ac1fdd5744/_apis/public/Packaging/Feeds/6368ad76-9653-4c2f-a6c6-da8c790ae826/Packages/2f65cb3b-df09-4050-a84e-b868ed95fd28/Badge)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=2f65cb3b-df09-4050-a84e-b868ed95fd28&preferRelease=true)|[![Refit.HttpClientFactory package in Refit feed in Azure Artifacts](https://feeds.dev.azure.com/dotnet/a5852744-a77d-4d76-a9d2-81ac1fdd5744/_apis/public/Packaging/Feeds/6368ad76-9653-4c2f-a6c6-da8c790ae826/Packages/d87934cb-2f7b-44b7-83b8-3872ac965ef2/Badge)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=d87934cb-2f7b-44b7-83b8-3872ac965ef2&preferRelease=true)|
 
-CI Feed: `https://www.myget.org/F/refit/api/v3/index.json `
+CI Feed: `https://pkgs.dev.azure.com/dotnet/ReactiveUI/_packaging/Refit/nuget/v3/index.json`
 
 Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
