@@ -438,7 +438,7 @@ namespace Refit
                 MultipartFormDataContent multiPartContent = null;
                 if (restMethod.IsMultipart)
                 {
-                    multiPartContent = new MultipartFormDataContent("----MyGreatBoundary");
+                    multiPartContent = new MultipartFormDataContent(restMethod.MultipartBoundary);
                     ret.Content = multiPartContent;
                 }
 
