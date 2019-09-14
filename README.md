@@ -542,7 +542,7 @@ public interface IGitHubApi
     
     [Post("/users/new")]
     [Headers("X-Emoji: :metal:")]
-    Task CreateUser([Body] User user, [Header("X-Emoji")] string emoji);
+    Task CreateUser([Body] User user, [Header("X-Emoji: :trollface:")] string emoji);
 }
 
 // X-Emoji: :rocket:
