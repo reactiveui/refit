@@ -16,7 +16,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.4' ">
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="1.1.2" />
-    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.5.1" />
+    <PackageReference Include="System.Reflection.TypeExtensions" Version="4.6.0" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0 " />
   </ItemGroup>
   
