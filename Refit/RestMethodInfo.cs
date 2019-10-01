@@ -206,7 +206,7 @@ bogusPath:
                         ret.Add(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
                     }
                     //else if it's a property on a object parameter
-                    else if (objectParamValidationDict.ContainsKey(name))
+                    else if (objectParamValidationDict.ContainsKey(name) && !isRoundTripping)
                     {
                         var property = objectParamValidationDict[name];
                         var parameterIndex = parameterInfo.IndexOf(property.Item1);
