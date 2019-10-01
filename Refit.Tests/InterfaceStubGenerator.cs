@@ -126,7 +126,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.Equal(12, result.ClassList.Count);
+            Assert.Equal(13, result.ClassList.Count);
         }
 
         [Fact]
