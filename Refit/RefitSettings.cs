@@ -53,7 +53,14 @@ namespace Refit
 
     public interface IUrlParameterFormatter
     {
+#if !NETSTANDARD1_4
         string Format(object value, ICustomAttributeProvider attributeProvider, Type type);
+
+#else
+            string Format(object value, PropertyInfo attributeProvider, Type type);
+            string Format(object value, ParameterInfo attributeProvider, Type type);
+#endif
+
     }
 
     public interface IFormUrlEncodedParameterFormatter
@@ -65,7 +72,7 @@ namespace Refit
     {
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> EnumMemberCache
             = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>>();
-
+#if !NETSTANDARD1_4
         public virtual string Format(object parameterValue, ICustomAttributeProvider attributeProvider, Type type)
         {
 
@@ -89,6 +96,55 @@ namespace Refit
                                            : $"{{0:{formatString}}}",
                                        enummember?.Value ?? parameterValue);
         }
+#else
+        public virtual string Format(object parameterValue, PropertyInfo attributeProvider, Type type)
+        {
+
+            // See if we have a format
+            var formatString = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true)
+                .OfType<QueryAttribute>()
+                .FirstOrDefault()?.Format;
+
+            EnumMemberAttribute enummember = null;
+            if (parameterValue != null && type.GetTypeInfo().IsEnum)
+            {
+                var cached = EnumMemberCache.GetOrAdd(type, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                enummember = cached.GetOrAdd(parameterValue.ToString(), val => type.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+            }
+
+            return parameterValue == null
+                       ? null
+                       : string.Format(CultureInfo.InvariantCulture,
+                                       string.IsNullOrWhiteSpace(formatString)
+                                           ? "{0}"
+                                           : $"{{0:{formatString}}}",
+                                       enummember?.Value ?? parameterValue);
+        }
+
+        public virtual string Format(object parameterValue, ParameterInfo attributeProvider, Type type)
+        {
+
+            // See if we have a format
+            var formatString = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true)
+                .OfType<QueryAttribute>()
+                .FirstOrDefault()?.Format;
+
+            EnumMemberAttribute enummember = null;
+            if (parameterValue != null && type.GetTypeInfo().IsEnum)
+            {
+                var cached = EnumMemberCache.GetOrAdd(type, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                enummember = cached.GetOrAdd(parameterValue.ToString(), val => type.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+            }
+
+            return parameterValue == null
+                       ? null
+                       : string.Format(CultureInfo.InvariantCulture,
+                                       string.IsNullOrWhiteSpace(formatString)
+                                           ? "{0}"
+                                           : $"{{0:{formatString}}}",
+                                       enummember?.Value ?? parameterValue);
+        }
+#endif
     }
 
     public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
