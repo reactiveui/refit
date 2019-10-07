@@ -648,7 +648,7 @@ namespace Refit.Tests
         [Get("/api/{id}")]
         Task QueryWithOptionalParameters(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
 
-        [Get("/api/{someProperty}")]
+        [Get("/api/{obj.someProperty}")]
         Task QueryWithOptionalParametersPathBoundObject(PathBoundObject obj, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
     }
 

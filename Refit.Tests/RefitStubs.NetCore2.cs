@@ -421,6 +421,14 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
+        Task IApiBindPathToObject.GetFooBarsDerived(PathBoundDerivedObject request)
+        {
+            var arguments = new object[] { request };
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBarsDerived", new Type[] { typeof(PathBoundDerivedObject) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
         Task IApiBindPathToObject.GetFoos(PathBoundList request)
         {
             var arguments = new object[] { request };

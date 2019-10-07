@@ -50,30 +50,39 @@ namespace Refit.Tests
     }
     public interface IApiBindPathToObject
     {
-        [Get("/foos/{someProperty}/bar/{someProperty2}")]
+        [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task GetFooBars(PathBoundObject request);
 
-        [Get("/foos/{id}/{someProperty}/bar/{someProperty2}")]
+        [Get("/foos/{id}/{request.someProperty}/bar/{request.someProperty2}")]
         Task GetBarsByFoo(string id, PathBoundObject request);
 
-        [Get("/foos/{someProperty}/bar/{someProperty2}")]
+        [Get("/foos/{someProperty}/bar/{request.someProperty2}")]
         Task GetFooBars(PathBoundObject request, string someProperty);
 
-        [Get("/foos/{someProperty}/bar")]
+        [Get("/foos/{request.someProperty}/bar")]
         Task GetBarsByFoo(PathBoundObject request);
 
-        [Get("/foos/{values}")]
+        [Get("/foos/{request.someProperty}/bar/{request.someProperty3}")]
+        Task GetFooBarsDerived(PathBoundDerivedObject request);
+
+        [Get("/foos/{request.values}")]
         Task GetFoos(PathBoundList request);
 
         [Get("/foos2/{values}")]
         Task GetFoos2(List<int> Values);
 
-        [Post("/foos/{someProperty}/bar/{someProperty2}")]
+        [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task PostFooBar(PathBoundObject request, [Body]object someObject);
     }
     public class PathBoundList
     {
         public List<int> Values { get; set; }
+    }
+
+    public class PathBoundDerivedObject : PathBoundObject
+    {
+       public string SomeProperty3 { get; set; }
+
     }
 
     public class PathBoundObject
@@ -281,6 +290,29 @@ namespace Refit.Tests
                 SomeProperty = 1,
                 SomeProperty2 = "barNone"
             }, "chooseMe");
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithPathBoundDerivedObject()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/test")
+                    .WithExactQueryString(new[] { new KeyValuePair<string, string>("SomeProperty2", "barNone") })
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            await fixture.GetFooBarsDerived(new PathBoundDerivedObject()
+            {
+                SomeProperty = 1,
+                SomeProperty2 = "barNone",
+                SomeProperty3 = "test"
+            });
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
