@@ -619,6 +619,21 @@ namespace Refit.Tests
         Task QueryWithArrayFormattedAsPipes([Query(CollectionFormat.Pipes)]int[] numbers);
 
         [Get("/query")]
+        Task QueryWithEnumerableFormattedAsMulti([Query(CollectionFormat.Multi)]IEnumerable<string> lines);
+
+        [Get("/query")]
+        Task QueryWithEnumerableFormattedAsCsv([Query(CollectionFormat.Csv)]IEnumerable<string> lines);
+
+        [Get("/query")]
+        Task QueryWithEnumerableFormattedAsSsv([Query(CollectionFormat.Ssv)]IEnumerable<string> lines);
+
+        [Get("/query")]
+        Task QueryWithEnumerableFormattedAsTsv([Query(CollectionFormat.Tsv)]IEnumerable<string> lines);
+
+        [Get("/query")]
+        Task QueryWithEnumerableFormattedAsPipes([Query(CollectionFormat.Pipes)]IEnumerable<string> lines);
+
+        [Get("/query")]
         Task QueryWithObjectWithPrivateGetters(Person person);
 
         [Multipart]
@@ -1315,7 +1330,6 @@ namespace Refit.Tests
             Assert.Equal(expectedQuery, uri.PathAndQuery);
         }
 
-
         [Fact]
         public void QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()
         {
@@ -1346,6 +1360,31 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData("QueryWithEnumerableFormattedAsMulti", "/query?lines=first&lines=second&lines=third")]
+        [InlineData("QueryWithEnumerableFormattedAsCsv", "/query?lines=first%2Csecond%2Cthird")]
+        [InlineData("QueryWithEnumerableFormattedAsSsv", "/query?lines=first%20second%20third")]
+        [InlineData("QueryWithEnumerableFormattedAsTsv", "/query?lines=first%09second%09third")]
+        [InlineData("QueryWithEnumerableFormattedAsPipes", "/query?lines=first%7Csecond%7Cthird")]
+        public void QueryStringWithEnumerableFormatted(string apiMethodName, string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(apiMethodName);
+
+            var lines = new List<string>
+            {
+                "first",
+                "second",
+                "third"
+            };
+
+            var output = factory(new object[] { lines });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
         }
 
         [Fact]
