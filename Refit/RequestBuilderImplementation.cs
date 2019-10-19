@@ -447,6 +447,7 @@ namespace Refit
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
+                    var param = paramList[i];
                     // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.ContainsKey(i))
                     {
@@ -455,7 +456,7 @@ namespace Refit
                         if (restMethod.ParameterMap[i].Item2 == ParameterType.RoundTripping)
                         {
                             pattern = $@"{{\*\*{restMethod.ParameterMap[i].Item1}}}";
-                            var paramValue = paramList[i] as string;
+                            var paramValue = param as string;
                             replacement = string.Join(
                                 "/",
                                 paramValue.Split('/')
@@ -470,7 +471,7 @@ namespace Refit
                         {
                             pattern = "{" + restMethod.ParameterMap[i].Item1 + "}";
                             replacement = Uri.EscapeDataString(settings.UrlParameterFormatter
-                                    .Format(paramList[i], restMethod.ParameterInfoMap[i]) ?? string.Empty);
+                                    .Format(param, restMethod.ParameterInfoMap[i]) ?? string.Empty);
                         }
 
                         urlTarget = Regex.Replace(
@@ -487,17 +488,17 @@ namespace Refit
                     // if marked as body, add to content
                     if (restMethod.BodyParameterInfo != null && restMethod.BodyParameterInfo.Item3 == i)
                     {
-                        if (paramList[i] is HttpContent httpContentParam)
+                        if (param is HttpContent httpContentParam)
                         {
                             ret.Content = httpContentParam;
                         }
-                        else if (paramList[i] is Stream streamParam)
+                        else if (param is Stream streamParam)
                         {
                             ret.Content = new StreamContent(streamParam);
                         }
                         // Default sends raw strings
                         else if (restMethod.BodyParameterInfo.Item1 == BodySerializationMethod.Default &&
-                                 paramList[i] is string stringParam)
+                                 param is string stringParam)
                         {
                             ret.Content = new StringContent(stringParam);
                         }
@@ -506,14 +507,14 @@ namespace Refit
                             switch (restMethod.BodyParameterInfo.Item1)
                             {
                                 case BodySerializationMethod.UrlEncoded:
-                                    ret.Content = paramList[i] is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") : new FormUrlEncodedContent(new FormValueMultimap(paramList[i], settings));
+                                    ret.Content = param is string str ? (HttpContent)new StringContent(Uri.EscapeDataString(str), Encoding.UTF8, "application/x-www-form-urlencoded") : new FormUrlEncodedContent(new FormValueMultimap(param, settings));
                                     break;
                                 case BodySerializationMethod.Default:
 #pragma warning disable CS0618 // Type or member is obsolete
                                 case BodySerializationMethod.Json:
 #pragma warning restore CS0618 // Type or member is obsolete
                                 case BodySerializationMethod.Serialized:
-                                    var content = await serializer.SerializeAsync(paramList[i]).ConfigureAwait(false);
+                                    var content = await serializer.SerializeAsync(param).ConfigureAwait(false);
                                     switch (restMethod.BodyParameterInfo.Item2)
                                     {
                                         case false:
@@ -543,24 +544,22 @@ namespace Refit
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.ContainsKey(i))
                     {
-                        headersToAdd[restMethod.HeaderParameterMap[i]] = paramList[i]?.ToString();
+                        headersToAdd[restMethod.HeaderParameterMap[i]] = param?.ToString();
                         continue;
                     }
 
                     // ignore nulls
-                    if (paramList[i] == null) continue;
+                    if (param == null) continue;
 
                     // for anything that fell through to here, if this is not
                     // a multipart method, add the parameter to the query string
                     if (!restMethod.IsMultipart)
                     {
                         var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
-                        if (DoNotConvertToQueryMap(paramList[i]))
+                        if (DoNotConvertToQueryMap(param))
                         {
-                            var checkArray = paramList[i].GetType();
-                            if (checkArray.IsAssignableFrom(typeof(IEnumerable)) || checkArray.IsArray)
+                            if (!(param is string) && param is IEnumerable paramValues)
                             {
-                                var paramValues = (IEnumerable)paramList[i];
                                 switch (attr.CollectionFormat)
                                 {
                                     case CollectionFormat.Multi:
@@ -571,14 +570,12 @@ namespace Refit
                                                 settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i])));
                                         }
                                         continue;
-                                    case CollectionFormat.Ssv:
-                                    case CollectionFormat.Tsv:
-                                    case CollectionFormat.Pipes:
                                     default:
                                         var delimiter = attr.CollectionFormat == CollectionFormat.Ssv ? " "
                                             : attr.CollectionFormat == CollectionFormat.Tsv ? "\t"
                                             : attr.CollectionFormat == CollectionFormat.Pipes ? "|"
                                             : ",";
+
                                         // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
 
                                         var formattedValues = paramValues
@@ -590,13 +587,13 @@ namespace Refit
                                             string.Join(delimiter, formattedValues)));
                                         continue;
                                 }
-                            } else {
-                                queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value, settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
                             }
+
+                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value, settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i])));
                         }
                         else
                         {
-                            foreach (var kvp in BuildQueryMap(paramList[i], attr.Delimiter))
+                            foreach (var kvp in BuildQueryMap(param, attr.Delimiter))
                             {
                                 var path = !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
                                 queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
@@ -623,7 +620,7 @@ namespace Refit
                     }
 
                     // Check to see if it's an IEnumerable
-                    var itemValue = paramList[i];
+                    var itemValue = param;
                     var enumerable = itemValue as IEnumerable<object>;
                     var typeIsCollection = enumerable != null;
 
