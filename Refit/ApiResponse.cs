@@ -16,7 +16,7 @@ namespace Refit
 
     public sealed class ApiResponse<T> : IDisposable
     {
-        private readonly HttpResponseMessage response;
+        readonly HttpResponseMessage response;
         bool disposed;
 
         public ApiResponse(HttpResponseMessage response, T content, ApiException error = null)

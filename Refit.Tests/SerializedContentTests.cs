@@ -88,7 +88,7 @@ namespace Refit.Tests
         /// <summary>
         /// Runs the task to completion or until the timeout occurs
         /// </summary>
-        private static async Task<Task<User>> RunTaskWithATimeLimit(Task<User> fixtureTask)
+        static async Task<Task<User>> RunTaskWithATimeLimit(Task<User> fixtureTask)
         {
             var circuitBreakerTask = Task.Delay(TimeSpan.FromSeconds(30));
             await Task.WhenAny(fixtureTask, circuitBreakerTask);

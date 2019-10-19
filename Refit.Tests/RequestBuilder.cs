@@ -507,7 +507,7 @@ namespace Refit.Tests
 
             Assert.Equal("GET", fixture.HttpMethod.Method);
             Assert.Equal(2, fixture.QueryParameterMap.Count);
-            Assert.Equal(1, fixture.HeaderParameterMap.Count);
+            Assert.Single(fixture.HeaderParameterMap);
         }
     }
 
@@ -833,8 +833,8 @@ namespace Refit.Tests
             Assert.False(task.Result.StatusCode == default);
             Assert.NotNull(task.Result.Version);
 
-            using (var reader = new StreamReader(task.Result.Content))
-                Assert.Equal(reponseContent, reader.ReadToEnd());
+            using var reader = new StreamReader(task.Result.Content);
+            Assert.Equal(reponseContent, reader.ReadToEnd());
         }
 
         [Fact]
@@ -855,8 +855,8 @@ namespace Refit.Tests
             var task = (Task<Stream>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { "test-file" });
             task.Wait();
 
-            using (var reader = new StreamReader(task.Result))
-                Assert.Equal(reponseContent, reader.ReadToEnd());
+            using var reader = new StreamReader(task.Result);
+            Assert.Equal(reponseContent, reader.ReadToEnd());
         }
 
         [Fact]

@@ -58,12 +58,10 @@ namespace Refit.Generator
                 return File.ReadAllText(ourPath, Encoding.UTF8);
             }
 
-            using (var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache"))
-            {
-                var ms = new MemoryStream();
-                src.CopyTo(ms);
-                return Encoding.UTF8.GetString(ms.ToArray());
-            }
+            using var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache");
+            var ms = new MemoryStream();
+            src.CopyTo(ms);
+            return Encoding.UTF8.GetString(ms.ToArray());
         }
 
         public List<InterfaceDeclarationSyntax> FindInterfacesToGenerate(SyntaxTree tree)

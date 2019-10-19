@@ -38,7 +38,7 @@ namespace Refit.Generator.Tasks
 
             foreach (var propertyPair in propertiesMap)
             {
-                object outerPropertyValue = propertyPair.outerProperty.GetValue(this);
+                var outerPropertyValue = propertyPair.outerProperty.GetValue(this);
                 propertyPair.innerProperty.SetValue(innerTask, outerPropertyValue);
             }
 
@@ -71,9 +71,9 @@ namespace Refit.Generator.Tasks
         protected abstract bool ExecuteInner();
 
 #if NETCOREAPP2_1
-        private class CustomAssemblyLoader : AssemblyLoadContext
+        class CustomAssemblyLoader : AssemblyLoadContext
         {
-            private readonly ContextAwareTask loaderTask;
+            readonly ContextAwareTask loaderTask;
 
             internal CustomAssemblyLoader(ContextAwareTask loaderTask)
             {
