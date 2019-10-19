@@ -22,8 +22,8 @@ namespace Refit.Tests
 
     public class ResponseTests
     {
-        private readonly MockHttpMessageHandler mockHandler;
-        private readonly IMyAliasService fixture;
+        readonly MockHttpMessageHandler mockHandler;
+        readonly IMyAliasService fixture;
         public ResponseTests()
         {
             mockHandler = new MockHttpMessageHandler();
@@ -84,8 +84,10 @@ namespace Refit.Tests
                 Title = "title",
                 Type = "type"
             };
-            var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest);
-            expectedResponse.Content = new StringContent(JsonConvert.SerializeObject(expectedContent));
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
+            };
             expectedResponse.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/problem+json");
             mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
                 .Respond(req => expectedResponse);

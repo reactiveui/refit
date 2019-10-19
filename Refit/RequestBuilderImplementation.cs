@@ -37,7 +37,7 @@ namespace Refit
 
         public RequestBuilderImplementation(Type refitInterfaceType, RefitSettings refitSettings = null)
         {
-            Type[] targetInterfaceInheritedInterfaces = refitInterfaceType.GetInterfaces();
+            var targetInterfaceInheritedInterfaces = refitInterfaceType.GetInterfaces();
 
             settings = refitSettings ?? new RefitSettings();
             serializer = settings.ContentSerializer;
@@ -61,7 +61,7 @@ namespace Refit
             interfaceHttpMethods = dict;
         }
 
-        private void AddInterfaceHttpMethods(Type interfaceType, Dictionary<string, List<RestMethodInfo>> methods)
+        void AddInterfaceHttpMethods(Type interfaceType, Dictionary<string, List<RestMethodInfo>> methods)
         {
             foreach (var methodInfo in interfaceType.GetMethods())
             {
@@ -129,7 +129,7 @@ namespace Refit
 
         }
 
-        private RestMethodInfo CloseGenericMethodIfNeeded(RestMethodInfo restMethodInfo, Type[] genericArgumentTypes)
+        RestMethodInfo CloseGenericMethodIfNeeded(RestMethodInfo restMethodInfo, Type[] genericArgumentTypes)
         {
             if (genericArgumentTypes != null)
             {
@@ -218,7 +218,7 @@ namespace Refit
             }
 
             // Fallback to serializer
-            Exception e = null;
+            Exception e;
             try
             {
                 multiPartContent.Add(await settings.ContentSerializer.SerializeAsync(itemValue).ConfigureAwait(false), parameterName);
@@ -295,14 +295,12 @@ namespace Refit
 
                     if (serializedReturnType == typeof(string))
                     {
-                        using (var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
-                        using (var reader = new StreamReader(stream))
-                        {
-                            var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
-                            if (restMethod.IsApiResponse)
-                                return ApiResponse.Create<T>(resp, str);
-                            return (T)str;
-                        }
+                        using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+                        using var reader = new StreamReader(stream);
+                        var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                        if (restMethod.IsApiResponse)
+                            return ApiResponse.Create<T>(resp, str);
+                        return (T)str;
                     }
 
                     var body = await serializer.DeserializeAsync<TBody>(content);
@@ -520,7 +518,9 @@ namespace Refit
                                     {
                                         case false:
                                             ret.Content = new PushStreamContent(
+#pragma warning disable IDE1006 // Naming Styles
                                                 async (stream, _, __) =>
+#pragma warning restore IDE1006 // Naming Styles
                                                 {
                                                     using (stream)
                                                     {
@@ -736,12 +736,10 @@ namespace Refit
                     ct = paramList.OfType<CancellationToken>().FirstOrDefault();
                 }
 
-                using (var resp = await client.SendAsync(rq, ct).ConfigureAwait(false))
+                using var resp = await client.SendAsync(rq, ct).ConfigureAwait(false);
+                if (!resp.IsSuccessStatusCode)
                 {
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        throw await ApiException.Create(rq, restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
-                    }
+                    throw await ApiException.Create(rq, restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
                 }
             };
         }

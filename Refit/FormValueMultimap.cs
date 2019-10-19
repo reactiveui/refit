@@ -18,7 +18,7 @@ namespace Refit
         static readonly Dictionary<Type, PropertyInfo[]> PropertyCache
             = new Dictionary<Type, PropertyInfo[]>();
 
-        private readonly IList<KeyValuePair<string, string>> formEntries = new List<KeyValuePair<string, string>>();
+        readonly IList<KeyValuePair<string, string>> formEntries = new List<KeyValuePair<string, string>>();
 
         public FormValueMultimap(object source, RefitSettings settings)
         {
@@ -100,7 +100,7 @@ namespace Refit
         /// </summary>
         public IEnumerable<string> Keys => this.Select(it => it.Key);
 
-        private void Add(string key, string value)
+        void Add(string key, string value)
         {
             formEntries.Add(new KeyValuePair<string, string>(key, value));
         }

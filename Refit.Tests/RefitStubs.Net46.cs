@@ -1434,6 +1434,14 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
+        Task<HttpResponseMessage> IRunscopeApi.UploadStreamWithCustomBoundary(Stream stream)
+        {
+            var arguments = new object[] { stream };
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamWithCustomBoundary", new Type[] { typeof(Stream) });
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadStreamPart(StreamPart stream)
         {
             var arguments = new object[] { stream };

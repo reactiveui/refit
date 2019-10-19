@@ -2,7 +2,7 @@
 
 namespace System
 {
-    internal class ExcludeFromCodeCoverageAttribute : Attribute
+    class ExcludeFromCodeCoverageAttribute : Attribute
     {
     }
 }
