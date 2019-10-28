@@ -1470,6 +1470,31 @@ namespace Refit.Tests
 
             Assert.Equal(expected, output.SendContent);
         }
+
+        private class RequestBuilderMock : IRequestBuilder
+        {
+            public int CallCount { get; private set; }
+
+            public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
+            {
+                CallCount++;
+                return null;
+            }
+        }
+
+        [Fact]
+        public void CachedRequestBuilderCallInternalBuilderForParametersWithSameNamesButDifferentNamespaces()
+        {
+            var internalBuilder = new RequestBuilderMock();
+            var cachedBuilder = new CachedRequestBuilderImplementation(internalBuilder);
+
+            cachedBuilder.BuildRestResultFuncForMethod("TestMethodName", new[] { typeof(CollisionA.SomeType) });
+            cachedBuilder.BuildRestResultFuncForMethod("TestMethodName", new[] { typeof(CollisionB.SomeType) });
+            cachedBuilder.BuildRestResultFuncForMethod("TestMethodName", null, new[] { typeof(CollisionA.SomeType) });
+            cachedBuilder.BuildRestResultFuncForMethod("TestMethodName", null, new[] { typeof(CollisionB.SomeType) });
+
+            Assert.Equal(4, internalBuilder.CallCount);
+        }
     }
 
     static class RequestBuilderTestExtensions
