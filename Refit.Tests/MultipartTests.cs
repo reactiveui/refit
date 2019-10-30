@@ -680,7 +680,7 @@ namespace Refit.Tests
             });
         }
 
-        static Stream GetTestFileStream(string relativeFilePath)
+        internal static Stream GetTestFileStream(string relativeFilePath)
         {
             const char namespaceSeparator = '.';
 

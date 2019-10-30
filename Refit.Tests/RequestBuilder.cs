@@ -645,6 +645,22 @@ namespace Refit.Tests
 
         [Get("/api/{id}")]
         Task QueryWithOptionalParameters(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+
+        [Delete("/api/v1/video")]
+        Task Clear([Query] int playerIndex);
+
+        [Multipart]
+        [Post("/blobstorage/{**filepath}")]
+        Task Blob_Post_Byte(string filepath, [AliasAs("attachment")] ByteArrayPart byteArray);
+
+        [Multipart]
+        [Post("/companies/{companyId}/{path}")]
+        Task<ApiResponse<object>> UploadFile(int companyId,
+                                             string path,
+                                             [AliasAs("file")] StreamPart stream,
+                                             [Header("Authorization")] string authorization,
+                                             bool overwrite = false,
+                                             [AliasAs("fileMetadata")] string metadata = null);
     }
 
     interface ICancellableMethods
@@ -1469,6 +1485,54 @@ namespace Refit.Tests
             var output = factory(new object[] { 7, guid });
 
             Assert.Equal(expected, output.SendContent);
+        }
+
+        [Fact]
+        public void DeleteWithQuery()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("Clear");
+
+            var output = factory(new object[] { 1 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/api/v1/video?playerIndex=1", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void MultipartPostWithAliasAndHeader()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("UploadFile");
+
+            using var file = MultipartTests.GetTestFileStream("Test Files/Test.pdf");
+
+            var sp = new StreamPart(file, "aFile");
+
+            var output = factory(new object[] { 42, "aPath", sp, "theAuth", false, "theMeta" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/companies/42/aPath?overwrite=false&fileMetadata=theMeta", uri.PathAndQuery);
+            Assert.Equal("theAuth", output.Headers.Authorization.ToString());
+        }
+
+        [Fact]
+        public void PostBlobByteWithAlias()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("Blob_Post_Byte");
+
+            var bytes = new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+            var bap = new ByteArrayPart(bytes, "theBytes");
+
+            var output = factory(new object[] { "the/path", bap });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/blobstorage/the/path", uri.PathAndQuery);            
         }
 
         private class RequestBuilderMock : IRequestBuilder
