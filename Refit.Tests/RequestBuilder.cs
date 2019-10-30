@@ -1575,7 +1575,7 @@ namespace Refit.Tests
             Assert.Equal("/blobstorage/the/path", uri.PathAndQuery);            
         }
 
-        private class RequestBuilderMock : IRequestBuilder
+        class RequestBuilderMock : IRequestBuilder
         {
             public int CallCount { get; private set; }
 

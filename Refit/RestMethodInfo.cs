@@ -106,25 +106,7 @@ namespace Refit
                     (BodyParameterInfo != null && BodyParameterInfo.Item3 == i))
                 {
                     continue;
-                }
-
-                //if (parameterList[i].GetCustomAttribute<QueryAttribute>() != null)
-                //{
-                //    var typeInfo = parameterList[i].ParameterType.GetTypeInfo();
-                //    var isValueType = typeInfo.IsValueType && (!typeInfo.IsPrimitive || !typeInfo.IsEnum);
-                //    if (typeInfo.IsArray || parameterList[i].ParameterType.GetInterfaces().Contains(typeof(IEnumerable)) || isValueType)
-                //    {
-                //        QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
-                //    }
-                //    else
-                //    {
-                //        //foreach (var member in parameterList[i].ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                //        //{
-                //        //    QueryParameterMap.Add(i, GetUrlNameForMember(member));
-                //        //}
-                //    }
-                //    continue;
-                //}
+                }                
 
                 QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
             }
@@ -214,15 +196,7 @@ bogusPath:
                 .OfType<AliasAsAttribute>()
                 .FirstOrDefault();
             return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
-        }
-
-        string GetUrlNameForMember(MemberInfo memberInfo)
-        {
-            var aliasAttr = memberInfo.GetCustomAttributes(true)
-                .OfType<AliasAsAttribute>()
-                .FirstOrDefault();
-            return aliasAttr != null ? aliasAttr.Name : memberInfo.Name;
-        }
+        }      
 
         string GetAttachmentNameForParameter(ParameterInfo paramInfo)
         {
