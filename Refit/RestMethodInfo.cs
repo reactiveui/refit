@@ -226,12 +226,13 @@ bogusPath:
 
         string GetAttachmentNameForParameter(ParameterInfo paramInfo)
         {
-            var nameAttr = paramInfo.GetCustomAttributes(true)
-#pragma warning disable 618
-                .OfType<AttachmentNameAttribute>()
-#pragma warning restore 618
+#pragma warning disable CS0618 // Type or member is obsolete
+            var nameAttr = paramInfo.GetCustomAttributes<AttachmentNameAttribute>(true)
+#pragma warning restore CS0618 // Type or member is obsolete
                 .FirstOrDefault();
-            return nameAttr?.Name;
+
+            // also check for AliasAs
+            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name;           
         }
 
         Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)

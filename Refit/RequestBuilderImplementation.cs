@@ -741,7 +741,7 @@ namespace Refit
             };
         }
 
-        static bool DoNotConvertToQueryMap(object value)
+        internal static bool DoNotConvertToQueryMap(object value)
         {
             if (value == null)
                 return false;
