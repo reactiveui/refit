@@ -114,19 +114,19 @@ namespace Refit
                     var isValueType = typeInfo.IsValueType && (!typeInfo.IsPrimitive || !typeInfo.IsEnum);
                     if (typeInfo.IsArray || parameterList[i].ParameterType.GetInterfaces().Contains(typeof(IEnumerable)) || isValueType)
                     {
-                        QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
+                        QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
                     }
                     else
                     {
                         foreach (var member in parameterList[i].ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
                         {
-                            QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForMember(member));
+                            QueryParameterMap.Add(i, GetUrlNameForMember(member));
                         }
                     }
                     continue;
                 }
 
-                QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
+                QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
             }
 
             var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
