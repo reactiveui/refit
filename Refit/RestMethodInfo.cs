@@ -94,7 +94,7 @@ namespace Refit
                     if (attachmentName == null)
                         continue;
 
-                    AttachmentNameMap[i] = Tuple.Create(attachmentName, GetUrlNameForParameter(parameterList[i]).ToLowerInvariant());
+                    AttachmentNameMap[i] = Tuple.Create(attachmentName, GetUrlNameForParameter(parameterList[i]));
                 }
             }
 
@@ -108,23 +108,23 @@ namespace Refit
                     continue;
                 }
 
-                if (parameterList[i].GetCustomAttribute<QueryAttribute>() != null)
-                {
-                    var typeInfo = parameterList[i].ParameterType.GetTypeInfo();
-                    var isValueType = typeInfo.IsValueType && (!typeInfo.IsPrimitive || !typeInfo.IsEnum);
-                    if (typeInfo.IsArray || parameterList[i].ParameterType.GetInterfaces().Contains(typeof(IEnumerable)) || isValueType)
-                    {
-                        QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
-                    }
-                    else
-                    {
-                        foreach (var member in parameterList[i].ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                        {
-                            QueryParameterMap.Add(i, GetUrlNameForMember(member));
-                        }
-                    }
-                    continue;
-                }
+                //if (parameterList[i].GetCustomAttribute<QueryAttribute>() != null)
+                //{
+                //    var typeInfo = parameterList[i].ParameterType.GetTypeInfo();
+                //    var isValueType = typeInfo.IsValueType && (!typeInfo.IsPrimitive || !typeInfo.IsEnum);
+                //    if (typeInfo.IsArray || parameterList[i].ParameterType.GetInterfaces().Contains(typeof(IEnumerable)) || isValueType)
+                //    {
+                //        QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
+                //    }
+                //    else
+                //    {
+                //        //foreach (var member in parameterList[i].ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                //        //{
+                //        //    QueryParameterMap.Add(i, GetUrlNameForMember(member));
+                //        //}
+                //    }
+                //    continue;
+                //}
 
                 QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
             }

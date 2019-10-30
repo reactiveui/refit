@@ -187,14 +187,34 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void PostWithObjectQueryParameter()
+        public void PostWithObjectQueryParameterHasSingleQueryParameterValue()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixtureParams = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithComplexTypeQuery"));
+            var fixtureParams = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostWithComplexTypeQuery)));
 
-            Assert.Equal(2, fixtureParams.QueryParameterMap.Count);
-            Assert.Equal("test-query-alias", fixtureParams.QueryParameterMap[0]);
+            Assert.Single(fixtureParams.QueryParameterMap);
+            Assert.Equal("queryParams", fixtureParams.QueryParameterMap[0]);
             Assert.Null(fixtureParams.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameterHasCorrectQuerystring()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                TestAlias1 = "one",
+                TestAlias2 = "two"
+            };
+
+            var output = factory(new object[] { param });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?test-query-alias=one&TestAlias2=two", uri.PathAndQuery);
         }
 
         [Fact]
@@ -302,7 +322,7 @@ namespace Refit.Tests
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
             Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
-            Assert.Equal("search", fixture.QueryParameterMap[0]);
+            Assert.Equal("search", fixture.QueryParameterMap[1]);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
@@ -664,6 +684,10 @@ namespace Refit.Tests
                                              [Header("Authorization")] string authorization,
                                              bool overwrite = false,
                                              [AliasAs("fileMetadata")] string metadata = null);
+
+
+        [Post("/foo")]
+        Task PostWithComplexTypeQuery([Query]ComplexQueryObject queryParams);
     }
 
     interface ICancellableMethods
@@ -1520,7 +1544,7 @@ namespace Refit.Tests
         public void MultipartPostWithAliasAndHeader()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-            var factory = fixture.BuildRequestFactoryForMethod("UploadFile");
+            var factory = fixture.RunRequest("UploadFile", "true");
 
             using var file = MultipartTests.GetTestFileStream("Test Files/Test.pdf");
 
@@ -1528,10 +1552,10 @@ namespace Refit.Tests
 
             var output = factory(new object[] { 42, "aPath", sp, "theAuth", false, "theMeta" });
 
-            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
 
-            Assert.Equal("/companies/42/aPath?overwrite=false&fileMetadata=theMeta", uri.PathAndQuery);
-            Assert.Equal("theAuth", output.Headers.Authorization.ToString());
+            Assert.Equal("/companies/42/aPath", uri.PathAndQuery);
+            Assert.Equal("theAuth", output.RequestMessage.Headers.Authorization.ToString());
         }
 
         [Fact]
