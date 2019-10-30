@@ -646,6 +646,9 @@ namespace Refit.Tests
         [Get("/api/{id}")]
         Task QueryWithOptionalParameters(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
 
+        [Delete("/api/bar")]
+        Task ClearWithEnumMember([Query] FooWithEnumMember foo);
+
         [Delete("/api/v1/video")]
         Task Clear([Query] int playerIndex);
 
@@ -1498,6 +1501,19 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/api/v1/video?playerIndex=1", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ClearWithQuery()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("ClearWithEnumMember");
+
+            var output = factory(new object[] { FooWithEnumMember.B });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/api/bar?foo=b", uri.PathAndQuery);
         }
 
         [Fact]

@@ -111,7 +111,7 @@ namespace Refit
                 if (parameterList[i].GetCustomAttribute<QueryAttribute>() != null)
                 {
                     var typeInfo = parameterList[i].ParameterType.GetTypeInfo();
-                    var isValueType = typeInfo.IsValueType && !typeInfo.IsPrimitive && !typeInfo.IsEnum;
+                    var isValueType = typeInfo.IsValueType && (!typeInfo.IsPrimitive || !typeInfo.IsEnum);
                     if (typeInfo.IsArray || parameterList[i].ParameterType.GetInterfaces().Contains(typeof(IEnumerable)) || isValueType)
                     {
                         QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
