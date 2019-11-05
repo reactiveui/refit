@@ -21,8 +21,9 @@
     <ProjectReference Include="..\Refit\Refit.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Condition="'$(TargetFramework)' == 'net461' " Include="System.Net.Http" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461' ">
+    <Reference Include="System.Net.Http" />
+    <PackageReference Include="StrongNamer" Version="0.1.4-g0b776dd4e6" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RefitStubs.*.cs" />
