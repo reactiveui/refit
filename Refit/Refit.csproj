@@ -2,17 +2,15 @@
 
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
-    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <Compile Remove="Features\**\*.*" />
-    <None Include="Features\**\*.*" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
-
+  
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
     <Reference Include="System.Web" />
     <Reference Include="System.Net.Http" />

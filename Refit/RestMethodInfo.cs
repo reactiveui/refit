@@ -87,7 +87,7 @@ namespace Refit
                     if (attachmentName == null)
                         continue;
 
-                    AttachmentNameMap[i] = Tuple.Create(attachmentName, GetUrlNameForParameter(parameterList[i]).ToLowerInvariant());
+                    AttachmentNameMap[i] = Tuple.Create(attachmentName, GetUrlNameForParameter(parameterList[i]));
                 }
             }
 
@@ -99,27 +99,9 @@ namespace Refit
                     (BodyParameterInfo != null && BodyParameterInfo.Item3 == i))
                 {
                     continue;
-                }
+                }                
 
-                if (parameterList[i].GetCustomAttribute<QueryAttribute>() != null)
-                {
-                    var typeInfo = parameterList[i].ParameterType.GetTypeInfo();
-                    var isValueType = typeInfo.IsValueType && !typeInfo.IsPrimitive && !typeInfo.IsEnum;
-                    if (typeInfo.IsArray || parameterList[i].ParameterType.GetInterfaces().Contains(typeof(IEnumerable)) || isValueType)
-                    {
-                        QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
-                    }
-                    else
-                    {
-                        foreach (var member in parameterList[i].ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                        {
-                            QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForMember(member));
-                        }
-                    }
-                    continue;
-                }
-
-                QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
+                QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
             }
 
             var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
@@ -252,22 +234,15 @@ bogusPath:
             return aliasAttr != null ? aliasAttr.Name : propInfo.Name;
         }
 
-        string GetUrlNameForMember(MemberInfo memberInfo)
-        {
-            var aliasAttr = memberInfo.GetCustomAttributes(true)
-                .OfType<AliasAsAttribute>()
-                .FirstOrDefault();
-            return aliasAttr != null ? aliasAttr.Name : memberInfo.Name;
-        }
-
         string GetAttachmentNameForParameter(ParameterInfo paramInfo)
         {
-            var nameAttr = paramInfo.GetCustomAttributes(true)
-#pragma warning disable 618
-                .OfType<AttachmentNameAttribute>()
-#pragma warning restore 618
+#pragma warning disable CS0618 // Type or member is obsolete
+            var nameAttr = paramInfo.GetCustomAttributes<AttachmentNameAttribute>(true)
+#pragma warning restore CS0618 // Type or member is obsolete
                 .FirstOrDefault();
-            return nameAttr?.Name;
+
+            // also check for AliasAs
+            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name;           
         }
 
         Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)

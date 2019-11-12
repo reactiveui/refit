@@ -117,7 +117,7 @@ namespace Refit.Tests
             Assert.Equal(encoding.WebName, documentEncoding);
         }
 
-        private static Dto BuildDto()
+        static Dto BuildDto()
         {
             var dto = new Dto
             {

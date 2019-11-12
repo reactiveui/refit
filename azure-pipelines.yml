@@ -16,91 +16,126 @@ pr:
     exclude:
     - '**/*.md'
 
-pool:
-  vmImage: windows-2019
-
-variables: 
-  BuildConfiguration: Release
+variables:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-  
-steps:
-- task: DotNetCoreCLI@2  
-  inputs:
-    command: custom
-    custom: tool
-    arguments: install --tool-path . nbgv
-  displayName: Install NBGV tool
 
-- script: nbgv cloud
-  displayName: Set Version
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    pool:
+      vmImage: windows-latest
 
-- task: UseDotNet@2
-  inputs:
-    version: '3.0.100-preview8-013656'
-    includePreviewVersions: true
-    performMultiLevelLookup: true
+    variables:
+      BuildConfiguration: Release
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: build
-    projects: Refit/Refit.csproj
-    arguments: -c $(BuildConfiguration)   
-  displayName: Build
-  
-- task: DotNetCoreCLI@2
-  inputs:
-    command: pack
-    packagesToPack: Refit/Refit.csproj
-    configuration: $(BuildConfiguration)
-    packDirectory: $(Build.ArtifactStagingDirectory)\artifacts
-    nobuild: true
-  displayName: Pack Refit
+    steps:
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: custom
+        custom: tool
+        arguments: install --tool-path . nbgv
+      displayName: Install NBGV tool
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: pack
-    packagesToPack: Refit.HttpClientFactory/Refit.HttpClientFactory.csproj
-    configuration: $(BuildConfiguration)
-    packDirectory: $(Build.ArtifactStagingDirectory)\artifacts    
-    verbosityPack: Minimal
-  displayName: Pack Extensions
+    - script: nbgv cloud
+      displayName: Set Version
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: test
-    projects: Refit.Tests/Refit.Tests.csproj
-    arguments: -c $(BuildConfiguration) --settings $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings --collect:"XPlat Code Coverage" -- RunConfiguration.DisableAppDomain=true
-  displayName: Run Tests
+    - task: UseDotNet@2
+      displayName: Use .NET Core 3.0.x SDK
+      inputs:
+        version: 3.0.x
+        performMultiLevelLookup: true
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: custom
-    custom: tool
-    arguments: install --tool-path . dotnet-reportgenerator-globaltool
-  displayName: Install ReportGenerator tool
-  
-- script: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/coverlet/reports -reporttypes:"Cobertura"
-  displayName: Create reports
-  
-- task: PublishCodeCoverageResults@1
-  displayName: 'Publish code coverage'
-  inputs:
-    codeCoverageTool: Cobertura
-    summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml  
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: build
+        projects: Refit/Refit.csproj
+        arguments: -c $(BuildConfiguration)
+      displayName: Build
 
-- task: PowerShell@2
-  displayName: Authenticode Sign Packages
-  inputs:
-    filePath: build/Sign-Package.ps1
-  env:
-    SignClientUser: $(SignClientUser)
-    SignClientSecret: $(SignClientSecret)
-    ArtifactDirectory: $(Build.ArtifactStagingDirectory)\artifacts
-  condition: and(succeeded(), not(eq(variables['build.reason'], 'PullRequest')), not(eq(variables['SignClientSecret'], '')), not(eq(variables['SignClientUser'], '')))
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: pack
+        packagesToPack: Refit/Refit.csproj
+        configuration: $(BuildConfiguration)
+        packDirectory: $(Build.ArtifactStagingDirectory)\artifacts
+        nobuild: true
+      displayName: Pack Refit
 
-- task: PublishBuildArtifacts@1
-  displayName: Publish Package Artifacts
-  inputs:
-    pathToPublish: $(Build.ArtifactStagingDirectory)\artifacts
-    artifactType: container
-    artifactName: Packages
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: pack
+        packagesToPack: Refit.HttpClientFactory/Refit.HttpClientFactory.csproj
+        configuration: $(BuildConfiguration)
+        packDirectory: $(Build.ArtifactStagingDirectory)\artifacts
+        verbosityPack: Minimal
+      displayName: Pack Extensions
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: test
+        projects: Refit.Tests/Refit.Tests.csproj
+        arguments: -c $(BuildConfiguration) --settings $(System.DefaultWorkingDirectory)/CodeCoverage.runsettings --collect:"XPlat Code Coverage" -- RunConfiguration.DisableAppDomain=true
+      displayName: Run Tests
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: custom
+        custom: tool
+        arguments: install --tool-path . dotnet-reportgenerator-globaltool
+      displayName: Install ReportGenerator tool
+
+    - script: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/coverlet/reports -reporttypes:"Cobertura"
+      displayName: Create reports
+
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish code coverage'
+      inputs:
+        codeCoverageTool: Cobertura
+        summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml
+
+    - publish: $(Build.ArtifactStagingDirectory)\artifacts
+      displayName: Publish build packages
+      artifact: BuildPackages
+
+    - publish: config
+      displayName: Publish signing config
+      artifact: config
+
+- stage: CodeSign
+  condition: and(succeeded('Build'), not(eq(variables['build.reason'], 'PullRequest')))
+  jobs:
+  - deployment: CodeSign
+    displayName: Code Signing
+    pool:
+      vmImage: windows-latest    
+    environment: Code Sign
+    variables:
+    - group: SignClient Credentials
+    strategy:
+      runOnce:
+        deploy:
+          steps: 
+          - task: DotNetCoreCLI@2
+            inputs:
+              command: custom
+              custom: tool
+              arguments: install --tool-path . SignClient
+            displayName: Install SignTool tool
+
+          - pwsh: |
+              .\SignClient "Sign" `
+              --baseDirectory "$(Pipeline.Workspace)\BuildPackages" `
+              --input "**/*.nupkg" `
+              --config "$(Pipeline.Workspace)\config\signclient.json" `
+              --filelist "$(Pipeline.Workspace)\config\filelist.txt" `
+              --user "$(SignClientUser)" `
+              --secret "$(SignClientSecret)" `
+              --name "Refit" `
+              --description "Refit" `
+              --descriptionUrl "https://github.com/ReactiveUI/refit"
+            displayName: Sign packages
+              
+          - publish: $(Pipeline.Workspace)/BuildPackages
+            displayName: Publish Signed Packages
+            artifact: SignedPackages

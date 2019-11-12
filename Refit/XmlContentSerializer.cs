@@ -12,8 +12,8 @@ namespace Refit
 
     public class XmlContentSerializer : IContentSerializer
     {
-        private readonly XmlContentSerializerSettings settings;
-        private readonly ConcurrentDictionary<Type, XmlSerializer> serializerCache = new ConcurrentDictionary<Type, XmlSerializer>();
+        readonly XmlContentSerializerSettings settings;
+        readonly ConcurrentDictionary<Type, XmlSerializer> serializerCache = new ConcurrentDictionary<Type, XmlSerializer>();
 
         public XmlContentSerializer() : this(new XmlContentSerializerSettings())
         {
@@ -27,34 +27,30 @@ namespace Refit
         public Task<HttpContent> SerializeAsync<T>(T item)
         {
             var xmlSerializer = serializerCache.GetOrAdd(item.GetType(), t => new XmlSerializer(t, settings.XmlAttributeOverrides));
-            
-            using (var stream = new MemoryStream())
-            {
-                using (var writer = XmlWriter.Create(stream, settings.XmlReaderWriterSettings.WriterSettings))
-                {
-                    var encoding = settings.XmlReaderWriterSettings.WriterSettings?.Encoding ?? Encoding.Unicode;
-                    xmlSerializer.Serialize(writer, item, settings.XmlNamespaces);
-                    var str = encoding.GetString(stream.ToArray());
-                    var content = new StringContent(str, encoding, "application/xml");
-                    return Task.FromResult((HttpContent)content);
-                }
-            }
+
+            using var stream = new MemoryStream();
+            using var writer = XmlWriter.Create(stream, settings.XmlReaderWriterSettings.WriterSettings);
+            var encoding = settings.XmlReaderWriterSettings.WriterSettings?.Encoding ?? Encoding.Unicode;
+            xmlSerializer.Serialize(writer, item, settings.XmlNamespaces);
+            var str = encoding.GetString(stream.ToArray());
+            var content = new StringContent(str, encoding, "application/xml");
+            return Task.FromResult((HttpContent)content);
         }
 
         public async Task<T> DeserializeAsync<T>(HttpContent content)
         {
             var xmlSerializer = serializerCache.GetOrAdd(typeof(T), t => new XmlSerializer(t, settings.XmlAttributeOverrides));
-            
-            using (var input = new StringReader(await content.ReadAsStringAsync().ConfigureAwait(false)))
-            using (var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings))
-                return (T)xmlSerializer.Deserialize(reader);
+
+            using var input = new StringReader(await content.ReadAsStringAsync().ConfigureAwait(false));
+            using var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings);
+            return (T)xmlSerializer.Deserialize(reader);
         }
     }
 
     public class XmlReaderWriterSettings
     {
-        private XmlReaderSettings readerSettings;
-        private XmlWriterSettings writerSettings;
+        XmlReaderSettings readerSettings;
+        XmlWriterSettings writerSettings;
 
         public XmlReaderWriterSettings() : this(new XmlReaderSettings(), new XmlWriterSettings())
         {
@@ -99,7 +95,7 @@ namespace Refit
         /// should remain set to meet the demands of the XmlContentSerializer. Those properties
         /// are always set here.
         /// </summary>
-        private void ApplyOverrideSettings()
+        void ApplyOverrideSettings()
         {
             writerSettings.Async = true;
             readerSettings.Async = true;
