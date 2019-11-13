@@ -583,9 +583,9 @@ namespace Refit
                     // ignore nulls
                     if (param == null) continue;
 
-                    // for anything that fell through to here, if this is not
-                    // a multipart method, add the parameter to the query string
-                    if (!restMethod.IsMultipart)
+                    // for anything that fell through to here, if this is not a multipart method add the parameter to the query string
+                    // or if is an object bound to the path add any non-path bound properties to query string
+                    if (!restMethod.IsMultipart || restMethod.ParameterMap.ContainsKey(i) && restMethod.ParameterMap[i].IsObjectPropertyParameter)
                     {
                         var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
                         if (DoNotConvertToQueryMap(param))

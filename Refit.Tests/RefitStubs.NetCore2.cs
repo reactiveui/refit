@@ -16,13 +16,12 @@ using Refit.Generator;
 using Task =  System.Threading.Tasks.Task;
 using System.Net;
 using System.Reactive.Linq;
+using System.Reflection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using RichardSzalay.MockHttp;
 using static System.Math;
 using SomeType =  CollisionA.SomeType;
 using CollisionB;
-using System.Reflection;
 using System.Threading;
 using System.Net.Http.Headers;
 
@@ -450,6 +449,30 @@ namespace Refit.Tests
             var arguments = new object[] { request, someObject };
             var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBar", new Type[] { typeof(PathBoundObject), typeof(object) });
             return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task IApiBindPathToObject.GetFooBars(PathBoundObjectWithQuery request)
+        {
+            var arguments = new object[] { request };
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBars", new Type[] { typeof(PathBoundObjectWithQuery) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task<HttpResponseMessage> IApiBindPathToObject.PostFooBarStreamPart(PathBoundObject request, StreamPart stream)
+        {
+            var arguments = new object[] { request, stream };
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", new Type[] { typeof(PathBoundObject), typeof(StreamPart) });
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task<HttpResponseMessage> IApiBindPathToObject.PostFooBarStreamPart(PathBoundObjectWithQuery request, StreamPart stream)
+        {
+            var arguments = new object[] { request, stream };
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", new Type[] { typeof(PathBoundObjectWithQuery), typeof(StreamPart) });
+            return (Task<HttpResponseMessage>)func(Client, arguments);
         }
     }
 }

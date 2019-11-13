@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reactive.Linq;
+using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using Xunit;
 using Refit; // InterfaceStubGenerator looks for this
 using RichardSzalay.MockHttp;
-using System.IO;
-using System.Text;
+using Xunit;
 
 namespace Refit.Tests
 {
@@ -73,7 +73,19 @@ namespace Refit.Tests
 
         [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task PostFooBar(PathBoundObject request, [Body]object someObject);
+
+        [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+        Task GetFooBars(PathBoundObjectWithQuery request);
+
+        [Multipart]
+        [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+        Task<HttpResponseMessage> PostFooBarStreamPart(PathBoundObject request, StreamPart stream);
+
+        [Multipart]
+        [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+        Task<HttpResponseMessage> PostFooBarStreamPart(PathBoundObjectWithQuery request, StreamPart stream);
     }
+
     public class PathBoundList
     {
         public List<int> Values { get; set; }
@@ -81,7 +93,7 @@ namespace Refit.Tests
 
     public class PathBoundDerivedObject : PathBoundObject
     {
-       public string SomeProperty3 { get; set; }
+        public string SomeProperty3 { get; set; }
 
     }
 
@@ -91,6 +103,16 @@ namespace Refit.Tests
 
         public string SomeProperty2 { get; set; }
 
+    }
+
+    public class PathBoundObjectWithQuery
+    {
+        public int SomeProperty { get; set; }
+
+        public string SomeProperty2 { get; set; }
+
+        [Query]
+        public string SomeQuery { get; set; }
     }
 
     public interface INoRefitHereBuddy
@@ -377,6 +399,76 @@ namespace Refit.Tests
             {
                 Values = new List<int>() { 22, 23 }
             });
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithPathBoundObjectAndQuery()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
+                    .WithExactQueryString("SomeQuery=test")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            await fixture.GetFooBars(new PathBoundObjectWithQuery()
+            {
+                SomeProperty = 1,
+                SomeProperty2 = "barNone",
+                SomeQuery = "test"
+            });
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostFooBarPathMultipart()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            await fixture.PostFooBarStreamPart(new PathBoundObject()
+            {
+                SomeProperty = 22,
+                SomeProperty2 = "bar"
+            }, new StreamPart(stream, "Test.pdf", "application/pdf"));
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostFooBarPathQueryMultipart()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
+                    .WithExactQueryString("SomeQuery=test")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            await fixture.PostFooBarStreamPart(new PathBoundObjectWithQuery()
+            {
+                SomeProperty = 22,
+                SomeProperty2 = "bar",
+                SomeQuery = "test"
+            }, new StreamPart(stream, "Test.pdf", "application/pdf"));
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -1534,6 +1626,37 @@ namespace Refit.Tests
             var fixture = RestService.For(typeof(ITrimTrailingForwardSlashApi), inputBaseAddress) as ITrimTrailingForwardSlashApi;
 
             Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
+        }
+
+        internal static Stream GetTestFileStream(string relativeFilePath)
+        {
+            const char namespaceSeparator = '.';
+
+            // get calling assembly
+            var assembly = Assembly.GetCallingAssembly();
+
+            // compute resource name suffix
+            var relativeName = "." + relativeFilePath
+                .Replace('\\', namespaceSeparator)
+                .Replace('/', namespaceSeparator)
+                .Replace(' ', '_');
+
+            // get resource stream
+            var fullName = assembly
+                .GetManifestResourceNames()
+                .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture));
+            if (fullName == null)
+            {
+                throw new Exception($"Unable to find resource for path \"{relativeFilePath}\". Resource with name ending on \"{relativeName}\" was not found in assembly.");
+            }
+
+            var stream = assembly.GetManifestResourceStream(fullName);
+            if (stream == null)
+            {
+                throw new Exception($"Unable to find resource for path \"{relativeFilePath}\". Resource named \"{fullName}\" was not found in assembly.");
+            }
+
+            return stream;
         }
     }
 }
