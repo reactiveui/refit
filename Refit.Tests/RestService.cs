@@ -77,6 +77,13 @@ namespace Refit.Tests
         [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task GetFooBars(PathBoundObjectWithQuery request);
 
+        [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+        Task<HttpResponseMessage> PostFooBar(PathBoundObject request, [Query] ModelObject someQueryParams);
+
+        [Multipart]
+        [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
+        Task<HttpResponseMessage> PostFooBarStreamPart(PathBoundObject request, [Query] ModelObject someQueryParams, StreamPart stream);
+
         [Multipart]
         [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task<HttpResponseMessage> PostFooBarStreamPart(PathBoundObject request, StreamPart stream);
@@ -426,6 +433,32 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task GetWithPathBoundObjectAndQueryObject()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/1/bar/barNone")
+                    .WithExactQueryString("Property1=test&Property2=test2")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            await fixture.PostFooBar(new PathBoundObject()
+            {
+                SomeProperty = 1,
+                SomeProperty2 = "barNone"
+            },new ModelObject()
+            {
+                Property1 = "test",
+                Property2 = "test2"
+            });
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
         public async Task PostFooBarPathMultipart()
         {
             var mockHttp = new MockHttpMessageHandler();
@@ -468,6 +501,33 @@ namespace Refit.Tests
                 SomeProperty = 22,
                 SomeProperty2 = "bar",
                 SomeQuery = "test"
+            }, new StreamPart(stream, "Test.pdf", "application/pdf"));
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostFooBarPathQueryObjectMultipart()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
+                    .WithExactQueryString("Property1=test&Property2=test2")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            await fixture.PostFooBarStreamPart(new PathBoundObject
+            {
+                SomeProperty = 22,
+                SomeProperty2 = "bar"
+            }, new ModelObject()
+            {
+                Property1 = "test",
+                Property2 = "test2"
             }, new StreamPart(stream, "Test.pdf", "application/pdf"));
             mockHttp.VerifyNoOutstandingExpectation();
         }

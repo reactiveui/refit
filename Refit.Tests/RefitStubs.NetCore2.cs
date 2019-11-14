@@ -460,6 +460,22 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
+        Task<HttpResponseMessage> IApiBindPathToObject.PostFooBar(PathBoundObject request, ModelObject someQueryParams)
+        {
+            var arguments = new object[] { request, someQueryParams };
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBar", new Type[] { typeof(PathBoundObject), typeof(ModelObject) });
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task<HttpResponseMessage> IApiBindPathToObject.PostFooBarStreamPart(PathBoundObject request, ModelObject someQueryParams, StreamPart stream)
+        {
+            var arguments = new object[] { request, someQueryParams, stream };
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", new Type[] { typeof(PathBoundObject), typeof(ModelObject), typeof(StreamPart) });
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
         Task<HttpResponseMessage> IApiBindPathToObject.PostFooBarStreamPart(PathBoundObject request, StreamPart stream)
         {
             var arguments = new object[] { request, stream };
@@ -1557,6 +1573,14 @@ namespace Refit.Tests
         {
             var arguments = new object[] { stream };
             var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamPart", new Type[] { typeof(StreamPart) });
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task<HttpResponseMessage> IRunscopeApi.UploadStreamPart(ModelObject someQueryParams, StreamPart stream)
+        {
+            var arguments = new object[] { someQueryParams, stream };
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamPart", new Type[] { typeof(ModelObject), typeof(StreamPart) });
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 

@@ -585,9 +585,14 @@ namespace Refit
 
                     // for anything that fell through to here, if this is not a multipart method add the parameter to the query string
                     // or if is an object bound to the path add any non-path bound properties to query string
-                    if (!restMethod.IsMultipart || restMethod.ParameterMap.ContainsKey(i) && restMethod.ParameterMap[i].IsObjectPropertyParameter)
+                    // or if it's an object with a query attribute
+                    var queryAttribute = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>();
+                    if (!restMethod.IsMultipart ||
+                        restMethod.ParameterMap.ContainsKey(i) && restMethod.ParameterMap[i].IsObjectPropertyParameter ||
+                        queryAttribute != null
+                    )
                     {
-                        var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
+                        var attr = queryAttribute ?? new QueryAttribute();
                         if (DoNotConvertToQueryMap(param))
                         {
                             if (!(param is string) && param is IEnumerable paramValues)
