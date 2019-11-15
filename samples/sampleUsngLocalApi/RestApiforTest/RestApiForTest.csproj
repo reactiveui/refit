@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\InterLibraries\LibraryWithSDKandRefitService\LibraryWithSDKandRefitService.csproj" />
+    <ProjectReference Include="..\LibraryWithSDKandRefitService\LibraryWithSDKandRefitService.csproj" />
   </ItemGroup>
 
 </Project>
