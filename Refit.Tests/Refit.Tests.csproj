@@ -11,7 +11,8 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="1.1.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.3.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
+    <PackageReference Include="StrongNamer" Version="0.2.5" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
     <PackageReference Include="System.Reactive" Version="4.2.0" />
@@ -21,8 +22,8 @@
     <ProjectReference Include="..\Refit\Refit.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Condition="'$(TargetFramework)' == 'net461' " Include="System.Net.Http" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461' ">
+    <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RefitStubs.*.cs" />

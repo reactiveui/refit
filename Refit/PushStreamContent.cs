@@ -40,7 +40,7 @@ namespace System.Net.Http
     [ExcludeFromCodeCoverage]
     class PushStreamContent : HttpContent
     {
-        private readonly Func<Stream, HttpContent, TransportContext, Task> _onStreamAvailable;
+        readonly Func<Stream, HttpContent, TransportContext, Task> _onStreamAvailable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PushStreamContent"/> class. The
@@ -98,7 +98,7 @@ namespace System.Net.Http
             Headers.ContentType = mediaType ?? new MediaTypeHeaderValue("application/octet-stream");
         }
 
-        private static Func<Stream, HttpContent, TransportContext, Task> Taskify(
+        static Func<Stream, HttpContent, TransportContext, Task> Taskify(
             Action<Stream, HttpContent, TransportContext> onStreamAvailable)
         {
             if (onStreamAvailable == null)
@@ -118,7 +118,7 @@ namespace System.Net.Http
         /// Used as the T in a "conversion" of a Task into a Task{T}
         /// </summary>
         // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L65
-        private struct AsyncVoid
+        struct AsyncVoid
         {
         }
 

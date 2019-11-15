@@ -1,11 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <CoreCompileDependsOn>
-      $(CoreCompileDependsOn);
-      GenerateRefitStubs;
-    </CoreCompileDependsOn>
-  </PropertyGroup>
+<Project>
 
   <PropertyGroup>
     <IntermediateOutputPath Condition="$(IntermediateOutputPath) == '' Or $(IntermediateOutputPath) == '*Undefined*'">$(MSBuildProjectDirectory)obj\$(Configuration)\</IntermediateOutputPath>
@@ -22,11 +15,13 @@
     Can be overriden by user in case of namespace clashes.
     -->
     <RefitInternalNamespace Condition=" '$(RefitInternalNamespace)' == '' ">$(RootNamespace)</RefitInternalNamespace>
+
+    <RefitGeneratedFile>$(IntermediateOutputPath)\RefitStubs.g.cs</RefitGeneratedFile>
   </PropertyGroup>
 
   <UsingTask TaskName="Refit.Generator.Tasks.GenerateStubsTask" AssemblyFile="$(RefitTaskAssemblyFile)" />
 
-  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile">
+  <Target Name="GenerateRefitStubs" BeforeTargets="BeforeCompile;CoreCompile" Inputs="@(Compile)" Outputs="$(RefitGeneratedFile)">
     <Error Condition="'$(MSBuildRuntimeType)' == 'Core' and '$(RefitMinCoreVersionRequired)' > '$(RefitNetCoreAppVersion)' "
            Text="Refit requires at least the .NET Core SDK v2.1 to run with 'dotnet build'"
            ContinueOnError="false"
@@ -34,14 +29,15 @@
 
     <GenerateStubsTask SourceFiles="@(Compile)"
                        BaseDirectory="$(MSBuildProjectDirectory)"
-                       OutputFile="$(IntermediateOutputPath)\RefitStubs.g.cs"
+                       OutputFile="$(RefitGeneratedFile)"
                        RefitInternalNamespace="$(RefitInternalNamespace)"
                        />
 
     <Message Text="Processed Refit Stubs" />
 
-    <ItemGroup Condition="Exists('$(IntermediateOutputPath)\RefitStubs.g.cs')">
-      <Compile Include="$(IntermediateOutputPath)\RefitStubs.g.cs" />
+    <ItemGroup Condition="Exists('$(RefitGeneratedFile)')">
+      <Compile Include="$(RefitGeneratedFile)" />
+      <FileWrites Include="$(RefitGeneratedFile)" />
     </ItemGroup>
   </Target>
 

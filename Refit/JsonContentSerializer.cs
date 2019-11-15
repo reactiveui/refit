@@ -9,7 +9,7 @@ namespace Refit
 {
     public class JsonContentSerializer : IContentSerializer
     {
-        private readonly Lazy<JsonSerializerSettings> jsonSerializerSettings;
+        readonly Lazy<JsonSerializerSettings> jsonSerializerSettings;
 
         public JsonContentSerializer() : this(null) { }
 
@@ -39,10 +39,10 @@ namespace Refit
         {
             var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
-            using (var stream = await content.ReadAsStreamAsync().ConfigureAwait(false))
-            using (var reader = new StreamReader(stream))
-            using (var jsonTextReader = new JsonTextReader(reader))
-                return serializer.Deserialize<T>(jsonTextReader);
+            using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+            using var reader = new StreamReader(stream);
+            using var jsonTextReader = new JsonTextReader(reader);
+            return serializer.Deserialize<T>(jsonTextReader);
         }
     }
 }

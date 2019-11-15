@@ -11,12 +11,6 @@ using System.Threading;
 
 namespace Refit
 {
-    public enum ParameterType
-    {
-        Normal,
-        RoundTripping
-    }
-
     [DebuggerDisplay("{MethodInfo}")]
     public class RestMethodInfo
     {
@@ -26,9 +20,7 @@ namespace Refit
         public HttpMethod HttpMethod { get; set; }
         public string RelativePath { get; set; }
         public bool IsMultipart { get; private set; }
-
         public string MultipartBoundary { get; private set; }
-        public Dictionary<int, Tuple<string, ParameterType>> ParameterMap { get; set; }
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
@@ -36,6 +28,7 @@ namespace Refit
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
+        public Dictionary<int, RestMethodParameterInfo> ParameterMap { get; set; }
         public Type ReturnType { get; set; }
         public Type SerializedReturnType { get; set; }
         public RefitSettings RefitSettings { get; set; }
@@ -94,7 +87,7 @@ namespace Refit
                     if (attachmentName == null)
                         continue;
 
-                    AttachmentNameMap[i] = Tuple.Create(attachmentName, GetUrlNameForParameter(parameterList[i]).ToLowerInvariant());
+                    AttachmentNameMap[i] = Tuple.Create(attachmentName, GetUrlNameForParameter(parameterList[i]));
                 }
             }
 
@@ -106,27 +99,9 @@ namespace Refit
                     (BodyParameterInfo != null && BodyParameterInfo.Item3 == i))
                 {
                     continue;
-                }
+                }                
 
-                if (parameterList[i].GetCustomAttribute<QueryAttribute>() != null)
-                {
-                    var typeInfo = parameterList[i].ParameterType.GetTypeInfo();
-                    var isValueType = typeInfo.IsValueType && !typeInfo.IsPrimitive && !typeInfo.IsEnum;
-                    if (typeInfo.IsArray || parameterList[i].ParameterType.GetInterfaces().Contains(typeof(IEnumerable)) || isValueType)
-                    {
-                        QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
-                    }
-                    else
-                    {
-                        foreach (var member in parameterList[i].ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-                        {
-                            QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForMember(member));
-                        }
-                    }
-                    continue;
-                }
-
-                QueryParameterMap.Add(QueryParameterMap.Count, GetUrlNameForParameter(parameterList[i]));
+                QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
             }
 
             var ctParams = methodInfo.GetParameters().Where(p => p.ParameterType == typeof(CancellationToken)).ToList();
@@ -139,6 +114,13 @@ namespace Refit
 
             IsApiResponse = SerializedReturnType.GetTypeInfo().IsGenericType &&
                                 SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
+        }
+
+        private PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
+        {
+            return parameter.ParameterType
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.CanRead && p.GetMethod.IsPublic).ToArray();
         }
 
         void VerifyUrlPathIsSane(string relativePath)
@@ -163,9 +145,9 @@ bogusPath:
             throw new ArgumentException($"URL path {relativePath} must be of the form '/foo/bar/baz'");
         }
 
-        Dictionary<int, Tuple<string, ParameterType>> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
+        Dictionary<int, RestMethodParameterInfo> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
         {
-            var ret = new Dictionary<int, Tuple<string, ParameterType>>();
+            var ret = new Dictionary<int, RestMethodParameterInfo>();
 
             // This section handles pattern matching in the URL. We also need it to add parameter key/values for any attribute with a [Query]
             var parameterizedParts = relativePath.Split('/', '?')
@@ -175,7 +157,11 @@ bogusPath:
             if (parameterizedParts.Count > 0)
             {
                 var paramValidationDict = parameterInfo.ToDictionary(k => GetUrlNameForParameter(k).ToLowerInvariant(), v => v);
-
+                //if the param is an lets make a dictionary for all it's potential parameters
+                var objectParamValidationDict = parameterInfo.Where(x => x.ParameterType.GetTypeInfo().IsClass)
+                                                                 .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
+                                                                 .GroupBy(i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2).ToLowerInvariant()}")
+                                                                 .ToDictionary(k => k.Key, v => v.First());
                 foreach (var match in parameterizedParts)
                 {
                     var rawName = match.Groups[1].Value.ToLowerInvariant();
@@ -190,19 +176,44 @@ bogusPath:
                         name = rawName;
                     }
 
-                    if (!paramValidationDict.ContainsKey(name))
+                    if (paramValidationDict.ContainsKey(name)) //if it's a standard parameter
+                    {
+                        var paramType = paramValidationDict[name].ParameterType;
+                        if (isRoundTripping && paramType != typeof(string))
+                        {
+                            throw new ArgumentException($"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.FullName}. It must be a string.");
+                        }
+                        var parameterType = isRoundTripping ? ParameterType.RoundTripping : ParameterType.Normal;
+                        var restMethodParameterInfo = new RestMethodParameterInfo(name, paramValidationDict[name]) { Type = parameterType };
+                        ret.Add(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
+                    }
+                    //else if it's a property on a object parameter
+                    else if (objectParamValidationDict.ContainsKey(name) && !isRoundTripping)
+                    {
+                        var property = objectParamValidationDict[name];
+                        var parameterIndex = parameterInfo.IndexOf(property.Item1);
+                        //If we already have this parameter, add additional ParameterProperty
+                        if (ret.ContainsKey(parameterIndex))
+                        {
+                            if (!ret[parameterIndex].IsObjectPropertyParameter)
+                            {
+                                throw new ArgumentException($"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object");
+                            }
+                            //we already have this parameter. add the additional property
+                            ret[parameterIndex].ParameterProperties.Add(new RestMethodParameterProperty(name, property.Item2));
+                        }
+                        else
+                        {
+                            var restMethodParameterInfo = new RestMethodParameterInfo(true, property.Item1);
+                            restMethodParameterInfo.ParameterProperties.Add(new RestMethodParameterProperty(name, property.Item2));
+                            ret.Add(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
+                        }
+                    }
+                    else
                     {
                         throw new ArgumentException($"URL {relativePath} has parameter {rawName}, but no method parameter matches");
                     }
 
-                    var paramType = paramValidationDict[name].ParameterType;
-                    if (isRoundTripping && paramType != typeof(string))
-                    {
-                        throw new ArgumentException($"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.FullName}. It must be a string.");
-                    }
-
-                    var parameterType = isRoundTripping ? ParameterType.RoundTripping : ParameterType.Normal;
-                    ret.Add(parameterInfo.IndexOf(paramValidationDict[name]), Tuple.Create(name, parameterType));
                 }
             }
             return ret;
@@ -215,23 +226,23 @@ bogusPath:
                 .FirstOrDefault();
             return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
         }
-
-        string GetUrlNameForMember(MemberInfo memberInfo)
+        string GetUrlNameForProperty(PropertyInfo propInfo)
         {
-            var aliasAttr = memberInfo.GetCustomAttributes(true)
+            var aliasAttr = propInfo.GetCustomAttributes(true)
                 .OfType<AliasAsAttribute>()
                 .FirstOrDefault();
-            return aliasAttr != null ? aliasAttr.Name : memberInfo.Name;
+            return aliasAttr != null ? aliasAttr.Name : propInfo.Name;
         }
 
         string GetAttachmentNameForParameter(ParameterInfo paramInfo)
         {
-            var nameAttr = paramInfo.GetCustomAttributes(true)
-#pragma warning disable 618
-                .OfType<AttachmentNameAttribute>()
-#pragma warning restore 618
+#pragma warning disable CS0618 // Type or member is obsolete
+            var nameAttr = paramInfo.GetCustomAttributes<AttachmentNameAttribute>(true)
+#pragma warning restore CS0618 // Type or member is obsolete
                 .FirstOrDefault();
-            return nameAttr?.Name;
+
+            // also check for AliasAs
+            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name;           
         }
 
         Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)

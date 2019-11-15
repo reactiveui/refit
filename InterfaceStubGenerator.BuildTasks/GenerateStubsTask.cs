@@ -38,7 +38,7 @@ namespace Refit.Generator.Tasks
                     return false;
                 }
 
-                SourceFiles = SourceFiles ?? Array.Empty<ITaskItem>();
+                SourceFiles ??= Array.Empty<ITaskItem>();
 
                 var targetDir = new DirectoryInfo(BaseDirectory);
 
