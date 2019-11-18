@@ -708,6 +708,10 @@ namespace Refit.Tests
 
         [Get("/api/{obj.someProperty}")]
         Task QueryWithOptionalParametersPathBoundObject(PathBoundObject obj, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+
+        [Headers("Accept:application/json", "X-API-V: 125")]
+        [Get("/api/someModule/deviceList?controlId={control_id}")]
+        Task QueryWithHeadersBeforeData([Header("Authorization")] string authorization, [Header("X-Lng")] string twoLetterLang, string search, [AliasAs("control_id")] string controlId, string secret);
     }
 
     interface ICancellableMethods
@@ -1594,7 +1598,7 @@ namespace Refit.Tests
         public void PostBlobByteWithAlias()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-            var factory = fixture.BuildRequestFactoryForMethod("Blob_Post_Byte");
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.Blob_Post_Byte));
 
             var bytes = new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
@@ -1605,6 +1609,29 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/blobstorage/the/path", uri.PathAndQuery);            
+        }
+
+        [Fact]
+        public void QueryWithAliasAndHeadersWorks()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.QueryWithHeadersBeforeData));
+
+            var authHeader = "theAuth";
+            var langHeader = "LnG";
+            var searchParam = "theSearchParam";
+            var controlIdParam = "theControlId";
+            var secretValue = "theSecret";
+
+            
+
+            var output = factory(new object[] { authHeader, langHeader, searchParam, controlIdParam, secretValue });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal($"/api/someModule/deviceList?controlId={controlIdParam}&search={searchParam}&secret={secretValue}", uri.PathAndQuery);
+            Assert.Equal(langHeader, output.Headers.GetValues("X-LnG").FirstOrDefault());
+            Assert.Equal(authHeader, output.Headers.Authorization?.Scheme);
         }
 
         class RequestBuilderMock : IRequestBuilder
