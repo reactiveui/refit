@@ -843,8 +843,11 @@ try
 }
 catch (ValidationApiException validationException)
 {
-   // handle validation here by using validationException.Content, 
+   // handle validation here by using validationException.Content,
    // which is type of ProblemDetails according to RFC 7807
+
+   // If the response contains additional properties on the problem details,
+   // they will be added to the validationException.Content.Extensions collection.
 }
 catch (ApiException exception)
 {
