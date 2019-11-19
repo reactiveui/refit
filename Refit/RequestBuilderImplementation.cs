@@ -454,8 +454,7 @@ namespace Refit
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
-                RestMethodParameterInfo parameterInfo = null;
-                var queryParamShift = 0;
+                RestMethodParameterInfo parameterInfo = null;                
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
@@ -477,7 +476,6 @@ namespace Refit
                                                                                                 propertyInfo.PropertyInfo.PropertyType) ?? string.Empty),
                                     RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
                             }
-                            queryParamShift++;
                             //don't continue here as we want it to fall through so any parameters on this object not bound here get passed as query parameters
                         }
                         else
@@ -511,7 +509,6 @@ namespace Refit
                                 replacement,
                                 RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                            queryParamShift++;
                             continue;
 
                         }
@@ -603,7 +600,7 @@ namespace Refit
                                         foreach (var paramValue in paramValues)
                                         {
                                             queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                                restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value,
+                                                restMethod.QueryParameterMap[i],
                                                 settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
                                         }
                                         continue;
@@ -620,13 +617,13 @@ namespace Refit
                                             .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType));
 
                                         queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                            restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value,
+                                            restMethod.QueryParameterMap[i],
                                             string.Join(delimiter, formattedValues)));
                                         continue;
                                 }
                             }
 
-                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value, settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
+                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
                         }
                         else
                         {
