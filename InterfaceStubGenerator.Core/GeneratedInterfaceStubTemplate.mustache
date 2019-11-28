@@ -29,6 +29,9 @@ namespace {{RefitInternalNamespace}}RefitInternalGenerated
 #pragma warning restore
 
 {{#ClassList}}
+{{#HasNullableReferenceTypes}}
+#nullable enable annotations
+{{/HasNullableReferenceTypes}}
 namespace {{Namespace}}
 {
     {{#UsingList}}
@@ -75,5 +78,8 @@ namespace {{Namespace}}
             {{/MethodList}}
     }
 }
+{{#HasNullableReferenceTypes}}
+#nullable disable annotations
+{{/HasNullableReferenceTypes}}
 
             {{/ClassList}}

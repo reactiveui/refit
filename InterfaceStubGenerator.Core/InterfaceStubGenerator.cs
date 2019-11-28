@@ -92,6 +92,11 @@ namespace Refit.Generator
             var parent = interfaceTree.Parent;
             while (parent != null && !(parent is NamespaceDeclarationSyntax)) parent = parent.Parent;
 
+            var semanticInterfaceTree = CSharpSyntaxTree.ParseText(interfaceTree.GetText().ToString());
+            var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+            var compilation = CSharpCompilation.Create("RefitCompilation", syntaxTrees: new[] { semanticInterfaceTree }, references: new[] { mscorlib });
+            var semanticModel = compilation.GetSemanticModel(semanticInterfaceTree);
+
             ret.InterfaceName = GetInterfaceName(interfaceTree.Identifier);
             ret.GeneratedClassSuffix = ret.InterfaceName.Replace(".", "");
             ret.Modifiers = interfaceTree.Modifiers.Select(t => t.ValueText).FirstOrDefault(m => m == "public" || m == "internal");
@@ -128,7 +133,9 @@ namespace Refit.Generator
 
             ret.UsingList = usings.ToList();
 
-            ret.MethodList = interfaceTree.Members
+            ret.MethodList = semanticInterfaceTree
+                                          .GetRoot()
+                                          .DescendantNodes()
                                           .OfType<MethodDeclarationSyntax>()
                                           .Select(x =>
                                           {
@@ -137,9 +144,9 @@ namespace Refit.Generator
                                                   Name = x.Identifier.Text,
                                                   InterfaceName = ret.InterfaceName,
                                                   TypeParametersInfo = ret.TypeParametersInfo?.ToList(),
-                                                  ReturnTypeInfo = x.ReturnType.GetTypeInfo(),
+                                                  ReturnTypeInfo = x.ReturnType.GetTypeInfo(semanticModel.GetTypeInfo(x.ReturnType).Type),
                                                   ArgumentListInfo = x.ParameterList.Parameters
-                                                    .Select(a => new ArgumentInfo { Name = a.Identifier.Text, TypeInfo = a.Type.GetTypeInfo() })
+                                                    .Select(a => new ArgumentInfo { Name = a.Identifier.Text, TypeInfo = a.Type.GetTypeInfo(semanticModel.GetTypeInfo(a.Type).Type) })
                                                     .ToList(),
                                                   IsRefitMethod = HasRefitHttpMethodAttribute(x)
                                               };
@@ -154,6 +161,17 @@ namespace Refit.Generator
                                               return mti;
                                           })
                                           .ToList();
+
+            static IEnumerable<TypeInfo> AllTypeInfos(IEnumerable<TypeInfo> typeInfos)
+            {
+                var result = typeInfos.SelectMany(ti => ti.Children ?? Enumerable.Empty<TypeInfo>());
+                if (!result.Any())
+                {
+                    return typeInfos;
+                }
+                return typeInfos.Concat(result.Concat(AllTypeInfos(result)));
+            }
+            ret.HasNullableReferenceTypes = ret.MethodList.Any(mti => AllTypeInfos(new[] { mti.ReturnTypeInfo }.Concat(mti.ArgumentListInfo.Select(ai => ai.TypeInfo))).Any(ti => ti.IsNullableReference));
 
             return ret;
         }
@@ -369,12 +387,14 @@ namespace Refit.Generator
         public List<string> TypeParametersInfo { get; set; }
         public string TypeParameters => TypeParametersInfo != null ? string.Join(", ", TypeParametersInfo) : null;
         public List<UsingDeclaration> UsingList { get; set; }
+        public bool HasNullableReferenceTypes { get; set; }
     }
 
     public class TypeInfo
     {
         public string Name { get; set; }
         public List<TypeInfo> Children { get; set; }
+        public bool IsNullableReference { get; set; }
 
         public override string ToString()
         {
@@ -392,6 +412,7 @@ namespace Refit.Generator
             {
                 Name = Name,
                 Children = Children?.Select(a => a.Clone()).ToList(),
+                IsNullableReference = IsNullableReference
             };
         }
     }
@@ -471,10 +492,20 @@ namespace Refit.Generator
             return result;
         }
 
-        public static TypeInfo GetTypeInfo(this TypeSyntax typeSyntax)
+        public static TypeInfo GetTypeInfo(this TypeSyntax typeSyntax, ITypeSymbol typeSymbol = null)
         {
-            if (typeSyntax is GenericNameSyntax g)
-                return new TypeInfo { Name = g.Identifier.ValueText, Children = g.TypeArgumentList.Arguments.Select(a => a.GetTypeInfo()).ToList() };
+            if (typeSyntax is QualifiedNameSyntax qualifiedNameSyntax)
+            {
+                typeSyntax = qualifiedNameSyntax.Right;
+            }
+            if (typeSyntax is GenericNameSyntax g && typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)
+                return new TypeInfo
+                {
+                    Name = g.Identifier.ValueText,
+                    Children = g.TypeArgumentList.Arguments.Zip(namedTypeSymbol.TypeArguments, (syntax, symbol) => (syntax, symbol)).Select(v => GetTypeInfo(v.syntax, v.symbol)).ToList(),
+                };
+            if (typeSyntax is NullableTypeSyntax && typeSymbol?.IsReferenceType == true)
+                return new TypeInfo { Name = typeSymbol.ToString(), IsNullableReference = true };
             else
                 return new TypeInfo { Name = typeSyntax.ToString() };
         }
