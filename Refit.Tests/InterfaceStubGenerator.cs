@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Xunit;
-using Nustache;
-using Nustache.Core;
-using Refit; // InterfaceStubGenerator looks for this
+
 using Refit.Generator;
+
+using Xunit;
+
 using Task = System.Threading.Tasks.Task;
 
 namespace Refit.Tests
@@ -202,8 +200,8 @@ namespace Refit.Tests
             var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("NamespaceCollisionApi.cs")));
             var input = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToList();
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-
-            var usingList = result.UsingList.Select(x => x.Item).ToList();
+            var classTemplate = result.ClassList[0];
+            var usingList = classTemplate.UsingList.Select(x => x.Item).ToList();
             Assert.Contains("SomeType =  CollisionA.SomeType", usingList);
             Assert.Contains("CollisionB", usingList);
         }
