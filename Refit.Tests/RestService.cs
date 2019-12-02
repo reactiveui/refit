@@ -8,9 +8,12 @@ using System.Reactive.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+
 using Newtonsoft.Json;
 using Refit; // InterfaceStubGenerator looks for this
+
 using RichardSzalay.MockHttp;
+
 using Xunit;
 
 namespace Refit.Tests
@@ -450,7 +453,7 @@ namespace Refit.Tests
             {
                 SomeProperty = 1,
                 SomeProperty2 = "barNone"
-            },new ModelObject()
+            }, new ModelObject()
             {
                 Property1 = "test",
                 Property2 = "test2"
@@ -1686,6 +1689,33 @@ namespace Refit.Tests
             var fixture = RestService.For(typeof(ITrimTrailingForwardSlashApi), inputBaseAddress) as ITrimTrailingForwardSlashApi;
 
             Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
+        }
+
+        [Fact]
+        public async Task TypeCollisionTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+            };
+
+            const string Url = "https://httpbin.org/get";
+
+            mockHttp.Expect(HttpMethod.Get, Url)
+                .Respond("application/json", "{ }");
+
+            var fixtureA = RestService.For<ITypeCollisionApiA>(Url);
+
+            var respA = await fixtureA.SomeARequest();
+
+            var fixtureB = RestService.For<ITypeCollisionApiB>(Url);
+
+            var respB = await fixtureB.SomeBRequest();
+
+            Assert.IsType<CollisionA.SomeType>(respA);
+            Assert.IsType<CollisionB.SomeType>(respB);
         }
 
         internal static Stream GetTestFileStream(string relativeFilePath)
