@@ -207,6 +207,28 @@ namespace Refit.Tests
             Assert.Contains("CollisionB", usingList);
         }
 
+        [Theory]
+        [InlineData(nameof(ITypeCollisionApiA), "System.Threading.Tasks,CollisionA")]
+        [InlineData(nameof(ITypeCollisionApiB), "System.Threading.Tasks,CollisionB")]
+        public void AvoidsTypeCollisions(string interfaceName, string usingCsv)
+        {
+            var fixture = new InterfaceStubGenerator();
+
+            var input = getInterfaces("TypeCollisionApiA.cs").Concat(getInterfaces("TypeCollisionApiB.cs")).ToList();
+            var result = fixture.GenerateTemplateInfoForInterfaceList(input);
+
+            var classItem = result.ClassList.Single(c => c.InterfaceName == interfaceName);
+            var usingList = classItem.UsingList.Select(x => x.Item);
+            var expected = usingCsv.Split(',');
+            Assert.Equal(usingList, expected);
+
+            IEnumerable<InterfaceDeclarationSyntax> getInterfaces(string fileName)
+            {
+                var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath(fileName)));
+                return syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
+            }
+        }
+
         [Fact]
         public void GenerateInterfaceStubsWithoutNamespaceSmokeTest()
         {
