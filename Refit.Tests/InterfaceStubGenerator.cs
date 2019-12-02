@@ -208,8 +208,8 @@ namespace Refit.Tests
         }
 
         [Theory]
-        [InlineData(nameof(ITypeCollisionApiA), "System.Threading.Tasks,CollisionA")]
-        [InlineData(nameof(ITypeCollisionApiB), "System.Threading.Tasks,CollisionB")]
+        [InlineData(nameof(ITypeCollisionApiA), "System.Threading.Tasks,CollisionA,Refit")]
+        [InlineData(nameof(ITypeCollisionApiB), "System.Threading.Tasks,CollisionB,Refit")]
         public void AvoidsTypeCollisions(string interfaceName, string usingCsv)
         {
             var fixture = new InterfaceStubGenerator();
