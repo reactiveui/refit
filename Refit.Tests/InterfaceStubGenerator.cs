@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+using Refit; // InterfaceStubGenerator looks for this
 using Refit.Generator;
 
 using Xunit;
