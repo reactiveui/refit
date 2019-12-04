@@ -418,6 +418,14 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
+        Task IApiBindPathToObject.GetFooBarsWithDifferentCasing(PathBoundObject requestParams)
+        {
+            var arguments = new object[] { requestParams };
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBarsWithDifferentCasing", new Type[] { typeof(PathBoundObject) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
         Task IApiBindPathToObject.GetBarsByFoo(string id, PathBoundObject request)
         {
             var arguments = new object[] { id, request };
