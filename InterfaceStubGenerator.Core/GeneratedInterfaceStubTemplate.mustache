@@ -2,9 +2,6 @@
 using System;
 using System.Net.Http;
 using System.Collections.Generic;
-{{#UsingList}}
-using {{Item}};
-{{/UsingList}}
 
 /* ******** Hey You! *********
  *
@@ -34,6 +31,9 @@ namespace {{RefitInternalNamespace}}RefitInternalGenerated
 namespace {{Namespace}}
 {
     using {{RefitInternalNamespace}}RefitInternalGenerated;
+    {{#UsingList}}
+    using {{Item}};
+    {{/UsingList}}
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
