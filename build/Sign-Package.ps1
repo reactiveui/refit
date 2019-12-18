@@ -19,8 +19,10 @@ $nupkgs = gci $Env:ArtifactDirectory\*.nupkg -recurse | Select -ExpandProperty F
 foreach ($nupkg in $nupkgs){
 	Write-Host "Submitting $nupkg for signing"
 
-	.\SignClient 'sign' -c $appSettings -i $nupkg -f $fileList -r $Env:SignClientUser -s $Env:SignClientSecret -n 'Refit' -d 'Refit' -u 'https://github.com/ReactiveUI/refit' 
-
+	.\SignClient 'sign' -c $appSettings -i $nupkg -f $fileList -r $Env:SignClientUser -s $Env:SignClientSecret -n 'Refit' -d 'Refit' -u 'https://github.com/ReactiveUI/refit'
+  if ($LASTEXITCODE -ne 0) {
+    exit 1
+  }
 	Write-Host "Finished signing $nupkg"
 }
 
