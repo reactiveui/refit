@@ -25,8 +25,12 @@
   </PropertyGroup>
 
   <UsingTask TaskName="Refit.Generator.Tasks.GenerateStubsTask" AssemblyFile="$(RefitTaskAssemblyFile)" />
-
-  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile">
+  <!--
+    BH: Checking that the project type GUID contains the C# guid, otherwise don't execute
+    https://github.com/reactiveui/refit/issues/811
+  -->
+  <Target Name="GenerateRefitStubs" BeforeTargets="CoreCompile"
+          Condition="$(MSBuildProjectFile.EndsWith('.csproj'))">
     <Error Condition="'$(MSBuildRuntimeType)' == 'Core' and '$(RefitMinCoreVersionRequired)' > '$(RefitNetCoreAppVersion)' "
            Text="Refit requires at least the .NET Core SDK v2.1 to run with 'dotnet build'"
            ContinueOnError="false"
