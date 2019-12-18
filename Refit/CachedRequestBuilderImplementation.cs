@@ -45,7 +45,7 @@ namespace Refit
                 return "";
             }
 
-            return string.Join(", ", parameterTypes.Select(t => t.Name));
+            return string.Join(", ", parameterTypes.Select(t => t.FullName));
         }
 
         string GetGenericString(Type[] genericArgumentTypes)
@@ -55,7 +55,7 @@ namespace Refit
                 return "";
             }
 
-            return "<" + string.Join(", ", genericArgumentTypes.Select(t => t.Name)) + ">";
+            return "<" + string.Join(", ", genericArgumentTypes.Select(t => t.FullName)) + ">";
         }
     }
 }

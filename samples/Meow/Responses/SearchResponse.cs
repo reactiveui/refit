@@ -4,17 +4,13 @@ using System.Text;
 
 namespace Meow.Responses
 {
-
-    public class BreedsResponse
-    {
-        public Class1[] Property1 { get; set; }
-    }
-
-    public class Class1
+    public class SearchResult
     {
         public Breed[] breeds { get; set; }
         public string id { get; set; }
         public string url { get; set; }
+        public int width { get; set; }
+        public int height { get; set; }
     }
 
     public class Breed
@@ -33,10 +29,10 @@ namespace Meow.Responses
         public string life_span { get; set; }
         public int indoor { get; set; }
         public int lap { get; set; }
+        public string alt_names { get; set; }
         public int adaptability { get; set; }
         public int affection_level { get; set; }
         public int child_friendly { get; set; }
-        public int cat_friendly { get; set; }
         public int dog_friendly { get; set; }
         public int energy_level { get; set; }
         public int grooming { get; set; }
@@ -46,7 +42,6 @@ namespace Meow.Responses
         public int social_needs { get; set; }
         public int stranger_friendly { get; set; }
         public int vocalisation { get; set; }
-        public int bidability { get; set; }
         public int experimental { get; set; }
         public int hairless { get; set; }
         public int natural { get; set; }

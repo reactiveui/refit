@@ -42,6 +42,7 @@ Refit currently supports the following platforms and any .NET Standard 1.4 targe
 * Xamarin.iOS 
 * Desktop .NET 4.6.1 
 * .NET Core
+* Uno Platform
 
 #### Note about .NET Core
 For .NET Core build-time support, you must use the .NET Core 2 SDK. You can target any supported platform in your library, long as the 2.0+ SDK is used at build-time.

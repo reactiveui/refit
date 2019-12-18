@@ -2,7 +2,7 @@
 
 namespace Refit
 {
-    internal class UniqueName
+    class UniqueName
     {
         public static string ForType<T>()
         {

@@ -305,17 +305,15 @@ namespace Refit.Tests
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-            using (var result = await fixture.NothingToSeeHereWithMetadata())
-            {
-                Assert.False(result.IsSuccessStatusCode);
-                Assert.NotNull(result.ReasonPhrase);
-                Assert.NotNull(result.RequestMessage);
-                Assert.True(result.StatusCode == HttpStatusCode.NotFound);
-                Assert.NotNull(result.Version);
-                Assert.Null(result.Content);
+            using var result = await fixture.NothingToSeeHereWithMetadata();
+            Assert.False(result.IsSuccessStatusCode);
+            Assert.NotNull(result.ReasonPhrase);
+            Assert.NotNull(result.RequestMessage);
+            Assert.True(result.StatusCode == HttpStatusCode.NotFound);
+            Assert.NotNull(result.Version);
+            Assert.Null(result.Content);
 
-                mockHttp.VerifyNoOutstandingExpectation();
-            }
+            mockHttp.VerifyNoOutstandingExpectation();
         }
 
         [Fact]
@@ -828,19 +826,16 @@ namespace Refit.Tests
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
 
-            using (var response = await fixture.CreateUserWithMetadata(new User { Name = "foo" }))
-            {
-                Assert.False(response.IsSuccessStatusCode);
-                Assert.NotNull(response.Error);
+            using var response = await fixture.CreateUserWithMetadata(new User { Name = "foo" });
+            Assert.False(response.IsSuccessStatusCode);
+            Assert.NotNull(response.Error);
 
-                var errors = await response.Error.GetContentAsAsync<ErrorResponse>();
+            var errors = await response.Error.GetContentAsAsync<ErrorResponse>();
 
-                Assert.Contains("error1", errors.Errors);
-                Assert.Contains("message", errors.Errors);
+            Assert.Contains("error1", errors.Errors);
+            Assert.Contains("message", errors.Errors);
 
-                mockHttp.VerifyNoOutstandingExpectation();
-
-            }
+            mockHttp.VerifyNoOutstandingExpectation();
         }
 
         [Fact]
