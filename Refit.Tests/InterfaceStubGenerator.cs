@@ -1,18 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Xunit;
-using Nustache;
-using Nustache.Core;
+
 using Refit; // InterfaceStubGenerator looks for this
 using Refit.Generator;
+
+using Xunit;
+
 using Task = System.Threading.Tasks.Task;
 
 namespace Refit.Tests
@@ -202,10 +201,32 @@ namespace Refit.Tests
             var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("NamespaceCollisionApi.cs")));
             var input = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToList();
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-
-            var usingList = result.UsingList.Select(x => x.Item).ToList();
+            var classTemplate = result.ClassList[0];
+            var usingList = classTemplate.UsingList.Select(x => x.Item).ToList();
             Assert.Contains("SomeType =  CollisionA.SomeType", usingList);
             Assert.Contains("CollisionB", usingList);
+        }
+
+        [Theory]
+        [InlineData(nameof(ITypeCollisionApiA), "System.Threading.Tasks,CollisionA,Refit")]
+        [InlineData(nameof(ITypeCollisionApiB), "System.Threading.Tasks,CollisionB,Refit")]
+        public void AvoidsTypeCollisions(string interfaceName, string usingCsv)
+        {
+            var fixture = new InterfaceStubGenerator();
+
+            var input = getInterfaces("TypeCollisionApiA.cs").Concat(getInterfaces("TypeCollisionApiB.cs")).ToList();
+            var result = fixture.GenerateTemplateInfoForInterfaceList(input);
+
+            var classItem = result.ClassList.Single(c => c.InterfaceName == interfaceName);
+            var usingList = classItem.UsingList.Select(x => x.Item);
+            var expected = usingCsv.Split(',');
+            Assert.Equal(usingList, expected);
+
+            IEnumerable<InterfaceDeclarationSyntax> getInterfaces(string fileName)
+            {
+                var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath(fileName)));
+                return syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
+            }
         }
 
         [Fact]

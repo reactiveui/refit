@@ -118,6 +118,9 @@ namespace Refit.Tests
 
         [Get("/api/{id}")]
         Task NullableValues(int id, string text = null, int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+
+        [Get("/api/{id}")]
+        Task IEnumerableThrowingError([Query(CollectionFormat.Multi)] IEnumerable<string> values);
     }
 
     public class ComplexQueryObject
