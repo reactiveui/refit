@@ -75,6 +75,19 @@ If the name of your parameter doesn't match the name in the URL path, use the
 Task<List<User>> GroupList([AliasAs("id")] int groupId);
 ```
 
+A request url can also bind replacement blocks to a custom object
+
+```csharp
+[Get("/group/{request.groupId}/users/{request.userId}")]
+Task<List<User>> GroupList(UserGroupRequest request);
+
+class UserGroupRequest{
+    int groupId { get;set; }
+    int userId { get;set; }
+}
+
+```
+
 Parameters that are not specified as a URL substitution will automatically be
 used as query parameters. This is different than Retrofit, where all
 parameters must be explicitly specified.
@@ -104,6 +117,7 @@ Task<List<Page>> Search(string page);
 Search("admin/products");
 >>> "/search/admin/products"
 ```
+
 ### Dynamic Querystring Parameters
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
@@ -829,8 +843,11 @@ try
 }
 catch (ValidationApiException validationException)
 {
-   // handle validation here by using validationException.Content, 
+   // handle validation here by using validationException.Content,
    // which is type of ProblemDetails according to RFC 7807
+
+   // If the response contains additional properties on the problem details,
+   // they will be added to the validationException.Content.Extensions collection.
 }
 catch (ApiException exception)
 {

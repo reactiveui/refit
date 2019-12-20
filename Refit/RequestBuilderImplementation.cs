@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Web;
 using System.Collections.Concurrent;
-using System.Net.Http.Headers;
 
 namespace Refit
 {
@@ -328,7 +327,7 @@ namespace Refit
             };
         }
 
-        List<KeyValuePair<string, object>> BuildQueryMap(object @object, string delimiter = null)
+        List<KeyValuePair<string, object>> BuildQueryMap(object @object, string delimiter = null, RestMethodParameterInfo parameterInfo = null)
         {
             if (@object is IDictionary idictionary)
             {
@@ -345,6 +344,18 @@ namespace Refit
                 var obj = propertyInfo.GetValue(@object);
                 if (obj == null)
                     continue;
+
+                if (parameterInfo != null)
+                {
+                    //if we have a parameter info lets check it to make sure it isn't bound to the path
+                    if (parameterInfo.IsObjectPropertyParameter)
+                    {
+                        if (parameterInfo.ParameterProperties.Any(x => x.PropertyInfo == propertyInfo))
+                        {
+                            continue;
+                        }
+                    }
+                }
 
                 var key = propertyInfo.Name;
 
@@ -443,7 +454,7 @@ namespace Refit
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
-                var queryParamShift = 0;
+                RestMethodParameterInfo parameterInfo = null;                
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
@@ -451,38 +462,56 @@ namespace Refit
                     // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.ContainsKey(i))
                     {
-                        string pattern;
-                        string replacement;
-                        if (restMethod.ParameterMap[i].Item2 == ParameterType.RoundTripping)
+                        parameterInfo = restMethod.ParameterMap[i];
+                        if (parameterInfo.IsObjectPropertyParameter)
                         {
-                            pattern = $@"{{\*\*{restMethod.ParameterMap[i].Item1}}}";
-                            var paramValue = param as string;
-                            replacement = string.Join(
-                                "/",
-                                paramValue.Split('/')
-                                    .Select(s =>
-                                        Uri.EscapeDataString(
-                                            settings.UrlParameterFormatter.Format(s, restMethod.ParameterInfoMap[i]) ?? string.Empty
-                                        )
-                                    )
-                            );
+                            foreach (var propertyInfo in parameterInfo.ParameterProperties)
+                            {
+                                var propertyObject = propertyInfo.PropertyInfo.GetValue(param);
+                                urlTarget = Regex.Replace(
+                                    urlTarget,
+                                   "{" + propertyInfo.Name + "}",
+                                    Uri.EscapeDataString(settings.UrlParameterFormatter.Format(propertyObject,
+                                                                                                propertyInfo.PropertyInfo,
+                                                                                                propertyInfo.PropertyInfo.PropertyType) ?? string.Empty),
+                                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+                            }
+                            //don't continue here as we want it to fall through so any parameters on this object not bound here get passed as query parameters
                         }
                         else
                         {
-                            pattern = "{" + restMethod.ParameterMap[i].Item1 + "}";
-                            replacement = Uri.EscapeDataString(settings.UrlParameterFormatter
-                                    .Format(param, restMethod.ParameterInfoMap[i]) ?? string.Empty);
+                            string pattern;
+                            string replacement;
+                            if (restMethod.ParameterMap[i].Type == ParameterType.RoundTripping)
+                            {
+                                pattern = $@"{{\*\*{restMethod.ParameterMap[i].Name}}}";
+                                var paramValue = param as string;
+                                replacement = string.Join(
+                                    "/",
+                                    paramValue.Split('/')
+                                        .Select(s =>
+                                            Uri.EscapeDataString(
+                                                settings.UrlParameterFormatter.Format(s, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType) ?? string.Empty
+                                            )
+                                        )
+                                );
+                            }
+                            else
+                            {
+                                pattern = "{" + restMethod.ParameterMap[i].Name + "}";
+                                replacement = Uri.EscapeDataString(settings.UrlParameterFormatter
+                                        .Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType) ?? string.Empty);
+                            }
+
+                            urlTarget = Regex.Replace(
+                                urlTarget,
+                                pattern,
+                                replacement,
+                                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                            continue;
+
                         }
-
-                        urlTarget = Regex.Replace(
-                            urlTarget,
-                            pattern,
-                            replacement,
-                            RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
-                        queryParamShift++;
-
-                        continue;
                     }
 
                     // if marked as body, add to content
@@ -551,11 +580,16 @@ namespace Refit
                     // ignore nulls
                     if (param == null) continue;
 
-                    // for anything that fell through to here, if this is not
-                    // a multipart method, add the parameter to the query string
-                    if (!restMethod.IsMultipart)
+                    // for anything that fell through to here, if this is not a multipart method add the parameter to the query string
+                    // or if is an object bound to the path add any non-path bound properties to query string
+                    // or if it's an object with a query attribute
+                    var queryAttribute = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>();
+                    if (!restMethod.IsMultipart ||
+                        restMethod.ParameterMap.ContainsKey(i) && restMethod.ParameterMap[i].IsObjectPropertyParameter ||
+                        queryAttribute != null
+                    )
                     {
-                        var attr = restMethod.ParameterInfoMap[i].GetCustomAttribute<QueryAttribute>() ?? new QueryAttribute();
+                        var attr = queryAttribute ?? new QueryAttribute();
                         if (DoNotConvertToQueryMap(param))
                         {
                             if (!(param is string) && param is IEnumerable paramValues)
@@ -566,8 +600,8 @@ namespace Refit
                                         foreach (var paramValue in paramValues)
                                         {
                                             queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                                restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value,
-                                                settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i])));
+                                                restMethod.QueryParameterMap[i],
+                                                settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
                                         }
                                         continue;
                                     default:
@@ -580,23 +614,23 @@ namespace Refit
 
                                         var formattedValues = paramValues
                                             .Cast<object>()
-                                            .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i]));
+                                            .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType));
 
                                         queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                            restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value,
+                                            restMethod.QueryParameterMap[i],
                                             string.Join(delimiter, formattedValues)));
                                         continue;
                                 }
                             }
 
-                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value, settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i])));
+                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
                         }
                         else
                         {
-                            foreach (var kvp in BuildQueryMap(param, attr.Delimiter))
+                            foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo))
                             {
                                 var path = !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
-                                queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i])));
+                                queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
                             }
                         }
 
