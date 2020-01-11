@@ -715,6 +715,14 @@ namespace Refit.Tests
         [Headers("Accept:application/json", "X-API-V: 125")]
         [Get("/api/someModule/deviceList?controlId={control_id}")]
         Task QueryWithHeadersBeforeData([Header("Authorization")] string authorization, [Header("X-Lng")] string twoLetterLang, string search, [AliasAs("control_id")] string controlId, string secret);
+
+        [Get("/query")]
+        [QueryUriFormat(UriFormat.Unescaped)]
+        Task UnescapedQueryParams(string q);
+
+        [Get("/query")]
+        [QueryUriFormat(UriFormat.Unescaped)]
+        Task UnescapedQueryParamsWithFilter(string q, string filter);
     }
 
     interface ICancellableMethods
@@ -1381,6 +1389,30 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringWithArrayCanBeFormattedByAttribute()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod("UnescapedQueryParams");
+            var output = factory(new object[] { "Select+Id,Name+From+Account" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?q=Select+Id,Name+From+Account", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringWithArrayCanBeFormattedByAttributeWithMultiple()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod("UnescapedQueryParamsWithFilter");
+            var output = factory(new object[] { "Select+Id+From+Account", "*" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?q=Select+Id+From+Account&filter=*", uri.PathAndQuery);
         }
 
         [Theory]
