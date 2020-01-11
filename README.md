@@ -179,6 +179,19 @@ Search(new [] {10, 20, 30})
 >>> "/users/list?ages=10%2C20%2C30"
 ```
 
+### Unescape Querystring parameters
+
+Use the `QueryUriFormat` attribute to specify if the query parameters should be url escaped
+
+```csharp
+[Get("/query")]
+[QueryUriFormat(UriFormat.Unescaped)]
+Task Query(string q);
+
+Query("Select+Id,Name+From+Account")
+>>> "/query?q=Select+Id,Name+From+Account"
+```
+
 ### Body content
 
 One of the parameters in your method can be used as the body, by using the

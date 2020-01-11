@@ -327,4 +327,19 @@ namespace Refit
         /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
     }
+
+    [AttributeUsage(AttributeTargets.Method)]
+
+    public class QueryUriFormatAttribute : Attribute
+    {
+        public QueryUriFormatAttribute(UriFormat uriFormat)
+        {
+            UriFormat = uriFormat;
+        }
+
+        /// <summary>
+        /// Specifies how the Query Params should be encoded.
+        /// </summary>
+        public UriFormat UriFormat { get; }
+    }
 }
