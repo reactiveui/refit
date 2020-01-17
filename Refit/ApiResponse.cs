@@ -14,7 +14,7 @@ namespace Refit
         }
     }
 
-    public sealed class ApiResponse<T> : IDisposable
+    public sealed class ApiResponse<T> : IApiResponse<T>
     {
         readonly HttpResponseMessage response;
         bool disposed;
@@ -65,5 +65,22 @@ namespace Refit
 
             response.Dispose();
         }
+    }
+
+    public interface IApiResponse<T> : IApiResponse
+    {
+        T Content { get; }
+    }
+
+    public interface IApiResponse : IDisposable
+    {
+        HttpResponseHeaders Headers { get; }
+        HttpContentHeaders ContentHeaders { get; }
+        bool IsSuccessStatusCode { get; }
+        string ReasonPhrase { get; }
+        HttpRequestMessage RequestMessage { get; }
+        HttpStatusCode StatusCode { get; }
+        Version Version { get; }
+        ApiException Error { get; }
     }
 }
