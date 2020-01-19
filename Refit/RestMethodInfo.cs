@@ -30,9 +30,9 @@ namespace Refit
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Dictionary<int, RestMethodParameterInfo> ParameterMap { get; set; }
         public Type ReturnType { get; set; }
-        public Type SerializedReturnType { get; set; }
+        public Type ReturnResultType { get; set; }
+        public Type DeserializedResultType { get; set; }
         public RefitSettings RefitSettings { get; set; }
-        public Type SerializedGenericArgument { get; set; }
         public bool IsApiResponse { get; }
 
         static readonly Regex ParameterRegex = new Regex(@"{(.*?)}");
@@ -112,8 +112,10 @@ namespace Refit
 
             CancellationToken = ctParams.FirstOrDefault();
 
-            IsApiResponse = SerializedReturnType.GetTypeInfo().IsGenericType &&
-                                SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
+            IsApiResponse = ReturnResultType.GetTypeInfo().IsGenericType &&
+                            (ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+                             || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>)
+                             || ReturnResultType == typeof(IApiResponse));
         }
 
         private PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
@@ -242,7 +244,7 @@ bogusPath:
                 .FirstOrDefault();
 
             // also check for AliasAs
-            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name;           
+            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name;
         }
 
         Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
@@ -317,7 +319,7 @@ bogusPath:
                 ? methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true)
                 : new Attribute[0];
 
-            // Headers set on the declaring type have to come first, 
+            // Headers set on the declaring type have to come first,
             // so headers set on the method can replace them. Switching
             // the order here will break stuff.
             var headers = inheritedAttributes.Concat(declaringTypeAttributes).Concat(methodInfo.GetCustomAttributes(true))
@@ -362,34 +364,33 @@ bogusPath:
 
         void DetermineReturnTypeInfo(MethodInfo methodInfo)
         {
-            if (methodInfo.ReturnType.GetTypeInfo().IsGenericType == false)
+            var returnType = methodInfo.ReturnType;
+            if (returnType.IsGenericType && (methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(Task<>)
+                                             || methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(IObservable<>)))
             {
-                if (methodInfo.ReturnType != typeof(Task))
+                ReturnType = returnType;
+                ReturnResultType = returnType.GetGenericArguments()[0];
+
+                if (ReturnResultType.IsGenericType &&
+                    (ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+                     || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)))
                 {
-                    goto bogusMethod;
+                        DeserializedResultType = ReturnResultType.GetGenericArguments()[0];
                 }
-
-                ReturnType = methodInfo.ReturnType;
-                SerializedReturnType = typeof(void);
-                return;
+                else if (ReturnResultType == typeof(IApiResponse))
+                {
+                    DeserializedResultType = typeof(HttpContent);
+                }else
+                    DeserializedResultType = ReturnResultType;
             }
-
-            var genericType = methodInfo.ReturnType.GetGenericTypeDefinition();
-            if (genericType != typeof(Task<>) && genericType != typeof(IObservable<>))
+            else if (returnType == typeof(Task))
             {
-                goto bogusMethod;
+                ReturnType = methodInfo.ReturnType;
+                ReturnResultType = typeof(void);
+                DeserializedResultType = typeof(void);
             }
-
-            ReturnType = methodInfo.ReturnType;
-            SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
-
-            if (SerializedReturnType.GetTypeInfo().IsGenericType)
-                SerializedGenericArgument = SerializedReturnType.GetGenericArguments()[0];
-
-            return;
-
-bogusMethod:
-            throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
+            else
+                throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
         }
     }
 }

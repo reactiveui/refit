@@ -159,8 +159,8 @@ namespace Refit
                 // invoke buildTaskFuncForMethod.
                 var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var taskFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
-                    taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
-                    taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
+                    taskFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType) :
+                    taskFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
 
                 return (client, args) => taskFunc.DynamicInvoke(client, args);
             }
@@ -168,8 +168,8 @@ namespace Refit
             // Same deal
             var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
             var rxFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
-                    rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
-                    rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
+                    rxFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType) :
+                    rxFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
 
             return (client, args) => rxFunc.DynamicInvoke(client, args);
         }
@@ -249,7 +249,7 @@ namespace Refit
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
 
-                    if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
+                    if (restMethod.ReturnResultType == typeof(HttpResponseMessage))
                     {
                         disposeResponse = false; // caller has to dispose
 
@@ -273,9 +273,7 @@ namespace Refit
                         throw exception;
                     }
 
-                    var serializedReturnType = restMethod.IsApiResponse ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;
-
-                    if (serializedReturnType == typeof(HttpContent))
+                    if (restMethod.DeserializedResultType == typeof(HttpContent))
                     {
                         disposeResponse = false; // caller has to clean up the content
                         if (restMethod.IsApiResponse)
@@ -283,7 +281,7 @@ namespace Refit
                         return (T)(object)content;
                     }
 
-                    if (serializedReturnType == typeof(Stream))
+                    if (restMethod.DeserializedResultType == typeof(Stream))
                     {
                         disposeResponse = false; // caller has to dispose
                         var stream = (object)await content.ReadAsStreamAsync().ConfigureAwait(false);
@@ -292,7 +290,7 @@ namespace Refit
                         return (T)stream;
                     }
 
-                    if (serializedReturnType == typeof(string))
+                    if (restMethod.DeserializedResultType == typeof(string))
                     {
                         using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
                         using var reader = new StreamReader(stream);

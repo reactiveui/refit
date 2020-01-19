@@ -440,7 +440,7 @@ namespace Refit.Tests
             Assert.True(fixture.BodyParameterInfo.Item2); // buffered default
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
-            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
+            Assert.Equal(typeof(bool), fixture.ReturnResultType);
         }
 
         [Fact]
@@ -455,7 +455,7 @@ namespace Refit.Tests
             Assert.False(fixture.BodyParameterInfo.Item2); // unbuffered specified
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
-            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
+            Assert.Equal(typeof(bool), fixture.ReturnResultType);
         }
 
         [Fact]
@@ -470,7 +470,7 @@ namespace Refit.Tests
             Assert.True(fixture.BodyParameterInfo.Item2);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
-            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
+            Assert.Equal(typeof(bool), fixture.ReturnResultType);
         }
 
         [Fact]
@@ -482,7 +482,7 @@ namespace Refit.Tests
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
 
             Assert.Equal(typeof(Task), fixture.ReturnType);
-            Assert.Equal(typeof(void), fixture.SerializedReturnType);
+            Assert.Equal(typeof(void), fixture.ReturnResultType);
         }
 
         [Fact]
