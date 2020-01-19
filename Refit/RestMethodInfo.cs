@@ -3,6 +3,7 @@ using System.Collections;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -34,6 +35,7 @@ namespace Refit
         public Type DeserializedResultType { get; set; }
         public RefitSettings RefitSettings { get; set; }
         public bool IsApiResponse { get; }
+        public bool ShouldDisposeResponse { get; private set; }
 
         static readonly Regex ParameterRegex = new Regex(@"{(.*?)}");
         static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
@@ -60,6 +62,7 @@ namespace Refit
 
             VerifyUrlPathIsSane(RelativePath);
             DetermineReturnTypeInfo(methodInfo);
+            DetermineIfResponseMustBeDisposed();
 
             // Exclude cancellation token parameters from this list
             var parameterList = methodInfo.GetParameters().Where(p => p.ParameterType != typeof(CancellationToken)).ToList();
@@ -392,5 +395,14 @@ bogusPath:
             else
                 throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
         }
+
+        private void DetermineIfResponseMustBeDisposed()
+        {
+            // Rest method caller will have to dispose if it's one of those 3
+            ShouldDisposeResponse = DeserializedResultType != typeof(HttpResponseMessage) &&
+                                    DeserializedResultType != typeof(HttpContent) &&
+                                    DeserializedResultType != typeof(Stream);
+        }
+
     }
 }

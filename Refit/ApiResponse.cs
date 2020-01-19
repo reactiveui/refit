@@ -8,9 +8,9 @@ namespace Refit
 {
     static class ApiResponse
     {
-        internal static T Create<T>(HttpResponseMessage resp, object content, ApiException error = null)
+        internal static T Create<T, TBody>(HttpResponseMessage resp, object content, ApiException error = null)
         {
-            return (T)Activator.CreateInstance(typeof(T), resp, content, error);
+            return (T)Activator.CreateInstance(typeof(ApiResponse<TBody>), resp, content, error);
         }
     }
 
