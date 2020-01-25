@@ -439,7 +439,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeaderCollection"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
@@ -456,7 +457,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeaderCollectionAtFirstPlace"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[1]);
+            Assert.Equal("id", fixture.ParameterMap[1].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[1].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 

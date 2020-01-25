@@ -24,12 +24,6 @@ namespace Refit
         }
     }
 
-    public enum ParameterType
-    {
-        Normal,
-        RoundTripping
-    }
-
     [DebuggerDisplay("{MethodInfo}")]
     public class RestMethodInfo
     {
@@ -160,7 +154,7 @@ namespace Refit
 
             return;
 
-bogusPath:
+        bogusPath:
             throw new ArgumentException($"URL path {relativePath} must be of the form '/foo/bar/baz'");
         }
 
@@ -414,7 +408,7 @@ bogusPath:
 
             return;
 
-bogusMethod:
+        bogusMethod:
             throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
         }
     }

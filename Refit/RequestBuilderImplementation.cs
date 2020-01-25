@@ -586,7 +586,7 @@ namespace Refit
                         }
                         else
                         {
-                            headersToAdd[restMethod.HeaderParameterMap[i]] = param?.ToString();
+                            headersToAdd[headerInfo.Name] = param?.ToString();
                         }
                         continue;
                     }
@@ -638,10 +638,8 @@ namespace Refit
                             }
                             else
                             {
-                                queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap.ElementAt(i - queryParamShift).Value, settings.UrlParameterFormatter.Format(paramList[i], restMethod.ParameterInfoMap[i])));
+                                queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
                             }
-
-                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
                         }
                         else
                         {
