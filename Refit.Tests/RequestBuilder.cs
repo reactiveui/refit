@@ -124,6 +124,9 @@ namespace Refit.Tests
 
         [Get("/api/{id}")]
         Task NullableValues(int id, string text = null, int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+
+        [Get("/api/{id}")]
+        Task IEnumerableThrowingError([Query(CollectionFormat.Multi)] IEnumerable<string> values);
     }
 
     public class ComplexQueryObject
@@ -133,6 +136,7 @@ namespace Refit.Tests
 
         public string TestAlias2 { get; set; }
     }
+
 
     public class RestMethodInfoTests
     {
@@ -193,14 +197,34 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void PostWithObjectQueryParameter()
+        public void PostWithObjectQueryParameterHasSingleQueryParameterValue()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixtureParams = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithComplexTypeQuery"));
+            var fixtureParams = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostWithComplexTypeQuery)));
 
-            Assert.Equal(2, fixtureParams.QueryParameterMap.Count);
-            Assert.Equal("test-query-alias", fixtureParams.QueryParameterMap[0]);
+            Assert.Single(fixtureParams.QueryParameterMap);
+            Assert.Equal("queryParams", fixtureParams.QueryParameterMap[0]);
             Assert.Null(fixtureParams.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameterHasCorrectQuerystring()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                TestAlias1 = "one",
+                TestAlias2 = "two"
+            };
+
+            var output = factory(new object[] { param });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?test-query-alias=one&TestAlias2=two", uri.PathAndQuery);
         }
 
         [Fact]
@@ -273,7 +297,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -283,8 +308,10 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithRoundTrippingParam"));
-            Assert.Equal(Tuple.Create("path", ParameterType.RoundTripping), fixture.ParameterMap[0]);
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[1]);
+            Assert.Equal("path", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.RoundTripping, fixture.ParameterMap[0].Type);
+            Assert.Equal("id", fixture.ParameterMap[1].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[1].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -307,8 +334,9 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
-            Assert.Equal("search", fixture.QueryParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Equal("search", fixture.QueryParameterMap[1]);
             Assert.Null(fixture.BodyParameterInfo);
         }
 
@@ -317,7 +345,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedQueryParam"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -327,7 +356,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -337,8 +367,10 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchAnImage"));
-            Assert.Equal(Tuple.Create("width", ParameterType.Normal), fixture.ParameterMap[0]);
-            Assert.Equal(Tuple.Create("height", ParameterType.Normal), fixture.ParameterMap[1]);
+            Assert.Equal("width", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Equal("height", fixture.ParameterMap[1].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[1].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
@@ -348,7 +380,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithBody"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
 
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Empty(fixture.QueryParameterMap);
@@ -360,7 +393,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostSomeUrlEncodedStuff"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
 
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Empty(fixture.QueryParameterMap);
@@ -372,7 +406,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedHeaders"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
@@ -388,7 +423,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeader"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
@@ -437,7 +473,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypes"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.True(fixture.BodyParameterInfo.Item2); // buffered default
@@ -451,7 +488,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypesUnbuffered"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.False(fixture.BodyParameterInfo.Item2); // unbuffered specified
@@ -465,7 +503,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PullStreamMethod"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(BodySerializationMethod.Default, fixture.BodyParameterInfo.Item1);
             Assert.True(fixture.BodyParameterInfo.Item2);
@@ -479,7 +518,8 @@ namespace Refit.Tests
         {
             var input = typeof(IRestMethodInfoTests);
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "VoidPost"));
-            Assert.Equal(Tuple.Create("id", ParameterType.Normal), fixture.ParameterMap[0]);
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
 
             Assert.Equal(typeof(Task), fixture.ReturnType);
             Assert.Equal(typeof(void), fixture.SerializedReturnType);
@@ -547,7 +587,7 @@ namespace Refit.Tests
 
             Assert.Equal("GET", fixture.HttpMethod.Method);
             Assert.Equal(2, fixture.QueryParameterMap.Count);
-            Assert.Equal(1, fixture.HeaderParameterMap.Count);
+            Assert.Single(fixture.HeaderParameterMap);
         }
     }
 
@@ -663,6 +703,21 @@ namespace Refit.Tests
         Task QueryWithArrayFormattedAsPipes([Query(CollectionFormat.Pipes)]int[] numbers);
 
         [Get("/query")]
+        Task QueryWithEnumerableFormattedAsMulti([Query(CollectionFormat.Multi)]IEnumerable<string> lines);
+
+        [Get("/query")]
+        Task QueryWithEnumerableFormattedAsCsv([Query(CollectionFormat.Csv)]IEnumerable<string> lines);
+
+        [Get("/query")]
+        Task QueryWithEnumerableFormattedAsSsv([Query(CollectionFormat.Ssv)]IEnumerable<string> lines);
+
+        [Get("/query")]
+        Task QueryWithEnumerableFormattedAsTsv([Query(CollectionFormat.Tsv)]IEnumerable<string> lines);
+
+        [Get("/query")]
+        Task QueryWithEnumerableFormattedAsPipes([Query(CollectionFormat.Pipes)]IEnumerable<string> lines);
+
+        [Get("/query")]
         Task QueryWithObjectWithPrivateGetters(Person person);
 
         [Multipart]
@@ -674,6 +729,44 @@ namespace Refit.Tests
 
         [Get("/api/{id}")]
         Task QueryWithOptionalParameters(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+
+        [Delete("/api/bar")]
+        Task ClearWithEnumMember([Query] FooWithEnumMember foo);
+
+        [Delete("/api/v1/video")]
+        Task Clear([Query] int playerIndex);
+
+        [Multipart]
+        [Post("/blobstorage/{**filepath}")]
+        Task Blob_Post_Byte(string filepath, [AliasAs("attachment")] ByteArrayPart byteArray);
+
+        [Multipart]
+        [Post("/companies/{companyId}/{path}")]
+        Task<ApiResponse<object>> UploadFile(int companyId,
+                                             string path,
+                                             [AliasAs("file")] StreamPart stream,
+                                             [Header("Authorization")] string authorization,
+                                             bool overwrite = false,
+                                             [AliasAs("fileMetadata")] string metadata = null);
+
+
+        [Post("/foo")]
+        Task PostWithComplexTypeQuery([Query]ComplexQueryObject queryParams);
+
+        [Get("/api/{obj.someProperty}")]
+        Task QueryWithOptionalParametersPathBoundObject(PathBoundObject obj, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+
+        [Headers("Accept:application/json", "X-API-V: 125")]
+        [Get("/api/someModule/deviceList?controlId={control_id}")]
+        Task QueryWithHeadersBeforeData([Header("Authorization")] string authorization, [Header("X-Lng")] string twoLetterLang, string search, [AliasAs("control_id")] string controlId, string secret);
+
+        [Get("/query")]
+        [QueryUriFormat(UriFormat.Unescaped)]
+        Task UnescapedQueryParams(string q);
+
+        [Get("/query")]
+        [QueryUriFormat(UriFormat.Unescaped)]
+        Task UnescapedQueryParamsWithFilter(string q, string filter);
     }
 
     interface ICancellableMethods
@@ -745,7 +838,7 @@ namespace Refit.Tests
             constantParameterOutput = constantOutput;
         }
 
-        public string Format(object value, ParameterInfo parameterInfo)
+        public string Format(object value, ICustomAttributeProvider attributeProvider, Type type)
         {
             return constantParameterOutput;
         }
@@ -753,18 +846,18 @@ namespace Refit.Tests
 
     public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
     {
-        public override string Format(object parameterValue, ParameterInfo parameterInfo)
+        public override string Format(object parameterValue, ICustomAttributeProvider attributeProvider, Type type)
         {
             if (parameterValue is IEnumerable<object> enu)
             {
-                return string.Join(",", enu.Select(o => base.Format(o, parameterInfo)));
+                return string.Join(",", enu.Select(o => base.Format(o, attributeProvider, type)));
             }
             if (parameterValue is IEnumerable en)
             {
-                return string.Join(",", en.Cast<object>().Select(o => base.Format(o, parameterInfo)));
+                return string.Join(",", en.Cast<object>().Select(o => base.Format(o, attributeProvider, type)));
             }
 
-            return base.Format(parameterValue, parameterInfo);
+            return base.Format(parameterValue, attributeProvider, type);
         }
     }
 
@@ -877,8 +970,8 @@ namespace Refit.Tests
             Assert.False(task.Result.StatusCode == default);
             Assert.NotNull(task.Result.Version);
 
-            using (var reader = new StreamReader(task.Result.Content))
-                Assert.Equal(reponseContent, reader.ReadToEnd());
+            using var reader = new StreamReader(task.Result.Content);
+            Assert.Equal(reponseContent, reader.ReadToEnd());
         }
 
         [Fact]
@@ -899,8 +992,8 @@ namespace Refit.Tests
             var task = (Task<Stream>)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, new object[] { "test-file" });
             task.Wait();
 
-            using (var reader = new StreamReader(task.Result))
-                Assert.Equal(reponseContent, reader.ReadToEnd());
+            using var reader = new StreamReader(task.Result);
+            Assert.Equal(reponseContent, reader.ReadToEnd());
         }
 
         [Fact]
@@ -1360,6 +1453,30 @@ namespace Refit.Tests
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
         }
 
+        [Fact]
+        public void QueryStringWithArrayCanBeFormattedByAttribute()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod("UnescapedQueryParams");
+            var output = factory(new object[] { "Select+Id,Name+From+Account" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?q=Select+Id,Name+From+Account", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void QueryStringWithArrayCanBeFormattedByAttributeWithMultiple()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod("UnescapedQueryParamsWithFilter");
+            var output = factory(new object[] { "Select+Id+From+Account", "*" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/query?q=Select+Id+From+Account&filter=*", uri.PathAndQuery);
+        }
+
         [Theory]
         [InlineData("QueryWithArrayFormattedAsMulti", "/query?numbers=1&numbers=2&numbers=3")]
         [InlineData("QueryWithArrayFormattedAsCsv", "/query?numbers=1%2C2%2C3")]
@@ -1376,7 +1493,6 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal(expectedQuery, uri.PathAndQuery);
         }
-
 
         [Fact]
         public void QueryStringWithArrayFormattedAsSsvAndItemsFormattedIndividually()
@@ -1408,6 +1524,31 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/query?numbers=1%2C2%2C3", uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData("QueryWithEnumerableFormattedAsMulti", "/query?lines=first&lines=second&lines=third")]
+        [InlineData("QueryWithEnumerableFormattedAsCsv", "/query?lines=first%2Csecond%2Cthird")]
+        [InlineData("QueryWithEnumerableFormattedAsSsv", "/query?lines=first%20second%20third")]
+        [InlineData("QueryWithEnumerableFormattedAsTsv", "/query?lines=first%09second%09third")]
+        [InlineData("QueryWithEnumerableFormattedAsPipes", "/query?lines=first%7Csecond%7Cthird")]
+        public void QueryStringWithEnumerableFormatted(string apiMethodName, string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(apiMethodName);
+
+            var lines = new List<string>
+            {
+                "first",
+                "second",
+                "third"
+            };
+
+            var output = factory(new object[] { lines });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
         }
 
         [Fact]
@@ -1467,6 +1608,18 @@ namespace Refit.Tests
             Assert.Equal(expectedQuery, uri.PathAndQuery);
         }
 
+        [Theory]
+        [InlineData("/api/123?SomeProperty2=test&text=title&filters=A&filters=B")]
+        public void TestNullableQueryStringParamsWithANullAndPathBoundObject(string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParametersPathBoundObject");
+            var output = factory(new object[] { new PathBoundObject() { SomeProperty = 123, SomeProperty2 = "test" }, "title", null, new string[] { "A", "B" } });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
 
         [Fact]
         [UseCulture("es-ES")] // Spain uses a , instead of a .
@@ -1492,6 +1645,115 @@ namespace Refit.Tests
             var output = factory(new object[] { 7, guid });
 
             Assert.Equal(expected, output.SendContent);
+        }
+
+        [Fact]
+        public void DeleteWithQuery()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("Clear");
+
+            var output = factory(new object[] { 1 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/api/v1/video?playerIndex=1", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ClearWithQuery()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("ClearWithEnumMember");
+
+            var output = factory(new object[] { FooWithEnumMember.B });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/api/bar?foo=b", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void MultipartPostWithAliasAndHeader()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.RunRequest("UploadFile", "true");
+
+            using var file = MultipartTests.GetTestFileStream("Test Files/Test.pdf");
+
+            var sp = new StreamPart(file, "aFile");
+
+            var output = factory(new object[] { 42, "aPath", sp, "theAuth", false, "theMeta" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
+
+            Assert.Equal("/companies/42/aPath", uri.PathAndQuery);
+            Assert.Equal("theAuth", output.RequestMessage.Headers.Authorization.ToString());
+        }
+
+        [Fact]
+        public void PostBlobByteWithAlias()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.Blob_Post_Byte));
+
+            var bytes = new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+
+            var bap = new ByteArrayPart(bytes, "theBytes");
+
+            var output = factory(new object[] { "the/path", bap });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/blobstorage/the/path", uri.PathAndQuery);            
+        }
+
+        [Fact]
+        public void QueryWithAliasAndHeadersWorks()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.QueryWithHeadersBeforeData));
+
+            var authHeader = "theAuth";
+            var langHeader = "LnG";
+            var searchParam = "theSearchParam";
+            var controlIdParam = "theControlId";
+            var secretValue = "theSecret";
+
+            
+
+            var output = factory(new object[] { authHeader, langHeader, searchParam, controlIdParam, secretValue });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal($"/api/someModule/deviceList?controlId={controlIdParam}&search={searchParam}&secret={secretValue}", uri.PathAndQuery);
+            Assert.Equal(langHeader, output.Headers.GetValues("X-LnG").FirstOrDefault());
+            Assert.Equal(authHeader, output.Headers.Authorization?.Scheme);
+        }
+
+        class RequestBuilderMock : IRequestBuilder
+        {
+            public int CallCount { get; private set; }
+
+            public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
+            {
+                CallCount++;
+                return null;
+            }
+        }
+
+        [Fact]
+        public void CachedRequestBuilderCallInternalBuilderForParametersWithSameNamesButDifferentNamespaces()
+        {
+            var internalBuilder = new RequestBuilderMock();
+            var cachedBuilder = new CachedRequestBuilderImplementation(internalBuilder);
+
+            cachedBuilder.BuildRestResultFuncForMethod("TestMethodName", new[] { typeof(CollisionA.SomeType) });
+            cachedBuilder.BuildRestResultFuncForMethod("TestMethodName", new[] { typeof(CollisionB.SomeType) });
+            cachedBuilder.BuildRestResultFuncForMethod("TestMethodName", null, new[] { typeof(CollisionA.SomeType) });
+            cachedBuilder.BuildRestResultFuncForMethod("TestMethodName", null, new[] { typeof(CollisionB.SomeType) });
+
+            Assert.Equal(4, internalBuilder.CallCount);
         }
     }
 

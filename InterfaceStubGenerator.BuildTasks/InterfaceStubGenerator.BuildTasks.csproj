@@ -3,8 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <RootNamespace>Refit.Generator.Tasks</RootNamespace>
-    <AssemblyOriginatorKeyFile>..\buildtask.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
   </PropertyGroup>
 
   <ItemGroup>

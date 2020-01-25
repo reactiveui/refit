@@ -21,9 +21,17 @@ namespace Refit.Tests
         [Post("/")]
         Task<HttpResponseMessage> UploadStream(Stream stream);
 
+        [Multipart("-----SomeCustomBoundary")]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadStreamWithCustomBoundary(Stream stream);
+
         [Multipart]
         [Post("/")]
         Task<HttpResponseMessage> UploadStreamPart(StreamPart stream);
+
+        [Multipart]
+        [Post("/")]
+        Task<HttpResponseMessage> UploadStreamPart([Query] ModelObject someQueryParams, StreamPart stream);
 
         [Multipart]
         [Post("/")]
@@ -99,11 +107,39 @@ namespace Refit.Tests
                     Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
                     Assert.Equal("stream", parts[0].Headers.ContentDisposition.FileName);
 
-                    using (var str = await parts[0].ReadAsStreamAsync())
-                    using (var src = GetTestFileStream("Test Files/Test.pdf"))
-                    {
-                        Assert.True(StreamsEqual(src, str));
-                    }
+                    using var str = await parts[0].ReadAsStreamAsync();
+                    using var src = GetTestFileStream("Test Files/Test.pdf");
+                    Assert.True(StreamsEqual(src, str));
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadStream(stream);
+        }
+
+        [Fact]
+        public async Task MultipartUploadShouldWorkWithStreamAndCustomBoundary()
+        {
+            var handler = new MockHttpMessageHandler
+            {
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Single(parts);
+
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.FileName);
+
+                    using var str = await parts[0].ReadAsStreamAsync();
+                    using var src = GetTestFileStream("Test Files/Test.pdf");
+                    Assert.True(StreamsEqual(src, str));
                 }
             };
 
@@ -115,8 +151,12 @@ namespace Refit.Tests
             using (var stream = GetTestFileStream("Test Files/Test.pdf"))
             {
                 var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
-                var result = await fixture.UploadStream(stream);
+                var result = await fixture.UploadStreamWithCustomBoundary(stream);
             }
+
+            var input = typeof(IRunscopeApi);
+            var methodFixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "UploadStreamWithCustomBoundary"));
+            Assert.Equal("-----SomeCustomBoundary", methodFixture.MultipartBoundary);
         }
 
         [Fact]
@@ -133,11 +173,9 @@ namespace Refit.Tests
                     Assert.Equal("bytes", parts[0].Headers.ContentDisposition.Name);
                     Assert.Equal("bytes", parts[0].Headers.ContentDisposition.FileName);
                     Assert.Null(parts[0].Headers.ContentType);
-                    using (var str = await parts[0].ReadAsStreamAsync())
-                    using (var src = GetTestFileStream("Test Files/Test.pdf"))
-                    {
-                        Assert.True(StreamsEqual(src, str));
-                    }
+                    using var str = await parts[0].ReadAsStreamAsync();
+                    using var src = GetTestFileStream("Test Files/Test.pdf");
+                    Assert.True(StreamsEqual(src, str));
                 }
             };
 
@@ -146,14 +184,12 @@ namespace Refit.Tests
                 HttpMessageHandlerFactory = () => handler
             };
 
-            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
-            using (var reader = new BinaryReader(stream))
-            {
-                var bytes = reader.ReadBytes((int)stream.Length);
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            using var reader = new BinaryReader(stream);
+            var bytes = reader.ReadBytes((int)stream.Length);
 
-                var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
-                var result = await fixture.UploadBytes(bytes);
-            }
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadBytes(bytes);
         }
 
         [Fact]
@@ -207,16 +243,14 @@ namespace Refit.Tests
 
             try
             {
-                using (var stream = GetTestFileStream("Test Files/Test.pdf"))
-                using (var outStream = File.OpenWrite(fileName))
-                {
-                    await stream.CopyToAsync(outStream);
-                    await outStream.FlushAsync();
-                    outStream.Close();
+                using var stream = GetTestFileStream("Test Files/Test.pdf");
+                using var outStream = File.OpenWrite(fileName);
+                await stream.CopyToAsync(outStream);
+                await outStream.FlushAsync();
+                outStream.Close();
 
-                    var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
-                    var result = await fixture.UploadFileInfo(new[] { new FileInfo(fileName), new FileInfo(fileName) }, new FileInfo(fileName));
-                }
+                var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+                var result = await fixture.UploadFileInfo(new[] { new FileInfo(fileName), new FileInfo(fileName) }, new FileInfo(fileName));
             }
             finally
             {
@@ -271,11 +305,9 @@ namespace Refit.Tests
                     Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
 
-                    using (var str = await parts[0].ReadAsStreamAsync())
-                    using (var src = GetTestFileStream("Test Files/Test.pdf"))
-                    {
-                        Assert.True(StreamsEqual(src, str));
-                    }
+                    using var str = await parts[0].ReadAsStreamAsync();
+                    using var src = GetTestFileStream("Test Files/Test.pdf");
+                    Assert.True(StreamsEqual(src, str));
                 }
             };
 
@@ -284,11 +316,48 @@ namespace Refit.Tests
                 HttpMessageHandlerFactory = () => handler
             };
 
-            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadStreamPart(new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
+        }
+
+        [Fact]
+        public async Task MultipartUploadShouldWorkWithStreamPartAndQuery()
+        {
+            var handler = new MockHttpMessageHandler
             {
-                var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
-                var result = await fixture.UploadStreamPart(new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
-            }
+                RequestAsserts = request =>
+                {
+                    Assert.Equal("?Property1=test&Property2=test2", request.RequestUri.Query);
+                },
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Single(parts);
+
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
+
+                    using var str = await parts[0].ReadAsStreamAsync();
+                    using var src = GetTestFileStream("Test Files/Test.pdf");
+                    Assert.True(StreamsEqual(src, str));
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadStreamPart(new ModelObject()
+            {
+                Property1 = "test",
+                Property2 = "test2"
+            }, new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
         }
 
 
@@ -307,11 +376,9 @@ namespace Refit.Tests
                     Assert.Equal("test-bytearraypart.pdf", parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
 
-                    using (var str = await parts[0].ReadAsStreamAsync())
-                    using (var src = GetTestFileStream("Test Files/Test.pdf"))
-                    {
-                        Assert.True(StreamsEqual(src, str));
-                    }
+                    using var str = await parts[0].ReadAsStreamAsync();
+                    using var src = GetTestFileStream("Test Files/Test.pdf");
+                    Assert.True(StreamsEqual(src, str));
                 }
             };
 
@@ -320,14 +387,12 @@ namespace Refit.Tests
                 HttpMessageHandlerFactory = () => handler
             };
 
-            using (var stream = GetTestFileStream("Test Files/Test.pdf"))
-            using (var reader = new BinaryReader(stream))
-            {
-                var bytes = reader.ReadBytes((int)stream.Length);
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            using var reader = new BinaryReader(stream);
+            var bytes = reader.ReadBytes((int)stream.Length);
 
-                var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
-                var result = await fixture.UploadBytesPart(new ByteArrayPart(bytes, "test-bytearraypart.pdf", "application/pdf"));
-            }
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadBytesPart(new ByteArrayPart(bytes, "test-bytearraypart.pdf", "application/pdf"));
         }
 
         [Fact]
@@ -381,20 +446,18 @@ namespace Refit.Tests
 
             try
             {
-                using (var stream = GetTestFileStream("Test Files/Test.pdf"))
-                using (var outStream = File.OpenWrite(fileName))
-                {
-                    await stream.CopyToAsync(outStream);
-                    await outStream.FlushAsync();
-                    outStream.Close();
+                using var stream = GetTestFileStream("Test Files/Test.pdf");
+                using var outStream = File.OpenWrite(fileName);
+                await stream.CopyToAsync(outStream);
+                await outStream.FlushAsync();
+                outStream.Close();
 
-                    var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
-                    var result = await fixture.UploadFileInfoPart(new[]
-                    {
+                var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+                var result = await fixture.UploadFileInfoPart(new[]
+                {
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart.pdf", "application/pdf"),
                         new FileInfoPart(new FileInfo(fileName), "test-fileinfopart2.pdf", contentType: null)
                     }, new FileInfoPart(new FileInfo(fileName), fileName: "additionalfile.pdf", contentType: "application/pdf"));
-                }
             }
             finally
             {
@@ -592,16 +655,14 @@ namespace Refit.Tests
 
             try
             {
-                using (var stream = GetTestFileStream("Test Files/Test.pdf"))
-                using (var outStream = File.OpenWrite(fileName))
-                {
-                    await stream.CopyToAsync(outStream);
-                    await outStream.FlushAsync();
-                    outStream.Close();
+                using var stream = GetTestFileStream("Test Files/Test.pdf");
+                using var outStream = File.OpenWrite(fileName);
+                await stream.CopyToAsync(outStream);
+                await outStream.FlushAsync();
+                outStream.Close();
 
-                    var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
-                    var result = await fixture.UploadMixedObjects(new[] { model1, model2 }, anotherModel, new FileInfo(fileName), AnEnum.Val2, "frob", 42);
-                }
+                var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+                var result = await fixture.UploadMixedObjects(new[] { model1, model2 }, anotherModel, new FileInfo(fileName), AnEnum.Val2, "frob", 42);
             }
             finally
             {
@@ -662,7 +723,7 @@ namespace Refit.Tests
             });
         }
 
-        private static Stream GetTestFileStream(string relativeFilePath)
+        internal static Stream GetTestFileStream(string relativeFilePath)
         {
             const char namespaceSeparator = '.';
 
@@ -723,10 +784,12 @@ namespace Refit.Tests
 
         class MockHttpMessageHandler : HttpMessageHandler
         {
+            public Action<HttpRequestMessage> RequestAsserts { get; set; }
             public Func<MultipartFormDataContent, Task> Asserts { get; set; }
 
-            protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             {
+                RequestAsserts?.Invoke(request);
                 var content = request.Content as MultipartFormDataContent;
                 Assert.IsType<MultipartFormDataContent>(content);
                 Assert.NotNull(Asserts);

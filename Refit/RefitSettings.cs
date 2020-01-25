@@ -53,7 +53,7 @@ namespace Refit
 
     public interface IUrlParameterFormatter
     {
-        string Format(object value, ParameterInfo parameterInfo);
+        string Format(object value, ICustomAttributeProvider attributeProvider, Type type);
     }
 
     public interface IFormUrlEncodedParameterFormatter
@@ -66,16 +66,19 @@ namespace Refit
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>> EnumMemberCache
             = new ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute>>();
 
-        public virtual string Format(object parameterValue, ParameterInfo parameterInfo)
+        public virtual string Format(object parameterValue, ICustomAttributeProvider attributeProvider, Type type)
         {
+
             // See if we have a format
-            var formatString = parameterInfo.GetCustomAttribute<QueryAttribute>(true)?.Format;
+            var formatString = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true)
+                .OfType<QueryAttribute>()
+                .FirstOrDefault()?.Format;
 
             EnumMemberAttribute enummember = null;
-            if (parameterValue != null && parameterInfo.ParameterType.GetTypeInfo().IsEnum)
+            if (parameterValue != null && type.GetTypeInfo().IsEnum)
             {
-                var cached = EnumMemberCache.GetOrAdd(parameterInfo.ParameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
-                enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterInfo.ParameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+                var cached = EnumMemberCache.GetOrAdd(type, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                enummember = cached.GetOrAdd(parameterValue.ToString(), val => type.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
             }
 
             return parameterValue == null

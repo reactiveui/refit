@@ -100,7 +100,16 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Method)]
-    public class MultipartAttribute : Attribute { }
+    public class MultipartAttribute : Attribute
+    {
+        public string BoundaryText { get; private set; }
+
+        public MultipartAttribute(string boundaryText = "----MyGreatBoundary")
+        {
+            BoundaryText = boundaryText;
+        }
+
+}
 
     public enum BodySerializationMethod
     {
@@ -322,5 +331,20 @@ namespace Refit
         /// Specifies how the collection should be encoded. The default behavior is <c>RefitParameterFormatter</c>.
         /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
+    }
+
+    [AttributeUsage(AttributeTargets.Method)]
+
+    public class QueryUriFormatAttribute : Attribute
+    {
+        public QueryUriFormatAttribute(UriFormat uriFormat)
+        {
+            UriFormat = uriFormat;
+        }
+
+        /// <summary>
+        /// Specifies how the Query Params should be encoded.
+        /// </summary>
+        public UriFormat UriFormat { get; }
     }
 }

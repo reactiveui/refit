@@ -14,13 +14,13 @@ namespace Meow
         private readonly HttpClient _httpClient;
         private readonly ITheCatsAPI _theCatsApi;
 
-        public CatsService(string baseUrl)
+        public CatsService(Uri baseUrl)
         {
-            _httpClient = new HttpClient(new HttpClientDiagnosticsHandler());
-            _theCatsApi = RestService.For<ITheCatsAPI>(baseUrl);
+            _httpClient = new HttpClient(new HttpClientDiagnosticsHandler(new HttpClientHandler())) { BaseAddress = baseUrl };
+            _theCatsApi = RestService.For<ITheCatsAPI>(_httpClient);
         }
 
-        public async Task<BreedsResponse> Search(string breed)
+        public async Task<IEnumerable<SearchResult>> Search(string breed)
         {
             return await _theCatsApi.Search(breed).ConfigureAwait(false);
         }

@@ -18,7 +18,7 @@ namespace Meow
 
         static async Task AsyncMain()
         {
-            var service = new CatsService("https://api.thecatapi.com");
+            var service = new CatsService(new Uri("https://api.thecatapi.com"));
             var results = await service.Search("bengal");
 
             Log.Debug("{results}", results);

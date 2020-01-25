@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 using Nustache.Core;
 
 namespace Refit.Generator
@@ -58,12 +60,10 @@ namespace Refit.Generator
                 return File.ReadAllText(ourPath, Encoding.UTF8);
             }
 
-            using (var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache"))
-            {
-                var ms = new MemoryStream();
-                src.CopyTo(ms);
-                return Encoding.UTF8.GetString(ms.ToArray());
-            }
+            using var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache");
+            var ms = new MemoryStream();
+            src.CopyTo(ms);
+            return Encoding.UTF8.GetString(ms.ToArray());
         }
 
         public List<InterfaceDeclarationSyntax> FindInterfacesToGenerate(SyntaxTree tree)
@@ -116,6 +116,18 @@ namespace Refit.Generator
                 ret.ConstraintClauses = interfaceTree.ConstraintClauses.ToFullString().Trim();
             }
 
+            var rootNode = interfaceTree.Parent;
+            while (rootNode.Parent != null) rootNode = rootNode.Parent;
+
+            var usings = rootNode.DescendantNodes()
+                            .OfType<UsingDirectiveSyntax>()
+                            .Select(x => $"{x.Alias} {x.StaticKeyword} {x.Name}".TrimStart())
+                            .Distinct()
+                            .Where(x => x != "System" && x != "System.Net.Http" && x != "System.Collections.Generic" && x != "System.Linq")
+                            .Select(x => new UsingDeclaration { Item = x });
+
+            ret.UsingList = usings.ToList();
+
             ret.MethodList = interfaceTree.Members
                                           .OfType<MethodDeclarationSyntax>()
                                           .Select(x =>
@@ -165,25 +177,10 @@ namespace Refit.Generator
         {
             interfaceList = interfaceList.OrderBy(i => i.Identifier.Text).ToList();
 
-            var usings = interfaceList
-                         .SelectMany(interfaceTree =>
-                         {
-                             var rootNode = interfaceTree.Parent;
-                             while (rootNode.Parent != null) rootNode = rootNode.Parent;
-
-                             return rootNode.DescendantNodes()
-                                            .OfType<UsingDirectiveSyntax>()
-                                            .Select(x => $"{x.Alias} {x.StaticKeyword} {x.Name}".TrimStart());
-                         })
-                         .Distinct()
-                         .Where(x => x != "System" && x != "System.Net.Http" && x != "System.Collections.Generic" && x != "System.Linq")
-                         .Select(x => new UsingDeclaration { Item = x });
-
             var ret = new TemplateInformation
             {
                 RefitInternalNamespace = RefitInternalNamespace ?? string.Empty,
                 ClassList = interfaceList.Select(GenerateClassInfoForInterface).ToList(),
-                UsingList = usings.ToList()
             };
 
             AddInheritedMethods(ret.ClassList);
@@ -371,6 +368,7 @@ namespace Refit.Generator
         public string Namespace { get; set; }
         public List<string> TypeParametersInfo { get; set; }
         public string TypeParameters => TypeParametersInfo != null ? string.Join(", ", TypeParametersInfo) : null;
+        public List<UsingDeclaration> UsingList { get; set; }
     }
 
     public class TypeInfo
@@ -433,7 +431,6 @@ namespace Refit.Generator
     {
         public string RefitInternalNamespace { get; set; }
         public List<ClassTemplateInfo> ClassList;
-        public List<UsingDeclaration> UsingList { get; set; }
     }
 
     static class InterfaceDeclarationExtension

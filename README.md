@@ -7,9 +7,9 @@
 ||Refit|Refit.HttpClientFactory|
 |-|-|-|
 |*NuGet*|[![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/)|[![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/)|
-|*MyGet*|![MyGet](https://img.shields.io/myget/refit/v/Refit.svg)|![MyGet](https://img.shields.io/myget/refit/v/Refit.HttpClientFactory.svg)|
+|*Azure<br />Artifacts*|[![Refit package in Refit feed in Azure Artifacts](https://feeds.dev.azure.com/dotnet/a5852744-a77d-4d76-a9d2-81ac1fdd5744/_apis/public/Packaging/Feeds/6368ad76-9653-4c2f-a6c6-da8c790ae826/Packages/2f65cb3b-df09-4050-a84e-b868ed95fd28/Badge)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=2f65cb3b-df09-4050-a84e-b868ed95fd28&preferRelease=true)|[![Refit.HttpClientFactory package in Refit feed in Azure Artifacts](https://feeds.dev.azure.com/dotnet/a5852744-a77d-4d76-a9d2-81ac1fdd5744/_apis/public/Packaging/Feeds/6368ad76-9653-4c2f-a6c6-da8c790ae826/Packages/d87934cb-2f7b-44b7-83b8-3872ac965ef2/Badge)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=d87934cb-2f7b-44b7-83b8-3872ac965ef2&preferRelease=true)|
 
-CI Feed: `https://www.myget.org/F/refit/api/v3/index.json `
+CI Feed: `https://pkgs.dev.azure.com/dotnet/ReactiveUI/_packaging/Refit/nuget/v3/index.json`
 
 Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
@@ -42,6 +42,7 @@ Refit currently supports the following platforms and any .NET Standard 1.4 targe
 * Xamarin.iOS 
 * Desktop .NET 4.6.1 
 * .NET Core
+* Uno Platform
 
 #### Note about .NET Core
 For .NET Core build-time support, you must use the .NET Core 2 SDK. You can target any supported platform in your library, long as the 2.0+ SDK is used at build-time.
@@ -74,6 +75,19 @@ If the name of your parameter doesn't match the name in the URL path, use the
 Task<List<User>> GroupList([AliasAs("id")] int groupId);
 ```
 
+A request url can also bind replacement blocks to a custom object
+
+```csharp
+[Get("/group/{request.groupId}/users/{request.userId}")]
+Task<List<User>> GroupList(UserGroupRequest request);
+
+class UserGroupRequest{
+    int groupId { get;set; }
+    int userId { get;set; }
+}
+
+```
+
 Parameters that are not specified as a URL substitution will automatically be
 used as query parameters. This is different than Retrofit, where all
 parameters must be explicitly specified.
@@ -103,6 +117,7 @@ Task<List<Page>> Search(string page);
 Search("admin/products");
 >>> "/search/admin/products"
 ```
+
 ### Dynamic Querystring Parameters
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
@@ -162,6 +177,19 @@ Task Search([Query(CollectionFormat.Csv)]int[] ages);
 
 Search(new [] {10, 20, 30})
 >>> "/users/list?ages=10%2C20%2C30"
+```
+
+### Unescape Querystring parameters
+
+Use the `QueryUriFormat` attribute to specify if the query parameters should be url escaped
+
+```csharp
+[Get("/query")]
+[QueryUriFormat(UriFormat.Unescaped)]
+Task Query(string q);
+
+Query("Select+Id,Name+From+Account")
+>>> "/query?q=Select+Id,Name+From+Account"
 ```
 
 ### Body content
@@ -625,6 +653,7 @@ At this time, multipart methods support the following parameter types:
  - FileInfo
 
 The parameter name will be used as the name of the field in the multipart data. This can be overridden with the `AliasAs` attribute.
+A custom boundary can be specified with an optional string parameter to the `Multipart` attribute. If left empty, this defaults to `----MyGreatBoundary`.
 
 To specify the file name and content type for byte array (`byte[]`), `Stream` and `FileInfo` parameters, use of a wrapper class is required.
 The wrapper classes for these types are `ByteArrayPart`, `StreamPart` and `FileInfoPart`.
@@ -834,8 +863,11 @@ try
 }
 catch (ValidationApiException validationException)
 {
-   // handle validation here by using validationException.Content, 
+   // handle validation here by using validationException.Content,
    // which is type of ProblemDetails according to RFC 7807
+
+   // If the response contains additional properties on the problem details,
+   // they will be added to the validationException.Content.Extensions collection.
 }
 catch (ApiException exception)
 {
