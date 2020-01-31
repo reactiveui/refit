@@ -451,7 +451,9 @@ namespace Refit
                     ret.Content = multiPartContent;
                 }
 
-                var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
+                // remove multiple bars
+                var urlTarget = (basePath == "/" ? string.Empty : basePath.TrimEnd('/')) + restMethod.RelativePath;
+                
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
                 RestMethodParameterInfo parameterInfo = null;                

@@ -95,7 +95,7 @@ namespace Refit
                 }
             }
 
-            return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
+            return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl) };
         }
 
         static Type GetGeneratedType<T>()

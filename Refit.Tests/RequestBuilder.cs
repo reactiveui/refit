@@ -121,6 +121,9 @@ namespace Refit.Tests
 
         [Get("/api/{id}")]
         Task IEnumerableThrowingError([Query(CollectionFormat.Multi)] IEnumerable<string> values);
+
+        [Get("api")]
+        Task AllowsRelativePathWithoutStartingBar();
     }
 
     public class ComplexQueryObject
@@ -134,6 +137,13 @@ namespace Refit.Tests
 
     public class RestMethodInfoTests
     {
+        [Fact]
+        public void AllowsRelativePathWithoutStartingBar()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "AllowsRelativePathWithoutStartingBar"));
+            Assert.Equal("api",fixture.RelativePath);
+        }
 
         [Fact]
         public void TooManyComplexTypesThrows()
@@ -248,24 +258,6 @@ namespace Refit.Tests
 
             Assert.Single(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
-        }
-
-        [Fact]
-        public void GarbagePathsShouldThrow()
-        {
-            var shouldDie = true;
-
-            try
-            {
-                var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
-            }
-            catch (ArgumentException)
-            {
-                shouldDie = false;
-            }
-
-            Assert.False(shouldDie);
         }
 
         [Fact]

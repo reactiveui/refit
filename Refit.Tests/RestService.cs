@@ -1622,9 +1622,9 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void ShouldTrimTrailingForwardSlashFromBaseUrl()
+        public void ShouldNotRemoveTheSlashToTheRightOfTheUrl()
         {
-            var expectedBaseAddress = "http://example.com/api";
+            var expectedBaseAddress = "http://example.com/api/";
             var inputBaseAddress = "http://example.com/api/";
 
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>(inputBaseAddress);
@@ -1683,7 +1683,7 @@ namespace Refit.Tests
         [Fact]
         public void NonGenericCreate()
         {
-            var expectedBaseAddress = "http://example.com/api";
+            var expectedBaseAddress = "http://example.com/api/";
             var inputBaseAddress = "http://example.com/api/";
 
             var fixture = RestService.For(typeof(ITrimTrailingForwardSlashApi), inputBaseAddress) as ITrimTrailingForwardSlashApi;
