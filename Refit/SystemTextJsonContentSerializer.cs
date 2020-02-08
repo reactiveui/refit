@@ -16,13 +16,32 @@ namespace Refit
     /// </summary>
     public sealed class SystemTextJsonContentSerializer : IContentSerializer
     {
+        /// <summary>
+        /// The JSON serialization settings to use
+        /// </summary>
+        private readonly JsonSerializerOptions jsonSerializerOptions;
+
+        /// <summary>
+        /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
+        /// </summary>
+        public SystemTextJsonContentSerializer() : this(new JsonSerializerOptions()) { }
+
+        /// <summary>
+        /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
+        /// </summary>
+        /// <param name="jsonSerializerOptions">The serialization settings to use for the current instance</param>
+        public SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
+        {
+            this.jsonSerializerOptions = jsonSerializerOptions;
+        }
+
         /// <inheritdoc/>
         public Task<HttpContent> SerializeAsync<T>(T item)
         {
             var utf8Stream = new PooledMemoryStream();
             var utf8JsonWriter = new Utf8JsonWriter(utf8Stream);
 
-            JsonSerializer.Serialize(utf8JsonWriter, item);
+            JsonSerializer.Serialize(utf8JsonWriter, item, jsonSerializerOptions);
 
             var content = new StreamContent(utf8Stream)
             {
@@ -45,7 +64,7 @@ namespace Refit
             {
                 var length = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
 
-                return Deserialize<T>(buffer, length);
+                return Deserialize<T>(buffer, length, jsonSerializerOptions);
 
             }
             finally
@@ -60,15 +79,16 @@ namespace Refit
         /// <typeparam name="T">The type of item to deserialize</typeparam>
         /// <param name="buffer">The input buffer of UTF8 bytes to read</param>
         /// <param name="length">The length of the usable data within <paramref name="buffer"/></param>
+        /// <param name="jsonSerializerOptions">The JSON serialization settings to use</param>
         /// <returns>A <typeparamref name="T"/> item deserialized from the UTF8 bytes within <paramref name="buffer"/></returns>
         [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static T Deserialize<T>(byte[] buffer, int length)
+        private static T Deserialize<T>(byte[] buffer, int length, JsonSerializerOptions jsonSerializerOptions)
         {
             var span = new ReadOnlySpan<byte>(buffer, 0, length);
             var utf8JsonReader = new Utf8JsonReader(span);
 
-            return JsonSerializer.Deserialize<T>(ref utf8JsonReader);
+            return JsonSerializer.Deserialize<T>(ref utf8JsonReader, jsonSerializerOptions);
         }
     }
 
