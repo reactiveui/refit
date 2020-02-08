@@ -1,11 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
     <RootNamespace>Refit.Generator.Tasks</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Condition="'$(TargetFramework)' == 'net461' " Include="Microsoft.Build.Tasks.Core" Version="14.3" PrivateAssets="all" />
     <PackageReference Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Include="Microsoft.Build.Tasks.Core" Version="15.1.548" PrivateAssets="all" />
   </ItemGroup>
 

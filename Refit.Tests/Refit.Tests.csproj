@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,12 +20,36 @@
     <ProjectReference Include="..\Refit\Refit.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461' ">
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="RefitStubs.*.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'net461' " Remove="RefitStubs.NetCore2.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Remove="RefitStubs.Net46.cs" />
   </ItemGroup>
+
+  <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' " BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'net461' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
+      <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
+    <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+      <RefitExecCmd>"$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.App\bin\$(ConfigurationName)\net461\InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)" "$(RootNamespace)"</RefitExecCmd>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+      <RefitExecCmd>mono "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.App/bin/$(Configuration)/net461/InterfaceStubGenerator.App.exe" "$(OutputStubsFile)" "$(MSBuildProjectDirectory)" "$(RefitParameterFile)" "$(RootNamespace)"</RefitExecCmd>
+    </PropertyGroup>
+    <Message Text="Executing: $(RefitExecCmd)" Importance="High" />
+    <Exec Command="$(RefitExecCmd)" />
+    <Message Text="Processed Refit Stubs" />
+  </Target>
 
   <Target Name="GenerateRefitStubsCore" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' == 'Core' " BeforeTargets="CoreCompile">
     <PropertyGroup>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'net461' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
       <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
     </PropertyGroup>
