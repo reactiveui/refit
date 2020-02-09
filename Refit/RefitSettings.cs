@@ -14,11 +14,20 @@ namespace Refit
     {
         JsonSerializerSettings jsonSerializerSettings;
 
-        public RefitSettings()
+        /// <summary>
+        /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
+        /// </summary>
+        /// <param name="contentSerializer">The <see cref="IContentSerializer"/> instance to use (defaults to <see cref="JsonContentSerializer"/>)</param>
+        /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
+        /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
+        public RefitSettings(
+            IContentSerializer contentSerializer = null,
+            IUrlParameterFormatter urlParameterFormatter = null,
+            IFormUrlEncodedParameterFormatter formUrlEncodedParameterFormatter = null)
         {
-            UrlParameterFormatter = new DefaultUrlParameterFormatter();
-            FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
-            ContentSerializer = new JsonContentSerializer();
+            ContentSerializer = contentSerializer ?? new JsonContentSerializer();
+            UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
+            FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
         }
 
         public Func<Task<string>> AuthorizationHeaderValueGetter { get; set; }
