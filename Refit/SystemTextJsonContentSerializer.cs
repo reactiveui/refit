@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Refit.IO;
+using Refit.Buffers;
 
 namespace Refit
 {
@@ -38,12 +38,13 @@ namespace Refit
         /// <inheritdoc/>
         public Task<HttpContent> SerializeAsync<T>(T item)
         {
-            var utf8Stream = new PooledMemoryStream();
-            var utf8JsonWriter = new Utf8JsonWriter(utf8Stream);
+            using var utf8BufferWriter = new PooledBufferWriter();
+
+            var utf8JsonWriter = new Utf8JsonWriter(utf8BufferWriter);
 
             JsonSerializer.Serialize(utf8JsonWriter, item, jsonSerializerOptions);
 
-            var content = new StreamContent(utf8Stream)
+            var content = new StreamContent(utf8BufferWriter.DetachStream())
             {
                 Headers =
                 {
