@@ -3,6 +3,7 @@ using System.Collections;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Refit
@@ -113,6 +114,9 @@ namespace Refit
                    ?? propertyInfo.GetCustomAttributes<JsonPropertyAttribute>(true)
                                   .Select(a => a.PropertyName)
                                   .FirstOrDefault()
+                   ?? propertyInfo.GetCustomAttributes<JsonPropertyNameAttribute>(true)
+                       .Select(a => a.Name)
+                       .FirstOrDefault()
                    ?? propertyInfo.Name;
 
             var qattrib = propertyInfo.GetCustomAttributes<QueryAttribute>(true)
