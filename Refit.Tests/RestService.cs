@@ -613,7 +613,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             var responseMessage = new HttpResponseMessage()
@@ -649,7 +649,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
@@ -676,7 +676,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
@@ -704,7 +704,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             var responseMessage = new HttpResponseMessage()
@@ -741,7 +741,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -766,7 +766,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -790,7 +790,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
@@ -815,7 +815,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/search/users")
@@ -839,7 +839,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -865,7 +865,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -921,7 +921,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/")
@@ -943,7 +943,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/")
@@ -1107,7 +1107,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
@@ -1138,7 +1138,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
@@ -1168,7 +1168,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
@@ -1198,7 +1198,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")

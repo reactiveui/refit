@@ -17,7 +17,7 @@ namespace Refit
     public sealed class SystemTextJsonContentSerializer : IContentSerializer
     {
         /// <summary>
-        /// The JSON serialization settings to use
+        /// The JSON serialization options to use
         /// </summary>
         private readonly JsonSerializerOptions jsonSerializerOptions;
 
@@ -29,7 +29,7 @@ namespace Refit
         /// <summary>
         /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
         /// </summary>
-        /// <param name="jsonSerializerOptions">The serialization settings to use for the current instance</param>
+        /// <param name="jsonSerializerOptions">The serialization options to use for the current instance</param>
         public SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
         {
             this.jsonSerializerOptions = jsonSerializerOptions;
@@ -61,6 +61,7 @@ namespace Refit
             using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
 
             var buffer = ArrayPool<byte>.Shared.Rent((int)stream.Length);
+
             try
             {
                 var length = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);

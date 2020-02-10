@@ -12,7 +12,7 @@ namespace Refit.Tests
         const string BaseAddress = "https://api/";
 
         [Theory]
-        [InlineData(typeof(JsonContentSerializer))]
+        [InlineData(typeof(NewtonsoftJsonContentSerializer))]
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
         {
@@ -40,7 +40,7 @@ namespace Refit.Tests
         }
 
         [Theory]
-        [InlineData(typeof(JsonContentSerializer))]
+        [InlineData(typeof(NewtonsoftJsonContentSerializer))]
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
         {

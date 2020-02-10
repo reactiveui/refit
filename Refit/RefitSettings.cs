@@ -17,7 +17,7 @@ namespace Refit
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
         /// </summary>
-        /// <param name="contentSerializer">The <see cref="IContentSerializer"/> instance to use (defaults to <see cref="JsonContentSerializer"/>)</param>
+        /// <param name="contentSerializer">The <see cref="IContentSerializer"/> instance to use (defaults to <see cref="NewtonsoftJsonContentSerializer"/>)</param>
         /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
         public RefitSettings(
@@ -25,7 +25,7 @@ namespace Refit
             IUrlParameterFormatter urlParameterFormatter = null,
             IFormUrlEncodedParameterFormatter formUrlEncodedParameterFormatter = null)
         {
-            ContentSerializer = contentSerializer ?? new JsonContentSerializer();
+            ContentSerializer = contentSerializer ?? new NewtonsoftJsonContentSerializer();
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
         }
