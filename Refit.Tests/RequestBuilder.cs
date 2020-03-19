@@ -129,6 +129,8 @@ namespace Refit.Tests
         public string TestAlias1 {get; set;}
 
         public string TestAlias2 {get; set;}
+
+        public IEnumerable<int> TestCollection { get; set; }
     }
 
 
@@ -219,6 +221,19 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/foo?test-query-alias=one&TestAlias2=two", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ObjectQueryParameterWithInnerCollectionHasCorrectQuerystring()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.ComplexTypeQueryWithInnerCollection));
+
+            var param = new ComplexQueryObject { TestCollection = new[] { 1, 2, 3 } };
+            var output = factory(new object[] { param });
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?TestCollection=1%2C2%2C3", uri.PathAndQuery);
         }
 
         [Fact]
@@ -708,6 +723,9 @@ namespace Refit.Tests
 
         [Post("/foo")]
         Task PostWithComplexTypeQuery([Query]ComplexQueryObject queryParams);
+
+        [Get("/foo")]
+        Task ComplexTypeQueryWithInnerCollection([Query]ComplexQueryObject queryParams);
 
         [Get("/api/{obj.someProperty}")]
         Task QueryWithOptionalParametersPathBoundObject(PathBoundObject obj, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
