@@ -581,45 +581,14 @@ namespace Refit
                         var attr = queryAttribute ?? new QueryAttribute();
                         if (DoNotConvertToQueryMap(param))
                         {
-                            if (!(param is string) && param is IEnumerable paramValues)
-                            {
-                                switch (attr.CollectionFormat)
-                                {
-                                    case CollectionFormat.Multi:
-                                        foreach (var paramValue in paramValues)
-                                        {
-                                            queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                                restMethod.QueryParameterMap[i],
-                                                settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
-                                        }
-                                        continue;
-                                    default:
-                                        var delimiter = attr.CollectionFormat == CollectionFormat.Ssv ? " "
-                                            : attr.CollectionFormat == CollectionFormat.Tsv ? "\t"
-                                            : attr.CollectionFormat == CollectionFormat.Pipes ? "|"
-                                            : ",";
-
-                                        // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
-
-                                        var formattedValues = paramValues
-                                            .Cast<object>()
-                                            .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType));
-
-                                        queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                            restMethod.QueryParameterMap[i],
-                                            string.Join(delimiter, formattedValues)));
-                                        continue;
-                                }
-                            }
-
-                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
+                            queryParamsToAdd.AddRange(ParseQueryParameter(param, restMethod.ParameterInfoMap[i], restMethod.QueryParameterMap[i], attr));
                         }
                         else
                         {
                             foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo))
                             {
                                 var path = !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
-                                queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
+                                queryParamsToAdd.AddRange(ParseQueryParameter(kvp.Value, restMethod.ParameterInfoMap[i], path, attr));
                             }
                         }
 
@@ -701,6 +670,44 @@ namespace Refit
                 ret.RequestUri = new Uri(uri.Uri.GetComponents(UriComponents.PathAndQuery, uriFormat), UriKind.Relative);
                 return ret;
             };
+        }
+
+        IEnumerable<KeyValuePair<string, string>> ParseQueryParameter(object param, ParameterInfo parameterInfo, string queryPath, QueryAttribute queryAttribute)
+        {
+            if (!(param is string) && param is IEnumerable paramValues)
+            {
+                switch (queryAttribute.CollectionFormat)
+                {
+                    case CollectionFormat.Multi:
+                        foreach (var paramValue in paramValues)
+                        {
+                            yield return new KeyValuePair<string, string>(
+                                queryPath,
+                                settings.UrlParameterFormatter.Format(paramValue, parameterInfo, parameterInfo.ParameterType));
+                        }
+
+                        break;
+
+                    default:
+                        var delimiter = queryAttribute.CollectionFormat == CollectionFormat.Ssv ? " "
+                            : queryAttribute.CollectionFormat == CollectionFormat.Tsv ? "\t"
+                            : queryAttribute.CollectionFormat == CollectionFormat.Pipes ? "|"
+                            : ",";
+
+                        // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
+                        var formattedValues = paramValues
+                            .Cast<object>()
+                            .Select(v => settings.UrlParameterFormatter.Format(v, parameterInfo, parameterInfo.ParameterType));
+
+                        yield return new KeyValuePair<string, string>(queryPath, string.Join(delimiter, formattedValues));
+
+                        break;
+                }
+            }
+            else
+            {
+                yield return new KeyValuePair<string, string>(queryPath, settings.UrlParameterFormatter.Format(param, parameterInfo, parameterInfo.ParameterType));
+            }
         }
 
         Func<HttpClient, object[], IObservable<T>> BuildRxFuncForMethod<T, TBody>(RestMethodInfo restMethod)
