@@ -13,6 +13,7 @@ namespace Refit.Tests
 
         [Theory]
         [InlineData(typeof(NewtonsoftJsonContentSerializer))]
+        [InlineData(typeof(SystemTextJsonContentSerializer))]
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
         {
@@ -41,6 +42,7 @@ namespace Refit.Tests
 
         [Theory]
         [InlineData(typeof(NewtonsoftJsonContentSerializer))]
+        [InlineData(typeof(SystemTextJsonContentSerializer))]
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
         {
