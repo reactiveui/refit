@@ -27,10 +27,9 @@ namespace Refit.Tests
                 Asserts = async content => new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
             };
 
-            var settings = new RefitSettings()
+            var settings = new RefitSettings(serializer)
             {
-                HttpMessageHandlerFactory = () => handler,
-                ContentSerializer = serializer
+                HttpMessageHandlerFactory = () => handler
             };
 
             var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
@@ -74,10 +73,9 @@ namespace Refit.Tests
                 }
             };
 
-            var settings = new RefitSettings()
+            var settings = new RefitSettings(serializer)
             {
-                HttpMessageHandlerFactory = () => handler,
-                ContentSerializer = serializer
+                HttpMessageHandlerFactory = () => handler
             };
 
             var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
