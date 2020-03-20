@@ -87,6 +87,20 @@ namespace Refit.Tests
             Assert.True(fixtureTask.IsCompleted);
         }
 
+        [Fact]
+        public void VerityDefaultSerializer()
+        {
+            var settings = new RefitSettings();
+
+            Assert.NotNull(settings.ContentSerializer);
+            Assert.IsType<NewtonsoftJsonContentSerializer>(settings.ContentSerializer);
+
+            settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+            Assert.NotNull(settings.ContentSerializer);
+            Assert.IsType<SystemTextJsonContentSerializer>(settings.ContentSerializer);
+        }
+
         /// <summary>
         /// Runs the task to completion or until the timeout occurs
         /// </summary>
