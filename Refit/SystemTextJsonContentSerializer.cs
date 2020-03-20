@@ -67,7 +67,6 @@ namespace Refit
                 var length = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
 
                 return Deserialize<T>(buffer, length, jsonSerializerOptions);
-
             }
             finally
             {
