@@ -60,7 +60,7 @@ namespace Refit.Buffers
             public override long Position
             {
                 get => position;
-                set => throw new NotSupportedException("This stream doesn't support seek operations");
+                set => ThrowNotSupportedException();
 
             }
 
@@ -70,10 +70,10 @@ namespace Refit.Buffers
             /// <inheritdoc/>
             public override int Read(byte[] buffer, int offset, int count)
             {
-                if (offset < 0) throw new ArgumentOutOfRangeException(nameof(offset), "The offset can't be negative");
-                if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), "The count can't be negative");
-                if (offset + count > buffer.Length) throw new ArgumentException("The sum of offset and count is larger than the buffer length");
-                if (pooledBuffer is null) throw new ObjectDisposedException(nameof(PooledMemoryStream));
+                if (offset < 0) ThrowArgumentOutOfRangeExceptionForNegativeOffset();
+                if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
+                if (offset + count > buffer.Length) ThrowArgumentOutOfRangeExceptionForEndOfStreamReached();
+                if (pooledBuffer is null) ThrowObjectDisposedException();
 
                 var destination = buffer.AsSpan(offset, count);
                 var source = pooledBuffer.AsSpan(0, length).Slice(position);
@@ -99,19 +99,21 @@ namespace Refit.Buffers
             /// <inheritdoc/>
             public override long Seek(long offset, SeekOrigin origin)
             {
-                throw new NotSupportedException("This stream doesn't support seek operations");
+                ThrowNotSupportedException();
+
+                return default;
             }
 
             /// <inheritdoc/>
             public override void SetLength(long value)
             {
-                throw new NotSupportedException("The lenght can't be externally set for this stream type");
+                ThrowNotSupportedException();
             }
 
             /// <inheritdoc/>
             public override void Write(byte[] buffer, int offset, int count)
             {
-                throw new NotSupportedException("This stream doesn't support write operations");
+                ThrowNotSupportedException();
             }
 
             /// <inheritdoc/>

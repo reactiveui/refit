@@ -37,8 +37,8 @@ namespace Refit.Buffers
         /// <inheritdoc/>
         public void Advance(int count)
         {
-            if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), "The count can't be < 0");
-            if (position > buffer.Length - count) throw new ArgumentOutOfRangeException(nameof(count), "Advanced too far");
+            if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
+            if (position > buffer.Length - count) ThrowArgumentOutOfRangeExceptionForAdvancedTooFar();
 
             position += count;
         }
@@ -66,7 +66,7 @@ namespace Refit.Buffers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void EnsureFreeCapacity(int count)
         {
-            if (count < 0) throw new ArgumentOutOfRangeException(nameof(count), "The count can't be < 0");
+            if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
 
             if (count == 0) count = 1;
 
