@@ -160,7 +160,7 @@ bogusPath:
                 //if the param is an lets make a dictionary for all it's potential parameters
                 var objectParamValidationDict = parameterInfo.Where(x => x.ParameterType.GetTypeInfo().IsClass)
                                                                  .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
-                                                                 .GroupBy(i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2).ToLowerInvariant()}")
+                                                                 .GroupBy(i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2)}".ToLowerInvariant())
                                                                  .ToDictionary(k => k.Key, v => v.First());
                 foreach (var match in parameterizedParts)
                 {
