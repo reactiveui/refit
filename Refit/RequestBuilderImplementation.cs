@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections;
-using System.Reflection;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
-using System.Collections.Concurrent;
 
 namespace Refit
 {
@@ -443,7 +443,7 @@ namespace Refit
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
-                RestMethodParameterInfo parameterInfo = null;                
+                RestMethodParameterInfo parameterInfo = null;
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
@@ -676,7 +676,11 @@ namespace Refit
         {
             if (!(param is string) && param is IEnumerable paramValues)
             {
-                switch (queryAttribute.CollectionFormat)
+                var collectionFormat = queryAttribute.IsCollectionFormatSpecified
+                    ? queryAttribute.CollectionFormat
+                    : settings.CollectionFormat;
+
+                switch (collectionFormat)
                 {
                     case CollectionFormat.Multi:
                         foreach (var paramValue in paramValues)
@@ -689,9 +693,9 @@ namespace Refit
                         break;
 
                     default:
-                        var delimiter = queryAttribute.CollectionFormat == CollectionFormat.Ssv ? " "
-                            : queryAttribute.CollectionFormat == CollectionFormat.Tsv ? "\t"
-                            : queryAttribute.CollectionFormat == CollectionFormat.Pipes ? "|"
+                        var delimiter = collectionFormat == CollectionFormat.Ssv ? " "
+                            : collectionFormat == CollectionFormat.Tsv ? "\t"
+                            : collectionFormat == CollectionFormat.Pipes ? "|"
                             : ",";
 
                         // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error

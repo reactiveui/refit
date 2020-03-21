@@ -41,6 +41,7 @@ namespace Refit
         public IContentSerializer ContentSerializer { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
+        public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
         public bool Buffered { get; set; } = true;
     }
 

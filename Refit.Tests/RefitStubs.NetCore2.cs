@@ -2,6 +2,7 @@
 using System;
 using System.Net.Http;
 using System.Collections.Generic;
+using Refit.Tests.RefitInternalGenerated;
 
 /* ******** Hey You! *********
  *
@@ -29,7 +30,6 @@ namespace Refit.Tests.RefitInternalGenerated
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Threading.Tasks;
     using Microsoft.CodeAnalysis;
@@ -100,7 +100,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -148,7 +147,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -207,7 +205,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -242,7 +239,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -285,7 +281,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -344,7 +339,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -379,7 +373,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -414,6 +407,14 @@ namespace Refit.Tests
         {
             var arguments = new object[] { request };
             var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBars", new Type[] { typeof(PathBoundObject) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task IApiBindPathToObject.GetFooBarsWithDifferentCasing(PathBoundObject requestParams)
+        {
+            var arguments = new object[] { requestParams };
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBarsWithDifferentCasing", new Type[] { typeof(PathBoundObject) });
             return (Task)func(Client, arguments);
         }
 
@@ -517,7 +518,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -559,7 +559,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -617,7 +616,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Threading.Tasks;
     using Microsoft.CodeAnalysis;
@@ -693,7 +691,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -735,7 +732,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -818,7 +814,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -893,7 +888,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -971,7 +965,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using Refit;
     using static System.Math;
@@ -1041,7 +1034,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Text;
     using System.Threading.Tasks;
     using Refit;
@@ -1173,7 +1165,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -1251,7 +1242,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -1301,7 +1291,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Net;
     using System.Text;
     using System.Threading.Tasks;
@@ -1340,7 +1329,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Net;
     using System.Text;
     using System.Threading.Tasks;
@@ -1386,7 +1374,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using SomeType =  CollisionA.SomeType;
     using CollisionB;
@@ -1422,7 +1409,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Text;
     using System.Threading.Tasks;
     using Refit;
@@ -1514,7 +1500,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Threading.Tasks;
     using Microsoft.CodeAnalysis;
@@ -1563,7 +1548,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -1605,7 +1589,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -1679,7 +1662,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reflection;
@@ -1817,7 +1799,6 @@ namespace Refit.Tests
 
 namespace AutoGeneratedIServiceWithoutNamespace
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Text;
     using System.Threading.Tasks;
     using Refit;
@@ -1860,7 +1841,6 @@ namespace AutoGeneratedIServiceWithoutNamespace
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -1910,7 +1890,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
@@ -1952,7 +1931,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using CollisionA;
     using Refit;
@@ -1987,7 +1965,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Threading.Tasks;
     using CollisionB;
     using Refit;
@@ -2022,7 +1999,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Net;
     using System.Threading.Tasks;
     using Refit;
@@ -2111,7 +2087,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.Net;
     using System.Threading.Tasks;
     using Refit;
@@ -2156,7 +2131,6 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
     using System.IO;
     using System.Net;
     using System.Reactive.Linq;
