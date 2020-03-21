@@ -3,6 +3,7 @@ using System.Collections;
 using System.Net.Http;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -30,10 +31,11 @@ namespace Refit
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
         public Dictionary<int, RestMethodParameterInfo> ParameterMap { get; set; }
         public Type ReturnType { get; set; }
-        public Type SerializedReturnType { get; set; }
+        public Type ReturnResultType { get; set; }
+        public Type DeserializedResultType { get; set; }
         public RefitSettings RefitSettings { get; set; }
-        public Type SerializedGenericArgument { get; set; }
         public bool IsApiResponse { get; }
+        public bool ShouldDisposeResponse { get; private set; }
 
         static readonly Regex ParameterRegex = new Regex(@"{(.*?)}");
         static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
@@ -60,6 +62,7 @@ namespace Refit
 
             VerifyUrlPathIsSane(RelativePath);
             DetermineReturnTypeInfo(methodInfo);
+            DetermineIfResponseMustBeDisposed();
 
             // Exclude cancellation token parameters from this list
             var parameterList = methodInfo.GetParameters().Where(p => p.ParameterType != typeof(CancellationToken)).ToList();
@@ -112,8 +115,10 @@ namespace Refit
 
             CancellationToken = ctParams.FirstOrDefault();
 
-            IsApiResponse = SerializedReturnType.GetTypeInfo().IsGenericType &&
-                                SerializedReturnType.GetGenericTypeDefinition() == typeof(ApiResponse<>);
+            IsApiResponse = ReturnResultType.GetTypeInfo().IsGenericType &&
+                            (ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+                             || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>)
+                             || ReturnResultType == typeof(IApiResponse));
         }
 
         private PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
@@ -242,7 +247,7 @@ bogusPath:
                 .FirstOrDefault();
 
             // also check for AliasAs
-            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name;           
+            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name;
         }
 
         Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
@@ -317,7 +322,7 @@ bogusPath:
                 ? methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true)
                 : new Attribute[0];
 
-            // Headers set on the declaring type have to come first, 
+            // Headers set on the declaring type have to come first,
             // so headers set on the method can replace them. Switching
             // the order here will break stuff.
             var headers = inheritedAttributes.Concat(declaringTypeAttributes).Concat(methodInfo.GetCustomAttributes(true))
@@ -362,34 +367,42 @@ bogusPath:
 
         void DetermineReturnTypeInfo(MethodInfo methodInfo)
         {
-            if (methodInfo.ReturnType.GetTypeInfo().IsGenericType == false)
+            var returnType = methodInfo.ReturnType;
+            if (returnType.IsGenericType && (methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(Task<>)
+                                             || methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(IObservable<>)))
             {
-                if (methodInfo.ReturnType != typeof(Task))
+                ReturnType = returnType;
+                ReturnResultType = returnType.GetGenericArguments()[0];
+
+                if (ReturnResultType.IsGenericType &&
+                    (ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+                     || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)))
                 {
-                    goto bogusMethod;
+                        DeserializedResultType = ReturnResultType.GetGenericArguments()[0];
                 }
-
-                ReturnType = methodInfo.ReturnType;
-                SerializedReturnType = typeof(void);
-                return;
+                else if (ReturnResultType == typeof(IApiResponse))
+                {
+                    DeserializedResultType = typeof(HttpContent);
+                }else
+                    DeserializedResultType = ReturnResultType;
             }
-
-            var genericType = methodInfo.ReturnType.GetGenericTypeDefinition();
-            if (genericType != typeof(Task<>) && genericType != typeof(IObservable<>))
+            else if (returnType == typeof(Task))
             {
-                goto bogusMethod;
+                ReturnType = methodInfo.ReturnType;
+                ReturnResultType = typeof(void);
+                DeserializedResultType = typeof(void);
             }
-
-            ReturnType = methodInfo.ReturnType;
-            SerializedReturnType = methodInfo.ReturnType.GetGenericArguments()[0];
-
-            if (SerializedReturnType.GetTypeInfo().IsGenericType)
-                SerializedGenericArgument = SerializedReturnType.GetGenericArguments()[0];
-
-            return;
-
-bogusMethod:
-            throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
+            else
+                throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
         }
+
+        private void DetermineIfResponseMustBeDisposed()
+        {
+            // Rest method caller will have to dispose if it's one of those 3
+            ShouldDisposeResponse = DeserializedResultType != typeof(HttpResponseMessage) &&
+                                    DeserializedResultType != typeof(HttpContent) &&
+                                    DeserializedResultType != typeof(Stream);
+        }
+
     }
 }
