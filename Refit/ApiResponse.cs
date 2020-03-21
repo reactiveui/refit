@@ -14,7 +14,7 @@ namespace Refit
         }
     }
 
-    public sealed class ApiResponse<out T> : IApiResponse<T>
+    public sealed class ApiResponse<T> : IApiResponse<T>
     {
         readonly HttpResponseMessage response;
         bool disposed;
@@ -67,7 +67,7 @@ namespace Refit
         }
     }
 
-    public interface IApiResponse<T> : IApiResponse
+    public interface IApiResponse<out T> : IApiResponse
     {
         T Content { get; }
     }
