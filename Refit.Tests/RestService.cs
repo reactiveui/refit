@@ -68,6 +68,8 @@ namespace Refit.Tests
         [Get("/foos/{request.someProperty}/bar")]
         Task GetBarsByFoo(PathBoundObject request);
 
+        [Get("/foo")]
+        Task GetBarsWithCustomQueryFormat(PathBoundObjectWithQueryFormat request);
 
         [Get("/foos/{request.someProperty}/bar/{request.someProperty3}")]
         Task GetFooBarsDerived(PathBoundDerivedObject request);
@@ -127,6 +129,14 @@ namespace Refit.Tests
 
         [Query]
         public string SomeQuery { get; set; }
+
+    }
+
+    public class PathBoundObjectWithQueryFormat
+    {
+
+        [Query(Format = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'")]
+        public DateTime SomeQueryWithFormat { get; set; }
     }
 
     public interface INoRefitHereBuddy
@@ -521,6 +531,28 @@ namespace Refit.Tests
                 SomeProperty2 = "barNone",
                 SomeQuery = "test"
             });
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithPathBoundObjectAndQueryWithFormat()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/foo")
+                    .WithExactQueryString("SomeQueryWithFormat=2020-03-05T13:55:00Z")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            await fixture.GetBarsWithCustomQueryFormat(new PathBoundObjectWithQueryFormat
+            {
+                SomeQueryWithFormat = new DateTime(2020, 03, 05, 13, 55, 00)
+            });
+
             mockHttp.VerifyNoOutstandingExpectation();
         }
 

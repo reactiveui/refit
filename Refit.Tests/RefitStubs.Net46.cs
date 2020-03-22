@@ -443,6 +443,14 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
+        Task IApiBindPathToObject.GetBarsWithCustomQueryFormat(PathBoundObjectWithQueryFormat request)
+        {
+            var arguments = new object[] { request };
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsWithCustomQueryFormat", new Type[] { typeof(PathBoundObjectWithQueryFormat) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
         Task IApiBindPathToObject.GetFooBarsDerived(PathBoundDerivedObject request)
         {
             var arguments = new object[] { request };
