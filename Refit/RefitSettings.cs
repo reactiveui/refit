@@ -46,7 +46,7 @@ namespace Refit
 
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
 
-        [Obsolete("Set RefitSettings.ContentSerializer = new JsonContentSerializer(JsonSerializerSettings) instead.", false)]
+        [Obsolete("Set RefitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer(JsonSerializerSettings) instead.", false)]
         public JsonSerializerSettings JsonSerializerSettings
         {
             get => jsonSerializerSettings;
