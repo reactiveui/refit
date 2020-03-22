@@ -97,8 +97,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("ReservedWordsForParameterNames", new Type[] { typeof(int), typeof(string), typeof(float) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -146,8 +144,6 @@ namespace Refit.Tests
         {
             throw new NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -206,8 +202,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Ping", new Type[] {  });
             return (Task<string>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -242,8 +236,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Ping", new Type[] {  });
             return (Task<string>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -286,8 +278,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Test", new Type[] {  });
             return (Task<string>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -346,8 +336,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Ping", new Type[] {  });
             return (Task<string>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -382,8 +370,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Test", new Type[] {  });
             return (Task<string>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -529,8 +515,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", new Type[] { typeof(PathBoundObjectWithQuery), typeof(StreamPart) });
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -572,8 +556,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("GetWithDecimal", new Type[] { typeof(decimal) });
             return (Task<string>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -631,8 +613,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Head", new Type[] {  });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -708,8 +688,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Delete", new Type[] { typeof(TKey) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -751,8 +729,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("PostAValue", new Type[] { typeof(string) });
             return (Task<bool>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -786,8 +762,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (CustomReferenceType?)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -821,8 +795,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (CustomValueType?)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -940,8 +912,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Delete", new Type[] { typeof(long) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1016,8 +986,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Delete", new Type[] { typeof(int) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1095,8 +1063,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Delete", new Type[] { typeof(long) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1166,8 +1132,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Delete", new Type[] { typeof(TKey) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1236,8 +1200,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (Task<string>?)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1271,8 +1233,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (ValueTask<int>?)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1341,8 +1301,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (Task<string?>?)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1376,8 +1334,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (ValueTask<int?>?)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1411,8 +1367,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(System.Collections.Generic.List<string?>) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1446,8 +1400,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (Task<int?>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1481,8 +1433,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (Task<string?>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1614,8 +1564,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", new Type[] { typeof(User) });
             return (Task<ApiResponse<User>>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1693,8 +1641,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("GetQuery1", new Type[] { typeof(TParam) }, new Type[] { typeof(TValue) });
             return (Task<TValue>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1744,8 +1690,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("PostFileUploadWithMetadata", new Type[] { typeof(HttpContent) });
             return (Task<ApiResponse<HttpContent>>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1784,8 +1728,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("GetTestObject", new Type[] {  });
             return (Task<TestAliasObject>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1831,8 +1773,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("GetAuthenticated", new Type[] {  });
             return (Task<string>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1868,8 +1808,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", new Type[] {  });
             return (Task<SomeType>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -1961,8 +1899,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", new Type[] {  });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2011,8 +1947,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("PostMessage", new Type[] { typeof(T), typeof(U), typeof(V) }, new Type[] { typeof(T), typeof(U), typeof(V) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2054,8 +1988,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("GetCongruence", new Type[] {  });
             return (Task<RootObject>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2089,8 +2021,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (string?)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2124,8 +2054,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (int?)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2234,8 +2162,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("PostGeneric", new Type[] { typeof(T) }, new Type[] { typeof(T) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2373,8 +2299,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("UploadHttpContent", new Type[] { typeof(HttpContent) });
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2417,8 +2341,6 @@ namespace AutoGeneratedIServiceWithoutNamespace
             var func = requestBuilder.BuildRestResultFuncForMethod("PostRoot", new Type[] {  });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2468,8 +2390,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("GetRemoteFileWithMetadata", new Type[] { typeof(string) });
             return (Task<ApiResponse<Stream>>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2511,8 +2431,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2547,8 +2465,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("SomeARequest", new Type[] {  });
             return (Task<SomeType>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2583,8 +2499,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("SomeBRequest", new Type[] {  });
             return (Task<SomeType>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2673,8 +2587,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(TInput1), typeof(TInput2) }, new Type[] { typeof(TInput1), typeof(TInput2) });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2719,8 +2631,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(int) });
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 
@@ -2762,8 +2672,6 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (Task)func(Client, arguments);
         }
-
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
     }
 }
 

@@ -363,6 +363,7 @@ namespace Refit.Generator
         public string InterfaceName { get; set; }
         public List<BaseClassInfo> BaseClasses { get; set; }
         public List<MethodTemplateInfo> MethodList { get; set; }
+        public bool HasAnyMethodsWithNullableArguments => MethodList.SelectMany(ml => ml.ArgumentListInfo).Any(y => y.TypeInfo.ToString().EndsWith("?"));
         public string Modifiers { get; set; }
         public string Namespace { get; set; }
         public List<string> TypeParametersInfo { get; set; }

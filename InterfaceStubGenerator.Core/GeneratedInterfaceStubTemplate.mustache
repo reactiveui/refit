@@ -75,8 +75,10 @@ namespace {{Namespace}}
             {{/IsRefitMethod}}
         }
             {{/MethodList}}
+        {{#HasAnyMethodsWithNullableArguments}}
 
         private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
+        {{/HasAnyMethodsWithNullableArguments}}
     }
 }
 
