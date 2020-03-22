@@ -264,6 +264,42 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task GetWithNoParametersTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo", settings);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithNoParametersTestTrailingSlashInBase()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo/", settings);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }   
+
+        [Fact]
         public async Task GetWithPathBoundObject()
         {
             var mockHttp = new MockHttpMessageHandler();
@@ -1656,6 +1692,22 @@ namespace Refit.Tests
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>(inputBaseAddress);
 
             Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
+        }
+
+        [Fact]
+        public void ShouldTrimTrailingForwardSlashFromBaseUrlInHttpClient()
+        {
+            var expectedBaseAddress = new Uri("http://example.com/api");
+            var inputBaseAddress = new Uri("http://example.com/api/");
+
+            var client = new HttpClient()
+            {
+                BaseAddress = inputBaseAddress
+            };
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
+
+            Assert.Equal(expectedBaseAddress.AbsoluteUri, fixture.Client.BaseAddress.AbsoluteUri);
         }
 
         [Fact]
