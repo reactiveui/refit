@@ -6,6 +6,8 @@ namespace Refit
 {
     public static class RestService
     {
+        const string RefitCreatedClient = "RefitClient";
+
         static readonly ConcurrentDictionary<Type, Type> TypeMapping = new ConcurrentDictionary<Type, Type>();
 
         public static T For<T>(HttpClient client, IRequestBuilder<T> builder)
@@ -60,8 +62,7 @@ namespace Refit
             return For(refitInterfaceType, client, settings);
         }
 
-        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);
-
+        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);             
 
         public static HttpClient CreateHttpClient(string hostUrl, RefitSettings settings)
         {
