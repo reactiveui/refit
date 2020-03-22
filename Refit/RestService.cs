@@ -1,17 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace Refit
 {
-    interface IRestService
-    {
-        T For<T>(HttpClient client);
-    }
-
     public static class RestService
     {
         static readonly ConcurrentDictionary<Type, Type> TypeMapping = new ConcurrentDictionary<Type, Type>();
