@@ -56,6 +56,9 @@ namespace Refit.Tests
         [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task GetFooBars(PathBoundObject request);
 
+        [Get("/foos/{Requestparams.SomeProperty}/bar/{requestParams.SoMeProPerty2}")]
+        Task GetFooBarsWithDifferentCasing(PathBoundObject requestParams);
+
         [Get("/foos/{id}/{request.someProperty}/bar/{request.someProperty2}")]
         Task GetBarsByFoo(string id, PathBoundObject request);
 
@@ -64,6 +67,7 @@ namespace Refit.Tests
 
         [Get("/foos/{request.someProperty}/bar")]
         Task GetBarsByFoo(PathBoundObject request);
+
 
         [Get("/foos/{request.someProperty}/bar/{request.someProperty3}")]
         Task GetFooBarsDerived(PathBoundDerivedObject request);
@@ -274,6 +278,28 @@ namespace Refit.Tests
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
             await fixture.GetFooBars(new PathBoundObject()
+            {
+                SomeProperty = 1,
+                SomeProperty2 = "barNone"
+            });
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithPathBoundObjectDifferentCasing()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            await fixture.GetFooBarsWithDifferentCasing(new PathBoundObject()
             {
                 SomeProperty = 1,
                 SomeProperty2 = "barNone"

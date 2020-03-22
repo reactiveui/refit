@@ -8,13 +8,13 @@ namespace Refit
 {
     static class ApiResponse
     {
-        internal static T Create<T>(HttpResponseMessage resp, object content, ApiException error = null)
+        internal static T Create<T, TBody>(HttpResponseMessage resp, object content, ApiException error = null)
         {
-            return (T)Activator.CreateInstance(typeof(T), resp, content, error);
+            return (T)Activator.CreateInstance(typeof(ApiResponse<TBody>), resp, content, error);
         }
     }
 
-    public sealed class ApiResponse<T> : IDisposable
+    public sealed class ApiResponse<T> : IApiResponse<T>
     {
         readonly HttpResponseMessage response;
         bool disposed;
@@ -65,5 +65,22 @@ namespace Refit
 
             response.Dispose();
         }
+    }
+
+    public interface IApiResponse<out T> : IApiResponse
+    {
+        T Content { get; }
+    }
+
+    public interface IApiResponse : IDisposable
+    {
+        HttpResponseHeaders Headers { get; }
+        HttpContentHeaders ContentHeaders { get; }
+        bool IsSuccessStatusCode { get; }
+        string ReasonPhrase { get; }
+        HttpRequestMessage RequestMessage { get; }
+        HttpStatusCode StatusCode { get; }
+        Version Version { get; }
+        ApiException Error { get; }
     }
 }

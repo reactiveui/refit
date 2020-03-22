@@ -179,6 +179,15 @@ Search(new [] {10, 20, 30})
 >>> "/users/list?ages=10%2C20%2C30"
 ```
 
+You can also specify collection format in `RefitSettings`, that will be used by default, unless explicitly defined in `Query` attribute.
+
+```csharp
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        CollectionFormat = CollectionFormat.Multi
+    });
+```
+
 ### Unescape Querystring parameters
 
 Use the `QueryUriFormat` attribute to specify if the query parameters should be url escaped

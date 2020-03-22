@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections;
-using System.Reflection;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
-using System.Collections.Concurrent;
 
 namespace Refit
 {
@@ -158,18 +158,14 @@ namespace Refit
                 // if you need to AOT everything, so we need to reflectively 
                 // invoke buildTaskFuncForMethod.
                 var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
-                var taskFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
-                    taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
-                    taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
+                var taskFunc = (MulticastDelegate)(taskFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
 
                 return (client, args) => taskFunc.DynamicInvoke(client, args);
             }
 
             // Same deal
             var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
-            var rxFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
-                    rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
-                    rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
+            var rxFunc = (MulticastDelegate)(rxFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
 
             return (client, args) => rxFunc.DynamicInvoke(client, args);
         }
@@ -248,70 +244,26 @@ namespace Refit
                 {
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
+                    ApiException e = null;
+                    disposeResponse = restMethod.ShouldDisposeResponse;
 
-                    if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
+                    if (!resp.IsSuccessStatusCode && typeof(T) != typeof(HttpResponseMessage))
                     {
                         disposeResponse = false; // caller has to dispose
-
-                        // NB: This double-casting manual-boxing hate crime is the only way to make 
-                        // this work without a 'class' generic constraint. It could blow up at runtime 
-                        // and would be A Bad Idea if we hadn't already vetted the return type.
-                        return (T)(object)resp;
+                        e = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
 
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        disposeResponse = false;
-
-                        var exception = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
-
-                        if (restMethod.IsApiResponse)
-                        {
-                            return ApiResponse.Create<T>(resp, default(T), exception);
-                        }
-
-                        throw exception;
-                    }
-
-                    var serializedReturnType = restMethod.IsApiResponse ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;
-
-                    if (serializedReturnType == typeof(HttpContent))
-                    {
-                        disposeResponse = false; // caller has to clean up the content
-                        if (restMethod.IsApiResponse)
-                            return ApiResponse.Create<T>(resp, content);
-                        return (T)(object)content;
-                    }
-
-                    if (serializedReturnType == typeof(Stream))
-                    {
-                        disposeResponse = false; // caller has to dispose
-                        var stream = (object)await content.ReadAsStreamAsync().ConfigureAwait(false);
-                        if (restMethod.IsApiResponse)
-                            return ApiResponse.Create<T>(resp, stream);
-                        return (T)stream;
-                    }
-
-                    if (serializedReturnType == typeof(string))
-                    {
-                        using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
-                        using var reader = new StreamReader(stream);
-                        var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
-                        if (restMethod.IsApiResponse)
-                            return ApiResponse.Create<T>(resp, str);
-                        return (T)str;
-                    }
-
-                    var body = await serializer.DeserializeAsync<TBody>(content);
                     if (restMethod.IsApiResponse)
                     {
-                        return ApiResponse.Create<T>(resp, body);
+                        var body = await DeserializeContentAsync<TBody>(resp, content);
+                        return ApiResponse.Create<T, TBody>(resp, body, e);
                     }
-
-                    //  Unfortunate side-effect of having no 'class' or 'T : TBody' constraints.
-                    //  However, we know that T must be the same as TBody because IsApiResponse != true so 
-                    //  this code is safe at runtime.
-                    return (T)(object)body;
+                    else if (e != null)
+                    {
+                        throw e;
+                    }
+                    else
+                        return await DeserializeContentAsync<T>(resp, content);
                 }
                 finally
                 {
@@ -325,6 +277,43 @@ namespace Refit
                     }
                 }
             };
+        }
+
+        private async Task<T> DeserializeContentAsync<T>(HttpResponseMessage resp, HttpContent content)
+        {
+            T result;
+            if (typeof(T) == typeof(HttpResponseMessage))
+            {
+                // NB: This double-casting manual-boxing hate crime is the only way to make
+                // this work without a 'class' generic constraint. It could blow up at runtime
+                // and would be A Bad Idea if we hadn't already vetted the return type.
+                result = (T)(object)resp;
+            }
+            else if (!resp.IsSuccessStatusCode)
+            {
+                result = default;
+            }
+            else if (typeof(T) == typeof(HttpContent))
+            {
+                result = (T)(object)content;
+            }
+            else if (typeof(T) == typeof(Stream))
+            {
+                var stream = (object)await content.ReadAsStreamAsync().ConfigureAwait(false);
+                result = (T)stream;
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+                using var reader = new StreamReader(stream);
+                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                result = (T)str;
+            }
+            else
+            {
+                result = await serializer.DeserializeAsync<T>(content);
+            }
+            return result;
         }
 
         List<KeyValuePair<string, object>> BuildQueryMap(object @object, string delimiter = null, RestMethodParameterInfo parameterInfo = null)
@@ -456,7 +445,7 @@ namespace Refit
                 
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
-                RestMethodParameterInfo parameterInfo = null;                
+                RestMethodParameterInfo parameterInfo = null;
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
@@ -689,7 +678,11 @@ namespace Refit
         {
             if (!(param is string) && param is IEnumerable paramValues)
             {
-                switch (queryAttribute.CollectionFormat)
+                var collectionFormat = queryAttribute.IsCollectionFormatSpecified
+                    ? queryAttribute.CollectionFormat
+                    : settings.CollectionFormat;
+
+                switch (collectionFormat)
                 {
                     case CollectionFormat.Multi:
                         foreach (var paramValue in paramValues)
@@ -702,9 +695,9 @@ namespace Refit
                         break;
 
                     default:
-                        var delimiter = queryAttribute.CollectionFormat == CollectionFormat.Ssv ? " "
-                            : queryAttribute.CollectionFormat == CollectionFormat.Tsv ? "\t"
-                            : queryAttribute.CollectionFormat == CollectionFormat.Pipes ? "|"
+                        var delimiter = collectionFormat == CollectionFormat.Ssv ? " "
+                            : collectionFormat == CollectionFormat.Tsv ? "\t"
+                            : collectionFormat == CollectionFormat.Pipes ? "|"
                             : ",";
 
                         // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
