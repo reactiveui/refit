@@ -13,7 +13,7 @@ namespace Refit.Buffers
         /// <summary>
         /// An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool
         /// </summary>
-        private sealed class PooledMemoryStream : Stream
+        private sealed partial class PooledMemoryStream : Stream
         {
             /// <summary>
             /// The current used length for <see cref="pooledBuffer"/>
