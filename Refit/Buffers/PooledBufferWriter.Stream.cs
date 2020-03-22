@@ -71,6 +71,41 @@ namespace Refit.Buffers
             public override void Flush() { }
 
             /// <inheritdoc/>
+            public override Task FlushAsync(CancellationToken cancellationToken)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return Task.FromCanceled(cancellationToken);
+                }
+
+                return Task.CompletedTask;
+            }
+
+            /// <inheritdoc/>
+            public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return Task.FromCanceled(cancellationToken);
+                }
+
+                try
+                {
+                    CopyTo(destination, bufferSize);
+
+                    return Task.CompletedTask;
+                }
+                catch (OperationCanceledException e)
+                {
+                    return Task.FromCanceled(e.CancellationToken);
+                }
+                catch (Exception e)
+                {
+                    return Task.FromException(e);
+                }
+            }
+
+            /// <inheritdoc/>
             public override int Read(byte[] buffer, int offset, int count)
             {
                 if (offset < 0) ThrowArgumentOutOfRangeExceptionForNegativeOffset();
@@ -102,11 +137,6 @@ namespace Refit.Buffers
             /// <inheritdoc/>
             public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             {
-                if (offset < 0) ThrowArgumentOutOfRangeExceptionForNegativeOffset();
-                if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
-                if (offset + count > buffer.Length) ThrowArgumentOutOfRangeExceptionForEndOfStreamReached();
-                if (pooledBuffer is null) ThrowObjectDisposedException();
-
                 if (cancellationToken.IsCancellationRequested)
                 {
                     return Task.FromCanceled<int>(cancellationToken);
@@ -114,17 +144,17 @@ namespace Refit.Buffers
 
                 try
                 {
-                    var n = Read(buffer, offset, count);
+                    var result = Read(buffer, offset, count);
 
-                    return Task.FromResult(n);
+                    return Task.FromResult(result);
                 }
-                catch (OperationCanceledException exception)
+                catch (OperationCanceledException e)
                 {
-                    return Task.FromCanceled<int>(exception.CancellationToken);
+                    return Task.FromCanceled<int>(e.CancellationToken);
                 }
-                catch (Exception exception)
+                catch (Exception e)
                 {
-                    return Task.FromException<int>(exception);
+                    return Task.FromException<int>(e);
                 }
             }
 
