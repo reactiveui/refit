@@ -106,7 +106,7 @@ namespace Refit
             BoundaryText = boundaryText;
         }
 
-}
+    }
 
     public enum BodySerializationMethod
     {
@@ -213,47 +213,12 @@ namespace Refit
             : base("Authorization: " + scheme) { }
     }
 
-    /// <summary>
-    /// Collection format defined in https://swagger.io/docs/specification/2-0/describing-parameters/ 
-    /// </summary>
-    public enum CollectionFormat
-    {
-        /// <summary>
-        /// Values formatted with <see cref="RefitSettings.UrlParameterFormatter"/> or
-        /// <see cref="RefitSettings.FormUrlEncodedParameterFormatter"/>.
-        /// </summary>
-        RefitParameterFormatter,
-
-        /// <summary>
-        /// Comma-separated values
-        /// </summary>
-        Csv,
-
-        /// <summary>
-        /// Space-separated values
-        /// </summary>
-        Ssv,
-
-        /// <summary>
-        /// Tab-separated values
-        /// </summary>
-        Tsv,
-
-        /// <summary>
-        /// Pipe-separated values
-        /// </summary>
-        Pipes,
-
-        /// <summary>
-        /// Multiple parameter instances
-        /// </summary>
-        Multi
-    }
-
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)] // Property is to allow for form url encoded data
 
     public class QueryAttribute : Attribute
     {
+        CollectionFormat? collectionFormat;
+
         public QueryAttribute() { }
 
         public QueryAttribute(string delimiter)
@@ -320,9 +285,16 @@ namespace Refit
         public string Format { get; set; }
 
         /// <summary>
-        /// Specifies how the collection should be encoded. The default behavior is <c>RefitParameterFormatter</c>.
+        /// Specifies how the collection should be encoded.
         /// </summary>
-        public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
+        public CollectionFormat CollectionFormat
+        {
+            // Cannot make property nullable due to Attribute restrictions
+            get => collectionFormat.GetValueOrDefault();
+            set => collectionFormat = value;
+        }
+
+        public bool IsCollectionFormatSpecified => collectionFormat.HasValue;
     }
 
     [AttributeUsage(AttributeTargets.Method)]

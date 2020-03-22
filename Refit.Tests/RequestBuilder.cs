@@ -1,15 +1,15 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
-using System.Threading.Tasks;
-using System.Threading;
-using Xunit;
-using System.Collections;
 using System.Runtime.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
+using Xunit;
 
 namespace Refit.Tests
 {
@@ -126,9 +126,9 @@ namespace Refit.Tests
     public class ComplexQueryObject
     {
         [AliasAs("test-query-alias")]
-        public string TestAlias1 {get; set;}
+        public string TestAlias1 { get; set; }
 
-        public string TestAlias2 {get; set;}
+        public string TestAlias2 { get; set; }
 
         public IEnumerable<int> TestCollection { get; set; }
     }
@@ -455,7 +455,7 @@ namespace Refit.Tests
             Assert.True(fixture.BodyParameterInfo.Item2); // buffered default
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
-            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
+            Assert.Equal(typeof(bool), fixture.ReturnResultType);
         }
 
         [Fact]
@@ -470,7 +470,7 @@ namespace Refit.Tests
             Assert.False(fixture.BodyParameterInfo.Item2); // unbuffered specified
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
-            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
+            Assert.Equal(typeof(bool), fixture.ReturnResultType);
         }
 
         [Fact]
@@ -485,7 +485,7 @@ namespace Refit.Tests
             Assert.True(fixture.BodyParameterInfo.Item2);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
 
-            Assert.Equal(typeof(bool), fixture.SerializedReturnType);
+            Assert.Equal(typeof(bool), fixture.ReturnResultType);
         }
 
         [Fact]
@@ -497,7 +497,7 @@ namespace Refit.Tests
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
 
             Assert.Equal(typeof(Task), fixture.ReturnType);
-            Assert.Equal(typeof(void), fixture.SerializedReturnType);
+            Assert.Equal(typeof(void), fixture.ReturnResultType);
         }
 
         [Fact]
@@ -1433,6 +1433,34 @@ namespace Refit.Tests
             Assert.Equal("/query?q=Select+Id+From+Account&filter=*", uri.PathAndQuery);
         }
 
+        [Fact]
+        public void QueryStringWithArrayCanBeFormattedByDefaultSetting()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(new RefitSettings
+            {
+                CollectionFormat = CollectionFormat.Multi
+            });
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArray");
+            var output = factory(new object[] { new[] { 1, 2, 3 } });
+
+            Assert.Equal("/query?numbers=1&numbers=2&numbers=3", output.RequestUri.PathAndQuery);
+        }
+
+        [Fact]
+        public void DefaultCollectionFormatCanBeOverridenByQueryAttribute()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(new RefitSettings
+            {
+                CollectionFormat = CollectionFormat.Multi
+            });
+
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsCsv");
+            var output = factory(new object[] { new[] { 1, 2, 3 } });
+
+            Assert.Equal("/query?numbers=1%2C2%2C3", output.RequestUri.PathAndQuery);
+        }
+
         [Theory]
         [InlineData("QueryWithArrayFormattedAsMulti", "/query?numbers=1&numbers=2&numbers=3")]
         [InlineData("QueryWithArrayFormattedAsCsv", "/query?numbers=1%2C2%2C3")]
@@ -1653,7 +1681,7 @@ namespace Refit.Tests
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.Blob_Post_Byte));
 
-            var bytes = new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+            var bytes = new byte[10] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
 
             var bap = new ByteArrayPart(bytes, "theBytes");
 
@@ -1661,7 +1689,7 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
-            Assert.Equal("/blobstorage/the/path", uri.PathAndQuery);            
+            Assert.Equal("/blobstorage/the/path", uri.PathAndQuery);
         }
 
         [Fact]
@@ -1676,7 +1704,7 @@ namespace Refit.Tests
             var controlIdParam = "theControlId";
             var secretValue = "theSecret";
 
-            
+
 
             var output = factory(new object[] { authHeader, langHeader, searchParam, controlIdParam, secretValue });
 
