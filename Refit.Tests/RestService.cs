@@ -142,6 +142,21 @@ namespace Refit.Tests
         Task Get();
     }
 
+    public interface IRefitInterfaceWithStaticMethod
+    {
+        [Get("")]
+        Task Get();
+
+#if NETCOREAPP3_1
+        public static IRefitInterfaceWithStaticMethod Create()
+        {
+            // This is a C# 8 factory method
+
+            return RestService.For<IRefitInterfaceWithStaticMethod>("http://foo/");
+        }
+#endif
+    }
+
     public class ErrorResponse
     {
         public string[] Errors { get; set; }
@@ -238,6 +253,18 @@ namespace Refit.Tests
 
     public class RestServiceIntegrationTests
     {
+#if NETCOREAPP3_1
+        [Fact]
+        public void CanCreateInstanceUsingStaticMethod()
+        {
+            var instance = IRefitInterfaceWithStaticMethod.Create();
+
+
+            Assert.NotNull(instance);
+        }
+#endif
+
+
         [Fact]
         public async Task CanAddContentHeadersToPostWithoutBody()
         {
