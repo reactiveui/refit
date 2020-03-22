@@ -237,6 +237,9 @@ namespace Refit.Tests
         [Head("/nobody")]
         [Headers("Content-Type: application/x-www-form-urlencoded; charset=UTF-8")]
         Task Head();
+
+        [Post("/nobody")]
+        Task PostWithoutContentType(string someQueryString);
     }
 
     public interface ITrimTrailingForwardSlashApi
@@ -296,6 +299,30 @@ namespace Refit.Tests
             var fixture = RestService.For<IBodylessApi>("http://foo", settings);
 
             await fixture.Post();
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task CanPostWithoutBodyButWithAQueryStringHasContentLength()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://foo/nobody?someQueryString=query")
+                // The content length header is set automatically by the HttpContent instance,
+                // so checking the header as a string doesn't work
+                .With(r => r.Content?.Headers.ContentLength == 0)
+                // But we added content type ourselves, so this should work
+                .WithContent("")
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+
+            await fixture.PostWithoutContentType("query");
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
