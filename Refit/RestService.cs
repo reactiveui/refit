@@ -6,8 +6,6 @@ namespace Refit
 {
     public static class RestService
     {
-        const string RefitCreatedClient = "RefitClient";
-
         static readonly ConcurrentDictionary<Type, Type> TypeMapping = new ConcurrentDictionary<Type, Type>();
 
         public static T For<T>(HttpClient client, IRequestBuilder<T> builder)
