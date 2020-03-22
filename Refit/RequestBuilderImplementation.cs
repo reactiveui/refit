@@ -352,6 +352,14 @@ namespace Refit
                 if (aliasAttribute != null)
                     key = aliasAttribute.Name;
 
+
+                // Look to see if the property has a Query attribute, and if so, format it accordingly
+                var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
+                if (queryAttribute != null)
+                {
+                    obj = settings.FormUrlEncodedParameterFormatter.Format(obj, queryAttribute?.Format);
+                }
+
                 if (DoNotConvertToQueryMap(obj))
                 {
                     kvps.Add(new KeyValuePair<string, object>(key, obj));

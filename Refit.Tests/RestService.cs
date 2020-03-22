@@ -68,6 +68,8 @@ namespace Refit.Tests
         [Get("/foos/{request.someProperty}/bar")]
         Task GetBarsByFoo(PathBoundObject request);
 
+        [Get("/foo")]
+        Task GetBarsWithCustomQueryFormat(PathBoundObjectWithQueryFormat request);
 
         [Get("/foos/{request.someProperty}/bar/{request.someProperty3}")]
         Task GetFooBarsDerived(PathBoundDerivedObject request);
@@ -127,6 +129,11 @@ namespace Refit.Tests
 
         [Query]
         public string SomeQuery { get; set; }
+
+    }
+
+    public class PathBoundObjectWithQueryFormat
+    {
 
         [Query(Format = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'")]
         public DateTime SomeQueryWithFormat { get; set; }
@@ -531,7 +538,7 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObjectAndQueryWithFormat()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
+            mockHttp.Expect(HttpMethod.Get, "http://foo/foo")
                     .WithExactQueryString("SomeQueryWithFormat=2020-03-05T13:55:00Z")
                     .Respond("application/json", "Ok");
 
@@ -541,11 +548,8 @@ namespace Refit.Tests
             };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetFooBars(new PathBoundObjectWithQuery()
+            await fixture.GetBarsWithCustomQueryFormat(new PathBoundObjectWithQueryFormat
             {
-                SomeProperty = 1,
-                SomeProperty2 = "barNone",
-                SomeQuery = "test",
                 SomeQueryWithFormat = new DateTime(2020, 03, 05, 13, 55, 00)
             });
 
