@@ -161,18 +161,6 @@ namespace Refit.Generator
                                               return mti;
                                           })
                                           .ToList();
-
-            static IEnumerable<TypeInfo> AllTypeInfos(IEnumerable<TypeInfo> typeInfos)
-            {
-                var result = typeInfos.SelectMany(ti => ti.Children ?? Enumerable.Empty<TypeInfo>());
-                if (!result.Any())
-                {
-                    return typeInfos;
-                }
-                return typeInfos.Concat(result.Concat(AllTypeInfos(result)));
-            }
-            ret.HasNullableReferenceTypes = ret.MethodList.Any(mti => AllTypeInfos(new[] { mti.ReturnTypeInfo }.Concat(mti.ArgumentListInfo.Select(ai => ai.TypeInfo))).Any(ti => ti.IsNullableReference));
-
             return ret;
         }
 
@@ -387,14 +375,12 @@ namespace Refit.Generator
         public List<string> TypeParametersInfo { get; set; }
         public string TypeParameters => TypeParametersInfo != null ? string.Join(", ", TypeParametersInfo) : null;
         public List<UsingDeclaration> UsingList { get; set; }
-        public bool HasNullableReferenceTypes { get; set; }
     }
 
     public class TypeInfo
     {
         public string Name { get; set; }
         public List<TypeInfo> Children { get; set; }
-        public bool IsNullableReference { get; set; }
 
         public override string ToString()
         {
@@ -411,8 +397,7 @@ namespace Refit.Generator
             return new TypeInfo
             {
                 Name = Name,
-                Children = Children?.Select(a => a.Clone()).ToList(),
-                IsNullableReference = IsNullableReference
+                Children = Children?.Select(a => a.Clone()).ToList()
             };
         }
     }
@@ -494,18 +479,14 @@ namespace Refit.Generator
 
         public static TypeInfo GetTypeInfo(this TypeSyntax typeSyntax, ITypeSymbol typeSymbol = null)
         {
-            if (typeSyntax is QualifiedNameSyntax qualifiedNameSyntax)
-            {
-                typeSyntax = qualifiedNameSyntax.Right;
-            }
-            if (typeSyntax is GenericNameSyntax g && typeSymbol is INamedTypeSymbol namedTypeSymbol && namedTypeSymbol.IsGenericType)
+            if (typeSyntax is GenericNameSyntax g)
                 return new TypeInfo
                 {
                     Name = g.Identifier.ValueText,
-                    Children = g.TypeArgumentList.Arguments.Zip(namedTypeSymbol.TypeArguments, (syntax, symbol) => (syntax, symbol)).Select(v => GetTypeInfo(v.syntax, v.symbol)).ToList(),
+                    Children = g.TypeArgumentList.Arguments.Select(syntax => syntax.GetTypeInfo()).ToList()
                 };
             if (typeSyntax is NullableTypeSyntax && typeSymbol?.IsReferenceType == true)
-                return new TypeInfo { Name = typeSymbol.ToString(), IsNullableReference = true };
+                return new TypeInfo { Name = typeSymbol.ToString() };
             else
                 return new TypeInfo { Name = typeSyntax.ToString() };
         }

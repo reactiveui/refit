@@ -28,6 +28,8 @@ namespace Refit.Tests.RefitInternalGenerated
 }
 #pragma warning restore
 
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+#pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
 namespace Refit.Tests
 {
     using System.IO;
@@ -1032,10 +1034,10 @@ namespace Refit.Tests
     }
 }
 
-#nullable enable annotations
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1064,11 +1066,11 @@ namespace Refit.Tests
         }
     }
 }
-#nullable disable annotations
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1100,7 +1102,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1130,10 +1133,10 @@ namespace Refit.Tests
     }
 }
 
-#nullable enable annotations
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1162,11 +1165,11 @@ namespace Refit.Tests
         }
     }
 }
-#nullable disable annotations
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1198,7 +1201,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1228,10 +1232,10 @@ namespace Refit.Tests
     }
 }
 
-#nullable enable annotations
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1252,19 +1256,19 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
-        Task IGenericWithNullableReferenceParameterService.Get(List<string> reference)
+        Task IGenericWithNullableReferenceParameterService.Get(System.Collections.Generic.List<string?> reference)
         {
             var arguments = new object[] { reference };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(List<string>) });
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(System.Collections.Generic.List<string?>) });
             return (Task)func(Client, arguments);
         }
     }
 }
-#nullable disable annotations
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1294,10 +1298,10 @@ namespace Refit.Tests
     }
 }
 
-#nullable enable annotations
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1318,15 +1322,14 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
-        Task<string> IGenericWithResultService.Get()
+        Task<string?> IGenericWithResultService.Get()
         {
             var arguments = new object[] {  };
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
-            return (Task<string>)func(Client, arguments);
+            return (Task<string?>)func(Client, arguments);
         }
     }
 }
-#nullable disable annotations
 
 namespace Refit.Tests
 {
@@ -1883,10 +1886,10 @@ namespace Refit.Tests
     }
 }
 
-#nullable enable annotations
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1915,11 +1918,11 @@ namespace Refit.Tests
         }
     }
 }
-#nullable disable annotations
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1949,10 +1952,10 @@ namespace Refit.Tests
     }
 }
 
-#nullable enable annotations
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
+    using System.Threading.Tasks;
+    using Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1981,7 +1984,6 @@ namespace Refit.Tests
         }
     }
 }
-#nullable disable annotations
 
 namespace Refit.Tests
 {
@@ -2565,3 +2567,6 @@ namespace Refit.Tests
         }
     }
 }
+
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+#pragma warning restore CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
