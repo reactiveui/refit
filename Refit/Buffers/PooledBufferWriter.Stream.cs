@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+
+#nullable enable
 
 namespace Refit.Buffers
 {
@@ -19,7 +24,7 @@ namespace Refit.Buffers
             /// <summary>
             /// The buffer rented from <see cref="ArrayPool{T}"/> currently in use
             /// </summary>
-            private byte[] pooledBuffer;
+            private byte[]? pooledBuffer;
 
             /// <summary>
             /// The current position within <see cref="pooledBuffer"/>
@@ -33,7 +38,6 @@ namespace Refit.Buffers
             {
                 length = writer.position;
                 pooledBuffer = writer.buffer;
-                position = 0;
             }
 
             /// <summary>
@@ -94,6 +98,50 @@ namespace Refit.Buffers
                 position += destination.Length;
 
                 return destination.Length;
+            }
+
+
+            /// <inheritdoc/>
+            [SuppressMessage("Usage", "VSTHRD103", Justification = "Task is guaranteed to have run to completion")]
+            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            {
+                if (offset < 0) ThrowArgumentOutOfRangeExceptionForNegativeOffset();
+                if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
+                if (offset + count > buffer.Length) ThrowArgumentOutOfRangeExceptionForEndOfStreamReached();
+                if (pooledBuffer is null) ThrowObjectDisposedException();
+
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    return Task.FromCanceled<int>(cancellationToken);
+                }
+
+                try
+                {
+                    var n = Read(buffer, offset, count);
+
+                    return Task.FromResult(n);
+                }
+                catch (OperationCanceledException exception)
+                {
+                    return Task.FromCanceled<int>(exception.CancellationToken);
+                }
+                catch (Exception exception)
+                {
+                    return Task.FromException<int>(exception);
+                }
+            }
+
+            /// <inheritdoc/>
+            public override int ReadByte()
+            {
+                if (pooledBuffer is null) ThrowObjectDisposedException();
+
+                if (position >= pooledBuffer!.Length)
+                {
+                    return -1;
+                }
+
+                return pooledBuffer[position++];
             }
 
             /// <inheritdoc/>
