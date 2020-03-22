@@ -60,8 +60,7 @@ namespace Refit
             return For(refitInterfaceType, client, settings);
         }
 
-        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);
-
+        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);             
 
         public static HttpClient CreateHttpClient(string hostUrl, RefitSettings settings)
         {
