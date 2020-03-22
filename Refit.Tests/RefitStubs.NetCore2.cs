@@ -611,6 +611,14 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("Head", new Type[] {  });
             return (Task)func(Client, arguments);
         }
+
+        /// <inheritdoc />
+        Task IBodylessApi.PostWithoutContentType(string someQueryString)
+        {
+            var arguments = new object[] { someQueryString };
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostWithoutContentType", new Type[] { typeof(string) });
+            return (Task)func(Client, arguments);
+        }
     }
 }
 
