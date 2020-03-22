@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -102,7 +101,6 @@ namespace Refit.Buffers
 
 
             /// <inheritdoc/>
-            [SuppressMessage("Usage", "VSTHRD103", Justification = "Task is guaranteed to have run to completion")]
             public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
             {
                 if (offset < 0) ThrowArgumentOutOfRangeExceptionForNegativeOffset();
