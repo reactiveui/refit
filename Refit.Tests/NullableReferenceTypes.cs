@@ -47,7 +47,7 @@ namespace Refit.Tests
         string? Get();
     }
 
-    interface INullableValueIService
+    interface INullableValueService
     {
         [Get("/")]
         int? Get();
@@ -76,4 +76,25 @@ namespace Refit.Tests
         [Get("/")]
         Task Get(System.Collections.Generic.List<string?>? reference);
     }
+
+    interface ICustomNullableReferenceService
+    {
+        [Get("/")]
+        CustomReferenceType? Get();
+    }
+
+    interface ICustomNullableValueService
+    {
+        [Get("/")]
+        CustomValueType? Get();
+    }
+
+    interface ICustomReferenceAndValueParametersService
+    {
+        [Get("/")]
+        Task Get(CustomReferenceType? reference, CustomValueType? value);
+    }
+
+    class CustomReferenceType { }
+    class CustomValueType { }
 }

@@ -92,11 +92,6 @@ namespace Refit.Generator
             var parent = interfaceTree.Parent;
             while (parent != null && !(parent is NamespaceDeclarationSyntax)) parent = parent.Parent;
 
-            var semanticInterfaceTree = CSharpSyntaxTree.ParseText(interfaceTree.GetText().ToString());
-            var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
-            var compilation = CSharpCompilation.Create("RefitCompilation", syntaxTrees: new[] { semanticInterfaceTree }, references: new[] { mscorlib });
-            var semanticModel = compilation.GetSemanticModel(semanticInterfaceTree);
-
             ret.InterfaceName = GetInterfaceName(interfaceTree.Identifier);
             ret.GeneratedClassSuffix = ret.InterfaceName.Replace(".", "");
             ret.Modifiers = interfaceTree.Modifiers.Select(t => t.ValueText).FirstOrDefault(m => m == "public" || m == "internal");
@@ -133,9 +128,7 @@ namespace Refit.Generator
 
             ret.UsingList = usings.ToList();
 
-            ret.MethodList = semanticInterfaceTree
-                                          .GetRoot()
-                                          .DescendantNodes()
+            ret.MethodList = interfaceTree.Members
                                           .OfType<MethodDeclarationSyntax>()
                                           .Select(x =>
                                           {
@@ -144,9 +137,9 @@ namespace Refit.Generator
                                                   Name = x.Identifier.Text,
                                                   InterfaceName = ret.InterfaceName,
                                                   TypeParametersInfo = ret.TypeParametersInfo?.ToList(),
-                                                  ReturnTypeInfo = x.ReturnType.GetTypeInfo(semanticModel.GetTypeInfo(x.ReturnType).Type),
+                                                  ReturnTypeInfo = x.ReturnType.GetTypeInfo(),
                                                   ArgumentListInfo = x.ParameterList.Parameters
-                                                    .Select(a => new ArgumentInfo { Name = a.Identifier.Text, TypeInfo = a.Type.GetTypeInfo(semanticModel.GetTypeInfo(a.Type).Type) })
+                                                    .Select(a => new ArgumentInfo { Name = a.Identifier.Text, TypeInfo = a.Type.GetTypeInfo() })
                                                     .ToList(),
                                                   IsRefitMethod = HasRefitHttpMethodAttribute(x)
                                               };
@@ -397,7 +390,7 @@ namespace Refit.Generator
             return new TypeInfo
             {
                 Name = Name,
-                Children = Children?.Select(a => a.Clone()).ToList()
+                Children = Children?.Select(a => a.Clone()).ToList(),
             };
         }
     }
@@ -413,7 +406,7 @@ namespace Refit.Generator
         public List<ArgumentInfo> ArgumentListInfo { get; set; }
         public string ArgumentList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => y.Name)) : null;
         public string ArgumentListWithTypes => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => $"{y.TypeInfo} {y.Name}")) : null;
-        public string ArgumentTypesList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => $"typeof({y.TypeInfo})")) : null;
+        public string ArgumentTypesList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => y.TypeInfo.ToString() is var typeName && typeName.EndsWith("?") ? $"ToNullable(typeof({typeName.Remove(typeName.Length - 1)}))" : $"typeof({typeName})")) : null;
         public bool IsRefitMethod { get; set; }
         public string Name { get; set; }
         public TypeInfo ReturnTypeInfo { get; set; }
@@ -477,16 +470,10 @@ namespace Refit.Generator
             return result;
         }
 
-        public static TypeInfo GetTypeInfo(this TypeSyntax typeSyntax, ITypeSymbol typeSymbol = null)
+        public static TypeInfo GetTypeInfo(this TypeSyntax typeSyntax)
         {
             if (typeSyntax is GenericNameSyntax g)
-                return new TypeInfo
-                {
-                    Name = g.Identifier.ValueText,
-                    Children = g.TypeArgumentList.Arguments.Select(syntax => syntax.GetTypeInfo()).ToList()
-                };
-            if (typeSyntax is NullableTypeSyntax && typeSymbol?.IsReferenceType == true)
-                return new TypeInfo { Name = typeSymbol.ToString() };
+                return new TypeInfo { Name = g.Identifier.ValueText, Children = g.TypeArgumentList.Arguments.Select(a => a.GetTypeInfo()).ToList() };
             else
                 return new TypeInfo { Name = typeSyntax.ToString() };
         }
