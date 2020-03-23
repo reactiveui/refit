@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp2.1</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,14 +25,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="RefitStubs.*.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'net461' " Remove="RefitStubs.NetCore2.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Remove="RefitStubs.Net46.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'net461' " Remove="RefitStubs.NetCore*.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp3.1' " Remove="RefitStubs.Net46.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Remove="RefitStubs.NetCore3.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'netcoreapp3.1' " Remove="RefitStubs.NetCore2.cs" />
   </ItemGroup>
 
   <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' " BeforeTargets="CoreCompile">
     <PropertyGroup>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net461' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp3.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore3.cs</OutputStubsFile>
       <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
@@ -51,6 +54,7 @@
     <PropertyGroup>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net461' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp3.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore3.cs</OutputStubsFile>
       <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />

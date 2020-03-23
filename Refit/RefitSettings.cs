@@ -40,10 +40,19 @@ namespace Refit
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
         }
 
+        /// <summary>
+        /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
+        /// </summary>
         public Func<Task<string>> AuthorizationHeaderValueGetter { get; set; }
 
+        /// <summary>
+        /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
+        /// </summary>
         public Func<HttpRequestMessage, Task<string>> AuthorizationHeaderValueWithParamGetter { get; set; }
 
+        /// <summary>
+        /// Supply a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.
+        /// </summary>
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
 
         [Obsolete("Set RefitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer(JsonSerializerSettings) instead.", false)]

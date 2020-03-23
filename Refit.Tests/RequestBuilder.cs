@@ -1743,7 +1743,7 @@ namespace Refit.Tests
 
     static class RequestBuilderTestExtensions
     {
-        public static Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(this IRequestBuilder builder, string methodName)
+        public static Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(this IRequestBuilder builder, string methodName, string baseAddress = "http://api/")
         {
             var factory = builder.BuildRestResultFuncForMethod(methodName);
             var testHttpMessageHandler = new TestHttpMessageHandler();
@@ -1751,14 +1751,14 @@ namespace Refit.Tests
 
             return paramList =>
             {
-                var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, paramList);
+                var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri(baseAddress) }, paramList);
                 task.Wait();
                 return testHttpMessageHandler.RequestMessage;
             };
         }
 
 
-        public static Func<object[], TestHttpMessageHandler> RunRequest(this IRequestBuilder builder, string methodName, string returnContent = null)
+        public static Func<object[], TestHttpMessageHandler> RunRequest(this IRequestBuilder builder, string methodName, string returnContent = null, string baseAddress = "http://api/")
         {
             var factory = builder.BuildRestResultFuncForMethod(methodName);
             var testHttpMessageHandler = new TestHttpMessageHandler();
@@ -1769,7 +1769,7 @@ namespace Refit.Tests
 
             return paramList =>
             {
-                var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") }, paramList);
+                var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri(baseAddress) }, paramList);
                 task.Wait();
                 return testHttpMessageHandler;
             };
