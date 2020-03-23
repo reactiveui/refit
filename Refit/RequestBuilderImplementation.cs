@@ -639,19 +639,18 @@ namespace Refit
 
                 // NB: We defer setting headers until the body has been
                 // added so any custom content headers don't get left out.
-
-                // For methods other than GET/HEAD, ensure we have a blank body
-                // So that Content-Length is set
-
-                // We could have content headers, so we need to make
-                // sure we have an HttpContent object to add them to,
-                // provided the HttpClient will allow it for the method
-                if (ret.Content == null && !BodylessMethods.Contains(ret.Method))
-                    ret.Content = new ByteArrayContent(new byte[0]);
-
-                foreach (var header in headersToAdd)
+                if (headersToAdd.Count > 0)
                 {
-                    SetHeader(ret, header.Key, header.Value);
+                    // We could have content headers, so we need to make
+                    // sure we have an HttpContent object to add them to,
+                    // provided the HttpClient will allow it for the method
+                    if (ret.Content == null && !BodylessMethods.Contains(ret.Method))
+                        ret.Content = new ByteArrayContent(new byte[0]);
+
+                    foreach (var header in headersToAdd)
+                    {
+                        SetHeader(ret, header.Key, header.Value);
+                    }
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this 
