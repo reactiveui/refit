@@ -16,9 +16,9 @@
     <LangVersion>latest</LangVersion>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)buildtask.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true' and '$(SourceLinkEnabled)' != 'false'">
