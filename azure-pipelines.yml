@@ -41,9 +41,9 @@ stages:
       displayName: Set Version
 
     - task: UseDotNet@2
-      displayName: Use .NET Core 3.0.x SDK
+      displayName: Use .NET Core 3.1.x SDK
       inputs:
-        version: 3.0.x
+        version: 3.1.x
         performMultiLevelLookup: true
 
     - task: DotNetCoreCLI@2

@@ -352,6 +352,14 @@ namespace Refit
                 if (aliasAttribute != null)
                     key = aliasAttribute.Name;
 
+
+                // Look to see if the property has a Query attribute, and if so, format it accordingly
+                var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
+                if (queryAttribute != null)
+                {
+                    obj = settings.FormUrlEncodedParameterFormatter.Format(obj, queryAttribute?.Format);
+                }
+
                 if (DoNotConvertToQueryMap(obj))
                 {
                     kvps.Add(new KeyValuePair<string, object>(key, obj));
@@ -631,18 +639,19 @@ namespace Refit
 
                 // NB: We defer setting headers until the body has been
                 // added so any custom content headers don't get left out.
-                if (headersToAdd.Count > 0)
-                {
-                    // We could have content headers, so we need to make
-                    // sure we have an HttpContent object to add them to,
-                    // provided the HttpClient will allow it for the method
-                    if (ret.Content == null && !BodylessMethods.Contains(ret.Method))
-                        ret.Content = new ByteArrayContent(new byte[0]);
 
-                    foreach (var header in headersToAdd)
-                    {
-                        SetHeader(ret, header.Key, header.Value);
-                    }
+                // For methods other than GET/HEAD, ensure we have a blank body
+                // So that Content-Length is set
+
+                // We could have content headers, so we need to make
+                // sure we have an HttpContent object to add them to,
+                // provided the HttpClient will allow it for the method
+                if (ret.Content == null && !BodylessMethods.Contains(ret.Method))
+                    ret.Content = new ByteArrayContent(new byte[0]);
+
+                foreach (var header in headersToAdd)
+                {
+                    SetHeader(ret, header.Key, header.Value);
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this 

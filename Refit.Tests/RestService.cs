@@ -68,6 +68,8 @@ namespace Refit.Tests
         [Get("/foos/{request.someProperty}/bar")]
         Task GetBarsByFoo(PathBoundObject request);
 
+        [Get("/foo")]
+        Task GetBarsWithCustomQueryFormat(PathBoundObjectWithQueryFormat request);
 
         [Get("/foos/{request.someProperty}/bar/{request.someProperty3}")]
         Task GetFooBarsDerived(PathBoundDerivedObject request);
@@ -127,6 +129,14 @@ namespace Refit.Tests
 
         [Query]
         public string SomeQuery { get; set; }
+
+    }
+
+    public class PathBoundObjectWithQueryFormat
+    {
+
+        [Query(Format = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'")]
+        public DateTime SomeQueryWithFormat { get; set; }
     }
 
     public interface INoRefitHereBuddy
@@ -140,6 +150,21 @@ namespace Refit.Tests
         Task Post();
 
         Task Get();
+    }
+
+    public interface IRefitInterfaceWithStaticMethod
+    {
+        [Get("")]
+        Task Get();
+
+#if NETCOREAPP3_1
+        public static IRefitInterfaceWithStaticMethod Create()
+        {
+            // This is a C# 8 factory method
+
+            return RestService.For<IRefitInterfaceWithStaticMethod>("http://foo/");
+        }
+#endif
     }
 
     public class ErrorResponse
@@ -212,6 +237,9 @@ namespace Refit.Tests
         [Head("/nobody")]
         [Headers("Content-Type: application/x-www-form-urlencoded; charset=UTF-8")]
         Task Head();
+
+        [Post("/nobody")]
+        Task PostWithoutContentType(string someQueryString);
     }
 
     public interface ITrimTrailingForwardSlashApi
@@ -238,6 +266,18 @@ namespace Refit.Tests
 
     public class RestServiceIntegrationTests
     {
+#if NETCOREAPP3_1
+        [Fact]
+        public void CanCreateInstanceUsingStaticMethod()
+        {
+            var instance = IRefitInterfaceWithStaticMethod.Create();
+
+
+            Assert.NotNull(instance);
+        }
+#endif
+
+
         [Fact]
         public async Task CanAddContentHeadersToPostWithoutBody()
         {
@@ -262,6 +302,66 @@ namespace Refit.Tests
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
+
+        [Fact]
+        public async Task CanPostWithoutBodyButWithAQueryStringHasContentLength()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://foo/nobody?someQueryString=query")
+                // The content length header is set automatically by the HttpContent instance,
+                // so checking the header as a string doesn't work
+                .With(r => r.Content?.Headers.ContentLength == 0)
+                // But we added content type ourselves, so this should work
+                .WithContent("")
+                .Respond("application/json", "Ok");
+
+            var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+
+            await fixture.PostWithoutContentType("query");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithNoParametersTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo", settings);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithNoParametersTestTrailingSlashInBase()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo/", settings);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }   
 
         [Fact]
         public async Task GetWithPathBoundObject()
@@ -458,6 +558,28 @@ namespace Refit.Tests
                 SomeProperty2 = "barNone",
                 SomeQuery = "test"
             });
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithPathBoundObjectAndQueryWithFormat()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/foo")
+                    .WithExactQueryString("SomeQueryWithFormat=2020-03-05T13:55:00Z")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            await fixture.GetBarsWithCustomQueryFormat(new PathBoundObjectWithQueryFormat
+            {
+                SomeQueryWithFormat = new DateTime(2020, 03, 05, 13, 55, 00)
+            });
+
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -1656,6 +1778,22 @@ namespace Refit.Tests
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>(inputBaseAddress);
 
             Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
+        }
+
+        [Fact]
+        public void ShouldTrimTrailingForwardSlashFromBaseUrlInHttpClient()
+        {
+            var expectedBaseAddress = new Uri("http://example.com/api");
+            var inputBaseAddress = new Uri("http://example.com/api/");
+
+            var client = new HttpClient()
+            {
+                BaseAddress = inputBaseAddress
+            };
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
+
+            Assert.Equal(expectedBaseAddress.AbsoluteUri, fixture.Client.BaseAddress.AbsoluteUri);
         }
 
         [Fact]
