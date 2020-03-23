@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 
 namespace Refit
 {
+    [Obsolete("Use NewtonsoftJsonContentSerializer instead", false)]
     public class JsonContentSerializer : IContentSerializer
     {
         readonly Lazy<JsonSerializerSettings> jsonSerializerSettings;

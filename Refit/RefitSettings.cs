@@ -14,11 +14,30 @@ namespace Refit
     {
         JsonSerializerSettings jsonSerializerSettings;
 
+        /// <summary>
+        /// Creates a new <see cref="RefitSettings"/> instance with the default parameters
+        /// </summary>
         public RefitSettings()
         {
+            ContentSerializer = new NewtonsoftJsonContentSerializer();
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
-            ContentSerializer = new JsonContentSerializer();
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
+        /// </summary>
+        /// <param name="contentSerializer">The <see cref="IContentSerializer"/> instance to use</param>
+        /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
+        /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
+        public RefitSettings(
+            IContentSerializer contentSerializer,
+            IUrlParameterFormatter urlParameterFormatter = null,
+            IFormUrlEncodedParameterFormatter formUrlEncodedParameterFormatter = null)
+        {
+            ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
+            UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
+            FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
         }
 
         /// <summary>
@@ -36,7 +55,7 @@ namespace Refit
         /// </summary>
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
 
-        [Obsolete("Set RefitSettings.ContentSerializer = new JsonContentSerializer(JsonSerializerSettings) instead.", false)]
+        [Obsolete("Set RefitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer(JsonSerializerSettings) instead.", false)]
         public JsonSerializerSettings JsonSerializerSettings
         {
             get => jsonSerializerSettings;

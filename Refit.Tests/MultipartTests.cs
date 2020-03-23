@@ -466,7 +466,8 @@ namespace Refit.Tests
         }
 
         [Theory]
-        [InlineData(typeof(JsonContentSerializer), "application/json")]
+        [InlineData(typeof(NewtonsoftJsonContentSerializer), "application/json")]
+        [InlineData(typeof(SystemTextJsonContentSerializer), "application/json")]
         [InlineData(typeof(XmlContentSerializer), "application/xml")]
         public async Task MultipartUploadShouldWorkWithAnObject(Type contentSerializerType, string mediaType)
         {
@@ -509,7 +510,8 @@ namespace Refit.Tests
         }
 
         [Theory]
-        [InlineData(typeof(JsonContentSerializer), "application/json")]
+        [InlineData(typeof(NewtonsoftJsonContentSerializer), "application/json")]
+        [InlineData(typeof(SystemTextJsonContentSerializer), "application/json")]
         [InlineData(typeof(XmlContentSerializer), "application/xml")]
         public async Task MultipartUploadShouldWorkWithObjects(Type contentSerializerType, string mediaType)
         {

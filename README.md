@@ -236,9 +236,15 @@ Task CreateUser([Body(buffered: true)] User user);
 
 #### JSON content
 
-JSON requests and responses are serialized/deserialized using Json.NET. 
-By default, Refit will use the serializer settings that can be configured 
-by setting _Newtonsoft.Json.JsonConvert.DefaultSettings_:
+JSON requests and responses are serialized/deserialized using an instance of the `IContentSerializer` interface. Refit provides two implementations out of the box: `NewtonsoftJsonContentSerializer` (which is the default JSON serializer) and `SystemTextJsonContentSerializer`. The first uses the well known `Newtonsoft.Json` library and is extremely versatile and customizable, while the latter uses the new `System.Text.Json` APIs and is focused on high performance and low memory usage, at the cost of being slightly less feature rich. You can read more about the two serializers and the main differences between the two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
+
+For instance, here is how to create a new `RefitSettings` instance using the `System.Text.Json`-based serializer:
+
+```csharp
+var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+```
+
+If instead you're using the default settings, which use the `Newtonsoft.Json` APIs, you can customize their behavior by setting the `Newtonsoft.Json.JsonConvert.DefaultSettings` property:
 
 ```csharp
 JsonConvert.DefaultSettings = 
@@ -261,7 +267,7 @@ APIs:
 ```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     new RefitSettings {
-        ContentSerializer = new JsonContentSerializer( 
+        ContentSerializer = new NewtonsoftJsonContentSerializer( 
             new JsonSerializerSettings {
                 ContractResolver = new SnakeCasePropertyNamesContractResolver()
         }
@@ -269,7 +275,7 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
 
 var otherApi = RestService.For<IOtherApi>("https://api.example.com",
     new RefitSettings {
-        ContentSerializer = new JsonContentSerializer( 
+        ContentSerializer = new NewtonsoftJsonContentSerializer( 
             new JsonSerializerSettings {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
         }
