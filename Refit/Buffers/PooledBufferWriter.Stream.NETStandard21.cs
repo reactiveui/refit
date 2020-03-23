@@ -5,6 +5,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
+#nullable enable
+
 namespace Refit.Buffers
 {
     internal sealed partial class PooledBufferWriter
