@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections;
-using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
 namespace Refit
@@ -59,7 +60,11 @@ namespace Refit
 
                         if (value is IEnumerable enumerable)
                         {
-                            switch (attrib?.CollectionFormat)
+                            var collectionFormat = attrib != null && attrib.IsCollectionFormatSpecified
+                                ? attrib.CollectionFormat
+                                : settings.CollectionFormat;
+
+                            switch (collectionFormat)
                             {
                                 case CollectionFormat.Multi:
                                     foreach (var item in enumerable)
@@ -113,6 +118,9 @@ namespace Refit
                    ?? propertyInfo.GetCustomAttributes<JsonPropertyAttribute>(true)
                                   .Select(a => a.PropertyName)
                                   .FirstOrDefault()
+                   ?? propertyInfo.GetCustomAttributes<JsonPropertyNameAttribute>(true)
+                       .Select(a => a.Name)
+                       .FirstOrDefault()
                    ?? propertyInfo.Name;
 
             var qattrib = propertyInfo.GetCustomAttributes<QueryAttribute>(true)

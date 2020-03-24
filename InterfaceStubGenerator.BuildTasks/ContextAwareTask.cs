@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Linq;
-using System.Threading.Tasks;
 using Task = Microsoft.Build.Utilities.Task;
 #if NETCOREAPP2_1
 using Microsoft.Build.Framework;

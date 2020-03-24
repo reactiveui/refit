@@ -1,26 +1,16 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
 
 namespace Refit
 {
-    interface IRestService
-    {
-        T For<T>(HttpClient client);
-    }
-
     public static class RestService
     {
         static readonly ConcurrentDictionary<Type, Type> TypeMapping = new ConcurrentDictionary<Type, Type>();
 
         public static T For<T>(HttpClient client, IRequestBuilder<T> builder)
         {
-            var generatedType = TypeMapping.GetOrAdd(typeof(T), GetGeneratedType<T>());
-
-            return (T)Activator.CreateInstance(generatedType, client, builder);
+            return (T)For(typeof(T), client, builder);            
         }
 
         public static T For<T>(HttpClient client, RefitSettings settings)
@@ -45,6 +35,12 @@ namespace Refit
         {
             var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType(refitInterfaceType));
 
+            // Ensure base url of supplied HttpClient doesn't contain a /
+            if(client.BaseAddress?.AbsoluteUri.EndsWith("/") == true)
+            {
+                client.BaseAddress = new Uri(client.BaseAddress.AbsoluteUri.TrimEnd('/'));
+            }
+
             return Activator.CreateInstance(generatedType, client, builder);
         }
 
@@ -60,12 +56,11 @@ namespace Refit
         public static object For(Type refitInterfaceType, string hostUrl, RefitSettings settings)
         {
             var client = CreateHttpClient(hostUrl, settings);
-
+            
             return For(refitInterfaceType, client, settings);
         }
 
-        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);
-
+        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);             
 
         public static HttpClient CreateHttpClient(string hostUrl, RefitSettings settings)
         {
@@ -95,12 +90,7 @@ namespace Refit
                 }
             }
 
-            return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
-        }
-
-        static Type GetGeneratedType<T>()
-        {
-            return GetGeneratedType(typeof(T));
+            return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl) };
         }
 
         static Type GetGeneratedType(Type refitInterfaceType)
