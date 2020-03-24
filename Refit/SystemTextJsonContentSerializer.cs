@@ -60,27 +60,36 @@ namespace Refit
         {
             using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
 
-            if (stream.CanSeek)
+            int streamLength;
+
+            try
             {
-                var buffer = ArrayPool<byte>.Shared.Rent((int)stream.Length);
-
-                try
-                {
-                    var length = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-
-                    return Deserialize<T>(buffer, length, jsonSerializerOptions);
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                }
+                streamLength = (int)stream.Length;
+            }
+            catch (NotSupportedException)
+            {
+                /* If the stream doesn't support seeking, the Stream.Length property
+                 * cannot be used, which means we can't retrieve the size of a buffer
+                 * to rent from the pool. In this case, we just deserialize directly
+                 * from the input stream, with the Async equivalent API.
+                 * We're using a try/catch here instead of just checking Stream.CanSeek
+                 * because some streams can report that property as false even though
+                 * they actually let users access the Length property just fine. */
+                return await JsonSerializer.DeserializeAsync<T>(stream, jsonSerializerOptions).ConfigureAwait(false);
             }
 
-            /* If the stream doesn't support seeking, the Stream.Length property
-             * cannot be used, which means we can't retrieve the size of a buffer
-             * to rent from the pool. In this case, we just deserialize directly
-             * from the input stream, with the Async equivalent API. */
-            return await JsonSerializer.DeserializeAsync<T>(stream, jsonSerializerOptions).ConfigureAwait(false);
+            var buffer = ArrayPool<byte>.Shared.Rent(streamLength);
+
+            try
+            {
+                var utf8Length = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+
+                return Deserialize<T>(buffer, utf8Length, jsonSerializerOptions);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
         }
 
         /// <summary>
