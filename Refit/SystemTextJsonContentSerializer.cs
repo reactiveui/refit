@@ -60,18 +60,27 @@ namespace Refit
         {
             using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
 
-            var buffer = ArrayPool<byte>.Shared.Rent((int)stream.Length);
-
-            try
+            if (stream.CanSeek)
             {
-                var length = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                var buffer = ArrayPool<byte>.Shared.Rent((int)stream.Length);
 
-                return Deserialize<T>(buffer, length, jsonSerializerOptions);
+                try
+                {
+                    var length = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+
+                    return Deserialize<T>(buffer, length, jsonSerializerOptions);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                }
             }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
+
+            /* If the stream doesn't support seeking, the Stream.Length property
+             * cannot be used, which means we can't retrieve the size of a buffer
+             * to rent from the pool. In this case, we just deserialize directly
+             * from the input stream, with the Async equivalent API. */
+            return await JsonSerializer.DeserializeAsync<T>(stream, jsonSerializerOptions).ConfigureAwait(false);
         }
 
         /// <summary>
