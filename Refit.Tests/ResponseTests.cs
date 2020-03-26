@@ -140,6 +140,43 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task WithNonSeekableStream_UsingSystemTextJsonContentSerializer()
+        {
+            var model = new TestAliasObject
+            {
+                ShortNameForAlias = nameof(WithNonSeekableStream_UsingSystemTextJsonContentSerializer),
+                ShortNameForJsonProperty = nameof(TestAliasObject)
+            };
+
+            var localHandler = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings(new SystemTextJsonContentSerializer())
+            {
+                HttpMessageHandlerFactory = () => localHandler
+            };
+
+            var httpContent = await settings.ContentSerializer.SerializeAsync(model);
+
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = httpContent
+            };
+
+            expectedResponse.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            expectedResponse.StatusCode = HttpStatusCode.OK;
+
+            localHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+
+            var localFixture = RestService.For<IMyAliasService>("http://api", settings);
+
+            var result = await localFixture.GetTestObject();
+
+            Assert.NotNull(result);
+            Assert.Equal(nameof(WithNonSeekableStream_UsingSystemTextJsonContentSerializer), result.ShortNameForAlias);
+            Assert.Equal(nameof(TestAliasObject), result.ShortNameForJsonProperty);
+        }
+
+        [Fact]
         public async Task BadRequestWithEmptyContent_ShouldReturnApiException()
         {
             var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
