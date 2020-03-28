@@ -30,16 +30,6 @@ stages:
       BuildConfiguration: Release
 
     steps:
-    - task: DotNetCoreCLI@2
-      inputs:
-        command: custom
-        custom: tool
-        arguments: install --tool-path . nbgv
-      displayName: Install NBGV tool
-
-    - script: nbgv cloud
-      displayName: Set Version
-
     - task: UseDotNet@2
       displayName: Use .NET Core 3.1.x SDK
       inputs:
@@ -52,6 +42,16 @@ stages:
         version: '3.1.300-preview-015048'
         performMultiLevelLookup: true
         includePreviewVersions: true
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: custom
+        custom: tool
+        arguments: install --tool-path . nbgv
+      displayName: Install NBGV tool
+
+    - script: nbgv cloud
+      displayName: Set Version
 
     - task: DotNetCoreCLI@2
       inputs:
