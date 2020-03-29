@@ -34,7 +34,7 @@ var octocat = await gitHubApi.GetUser("octocat");
 
 ### Where does this work?
 
-Refit currently supports the following platforms and any .NET Standard 1.4 target:
+Refit currently supports the following platforms and any .NET Standard 2.0 target:
 
 * UWP
 * Xamarin.Android
