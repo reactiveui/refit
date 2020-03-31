@@ -5,7 +5,7 @@
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <Authors>.NET Foundation and Contributors</Authors>
     <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
-    <PackageIconUrl>https://github.com/reactiveui/refit/raw/master/refit_logo.png</PackageIconUrl>
+    <PackageIcon>refit_logo.png</PackageIcon>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <DefaultLanguage>en-US</DefaultLanguage>
     <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
@@ -24,6 +24,10 @@
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)refit_logo.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.5.132" PrivateAssets="All" />
