@@ -1703,13 +1703,18 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
+    using System.IO;
     using System.Net;
+    using System.Net.Http.Headers;
     using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
     using Newtonsoft.Json;
     using RichardSzalay.MockHttp;
     using Refit;
+    using Refit.Buffers;
     using Xunit;
+    using JsonSerializer =  Newtonsoft.Json.JsonSerializer;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

@@ -319,6 +319,68 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task BaseAddressFromHttpClientMatchesTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+
+            var client = new HttpClient(mockHttp)
+            {
+                BaseAddress = new Uri("http://foo")
+            };
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task BaseAddressWithTrailingSlashFromHttpClientMatchesTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+
+            var client = new HttpClient(mockHttp)
+            {
+                BaseAddress = new Uri("http://foo/")
+            };
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task BaseAddressWithTrailingSlashCalledBeforeFromHttpClientMatchesTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+
+            var client = new HttpClient(mockHttp)
+            {
+                BaseAddress = new Uri("http://foo/")
+            };
+
+            await client.GetAsync("/firstRequest"); ;
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
         public async Task GetWithNoParametersTestTrailingSlashInBase()
         {
             var mockHttp = new MockHttpMessageHandler();
@@ -1054,7 +1116,7 @@ namespace Refit.Tests
 
             Assert.NotNull(result);
             Assert.True(result.IsSuccessStatusCode);
-        }
+        }       
 
         [Fact]
         public async Task ShouldRetHttpResponseMessageWithNestedInterface()
