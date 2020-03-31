@@ -35,12 +35,6 @@ namespace Refit
         {
             var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType(refitInterfaceType));
 
-            // Ensure base url of supplied HttpClient doesn't contain a /
-            if(client.BaseAddress?.AbsoluteUri.EndsWith("/") == true)
-            {
-                client.BaseAddress = new Uri(client.BaseAddress.AbsoluteUri.TrimEnd('/'));
-            }
-
             return Activator.CreateInstance(generatedType, client, builder);
         }
 
@@ -90,7 +84,7 @@ namespace Refit
                 }
             }
 
-            return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl) };
+            return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
         }
 
         static Type GetGeneratedType(Type refitInterfaceType)

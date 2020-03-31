@@ -374,7 +374,7 @@ namespace Refit.Tests
 
             await client.GetAsync("/firstRequest"); ;
 
-            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);            
 
             await fixture.Get();
             mockHttp.VerifyNoOutstandingExpectation();
@@ -1813,22 +1813,6 @@ namespace Refit.Tests
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>(inputBaseAddress);
 
             Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
-        }
-
-        [Fact]
-        public void ShouldTrimTrailingForwardSlashFromBaseUrlInHttpClient()
-        {
-            var expectedBaseAddress = new Uri("http://example.com/api");
-            var inputBaseAddress = new Uri("http://example.com/api/");
-
-            var client = new HttpClient()
-            {
-                BaseAddress = inputBaseAddress
-            };
-
-            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
-
-            Assert.Equal(expectedBaseAddress.AbsoluteUri, fixture.Client.BaseAddress.AbsoluteUri);
         }
 
         [Fact]
