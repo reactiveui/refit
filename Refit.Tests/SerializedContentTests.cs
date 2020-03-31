@@ -124,5 +124,27 @@ namespace Refit.Tests
                 return new HttpResponseMessage(HttpStatusCode.OK) { Content = responseContent };
             }
         }
+
+        [Fact]
+        public async Task StreamDeserialization_UsingSystemTextJsonContentSerializer()
+        {
+            var model = new TestAliasObject
+            {
+                ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
+                ShortNameForJsonProperty = nameof(TestAliasObject)
+            };
+
+            var serializer = new SystemTextJsonContentSerializer();
+
+            var json = await serializer.SerializeAsync(model);
+
+            var stream = await json.ReadAsStreamAsync();
+
+            var result = await System.Text.Json.JsonSerializer.DeserializeAsync<TestAliasObject>(stream);
+
+            Assert.NotNull(result);
+            Assert.Equal(model.ShortNameForAlias, result.ShortNameForAlias);
+            Assert.Equal(model.ShortNameForJsonProperty, result.ShortNameForJsonProperty);
+        }
     }
 }

@@ -18,7 +18,10 @@ namespace Refit.Buffers
             {
                 if (pooledBuffer is null) ThrowObjectDisposedException();
 
-                var source = pooledBuffer.AsSpan(position);
+                var bytesAvailable = length - position;
+                var spanLength = Math.Min(bytesAvailable, bufferSize);
+
+                var source = pooledBuffer.AsSpan(position, spanLength);
 
                 position += source.Length;
 
@@ -54,7 +57,11 @@ namespace Refit.Buffers
             {
                 if (pooledBuffer is null) ThrowObjectDisposedException();
 
-                var source = pooledBuffer.AsSpan(position);
+                if (position >= length) return 0;
+
+                var bytesAvailable = length - position;
+
+                var source = pooledBuffer.AsSpan(position, bytesAvailable);
 
                 var bytesCopied = Math.Min(source.Length, buffer.Length);
 
