@@ -32,15 +32,17 @@ namespace Refit.Tests.RefitInternalGenerated
 #pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Threading.Tasks;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Refit;
-    using Refit.Generator;
-    using Xunit;
-    using Task =  System.Threading.Tasks.Task;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Threading.Tasks;
+    using global::Microsoft.CodeAnalysis;
+    using global::Microsoft.CodeAnalysis.CSharp;
+    using global::Microsoft.CodeAnalysis.CSharp.Syntax;
+    using global::Refit;
+    using global::Refit.Generator;
+    using global::Xunit;
+    using Task =  global::System.Threading.Tasks.Task;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -102,16 +104,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -149,9 +155,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -207,9 +213,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -241,9 +247,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -283,9 +289,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -341,9 +347,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -375,16 +381,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -528,16 +538,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -569,16 +583,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -626,15 +644,17 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Threading.Tasks;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Refit;
-    using Refit.Generator;
-    using Xunit;
-    using Task =  System.Threading.Tasks.Task;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Threading.Tasks;
+    using global::Microsoft.CodeAnalysis;
+    using global::Microsoft.CodeAnalysis.CSharp;
+    using global::Microsoft.CodeAnalysis.CSharp.Syntax;
+    using global::Refit;
+    using global::Refit.Generator;
+    using global::Xunit;
+    using Task =  global::System.Threading.Tasks.Task;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -701,16 +721,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -742,8 +766,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -775,8 +799,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -808,8 +832,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -843,9 +867,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -925,9 +950,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -999,9 +1025,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1076,9 +1103,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1145,8 +1173,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1180,8 +1208,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1213,8 +1241,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1246,8 +1274,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1281,8 +1309,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1314,8 +1342,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1347,8 +1375,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1380,8 +1408,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1413,8 +1441,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1446,10 +1474,14 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Text;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Linq;
+    using global::System.Net.Http;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1577,16 +1609,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1654,16 +1690,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1703,18 +1743,21 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Net.Http.Headers;
-    using System.Text;
-    using System.Text.Json;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using RichardSzalay.MockHttp;
-    using Refit;
-    using Refit.Buffers;
-    using Xunit;
-    using JsonSerializer =  Newtonsoft.Json.JsonSerializer;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Net.Http.Headers;
+    using global::System.Text;
+    using global::System.Text.Json;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::RichardSzalay.MockHttp;
+    using global::Refit;
+    using global::Refit.Buffers;
+    using global::Xunit;
+    using JsonSerializer =  global::Newtonsoft.Json.JsonSerializer;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1746,12 +1789,15 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Net;
-    using System.Text;
-    using System.Threading.Tasks;
-    using RichardSzalay.MockHttp;
-    using Refit;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::RichardSzalay.MockHttp;
+    using global::Refit;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1791,10 +1837,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using SomeType =  CollisionA.SomeType;
-    using CollisionB;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using SomeType =  global::CollisionA.SomeType;
+    using global::CollisionB;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1826,10 +1872,50 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Text;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System;
+    using global::System.Threading.Tasks;
+    using global::Common.Helper;
+    using global::Refit.Tests.Common;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedINamespaceOverlapApi : INamespaceOverlapApi
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedINamespaceOverlapApi(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<SomeOtherType> INamespaceOverlapApi.SomeRequest()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", new Type[] {  });
+            return (Task<SomeOtherType>)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Linq;
+    using global::System.Net.Http;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1917,15 +2003,17 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Threading.Tasks;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Refit;
-    using Refit.Generator;
-    using Xunit;
-    using Task =  System.Threading.Tasks.Task;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Threading.Tasks;
+    using global::Microsoft.CodeAnalysis;
+    using global::Microsoft.CodeAnalysis.CSharp;
+    using global::Microsoft.CodeAnalysis.CSharp.Syntax;
+    using global::Refit;
+    using global::Refit.Generator;
+    using global::Xunit;
+    using Task =  global::System.Threading.Tasks.Task;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1965,16 +2053,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2006,8 +2098,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2039,8 +2131,8 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2072,8 +2164,42 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using Refit;
+    using ModelNamespace;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIReducedUsingInsideNamespaceApi : IReducedUsingInsideNamespaceApi
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIReducedUsingInsideNamespaceApi(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<SomeType> IReducedUsingInsideNamespaceApi.SomeRequest()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", new Type[] {  });
+            return (Task<SomeType>)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2107,16 +2233,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2148,16 +2278,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2221,16 +2355,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reflection;
-    using System.Threading.Tasks;
-    using Xunit;
-    using Refit;
-    using System.Threading;
-    using Newtonsoft.Json;
-    using System.Text;
-    using System.Net.Http.Headers;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reflection;
+    using global::System.Threading.Tasks;
+    using global::Xunit;
+    using global::Refit;
+    using global::System.Threading;
+    using global::Newtonsoft.Json;
+    using global::System.Text;
+    using global::System.Net.Http.Headers;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2358,9 +2496,11 @@ namespace Refit.Tests
 
 namespace AutoGeneratedIServiceWithoutNamespace
 {
-    using System.Text;
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2400,16 +2540,20 @@ namespace AutoGeneratedIServiceWithoutNamespace
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2449,16 +2593,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2490,9 +2638,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using CollisionA;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::CollisionA;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2524,9 +2672,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Threading.Tasks;
-    using CollisionB;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::CollisionB;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2558,11 +2706,14 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Net;
-    using System.Threading.Tasks;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2646,11 +2797,14 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.Net;
-    using System.Threading.Tasks;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2690,16 +2844,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2725,6 +2883,40 @@ namespace Refit.Tests
             var arguments = new object[] {  };
             var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
             return (Task)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::Refit.Tests.SomeNamespace;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedNamespaceWithGlobalAliasApi : NamespaceWithGlobalAliasApi
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedNamespaceWithGlobalAliasApi(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<SomeType> NamespaceWithGlobalAliasApi.SomeRequest()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", new Type[] {  });
+            return (Task<SomeType>)func(Client, arguments);
         }
     }
 }

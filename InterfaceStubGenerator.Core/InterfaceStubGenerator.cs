@@ -119,9 +119,25 @@ namespace Refit.Generator
             var rootNode = interfaceTree.Parent;
             while (rootNode.Parent != null) rootNode = rootNode.Parent;
 
-            var usings = rootNode.DescendantNodes()
+            var usingsInsideNamespace = ns?.DescendantNodes()
                             .OfType<UsingDirectiveSyntax>()
                             .Select(x => $"{x.Alias} {x.StaticKeyword} {x.Name}".TrimStart())
+                            ?? Enumerable.Empty<string>();
+
+            var usingsOutsideNamespace = rootNode.DescendantNodes(x => !x.IsKind(SyntaxKind.NamespaceDeclaration))
+                            .OfType<UsingDirectiveSyntax>()
+                            .Select(x =>
+                            {
+                                // Globally qualify namespace name to avoid conflicts when put inside namespace.
+                                var name = x.Name.ToString();
+                                var globallyQualifiedName = name.Contains("::")
+                                    ? name
+                                    : "global::" + name;
+
+                                return $"{x.Alias} {x.StaticKeyword} {globallyQualifiedName}".TrimStart();
+                            });
+
+            var usings = usingsInsideNamespace.Concat(usingsOutsideNamespace)
                             .Distinct()
                             .Where(x => x != "System" && x != "System.Net.Http" && x != "System.Collections.Generic" && x != "System.Linq")
                             .Select(x => new UsingDeclaration { Item = x });
