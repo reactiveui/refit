@@ -130,7 +130,7 @@ namespace Refit.Generator
                             {
                                 // Globally qualify namespace name to avoid conflicts when put inside namespace.
                                 var name = x.Name.ToString();
-                                var globallyQualifiedName = name.StartsWith("global::")
+                                var globallyQualifiedName = name.Contains("::")
                                     ? name
                                     : "global::" + name;
 
