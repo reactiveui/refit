@@ -44,10 +44,13 @@ namespace Refit
 
             JsonSerializer.Serialize(utf8JsonWriter, item, jsonSerializerOptions);
 
-            var content = new StreamContent(utf8BufferWriter.DetachStream())
+            var stream = utf8BufferWriter.DetachStream();
+
+            var content = new StreamContent(stream)
             {
                 Headers =
                 {
+                    ContentLength = stream.Length,
                     ContentType = new MediaTypeHeaderValue("application/json") { CharSet = Encoding.UTF8.WebName }
                 }
             };

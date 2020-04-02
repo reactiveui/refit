@@ -146,5 +146,25 @@ namespace Refit.Tests
             Assert.Equal(model.ShortNameForAlias, result.ShortNameForAlias);
             Assert.Equal(model.ShortNameForJsonProperty, result.ShortNameForJsonProperty);
         }
+
+        [Fact]
+        public async Task StreamDeserialization_UsingSystemTextJsonContentSerializer_SetsCorrectHeaders()
+        {
+            var model = new TestAliasObject
+            {
+                ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
+                ShortNameForJsonProperty = nameof(TestAliasObject)
+            };
+
+            var serializer = new SystemTextJsonContentSerializer();
+
+            var json = await serializer.SerializeAsync(model);
+
+            Assert.NotNull(json.Headers.ContentLength);
+            Assert.True(json.Headers.ContentLength.Value > 0);
+            Assert.NotNull(json.Headers.ContentType);
+            Assert.Equal("utf-8", json.Headers.ContentType.CharSet);
+            Assert.Equal("application/json", json.Headers.ContentType.MediaType);
+        }
     }
 }
