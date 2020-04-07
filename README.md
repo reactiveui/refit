@@ -718,6 +718,42 @@ Task<string> GetUser(string user);
 IObservable<HttpResponseMessage> GetUser(string user);
 ```
 
+There is also a generic wrapper class called `ApiResponse<T>` that can be used as a return type. Using this class as a return type allows you to retrieve not just the content as an object, but also any meta data associated with the request/response. This includes information such as response headers, the http status code and reason phrase (e.g. 404 Not Found), the response version, the original request message that was sent and in the case of an error, an `ApiException` object containing details of the error. Following are some examples of how you can retrieve the response meta data.
+
+```csharp
+//Returns the content within a wrapper class containing meta data about the request/response
+[Get("/users/{user}")]
+Task<ApiResponse<User>> GetUser(string user);
+
+//Calling the API
+var response = await gitHubApi.GetUser("octocat");
+
+//Getting the status code (returns a value from the System.Net.HttpStatusCode enumeration)
+var httpStatus = response.StatusCode;
+
+//Determining if a success status code was received
+if(response.IsSuccessStatusCode)
+{
+    //YAY! Do the thing...
+}
+
+//Retrieving a well-known header value (e.g. "Server" header)
+var serverHeaderValue = response.Headers.Server != null ? response.Headers.Server.ToString() : string.Empty;
+
+//Retrieving a custom header value
+var customHeaderValue = string.Join(',', response.Headers.GetValues("A-Custom-Header"));
+
+//Looping through all the headers
+foreach(var header in response.Headers)
+{
+    var headerName = header.Key;
+    var headerValue = string.Join(',', header.Value);
+}
+
+//Finally, retrieving the content in the response body as a strongly-typed object
+var user = response.Content;
+```
+
 ### Using generic interfaces
 
 When using something like ASP.NET Web API, it's a fairly common pattern to have a whole stack of CRUD REST services. Refit now supports these, allowing you to define a single API interface with a generic type:
