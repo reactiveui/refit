@@ -62,12 +62,28 @@ namespace {{Namespace}}
         }
         {{#MethodList}}
 
+        {{#MethodTypeParameters}}
+        private static class TypeHelper_{{Id}}<{{.}}>
+        {
+            public static readonly Type[] ArgumentTypes = new Type[] { {{ArgumentTypesList}} };
+            public static readonly Type[] TypeParameters = new Type[] { {{MethodTypeParameterList}} };
+        }
+        {{/MethodTypeParameters}}
+        {{^MethodTypeParameters}}
+        private static readonly Type[] ArgumentTypes_{{Id}} = new Type[] { {{ArgumentTypesList}} };
+        {{/MethodTypeParameters}}
+
         /// <inheritdoc />
         {{ReturnType}} {{InterfaceName}}{{#TypeParameters}}<{{.}}>{{/TypeParameters}}.{{Name}}{{#MethodTypeParameters}}<{{.}}>{{/MethodTypeParameters}}({{ArgumentListWithTypes}})
         {
             {{#IsRefitMethod}}
             var arguments = new object[] { {{ArgumentList}} };
-            var func = requestBuilder.BuildRestResultFuncForMethod("{{Name}}", new Type[] { {{ArgumentTypesList}} }{{#MethodTypeParameterList}}, new Type[] { {{.}} }{{/MethodTypeParameterList}});
+            {{#MethodTypeParameters}}
+            var func = requestBuilder.BuildRestResultFuncForMethod("{{Name}}", TypeHelper_{{Id}}<{{.}}>.ArgumentTypes, TypeHelper_{{Id}}<{{.}}>.TypeParameters);
+            {{/MethodTypeParameters}}
+            {{^MethodTypeParameters}}
+            var func = requestBuilder.BuildRestResultFuncForMethod("{{Name}}", ArgumentTypes_{{Id}});
+            {{/MethodTypeParameters}}
             return ({{ReturnType}})func(Client, arguments);
             {{/IsRefitMethod}}
             {{^IsRefitMethod}}
