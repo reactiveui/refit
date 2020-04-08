@@ -65,12 +65,12 @@ namespace {{Namespace}}
         {{#MethodTypeParameters}}
         private static class TypeHelper_{{Id}}<{{.}}>
         {
-            public static readonly Type[] ArgumentTypes = new Type[] { {{ArgumentTypesList}} };
-            public static readonly Type[] TypeParameters = new Type[] { {{MethodTypeParameterList}} };
+            public static readonly Type[] ArgumentTypes = {{#ArgumentTypesList}}new Type[] { {{ArgumentTypesList}} }{{/ArgumentTypesList}}{{^ArgumentTypesList}}Array.Empty<Type>(){{/ArgumentTypesList}};
+            public static readonly Type[] TypeParameters = {{#MethodTypeParameterList}}new Type[] { {{MethodTypeParameterList}} }{{/MethodTypeParameterList}}{{^MethodTypeParameterList}}Array.Empty<Type>(){{/MethodTypeParameterList}};
         }
         {{/MethodTypeParameters}}
         {{^MethodTypeParameters}}
-        private static readonly Type[] ArgumentTypes_{{Id}} = new Type[] { {{ArgumentTypesList}} };
+        private static readonly Type[] ArgumentTypes_{{Id}} = {{#ArgumentTypesList}}new Type[] { {{ArgumentTypesList}} }{{/ArgumentTypesList}}{{^ArgumentTypesList}}Array.Empty<Type>(){{/ArgumentTypesList}};
         {{/MethodTypeParameters}}
 
         /// <inheritdoc />
