@@ -30,6 +30,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Buil
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.HttpClientFactory", "Refit.HttpClientFactory\Refit.HttpClientFactory.csproj", "{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit.Profiler", "Refit.Profiler\Refit.Profiler.csproj", "{C3D34C83-282A-4A53-9739-9732325B819D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -138,12 +140,29 @@ Global
 		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|x64.Build.0 = Release|Any CPU
 		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|x86.ActiveCfg = Release|Any CPU
 		{01AE14AC-88D1-49C4-A612-2F9B2DEB5DEA}.Release|x86.Build.0 = Release|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Debug|ARM.Build.0 = Debug|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Debug|x64.Build.0 = Debug|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Debug|x86.Build.0 = Debug|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Release|ARM.ActiveCfg = Release|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Release|ARM.Build.0 = Release|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Release|x64.ActiveCfg = Release|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Release|x64.Build.0 = Release|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Release|x86.ActiveCfg = Release|Any CPU
+		{C3D34C83-282A-4A53-9739-9732325B819D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{EB833B36-D3CA-4308-A776-8D574F2ADF64} = {0E99249A-FB80-4C60-8FD3-13820E853FF7}
+		{C3D34C83-282A-4A53-9739-9732325B819D} = {0E99249A-FB80-4C60-8FD3-13820E853FF7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6E9C2873-AFF9-4D32-A784-1BA094814054}

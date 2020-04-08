@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterfaceStubGenerator.App\InterfaceStubGenerator.App.csproj" />
+    <ProjectReference Include="..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
+    <ProjectReference Include="..\Refit\Refit.csproj" />
+  </ItemGroup>
+
+</Project>
