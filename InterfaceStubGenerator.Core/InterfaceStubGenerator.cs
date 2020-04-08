@@ -436,7 +436,6 @@ namespace Refit.Generator
         public string ArgumentList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => y.Name)) : null;
         public string ArgumentListWithTypes => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => $"{y.TypeInfo} {y.Name}")) : null;
         public string ArgumentTypesList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => y.TypeInfo.ToString() is var typeName && typeName.EndsWith("?") ? $"ToNullable(typeof({typeName.Remove(typeName.Length - 1)}))" : $"typeof({typeName})")) : null;
-        public string Id { get; } = Guid.NewGuid().ToString("N");
         public bool IsRefitMethod { get; set; }
         public string Name { get; set; }
         public TypeInfo ReturnTypeInfo { get; set; }
@@ -448,6 +447,27 @@ namespace Refit.Generator
         public string InterfaceName { get; set; }
         public List<string> TypeParametersInfo { get; set; }
         public string TypeParameters => TypeParametersInfo != null ? string.Join(", ", TypeParametersInfo) : null;
+
+        public string Id
+        {
+            get
+            {
+                HashCode hashCode = default;
+
+                hashCode.Add(IsRefitMethod);
+                hashCode.Add(Name);
+                hashCode.Add(ReturnType);
+                hashCode.Add(ArgumentListWithTypes);
+                hashCode.Add(MethodTypeParameters);
+                hashCode.Add(TypeParameters);
+                hashCode.Add(InterfaceName);
+
+                var key = hashCode.ToHashCode();
+
+                // Cast to uint as we can't have an id starting with the '-' character
+                return ((uint)key).ToString();
+            }
+        }
     }
 
     public class ArgumentInfo
