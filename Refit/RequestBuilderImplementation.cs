@@ -29,7 +29,7 @@ namespace Refit
             HttpMethod.Head
         };
         readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
-        readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
+        readonly ConcurrentDictionary<int, Func<HttpClient, object[], object>> restResultFuncForMethodsMap;
         readonly IContentSerializer serializer;
         readonly RefitSettings settings;
         public Type TargetType { get; }
@@ -40,7 +40,7 @@ namespace Refit
 
             settings = refitSettings ?? new RefitSettings();
             serializer = settings.ContentSerializer;
-            interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();
+            restResultFuncForMethodsMap = new ConcurrentDictionary<int, Func<HttpClient, object[], object>>();
 
             if (refitInterfaceType == null || !refitInterfaceType.GetTypeInfo().IsInterface)
             {
@@ -121,10 +121,8 @@ namespace Refit
 
                 throw new Exception("No suitable Method found...");
             }
-            else
-            {
-                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
-            }
+
+            throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
 
         }
 
@@ -132,42 +130,65 @@ namespace Refit
         {
             if (genericArgumentTypes != null)
             {
-                return interfaceGenericHttpMethods.GetOrAdd(new CloseGenericMethodKey(restMethodInfo.MethodInfo, genericArgumentTypes),
-                    _ => new RestMethodInfo(restMethodInfo.Type, restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes), restMethodInfo.RefitSettings));
+                return new RestMethodInfo(restMethodInfo.Type, restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes), restMethodInfo.RefitSettings);
             }
+
             return restMethodInfo;
         }
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {
-            if (!interfaceHttpMethods.ContainsKey(methodName))
+            HashCode hashCode = default;
+
+            hashCode.Add(methodName);
+
+            hashCode.Add(parameterTypes);
+            if (!(parameterTypes is null))
             {
-                throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
+                foreach (var type in parameterTypes)
+                    hashCode.Add(type);
             }
 
-            var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes, genericArgumentTypes);
-            if (restMethod.ReturnType == typeof(Task))
+            hashCode.Add(genericArgumentTypes);
+            if (!(genericArgumentTypes is null))
             {
-                return BuildVoidTaskFuncForMethod(restMethod);
+                foreach (var type in genericArgumentTypes)
+                    hashCode.Add(type);
             }
 
-            if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+            var key = hashCode.ToHashCode();
+
+            return restResultFuncForMethodsMap.GetOrAdd(key, _ =>
             {
-                // NB: This jacked up reflection code is here because it's
-                // difficult to upcast Task<object> to an arbitrary T, especially
-                // if you need to AOT everything, so we need to reflectively 
-                // invoke buildTaskFuncForMethod.
-                var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
-                var taskFunc = (MulticastDelegate)(taskFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
+                if (!interfaceHttpMethods.ContainsKey(methodName))
+                {
+                    throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
+                }
 
-                return (client, args) => taskFunc.DynamicInvoke(client, args);
-            }
+                var restMethod = FindMatchingRestMethodInfo(methodName, parameterTypes, genericArgumentTypes);
+                if (restMethod.ReturnType == typeof(Task))
+                {
+                    return BuildVoidTaskFuncForMethod(restMethod);
+                }
 
-            // Same deal
-            var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
-            var rxFunc = (MulticastDelegate)(rxFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
+                if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                {
+                    // NB: This jacked up reflection code is here because it's
+                    // difficult to upcast Task<object> to an arbitrary T, especially
+                    // if you need to AOT everything, so we need to reflectively 
+                    // invoke buildTaskFuncForMethod.
+                    var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
+                    var taskFunc = (MulticastDelegate)(taskFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
 
-            return (client, args) => rxFunc.DynamicInvoke(client, args);
+                    return (client, args) => taskFunc.DynamicInvoke(client, args);
+                }
+
+                // Same deal
+                var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
+                var rxFunc = (MulticastDelegate)(rxFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
+
+                return (client, args) => rxFunc.DynamicInvoke(client, args);
+            });
         }
 
         async Task AddMultipartItemAsync(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)

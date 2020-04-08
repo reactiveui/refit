@@ -17,6 +17,10 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.1'">
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="1.1.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Package">
     <None Include="targets\refit.targets" PackagePath="build\net461" Pack="true" />
     <None Include="targets\refit.targets" PackagePath="buildTransitive\net461" Pack="true" />
