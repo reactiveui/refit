@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -138,6 +139,10 @@ namespace Refit
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {
+            /* Build a unique key for this specific rest method, by combining
+             * all the necessary info: method name, parameter types and generic
+             * arguments. We're doing this work here since we can't just modify
+             * the existing interface, as that would be a breaking chance.*/
             HashCode hashCode = default;
 
             hashCode.Add(methodName);
@@ -158,6 +163,21 @@ namespace Refit
 
             var key = hashCode.ToHashCode();
 
+            /* Fast path if we have already generated this specific method before: in that
+             * case we simply get it from the cache and return it immediately.
+             * We pay the potential lookup price again here since that could at worst only
+             * be paid when first generating this method - once it's added to the cache this
+             * call will always return the existing instance directly. The method building
+             * and adding the function is separate to prevent the C# compiler from allocating
+             * the closure class even when it's not needed, in case this lookup is successful. */
+            if (restResultFuncForMethodsMap.TryGetValue(key, out var func)) return func;
+
+            return BuildAndAddRestResultFuncForMethod(key, methodName, parameterTypes, genericArgumentTypes);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private Func<HttpClient, object[], object> BuildAndAddRestResultFuncForMethod(int key, string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
+        {
             return restResultFuncForMethodsMap.GetOrAdd(key, _ =>
             {
                 if (!interfaceHttpMethods.ContainsKey(methodName))

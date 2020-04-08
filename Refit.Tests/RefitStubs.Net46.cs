@@ -62,27 +62,27 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_a48bc2b6f2be46ab971cb42e5cdcb30b = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_d949573dee2148e5a3f01d2f6c511671 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IAmARefitInterfaceButNobodyUsesMe.RefitMethod()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("RefitMethod", ArgumentTypes_a48bc2b6f2be46ab971cb42e5cdcb30b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("RefitMethod", ArgumentTypes_d949573dee2148e5a3f01d2f6c511671);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_af508c51c82b497c97e0c3d11206cd3d = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_6b1f39999a6c44b5813b509b86afc235 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IAmARefitInterfaceButNobodyUsesMe.AnotherRefitMethod()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("AnotherRefitMethod", ArgumentTypes_af508c51c82b497c97e0c3d11206cd3d);
+            var func = requestBuilder.BuildRestResultFuncForMethod("AnotherRefitMethod", ArgumentTypes_6b1f39999a6c44b5813b509b86afc235);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_ecc1c19be1fb4e5fab2677517343e6be = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_405e6c6a3af54f339db979363c2b8e42 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IAmARefitInterfaceButNobodyUsesMe.NoConstantsAllowed()
@@ -90,23 +90,23 @@ namespace Refit.Tests
             throw new NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
         }
 
-        private static readonly Type[] ArgumentTypes_d1e3a2494f414806aa55790955510242 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_71a448969dfa44238f73b7e73bf4ad9b = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IAmARefitInterfaceButNobodyUsesMe.SpacesShouldntBreakMe()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("SpacesShouldntBreakMe", ArgumentTypes_d1e3a2494f414806aa55790955510242);
+            var func = requestBuilder.BuildRestResultFuncForMethod("SpacesShouldntBreakMe", ArgumentTypes_71a448969dfa44238f73b7e73bf4ad9b);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_ff452461fe6b475e8d9679a3c43cbd05 = new Type[] { typeof(int), typeof(string), typeof(float) };
+        private static readonly Type[] ArgumentTypes_12796b3e5d36439282bd5082744f78bf = new Type[] { typeof(int), typeof(string), typeof(float) };
 
         /// <inheritdoc />
         Task IAmARefitInterfaceButNobodyUsesMe.ReservedWordsForParameterNames(int @int, string @string, float @long)
         {
             var arguments = new object[] { @int, @string, @long };
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReservedWordsForParameterNames", ArgumentTypes_ff452461fe6b475e8d9679a3c43cbd05);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReservedWordsForParameterNames", ArgumentTypes_12796b3e5d36439282bd5082744f78bf);
             return (Task)func(Client, arguments);
         }
     }
@@ -147,17 +147,17 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_253a8552186f499ebd4944d3b293ce4a = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_372757d9f1ff4838acf693fdcfe768cd = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IAmHalfRefit.Post()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Post", ArgumentTypes_253a8552186f499ebd4944d3b293ce4a);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Post", ArgumentTypes_372757d9f1ff4838acf693fdcfe768cd);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_15ad005be3e4429c94ece17334e35954 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_89900dde2a3e4be9b63daabb3a98f928 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IAmHalfRefit.Get()
@@ -191,43 +191,43 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_26b79b10676a4718a1d22d6b4265f341 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_c5a06fe299834cc18c792d4a8ee91e12 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterface.Pang()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Pang", ArgumentTypes_26b79b10676a4718a1d22d6b4265f341);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Pang", ArgumentTypes_c5a06fe299834cc18c792d4a8ee91e12);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_ea7fd87b0904493bb73a5f26cadbe9ff = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_d175517191f84e3fbf46337f3f83147a = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceB.Pong()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Pong", ArgumentTypes_ea7fd87b0904493bb73a5f26cadbe9ff);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Pong", ArgumentTypes_d175517191f84e3fbf46337f3f83147a);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_6b8219c660d74f8a8a51932dfcc6d178 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_96c7cc0542964b65ba2f2078b136d9b1 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceD.Test()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Test", ArgumentTypes_6b8219c660d74f8a8a51932dfcc6d178);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Test", ArgumentTypes_96c7cc0542964b65ba2f2078b136d9b1);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_6743d27257914fb381c1c8aa9b709ccc = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_b040951162a04bd986dee737de2baff7 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceA.Ping()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Ping", ArgumentTypes_6743d27257914fb381c1c8aa9b709ccc);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Ping", ArgumentTypes_b040951162a04bd986dee737de2baff7);
             return (Task<string>)func(Client, arguments);
         }
     }
@@ -257,13 +257,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_731032c67ebd41e4a855b0306eada0cf = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_4710a70bbc4544d984f106326ca2acd5 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceA.Ping()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Ping", ArgumentTypes_731032c67ebd41e4a855b0306eada0cf);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Ping", ArgumentTypes_4710a70bbc4544d984f106326ca2acd5);
             return (Task<string>)func(Client, arguments);
         }
     }
@@ -293,23 +293,23 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_27ecbf31ccc1487ead2be33be23b820f = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_db260836205444aeb40c8f0a65cdd7ea = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceB.Pong()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Pong", ArgumentTypes_27ecbf31ccc1487ead2be33be23b820f);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Pong", ArgumentTypes_db260836205444aeb40c8f0a65cdd7ea);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_6a559b86d4d6469d953625b166a1c43b = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_532c96f3299544e49984a49606b30480 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceD.Test()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Test", ArgumentTypes_6a559b86d4d6469d953625b166a1c43b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Test", ArgumentTypes_532c96f3299544e49984a49606b30480);
             return (Task<string>)func(Client, arguments);
         }
     }
@@ -339,43 +339,43 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_372d2c0b672e4952b8073dd144cddccc = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_42f8f82df25d4552a6c1bc19ee065f4a = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceC.Pang()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Pang", ArgumentTypes_372d2c0b672e4952b8073dd144cddccc);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Pang", ArgumentTypes_42f8f82df25d4552a6c1bc19ee065f4a);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_88957aae34f6406288cc3a707794b4af = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_c41160ece21647ce9fe5e561c71abc3f = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceB.Pong()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Pong", ArgumentTypes_88957aae34f6406288cc3a707794b4af);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Pong", ArgumentTypes_c41160ece21647ce9fe5e561c71abc3f);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_c6f018a7630e41eead454301e161e7a3 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_6c9814fae45a416b916f23b951e5b9a4 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceD.Test()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Test", ArgumentTypes_c6f018a7630e41eead454301e161e7a3);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Test", ArgumentTypes_6c9814fae45a416b916f23b951e5b9a4);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_0d0382f9d6e749ec988e7e6e10d61e64 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_4b06a92d5f02475783c9e71a5908cbbd = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceA.Ping()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Ping", ArgumentTypes_0d0382f9d6e749ec988e7e6e10d61e64);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Ping", ArgumentTypes_4b06a92d5f02475783c9e71a5908cbbd);
             return (Task<string>)func(Client, arguments);
         }
     }
@@ -405,13 +405,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_b9d9dcb9a51c4391bffd33b81e02d82c = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_95b3b87155624554a10396f579495a26 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IAmInterfaceD.Test()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Test", ArgumentTypes_b9d9dcb9a51c4391bffd33b81e02d82c);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Test", ArgumentTypes_95b3b87155624554a10396f579495a26);
             return (Task<string>)func(Client, arguments);
         }
     }
@@ -452,153 +452,153 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_2f182ae8f9a3496c960012d4d4ee6ba2 = new Type[] { typeof(PathBoundObject) };
+        private static readonly Type[] ArgumentTypes_a5da556eb23a44a08480265cede3de23 = new Type[] { typeof(PathBoundObject) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetFooBars(PathBoundObject request)
         {
             var arguments = new object[] { request };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBars", ArgumentTypes_2f182ae8f9a3496c960012d4d4ee6ba2);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBars", ArgumentTypes_a5da556eb23a44a08480265cede3de23);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_70f28ea9f4bb47958bd85e3c13de91e4 = new Type[] { typeof(PathBoundObject) };
+        private static readonly Type[] ArgumentTypes_801c8ed0210b4b5e992d0c6c3aa01248 = new Type[] { typeof(PathBoundObject) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetFooBarsWithDifferentCasing(PathBoundObject requestParams)
         {
             var arguments = new object[] { requestParams };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBarsWithDifferentCasing", ArgumentTypes_70f28ea9f4bb47958bd85e3c13de91e4);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBarsWithDifferentCasing", ArgumentTypes_801c8ed0210b4b5e992d0c6c3aa01248);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_376b4d7cbe2a4a8f9e2f66121c2e349e = new Type[] { typeof(string), typeof(PathBoundObject) };
+        private static readonly Type[] ArgumentTypes_641630c67d4844eabef82920f3b7d88e = new Type[] { typeof(string), typeof(PathBoundObject) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetBarsByFoo(string id, PathBoundObject request)
         {
             var arguments = new object[] { id, request };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsByFoo", ArgumentTypes_376b4d7cbe2a4a8f9e2f66121c2e349e);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsByFoo", ArgumentTypes_641630c67d4844eabef82920f3b7d88e);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_5e4cbced83af4fcea89dfdb1e4e6f255 = new Type[] { typeof(PathBoundObject), typeof(string) };
+        private static readonly Type[] ArgumentTypes_211ea9fced2a4144815573f578a4c2b5 = new Type[] { typeof(PathBoundObject), typeof(string) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetFooBars(PathBoundObject request, string someProperty)
         {
             var arguments = new object[] { request, someProperty };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBars", ArgumentTypes_5e4cbced83af4fcea89dfdb1e4e6f255);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBars", ArgumentTypes_211ea9fced2a4144815573f578a4c2b5);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_f1edf614fee1483b8de881052edd50e9 = new Type[] { typeof(PathBoundObject) };
+        private static readonly Type[] ArgumentTypes_2bb42cb50236410db9f9c5be171cbf07 = new Type[] { typeof(PathBoundObject) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetBarsByFoo(PathBoundObject request)
         {
             var arguments = new object[] { request };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsByFoo", ArgumentTypes_f1edf614fee1483b8de881052edd50e9);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsByFoo", ArgumentTypes_2bb42cb50236410db9f9c5be171cbf07);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_d56f182b10754740b3a2575394a67742 = new Type[] { typeof(PathBoundObjectWithQueryFormat) };
+        private static readonly Type[] ArgumentTypes_9afecfaf2e6844fc83117be3ef1fbfd1 = new Type[] { typeof(PathBoundObjectWithQueryFormat) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetBarsWithCustomQueryFormat(PathBoundObjectWithQueryFormat request)
         {
             var arguments = new object[] { request };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsWithCustomQueryFormat", ArgumentTypes_d56f182b10754740b3a2575394a67742);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsWithCustomQueryFormat", ArgumentTypes_9afecfaf2e6844fc83117be3ef1fbfd1);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_a769470349f1438092c892b6b0db2c6a = new Type[] { typeof(PathBoundDerivedObject) };
+        private static readonly Type[] ArgumentTypes_ddc6d9996f5d4afb887848e3585d8276 = new Type[] { typeof(PathBoundDerivedObject) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetFooBarsDerived(PathBoundDerivedObject request)
         {
             var arguments = new object[] { request };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBarsDerived", ArgumentTypes_a769470349f1438092c892b6b0db2c6a);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBarsDerived", ArgumentTypes_ddc6d9996f5d4afb887848e3585d8276);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_aff1c21c921a4b798582c7145c33de42 = new Type[] { typeof(PathBoundList) };
+        private static readonly Type[] ArgumentTypes_1d1ce21a1a7444d39b7ccabf81dafb17 = new Type[] { typeof(PathBoundList) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetFoos(PathBoundList request)
         {
             var arguments = new object[] { request };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetFoos", ArgumentTypes_aff1c21c921a4b798582c7145c33de42);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFoos", ArgumentTypes_1d1ce21a1a7444d39b7ccabf81dafb17);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_29f3c556ba6d48d3b7bc674e275e58f2 = new Type[] { typeof(List<int>) };
+        private static readonly Type[] ArgumentTypes_81a7737769064a6889cc327063d31268 = new Type[] { typeof(List<int>) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetFoos2(List<int> Values)
         {
             var arguments = new object[] { Values };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetFoos2", ArgumentTypes_29f3c556ba6d48d3b7bc674e275e58f2);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFoos2", ArgumentTypes_81a7737769064a6889cc327063d31268);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_5448f950e324489d91466cae0c4b76ea = new Type[] { typeof(PathBoundObject), typeof(object) };
+        private static readonly Type[] ArgumentTypes_be99457e3c0d402eabe6195e0042d017 = new Type[] { typeof(PathBoundObject), typeof(object) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.PostFooBar(PathBoundObject request, object someObject)
         {
             var arguments = new object[] { request, someObject };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBar", ArgumentTypes_5448f950e324489d91466cae0c4b76ea);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBar", ArgumentTypes_be99457e3c0d402eabe6195e0042d017);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_5b5c5ef67a424e0b9d37dd1f314cc2c0 = new Type[] { typeof(PathBoundObjectWithQuery) };
+        private static readonly Type[] ArgumentTypes_44e97b905be14b768c6bd0fbb96317a9 = new Type[] { typeof(PathBoundObjectWithQuery) };
 
         /// <inheritdoc />
         Task IApiBindPathToObject.GetFooBars(PathBoundObjectWithQuery request)
         {
             var arguments = new object[] { request };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBars", ArgumentTypes_5b5c5ef67a424e0b9d37dd1f314cc2c0);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBars", ArgumentTypes_44e97b905be14b768c6bd0fbb96317a9);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_a06b1cefaa4c4fda9f0c3158a974e20d = new Type[] { typeof(PathBoundObject), typeof(ModelObject) };
+        private static readonly Type[] ArgumentTypes_e3073de87d394935b5e7c464d857fd3e = new Type[] { typeof(PathBoundObject), typeof(ModelObject) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IApiBindPathToObject.PostFooBar(PathBoundObject request, ModelObject someQueryParams)
         {
             var arguments = new object[] { request, someQueryParams };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBar", ArgumentTypes_a06b1cefaa4c4fda9f0c3158a974e20d);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBar", ArgumentTypes_e3073de87d394935b5e7c464d857fd3e);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_b8fa2614d06e4ff2aeb882159ecad81c = new Type[] { typeof(PathBoundObject), typeof(ModelObject), typeof(StreamPart) };
+        private static readonly Type[] ArgumentTypes_e97da96314aa44a989bb485f3f07185f = new Type[] { typeof(PathBoundObject), typeof(ModelObject), typeof(StreamPart) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IApiBindPathToObject.PostFooBarStreamPart(PathBoundObject request, ModelObject someQueryParams, StreamPart stream)
         {
             var arguments = new object[] { request, someQueryParams, stream };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", ArgumentTypes_b8fa2614d06e4ff2aeb882159ecad81c);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", ArgumentTypes_e97da96314aa44a989bb485f3f07185f);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_365ef833dac44adfa151c34c5b779f4d = new Type[] { typeof(PathBoundObject), typeof(StreamPart) };
+        private static readonly Type[] ArgumentTypes_702ba8eb14934b25847853b65688a954 = new Type[] { typeof(PathBoundObject), typeof(StreamPart) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IApiBindPathToObject.PostFooBarStreamPart(PathBoundObject request, StreamPart stream)
         {
             var arguments = new object[] { request, stream };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", ArgumentTypes_365ef833dac44adfa151c34c5b779f4d);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", ArgumentTypes_702ba8eb14934b25847853b65688a954);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_14036959e3994adda130822fe08de2c8 = new Type[] { typeof(PathBoundObjectWithQuery), typeof(StreamPart) };
+        private static readonly Type[] ArgumentTypes_1d98e34cba4a46138b20d3f3029eafcf = new Type[] { typeof(PathBoundObjectWithQuery), typeof(StreamPart) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IApiBindPathToObject.PostFooBarStreamPart(PathBoundObjectWithQuery request, StreamPart stream)
         {
             var arguments = new object[] { request, stream };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", ArgumentTypes_14036959e3994adda130822fe08de2c8);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFooBarStreamPart", ArgumentTypes_1d98e34cba4a46138b20d3f3029eafcf);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
     }
@@ -639,13 +639,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_f2401111d63c4016af79e87a5168bb77 = new Type[] { typeof(decimal) };
+        private static readonly Type[] ArgumentTypes_65ae94e6fd41479f80d1168bb16e2755 = new Type[] { typeof(decimal) };
 
         /// <inheritdoc />
         Task<string> IApiWithDecimal.GetWithDecimal(decimal value)
         {
             var arguments = new object[] { value };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetWithDecimal", ArgumentTypes_f2401111d63c4016af79e87a5168bb77);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetWithDecimal", ArgumentTypes_65ae94e6fd41479f80d1168bb16e2755);
             return (Task<string>)func(Client, arguments);
         }
     }
@@ -686,33 +686,33 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_d82e4c1202674bfb9e81331999c1ba1d = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_da1e18efa4eb4fbeb3df8b08cef6fe2b = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IBodylessApi.Post()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Post", ArgumentTypes_d82e4c1202674bfb9e81331999c1ba1d);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Post", ArgumentTypes_da1e18efa4eb4fbeb3df8b08cef6fe2b);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_fd8089bbab69431e9d28b70d38a9af6b = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_a412d7e6fac74645ac75ca5726400813 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IBodylessApi.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_fd8089bbab69431e9d28b70d38a9af6b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_a412d7e6fac74645ac75ca5726400813);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_e1f8a071b55040d2bb87a60ee74f6ce6 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_478e9cbb3f734d7aa671facdd584de5d = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IBodylessApi.Head()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Head", ArgumentTypes_e1f8a071b55040d2bb87a60ee74f6ce6);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Head", ArgumentTypes_478e9cbb3f734d7aa671facdd584de5d);
             return (Task)func(Client, arguments);
         }
     }
@@ -753,53 +753,53 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_0dbe008f1eef47fe91608889a8e1cbbd = new Type[] { typeof(T) };
+        private static readonly Type[] ArgumentTypes_de1da531a3d444a8b3c1ee09a7b9423a = new Type[] { typeof(T) };
 
         /// <inheritdoc />
         Task<T> IBoringCrudApi<T, TKey>.Create(T paylod)
         {
             var arguments = new object[] { paylod };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_0dbe008f1eef47fe91608889a8e1cbbd);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_de1da531a3d444a8b3c1ee09a7b9423a);
             return (Task<T>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_e5bfb3a3cd7a42a08ea9eeabfacbf41c = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_fea3eaaa5bb34bd7bf34b9445444b706 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<List<T>> IBoringCrudApi<T, TKey>.ReadAll()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_e5bfb3a3cd7a42a08ea9eeabfacbf41c);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_fea3eaaa5bb34bd7bf34b9445444b706);
             return (Task<List<T>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_7e07c8d0fedf40c2ba3f9391f9d72281 = new Type[] { typeof(TKey) };
+        private static readonly Type[] ArgumentTypes_a2c2e5858546478293dfe4e40b8e27b8 = new Type[] { typeof(TKey) };
 
         /// <inheritdoc />
         Task<T> IBoringCrudApi<T, TKey>.ReadOne(TKey key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_7e07c8d0fedf40c2ba3f9391f9d72281);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_a2c2e5858546478293dfe4e40b8e27b8);
             return (Task<T>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_69fd881ce4664fe6bf9e7f93db6a7010 = new Type[] { typeof(TKey), typeof(T) };
+        private static readonly Type[] ArgumentTypes_3e14d8dc65b9477799ff19d3de30e99f = new Type[] { typeof(TKey), typeof(T) };
 
         /// <inheritdoc />
         Task IBoringCrudApi<T, TKey>.Update(TKey key, T payload)
         {
             var arguments = new object[] { key, payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_69fd881ce4664fe6bf9e7f93db6a7010);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_3e14d8dc65b9477799ff19d3de30e99f);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_8de5ef10fe0b442a8827a0ffc36b4ea0 = new Type[] { typeof(TKey) };
+        private static readonly Type[] ArgumentTypes_74a83767854c4127b5ccdade33175198 = new Type[] { typeof(TKey) };
 
         /// <inheritdoc />
         Task IBoringCrudApi<T, TKey>.Delete(TKey key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_8de5ef10fe0b442a8827a0ffc36b4ea0);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_74a83767854c4127b5ccdade33175198);
             return (Task)func(Client, arguments);
         }
     }
@@ -840,13 +840,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_806b36fbd50d42e49c52cba474d5cdd9 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_c921a0a4e3974b2ebb645b77c7115917 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<bool> IBrokenWebApi.PostAValue(string derp)
         {
             var arguments = new object[] { derp };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostAValue", ArgumentTypes_806b36fbd50d42e49c52cba474d5cdd9);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostAValue", ArgumentTypes_c921a0a4e3974b2ebb645b77c7115917);
             return (Task<bool>)func(Client, arguments);
         }
     }
@@ -875,13 +875,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_ba89a9ca7434410aad38ab87e5615c8a = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_f89dd05ddeb44f0bb4800664fe2543db = Array.Empty<Type>();
 
         /// <inheritdoc />
         CustomReferenceType? ICustomNullableReferenceService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_ba89a9ca7434410aad38ab87e5615c8a);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_f89dd05ddeb44f0bb4800664fe2543db);
             return (CustomReferenceType?)func(Client, arguments);
         }
     }
@@ -910,13 +910,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_bed68500aa4a41469c7f2f83df276a30 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_d1e3039fccd34383b66f7bdfb7b977b1 = Array.Empty<Type>();
 
         /// <inheritdoc />
         CustomValueType? ICustomNullableValueService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_bed68500aa4a41469c7f2f83df276a30);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_d1e3039fccd34383b66f7bdfb7b977b1);
             return (CustomValueType?)func(Client, arguments);
         }
     }
@@ -945,13 +945,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_4b4ec04556314aeaa6ead2d624ba9ecb = new Type[] { ToNullable(typeof(CustomReferenceType)), ToNullable(typeof(CustomValueType)) };
+        private static readonly Type[] ArgumentTypes_17fd015c6f7d424d81de0bcc87338900 = new Type[] { ToNullable(typeof(CustomReferenceType)), ToNullable(typeof(CustomValueType)) };
 
         /// <inheritdoc />
         Task ICustomReferenceAndValueParametersService.Get(CustomReferenceType? reference, CustomValueType? value)
         {
             var arguments = new object[] { reference, value };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_4b4ec04556314aeaa6ead2d624ba9ecb);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_17fd015c6f7d424d81de0bcc87338900);
             return (Task)func(Client, arguments);
         }
 
@@ -984,73 +984,73 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_93306ecc2dc64b2c9751dc3c227022d4 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_1ecfb5b41cf444a2832302798f96ce0a = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IDataApiA.PingA()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("PingA", ArgumentTypes_93306ecc2dc64b2c9751dc3c227022d4);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PingA", ArgumentTypes_1ecfb5b41cf444a2832302798f96ce0a);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_b8056e174c1a463f8aec91e08d30700b = new Type[] { typeof(DataEntity) };
+        private static readonly Type[] ArgumentTypes_3c0cfa4092ee49fcb5a0b8b2815aea8c = new Type[] { typeof(DataEntity) };
 
         /// <inheritdoc />
         Task<DataEntity> IDataCrudApi<DataEntity>.Copy(DataEntity payload)
         {
             var arguments = new object[] { payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Copy", ArgumentTypes_b8056e174c1a463f8aec91e08d30700b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Copy", ArgumentTypes_3c0cfa4092ee49fcb5a0b8b2815aea8c);
             return (Task<DataEntity>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_e229e168b3d54e0f9d88812ae6b428f6 = new Type[] { typeof(DataEntity) };
+        private static readonly Type[] ArgumentTypes_9c15c96e441b477eaca6770b6e6cf9af = new Type[] { typeof(DataEntity) };
 
         /// <inheritdoc />
         Task<DataEntity> IDataCrudApi<DataEntity, long>.Create(DataEntity payload)
         {
             var arguments = new object[] { payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_e229e168b3d54e0f9d88812ae6b428f6);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_9c15c96e441b477eaca6770b6e6cf9af);
             return (Task<DataEntity>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_f6f30f0cdd4842478bff919ac007ce01 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_17af67c89a844204b31a3f019eba3ae7 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<List<DataEntity>> IDataCrudApi<DataEntity, long>.ReadAll()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_f6f30f0cdd4842478bff919ac007ce01);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_17af67c89a844204b31a3f019eba3ae7);
             return (Task<List<DataEntity>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_08d9d80a0f03466c9dd3e8c35531581e = new Type[] { typeof(long) };
+        private static readonly Type[] ArgumentTypes_72e70e75e0db43f0b75ed85a68db593a = new Type[] { typeof(long) };
 
         /// <inheritdoc />
         Task<DataEntity> IDataCrudApi<DataEntity, long>.ReadOne(long key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_08d9d80a0f03466c9dd3e8c35531581e);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_72e70e75e0db43f0b75ed85a68db593a);
             return (Task<DataEntity>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_b2db3c73b5a94212b4b47b35229e1959 = new Type[] { typeof(long), typeof(DataEntity) };
+        private static readonly Type[] ArgumentTypes_323b8ca82f434267b925805759aa5a1b = new Type[] { typeof(long), typeof(DataEntity) };
 
         /// <inheritdoc />
         Task IDataCrudApi<DataEntity, long>.Update(long key, DataEntity payload)
         {
             var arguments = new object[] { key, payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_b2db3c73b5a94212b4b47b35229e1959);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_323b8ca82f434267b925805759aa5a1b);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_b39b4de3dfd247049fc457558882fe47 = new Type[] { typeof(long) };
+        private static readonly Type[] ArgumentTypes_8075d45ee070434c929937f95edeca93 = new Type[] { typeof(long) };
 
         /// <inheritdoc />
         Task IDataCrudApi<DataEntity, long>.Delete(long key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_b39b4de3dfd247049fc457558882fe47);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_8075d45ee070434c929937f95edeca93);
             return (Task)func(Client, arguments);
         }
     }
@@ -1081,63 +1081,63 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_846549be564c45e5beae993074d12e09 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_eab20877d532430eb4420e006960956f = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IDataApiB.PingB()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("PingB", ArgumentTypes_846549be564c45e5beae993074d12e09);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PingB", ArgumentTypes_eab20877d532430eb4420e006960956f);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_9d0b0f1fe19442efb8b8763c8ba11ae8 = new Type[] { typeof(DataEntity) };
+        private static readonly Type[] ArgumentTypes_21b3f1fa245f4606a1abef0bf61b9f74 = new Type[] { typeof(DataEntity) };
 
         /// <inheritdoc />
         Task<DataEntity> IDataCrudApi<DataEntity, int>.Create(DataEntity payload)
         {
             var arguments = new object[] { payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_9d0b0f1fe19442efb8b8763c8ba11ae8);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_21b3f1fa245f4606a1abef0bf61b9f74);
             return (Task<DataEntity>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_7159f821444a47739a9bc138cbf42c6c = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_7f782c8768ca44d28e3bf157494b6e01 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<List<DataEntity>> IDataCrudApi<DataEntity, int>.ReadAll()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_7159f821444a47739a9bc138cbf42c6c);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_7f782c8768ca44d28e3bf157494b6e01);
             return (Task<List<DataEntity>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_b92ed93815aa452eb29b89a600a04dd4 = new Type[] { typeof(int) };
+        private static readonly Type[] ArgumentTypes_ca2d18a8dea34216959861ce79966250 = new Type[] { typeof(int) };
 
         /// <inheritdoc />
         Task<DataEntity> IDataCrudApi<DataEntity, int>.ReadOne(int key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_b92ed93815aa452eb29b89a600a04dd4);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_ca2d18a8dea34216959861ce79966250);
             return (Task<DataEntity>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_6c6a24e0970a4ee782934be15f900978 = new Type[] { typeof(int), typeof(DataEntity) };
+        private static readonly Type[] ArgumentTypes_095dcaf535074ea6b06037857c75d8ed = new Type[] { typeof(int), typeof(DataEntity) };
 
         /// <inheritdoc />
         Task IDataCrudApi<DataEntity, int>.Update(int key, DataEntity payload)
         {
             var arguments = new object[] { key, payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_6c6a24e0970a4ee782934be15f900978);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_095dcaf535074ea6b06037857c75d8ed);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_0b3b83da5a0d493eb911c9e668af0787 = new Type[] { typeof(int) };
+        private static readonly Type[] ArgumentTypes_634730b8ad4e42f4a11d9f0ae6e3f467 = new Type[] { typeof(int) };
 
         /// <inheritdoc />
         Task IDataCrudApi<DataEntity, int>.Delete(int key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_0b3b83da5a0d493eb911c9e668af0787);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_634730b8ad4e42f4a11d9f0ae6e3f467);
             return (Task)func(Client, arguments);
         }
     }
@@ -1171,63 +1171,63 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_da6a19bb599748748b4872ba4496436d = new Type[] { typeof(T) };
+        private static readonly Type[] ArgumentTypes_225894f33c97485896ac8b3785bf1d08 = new Type[] { typeof(T) };
 
         /// <inheritdoc />
         Task<T> IDataCrudApi<T>.Copy(T payload)
         {
             var arguments = new object[] { payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Copy", ArgumentTypes_da6a19bb599748748b4872ba4496436d);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Copy", ArgumentTypes_225894f33c97485896ac8b3785bf1d08);
             return (Task<T>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_8d155d02a1b04e16b49052b75dffa65f = new Type[] { typeof(T) };
+        private static readonly Type[] ArgumentTypes_17dc4af01d6d4a4e989b2cc8d5b80374 = new Type[] { typeof(T) };
 
         /// <inheritdoc />
         Task<T> IDataCrudApi<T, long>.Create(T payload)
         {
             var arguments = new object[] { payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_8d155d02a1b04e16b49052b75dffa65f);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_17dc4af01d6d4a4e989b2cc8d5b80374);
             return (Task<T>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_191b7aa802ac471490cfe925747a53dc = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_ef0de279380542e1b94c830ebc233959 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<List<T>> IDataCrudApi<T, long>.ReadAll()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_191b7aa802ac471490cfe925747a53dc);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_ef0de279380542e1b94c830ebc233959);
             return (Task<List<T>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_d708c41165e443169b73224d9ee83f28 = new Type[] { typeof(long) };
+        private static readonly Type[] ArgumentTypes_a192dff9462f4ee49ca1a630eb21e837 = new Type[] { typeof(long) };
 
         /// <inheritdoc />
         Task<T> IDataCrudApi<T, long>.ReadOne(long key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_d708c41165e443169b73224d9ee83f28);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_a192dff9462f4ee49ca1a630eb21e837);
             return (Task<T>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_a861038879ad48d580d3f3cbabd82918 = new Type[] { typeof(long), typeof(T) };
+        private static readonly Type[] ArgumentTypes_562f019925484fd5a34728e2c28acd7f = new Type[] { typeof(long), typeof(T) };
 
         /// <inheritdoc />
         Task IDataCrudApi<T, long>.Update(long key, T payload)
         {
             var arguments = new object[] { key, payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_a861038879ad48d580d3f3cbabd82918);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_562f019925484fd5a34728e2c28acd7f);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_d1bdd89197ce4e5daf7459f10f333e29 = new Type[] { typeof(long) };
+        private static readonly Type[] ArgumentTypes_8ffe1a8b4c114aa59efdbe54201538b4 = new Type[] { typeof(long) };
 
         /// <inheritdoc />
         Task IDataCrudApi<T, long>.Delete(long key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_d1bdd89197ce4e5daf7459f10f333e29);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_8ffe1a8b4c114aa59efdbe54201538b4);
             return (Task)func(Client, arguments);
         }
     }
@@ -1261,53 +1261,53 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_0b93f0bbee924c8db162e60147dd0734 = new Type[] { typeof(T) };
+        private static readonly Type[] ArgumentTypes_b6884e571ad64162b6fc4508d9019626 = new Type[] { typeof(T) };
 
         /// <inheritdoc />
         Task<T> IDataCrudApi<T, TKey>.Create(T payload)
         {
             var arguments = new object[] { payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_0b93f0bbee924c8db162e60147dd0734);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Create", ArgumentTypes_b6884e571ad64162b6fc4508d9019626);
             return (Task<T>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_09569e9fe23a4b16ad1668d742ae6686 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_7ef9bcac29ce4618a3640050bb8b76dc = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<List<T>> IDataCrudApi<T, TKey>.ReadAll()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_09569e9fe23a4b16ad1668d742ae6686);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadAll", ArgumentTypes_7ef9bcac29ce4618a3640050bb8b76dc);
             return (Task<List<T>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_6983f40f12a24026aa83fead1cf70a57 = new Type[] { typeof(TKey) };
+        private static readonly Type[] ArgumentTypes_5682ebb78dae4935844353a07132abe8 = new Type[] { typeof(TKey) };
 
         /// <inheritdoc />
         Task<T> IDataCrudApi<T, TKey>.ReadOne(TKey key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_6983f40f12a24026aa83fead1cf70a57);
+            var func = requestBuilder.BuildRestResultFuncForMethod("ReadOne", ArgumentTypes_5682ebb78dae4935844353a07132abe8);
             return (Task<T>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_0efe952a63114f2d950a09e668f4fcad = new Type[] { typeof(TKey), typeof(T) };
+        private static readonly Type[] ArgumentTypes_ef67ac14fb7445d1b3305aa95b3bf3e3 = new Type[] { typeof(TKey), typeof(T) };
 
         /// <inheritdoc />
         Task IDataCrudApi<T, TKey>.Update(TKey key, T payload)
         {
             var arguments = new object[] { key, payload };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_0efe952a63114f2d950a09e668f4fcad);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Update", ArgumentTypes_ef67ac14fb7445d1b3305aa95b3bf3e3);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_026922b66caf4828bb795aea04b7bfc2 = new Type[] { typeof(TKey) };
+        private static readonly Type[] ArgumentTypes_8ca377da40944cd49cb0b5af5e02d27c = new Type[] { typeof(TKey) };
 
         /// <inheritdoc />
         Task IDataCrudApi<T, TKey>.Delete(TKey key)
         {
             var arguments = new object[] { key };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_026922b66caf4828bb795aea04b7bfc2);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Delete", ArgumentTypes_8ca377da40944cd49cb0b5af5e02d27c);
             return (Task)func(Client, arguments);
         }
     }
@@ -1336,13 +1336,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_4e45039b9f914350b88bf7be534cbaf2 = new Type[] { ToNullable(typeof(System.Collections.Generic.List<string>)) };
+        private static readonly Type[] ArgumentTypes_0949d96ece124a6eaaaa458665ed30b0 = new Type[] { ToNullable(typeof(System.Collections.Generic.List<string>)) };
 
         /// <inheritdoc />
         Task IGenericNullableReferenceParameterService.Get(System.Collections.Generic.List<string>? reference)
         {
             var arguments = new object[] { reference };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_4e45039b9f914350b88bf7be534cbaf2);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_0949d96ece124a6eaaaa458665ed30b0);
             return (Task)func(Client, arguments);
         }
 
@@ -1373,13 +1373,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_e11b382c2b4441848d57c61da877b0c6 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_c380d9ee147f4d29ba6bea2b1a4fddf6 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string>? IGenericNullableReferenceService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_e11b382c2b4441848d57c61da877b0c6);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_c380d9ee147f4d29ba6bea2b1a4fddf6);
             return (Task<string>?)func(Client, arguments);
         }
     }
@@ -1408,13 +1408,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_7dfa677b161d4a51957d18facb771516 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_3d10f32c17314037ba04fc3a5a516a7f = Array.Empty<Type>();
 
         /// <inheritdoc />
         ValueTask<int>? IGenericNullableValueService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_7dfa677b161d4a51957d18facb771516);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_3d10f32c17314037ba04fc3a5a516a7f);
             return (ValueTask<int>?)func(Client, arguments);
         }
     }
@@ -1443,13 +1443,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_ff1fbe7dcb704c23892e8196e882c737 = new Type[] { ToNullable(typeof(System.Collections.Generic.List<string?>)) };
+        private static readonly Type[] ArgumentTypes_93ccb7daf7bc46de95461113e3108e59 = new Type[] { ToNullable(typeof(System.Collections.Generic.List<string?>)) };
 
         /// <inheritdoc />
         Task IGenericNullableWithNullableReferenceParameterService.Get(System.Collections.Generic.List<string?>? reference)
         {
             var arguments = new object[] { reference };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_ff1fbe7dcb704c23892e8196e882c737);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_93ccb7daf7bc46de95461113e3108e59);
             return (Task)func(Client, arguments);
         }
 
@@ -1480,13 +1480,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_5d32602120e84899b82e0b78343acc9e = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_fc4e89ccae654e72abf5f65ba144dee9 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string?>? IGenericNullableWithNullableReferenceService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_5d32602120e84899b82e0b78343acc9e);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_fc4e89ccae654e72abf5f65ba144dee9);
             return (Task<string?>?)func(Client, arguments);
         }
     }
@@ -1515,13 +1515,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_f55308fe6638421899bd9101833b7be2 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_a309e68b914347ae9cbf0c0fe1cab671 = Array.Empty<Type>();
 
         /// <inheritdoc />
         ValueTask<int?>? IGenericNullableWithNullableValueService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_f55308fe6638421899bd9101833b7be2);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_a309e68b914347ae9cbf0c0fe1cab671);
             return (ValueTask<int?>?)func(Client, arguments);
         }
     }
@@ -1550,13 +1550,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_39ec9c26b66d463ca6929efc807b2770 = new Type[] { typeof(System.Collections.Generic.List<string?>) };
+        private static readonly Type[] ArgumentTypes_a3fba2221f94466ca42c2b129f73c1e2 = new Type[] { typeof(System.Collections.Generic.List<string?>) };
 
         /// <inheritdoc />
         Task IGenericWithNullableReferenceParameterService.Get(System.Collections.Generic.List<string?> reference)
         {
             var arguments = new object[] { reference };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_39ec9c26b66d463ca6929efc807b2770);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_a3fba2221f94466ca42c2b129f73c1e2);
             return (Task)func(Client, arguments);
         }
     }
@@ -1585,13 +1585,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_0b482db2c26848ac8822ae8d5178cd42 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_d23e4cf7c0014168b584a174351aa6c4 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<int?> IGenericWithNullableValueService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_0b482db2c26848ac8822ae8d5178cd42);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_d23e4cf7c0014168b584a174351aa6c4);
             return (Task<int?>)func(Client, arguments);
         }
     }
@@ -1620,13 +1620,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_82849c15effc40c79326d2dc3453befb = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_33979930fcd644b6a9be335caea543ca = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string?> IGenericWithResultService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_82849c15effc40c79326d2dc3453befb);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_33979930fcd644b6a9be335caea543ca);
             return (Task<string?>)func(Client, arguments);
         }
     }
@@ -1661,133 +1661,133 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_eb9cc862592446e7bcaa47934d1e9063 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_8dfeb04a675648ccaf30bec57691abe0 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<User> IGitHubApi.GetUser(string userName)
         {
             var arguments = new object[] { userName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ArgumentTypes_eb9cc862592446e7bcaa47934d1e9063);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ArgumentTypes_8dfeb04a675648ccaf30bec57691abe0);
             return (Task<User>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_e94a5a345f214b3fb5e1e6227563da27 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_1502f4ade371464b8e1ad25a1de26db3 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         IObservable<User> IGitHubApi.GetUserObservable(string userName)
         {
             var arguments = new object[] { userName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ArgumentTypes_e94a5a345f214b3fb5e1e6227563da27);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ArgumentTypes_1502f4ade371464b8e1ad25a1de26db3);
             return (IObservable<User>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_fd06def76ab745408ee44e8a09c397a5 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_34029a0ae695450bb12357c3e339ce44 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         IObservable<User> IGitHubApi.GetUserCamelCase(string userName)
         {
             var arguments = new object[] { userName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ArgumentTypes_fd06def76ab745408ee44e8a09c397a5);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ArgumentTypes_34029a0ae695450bb12357c3e339ce44);
             return (IObservable<User>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_8f2935c472834d26a9117011b7c92400 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_122d33066c704550bf2ef0cb49d92f96 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<List<User>> IGitHubApi.GetOrgMembers(string orgName)
         {
             var arguments = new object[] { orgName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ArgumentTypes_8f2935c472834d26a9117011b7c92400);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ArgumentTypes_122d33066c704550bf2ef0cb49d92f96);
             return (Task<List<User>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_e4adb0464ccc4fdd9c87f5378ca8e880 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_613b781eee444927988db68fae8334aa = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<UserSearchResult> IGitHubApi.FindUsers(string q)
         {
             var arguments = new object[] { q };
-            var func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ArgumentTypes_e4adb0464ccc4fdd9c87f5378ca8e880);
+            var func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ArgumentTypes_613b781eee444927988db68fae8334aa);
             return (Task<UserSearchResult>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_fcec939287904012b5c1dd896e430faf = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_89a0bfb0fb2d4e86a24a9eeffbb2b220 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IGitHubApi.GetIndex()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", ArgumentTypes_fcec939287904012b5c1dd896e430faf);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", ArgumentTypes_89a0bfb0fb2d4e86a24a9eeffbb2b220);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_eb217e47884046db904ed2b7ea815780 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_fe22fbd5bf084b45a4d700b885287ba4 = Array.Empty<Type>();
 
         /// <inheritdoc />
         IObservable<string> IGitHubApi.GetIndexObservable()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", ArgumentTypes_eb217e47884046db904ed2b7ea815780);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", ArgumentTypes_fe22fbd5bf084b45a4d700b885287ba4);
             return (IObservable<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_42233be489214803996d3e71640a9a6f = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_6347decfef0c406a982e955a4cc00cda = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<User> IGitHubApi.NothingToSeeHere()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", ArgumentTypes_42233be489214803996d3e71640a9a6f);
+            var func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", ArgumentTypes_6347decfef0c406a982e955a4cc00cda);
             return (Task<User>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_ea94f540b7ab4efa9582185e6e2b81bf = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_180575c6285e411c962cd05202ce93dc = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<ApiResponse<User>> IGitHubApi.NothingToSeeHereWithMetadata()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHereWithMetadata", ArgumentTypes_ea94f540b7ab4efa9582185e6e2b81bf);
+            var func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHereWithMetadata", ArgumentTypes_180575c6285e411c962cd05202ce93dc);
             return (Task<ApiResponse<User>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_adee9a3ccd70477eb43431b504c81878 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_12843af036a5449e80653892c0c5af66 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<ApiResponse<User>> IGitHubApi.GetUserWithMetadata(string userName)
         {
             var arguments = new object[] { userName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ArgumentTypes_adee9a3ccd70477eb43431b504c81878);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ArgumentTypes_12843af036a5449e80653892c0c5af66);
             return (Task<ApiResponse<User>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_dc6c91703ef84fc8aece0c4e4e6cef73 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_fe2c2bd81ee0402ba8ba62631bec7e76 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         IObservable<ApiResponse<User>> IGitHubApi.GetUserObservableWithMetadata(string userName)
         {
             var arguments = new object[] { userName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ArgumentTypes_dc6c91703ef84fc8aece0c4e4e6cef73);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ArgumentTypes_fe2c2bd81ee0402ba8ba62631bec7e76);
             return (IObservable<ApiResponse<User>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_c241f38681d84307a8b2753f77fd343e = new Type[] { typeof(User) };
+        private static readonly Type[] ArgumentTypes_3e50732ae63249e6bf9f1652c588f8f2 = new Type[] { typeof(User) };
 
         /// <inheritdoc />
         Task<User> IGitHubApi.CreateUser(User user)
         {
             var arguments = new object[] { user };
-            var func = requestBuilder.BuildRestResultFuncForMethod("CreateUser", ArgumentTypes_c241f38681d84307a8b2753f77fd343e);
+            var func = requestBuilder.BuildRestResultFuncForMethod("CreateUser", ArgumentTypes_3e50732ae63249e6bf9f1652c588f8f2);
             return (Task<User>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_93373ce4abb44ee5a55ca3aa36a66cf9 = new Type[] { typeof(User) };
+        private static readonly Type[] ArgumentTypes_da51f3d856c84d07b30326beda1468e6 = new Type[] { typeof(User) };
 
         /// <inheritdoc />
         Task<ApiResponse<User>> IGitHubApi.CreateUserWithMetadata(User user)
         {
             var arguments = new object[] { user };
-            var func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ArgumentTypes_93373ce4abb44ee5a55ca3aa36a66cf9);
+            var func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ArgumentTypes_da51f3d856c84d07b30326beda1468e6);
             return (Task<ApiResponse<User>>)func(Client, arguments);
         }
     }
@@ -1832,47 +1832,47 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_de0f94a241b0476191e081a72e56eecb = new Type[] { typeof(TParam), typeof(THeader) };
+        private static readonly Type[] ArgumentTypes_46113c251ba24b76b9ca435ef838b101 = new Type[] { typeof(TParam), typeof(THeader) };
 
         /// <inheritdoc />
         Task<TResponse> IHttpBinApi<TResponse, TParam, THeader>.Get(TParam param, THeader header)
         {
             var arguments = new object[] { param, header };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_de0f94a241b0476191e081a72e56eecb);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_46113c251ba24b76b9ca435ef838b101);
             return (Task<TResponse>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_e2d86090b08148c2876b20455bac3ffc = new Type[] { typeof(TParam) };
+        private static readonly Type[] ArgumentTypes_50c7a5ee88374bf0ba37bb07c778e56b = new Type[] { typeof(TParam) };
 
         /// <inheritdoc />
         Task<TResponse> IHttpBinApi<TResponse, TParam, THeader>.GetQuery(TParam param)
         {
             var arguments = new object[] { param };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetQuery", ArgumentTypes_e2d86090b08148c2876b20455bac3ffc);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetQuery", ArgumentTypes_50c7a5ee88374bf0ba37bb07c778e56b);
             return (Task<TResponse>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_6977c7b8804f4a36be922e0e52ea9a1b = new Type[] { typeof(TParam) };
+        private static readonly Type[] ArgumentTypes_876875bb2f674e2fbdd672c24918de6a = new Type[] { typeof(TParam) };
 
         /// <inheritdoc />
         Task<TResponse> IHttpBinApi<TResponse, TParam, THeader>.PostQuery(TParam param)
         {
             var arguments = new object[] { param };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostQuery", ArgumentTypes_6977c7b8804f4a36be922e0e52ea9a1b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostQuery", ArgumentTypes_876875bb2f674e2fbdd672c24918de6a);
             return (Task<TResponse>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_87ca08e38b7c4d7bbacba1c46a2db798 = new Type[] { typeof(TParam) };
+        private static readonly Type[] ArgumentTypes_ce8eabdec62048aaacc8319710aa6074 = new Type[] { typeof(TParam) };
 
         /// <inheritdoc />
         Task<TResponse> IHttpBinApi<TResponse, TParam, THeader>.GetQueryWithIncludeParameterName(TParam param)
         {
             var arguments = new object[] { param };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetQueryWithIncludeParameterName", ArgumentTypes_87ca08e38b7c4d7bbacba1c46a2db798);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetQueryWithIncludeParameterName", ArgumentTypes_ce8eabdec62048aaacc8319710aa6074);
             return (Task<TResponse>)func(Client, arguments);
         }
 
-        private static class TypeHelper_1bda28ef13b642aeba28f98ba4d442c2<TValue>
+        private static class TypeHelper_2a2fa77fe73c4e7c9c4dbd4e10064d4e<TValue>
         {
             public static readonly Type[] ArgumentTypes = new Type[] { typeof(TParam) };
             public static readonly Type[] TypeParameters = new Type[] { typeof(TValue) };
@@ -1882,7 +1882,7 @@ namespace Refit.Tests
         Task<TValue> IHttpBinApi<TResponse, TParam, THeader>.GetQuery1<TValue>(TParam param)
         {
             var arguments = new object[] { param };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetQuery1", TypeHelper_1bda28ef13b642aeba28f98ba4d442c2<TValue>.ArgumentTypes, TypeHelper_1bda28ef13b642aeba28f98ba4d442c2<TValue>.TypeParameters);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetQuery1", TypeHelper_2a2fa77fe73c4e7c9c4dbd4e10064d4e<TValue>.ArgumentTypes, TypeHelper_2a2fa77fe73c4e7c9c4dbd4e10064d4e<TValue>.TypeParameters);
             return (Task<TValue>)func(Client, arguments);
         }
     }
@@ -1923,23 +1923,23 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_85adaa395d21419ab72fff0ab2f42b90 = new Type[] { typeof(HttpContent) };
+        private static readonly Type[] ArgumentTypes_b307caa8ec6449e9827e4f92693abfea = new Type[] { typeof(HttpContent) };
 
         /// <inheritdoc />
         Task<HttpContent> IHttpContentApi.PostFileUpload(HttpContent content)
         {
             var arguments = new object[] { content };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostFileUpload", ArgumentTypes_85adaa395d21419ab72fff0ab2f42b90);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFileUpload", ArgumentTypes_b307caa8ec6449e9827e4f92693abfea);
             return (Task<HttpContent>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_42346890a15e40c08c4aa631497469f9 = new Type[] { typeof(HttpContent) };
+        private static readonly Type[] ArgumentTypes_20e74ad405df4b64a1af5047262ff253 = new Type[] { typeof(HttpContent) };
 
         /// <inheritdoc />
         Task<ApiResponse<HttpContent>> IHttpContentApi.PostFileUploadWithMetadata(HttpContent content)
         {
             var arguments = new object[] { content };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostFileUploadWithMetadata", ArgumentTypes_42346890a15e40c08c4aa631497469f9);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostFileUploadWithMetadata", ArgumentTypes_20e74ad405df4b64a1af5047262ff253);
             return (Task<ApiResponse<HttpContent>>)func(Client, arguments);
         }
     }
@@ -1981,13 +1981,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_d7089633ab9943e8a696c95a0853f860 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_586eeecca4104f39aa01c2422682b2f6 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<TestAliasObject> ResponseTests.IMyAliasService.GetTestObject()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetTestObject", ArgumentTypes_d7089633ab9943e8a696c95a0853f860);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetTestObject", ArgumentTypes_586eeecca4104f39aa01c2422682b2f6);
             return (Task<TestAliasObject>)func(Client, arguments);
         }
     }
@@ -2023,23 +2023,23 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_da89e5f7923a405b9f6e32ec2fa0fbf1 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_038549a6bdec42a29d779c6f9e0f91e3 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> AuthenticatedClientHandlerTests.IMyAuthenticatedService.GetUnauthenticated()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUnauthenticated", ArgumentTypes_da89e5f7923a405b9f6e32ec2fa0fbf1);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUnauthenticated", ArgumentTypes_038549a6bdec42a29d779c6f9e0f91e3);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_b3a09c7902db4afdb99787c93eafab80 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_36f5b2072e304f22b0fad2e216a1f496 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> AuthenticatedClientHandlerTests.IMyAuthenticatedService.GetAuthenticated()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetAuthenticated", ArgumentTypes_b3a09c7902db4afdb99787c93eafab80);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetAuthenticated", ArgumentTypes_36f5b2072e304f22b0fad2e216a1f496);
             return (Task<string>)func(Client, arguments);
         }
     }
@@ -2070,13 +2070,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_26cc32f3e8b64f3f9f96504fd31ce86b = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_eed19731fbba49019c549a73a42ef80e = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<SomeType> INamespaceCollisionApi.SomeRequest()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", ArgumentTypes_26cc32f3e8b64f3f9f96504fd31ce86b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", ArgumentTypes_eed19731fbba49019c549a73a42ef80e);
             return (Task<SomeType>)func(Client, arguments);
         }
     }
@@ -2108,13 +2108,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_a046213fd7644c9d83305105058b955b = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_5c214ff0c5ee46df9fed14d7c789a0c0 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<SomeOtherType> INamespaceOverlapApi.SomeRequest()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", ArgumentTypes_a046213fd7644c9d83305105058b955b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", ArgumentTypes_5c214ff0c5ee46df9fed14d7c789a0c0);
             return (Task<SomeOtherType>)func(Client, arguments);
         }
     }
@@ -2149,83 +2149,83 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_6c3b119979c540e7a931091be4c2a225 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_cbeb1481f479428182322da32d93f595 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<User> TestNested.INestedGitHubApi.GetUser(string userName)
         {
             var arguments = new object[] { userName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ArgumentTypes_6c3b119979c540e7a931091be4c2a225);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ArgumentTypes_cbeb1481f479428182322da32d93f595);
             return (Task<User>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_4e9579d84e334db48afc1b5af5d554d1 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_24bcd35e498948d48766129a8cb264a1 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         IObservable<User> TestNested.INestedGitHubApi.GetUserObservable(string userName)
         {
             var arguments = new object[] { userName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ArgumentTypes_4e9579d84e334db48afc1b5af5d554d1);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ArgumentTypes_24bcd35e498948d48766129a8cb264a1);
             return (IObservable<User>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_69f6e36d53be4761bc826265cdb54410 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_605af9443fe74ab7ab12170ae304a881 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         IObservable<User> TestNested.INestedGitHubApi.GetUserCamelCase(string userName)
         {
             var arguments = new object[] { userName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ArgumentTypes_69f6e36d53be4761bc826265cdb54410);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ArgumentTypes_605af9443fe74ab7ab12170ae304a881);
             return (IObservable<User>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_01ffe48e5fb0491cb856c34cf24b8d10 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_270b3c1c13934d38ada425fc441a8d87 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<List<User>> TestNested.INestedGitHubApi.GetOrgMembers(string orgName)
         {
             var arguments = new object[] { orgName };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ArgumentTypes_01ffe48e5fb0491cb856c34cf24b8d10);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ArgumentTypes_270b3c1c13934d38ada425fc441a8d87);
             return (Task<List<User>>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_f39ee737cd4e470685b54e853ba71276 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_6aea8732f0af4ad29dd84918f17e04c7 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<UserSearchResult> TestNested.INestedGitHubApi.FindUsers(string q)
         {
             var arguments = new object[] { q };
-            var func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ArgumentTypes_f39ee737cd4e470685b54e853ba71276);
+            var func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ArgumentTypes_6aea8732f0af4ad29dd84918f17e04c7);
             return (Task<UserSearchResult>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_0504d60949ee433c9407005217f17deb = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_d30449b4bb2b4e508e2ddf161f0f0562 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<HttpResponseMessage> TestNested.INestedGitHubApi.GetIndex()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", ArgumentTypes_0504d60949ee433c9407005217f17deb);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", ArgumentTypes_d30449b4bb2b4e508e2ddf161f0f0562);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_bb400a0dba9c4f6fbefdcfb3336224fc = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_13ea9f9619984540bb551a37ecc660f8 = Array.Empty<Type>();
 
         /// <inheritdoc />
         IObservable<string> TestNested.INestedGitHubApi.GetIndexObservable()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", ArgumentTypes_bb400a0dba9c4f6fbefdcfb3336224fc);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", ArgumentTypes_13ea9f9619984540bb551a37ecc660f8);
             return (IObservable<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_cdc3c74137344ac9a106357be3936de5 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_7122a720bedb40bfae7b27bd78df1705 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task TestNested.INestedGitHubApi.NothingToSeeHere()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", ArgumentTypes_cdc3c74137344ac9a106357be3936de5);
+            var func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", ArgumentTypes_7122a720bedb40bfae7b27bd78df1705);
             return (Task)func(Client, arguments);
         }
     }
@@ -2263,7 +2263,7 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static class TypeHelper_559abbdae8664e5bb4eeae3f2c30f8fa<T>
+        private static class TypeHelper_55c28e6979e14d5c8cf96a0bb18b030d<T>
         {
             public static readonly Type[] ArgumentTypes = new Type[] { typeof(T) };
             public static readonly Type[] TypeParameters = new Type[] { typeof(T) };
@@ -2273,11 +2273,11 @@ namespace Refit.Tests
         Task INonGenericInterfaceWithGenericMethod.PostMessage<T>(T message)
         {
             var arguments = new object[] { message };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostMessage", TypeHelper_559abbdae8664e5bb4eeae3f2c30f8fa<T>.ArgumentTypes, TypeHelper_559abbdae8664e5bb4eeae3f2c30f8fa<T>.TypeParameters);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostMessage", TypeHelper_55c28e6979e14d5c8cf96a0bb18b030d<T>.ArgumentTypes, TypeHelper_55c28e6979e14d5c8cf96a0bb18b030d<T>.TypeParameters);
             return (Task)func(Client, arguments);
         }
 
-        private static class TypeHelper_fd1380cb58644059b4e8eeadf6296253<T, U, V>
+        private static class TypeHelper_d44ef9a2e8d34f87af2c01e2de49252a<T, U, V>
         {
             public static readonly Type[] ArgumentTypes = new Type[] { typeof(T), typeof(U), typeof(V) };
             public static readonly Type[] TypeParameters = new Type[] { typeof(T), typeof(U), typeof(V) };
@@ -2287,7 +2287,7 @@ namespace Refit.Tests
         Task INonGenericInterfaceWithGenericMethod.PostMessage<T, U, V>(T message, U param1, V param2)
         {
             var arguments = new object[] { message, param1, param2 };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostMessage", TypeHelper_fd1380cb58644059b4e8eeadf6296253<T, U, V>.ArgumentTypes, TypeHelper_fd1380cb58644059b4e8eeadf6296253<T, U, V>.TypeParameters);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostMessage", TypeHelper_d44ef9a2e8d34f87af2c01e2de49252a<T, U, V>.ArgumentTypes, TypeHelper_d44ef9a2e8d34f87af2c01e2de49252a<T, U, V>.TypeParameters);
             return (Task)func(Client, arguments);
         }
     }
@@ -2328,13 +2328,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_2c8dbadcd9cb4726903f061136997397 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_21e377d281274587809cdfe9c63d361b = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<RootObject> INpmJs.GetCongruence()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetCongruence", ArgumentTypes_2c8dbadcd9cb4726903f061136997397);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetCongruence", ArgumentTypes_21e377d281274587809cdfe9c63d361b);
             return (Task<RootObject>)func(Client, arguments);
         }
     }
@@ -2363,13 +2363,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_15828926f9db4fad944adcc4d33f9465 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_c5452962550d4b99a87f7d036686a432 = Array.Empty<Type>();
 
         /// <inheritdoc />
         string? INullableReferenceService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_15828926f9db4fad944adcc4d33f9465);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_c5452962550d4b99a87f7d036686a432);
             return (string?)func(Client, arguments);
         }
     }
@@ -2398,13 +2398,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_f21e362c036c4110a5264ee18b22970b = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_ac26a6c7eb5646d2bf7d2c5d6579cb04 = Array.Empty<Type>();
 
         /// <inheritdoc />
         int? INullableValueService.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_f21e362c036c4110a5264ee18b22970b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_ac26a6c7eb5646d2bf7d2c5d6579cb04);
             return (int?)func(Client, arguments);
         }
     }
@@ -2434,13 +2434,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_52458e6a7ced4fc38e28d2a9304b74f2 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_390223737096447ea0d542882da3e1c5 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<SomeType> IReducedUsingInsideNamespaceApi.SomeRequest()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", ArgumentTypes_52458e6a7ced4fc38e28d2a9304b74f2);
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", ArgumentTypes_390223737096447ea0d542882da3e1c5);
             return (Task<SomeType>)func(Client, arguments);
         }
     }
@@ -2469,13 +2469,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_543e0483a07145bdaaa354aa59bbbb56 = new Type[] { ToNullable(typeof(string)), ToNullable(typeof(int)) };
+        private static readonly Type[] ArgumentTypes_986f8182b76d427f815bcbe232d1697e = new Type[] { ToNullable(typeof(string)), ToNullable(typeof(int)) };
 
         /// <inheritdoc />
         Task IReferenceAndValueParametersService.Get(string? reference, int? value)
         {
             var arguments = new object[] { reference, value };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_543e0483a07145bdaaa354aa59bbbb56);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_986f8182b76d427f815bcbe232d1697e);
             return (Task)func(Client, arguments);
         }
 
@@ -2518,13 +2518,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_fb20ec3d44b04ab08f5b61fac7021b1b = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_790de5eadf95440f833f62f580365d95 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IRefitInterfaceWithStaticMethod.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_fb20ec3d44b04ab08f5b61fac7021b1b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_790de5eadf95440f833f62f580365d95);
             return (Task)func(Client, arguments);
         }
     }
@@ -2565,47 +2565,47 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_83f17c7db08c4b27aa617d95cc7018d3 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_14e4977f65934469b9e86daa9003e021 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IRequestBin.Post()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Post", ArgumentTypes_83f17c7db08c4b27aa617d95cc7018d3);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Post", ArgumentTypes_14e4977f65934469b9e86daa9003e021);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_c18bdc1b232f4bf49404c38522d170df = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_626e5504603c4ced8760cae679a8789c = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task IRequestBin.PostRawStringDefault(string str)
         {
             var arguments = new object[] { str };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostRawStringDefault", ArgumentTypes_c18bdc1b232f4bf49404c38522d170df);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostRawStringDefault", ArgumentTypes_626e5504603c4ced8760cae679a8789c);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_32f9d5b591854d1480f960c5044e185a = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_1ca19aa640c244f29424e2c14bd6939a = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task IRequestBin.PostRawStringJson(string str)
         {
             var arguments = new object[] { str };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostRawStringJson", ArgumentTypes_32f9d5b591854d1480f960c5044e185a);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostRawStringJson", ArgumentTypes_1ca19aa640c244f29424e2c14bd6939a);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_0c67833ae5cf4308842f74d6c043e9db = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_099c4b062bfb4a888a1a8626bc21b13f = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task IRequestBin.PostRawStringUrlEncoded(string str)
         {
             var arguments = new object[] { str };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostRawStringUrlEncoded", ArgumentTypes_0c67833ae5cf4308842f74d6c043e9db);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostRawStringUrlEncoded", ArgumentTypes_099c4b062bfb4a888a1a8626bc21b13f);
             return (Task)func(Client, arguments);
         }
 
-        private static class TypeHelper_950a5ed53666409684ca5862e037e5cf<T>
+        private static class TypeHelper_86efc3ef5d9240f1976efc10c7f50430<T>
         {
             public static readonly Type[] ArgumentTypes = new Type[] { typeof(T) };
             public static readonly Type[] TypeParameters = new Type[] { typeof(T) };
@@ -2615,7 +2615,7 @@ namespace Refit.Tests
         Task IRequestBin.PostGeneric<T>(T param)
         {
             var arguments = new object[] { param };
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostGeneric", TypeHelper_950a5ed53666409684ca5862e037e5cf<T>.ArgumentTypes, TypeHelper_950a5ed53666409684ca5862e037e5cf<T>.TypeParameters);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostGeneric", TypeHelper_86efc3ef5d9240f1976efc10c7f50430<T>.ArgumentTypes, TypeHelper_86efc3ef5d9240f1976efc10c7f50430<T>.TypeParameters);
             return (Task)func(Client, arguments);
         }
     }
@@ -2656,133 +2656,133 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_198a3722931849acb2cf2c13cabc0063 = new Type[] { typeof(Stream) };
+        private static readonly Type[] ArgumentTypes_bbbdb47295f04c3aba244c81aa460b16 = new Type[] { typeof(Stream) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadStream(Stream stream)
         {
             var arguments = new object[] { stream };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStream", ArgumentTypes_198a3722931849acb2cf2c13cabc0063);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStream", ArgumentTypes_bbbdb47295f04c3aba244c81aa460b16);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_cb6a8dd327314d64bcf08ded5a8190ef = new Type[] { typeof(Stream) };
+        private static readonly Type[] ArgumentTypes_ce74f4016e164285b4b90d9fa66dc9f2 = new Type[] { typeof(Stream) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadStreamWithCustomBoundary(Stream stream)
         {
             var arguments = new object[] { stream };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamWithCustomBoundary", ArgumentTypes_cb6a8dd327314d64bcf08ded5a8190ef);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamWithCustomBoundary", ArgumentTypes_ce74f4016e164285b4b90d9fa66dc9f2);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_36ac597d361641a1bf3075dbca317c75 = new Type[] { typeof(StreamPart) };
+        private static readonly Type[] ArgumentTypes_5a7e99cf109c4f068dbad8d96e633d12 = new Type[] { typeof(StreamPart) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadStreamPart(StreamPart stream)
         {
             var arguments = new object[] { stream };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamPart", ArgumentTypes_36ac597d361641a1bf3075dbca317c75);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamPart", ArgumentTypes_5a7e99cf109c4f068dbad8d96e633d12);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_31e7c93c38844317ad3c2ed46888298e = new Type[] { typeof(ModelObject), typeof(StreamPart) };
+        private static readonly Type[] ArgumentTypes_3835fbf7968e4a938eb5963af13c0af8 = new Type[] { typeof(ModelObject), typeof(StreamPart) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadStreamPart(ModelObject someQueryParams, StreamPart stream)
         {
             var arguments = new object[] { someQueryParams, stream };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamPart", ArgumentTypes_31e7c93c38844317ad3c2ed46888298e);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStreamPart", ArgumentTypes_3835fbf7968e4a938eb5963af13c0af8);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_4433284065d74d86b0d136b52ab18ab1 = new Type[] { typeof(byte[]) };
+        private static readonly Type[] ArgumentTypes_698c270a8c784d22abdc3605110cb6c1 = new Type[] { typeof(byte[]) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadBytes(byte[] bytes)
         {
             var arguments = new object[] { bytes };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadBytes", ArgumentTypes_4433284065d74d86b0d136b52ab18ab1);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadBytes", ArgumentTypes_698c270a8c784d22abdc3605110cb6c1);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_e4c7af8b3d7741df9ceff2a9aeee9ed7 = new Type[] { typeof(ByteArrayPart) };
+        private static readonly Type[] ArgumentTypes_132b8e646ca841c0bb6a4849bc8a7f93 = new Type[] { typeof(ByteArrayPart) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadBytesPart(ByteArrayPart bytes)
         {
             var arguments = new object[] { bytes };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadBytesPart", ArgumentTypes_e4c7af8b3d7741df9ceff2a9aeee9ed7);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadBytesPart", ArgumentTypes_132b8e646ca841c0bb6a4849bc8a7f93);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_ecb54e62daf7407680e789606d7de9c6 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_05d8008013fe405ab2ba062c5d98ae50 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadString(string someString)
         {
             var arguments = new object[] { someString };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadString", ArgumentTypes_ecb54e62daf7407680e789606d7de9c6);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadString", ArgumentTypes_05d8008013fe405ab2ba062c5d98ae50);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_1020fd93b93e4b66b5c64c50ae2866e0 = new Type[] { typeof(IEnumerable<FileInfo>), typeof(FileInfo) };
+        private static readonly Type[] ArgumentTypes_95ef47447fc44727b54d6a73acf69ff1 = new Type[] { typeof(IEnumerable<FileInfo>), typeof(FileInfo) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadFileInfo(IEnumerable<FileInfo> fileInfos, FileInfo anotherFile)
         {
             var arguments = new object[] { fileInfos, anotherFile };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadFileInfo", ArgumentTypes_1020fd93b93e4b66b5c64c50ae2866e0);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadFileInfo", ArgumentTypes_95ef47447fc44727b54d6a73acf69ff1);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_bc11095ef2954dcabf474abe5c85927e = new Type[] { typeof(IEnumerable<FileInfoPart>), typeof(FileInfoPart) };
+        private static readonly Type[] ArgumentTypes_a0bb858a4a644dd292e3e57299c264ff = new Type[] { typeof(IEnumerable<FileInfoPart>), typeof(FileInfoPart) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadFileInfoPart(IEnumerable<FileInfoPart> fileInfos, FileInfoPart anotherFile)
         {
             var arguments = new object[] { fileInfos, anotherFile };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadFileInfoPart", ArgumentTypes_bc11095ef2954dcabf474abe5c85927e);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadFileInfoPart", ArgumentTypes_a0bb858a4a644dd292e3e57299c264ff);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_c62c3e7ee67c49c691798a1c32c8cc45 = new Type[] { typeof(ModelObject) };
+        private static readonly Type[] ArgumentTypes_ef8a147db6fe400fa7586bb04603f5fb = new Type[] { typeof(ModelObject) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadJsonObject(ModelObject theObject)
         {
             var arguments = new object[] { theObject };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadJsonObject", ArgumentTypes_c62c3e7ee67c49c691798a1c32c8cc45);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadJsonObject", ArgumentTypes_ef8a147db6fe400fa7586bb04603f5fb);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_bae83e2611034340be023f81f31db019 = new Type[] { typeof(IEnumerable<ModelObject>) };
+        private static readonly Type[] ArgumentTypes_05383aa6b8764e3dbc1250b4a83f4496 = new Type[] { typeof(IEnumerable<ModelObject>) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadJsonObjects(IEnumerable<ModelObject> theObjects)
         {
             var arguments = new object[] { theObjects };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadJsonObjects", ArgumentTypes_bae83e2611034340be023f81f31db019);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadJsonObjects", ArgumentTypes_05383aa6b8764e3dbc1250b4a83f4496);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_0a50561b213e43dcb0dcae4f550c34d2 = new Type[] { typeof(IEnumerable<ModelObject>), typeof(AnotherModel), typeof(FileInfo), typeof(AnEnum), typeof(string), typeof(int) };
+        private static readonly Type[] ArgumentTypes_3d149532f20548b7ae45c3ad8bab8dff = new Type[] { typeof(IEnumerable<ModelObject>), typeof(AnotherModel), typeof(FileInfo), typeof(AnEnum), typeof(string), typeof(int) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadMixedObjects(IEnumerable<ModelObject> theObjects, AnotherModel anotherModel, FileInfo aFile, AnEnum anEnum, string aString, int anInt)
         {
             var arguments = new object[] { theObjects, anotherModel, aFile, anEnum, aString, anInt };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadMixedObjects", ArgumentTypes_0a50561b213e43dcb0dcae4f550c34d2);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadMixedObjects", ArgumentTypes_3d149532f20548b7ae45c3ad8bab8dff);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_15ea0dfbf78e4edf9d29787d67eef7c1 = new Type[] { typeof(HttpContent) };
+        private static readonly Type[] ArgumentTypes_53dbac1cb0a2411bb79537718a1dcf8e = new Type[] { typeof(HttpContent) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadHttpContent(HttpContent content)
         {
             var arguments = new object[] { content };
-            var func = requestBuilder.BuildRestResultFuncForMethod("UploadHttpContent", ArgumentTypes_15ea0dfbf78e4edf9d29787d67eef7c1);
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadHttpContent", ArgumentTypes_53dbac1cb0a2411bb79537718a1dcf8e);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
     }
@@ -2814,23 +2814,23 @@ namespace AutoGeneratedIServiceWithoutNamespace
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_07243fab8f694b749a091808bb1d94cc = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_78f6f6420a4f4c25b0f99b5eb647f6a7 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IServiceWithoutNamespace.GetRoot()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetRoot", ArgumentTypes_07243fab8f694b749a091808bb1d94cc);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetRoot", ArgumentTypes_78f6f6420a4f4c25b0f99b5eb647f6a7);
             return (Task)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_3eca43f166384cf688b48e44e3f2a678 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_581410930ee34e3c9ae77627db1f13d0 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IServiceWithoutNamespace.PostRoot()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("PostRoot", ArgumentTypes_3eca43f166384cf688b48e44e3f2a678);
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostRoot", ArgumentTypes_581410930ee34e3c9ae77627db1f13d0);
             return (Task)func(Client, arguments);
         }
     }
@@ -2871,23 +2871,23 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_925534496a6f4a3ea13c5d5ddc4202be = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_9381e01b9f3d4faebd9d4e73eb3013f5 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<Stream> IStreamApi.GetRemoteFile(string filename)
         {
             var arguments = new object[] { filename };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetRemoteFile", ArgumentTypes_925534496a6f4a3ea13c5d5ddc4202be);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetRemoteFile", ArgumentTypes_9381e01b9f3d4faebd9d4e73eb3013f5);
             return (Task<Stream>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_87e39ab8352d4701be083ae3467653a9 = new Type[] { typeof(string) };
+        private static readonly Type[] ArgumentTypes_10cf9049a3744e68b632b41920191073 = new Type[] { typeof(string) };
 
         /// <inheritdoc />
         Task<ApiResponse<Stream>> IStreamApi.GetRemoteFileWithMetadata(string filename)
         {
             var arguments = new object[] { filename };
-            var func = requestBuilder.BuildRestResultFuncForMethod("GetRemoteFileWithMetadata", ArgumentTypes_87e39ab8352d4701be083ae3467653a9);
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetRemoteFileWithMetadata", ArgumentTypes_10cf9049a3744e68b632b41920191073);
             return (Task<ApiResponse<Stream>>)func(Client, arguments);
         }
     }
@@ -2928,13 +2928,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_5d459eec59aa4f60aa245577d4317081 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_4188e6921fd54e70ad18c86f7816ff3b = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task ITrimTrailingForwardSlashApi.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_5d459eec59aa4f60aa245577d4317081);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_4188e6921fd54e70ad18c86f7816ff3b);
             return (Task)func(Client, arguments);
         }
     }
@@ -2964,13 +2964,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_d027ad0a33864409a3c95c1952e18797 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_4e9e0a710b61487991a59815ce459efd = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<SomeType> ITypeCollisionApiA.SomeARequest()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("SomeARequest", ArgumentTypes_d027ad0a33864409a3c95c1952e18797);
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeARequest", ArgumentTypes_4e9e0a710b61487991a59815ce459efd);
             return (Task<SomeType>)func(Client, arguments);
         }
     }
@@ -3000,13 +3000,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_07ad48c6a1344a16b782aee283c7226f = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_16488024e6674068a0fb51e56c1d6c1a = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<SomeType> ITypeCollisionApiB.SomeBRequest()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("SomeBRequest", ArgumentTypes_07ad48c6a1344a16b782aee283c7226f);
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeBRequest", ArgumentTypes_16488024e6674068a0fb51e56c1d6c1a);
             return (Task<SomeType>)func(Client, arguments);
         }
     }
@@ -3045,47 +3045,47 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_02910c89aa304f42b74de29b8733eaa6 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_da936458072d4e0d99c4448c53e55f62 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IUseOverloadedGenericMethods<TResponse, TParam, THeader>.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_02910c89aa304f42b74de29b8733eaa6);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_da936458072d4e0d99c4448c53e55f62);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_2a20ba4fbca14b7da65d2e3c50765c7b = new Type[] { typeof(TParam), typeof(THeader) };
+        private static readonly Type[] ArgumentTypes_ea0ba4f8d8cf4b00b0a4e0ff4ce1f984 = new Type[] { typeof(TParam), typeof(THeader) };
 
         /// <inheritdoc />
         Task<TResponse> IUseOverloadedGenericMethods<TResponse, TParam, THeader>.Get(TParam param, THeader header)
         {
             var arguments = new object[] { param, header };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_2a20ba4fbca14b7da65d2e3c50765c7b);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_ea0ba4f8d8cf4b00b0a4e0ff4ce1f984);
             return (Task<TResponse>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_e4a5f2d11b7c40cfb2db18f67b2996e6 = new Type[] { typeof(THeader), typeof(TParam) };
+        private static readonly Type[] ArgumentTypes_477438bfa3374fdba55ab97455c1cd4c = new Type[] { typeof(THeader), typeof(TParam) };
 
         /// <inheritdoc />
         Task<TResponse> IUseOverloadedGenericMethods<TResponse, TParam, THeader>.Get(THeader param, TParam header)
         {
             var arguments = new object[] { param, header };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_e4a5f2d11b7c40cfb2db18f67b2996e6);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_477438bfa3374fdba55ab97455c1cd4c);
             return (Task<TResponse>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_94d03ebf56b64650b83a738785fe6fe1 = new Type[] { typeof(int) };
+        private static readonly Type[] ArgumentTypes_f4ddcfb2f69746aabaab37a53d8d655d = new Type[] { typeof(int) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IUseOverloadedGenericMethods<TResponse, TParam, THeader>.Get(int httpstatuscode)
         {
             var arguments = new object[] { httpstatuscode };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_94d03ebf56b64650b83a738785fe6fe1);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_f4ddcfb2f69746aabaab37a53d8d655d);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
 
-        private static class TypeHelper_bbeff6f0a907426d92d8348422e3b67c<TValue>
+        private static class TypeHelper_aea96aba6ac94a70b1fc3dc7a133310a<TValue>
         {
             public static readonly Type[] ArgumentTypes = new Type[] { typeof(int) };
             public static readonly Type[] TypeParameters = new Type[] { typeof(TValue) };
@@ -3095,11 +3095,11 @@ namespace Refit.Tests
         Task<TValue> IUseOverloadedGenericMethods<TResponse, TParam, THeader>.Get<TValue>(int someVal)
         {
             var arguments = new object[] { someVal };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", TypeHelper_bbeff6f0a907426d92d8348422e3b67c<TValue>.ArgumentTypes, TypeHelper_bbeff6f0a907426d92d8348422e3b67c<TValue>.TypeParameters);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", TypeHelper_aea96aba6ac94a70b1fc3dc7a133310a<TValue>.ArgumentTypes, TypeHelper_aea96aba6ac94a70b1fc3dc7a133310a<TValue>.TypeParameters);
             return (Task<TValue>)func(Client, arguments);
         }
 
-        private static class TypeHelper_76b34f9783f446ccb7b5a55490bdd70e<TValue, TInput>
+        private static class TypeHelper_761c6c8c79b149cbb2279fc7384b89d8<TValue, TInput>
         {
             public static readonly Type[] ArgumentTypes = new Type[] { typeof(TInput) };
             public static readonly Type[] TypeParameters = new Type[] { typeof(TValue), typeof(TInput) };
@@ -3109,11 +3109,11 @@ namespace Refit.Tests
         Task<TValue> IUseOverloadedGenericMethods<TResponse, TParam, THeader>.Get<TValue, TInput>(TInput input)
         {
             var arguments = new object[] { input };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", TypeHelper_76b34f9783f446ccb7b5a55490bdd70e<TValue, TInput>.ArgumentTypes, TypeHelper_76b34f9783f446ccb7b5a55490bdd70e<TValue, TInput>.TypeParameters);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", TypeHelper_761c6c8c79b149cbb2279fc7384b89d8<TValue, TInput>.ArgumentTypes, TypeHelper_761c6c8c79b149cbb2279fc7384b89d8<TValue, TInput>.TypeParameters);
             return (Task<TValue>)func(Client, arguments);
         }
 
-        private static class TypeHelper_badc1e288da04f3cb48d9c01837a65a4<TInput1, TInput2>
+        private static class TypeHelper_fa8955a43e5c45b2b25bc38dd25a4ecf<TInput1, TInput2>
         {
             public static readonly Type[] ArgumentTypes = new Type[] { typeof(TInput1), typeof(TInput2) };
             public static readonly Type[] TypeParameters = new Type[] { typeof(TInput1), typeof(TInput2) };
@@ -3123,7 +3123,7 @@ namespace Refit.Tests
         Task IUseOverloadedGenericMethods<TResponse, TParam, THeader>.Get<TInput1, TInput2>(TInput1 input1, TInput2 input2)
         {
             var arguments = new object[] { input1, input2 };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", TypeHelper_badc1e288da04f3cb48d9c01837a65a4<TInput1, TInput2>.ArgumentTypes, TypeHelper_badc1e288da04f3cb48d9c01837a65a4<TInput1, TInput2>.TypeParameters);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", TypeHelper_fa8955a43e5c45b2b25bc38dd25a4ecf<TInput1, TInput2>.ArgumentTypes, TypeHelper_fa8955a43e5c45b2b25bc38dd25a4ecf<TInput1, TInput2>.TypeParameters);
             return (Task)func(Client, arguments);
         }
     }
@@ -3158,23 +3158,23 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_07d5933f8f394c0fbf4042bf70c83ea1 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_2e60e1ac49184a17ba2a1807715883d5 = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<string> IUseOverloadedMethods.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_07d5933f8f394c0fbf4042bf70c83ea1);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_2e60e1ac49184a17ba2a1807715883d5);
             return (Task<string>)func(Client, arguments);
         }
 
-        private static readonly Type[] ArgumentTypes_d1644e57494b45d9ab59c1be7a3c26be = new Type[] { typeof(int) };
+        private static readonly Type[] ArgumentTypes_91f4870457594691b10ba80d7176022d = new Type[] { typeof(int) };
 
         /// <inheritdoc />
         Task<HttpResponseMessage> IUseOverloadedMethods.Get(int httpstatuscode)
         {
             var arguments = new object[] { httpstatuscode };
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_d1644e57494b45d9ab59c1be7a3c26be);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_91f4870457594691b10ba80d7176022d);
             return (Task<HttpResponseMessage>)func(Client, arguments);
         }
     }
@@ -3215,13 +3215,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_4a656be62dad4069b51f11f32a77149d = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_081913b79f874bbb8fec4a49cce6465c = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task IValidApi.Get()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_4a656be62dad4069b51f11f32a77149d);
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", ArgumentTypes_081913b79f874bbb8fec4a49cce6465c);
             return (Task)func(Client, arguments);
         }
     }
@@ -3251,13 +3251,13 @@ namespace Refit.Tests
             this.requestBuilder = requestBuilder;
         }
 
-        private static readonly Type[] ArgumentTypes_0b41c3542cf24168b500f12a8b236f89 = Array.Empty<Type>();
+        private static readonly Type[] ArgumentTypes_647ae97a112c4c8ab3518c95c36674ae = Array.Empty<Type>();
 
         /// <inheritdoc />
         Task<SomeType> NamespaceWithGlobalAliasApi.SomeRequest()
         {
             var arguments = Array.Empty<object>();
-            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", ArgumentTypes_0b41c3542cf24168b500f12a8b236f89);
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", ArgumentTypes_647ae97a112c4c8ab3518c95c36674ae);
             return (Task<SomeType>)func(Client, arguments);
         }
     }
