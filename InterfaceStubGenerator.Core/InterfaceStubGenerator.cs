@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -465,7 +466,7 @@ namespace Refit.Generator
                 var key = hashCode.ToHashCode();
 
                 // Cast to uint as we can't have an id starting with the '-' character
-                return ((uint)key).ToString();
+                return ((uint)key).ToString(CultureInfo.InvariantCulture);
             }
         }
     }
