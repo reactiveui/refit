@@ -139,7 +139,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.Equal(5, result.ClassList.Count);
+            Assert.Equal(6, result.ClassList.Count);
 
             var inherited = result.ClassList.First(c => c.InterfaceName == "IAmInterfaceC");
 

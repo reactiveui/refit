@@ -396,9 +396,20 @@ namespace Refit
 
                 // Look to see if the property has a Query attribute, and if so, format it accordingly
                 var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
-                if (queryAttribute != null)
+                if (queryAttribute != null && queryAttribute.Format != null)
                 {
-                    obj = settings.FormUrlEncodedParameterFormatter.Format(obj, queryAttribute?.Format);
+                    obj = settings.FormUrlEncodedParameterFormatter.Format(obj, queryAttribute.Format);
+                }
+
+                // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
+                if (!(obj is string) && obj is IEnumerable ienu)
+                {
+                    foreach (var value in ParseEnumerableQueryParameterValue(ienu, propertyInfo, propertyInfo.PropertyType, queryAttribute))
+                    {
+                        kvps.Add(new KeyValuePair<string, object>(key, value));
+                    }
+
+                    continue;
                 }
 
                 if (DoNotConvertToQueryMap(obj))
@@ -413,14 +424,6 @@ namespace Refit
                         foreach (var keyValuePair in BuildQueryMap(idict, delimiter))
                         {
                             kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
-                        }
-
-                        break;
-
-                    case IEnumerable ienu:
-                        foreach (var o in ienu)
-                        {
-                            kvps.Add(new KeyValuePair<string, object>(key, o));
                         }
 
                         break;
@@ -725,41 +728,47 @@ namespace Refit
         {
             if (!(param is string) && param is IEnumerable paramValues)
             {
-                var collectionFormat = queryAttribute.IsCollectionFormatSpecified
-                    ? queryAttribute.CollectionFormat
-                    : settings.CollectionFormat;
-
-                switch (collectionFormat)
+                foreach (var value in ParseEnumerableQueryParameterValue(paramValues, parameterInfo, parameterInfo.ParameterType, queryAttribute))
                 {
-                    case CollectionFormat.Multi:
-                        foreach (var paramValue in paramValues)
-                        {
-                            yield return new KeyValuePair<string, string>(
-                                queryPath,
-                                settings.UrlParameterFormatter.Format(paramValue, parameterInfo, parameterInfo.ParameterType));
-                        }
-
-                        break;
-
-                    default:
-                        var delimiter = collectionFormat == CollectionFormat.Ssv ? " "
-                            : collectionFormat == CollectionFormat.Tsv ? "\t"
-                            : collectionFormat == CollectionFormat.Pipes ? "|"
-                            : ",";
-
-                        // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
-                        var formattedValues = paramValues
-                            .Cast<object>()
-                            .Select(v => settings.UrlParameterFormatter.Format(v, parameterInfo, parameterInfo.ParameterType));
-
-                        yield return new KeyValuePair<string, string>(queryPath, string.Join(delimiter, formattedValues));
-
-                        break;
+                    yield return new KeyValuePair<string, string>(queryPath, value);
                 }
             }
             else
             {
                 yield return new KeyValuePair<string, string>(queryPath, settings.UrlParameterFormatter.Format(param, parameterInfo, parameterInfo.ParameterType));
+            }
+        }
+
+        IEnumerable<string> ParseEnumerableQueryParameterValue(IEnumerable paramValues, ICustomAttributeProvider customAttributeProvider, Type type, QueryAttribute queryAttribute)
+        {
+            var collectionFormat = queryAttribute != null && queryAttribute.IsCollectionFormatSpecified
+                ? queryAttribute.CollectionFormat
+                : settings.CollectionFormat;
+
+            switch (collectionFormat)
+            {
+                case CollectionFormat.Multi:
+                    foreach (var paramValue in paramValues)
+                    {
+                        yield return settings.UrlParameterFormatter.Format(paramValue, customAttributeProvider, type);
+                    }
+
+                    break;
+
+                default:
+                    var delimiter = collectionFormat == CollectionFormat.Ssv ? " "
+                        : collectionFormat == CollectionFormat.Tsv ? "\t"
+                        : collectionFormat == CollectionFormat.Pipes ? "|"
+                        : ",";
+
+                    // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
+                    var formattedValues = paramValues
+                        .Cast<object>()
+                        .Select(v => settings.UrlParameterFormatter.Format(v, customAttributeProvider, type));
+
+                    yield return string.Join(delimiter, formattedValues);
+
+                    break;
             }
         }
 

@@ -238,6 +238,8 @@ namespace Refit.Generator
                     });
 
                 classInfo.MethodList.AddRange(methodsToAdd);
+
+                classInfo.UsingList = classInfo.UsingList.Union(baseClassInfo.UsingList).ToList();
             });
         }
 
@@ -370,6 +372,16 @@ namespace Refit.Generator
     public class UsingDeclaration
     {
         public string Item { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return obj is UsingDeclaration other && Item == other.Item;
+        }
+
+        public override int GetHashCode()
+        {
+            return Item.GetHashCode();
+        }
     }
 
     public class ClassTemplateInfo

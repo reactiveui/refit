@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Xunit;
 
 namespace Refit.Tests
@@ -123,6 +124,8 @@ namespace Refit.Tests
         Task IEnumerableThrowingError([Query(CollectionFormat.Multi)] IEnumerable<string> values);
     }
 
+    public enum TestEnum { A, B, C }
+
     public class ComplexQueryObject
     {
         [AliasAs("test-query-alias")]
@@ -131,6 +134,20 @@ namespace Refit.Tests
         public string TestAlias2 { get; set; }
 
         public IEnumerable<int> TestCollection { get; set; }
+
+        [AliasAs("listOfEnumMulti")]
+        [Query(CollectionFormat.Multi)]
+        public List<TestEnum> EnumCollectionMulti { get; set; }
+
+        [Query(CollectionFormat.Multi)]
+        public List<object> ObjectCollectionMulti { get; set; }
+
+        [Query(CollectionFormat.Csv)]
+        public List<TestEnum> EnumCollectionCsv { get; set; }
+
+        [AliasAs("listOfObjectsCsv")]
+        [Query(CollectionFormat.Csv)]
+        public List<object> ObjectCollectionCcv { get; set; }
     }
 
 
@@ -146,7 +163,7 @@ namespace Refit.Tests
             {
                 var fixture = new RestMethodInfo(
                     input,
-                    input.GetMethods().First(x => x.Name == "TooManyComplexTypes"));
+                    input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.TooManyComplexTypes)));
             });
 
         }
@@ -155,7 +172,7 @@ namespace Refit.Tests
         public void ManyComplexTypes()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "ManyComplexTypes"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.ManyComplexTypes)));
 
             Assert.Single(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
@@ -166,7 +183,7 @@ namespace Refit.Tests
         public void DefaultBodyParameterDetectedForPost()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithBodyDetected"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostWithBodyDetected)));
 
             Assert.Empty(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
@@ -176,7 +193,7 @@ namespace Refit.Tests
         public void DefaultBodyParameterDetectedForPut()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PutWithBodyDetected"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PutWithBodyDetected)));
 
             Assert.Empty(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
@@ -186,7 +203,7 @@ namespace Refit.Tests
         public void PostWithDictionaryQueryParameter()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostWithDictionaryQuery"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostWithDictionaryQuery)));
 
             Assert.Single(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
@@ -224,6 +241,74 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void PostWithObjectQueryParameterWithEnumList_Multi()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                EnumCollectionMulti = new List<TestEnum> { TestEnum.A, TestEnum.B }
+            };
+
+            var output = factory(new object[] { param });
+
+            Assert.Equal("/foo?listOfEnumMulti=A&listOfEnumMulti=B", output.RequestUri.PathAndQuery);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameterWithObjectListWithProvidedEnumValues_Multi()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                ObjectCollectionMulti = new List<object> { TestEnum.A, TestEnum.B }
+            };
+
+            var output = factory(new object[] { param });
+
+            Assert.Equal("/foo?ObjectCollectionMulti=A&ObjectCollectionMulti=B", output.RequestUri.PathAndQuery);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameterWithEnumList_Csv()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                EnumCollectionCsv = new List<TestEnum> { TestEnum.A, TestEnum.B }
+            };
+
+            var output = factory(new object[] { param });
+
+            Assert.Equal("/foo?EnumCollectionCsv=A%2CB", output.RequestUri.PathAndQuery);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameterWithObjectListWithProvidedEnumValues_Csv()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                ObjectCollectionCcv = new List<object> { TestEnum.A, TestEnum.B }
+            };
+
+            var output = factory(new object[] { param });
+
+            Assert.Equal("/foo?listOfObjectsCsv=A%2CB", output.RequestUri.PathAndQuery);
+        }
+
+        [Fact]
         public void ObjectQueryParameterWithInnerCollectionHasCorrectQuerystring()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
@@ -240,7 +325,7 @@ namespace Refit.Tests
         public void MultipleQueryAttributesWithNulls()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixtureParams = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "MultipleQueryAttributes"));
+            var fixtureParams = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.MultipleQueryAttributes)));
 
             Assert.Equal(3, fixtureParams.QueryParameterMap.Count);
         }
@@ -249,7 +334,7 @@ namespace Refit.Tests
         public void DefaultBodyParameterDetectedForPatch()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchWithBodyDetected"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PatchWithBodyDetected)));
 
             Assert.Empty(fixture.QueryParameterMap);
             Assert.NotNull(fixture.BodyParameterInfo);
@@ -259,7 +344,7 @@ namespace Refit.Tests
         public void DefaultBodyParameterNotDetectedForGet()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GetWithBodyDetected"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.GetWithBodyDetected)));
 
             Assert.Single(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
@@ -273,7 +358,7 @@ namespace Refit.Tests
             try
             {
                 var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "GarbagePath"));
+                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.GarbagePath)));
             }
             catch (ArgumentException)
             {
@@ -291,7 +376,7 @@ namespace Refit.Tests
             try
             {
                 var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffMissingParameters"));
+                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffMissingParameters)));
             }
             catch (ArgumentException)
             {
@@ -305,7 +390,7 @@ namespace Refit.Tests
         public void ParameterMappingSmokeTest()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuff"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuff)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
@@ -316,7 +401,7 @@ namespace Refit.Tests
         public void ParameterMappingWithRoundTrippingSmokeTest()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithRoundTrippingParam"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithRoundTrippingParam)));
             Assert.Equal("path", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.RoundTripping, fixture.ParameterMap[0].Type);
             Assert.Equal("id", fixture.ParameterMap[1].Name);
@@ -333,7 +418,7 @@ namespace Refit.Tests
             {
                 var fixture = new RestMethodInfo(
                     input,
-                    input.GetMethods().First(x => x.Name == "FetchSomeStuffWithNonStringRoundTrippingParam")
+                    input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithNonStringRoundTrippingParam))
                     );
             });
         }
@@ -342,7 +427,7 @@ namespace Refit.Tests
         public void ParameterMappingWithQuerySmokeTest()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithQueryParam"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithQueryParam)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Equal("search", fixture.QueryParameterMap[1]);
@@ -353,7 +438,7 @@ namespace Refit.Tests
         public void ParameterMappingWithHardcodedQuerySmokeTest()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedQueryParam"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithHardcodedQueryParam)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
@@ -364,7 +449,7 @@ namespace Refit.Tests
         public void AliasMappingShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithAlias"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithAlias)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
@@ -375,7 +460,7 @@ namespace Refit.Tests
         public void MultipleParametersPerSegmentShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchAnImage"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchAnImage)));
             Assert.Equal("width", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Equal("height", fixture.ParameterMap[1].Name);
@@ -388,7 +473,7 @@ namespace Refit.Tests
         public void FindTheBodyParameter()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithBody"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithBody)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
 
@@ -401,7 +486,7 @@ namespace Refit.Tests
         public void AllowUrlEncodedContent()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PostSomeUrlEncodedStuff"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostSomeUrlEncodedStuff)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
 
@@ -414,7 +499,7 @@ namespace Refit.Tests
         public void HardcodedHeadersShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithHardcodedHeaders"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithHardcodedHeaders)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
@@ -431,7 +516,7 @@ namespace Refit.Tests
         public void DynamicHeadersShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeader"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeader)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
@@ -447,7 +532,7 @@ namespace Refit.Tests
         public void ValueTypesDontBlowUpBuffered()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypes"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.OhYeahValueTypes)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
@@ -462,7 +547,7 @@ namespace Refit.Tests
         public void ValueTypesDontBlowUpUnBuffered()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "OhYeahValueTypesUnbuffered"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.OhYeahValueTypesUnbuffered)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
@@ -477,7 +562,7 @@ namespace Refit.Tests
         public void StreamMethodPullWorks()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PullStreamMethod"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PullStreamMethod)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
@@ -492,7 +577,7 @@ namespace Refit.Tests
         public void ReturningTaskShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "VoidPost"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.VoidPost)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
 
@@ -508,7 +593,7 @@ namespace Refit.Tests
             try
             {
                 var input = typeof(IRestMethodInfoTests);
-                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "AsyncOnlyBuddy"));
+                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.AsyncOnlyBuddy)));
             }
             catch (ArgumentException)
             {
@@ -522,7 +607,7 @@ namespace Refit.Tests
         public void UsingThePatchAttributeSetsTheCorrectMethod()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "PatchSomething"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PatchSomething)));
 
             Assert.Equal("PATCH", fixture.HttpMethod.Method);
         }
@@ -558,7 +643,7 @@ namespace Refit.Tests
         public void ParameterMappingWithHeaderQueryParamAndQueryArrayParam()
         {
             var input = typeof(IRestMethodInfoTests);
-            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam"));
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam)));
 
             Assert.Equal("GET", fixture.HttpMethod.Method);
             Assert.Equal(2, fixture.QueryParameterMap.Count);
