@@ -32,16 +32,7 @@ namespace Refit.Profiler.RefitInternalGenerated
 #pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
 namespace Refit.Profiler
 {
-    using global::System;
-    using global::System.Net;
-    using global::System.Net.Http;
-    using global::System.Net.Http.Headers;
     using global::System.Threading.Tasks;
-    using global::BenchmarkDotNet.Attributes;
-    using global::BenchmarkDotNet.Jobs;
-    using global::BenchmarkDotNet.Running;
-    using global::Newtonsoft.Json;
-    using global::RichardSzalay.MockHttp;
     using global::Refit;
 
     /// <inheritdoc />
