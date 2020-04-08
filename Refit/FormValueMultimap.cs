@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
+
 using Newtonsoft.Json;
 
 namespace Refit
@@ -76,9 +77,13 @@ namespace Refit
                                 case CollectionFormat.Ssv:
                                 case CollectionFormat.Tsv:
                                 case CollectionFormat.Pipes:
-                                    var delimiter = attrib.CollectionFormat == CollectionFormat.Csv ? ","
-                                        : attrib.CollectionFormat == CollectionFormat.Ssv ? " "
-                                        : attrib.CollectionFormat == CollectionFormat.Tsv ? "\t" : "|";
+                                    var delimiter = collectionFormat switch
+                                    {
+                                        CollectionFormat.Csv => ",",
+                                        CollectionFormat.Ssv => " ",
+                                        CollectionFormat.Tsv => "\t",
+                                        _ => "|"
+                                    };
 
                                     var formattedValues = enumerable
                                         .Cast<object>()
