@@ -77,7 +77,7 @@ namespace {{Namespace}}
         {{ReturnType}} {{InterfaceName}}{{#TypeParameters}}<{{.}}>{{/TypeParameters}}.{{Name}}{{#MethodTypeParameters}}<{{.}}>{{/MethodTypeParameters}}({{ArgumentListWithTypes}})
         {
             {{#IsRefitMethod}}
-            var arguments = new object[] { {{ArgumentList}} };
+            var arguments = {{#ArgumentList}}new object[] { {{ArgumentList}} }{{/ArgumentList}}{{^ArgumentList}}Array.Empty<object>(){{/ArgumentList}};
             {{#MethodTypeParameters}}
             var func = requestBuilder.BuildRestResultFuncForMethod("{{Name}}", TypeHelper_{{Id}}<{{.}}>.ArgumentTypes, TypeHelper_{{Id}}<{{.}}>.TypeParameters);
             {{/MethodTypeParameters}}
