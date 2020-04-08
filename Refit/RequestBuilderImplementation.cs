@@ -30,7 +30,7 @@ namespace Refit
             HttpMethod.Head
         };
         readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
-        readonly ConcurrentDictionary<int, Func<HttpClient, object[], object>> restResultFuncForMethodsMap;
+        readonly ConcurrentDictionary<RestMethodKey, Func<HttpClient, object[], object>> restResultFuncForMethodsMap;
         readonly IContentSerializer serializer;
         readonly RefitSettings settings;
         public Type TargetType { get; }
@@ -41,7 +41,7 @@ namespace Refit
 
             settings = refitSettings ?? new RefitSettings();
             serializer = settings.ContentSerializer;
-            restResultFuncForMethodsMap = new ConcurrentDictionary<int, Func<HttpClient, object[], object>>();
+            restResultFuncForMethodsMap = new ConcurrentDictionary<RestMethodKey, Func<HttpClient, object[], object>>();
 
             if (refitInterfaceType == null || !refitInterfaceType.GetTypeInfo().IsInterface)
             {
@@ -139,29 +139,7 @@ namespace Refit
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {
-            /* Build a unique key for this specific rest method, by combining
-             * all the necessary info: method name, parameter types and generic
-             * arguments. We're doing this work here since we can't just modify
-             * the existing interface, as that would be a breaking chance.*/
-            HashCode hashCode = default;
-
-            hashCode.Add(methodName);
-
-            hashCode.Add(parameterTypes);
-            if (!(parameterTypes is null))
-            {
-                foreach (var type in parameterTypes)
-                    hashCode.Add(type);
-            }
-
-            hashCode.Add(genericArgumentTypes);
-            if (!(genericArgumentTypes is null))
-            {
-                foreach (var type in genericArgumentTypes)
-                    hashCode.Add(type);
-            }
-
-            var key = hashCode.ToHashCode();
+            var key = new RestMethodKey(methodName, parameterTypes, genericArgumentTypes);
 
             /* Fast path if we have already generated this specific method before: in that
              * case we simply get it from the cache and return it immediately.
@@ -175,8 +153,61 @@ namespace Refit
             return BuildAndAddRestResultFuncForMethod(key, methodName, parameterTypes, genericArgumentTypes);
         }
 
+        /// <summary>
+        /// A <see langword="struct"/> acting as key for a given generated REST method.
+        /// </summary>
+        private readonly struct RestMethodKey : IEquatable<RestMethodKey>
+        {
+            private readonly string methodName;
+            private readonly Type[] parameterTypes;
+            private readonly Type[] genericArgumentTypes;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal RestMethodKey(string methodName, Type[] parameterTypes, Type[] genericArgumentTypes)
+            {
+                this.methodName = methodName;
+                this.parameterTypes = parameterTypes;
+                this.genericArgumentTypes = genericArgumentTypes;
+            }
+
+            /// <inheritdoc/>
+            public override bool Equals(object obj)
+            {
+                if (obj is null) return false;
+                if (obj.GetType() != typeof(RestMethodKey)) return false;
+
+                return Equals((RestMethodKey)obj);
+            }
+
+            /// <inheritdoc/>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool Equals(RestMethodKey other)
+            {
+                return
+                    methodName == other.methodName &&
+                    parameterTypes == other.parameterTypes &&
+                    genericArgumentTypes == other.genericArgumentTypes;
+            }
+
+            /// <inheritdoc/>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public override int GetHashCode()
+            {
+                HashCode hashCode = default;
+
+                /* We can just compare the arrays directly since the
+                 * stubs are caching all the array instances, so we
+                 * don't need to iterate and inspect each array value. */
+                hashCode.Add(methodName);
+                hashCode.Add(parameterTypes);
+                hashCode.Add(genericArgumentTypes);
+
+                return hashCode.ToHashCode();
+            }
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private Func<HttpClient, object[], object> BuildAndAddRestResultFuncForMethod(int key, string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
+        private Func<HttpClient, object[], object> BuildAndAddRestResultFuncForMethod(RestMethodKey key, string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {
             return restResultFuncForMethodsMap.GetOrAdd(key, _ =>
             {
