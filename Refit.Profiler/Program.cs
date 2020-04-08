@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BenchmarkDotNet.Running;
+
 
 namespace Refit.Profiler
 {
@@ -6,6 +7,7 @@ namespace Refit.Profiler
     {
         static void Main()
         {
+            BenchmarkRunner.Run<RefitBenchmark>();
         }
     }
 }
