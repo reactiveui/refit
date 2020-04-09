@@ -200,6 +200,7 @@ namespace Refit.Generator
 
             AddInheritedMethods(ret.ClassList);
             FixInheritedMethods(ret.ClassList);
+            MergePartialInterfaces(ret.ClassList);
 
             return ret;
         }
@@ -321,6 +322,25 @@ namespace Refit.Generator
             });
 
             return outResult;
+        }
+
+        void MergePartialInterfaces(List<ClassTemplateInfo> classList)
+        {
+            var partialClasses = classList
+                .GroupBy(c => c.Namespace + c.InterfaceName + string.Join(".", c.TypeParameters))
+                .Where(g => g.Count() > 1)
+                .ToList();
+
+            foreach (var partialGroup in partialClasses)
+            {
+                var firstClass = partialGroup.First();
+
+                foreach (var otherClass in partialGroup.Skip(1))
+                {
+                    firstClass.MethodList.AddRange(otherClass.MethodList);
+                    classList.Remove(otherClass);
+                }
+            }
         }
 
         public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate)

@@ -194,6 +194,30 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void GenerateTemplateInfoForPartialInterfaces()
+        {
+            var partialFile1 = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("PartialInterfacesApi.First.cs")));
+            var partialFile2 = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("PartialInterfacesApi.Second.cs")));
+
+            var fixture = new InterfaceStubGenerator();
+
+            var input = new[] { partialFile1, partialFile2 }
+                .Select(file => file.GetRoot())
+                .SelectMany(root => root.DescendantNodes())
+                .OfType<InterfaceDeclarationSyntax>()
+                .ToList();
+
+            var result = fixture.GenerateTemplateInfoForInterfaceList(input);
+
+            var classInfo = Assert.Single(result.ClassList);
+
+            Assert.Equal(nameof(PartialInterfacesApi), classInfo.InterfaceName);
+            Assert.Collection(classInfo.MethodList,
+                m => Assert.Equal(nameof(PartialInterfacesApi.First), m.Name),
+                m => Assert.Equal(nameof(PartialInterfacesApi.Second), m.Name));
+        }
+
+        [Fact]
         public void RetainsAliasesInUsings()
         {
             var fixture = new InterfaceStubGenerator();
