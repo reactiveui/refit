@@ -244,22 +244,26 @@ namespace Refit
                 {
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
-                    ApiException e = null;
+                    Exception e = null;
                     disposeResponse = restMethod.ShouldDisposeResponse;
 
-                    if (!resp.IsSuccessStatusCode && typeof(T) != typeof(HttpResponseMessage))
+                    if (typeof(T) != typeof(HttpResponseMessage))
                     {
-                        disposeResponse = false; // caller has to dispose
-                        e = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
+                        e = await settings.ExceptionFactory(resp).ConfigureAwait(false);
                     }
 
                     if (restMethod.IsApiResponse)
                     {
-                        var body = await DeserializeContentAsync<TBody>(resp, content);
-                        return ApiResponse.Create<T, TBody>(resp, body, e);
+                        // Only attempt to deserialize content if no error present for backward-compatibility
+                        var body = e == null
+                            ? await DeserializeContentAsync<TBody>(resp, content)
+                            : default;
+
+                        return ApiResponse.Create<T, TBody>(resp, body, e as ApiException);
                     }
                     else if (e != null)
                     {
+                        disposeResponse = false; // caller has to dispose
                         throw e;
                     }
                     else
@@ -288,10 +292,6 @@ namespace Refit
                 // this work without a 'class' generic constraint. It could blow up at runtime
                 // and would be A Bad Idea if we hadn't already vetted the return type.
                 result = (T)(object)resp;
-            }
-            else if (!resp.IsSuccessStatusCode)
-            {
-                result = default;
             }
             else if (typeof(T) == typeof(HttpContent))
             {
@@ -787,9 +787,11 @@ namespace Refit
                 }
 
                 using var resp = await client.SendAsync(rq, ct).ConfigureAwait(false);
-                if (!resp.IsSuccessStatusCode)
+
+                var exception = await settings.ExceptionFactory(resp).ConfigureAwait(false);
+                if (exception != null)
                 {
-                    throw await ApiException.Create(rq, restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
+                    throw exception;
                 }
             };
         }

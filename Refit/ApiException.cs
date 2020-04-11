@@ -22,7 +22,12 @@ namespace Refit
         public RefitSettings RefitSettings { get; set; }
 
         protected ApiException(HttpRequestMessage message, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
-            base(CreateMessage(statusCode, reasonPhrase))
+            this(CreateMessage(statusCode, reasonPhrase), message, httpMethod, statusCode, reasonPhrase, headers, refitSettings)
+        {
+        }
+
+        protected ApiException(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
+            base(exceptionMessage)
         {
             RequestMessage = message;
             HttpMethod = httpMethod;
@@ -40,10 +45,18 @@ namespace Refit
                 default;
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
-        public static async Task<ApiException> Create(HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
+        public static Task<ApiException> Create(HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
-            var exception = new ApiException(message, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
+            var exceptionMessage = CreateMessage(response.StatusCode, response.ReasonPhrase);
+            return Create(exceptionMessage, message, httpMethod, response, refitSettings);
+        }
+
+#pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
+        public static async Task<ApiException> Create(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
+#pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
+        {
+            var exception = new ApiException(exceptionMessage, message, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
             if (response.Content == null)
             {
