@@ -33,6 +33,7 @@ namespace Refit
         public Type ReturnResultType { get; set; }
         public Type DeserializedResultType { get; set; }
         public RefitSettings RefitSettings { get; set; }
+        public IErrorHandler ErrorHandler { get; set; }
         public bool IsApiResponse { get; }
         public bool ShouldDisposeResponse { get; private set; }
 
@@ -118,6 +119,7 @@ namespace Refit
                             (ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
                              || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>)
                              || ReturnResultType == typeof(IApiResponse));
+            ErrorHandler = refitSettings?.ErrorHandler ?? new DefaultErrorHandler();
         }
 
         private PropertyInfo[] GetParameterProperties(ParameterInfo parameter)

@@ -30,14 +30,17 @@ namespace Refit
         /// <param name="contentSerializer">The <see cref="IContentSerializer"/> instance to use</param>
         /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
+        /// <param name="errorHandler"> instance to use (defaults to <see cref="DefaultErrorHandler"/>)</param>
         public RefitSettings(
             IContentSerializer contentSerializer,
             IUrlParameterFormatter urlParameterFormatter = null,
-            IFormUrlEncodedParameterFormatter formUrlEncodedParameterFormatter = null)
+            IFormUrlEncodedParameterFormatter formUrlEncodedParameterFormatter = null,
+            IErrorHandler errorHandler = null)
         {
             ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
+            ErrorHandler = errorHandler ?? new DefaultErrorHandler();
         }
 
         /// <summary>
@@ -69,6 +72,7 @@ namespace Refit
         public IContentSerializer ContentSerializer { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
+        public IErrorHandler ErrorHandler { get; set; }
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
         public bool Buffered { get; set; } = true;
     }
