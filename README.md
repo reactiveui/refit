@@ -919,3 +919,24 @@ catch (ApiException exception)
 }
 // ...
 ```
+
+
+If your service uses some specific error contract you can override error handling by setting ErrorHandler in RefitSetting
+
+```csharp
+// ...
+RestService.For<IGitHubApi>("https://api.github.com",
+                new RefitSettings() {ErrorHandler = new MyErrorHandler()});
+
+// ...
+
+public class MyErrorHandler : IErrorHandler
+{
+    public Task<Exception> HandleErrorAsync(HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response,
+        RefitSettings refitSettings = null)
+    {
+        // Handle errors here. This method will be called if the service responses a status other than 2xx
+        // You need to return the Exception object or its inheritor, this exception will be thrown
+    }
+}
+```
