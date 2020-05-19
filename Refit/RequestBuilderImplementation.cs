@@ -244,13 +244,13 @@ namespace Refit
                 {
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
-                    ApiException e = null;
+                    Exception e = null;
                     disposeResponse = restMethod.ShouldDisposeResponse;
 
                     if (!resp.IsSuccessStatusCode && typeof(T) != typeof(HttpResponseMessage))
                     {
                         disposeResponse = false; // caller has to dispose
-                        e = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
+                        e = await restMethod.ErrorHandler.HandleErrorAsync(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
 
                     if (restMethod.IsApiResponse)
@@ -788,7 +788,7 @@ namespace Refit
                 using var resp = await client.SendAsync(rq, ct).ConfigureAwait(false);
                 if (!resp.IsSuccessStatusCode)
                 {
-                    throw await ApiException.Create(rq, restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
+                    throw await restMethod.ErrorHandler.HandleErrorAsync(rq, restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
                 }
             };
         }
