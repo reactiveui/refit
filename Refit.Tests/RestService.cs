@@ -1365,7 +1365,8 @@ namespace Refit.Tests
             Assert.False(response.IsSuccessStatusCode);
             Assert.NotNull(response.Error);
 
-            var errors = await response.Error.GetContentAsAsync<ErrorResponse>();
+            var apiException = (ApiException) response.Error;
+            var errors = await apiException.GetContentAsAsync<ErrorResponse>();
 
             Assert.Contains("error1", errors.Errors);
             Assert.Contains("message", errors.Errors);

@@ -8,7 +8,7 @@ namespace Refit
 {
     static class ApiResponse
     {
-        internal static T Create<T, TBody>(HttpResponseMessage resp, object content, ApiException error = null)
+        internal static T Create<T, TBody>(HttpResponseMessage resp, object content, Exception error = null)
         {
             return (T)Activator.CreateInstance(typeof(ApiResponse<TBody>), resp, content, error);
         }
@@ -19,7 +19,7 @@ namespace Refit
         readonly HttpResponseMessage response;
         bool disposed;
 
-        public ApiResponse(HttpResponseMessage response, T content, ApiException error = null)
+        public ApiResponse(HttpResponseMessage response, T content, Exception error = null)
         {
             this.response = response ?? throw new ArgumentNullException(nameof(response));
             Error = error;
@@ -34,7 +34,7 @@ namespace Refit
         public HttpRequestMessage RequestMessage => response.RequestMessage;
         public HttpStatusCode StatusCode => response.StatusCode;
         public Version Version => response.Version;
-        public ApiException Error { get; private set; }
+        public Exception Error { get; private set; }
 
 
         public void Dispose()
@@ -81,6 +81,6 @@ namespace Refit
         HttpRequestMessage RequestMessage { get; }
         HttpStatusCode StatusCode { get; }
         Version Version { get; }
-        ApiException Error { get; }
+        Exception Error { get; }
     }
 }
