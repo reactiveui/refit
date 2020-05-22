@@ -14,7 +14,6 @@ namespace Refit.Profiler
     [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     public class RefitBenchmark
     {
-        private MockHttpMessageHandler mockHttp;
         private IGitHubService newtonsoftJsonFixture;
         private IGitHubService systemTextJsonFixture;
 
@@ -22,8 +21,6 @@ namespace Refit.Profiler
         public void Setup()
         {
             var mockHttp = new MockHttpMessageHandler();
-
-            this.mockHttp = mockHttp;
 
             var newtonsoftJsonSettings = new RefitSettings(new NewtonsoftJsonContentSerializer())
             {
