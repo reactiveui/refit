@@ -24,7 +24,7 @@
     BH: Checking that the project type is a csproj, otherwise don't execute
     https://github.com/reactiveui/refit/issues/811
   -->
-  <Target Name="GenerateRefitStubs" BeforeTargets="BeforeCompile;CoreCompile" Inputs="@(Compile)" Outputs="$(RefitGeneratedFile)" Condition="$(Language) == 'C#'">
+  <Target Name="GenerateRefitStubs" BeforeTargets="BeforeCompile;CoreCompile" Inputs="@(Compile)" Outputs="$(RefitGeneratedFile)" Condition="$(Language) == 'C#' and '$(RefitDisableGenerateRefitStubs)'==''">
     <Error Condition="'$(MSBuildRuntimeType)' == 'Core' and '$(RefitMinCoreVersionRequired)' > '$(RefitNetCoreAppVersion)' "
            Text="Refit requires at least the .NET Core SDK v2.1 to run with 'dotnet build'"
            ContinueOnError="false"
