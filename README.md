@@ -919,3 +919,7 @@ catch (ApiException exception)
 }
 // ...
 ```
+
+### MSBuild configuration
+
+- `RefitDisableGenerateRefitStubs`: This property allows for other Roslyn-based source generators to disable the Refit's stubs generation during they own generation phase.
