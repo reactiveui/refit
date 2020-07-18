@@ -1,0 +1,8 @@
+title: Refit
+description: The automatic type-safe REST library for Xamarin and .NET
+google_analytics: 
+show_downloads: true
+theme: jekyll-theme-dinky
+
+gems:
+  - jekyll-mentions

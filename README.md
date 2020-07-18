@@ -34,7 +34,7 @@ var octocat = await gitHubApi.GetUser("octocat");
 
 ### Where does this work?
 
-Refit currently supports the following platforms and any .NET Standard 1.4 target:
+Refit currently supports the following platforms and any .NET Standard 2.0 target:
 
 * UWP
 * Xamarin.Android
@@ -179,6 +179,15 @@ Search(new [] {10, 20, 30})
 >>> "/users/list?ages=10%2C20%2C30"
 ```
 
+You can also specify collection format in `RefitSettings`, that will be used by default, unless explicitly defined in `Query` attribute.
+
+```csharp
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        CollectionFormat = CollectionFormat.Multi
+    });
+```
+
 ### Unescape Querystring parameters
 
 Use the `QueryUriFormat` attribute to specify if the query parameters should be url escaped
@@ -227,9 +236,15 @@ Task CreateUser([Body(buffered: true)] User user);
 
 #### JSON content
 
-JSON requests and responses are serialized/deserialized using Json.NET. 
-By default, Refit will use the serializer settings that can be configured 
-by setting _Newtonsoft.Json.JsonConvert.DefaultSettings_:
+JSON requests and responses are serialized/deserialized using an instance of the `IContentSerializer` interface. Refit provides two implementations out of the box: `NewtonsoftJsonContentSerializer` (which is the default JSON serializer) and `SystemTextJsonContentSerializer`. The first uses the well known `Newtonsoft.Json` library and is extremely versatile and customizable, while the latter uses the new `System.Text.Json` APIs and is focused on high performance and low memory usage, at the cost of being slightly less feature rich. You can read more about the two serializers and the main differences between the two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
+
+For instance, here is how to create a new `RefitSettings` instance using the `System.Text.Json`-based serializer:
+
+```csharp
+var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+```
+
+If instead you're using the default settings, which use the `Newtonsoft.Json` APIs, you can customize their behavior by setting the `Newtonsoft.Json.JsonConvert.DefaultSettings` property:
 
 ```csharp
 JsonConvert.DefaultSettings = 
@@ -252,7 +267,7 @@ APIs:
 ```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     new RefitSettings {
-        ContentSerializer = new JsonContentSerializer( 
+        ContentSerializer = new NewtonsoftJsonContentSerializer( 
             new JsonSerializerSettings {
                 ContractResolver = new SnakeCasePropertyNamesContractResolver()
         }
@@ -260,7 +275,7 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
 
 var otherApi = RestService.For<IOtherApi>("https://api.example.com",
     new RefitSettings {
-        ContentSerializer = new JsonContentSerializer( 
+        ContentSerializer = new NewtonsoftJsonContentSerializer( 
             new JsonSerializerSettings {
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
         }
@@ -703,6 +718,42 @@ Task<string> GetUser(string user);
 IObservable<HttpResponseMessage> GetUser(string user);
 ```
 
+There is also a generic wrapper class called `ApiResponse<T>` that can be used as a return type. Using this class as a return type allows you to retrieve not just the content as an object, but also any meta data associated with the request/response. This includes information such as response headers, the http status code and reason phrase (e.g. 404 Not Found), the response version, the original request message that was sent and in the case of an error, an `ApiException` object containing details of the error. Following are some examples of how you can retrieve the response meta data.
+
+```csharp
+//Returns the content within a wrapper class containing meta data about the request/response
+[Get("/users/{user}")]
+Task<ApiResponse<User>> GetUser(string user);
+
+//Calling the API
+var response = await gitHubApi.GetUser("octocat");
+
+//Getting the status code (returns a value from the System.Net.HttpStatusCode enumeration)
+var httpStatus = response.StatusCode;
+
+//Determining if a success status code was received
+if(response.IsSuccessStatusCode)
+{
+    //YAY! Do the thing...
+}
+
+//Retrieving a well-known header value (e.g. "Server" header)
+var serverHeaderValue = response.Headers.Server != null ? response.Headers.Server.ToString() : string.Empty;
+
+//Retrieving a custom header value
+var customHeaderValue = string.Join(',', response.Headers.GetValues("A-Custom-Header"));
+
+//Looping through all the headers
+foreach(var header in response.Headers)
+{
+    var headerName = header.Key;
+    var headerValue = string.Join(',', header.Value);
+}
+
+//Finally, retrieving the content in the response body as a strongly-typed object
+var user = response.Content;
+```
+
 ### Using generic interfaces
 
 When using something like ASP.NET Web API, it's a fairly common pattern to have a whole stack of CRUD REST services. Refit now supports these, allowing you to define a single API interface with a generic type:
@@ -868,3 +919,7 @@ catch (ApiException exception)
 }
 // ...
 ```
+
+### MSBuild configuration
+
+- `RefitDisableGenerateRefitStubs`: This property allows for other Roslyn-based source generators to disable the Refit's stubs generation during they own generation phase.

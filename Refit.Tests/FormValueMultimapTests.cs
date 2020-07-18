@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+
 using Newtonsoft.Json;
+
 using Xunit;
 
 namespace Refit.Tests
@@ -77,6 +79,80 @@ namespace Refit.Tests
             Assert.Equal(expected, actual);
         }
 
+        [Fact]
+        public void DefaultCollectionFormatCanBeSpecifiedInSettings_Multi()
+        {
+            var settingsWithCollectionFormat = new RefitSettings
+            {
+                CollectionFormat = CollectionFormat.Multi
+            };
+            var source = new ObjectWithRepeatedFieldsTestClass
+            {
+                // Members have explicit CollectionFormat
+                A = new List<int> { 1, 2 },
+                B = new HashSet<string> { "set1", "set2" },
+                C = new HashSet<int> { 1, 2 },
+                D = new List<double> { 0.1, 1.0 },
+                E = new List<bool> { true, false },
+
+                // Member has no explicit CollectionFormat
+                F = new[] { 1, 2, 3 }
+            };
+            var expected = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("A", "01"),
+                new KeyValuePair<string, string>("A", "02"),
+                new KeyValuePair<string, string>("B", "set1,set2"),
+                new KeyValuePair<string, string>("C", "01 02"),
+                new KeyValuePair<string, string>("D", "0.10\t1.00"),
+                new KeyValuePair<string, string>("E", "True|False"),
+                new KeyValuePair<string, string>("F", "1"),
+                new KeyValuePair<string, string>("F", "2"),
+                new KeyValuePair<string, string>("F", "3"),
+            };
+
+            var actual = new FormValueMultimap(source, settingsWithCollectionFormat);
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory]
+        [InlineData(CollectionFormat.Csv, "1,2,3")]
+        [InlineData(CollectionFormat.Pipes, "1|2|3")]
+        [InlineData(CollectionFormat.Ssv, "1 2 3")]
+        [InlineData(CollectionFormat.Tsv, "1\t2\t3")]
+        public void DefaultCollectionFormatCanBeSpecifiedInSettings(CollectionFormat format, string expectedFormat)
+        {
+            var settingsWithCollectionFormat = new RefitSettings
+            {
+                CollectionFormat = format
+            };
+            var source = new ObjectWithRepeatedFieldsTestClass
+            {
+                // Members have explicit CollectionFormat
+                A = new List<int> { 1, 2 },
+                B = new HashSet<string> { "set1", "set2" },
+                C = new HashSet<int> { 1, 2 },
+                D = new List<double> { 0.1, 1.0 },
+                E = new List<bool> { true, false },
+
+                // Member has no explicit CollectionFormat
+                F = new[] { 1, 2, 3 }
+            };
+            var expected = new List<KeyValuePair<string, string>> {
+                new KeyValuePair<string, string>("A", "01"),
+                new KeyValuePair<string, string>("A", "02"),
+                new KeyValuePair<string, string>("B", "set1,set2"),
+                new KeyValuePair<string, string>("C", "01 02"),
+                new KeyValuePair<string, string>("D", "0.10\t1.00"),
+                new KeyValuePair<string, string>("E", "True|False"),
+                new KeyValuePair<string, string>("F", expectedFormat),
+            };
+
+            var actual = new FormValueMultimap(source, settingsWithCollectionFormat);
+
+            Assert.Equal(expected, actual);
+        }
+
         public class ObjectTestClass
         {
             public string A { get; set; }
@@ -96,6 +172,8 @@ namespace Refit.Tests
             public IList<double> D { get; set; }
             [Query(CollectionFormat.Pipes)]
             public IList<bool> E { get; set; }
+            [Query]
+            public int[] F { get; set; }
         }
 
         [Fact]

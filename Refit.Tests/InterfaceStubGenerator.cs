@@ -125,7 +125,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.Equal(13, result.ClassList.Count);
+            Assert.Equal(14, result.ClassList.Count);
         }
 
         [Fact]
@@ -139,7 +139,7 @@ namespace Refit.Tests
                 .ToList();
 
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
-            Assert.Equal(5, result.ClassList.Count);
+            Assert.Equal(6, result.ClassList.Count);
 
             var inherited = result.ClassList.First(c => c.InterfaceName == "IAmInterfaceC");
 
@@ -202,7 +202,7 @@ namespace Refit.Tests
             var input = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToList();
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
             var classTemplate = result.ClassList[0];
-            var usingList = classTemplate.UsingList.Select(x => x.Item).ToList();
+            var usingList = classTemplate.UsingList.Select(x => x.Item.Replace("global::", "")).ToList();
             Assert.Contains("SomeType =  CollisionA.SomeType", usingList);
             Assert.Contains("CollisionB", usingList);
         }
@@ -218,7 +218,7 @@ namespace Refit.Tests
             var result = fixture.GenerateTemplateInfoForInterfaceList(input);
 
             var classItem = result.ClassList.Single(c => c.InterfaceName == interfaceName);
-            var usingList = classItem.UsingList.Select(x => x.Item);
+            var usingList = classItem.UsingList.Select(x => x.Item.Replace("global::", ""));
             var expected = usingCsv.Split(',');
             Assert.Equal(usingList, expected);
 
@@ -227,6 +227,22 @@ namespace Refit.Tests
                 var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath(fileName)));
                 return syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
             }
+        }
+
+        [Fact]
+        public void HandlesReducedUsingsInsideNamespace()
+        {
+            var fixture = new InterfaceStubGenerator();
+
+            var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("ReducedUsingInsideNamespaceApi.cs")));
+            var input = syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToList();
+            var result = fixture.GenerateTemplateInfoForInterfaceList(input);
+            var classTemplate = result.ClassList[0];
+            var usingList = classTemplate.UsingList.Select(x => x.Item).ToList();
+
+            Assert.Contains("ModelNamespace", usingList);
+            Assert.Contains("global::System.Threading.Tasks", usingList);
+            Assert.Contains("global::Refit", usingList);
         }
 
         [Fact]

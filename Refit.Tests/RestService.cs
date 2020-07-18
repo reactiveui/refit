@@ -56,6 +56,9 @@ namespace Refit.Tests
         [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task GetFooBars(PathBoundObject request);
 
+        [Get("/foos/{Requestparams.SomeProperty}/bar/{requestParams.SoMeProPerty2}")]
+        Task GetFooBarsWithDifferentCasing(PathBoundObject requestParams);
+
         [Get("/foos/{id}/{request.someProperty}/bar/{request.someProperty2}")]
         Task GetBarsByFoo(string id, PathBoundObject request);
 
@@ -64,6 +67,9 @@ namespace Refit.Tests
 
         [Get("/foos/{request.someProperty}/bar")]
         Task GetBarsByFoo(PathBoundObject request);
+
+        [Get("/foo")]
+        Task GetBarsWithCustomQueryFormat(PathBoundObjectWithQueryFormat request);
 
         [Get("/foos/{request.someProperty}/bar/{request.someProperty3}")]
         Task GetFooBarsDerived(PathBoundDerivedObject request);
@@ -123,6 +129,14 @@ namespace Refit.Tests
 
         [Query]
         public string SomeQuery { get; set; }
+
+    }
+
+    public class PathBoundObjectWithQueryFormat
+    {
+
+        [Query(Format = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'")]
+        public DateTime SomeQueryWithFormat { get; set; }
     }
 
     public interface INoRefitHereBuddy
@@ -136,6 +150,21 @@ namespace Refit.Tests
         Task Post();
 
         Task Get();
+    }
+
+    public interface IRefitInterfaceWithStaticMethod
+    {
+        [Get("")]
+        Task Get();
+
+#if NETCOREAPP3_1
+        public static IRefitInterfaceWithStaticMethod Create()
+        {
+            // This is a C# 8 factory method
+
+            return RestService.For<IRefitInterfaceWithStaticMethod>("http://foo/");
+        }
+#endif
     }
 
     public class ErrorResponse
@@ -234,6 +263,18 @@ namespace Refit.Tests
 
     public class RestServiceIntegrationTests
     {
+#if NETCOREAPP3_1
+        [Fact]
+        public void CanCreateInstanceUsingStaticMethod()
+        {
+            var instance = IRefitInterfaceWithStaticMethod.Create();
+
+
+            Assert.NotNull(instance);
+        }
+#endif
+
+
         [Fact]
         public async Task CanAddContentHeadersToPostWithoutBody()
         {
@@ -260,6 +301,104 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task GetWithNoParametersTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo", settings);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task BaseAddressFromHttpClientMatchesTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+
+            var client = new HttpClient(mockHttp)
+            {
+                BaseAddress = new Uri("http://foo")
+            };
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task BaseAddressWithTrailingSlashFromHttpClientMatchesTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+
+            var client = new HttpClient(mockHttp)
+            {
+                BaseAddress = new Uri("http://foo/")
+            };
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task BaseAddressWithTrailingSlashCalledBeforeFromHttpClientMatchesTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+
+            var client = new HttpClient(mockHttp)
+            {
+                BaseAddress = new Uri("http://foo/")
+            };
+
+            await client.GetAsync("/firstRequest"); ;
+
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);            
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithNoParametersTestTrailingSlashInBase()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo/", settings);
+
+            await fixture.Get();
+            mockHttp.VerifyNoOutstandingExpectation();
+        }   
+
+        [Fact]
         public async Task GetWithPathBoundObject()
         {
             var mockHttp = new MockHttpMessageHandler();
@@ -274,6 +413,28 @@ namespace Refit.Tests
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
             await fixture.GetFooBars(new PathBoundObject()
+            {
+                SomeProperty = 1,
+                SomeProperty2 = "barNone"
+            });
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithPathBoundObjectDifferentCasing()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
+                    .WithExactQueryString("")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            await fixture.GetFooBarsWithDifferentCasing(new PathBoundObject()
             {
                 SomeProperty = 1,
                 SomeProperty2 = "barNone"
@@ -432,6 +593,28 @@ namespace Refit.Tests
                 SomeProperty2 = "barNone",
                 SomeQuery = "test"
             });
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task GetWithPathBoundObjectAndQueryWithFormat()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+            mockHttp.Expect(HttpMethod.Get, "http://foo/foo")
+                    .WithExactQueryString("SomeQueryWithFormat=2020-03-05T13:55:00Z")
+                    .Respond("application/json", "Ok");
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+            var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+            await fixture.GetBarsWithCustomQueryFormat(new PathBoundObjectWithQueryFormat
+            {
+                SomeQueryWithFormat = new DateTime(2020, 03, 05, 13, 55, 00)
+            });
+
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -613,7 +796,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             var responseMessage = new HttpResponseMessage()
@@ -649,7 +832,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
@@ -676,7 +859,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
@@ -704,7 +887,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             var responseMessage = new HttpResponseMessage()
@@ -741,7 +924,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -766,7 +949,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -790,7 +973,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
@@ -815,7 +998,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/search/users")
@@ -839,7 +1022,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -865,7 +1048,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/users/octocat")
@@ -921,7 +1104,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/")
@@ -933,7 +1116,7 @@ namespace Refit.Tests
 
             Assert.NotNull(result);
             Assert.True(result.IsSuccessStatusCode);
-        }
+        }       
 
         [Fact]
         public async Task ShouldRetHttpResponseMessageWithNestedInterface()
@@ -943,7 +1126,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/")
@@ -1107,7 +1290,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.When(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
@@ -1138,7 +1321,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
@@ -1168,7 +1351,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
@@ -1198,7 +1381,7 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new JsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
             };
 
             mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")

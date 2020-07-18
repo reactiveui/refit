@@ -2,6 +2,7 @@
 using System;
 using System.Net.Http;
 using System.Collections.Generic;
+using Refit.Tests.RefitInternalGenerated;
 
 /* ******** Hey You! *********
  *
@@ -27,18 +28,21 @@ namespace Refit.Tests.RefitInternalGenerated
 }
 #pragma warning restore
 
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+#pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Refit;
-    using Refit.Generator;
-    using Xunit;
-    using Task =  System.Threading.Tasks.Task;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Threading.Tasks;
+    using global::Microsoft.CodeAnalysis;
+    using global::Microsoft.CodeAnalysis.CSharp;
+    using global::Microsoft.CodeAnalysis.CSharp.Syntax;
+    using global::Refit;
+    using global::Refit.Generator;
+    using global::Xunit;
+    using Task =  global::System.Threading.Tasks.Task;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -100,17 +104,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -148,10 +155,12 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::Refit.Tests.SeparateNamespaceWithModel;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -207,10 +216,12 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::Refit.Tests.SeparateNamespaceWithModel;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -242,10 +253,12 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::Refit.Tests.SeparateNamespaceWithModel;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -285,10 +298,12 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::Refit.Tests.SeparateNamespaceWithModel;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -344,10 +359,12 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::Refit.Tests.SeparateNamespaceWithModel;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -379,17 +396,57 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::Refit.Tests.SeparateNamespaceWithModel;
+    using static global::System.Math;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIAmInterfaceF_RequireUsing : IAmInterfaceF_RequireUsing
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIAmInterfaceF_RequireUsing(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<ResponseModel> IAmInterfaceF_RequireUsing.Get(List<Guid> guids)
+        {
+            var arguments = new object[] { guids };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(List<Guid>) });
+            return (Task<ResponseModel>)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -418,6 +475,14 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
+        Task IApiBindPathToObject.GetFooBarsWithDifferentCasing(PathBoundObject requestParams)
+        {
+            var arguments = new object[] { requestParams };
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetFooBarsWithDifferentCasing", new Type[] { typeof(PathBoundObject) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
         Task IApiBindPathToObject.GetBarsByFoo(string id, PathBoundObject request)
         {
             var arguments = new object[] { id, request };
@@ -438,6 +503,14 @@ namespace Refit.Tests
         {
             var arguments = new object[] { request };
             var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsByFoo", new Type[] { typeof(PathBoundObject) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task IApiBindPathToObject.GetBarsWithCustomQueryFormat(PathBoundObjectWithQueryFormat request)
+        {
+            var arguments = new object[] { request };
+            var func = requestBuilder.BuildRestResultFuncForMethod("GetBarsWithCustomQueryFormat", new Type[] { typeof(PathBoundObjectWithQueryFormat) });
             return (Task)func(Client, arguments);
         }
 
@@ -517,17 +590,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -559,17 +635,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -617,16 +696,17 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Refit;
-    using Refit.Generator;
-    using Xunit;
-    using Task =  System.Threading.Tasks.Task;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Threading.Tasks;
+    using global::Microsoft.CodeAnalysis;
+    using global::Microsoft.CodeAnalysis.CSharp;
+    using global::Microsoft.CodeAnalysis.CSharp.Syntax;
+    using global::Refit;
+    using global::Refit.Generator;
+    using global::Xunit;
+    using Task =  global::System.Threading.Tasks.Task;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -693,17 +773,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -735,10 +818,111 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedICustomNullableReferenceService : ICustomNullableReferenceService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedICustomNullableReferenceService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        CustomReferenceType? ICustomNullableReferenceService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (CustomReferenceType?)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedICustomNullableValueService : ICustomNullableValueService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedICustomNullableValueService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        CustomValueType? ICustomNullableValueService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (CustomValueType?)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedICustomReferenceAndValueParametersService : ICustomReferenceAndValueParametersService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedICustomReferenceAndValueParametersService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task ICustomReferenceAndValueParametersService.Get(CustomReferenceType? reference, CustomValueType? value)
+        {
+            var arguments = new object[] { reference, value };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { ToNullable(typeof(CustomReferenceType)), ToNullable(typeof(CustomValueType)) });
+            return (Task)func(Client, arguments);
+        }
+
+        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -818,10 +1002,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -893,10 +1077,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -971,10 +1155,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Collections.Generic;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1041,11 +1225,315 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericNullableReferenceParameterService : IGenericNullableReferenceParameterService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericNullableReferenceParameterService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task IGenericNullableReferenceParameterService.Get(System.Collections.Generic.List<string>? reference)
+        {
+            var arguments = new object[] { reference };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { ToNullable(typeof(System.Collections.Generic.List<string>)) });
+            return (Task)func(Client, arguments);
+        }
+
+        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericNullableReferenceService : IGenericNullableReferenceService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericNullableReferenceService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<string>? IGenericNullableReferenceService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (Task<string>?)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericNullableValueService : IGenericNullableValueService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericNullableValueService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        ValueTask<int>? IGenericNullableValueService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (ValueTask<int>?)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericNullableWithNullableReferenceParameterService : IGenericNullableWithNullableReferenceParameterService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericNullableWithNullableReferenceParameterService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task IGenericNullableWithNullableReferenceParameterService.Get(System.Collections.Generic.List<string?>? reference)
+        {
+            var arguments = new object[] { reference };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { ToNullable(typeof(System.Collections.Generic.List<string?>)) });
+            return (Task)func(Client, arguments);
+        }
+
+        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericNullableWithNullableReferenceService : IGenericNullableWithNullableReferenceService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericNullableWithNullableReferenceService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<string?>? IGenericNullableWithNullableReferenceService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (Task<string?>?)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericNullableWithNullableValueService : IGenericNullableWithNullableValueService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericNullableWithNullableValueService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        ValueTask<int?>? IGenericNullableWithNullableValueService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (ValueTask<int?>?)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericWithNullableReferenceParameterService : IGenericWithNullableReferenceParameterService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericWithNullableReferenceParameterService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task IGenericWithNullableReferenceParameterService.Get(System.Collections.Generic.List<string?> reference)
+        {
+            var arguments = new object[] { reference };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(System.Collections.Generic.List<string?>) });
+            return (Task)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericWithNullableValueService : IGenericWithNullableValueService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericWithNullableValueService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<int?> IGenericWithNullableValueService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (Task<int?>)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIGenericWithResultService : IGenericWithResultService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIGenericWithResultService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<string?> IGenericWithResultService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (Task<string?>)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Linq;
+    using global::System.Net.Http;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1173,17 +1661,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1251,17 +1742,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1301,14 +1795,21 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Net;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using RichardSzalay.MockHttp;
-    using Refit;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Net.Http.Headers;
+    using global::System.Text;
+    using global::System.Text.Json;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::RichardSzalay.MockHttp;
+    using global::Refit;
+    using global::Refit.Buffers;
+    using global::Xunit;
+    using JsonSerializer =  global::Newtonsoft.Json.JsonSerializer;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1340,13 +1841,15 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Net;
-    using System.Text;
-    using System.Threading.Tasks;
-    using RichardSzalay.MockHttp;
-    using Refit;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::RichardSzalay.MockHttp;
+    using global::Refit;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1386,11 +1889,10 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using SomeType =  CollisionA.SomeType;
-    using CollisionB;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using SomeType =  global::CollisionA.SomeType;
+    using global::CollisionB;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1422,11 +1924,50 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Refit;
-    using static System.Math;
+    using global::System;
+    using global::System.Threading.Tasks;
+    using global::Common.Helper;
+    using global::Refit.Tests.Common;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedINamespaceOverlapApi : INamespaceOverlapApi
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedINamespaceOverlapApi(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<SomeOtherType> INamespaceOverlapApi.SomeRequest()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", new Type[] {  });
+            return (Task<SomeOtherType>)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Linq;
+    using global::System.Net.Http;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using static global::System.Math;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1512,18 +2053,64 @@ namespace Refit.Tests
     }
 }
 
+namespace Refit.Tests.SeparateNamespace
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::Refit.Tests.SeparateNamespaceWithModel;
+    using static global::System.Math;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedInheritedInterfacesInSeparateFileApi : InheritedInterfacesInSeparateFileApi
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedInheritedInterfacesInSeparateFileApi(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task InheritedInterfacesInSeparateFileApi.Get(int i)
+        {
+            var arguments = new object[] { i };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(int) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task<ResponseModel> IAmInterfaceF_RequireUsing.Get(List<Guid> guids)
+        {
+            var arguments = new object[] { guids };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { typeof(List<Guid>) });
+            return (Task<ResponseModel>)func(Client, arguments);
+        }
+    }
+}
+
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Microsoft.CodeAnalysis;
-    using Microsoft.CodeAnalysis.CSharp;
-    using Microsoft.CodeAnalysis.CSharp.Syntax;
-    using Refit;
-    using Refit.Generator;
-    using Xunit;
-    using Task =  System.Threading.Tasks.Task;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Threading.Tasks;
+    using global::Microsoft.CodeAnalysis;
+    using global::Microsoft.CodeAnalysis.CSharp;
+    using global::Microsoft.CodeAnalysis.CSharp.Syntax;
+    using global::Refit;
+    using global::Refit.Generator;
+    using global::Xunit;
+    using Task =  global::System.Threading.Tasks.Task;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1563,17 +2150,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1605,17 +2195,200 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedINullableReferenceService : INullableReferenceService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedINullableReferenceService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        string? INullableReferenceService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (string?)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedINullableValueService : INullableValueService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedINullableValueService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        int? INullableValueService.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (int?)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using ModelNamespace;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIReducedUsingInsideNamespaceApi : IReducedUsingInsideNamespaceApi
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIReducedUsingInsideNamespaceApi(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<SomeType> IReducedUsingInsideNamespaceApi.SomeRequest()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", new Type[] {  });
+            return (Task<SomeType>)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIReferenceAndValueParametersService : IReferenceAndValueParametersService
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIReferenceAndValueParametersService(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task IReferenceAndValueParametersService.Get(string? reference, int? value)
+        {
+            var arguments = new object[] { reference, value };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] { ToNullable(typeof(string)), ToNullable(typeof(int)) });
+            return (Task)func(Client, arguments);
+        }
+
+        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedIRefitInterfaceWithStaticMethod : IRefitInterfaceWithStaticMethod
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedIRefitInterfaceWithStaticMethod(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task IRefitInterfaceWithStaticMethod.Get()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("Get", new Type[] {  });
+            return (Task)func(Client, arguments);
+        }
+    }
+}
+
+namespace Refit.Tests
+{
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1679,17 +2452,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reflection;
-    using System.Threading.Tasks;
-    using Xunit;
-    using Refit;
-    using System.Threading;
-    using Newtonsoft.Json;
-    using System.Text;
-    using System.Net.Http.Headers;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reflection;
+    using global::System.Threading.Tasks;
+    using global::Xunit;
+    using global::Refit;
+    using global::System.Threading;
+    using global::Newtonsoft.Json;
+    using global::System.Text;
+    using global::System.Net.Http.Headers;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1817,10 +2593,11 @@ namespace Refit.Tests
 
 namespace AutoGeneratedIServiceWithoutNamespace
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Refit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1860,17 +2637,20 @@ namespace AutoGeneratedIServiceWithoutNamespace
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1910,17 +2690,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1952,10 +2735,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using CollisionA;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::CollisionA;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -1987,10 +2769,9 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Threading.Tasks;
-    using CollisionB;
-    using Refit;
+    using global::System.Threading.Tasks;
+    using global::CollisionB;
+    using global::Refit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2022,12 +2803,14 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Net;
-    using System.Threading.Tasks;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2111,12 +2894,14 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.Net;
-    using System.Threading.Tasks;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2156,17 +2941,20 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
-    using Refit.Tests.RefitInternalGenerated;
-    using System.IO;
-    using System.Net;
-    using System.Reactive.Linq;
-    using System.Reflection;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Newtonsoft.Json;
-    using Refit;
-    using RichardSzalay.MockHttp;
-    using Xunit;
+    using global::System;
+    using global::System.Collections.Generic;
+    using global::System.IO;
+    using global::System.Linq;
+    using global::System.Net;
+    using global::System.Net.Http;
+    using global::System.Reactive.Linq;
+    using global::System.Reflection;
+    using global::System.Text;
+    using global::System.Threading.Tasks;
+    using global::Newtonsoft.Json;
+    using global::Refit;
+    using global::RichardSzalay.MockHttp;
+    using global::Xunit;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2195,3 +2983,40 @@ namespace Refit.Tests
         }
     }
 }
+
+namespace Refit.Tests
+{
+    using global::Refit.Tests.SomeNamespace;
+    using global::System.Threading.Tasks;
+    using global::Refit;
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [Preserve]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGeneratedNamespaceWithGlobalAliasApi : NamespaceWithGlobalAliasApi
+    {
+        /// <inheritdoc />
+        public HttpClient Client { get; protected set; }
+        readonly IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGeneratedNamespaceWithGlobalAliasApi(HttpClient client, IRequestBuilder requestBuilder)
+        {
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }
+
+        /// <inheritdoc />
+        Task<SomeType> NamespaceWithGlobalAliasApi.SomeRequest()
+        {
+            var arguments = new object[] {  };
+            var func = requestBuilder.BuildRestResultFuncForMethod("SomeRequest", new Type[] {  });
+            return (Task<SomeType>)func(Client, arguments);
+        }
+    }
+}
+
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+#pragma warning restore CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.

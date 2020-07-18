@@ -89,3 +89,4 @@ packages/
 *.userprefs
 Refit-Tests/test-results
 /InterfaceStubGenerator.App/Properties/launchSettings.json
+*.binlog

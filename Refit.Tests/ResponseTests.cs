@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using RichardSzalay.MockHttp;
-using Refit; // for the code gen
+using Refit;
+using Refit.Buffers;
+// for the code gen
 using Xunit;
+using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Refit.Tests
 {
@@ -140,6 +146,65 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task WithNonSeekableStream_UsingSystemTextJsonContentSerializer()
+        {
+            var model = new TestAliasObject
+            {
+                ShortNameForAlias = nameof(WithNonSeekableStream_UsingSystemTextJsonContentSerializer),
+                ShortNameForJsonProperty = nameof(TestAliasObject)
+            };
+
+            var localHandler = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings(new SystemTextJsonContentSerializer())
+            {
+                HttpMessageHandlerFactory = () => localHandler
+            };
+
+            using var utf8BufferWriter = new PooledBufferWriter();
+
+            var utf8JsonWriter = new Utf8JsonWriter(utf8BufferWriter);
+
+            System.Text.Json.JsonSerializer.Serialize(utf8JsonWriter, model);
+
+            using var sourceStream = utf8BufferWriter.DetachStream();
+
+            using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
+
+            sourceStream.CopyTo(contentStream);
+
+            contentStream.Position = 0;
+
+            contentStream.CanGetLength = false;
+
+            var httpContent = new StreamContent(contentStream)
+            {
+                Headers =
+                {
+                    ContentType = new MediaTypeHeaderValue("application/json") { CharSet = Encoding.UTF8.WebName }
+                }
+            };
+
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = httpContent
+            };
+
+            expectedResponse.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+            expectedResponse.StatusCode = HttpStatusCode.OK;
+
+            localHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+
+            var localFixture = RestService.For<IMyAliasService>("http://api", settings);
+
+            var result = await localFixture.GetTestObject();
+
+            Assert.NotNull(result);
+            Assert.Equal(nameof(WithNonSeekableStream_UsingSystemTextJsonContentSerializer), result.ShortNameForAlias);
+            Assert.Equal(nameof(TestAliasObject), result.ShortNameForJsonProperty);
+        }
+
+        [Fact]
         public async Task BadRequestWithEmptyContent_ShouldReturnApiException()
         {
             var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
@@ -156,5 +221,12 @@ namespace Refit.Tests
             Assert.NotNull(actualException.Content);
             Assert.Equal("Hello world", actualException.Content);
         }
+    }
+
+    public sealed class ThrowOnGetLengthMemoryStream : MemoryStream
+    {
+        public bool CanGetLength { get; set; }
+
+        public override long Length => CanGetLength ? base.Length : throw new NotSupportedException();
     }
 }

@@ -12,7 +12,8 @@ namespace Refit.Tests
         const string BaseAddress = "https://api/";
 
         [Theory]
-        [InlineData(typeof(JsonContentSerializer))]
+        [InlineData(typeof(NewtonsoftJsonContentSerializer))]
+        [InlineData(typeof(SystemTextJsonContentSerializer))]
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
         {
@@ -26,10 +27,9 @@ namespace Refit.Tests
                 Asserts = async content => new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
             };
 
-            var settings = new RefitSettings()
+            var settings = new RefitSettings(serializer)
             {
-                HttpMessageHandlerFactory = () => handler,
-                ContentSerializer = serializer
+                HttpMessageHandlerFactory = () => handler
             };
 
             var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
@@ -40,7 +40,8 @@ namespace Refit.Tests
         }
 
         [Theory]
-        [InlineData(typeof(JsonContentSerializer))]
+        [InlineData(typeof(NewtonsoftJsonContentSerializer))]
+        [InlineData(typeof(SystemTextJsonContentSerializer))]
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
         {
@@ -72,10 +73,9 @@ namespace Refit.Tests
                 }
             };
 
-            var settings = new RefitSettings()
+            var settings = new RefitSettings(serializer)
             {
-                HttpMessageHandlerFactory = () => handler,
-                ContentSerializer = serializer
+                HttpMessageHandlerFactory = () => handler
             };
 
             var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
@@ -83,6 +83,20 @@ namespace Refit.Tests
             var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(model)).ConfigureAwait(false);
 
             Assert.True(fixtureTask.IsCompleted);
+        }
+
+        [Fact]
+        public void VerityDefaultSerializer()
+        {
+            var settings = new RefitSettings();
+
+            Assert.NotNull(settings.ContentSerializer);
+            Assert.IsType<NewtonsoftJsonContentSerializer>(settings.ContentSerializer);
+
+            settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+            Assert.NotNull(settings.ContentSerializer);
+            Assert.IsType<SystemTextJsonContentSerializer>(settings.ContentSerializer);
         }
 
         /// <summary>
@@ -109,6 +123,48 @@ namespace Refit.Tests
 
                 return new HttpResponseMessage(HttpStatusCode.OK) { Content = responseContent };
             }
+        }
+
+        [Fact]
+        public async Task StreamDeserialization_UsingSystemTextJsonContentSerializer()
+        {
+            var model = new TestAliasObject
+            {
+                ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
+                ShortNameForJsonProperty = nameof(TestAliasObject)
+            };
+
+            var serializer = new SystemTextJsonContentSerializer();
+
+            var json = await serializer.SerializeAsync(model);
+
+            var stream = await json.ReadAsStreamAsync();
+
+            var result = await System.Text.Json.JsonSerializer.DeserializeAsync<TestAliasObject>(stream);
+
+            Assert.NotNull(result);
+            Assert.Equal(model.ShortNameForAlias, result.ShortNameForAlias);
+            Assert.Equal(model.ShortNameForJsonProperty, result.ShortNameForJsonProperty);
+        }
+
+        [Fact]
+        public async Task StreamDeserialization_UsingSystemTextJsonContentSerializer_SetsCorrectHeaders()
+        {
+            var model = new TestAliasObject
+            {
+                ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
+                ShortNameForJsonProperty = nameof(TestAliasObject)
+            };
+
+            var serializer = new SystemTextJsonContentSerializer();
+
+            var json = await serializer.SerializeAsync(model);
+
+            Assert.NotNull(json.Headers.ContentLength);
+            Assert.True(json.Headers.ContentLength.Value > 0);
+            Assert.NotNull(json.Headers.ContentType);
+            Assert.Equal("utf-8", json.Headers.ContentType.CharSet);
+            Assert.Equal("application/json", json.Headers.ContentType.MediaType);
         }
     }
 }

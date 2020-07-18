@@ -119,9 +119,25 @@ namespace Refit.Generator
             var rootNode = interfaceTree.Parent;
             while (rootNode.Parent != null) rootNode = rootNode.Parent;
 
-            var usings = rootNode.DescendantNodes()
+            var usingsInsideNamespace = ns?.DescendantNodes()
                             .OfType<UsingDirectiveSyntax>()
                             .Select(x => $"{x.Alias} {x.StaticKeyword} {x.Name}".TrimStart())
+                            ?? Enumerable.Empty<string>();
+
+            var usingsOutsideNamespace = rootNode.DescendantNodes(x => !x.IsKind(SyntaxKind.NamespaceDeclaration))
+                            .OfType<UsingDirectiveSyntax>()
+                            .Select(x =>
+                            {
+                                // Globally qualify namespace name to avoid conflicts when put inside namespace.
+                                var name = x.Name.ToString();
+                                var globallyQualifiedName = name.Contains("::")
+                                    ? name
+                                    : "global::" + name;
+
+                                return $"{x.Alias} {x.StaticKeyword} {globallyQualifiedName}".TrimStart();
+                            });
+
+            var usings = usingsInsideNamespace.Concat(usingsOutsideNamespace)
                             .Distinct()
                             .Where(x => x != "System" && x != "System.Net.Http" && x != "System.Collections.Generic" && x != "System.Linq")
                             .Select(x => new UsingDeclaration { Item = x });
@@ -154,7 +170,6 @@ namespace Refit.Generator
                                               return mti;
                                           })
                                           .ToList();
-
             return ret;
         }
 
@@ -223,6 +238,8 @@ namespace Refit.Generator
                     });
 
                 classInfo.MethodList.AddRange(methodsToAdd);
+
+                classInfo.UsingList = classInfo.UsingList.Union(baseClassInfo.UsingList).ToList();
             });
         }
 
@@ -355,6 +372,16 @@ namespace Refit.Generator
     public class UsingDeclaration
     {
         public string Item { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return obj is UsingDeclaration other && Item == other.Item;
+        }
+
+        public override int GetHashCode()
+        {
+            return Item.GetHashCode();
+        }
     }
 
     public class ClassTemplateInfo
@@ -364,6 +391,7 @@ namespace Refit.Generator
         public string InterfaceName { get; set; }
         public List<BaseClassInfo> BaseClasses { get; set; }
         public List<MethodTemplateInfo> MethodList { get; set; }
+        public bool HasAnyMethodsWithNullableArguments => MethodList.SelectMany(ml => ml.ArgumentListInfo).Any(y => y.TypeInfo.ToString().EndsWith("?"));
         public string Modifiers { get; set; }
         public string Namespace { get; set; }
         public List<string> TypeParametersInfo { get; set; }
@@ -407,7 +435,7 @@ namespace Refit.Generator
         public List<ArgumentInfo> ArgumentListInfo { get; set; }
         public string ArgumentList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => y.Name)) : null;
         public string ArgumentListWithTypes => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => $"{y.TypeInfo} {y.Name}")) : null;
-        public string ArgumentTypesList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => $"typeof({y.TypeInfo})")) : null;
+        public string ArgumentTypesList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => y.TypeInfo.ToString() is var typeName && typeName.EndsWith("?") ? $"ToNullable(typeof({typeName.Remove(typeName.Length - 1)}))" : $"typeof({typeName})")) : null;
         public bool IsRefitMethod { get; set; }
         public string Name { get; set; }
         public TypeInfo ReturnTypeInfo { get; set; }

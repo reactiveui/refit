@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net.Http;
+
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Refit
@@ -17,6 +19,33 @@ namespace Refit
             services.AddSingleton(provider => RequestBuilder.ForType<T>(settings));
 
             return services.AddHttpClient(UniqueName.ForType<T>())
+                           .ConfigureHttpMessageHandlerBuilder(builder =>
+                           {
+                               // check to see if user provided custom auth token
+                               HttpMessageHandler innerHandler = null;
+                               if (settings != null)
+                               {
+                                   if (settings.HttpMessageHandlerFactory != null)
+                                   {
+                                       innerHandler = settings.HttpMessageHandlerFactory();
+                                   }
+
+                                   if (settings.AuthorizationHeaderValueGetter != null)
+                                   {
+                                       innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, innerHandler);
+                                   }
+                                   else if (settings.AuthorizationHeaderValueWithParamGetter != null)
+                                   {
+                                       innerHandler = new AuthenticatedParameterizedHttpClientHandler(settings.AuthorizationHeaderValueWithParamGetter, innerHandler);
+                                   }
+                               }
+
+                               if(innerHandler != null)
+                               {
+                                   builder.PrimaryHandler = innerHandler;
+                               }    
+
+                           })
                            .AddTypedClient((client, serviceProvider) => RestService.For<T>(client, serviceProvider.GetService<IRequestBuilder<T>>()));
         }
 
@@ -30,7 +59,57 @@ namespace Refit
         public static IHttpClientBuilder AddRefitClient(this IServiceCollection services, Type refitInterfaceType, RefitSettings settings = null)
         {
             return services.AddHttpClient(UniqueName.ForType(refitInterfaceType))
-                           .AddTypedClient((client, serviceProvider) => RestService.For(refitInterfaceType, client, settings));
+                            .ConfigureHttpMessageHandlerBuilder(builder =>
+                            {
+                                // check to see if user provided custom auth token
+                                HttpMessageHandler innerHandler = null;
+                                if (settings != null)
+                                {
+                                    if (settings.HttpMessageHandlerFactory != null)
+                                    {
+                                        innerHandler = settings.HttpMessageHandlerFactory();
+                                    }
+
+                                    if (settings.AuthorizationHeaderValueGetter != null)
+                                    {
+                                        innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, innerHandler);
+                                    }
+                                    else if (settings.AuthorizationHeaderValueWithParamGetter != null)
+                                    {
+                                        innerHandler = new AuthenticatedParameterizedHttpClientHandler(settings.AuthorizationHeaderValueWithParamGetter, innerHandler);
+                                    }
+                                }
+
+                                if (innerHandler != null)
+                                {
+                                    builder.PrimaryHandler = innerHandler;
+                                }
+
+                            })
+                           .AddTypedClient(refitInterfaceType, (client, serviceProvider) => RestService.For(refitInterfaceType, client, settings));
+        }
+
+        private static IHttpClientBuilder AddTypedClient(this IHttpClientBuilder builder, Type type, Func<HttpClient, IServiceProvider, object> factory)
+        {
+            if (builder == null)
+            {
+                throw new ArgumentNullException(nameof(builder));
+            }
+
+            if (factory == null)
+            {
+                throw new ArgumentNullException(nameof(factory));
+            }
+
+            builder.Services.AddTransient(type, s =>
+            {
+                var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
+                var httpClient = httpClientFactory.CreateClient(builder.Name);
+
+                return factory(httpClient, s);
+            });
+
+            return builder;
         }
     }
 }

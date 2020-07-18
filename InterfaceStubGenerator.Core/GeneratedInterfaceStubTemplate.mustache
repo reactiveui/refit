@@ -2,6 +2,7 @@
 using System;
 using System.Net.Http;
 using System.Collections.Generic;
+using {{RefitInternalNamespace}}RefitInternalGenerated;
 
 /* ******** Hey You! *********
  *
@@ -27,10 +28,11 @@ namespace {{RefitInternalNamespace}}RefitInternalGenerated
 }
 #pragma warning restore
 
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+#pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
 {{#ClassList}}
 namespace {{Namespace}}
 {
-    using {{RefitInternalNamespace}}RefitInternalGenerated;
     {{#UsingList}}
     using {{Item}};
     {{/UsingList}}
@@ -73,7 +75,13 @@ namespace {{Namespace}}
             {{/IsRefitMethod}}
         }
             {{/MethodList}}
+        {{#HasAnyMethodsWithNullableArguments}}
+
+        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
+        {{/HasAnyMethodsWithNullableArguments}}
     }
 }
 
             {{/ClassList}}
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+#pragma warning restore CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.

@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections;
-using System.Reflection;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Web;
-using System.Collections.Concurrent;
 
 namespace Refit
 {
@@ -158,18 +158,14 @@ namespace Refit
                 // if you need to AOT everything, so we need to reflectively 
                 // invoke buildTaskFuncForMethod.
                 var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
-                var taskFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
-                    taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
-                    taskFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
+                var taskFunc = (MulticastDelegate)(taskFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
 
                 return (client, args) => taskFunc.DynamicInvoke(client, args);
             }
 
             // Same deal
             var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildRxFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
-            var rxFunc = (MulticastDelegate)(restMethod.IsApiResponse ?
-                    rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedGenericArgument) :
-                    rxFuncMi.MakeGenericMethod(restMethod.SerializedReturnType, restMethod.SerializedReturnType)).Invoke(this, new[] { restMethod });
+            var rxFunc = (MulticastDelegate)(rxFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
 
             return (client, args) => rxFunc.DynamicInvoke(client, args);
         }
@@ -248,70 +244,26 @@ namespace Refit
                 {
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
+                    ApiException e = null;
+                    disposeResponse = restMethod.ShouldDisposeResponse;
 
-                    if (restMethod.SerializedReturnType == typeof(HttpResponseMessage))
+                    if (!resp.IsSuccessStatusCode && typeof(T) != typeof(HttpResponseMessage))
                     {
                         disposeResponse = false; // caller has to dispose
-
-                        // NB: This double-casting manual-boxing hate crime is the only way to make 
-                        // this work without a 'class' generic constraint. It could blow up at runtime 
-                        // and would be A Bad Idea if we hadn't already vetted the return type.
-                        return (T)(object)resp;
+                        e = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
                     }
 
-                    if (!resp.IsSuccessStatusCode)
-                    {
-                        disposeResponse = false;
-
-                        var exception = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
-
-                        if (restMethod.IsApiResponse)
-                        {
-                            return ApiResponse.Create<T>(resp, default(T), exception);
-                        }
-
-                        throw exception;
-                    }
-
-                    var serializedReturnType = restMethod.IsApiResponse ? restMethod.SerializedGenericArgument : restMethod.SerializedReturnType;
-
-                    if (serializedReturnType == typeof(HttpContent))
-                    {
-                        disposeResponse = false; // caller has to clean up the content
-                        if (restMethod.IsApiResponse)
-                            return ApiResponse.Create<T>(resp, content);
-                        return (T)(object)content;
-                    }
-
-                    if (serializedReturnType == typeof(Stream))
-                    {
-                        disposeResponse = false; // caller has to dispose
-                        var stream = (object)await content.ReadAsStreamAsync().ConfigureAwait(false);
-                        if (restMethod.IsApiResponse)
-                            return ApiResponse.Create<T>(resp, stream);
-                        return (T)stream;
-                    }
-
-                    if (serializedReturnType == typeof(string))
-                    {
-                        using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
-                        using var reader = new StreamReader(stream);
-                        var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
-                        if (restMethod.IsApiResponse)
-                            return ApiResponse.Create<T>(resp, str);
-                        return (T)str;
-                    }
-
-                    var body = await serializer.DeserializeAsync<TBody>(content);
                     if (restMethod.IsApiResponse)
                     {
-                        return ApiResponse.Create<T>(resp, body);
+                        var body = await DeserializeContentAsync<TBody>(resp, content);
+                        return ApiResponse.Create<T, TBody>(resp, body, e);
                     }
-
-                    //  Unfortunate side-effect of having no 'class' or 'T : TBody' constraints.
-                    //  However, we know that T must be the same as TBody because IsApiResponse != true so 
-                    //  this code is safe at runtime.
-                    return (T)(object)body;
+                    else if (e != null)
+                    {
+                        throw e;
+                    }
+                    else
+                        return await DeserializeContentAsync<T>(resp, content);
                 }
                 finally
                 {
@@ -325,6 +277,43 @@ namespace Refit
                     }
                 }
             };
+        }
+
+        private async Task<T> DeserializeContentAsync<T>(HttpResponseMessage resp, HttpContent content)
+        {
+            T result;
+            if (typeof(T) == typeof(HttpResponseMessage))
+            {
+                // NB: This double-casting manual-boxing hate crime is the only way to make
+                // this work without a 'class' generic constraint. It could blow up at runtime
+                // and would be A Bad Idea if we hadn't already vetted the return type.
+                result = (T)(object)resp;
+            }
+            else if (!resp.IsSuccessStatusCode)
+            {
+                result = default;
+            }
+            else if (typeof(T) == typeof(HttpContent))
+            {
+                result = (T)(object)content;
+            }
+            else if (typeof(T) == typeof(Stream))
+            {
+                var stream = (object)await content.ReadAsStreamAsync().ConfigureAwait(false);
+                result = (T)stream;
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+                using var reader = new StreamReader(stream);
+                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                result = (T)str;
+            }
+            else
+            {
+                result = await serializer.DeserializeAsync<T>(content);
+            }
+            return result;
         }
 
         List<KeyValuePair<string, object>> BuildQueryMap(object @object, string delimiter = null, RestMethodParameterInfo parameterInfo = null)
@@ -363,6 +352,25 @@ namespace Refit
                 if (aliasAttribute != null)
                     key = aliasAttribute.Name;
 
+
+                // Look to see if the property has a Query attribute, and if so, format it accordingly
+                var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
+                if (queryAttribute != null && queryAttribute.Format != null)
+                {
+                    obj = settings.FormUrlEncodedParameterFormatter.Format(obj, queryAttribute.Format);
+                }
+
+                // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
+                if (!(obj is string) && obj is IEnumerable ienu)
+                {
+                    foreach (var value in ParseEnumerableQueryParameterValue(ienu, propertyInfo, propertyInfo.PropertyType, queryAttribute))
+                    {
+                        kvps.Add(new KeyValuePair<string, object>(key, value));
+                    }
+
+                    continue;
+                }
+
                 if (DoNotConvertToQueryMap(obj))
                 {
                     kvps.Add(new KeyValuePair<string, object>(key, obj));
@@ -375,14 +383,6 @@ namespace Refit
                         foreach (var keyValuePair in BuildQueryMap(idict, delimiter))
                         {
                             kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
-                        }
-
-                        break;
-
-                    case IEnumerable ienu:
-                        foreach (var o in ienu)
-                        {
-                            kvps.Add(new KeyValuePair<string, object>(key, o));
                         }
 
                         break;
@@ -454,7 +454,7 @@ namespace Refit
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
-                RestMethodParameterInfo parameterInfo = null;                
+                RestMethodParameterInfo parameterInfo = null;
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
@@ -592,45 +592,14 @@ namespace Refit
                         var attr = queryAttribute ?? new QueryAttribute();
                         if (DoNotConvertToQueryMap(param))
                         {
-                            if (!(param is string) && param is IEnumerable paramValues)
-                            {
-                                switch (attr.CollectionFormat)
-                                {
-                                    case CollectionFormat.Multi:
-                                        foreach (var paramValue in paramValues)
-                                        {
-                                            queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                                restMethod.QueryParameterMap[i],
-                                                settings.UrlParameterFormatter.Format(paramValue, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
-                                        }
-                                        continue;
-                                    default:
-                                        var delimiter = attr.CollectionFormat == CollectionFormat.Ssv ? " "
-                                            : attr.CollectionFormat == CollectionFormat.Tsv ? "\t"
-                                            : attr.CollectionFormat == CollectionFormat.Pipes ? "|"
-                                            : ",";
-
-                                        // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
-
-                                        var formattedValues = paramValues
-                                            .Cast<object>()
-                                            .Select(v => settings.UrlParameterFormatter.Format(v, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType));
-
-                                        queryParamsToAdd.Add(new KeyValuePair<string, string>(
-                                            restMethod.QueryParameterMap[i],
-                                            string.Join(delimiter, formattedValues)));
-                                        continue;
-                                }
-                            }
-
-                            queryParamsToAdd.Add(new KeyValuePair<string, string>(restMethod.QueryParameterMap[i], settings.UrlParameterFormatter.Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
+                            queryParamsToAdd.AddRange(ParseQueryParameter(param, restMethod.ParameterInfoMap[i], restMethod.QueryParameterMap[i], attr));
                         }
                         else
                         {
                             foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo))
                             {
                                 var path = !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}" : kvp.Key;
-                                queryParamsToAdd.Add(new KeyValuePair<string, string>(path, settings.UrlParameterFormatter.Format(kvp.Value, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType)));
+                                queryParamsToAdd.AddRange(ParseQueryParameter(kvp.Value, restMethod.ParameterInfoMap[i], path, attr));
                             }
                         }
 
@@ -712,6 +681,54 @@ namespace Refit
                 ret.RequestUri = new Uri(uri.Uri.GetComponents(UriComponents.PathAndQuery, uriFormat), UriKind.Relative);
                 return ret;
             };
+        }
+
+        IEnumerable<KeyValuePair<string, string>> ParseQueryParameter(object param, ParameterInfo parameterInfo, string queryPath, QueryAttribute queryAttribute)
+        {
+            if (!(param is string) && param is IEnumerable paramValues)
+            {
+                foreach (var value in ParseEnumerableQueryParameterValue(paramValues, parameterInfo, parameterInfo.ParameterType, queryAttribute))
+                {
+                    yield return new KeyValuePair<string, string>(queryPath, value);
+                }
+            }
+            else
+            {
+                yield return new KeyValuePair<string, string>(queryPath, settings.UrlParameterFormatter.Format(param, parameterInfo, parameterInfo.ParameterType));
+            }
+        }
+
+        IEnumerable<string> ParseEnumerableQueryParameterValue(IEnumerable paramValues, ICustomAttributeProvider customAttributeProvider, Type type, QueryAttribute queryAttribute)
+        {
+            var collectionFormat = queryAttribute != null && queryAttribute.IsCollectionFormatSpecified
+                ? queryAttribute.CollectionFormat
+                : settings.CollectionFormat;
+
+            switch (collectionFormat)
+            {
+                case CollectionFormat.Multi:
+                    foreach (var paramValue in paramValues)
+                    {
+                        yield return settings.UrlParameterFormatter.Format(paramValue, customAttributeProvider, type);
+                    }
+
+                    break;
+
+                default:
+                    var delimiter = collectionFormat == CollectionFormat.Ssv ? " "
+                        : collectionFormat == CollectionFormat.Tsv ? "\t"
+                        : collectionFormat == CollectionFormat.Pipes ? "|"
+                        : ",";
+
+                    // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
+                    var formattedValues = paramValues
+                        .Cast<object>()
+                        .Select(v => settings.UrlParameterFormatter.Format(v, customAttributeProvider, type));
+
+                    yield return string.Join(delimiter, formattedValues);
+
+                    break;
+            }
         }
 
         Func<HttpClient, object[], IObservable<T>> BuildRxFuncForMethod<T, TBody>(RestMethodInfo restMethod)
