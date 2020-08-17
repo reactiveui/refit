@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,7 +10,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using Refit; // InterfaceStubGenerator looks for this
 using Refit.Generator;
-
 using Xunit;
 
 using Task = System.Threading.Tasks.Task;
@@ -93,6 +93,25 @@ namespace Refit.Tests
             Assert.Equal("string userName", result.MethodList[0].ArgumentListWithTypes);
             Assert.Equal("IGitHubApi", result.InterfaceName);
             Assert.Equal("IGitHubApi", result.GeneratedClassSuffix);
+        }
+
+        [Fact]
+        public void GenerateClassInfoForDisposableInterfaceSmokeTest()
+        {
+            var file = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs")));
+            var fixture = new InterfaceStubGenerator();
+
+            var input = file.GetRoot().DescendantNodes()
+                .OfType<InterfaceDeclarationSyntax>()
+                .First(x => x.Identifier.ValueText == "IGitHubApiDisposable");
+
+            var result = fixture.GenerateClassInfoForInterface(input);
+
+            Assert.Equal(2, result.MethodList.Count);
+            Assert.Equal("RefitMethod", result.MethodList[0].Name);
+            Assert.Equal("Dispose", result.MethodList[1].Name);
+            Assert.Equal("IGitHubApiDisposable", result.InterfaceName);
+            Assert.Equal("IGitHubApiDisposable", result.GeneratedClassSuffix);
         }
 
         [Fact]

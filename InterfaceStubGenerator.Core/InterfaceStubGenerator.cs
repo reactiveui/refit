@@ -13,7 +13,7 @@ using Nustache.Core;
 
 namespace Refit.Generator
 {
-    // * Search for all Interfaces, find the method definitions 
+    // * Search for all Interfaces, find the method definitions
     //   and make sure there's at least one Refit attribute on one
     // * Generate the data we need for the template based on interface method
     //   defn's
@@ -70,7 +70,7 @@ namespace Refit.Generator
         {
             var nodes = tree.GetRoot().DescendantNodes().ToList();
 
-            // Make sure this file imports Refit. If not, we're not going to 
+            // Make sure this file imports Refit. If not, we're not going to
             // find any Refit interfaces
             // NB: This falls down in the tests unless we add an explicit "using Refit;",
             // but we can rely on this being there in any other file
@@ -170,6 +170,19 @@ namespace Refit.Generator
                                               return mti;
                                           })
                                           .ToList();
+
+            if (ret.BaseClasses?.Any(x => x.Name == nameof(IDisposable)) == true)
+            {
+                ret.MethodList.Add(new MethodTemplateInfo
+                {
+                    Name = nameof(IDisposable.Dispose),
+                    ReturnTypeInfo = new TypeInfo {Name = "void"},
+                    ArgumentListInfo = new List<ArgumentInfo>(),
+                    IsRefitMethod = false,
+                    InterfaceName = nameof(IDisposable),
+                });
+            }
+
             return ret;
         }
 
@@ -345,7 +358,7 @@ namespace Refit.Generator
 
         public bool HasRefitHttpMethodAttribute(MethodDeclarationSyntax method)
         {
-            // We could also verify that the single argument is a string, 
+            // We could also verify that the single argument is a string,
             // but what if somebody is dumb and uses a constant?
             // Could be turtles all the way down.
             return method.AttributeLists.SelectMany(a => a.Attributes)
