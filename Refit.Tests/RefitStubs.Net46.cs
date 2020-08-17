@@ -32,6 +32,7 @@ namespace Refit.Tests.RefitInternalGenerated
 #pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
 namespace Refit.Tests
 {
+    using global::System;
     using global::System.Collections.Generic;
     using global::System.IO;
     using global::System.Linq;
@@ -41,7 +42,6 @@ namespace Refit.Tests
     using global::Microsoft.CodeAnalysis.CSharp.Syntax;
     using global::Refit;
     using global::Refit.Generator;
-    using global::System;
     using global::Xunit;
     using Task =  global::System.Threading.Tasks.Task;
 
@@ -697,6 +697,7 @@ namespace Refit.Tests
 
 namespace Refit.Tests
 {
+    using global::System;
     using global::System.Collections.Generic;
     using global::System.IO;
     using global::System.Linq;
@@ -706,7 +707,6 @@ namespace Refit.Tests
     using global::Microsoft.CodeAnalysis.CSharp.Syntax;
     using global::Refit;
     using global::Refit.Generator;
-    using global::System;
     using global::Xunit;
     using Task =  global::System.Threading.Tasks.Task;
 
@@ -1701,7 +1701,7 @@ namespace Refit.Tests
         /// <inheritdoc />
         void IDisposable.Dispose()
         {
-            throw new NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
+            Client?.Dispose();
         }
     }
 }
@@ -2147,6 +2147,7 @@ namespace Refit.Tests.SeparateNamespace
 
 namespace Refit.Tests
 {
+    using global::System;
     using global::System.Collections.Generic;
     using global::System.IO;
     using global::System.Linq;
@@ -2156,7 +2157,6 @@ namespace Refit.Tests
     using global::Microsoft.CodeAnalysis.CSharp.Syntax;
     using global::Refit;
     using global::Refit.Generator;
-    using global::System;
     using global::Xunit;
     using Task =  global::System.Threading.Tasks.Task;
 

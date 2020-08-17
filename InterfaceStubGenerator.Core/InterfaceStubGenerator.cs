@@ -179,6 +179,7 @@ namespace Refit.Generator
                     ReturnTypeInfo = new TypeInfo {Name = "void"},
                     ArgumentListInfo = new List<ArgumentInfo>(),
                     IsRefitMethod = false,
+                    IsDispose = true,
                     InterfaceName = nameof(IDisposable),
                 });
             }
@@ -450,6 +451,8 @@ namespace Refit.Generator
         public string ArgumentListWithTypes => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => $"{y.TypeInfo} {y.Name}")) : null;
         public string ArgumentTypesList => ArgumentListInfo != null ? string.Join(", ", ArgumentListInfo.Select(y => y.TypeInfo.ToString() is var typeName && typeName.EndsWith("?") ? $"ToNullable(typeof({typeName.Remove(typeName.Length - 1)}))" : $"typeof({typeName})")) : null;
         public bool IsRefitMethod { get; set; }
+        public bool IsDispose { get; set; }
+        public bool UnsupportedMethod => !IsRefitMethod && !IsDispose;
         public string Name { get; set; }
         public TypeInfo ReturnTypeInfo { get; set; }
         public string ReturnType => ReturnTypeInfo.ToString();
