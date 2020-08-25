@@ -695,6 +695,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
 
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithPathMemberInCustomHeader([Header("X-PathMember")]int id, [Header("X-Emoji")] string custom);
+
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
 
@@ -1342,6 +1345,17 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, null });
 
             Assert.Null(output.Headers.Authorization);//, "Headers include Authorization header");
+        }
+
+        [Fact]
+        public void PathMemberAsCustomDynamicHeaderShouldBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithPathMemberInCustomHeader");
+            var output = factory(new object[] { 6, ":joy_cat:" });
+
+            Assert.True(output.Headers.Contains("X-PathMember"), "Headers include X-PathMember header");
+            Assert.Equal("6", output.Headers.GetValues("X-PathMember").First());
         }
 
         [Fact]
