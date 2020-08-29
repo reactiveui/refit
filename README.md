@@ -131,6 +131,16 @@ public class MyQueryParams
     public string SortOrder { get; set; }
 
     public int Limit { get; set; }
+
+    public KindOptions Kind { get; set; }
+}
+
+public enum KindOptions
+{
+    Foo,
+
+    [EnumMember(Value = "bar")]
+    Bar
 }
 
 
@@ -143,12 +153,13 @@ Task<List<User>> GroupListWithAttribute([AliasAs("id")] int groupId, [Query(".",
 
 params.SortOrder = "desc";
 params.Limit = 10;
+params.Kind = KindOptions.Bar;
 
 GroupList(4, params)
->>> "/group/4/users?order=desc&Limit=10"
+>>> "/group/4/users?order=desc&Limit=10&Kind=bar"
 
 GroupListWithAttribute(4, params)
->>> "/group/4/users?search.order=desc&search.Limit=10"
+>>> "/group/4/users?search.order=desc&search.Limit=10&search.Kind=bar"
 ```
 
 A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no intellisense and/or type safety.
