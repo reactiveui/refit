@@ -783,6 +783,9 @@ namespace Refit.Tests
         [Get("/query")]
         Task QueryWithEnum(FooWithEnumMember foo);
 
+        [Get("/query")]
+        Task QueryWithTypeWithEnum(TypeFooWithEnumMember foo);
+
         [Get("/api/{id}")]
         Task QueryWithOptionalParameters(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
 
@@ -843,6 +846,12 @@ namespace Refit.Tests
 
         [EnumMember(Value = "b")]
         B
+    }
+
+    public class TypeFooWithEnumMember
+    {
+        [AliasAs("foo")]
+        public FooWithEnumMember Foo { get; set; }
     }
 
     public class SomeRequestData
@@ -1648,6 +1657,20 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnum");
 
             var output = factory(new object[] { queryParameter });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData(FooWithEnumMember.A, "/query?foo=A")]
+        [InlineData(FooWithEnumMember.B, "/query?foo=b")]
+        public void QueryStringUsesEnumMemberAttributeInTypeWithEnum(FooWithEnumMember queryParameter, string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithTypeWithEnum");
+
+            var output = factory(new object[] { new TypeFooWithEnumMember { Foo = queryParameter } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal(expectedQuery, uri.PathAndQuery);
