@@ -155,7 +155,7 @@ namespace Refit
             {
                 // NB: This jacked up reflection code is here because it's
                 // difficult to upcast Task<object> to an arbitrary T, especially
-                // if you need to AOT everything, so we need to reflectively 
+                // if you need to AOT everything, so we need to reflectively
                 // invoke buildTaskFuncForMethod.
                 var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var taskFunc = (MulticastDelegate)(taskFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
@@ -458,6 +458,7 @@ namespace Refit
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
+                    var isParameterMappedToRequest = false;
                     var param = paramList[i];
                     // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.ContainsKey(i))
@@ -509,7 +510,7 @@ namespace Refit
                                 replacement,
                                 RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                            continue;
+                            isParameterMappedToRequest = true;
 
                         }
                     }
@@ -567,18 +568,18 @@ namespace Refit
                             }
                         }
 
-                        continue;
+                        isParameterMappedToRequest = true;
                     }
 
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.ContainsKey(i))
                     {
                         headersToAdd[restMethod.HeaderParameterMap[i]] = param?.ToString();
-                        continue;
+                        isParameterMappedToRequest = true;
                     }
 
-                    // ignore nulls
-                    if (param == null) continue;
+                    // ignore nulls and already processed parameters
+                    if (isParameterMappedToRequest || param == null) continue;
 
                     // for anything that fell through to here, if this is not a multipart method add the parameter to the query string
                     // or if is an object bound to the path add any non-path bound properties to query string
@@ -656,8 +657,8 @@ namespace Refit
                     }
                 }
 
-                // NB: The URI methods in .NET are dumb. Also, we do this 
-                // UriBuilder business so that we preserve any hardcoded query 
+                // NB: The URI methods in .NET are dumb. Also, we do this
+                // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
@@ -832,11 +833,11 @@ namespace Refit
         static void SetHeader(HttpRequestMessage request, string name, string value)
         {
             // Clear any existing version of this header that might be set, because
-            // we want to allow removal/redefinition of headers. 
+            // we want to allow removal/redefinition of headers.
             // We also don't want to double up content headers which may have been
             // set for us automatically.
 
-            // NB: We have to enumerate the header names to check existence because 
+            // NB: We have to enumerate the header names to check existence because
             // Contains throws if it's the wrong header type for the collection.
             if (request.Headers.Any(x => x.Key == name))
             {
