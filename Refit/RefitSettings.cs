@@ -104,10 +104,14 @@ namespace Refit
                 .FirstOrDefault()?.Format;
 
             EnumMemberAttribute enummember = null;
-            if (parameterValue != null && type.GetTypeInfo().IsEnum)
+            if (parameterValue != null)
             {
-                var cached = EnumMemberCache.GetOrAdd(type, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
-                enummember = cached.GetOrAdd(parameterValue.ToString(), val => type.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+                var parameterType = parameterValue.GetType();
+                if (parameterType.IsEnum)
+                {
+                    var cached = EnumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                    enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+                }
             }
 
             return parameterValue == null
