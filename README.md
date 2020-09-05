@@ -931,6 +931,17 @@ catch (ApiException exception)
 // ...
 ```
 
+You can also override default exceptions behavior by providing custom exception factory in `RefitSettings`. For example, you can suppress all exceptions with the following: 
+
+```csharp
+var nullTask = Task.FromResult<Exception>(null);
+
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        ExceptionFactory = httpResponse => nullTask;
+    });
+```
+
 ### MSBuild configuration
 
 - `RefitDisableGenerateRefitStubs`: This property allows for other Roslyn-based source generators to disable the Refit's stubs generation during they own generation phase.
