@@ -39,7 +39,12 @@ namespace Refit
 
         public async Task<T> DeserializeAsync<T>(HttpContent content)
         {
-            var xmlSerializer = serializerCache.GetOrAdd(typeof(T), t => new XmlSerializer(t, settings.XmlAttributeOverrides));
+            var xmlSerializer = serializerCache.GetOrAdd(typeof(T), t => new XmlSerializer(
+                t,
+                settings.XmlAttributeOverrides,
+                Array.Empty<Type>(),
+                null,
+                settings.XmlDefaultNamespace));
 
             using var input = new StringReader(await content.ReadAsStringAsync().ConfigureAwait(false));
             using var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings);
@@ -106,6 +111,7 @@ namespace Refit
     {
         public XmlContentSerializerSettings()
         {
+            XmlDefaultNamespace = null;
             XmlReaderWriterSettings = new XmlReaderWriterSettings();
             XmlNamespaces = new XmlSerializerNamespaces(
                 new[]
@@ -115,6 +121,8 @@ namespace Refit
 
             XmlAttributeOverrides = new XmlAttributeOverrides();
         }
+
+        public string XmlDefaultNamespace { get; set; }
 
         public XmlReaderWriterSettings XmlReaderWriterSettings { get; set; }
 

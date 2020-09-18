@@ -155,7 +155,7 @@ namespace Refit
             {
                 // NB: This jacked up reflection code is here because it's
                 // difficult to upcast Task<object> to an arbitrary T, especially
-                // if you need to AOT everything, so we need to reflectively 
+                // if you need to AOT everything, so we need to reflectively
                 // invoke buildTaskFuncForMethod.
                 var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(nameof(BuildTaskFuncForMethod), BindingFlags.NonPublic | BindingFlags.Instance);
                 var taskFunc = (MulticastDelegate)(taskFuncMi.MakeGenericMethod(restMethod.ReturnResultType, restMethod.DeserializedResultType)).Invoke(this, new[] { restMethod });
@@ -244,22 +244,26 @@ namespace Refit
                 {
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
-                    ApiException e = null;
+                    Exception e = null;
                     disposeResponse = restMethod.ShouldDisposeResponse;
 
-                    if (!resp.IsSuccessStatusCode && typeof(T) != typeof(HttpResponseMessage))
+                    if (typeof(T) != typeof(HttpResponseMessage))
                     {
-                        disposeResponse = false; // caller has to dispose
-                        e = await ApiException.Create(rq, restMethod.HttpMethod, resp, restMethod.RefitSettings).ConfigureAwait(false);
+                        e = await settings.ExceptionFactory(resp).ConfigureAwait(false);
                     }
 
                     if (restMethod.IsApiResponse)
                     {
-                        var body = await DeserializeContentAsync<TBody>(resp, content);
-                        return ApiResponse.Create<T, TBody>(resp, body, e);
+                        // Only attempt to deserialize content if no error present for backward-compatibility
+                        var body = e == null
+                            ? await DeserializeContentAsync<TBody>(resp, content)
+                            : default;
+
+                        return ApiResponse.Create<T, TBody>(resp, body, e as ApiException);
                     }
                     else if (e != null)
                     {
+                        disposeResponse = false; // caller has to dispose
                         throw e;
                     }
                     else
@@ -288,10 +292,6 @@ namespace Refit
                 // this work without a 'class' generic constraint. It could blow up at runtime
                 // and would be A Bad Idea if we hadn't already vetted the return type.
                 result = (T)(object)resp;
-            }
-            else if (!resp.IsSuccessStatusCode)
-            {
-                result = default;
             }
             else if (typeof(T) == typeof(HttpContent))
             {
@@ -458,6 +458,7 @@ namespace Refit
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
+                    var isParameterMappedToRequest = false;
                     var param = paramList[i];
                     // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.ContainsKey(i))
@@ -509,7 +510,7 @@ namespace Refit
                                 replacement,
                                 RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-                            continue;
+                            isParameterMappedToRequest = true;
 
                         }
                     }
@@ -567,18 +568,18 @@ namespace Refit
                             }
                         }
 
-                        continue;
+                        isParameterMappedToRequest = true;
                     }
 
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.ContainsKey(i))
                     {
                         headersToAdd[restMethod.HeaderParameterMap[i]] = param?.ToString();
-                        continue;
+                        isParameterMappedToRequest = true;
                     }
 
-                    // ignore nulls
-                    if (param == null) continue;
+                    // ignore nulls and already processed parameters
+                    if (isParameterMappedToRequest || param == null) continue;
 
                     // for anything that fell through to here, if this is not a multipart method add the parameter to the query string
                     // or if is an object bound to the path add any non-path bound properties to query string
@@ -656,8 +657,8 @@ namespace Refit
                     }
                 }
 
-                // NB: The URI methods in .NET are dumb. Also, we do this 
-                // UriBuilder business so that we preserve any hardcoded query 
+                // NB: The URI methods in .NET are dumb. Also, we do this
+                // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
@@ -786,9 +787,11 @@ namespace Refit
                 }
 
                 using var resp = await client.SendAsync(rq, ct).ConfigureAwait(false);
-                if (!resp.IsSuccessStatusCode)
+
+                var exception = await settings.ExceptionFactory(resp).ConfigureAwait(false);
+                if (exception != null)
                 {
-                    throw await ApiException.Create(rq, restMethod.HttpMethod, resp, settings).ConfigureAwait(false);
+                    throw exception;
                 }
             };
         }
@@ -832,11 +835,11 @@ namespace Refit
         static void SetHeader(HttpRequestMessage request, string name, string value)
         {
             // Clear any existing version of this header that might be set, because
-            // we want to allow removal/redefinition of headers. 
+            // we want to allow removal/redefinition of headers.
             // We also don't want to double up content headers which may have been
             // set for us automatically.
 
-            // NB: We have to enumerate the header names to check existence because 
+            // NB: We have to enumerate the header names to check existence because
             // Contains throws if it's the wrong header type for the collection.
             if (request.Headers.Any(x => x.Key == name))
             {

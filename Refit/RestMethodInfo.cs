@@ -133,20 +133,7 @@ namespace Refit
                 return;
 
             if (!relativePath.StartsWith("/"))
-            {
-                goto bogusPath;
-            }
-
-            var parts = relativePath.Split('/');
-            if (parts.Length == 0)
-            {
-                goto bogusPath;
-            }
-
-            return;
-
-bogusPath:
-            throw new ArgumentException($"URL path {relativePath} must be of the form '/foo/bar/baz'");
+                throw new ArgumentException($"URL path {relativePath} must start with '/' and be of the form '/foo/bar/baz'");
         }
 
         Dictionary<int, RestMethodParameterInfo> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)

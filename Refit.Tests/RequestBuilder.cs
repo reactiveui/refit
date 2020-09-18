@@ -695,6 +695,9 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
 
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithPathMemberInCustomHeader([Header("X-PathMember")]int id, [Header("X-Emoji")] string custom);
+
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
 
@@ -783,6 +786,9 @@ namespace Refit.Tests
         [Get("/query")]
         Task QueryWithEnum(FooWithEnumMember foo);
 
+        [Get("/query")]
+        Task QueryWithTypeWithEnum(TypeFooWithEnumMember foo);
+
         [Get("/api/{id}")]
         Task QueryWithOptionalParameters(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
 
@@ -843,6 +849,12 @@ namespace Refit.Tests
 
         [EnumMember(Value = "b")]
         B
+    }
+
+    public class TypeFooWithEnumMember
+    {
+        [AliasAs("foo")]
+        public FooWithEnumMember Foo { get; set; }
     }
 
     public class SomeRequestData
@@ -1345,6 +1357,17 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void PathMemberAsCustomDynamicHeaderShouldBeInHeaders()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithPathMemberInCustomHeader");
+            var output = factory(new object[] { 6, ":joy_cat:" });
+
+            Assert.True(output.Headers.Contains("X-PathMember"), "Headers include X-PathMember header");
+            Assert.Equal("6", output.Headers.GetValues("X-PathMember").First());
+        }
+
+        [Fact]
         public void AddCustomHeadersToRequestHeadersOnly()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
@@ -1648,6 +1671,20 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnum");
 
             var output = factory(new object[] { queryParameter });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData(FooWithEnumMember.A, "/query?foo=A")]
+        [InlineData(FooWithEnumMember.B, "/query?foo=b")]
+        public void QueryStringUsesEnumMemberAttributeInTypeWithEnum(FooWithEnumMember queryParameter, string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("QueryWithTypeWithEnum");
+
+            var output = factory(new object[] { new TypeFooWithEnumMember { Foo = queryParameter } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal(expectedQuery, uri.PathAndQuery);

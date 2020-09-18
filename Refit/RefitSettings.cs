@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+
 using Newtonsoft.Json;
 
 namespace Refit
@@ -22,6 +23,7 @@ namespace Refit
             ContentSerializer = new NewtonsoftJsonContentSerializer();
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
+            ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
         }
 
         /// <summary>
@@ -38,6 +40,7 @@ namespace Refit
             ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
+            ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
         }
 
         /// <summary>
@@ -54,6 +57,12 @@ namespace Refit
         /// Supply a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.
         /// </summary>
         public Func<HttpMessageHandler> HttpMessageHandlerFactory { get; set; }
+
+        /// <summary>
+        /// Supply a function to provide <see cref="Exception"/> based on <see cref="HttpResponseMessage"/>.
+        /// If function returns null - no exception is thrown.
+        /// </summary>
+        public Func<HttpResponseMessage, Task<Exception>> ExceptionFactory { get; set; }
 
         [Obsolete("Set RefitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer(JsonSerializerSettings) instead.", false)]
         public JsonSerializerSettings JsonSerializerSettings
@@ -104,10 +113,14 @@ namespace Refit
                 .FirstOrDefault()?.Format;
 
             EnumMemberAttribute enummember = null;
-            if (parameterValue != null && type.GetTypeInfo().IsEnum)
+            if (parameterValue != null)
             {
-                var cached = EnumMemberCache.GetOrAdd(type, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
-                enummember = cached.GetOrAdd(parameterValue.ToString(), val => type.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+                var parameterType = parameterValue.GetType();
+                if (parameterType.IsEnum)
+                {
+                    var cached = EnumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute>());
+                    enummember = cached.GetOrAdd(parameterValue.ToString(), val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+                }
             }
 
             return parameterValue == null
@@ -144,6 +157,38 @@ namespace Refit
                                      ? "{0}"
                                      : $"{{0:{formatString}}}",
                                  enummember?.Value ?? parameterValue);
+        }
+    }
+
+    public class DefaultApiExceptionFactory
+    {
+        static readonly Task<Exception> NullTask = Task.FromResult<Exception>(null);
+
+        readonly RefitSettings refitSettings;
+
+        public DefaultApiExceptionFactory(RefitSettings refitSettings)
+        {
+            this.refitSettings = refitSettings;
+        }
+
+        public Task<Exception> CreateAsync(HttpResponseMessage responseMessage)
+        {
+            if (!responseMessage.IsSuccessStatusCode)
+            {
+                return CreateExceptionAsync(responseMessage, refitSettings);
+            }
+            else
+            {
+                return NullTask;
+            }
+        }
+
+        static async Task<Exception> CreateExceptionAsync(HttpResponseMessage responseMessage, RefitSettings refitSettings)
+        {
+            var requestMessage = responseMessage.RequestMessage;
+            var method = requestMessage.Method;
+
+            return await ApiException.Create(requestMessage, method, responseMessage, refitSettings).ConfigureAwait(false);
         }
     }
 }
