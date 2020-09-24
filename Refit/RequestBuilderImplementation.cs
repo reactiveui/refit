@@ -181,7 +181,7 @@ namespace Refit
             if (itemValue is MultipartItem multipartItem)
             {
                 var httpContent = multipartItem.ToContent();
-                multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
+                multiPartContent.Add(httpContent, multipartItem.Name ?? parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
                 return;
             }
 
