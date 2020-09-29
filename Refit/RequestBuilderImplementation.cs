@@ -361,7 +361,7 @@ namespace Refit
                 }
 
                 // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
-                if (!(obj is string) && obj is IEnumerable ienu)
+                if (!(obj is string) && obj is IEnumerable ienu && !(obj is IDictionary))
                 {
                     foreach (var value in ParseEnumerableQueryParameterValue(ienu, propertyInfo, propertyInfo.PropertyType, queryAttribute))
                     {
@@ -404,8 +404,7 @@ namespace Refit
         {
             var kvps = new List<KeyValuePair<string, object>>();
 
-            var props = dictionary.Keys;
-            foreach (string key in props)
+            foreach (var key in dictionary.Keys)
             {
                 var obj = dictionary[key];
                 if (obj == null)
@@ -413,7 +412,7 @@ namespace Refit
 
                 if (DoNotConvertToQueryMap(obj))
                 {
-                    kvps.Add(new KeyValuePair<string, object>(key, obj));
+                    kvps.Add(new KeyValuePair<string, object>(key.ToString(), obj));
                 }
                 else
                 {
