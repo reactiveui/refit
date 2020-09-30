@@ -243,8 +243,8 @@ namespace Refit.Tests
                 .Respond(req => expectedResponse);
 
             var actualException = await Assert.ThrowsAsync<ValidationApiException>(() => fixture.GetTestObject());
-            var actualBaseExcpetion = actualException as ApiException;
-            Assert.Equal(expectedContent, actualBaseExcpetion.Content);
+            var actualBaseException = actualException as ApiException;
+            Assert.Equal(expectedContent, actualBaseException.Content);
         }
     }
 
