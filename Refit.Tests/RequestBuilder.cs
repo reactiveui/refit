@@ -931,6 +931,7 @@ namespace Refit.Tests
         }
     }
 
+    // Converts enums to ints and adds a suffix to strings to test that both dictionary keys and values are formatted.
     public class TestEnumUrlParameterFormatter : DefaultUrlParameterFormatter
     {
         public override string Format(object parameterValue, ICustomAttributeProvider attributeProvider, Type type)
@@ -941,8 +942,15 @@ namespace Refit.Tests
                 return enumBackingValue.ToString();
             }
 
+            if (parameterValue is string stringValue)
+            {
+                return $"{stringValue}{StringParameterSuffix}";
+            }
+
             return base.Format(parameterValue, attributeProvider, type);
         }
+
+        public string StringParameterSuffix => "suffix";
     }
 
     public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
@@ -1950,6 +1958,7 @@ namespace Refit.Tests
         public void DictionaryQueryWithCustomFormatterProducesCorrectQueryString()
         {
             var urlParameterFormatter = new TestEnumUrlParameterFormatter();
+
             var refitSettings = new RefitSettings { UrlParameterFormatter = urlParameterFormatter };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(refitSettings);
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.QueryWithDictionaryWithEnumKey));
@@ -1963,7 +1972,7 @@ namespace Refit.Tests
             var output = factory(new object[] { dict });
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
-            Assert.Equal($"/foo?{(int)TestEnum.A}=value1&{(int)TestEnum.B}=value2", uri.PathAndQuery);
+            Assert.Equal($"/foo?{(int)TestEnum.A}=value1{urlParameterFormatter.StringParameterSuffix}&{(int)TestEnum.B}=value2{urlParameterFormatter.StringParameterSuffix}", uri.PathAndQuery);
         }
 
         [Fact]
@@ -2028,7 +2037,7 @@ namespace Refit.Tests
             var output = factory(new object[] { complexQuery });
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
-            Assert.Equal($"/foo?TestDictionary.{(int)TestEnum.A}=value1&TestDictionary.{(int)TestEnum.B}=value2", uri.PathAndQuery);
+            Assert.Equal($"/foo?TestDictionary.{(int)TestEnum.A}=value1{urlParameterFormatter.StringParameterSuffix}&TestDictionary.{(int)TestEnum.B}=value2{urlParameterFormatter.StringParameterSuffix}", uri.PathAndQuery);
         }
     }
 

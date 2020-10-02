@@ -416,9 +416,7 @@ namespace Refit
 
                 if (DoNotConvertToQueryMap(obj))
                 {
-                    var objType = obj.GetType();
-                    var formattedValue = settings.UrlParameterFormatter.Format(obj, objType, objType);
-                    kvps.Add(new KeyValuePair<string, object>(formattedKey, formattedValue));
+                    kvps.Add(new KeyValuePair<string, object>(formattedKey, obj));
                 }
                 else
                 {
