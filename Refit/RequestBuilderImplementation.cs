@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -410,15 +411,20 @@ namespace Refit
                 if (obj == null)
                     continue;
 
+                var keyType = key.GetType();
+                var formattedKey = settings.UrlParameterFormatter.Format(key, keyType, keyType);
+
                 if (DoNotConvertToQueryMap(obj))
                 {
-                    kvps.Add(new KeyValuePair<string, object>(key.ToString(), obj));
+                    var objType = obj.GetType();
+                    var formattedValue = settings.UrlParameterFormatter.Format(obj, objType, objType);
+                    kvps.Add(new KeyValuePair<string, object>(formattedKey, formattedValue));
                 }
                 else
                 {
                     foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
                     {
-                        kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                        kvps.Add(new KeyValuePair<string, object>($"{formattedKey}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
                     }
                 }
             }

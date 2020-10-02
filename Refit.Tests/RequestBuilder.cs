@@ -931,6 +931,20 @@ namespace Refit.Tests
         }
     }
 
+    public class TestEnumUrlParameterFormatter : DefaultUrlParameterFormatter
+    {
+        public override string Format(object parameterValue, ICustomAttributeProvider attributeProvider, Type type)
+        {
+            if (parameterValue is TestEnum enumValue)
+            {
+                var enumBackingValue = (int)enumValue;
+                return enumBackingValue.ToString();
+            }
+
+            return base.Format(parameterValue, attributeProvider, type);
+        }
+    }
+
     public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
     {
         public override string Format(object parameterValue, ICustomAttributeProvider attributeProvider, Type type)
@@ -1897,7 +1911,7 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void DictionaryQueryWithCollection()
+        public void DictionaryQueryWithPrefix()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.QueryWithDictionaryWithPrefix));
@@ -1930,6 +1944,26 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/foo?1=value1&2=value2", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void DictionaryQueryWithCustomFormatterProducesCorrectQueryString()
+        {
+            var urlParameterFormatter = new TestEnumUrlParameterFormatter();
+            var refitSettings = new RefitSettings { UrlParameterFormatter = urlParameterFormatter };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(refitSettings);
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.QueryWithDictionaryWithEnumKey));
+
+            var dict = new Dictionary<TestEnum, string>
+            {
+                { TestEnum.A, "value1" },
+                { TestEnum.B, "value2" },
+            };
+
+            var output = factory(new object[] { dict });
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal($"/foo?{(int)TestEnum.A}=value1&{(int)TestEnum.B}=value2", uri.PathAndQuery);
         }
 
         [Fact]
@@ -1972,6 +2006,29 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/foo?TestDictionary.A=value1&TestDictionary.B=value2", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ComplexQueryObjectWithDictionaryAndCustomFormatterProducesCorrectQueryString()
+        {
+            var urlParameterFormatter = new TestEnumUrlParameterFormatter();
+            var refitSettings = new RefitSettings { UrlParameterFormatter = urlParameterFormatter };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(refitSettings);
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
+
+            var complexQuery = new ComplexQueryObject
+            {
+                TestDictionary = new Dictionary<TestEnum, string>
+                {
+                    { TestEnum.A, "value1" },
+                    { TestEnum.B, "value2" },
+                },
+            };
+
+            var output = factory(new object[] { complexQuery });
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal($"/foo?TestDictionary.{(int)TestEnum.A}=value1&TestDictionary.{(int)TestEnum.B}=value2", uri.PathAndQuery);
         }
     }
 
