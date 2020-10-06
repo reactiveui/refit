@@ -578,6 +578,12 @@ namespace Refit
                         isParameterMappedToRequest = true;
                     }
 
+                    //if authorize, add to request headers with scheme
+                    if (restMethod.AuthorizeParameterInfo != null && restMethod.AuthorizeParameterInfo.Item2 == i)
+                    {
+                        headersToAdd["Authorization"] = $"{restMethod.AuthorizeParameterInfo.Item1} {param}";
+                    }
+
                     // ignore nulls and already processed parameters
                     if (isParameterMappedToRequest || param == null) continue;
 

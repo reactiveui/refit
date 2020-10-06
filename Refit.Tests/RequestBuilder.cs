@@ -51,6 +51,9 @@ namespace Refit.Tests
         IObservable<string> PostSomeUrlEncodedStuff([AliasAs("id")] int anId, [Body(BodySerializationMethod.UrlEncoded)] Dictionary<string, string> theData);
 
         [Get("/foo/bar/{id}")]
+        IObservable<string> FetchSomeStuffWithAuthorizationSchemeSpecified([AliasAs("id")] int anId, [Authorize("Bearer")] string token);
+
+        [Get("/foo/bar/{id}")]
         [Headers("Api-Version: 2 ")]
         Task<string> FetchSomeStuffWithHardcodedHeaders(int id);
 
@@ -480,6 +483,19 @@ namespace Refit.Tests
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Equal(1, fixture.BodyParameterInfo.Item3);
+        }
+
+        [Fact]
+        public void FindTheAuthorizeParameter()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithAuthorizationSchemeSpecified)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+
+            Assert.NotNull(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Equal(1, fixture.AuthorizeParameterInfo.Item2);
         }
 
         [Fact]
