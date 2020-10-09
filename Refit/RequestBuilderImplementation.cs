@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -361,7 +362,7 @@ namespace Refit
                 }
 
                 // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
-                if (!(obj is string) && obj is IEnumerable ienu)
+                if (!(obj is string) && obj is IEnumerable ienu && !(obj is IDictionary))
                 {
                     foreach (var value in ParseEnumerableQueryParameterValue(ienu, propertyInfo, propertyInfo.PropertyType, queryAttribute))
                     {
@@ -404,22 +405,24 @@ namespace Refit
         {
             var kvps = new List<KeyValuePair<string, object>>();
 
-            var props = dictionary.Keys;
-            foreach (string key in props)
+            foreach (var key in dictionary.Keys)
             {
                 var obj = dictionary[key];
                 if (obj == null)
                     continue;
 
+                var keyType = key.GetType();
+                var formattedKey = settings.UrlParameterFormatter.Format(key, keyType, keyType);
+
                 if (DoNotConvertToQueryMap(obj))
                 {
-                    kvps.Add(new KeyValuePair<string, object>(key, obj));
+                    kvps.Add(new KeyValuePair<string, object>(formattedKey, obj));
                 }
                 else
                 {
                     foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
                     {
-                        kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                        kvps.Add(new KeyValuePair<string, object>($"{formattedKey}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
                     }
                 }
             }
