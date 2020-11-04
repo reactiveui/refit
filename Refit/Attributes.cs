@@ -207,10 +207,14 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class AuthorizeAttribute : HeaderAttribute
+    public class AuthorizeAttribute : Attribute
     {
         public AuthorizeAttribute(string scheme = "Bearer")
-            : base("Authorization: " + scheme) { }
+        {
+            Scheme = scheme;
+        }
+
+        public string Scheme { get; }
     }
 
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)] // Property is to allow for form url encoded data

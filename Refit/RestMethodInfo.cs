@@ -25,6 +25,7 @@ namespace Refit
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Tuple<BodySerializationMethod, bool, int> BodyParameterInfo { get; set; }
+        public Tuple<string, int> AuthorizeParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
@@ -70,6 +71,7 @@ namespace Refit
                 .ToDictionary(x => x.index, x => x.parameter);
             ParameterMap = BuildParameterMap(RelativePath, parameterList);
             BodyParameterInfo = FindBodyParameter(parameterList, IsMultipart, hma.Method);
+            AuthorizeParameterInfo = FindAuthorizationParameter(parameterList);
 
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(parameterList);
@@ -98,7 +100,8 @@ namespace Refit
             {
                 if (ParameterMap.ContainsKey(i) ||
                     HeaderParameterMap.ContainsKey(i) ||
-                    (BodyParameterInfo != null && BodyParameterInfo.Item3 == i))
+                    (BodyParameterInfo != null && BodyParameterInfo.Item3 == i) ||
+                    (AuthorizeParameterInfo != null && AuthorizeParameterInfo.Item2 == i))
                 {
                     continue;
                 }                
@@ -291,6 +294,27 @@ namespace Refit
             if (refParams.Count == 1)
             {
                 return Tuple.Create(BodySerializationMethod.Serialized, false, parameterList.IndexOf(refParams[0]));
+            }
+
+            return null;
+        }
+
+        Tuple<string, int> FindAuthorizationParameter(IList<ParameterInfo> parameterList)
+        {
+            var authorizeParams = parameterList
+                .Select(x => new { Parameter = x, AuthorizeAttribute = x.GetCustomAttributes(true).OfType<AuthorizeAttribute>().FirstOrDefault() })
+                .Where(x => x.AuthorizeAttribute != null)
+                .ToList();
+
+            if (authorizeParams.Count > 1)
+            {
+                throw new ArgumentException("Only one parameter can be an Authorize parameter");
+            }
+
+            if (authorizeParams.Count == 1)
+            {
+                var ret = authorizeParams[0];
+                return Tuple.Create(ret.AuthorizeAttribute.Scheme, parameterList.IndexOf(ret.Parameter));
             }
 
             return null;
