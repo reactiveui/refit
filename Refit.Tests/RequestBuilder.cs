@@ -2086,7 +2086,15 @@ namespace Refit.Tests
             return paramList =>
             {
                 var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri(baseAddress) }, paramList);
-                task.Wait();
+                try
+                {
+                    task.Wait();
+                }
+                catch(AggregateException e) when (e.InnerException is TaskCanceledException)
+                {
+
+                }
+                
                 return testHttpMessageHandler;
             };
         }

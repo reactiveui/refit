@@ -97,7 +97,7 @@ namespace Refit.Tests
         [Fact]
         public async Task XmlEncodingShouldMatchWriterSettingAsync()
         {
-            var encoding = Encoding.UTF7;
+            var encoding = Encoding.UTF32;
             var serializerSettings = new XmlContentSerializerSettings
             {
                 XmlReaderWriterSettings = new XmlReaderWriterSettings()
