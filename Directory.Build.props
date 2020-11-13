@@ -21,8 +21,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>    
   </PropertyGroup>
 
   <ItemGroup>
