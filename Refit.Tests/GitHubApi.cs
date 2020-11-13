@@ -10,7 +10,7 @@ using static System.Math; // This is here to verify https://github.com/reactiveu
 
 namespace Refit.Tests
 {
-    public class User
+    public record User
     {
         public string Login { get; set; }
         public int Id { get; set; }
