@@ -1,7 +1,7 @@
 {
-  "version": "5.2",
+  "version": "6.0-preview.{height}",
   "publicReleaseRefSpec": [
-    "^refs/heads/main$", // we release out of master
+    "^refs/heads/main$", // we release out of main
     "^refs/heads/rel/v\\d+\\.\\d+" // we also release branches starting with vN.N
   ],
   "nugetPackageVersion":{
