@@ -435,7 +435,7 @@ namespace Refit
 
             return async paramList =>
             {
-                // make sure we strip out any cancelation tokens
+                // make sure we strip out any cancellation tokens
                 if (paramsContainsCancellationToken)
                 {
                     paramList = paramList.Where(o => o == null || o.GetType() != typeof(CancellationToken)).ToArray();
@@ -457,6 +457,8 @@ namespace Refit
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
+                //var propertiesToAdd = new Dictionary<string, object>(restMethod.Properties);
+
                 RestMethodParameterInfo parameterInfo = null;
 
                 for (var i = 0; i < paramList.Length; i++)
