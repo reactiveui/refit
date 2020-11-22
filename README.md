@@ -676,7 +676,7 @@ await CreateUser(user, "");
 
 ### Passing state into custom HttpClient middleware
 
-If there is runtime state that you need to pass to an HttpRequestHandler you can add a property with a dynamic value to the underlying `HttpRequestMessage.Properties`
+If there is runtime state that you need to pass to a `DelegatingHandler` you can add a property with a dynamic value to the underlying `HttpRequestMessage.Properties`
 by applying a `RequestProperty` attribute to a parameter:
 
 ```csharp
@@ -688,6 +688,24 @@ public interface IGitHubApi
 ```
 
 The attribute constructor takes a string which becomes the key in the `HttpRequestMessage.Properties` dictionary.
+The parameter itself can be any `object`. Properties can be accessed inside a `DelegatingHandler` as follows:
+
+```csharp
+class RequestPropertyHandler : DelegatingHandler
+{
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // See if the request has a the property
+        if(request.Properties.ContainsKey("SomeProperty")
+        {
+            var someProperty = request.Properties["SomeProperty"];
+            //do stuff
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
 
 ### Multipart uploads
 
