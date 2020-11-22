@@ -207,9 +207,11 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class RequestPropertyAttribute : Attribute
+    public class PropertyAttribute : Attribute
     {
-        public RequestPropertyAttribute(string key)
+        public PropertyAttribute() { }
+
+        public PropertyAttribute(string key)
         {
             Key = key;
         }

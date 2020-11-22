@@ -76,7 +76,6 @@ namespace Refit
 
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(parameterList);
-
             RequestPropertyParameterMap = BuildRequestPropertyMap(parameterList);
 
             // get names for multipart attachments
@@ -133,15 +132,17 @@ namespace Refit
 
             for (var i = 0; i < parameterList.Count; i++)
             {
-                var propertyKey = parameterList[i].GetCustomAttributes(true)
-                    .OfType<RequestPropertyAttribute>()
-                    .Select(propertyAttribute => propertyAttribute.Key)
+                var param = parameterList[i];
+                var requestProperty = param.GetCustomAttributes(true)
+                    .OfType<PropertyAttribute>()
                     .FirstOrDefault();
 
-                if (!string.IsNullOrEmpty(propertyKey))
+                if (requestProperty != null)
                 {
+                    var propertyKey = !string.IsNullOrEmpty(requestProperty.Key) ? requestProperty.Key : param.Name;
                     requestPropertyMap[i] = propertyKey;
                 }
+
             }
 
             return requestPropertyMap;

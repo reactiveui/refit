@@ -47,7 +47,7 @@ namespace Refit.Tests
 
         [Multipart]
         [Post("/")]
-        Task<HttpResponseMessage> UploadStringWithHeaderAndRequestProperty([Header("Authorization")] string authorization, [RequestProperty("SomeProperty")] string someProperty, [AliasAs("SomeStringAlias")]string someString);
+        Task<HttpResponseMessage> UploadStringWithHeaderAndRequestProperty([Header("Authorization")] string authorization, [Property("SomeProperty")] string someProperty, [AliasAs("SomeStringAlias")]string someString);
 
         [Multipart]
         [Post("/")]

@@ -677,17 +677,22 @@ await CreateUser(user, "");
 ### Passing state into custom HttpClient middleware
 
 If there is runtime state that you need to pass to a `DelegatingHandler` you can add a property with a dynamic value to the underlying `HttpRequestMessage.Properties`
-by applying a `RequestProperty` attribute to a parameter:
+by applying a `Property` attribute to a parameter:
 
 ```csharp
 public interface IGitHubApi
 {
     [Post("/users/new")]
-    Task CreateUser([Body] User user, [RequestProperty("SomeProperty")] string someValue);
+    Task CreateUser([Body] User user, [Property("SomeKey")] string someValue);
+
+    [Post("/users/new")]
+    Task CreateUser([Body] User user, [Property] string someOtherKey);
 }
 ```
 
-The attribute constructor takes a string which becomes the key in the `HttpRequestMessage.Properties` dictionary.
+The attribute constructor optionally takes a string which becomes the key in the `HttpRequestMessage.Properties` dictionary.
+If no key is explicitly defined then the name of the parameter becomes the key.
+If a key is defined multiple times the value in `HttpRequestMessage.Properties` will be overwritten.
 The parameter itself can be any `object`. Properties can be accessed inside a `DelegatingHandler` as follows:
 
 ```csharp
@@ -698,9 +703,15 @@ class RequestPropertyHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         // See if the request has a the property
-        if(request.Properties.ContainsKey("SomeProperty")
+        if(request.Properties.ContainsKey("SomeKey")
         {
-            var someProperty = request.Properties["SomeProperty"];
+            var someProperty = request.Properties["SomeKey"];
+            //do stuff
+        }
+
+        if(request.Properties.ContainsKey("someOtherKey")
+        {
+            var someOtherProperty = request.Properties["someOtherKey"];
             //do stuff
         }
 

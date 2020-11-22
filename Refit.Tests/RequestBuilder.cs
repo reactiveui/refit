@@ -61,10 +61,16 @@ namespace Refit.Tests
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
 
         [Get("/foo")]
-        Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray, [RequestProperty("SomeProperty")] object someValue);
+        Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
 
         [Get("/foo/bar/{id}")]
-        Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [RequestProperty("SomeProperty")] object someValue);
+        Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someValue);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey(int id, [Property("SomeProperty")] object someValue1, [Property("SomeProperty")] object someValue2);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestPropertyWithoutKey(int id, [Property] object someValue, [Property("")] object someOtherValue);
 
         [Post("/foo/{id}")]
         Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
@@ -567,6 +573,36 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void DynamicRequestPropertiesWithoutKeysShouldDefaultKeyToParameterName()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestPropertyWithoutKey)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Equal("someValue", fixture.RequestPropertyParameterMap[1]);
+            Assert.Equal("someOtherValue", fixture.RequestPropertyParameterMap[2]);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesWithDuplicateKeysDontBlowUp()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[1]);
+            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[2]);
+        }
+
+        [Fact]
         public void ValueTypesDontBlowUpBuffered()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -741,7 +777,13 @@ namespace Refit.Tests
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
 
         [Get("/foo/bar/{id}")]
-        Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [RequestProperty("SomeProperty")] object someProperty);
+        Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someProperty);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey(int id, [Property("SomeProperty")] object someValue1, [Property("SomeProperty")] object someValue2);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestPropertyWithoutKey(int id, [Property] object someValue, [Property("")] object someOtherValue);
 
         [Get("/string")]
         Task<string> FetchSomeStuffWithoutFullPath();
@@ -1466,6 +1508,33 @@ namespace Refit.Tests
 
             Assert.NotEmpty(output.Properties);
             Assert.Equal(someProperty, output.Properties["SomeProperty"]);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesWithDefaultKeysShouldBeInProperties()
+        {
+            var someProperty = new object();
+            var someOtherProperty = new object();
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
+            var output = factory(new object[] { 6, someProperty, someOtherProperty });
+
+            Assert.NotEmpty(output.Properties);
+            Assert.Equal(someProperty, output.Properties["someValue"]);
+            Assert.Equal(someOtherProperty, output.Properties["someOtherValue"]);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesWithDuplicateKeyShouldOverwritePreviousProperty()
+        {
+            var someProperty = new object();
+            var someOtherProperty = new object();
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey));
+            var output = factory(new object[] { 6, someProperty, someOtherProperty });
+
+            Assert.Single(output.Properties);
+            Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
         }
 
         [Fact]
