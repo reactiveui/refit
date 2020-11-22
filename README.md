@@ -693,6 +693,8 @@ The parameter itself can be any `object`. Properties can be accessed inside a `D
 ```csharp
 class RequestPropertyHandler : DelegatingHandler
 {
+    public RequestPropertyHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         // See if the request has a the property
