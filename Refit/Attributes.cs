@@ -127,7 +127,7 @@ namespace Refit
         UrlEncoded,
 
         /// <summary>
-        /// Encodes everything using the ContentSerializer in RefitSettings 
+        /// Encodes everything using the ContentSerializer in RefitSettings
         /// </summary>
         Serialized
     }
@@ -207,6 +207,17 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
+    public class RequestPropertyAttribute : Attribute
+    {
+        public RequestPropertyAttribute(object value)
+        {
+            Value = value;
+        }
+
+        public object Value { get; }
+    }
+
+    [AttributeUsage(AttributeTargets.Parameter)]
     public class AuthorizeAttribute : Attribute
     {
         public AuthorizeAttribute(string scheme = "Bearer")
@@ -255,7 +266,7 @@ namespace Refit
         public string Delimiter { get; protected set; } = ".";
 
         /// <summary>
-        /// Used to customize the name of the encoded value.  
+        /// Used to customize the name of the encoded value.
         /// </summary>
         /// <remarks>
         /// Gets combined with <see cref="Delimiter"/> in the format <code>var name = $"{Prefix}{Delimiter}{originalFieldName}"</code>

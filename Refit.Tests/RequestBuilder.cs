@@ -63,6 +63,9 @@ namespace Refit.Tests
         [Get("/foo")]
         Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray);
 
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [RequestProperty("SomeProperty")] object someValue);
+
         [Post("/foo/{id}")]
         Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
 
@@ -546,6 +549,21 @@ namespace Refit.Tests
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.Equal(2, fixture.Headers.Count);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestProperty)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+            Assert.Single(fixture.HeaderParameterMap);
+
+            Assert.Equal("SomeParameter", fixture.RequestPropertyParameterMap[0]);
+            //more assertions here
         }
 
         [Fact]
@@ -1434,6 +1452,17 @@ namespace Refit.Tests
             Assert.False(output.Content.Headers.Contains("X-Emoji"), "Content headers include X-Emoji header");
         }
 
+        /*[Fact]
+        public void DynamicRequestPropertiesShouldBeInProperties()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
+            var output = factory(new object[] { 6, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
+
+            Assert.NotNull(output.Headers.Authorization);//, "Headers include Authorization header");
+            Assert.Equal("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
+        }*/
+
         [Fact]
         public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()
         {
@@ -2094,7 +2123,7 @@ namespace Refit.Tests
                 {
 
                 }
-                
+
                 return testHttpMessageHandler;
             };
         }
