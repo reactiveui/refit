@@ -24,7 +24,6 @@ namespace Refit
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
-        public Dictionary<string, object> RequestProperties { get; set; }
         public Dictionary<int, string> RequestPropertyParameterMap { get; set; }
         public Tuple<BodySerializationMethod, bool, int> BodyParameterInfo { get; set; }
         public Tuple<string, int> AuthorizeParameterInfo { get; set; }
@@ -78,8 +77,7 @@ namespace Refit
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(parameterList);
 
-            //RequestProperties = Yolo(methodInfo);
-            //RequestPropertyParameterMap = BuildRequestPropertyMap(parameterList);
+            RequestPropertyParameterMap = BuildRequestPropertyMap(parameterList);
 
             // get names for multipart attachments
             AttachmentNameMap = new Dictionary<int, Tuple<string, string>>();
@@ -87,7 +85,7 @@ namespace Refit
             {
                 for (var i = 0; i < parameterList.Count; i++)
                 {
-                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) /*|| RequestPropertyParameterMap.ContainsKey(i)*/)
+                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || RequestPropertyParameterMap.ContainsKey(i))
                     {
                         continue;
                     }
@@ -105,7 +103,7 @@ namespace Refit
             {
                 if (ParameterMap.ContainsKey(i) ||
                     HeaderParameterMap.ContainsKey(i) ||
-                    //RequestPropertyParameterMap.ContainsKey(i) ||
+                    RequestPropertyParameterMap.ContainsKey(i) ||
                     (BodyParameterInfo != null && BodyParameterInfo.Item3 == i) ||
                     (AuthorizeParameterInfo != null && AuthorizeParameterInfo.Item2 == i))
                 {
@@ -127,6 +125,26 @@ namespace Refit
                             (ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
                              || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>)
                              || ReturnResultType == typeof(IApiResponse));
+        }
+
+        private Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
+        {
+            var requestPropertyMap = new Dictionary<int, string>();
+
+            for (var i = 0; i < parameterList.Count; i++)
+            {
+                var propertyKey = parameterList[i].GetCustomAttributes(true)
+                    .OfType<RequestPropertyAttribute>()
+                    .Select(propertyAttribute => propertyAttribute.Key)
+                    .FirstOrDefault();
+
+                if (!string.IsNullOrEmpty(propertyKey))
+                {
+                    requestPropertyMap[i] = propertyKey;
+                }
+            }
+
+            return requestPropertyMap;
         }
 
         private PropertyInfo[] GetParameterProperties(ParameterInfo parameter)

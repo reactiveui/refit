@@ -61,7 +61,7 @@ namespace Refit.Tests
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
 
         [Get("/foo")]
-        Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray);
+        Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray, [RequestProperty("SomeProperty")] object someValue);
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [RequestProperty("SomeProperty")] object someValue);
@@ -543,6 +543,7 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.RequestPropertyParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
             Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
@@ -559,11 +560,10 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
-            Assert.Single(fixture.HeaderParameterMap);
 
-            Assert.Equal("SomeParameter", fixture.RequestPropertyParameterMap[0]);
-            //more assertions here
+            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[1]);
         }
 
         [Fact]
@@ -686,6 +686,7 @@ namespace Refit.Tests
             Assert.Equal("GET", fixture.HttpMethod.Method);
             Assert.Equal(2, fixture.QueryParameterMap.Count);
             Assert.Single(fixture.HeaderParameterMap);
+            Assert.Single(fixture.RequestPropertyParameterMap);
         }
     }
 
@@ -738,6 +739,9 @@ namespace Refit.Tests
 
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [RequestProperty("SomeProperty")] object someProperty);
 
         [Get("/string")]
         Task<string> FetchSomeStuffWithoutFullPath();
@@ -1452,16 +1456,17 @@ namespace Refit.Tests
             Assert.False(output.Content.Headers.Contains("X-Emoji"), "Content headers include X-Emoji header");
         }
 
-        /*[Fact]
+        [Fact]
         public void DynamicRequestPropertiesShouldBeInProperties()
         {
+            var someProperty = new object();
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
-            var output = factory(new object[] { 6, "Basic RnVjayB5ZWFoOmhlYWRlcnMh" });
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestProperty));
+            var output = factory(new object[] { 6, someProperty });
 
-            Assert.NotNull(output.Headers.Authorization);//, "Headers include Authorization header");
-            Assert.Equal("RnVjayB5ZWFoOmhlYWRlcnMh", output.Headers.Authorization.Parameter);
-        }*/
+            Assert.NotEmpty(output.Properties);
+            Assert.Equal(someProperty, output.Properties["SomeProperty"]);
+        }
 
         [Fact]
         public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()

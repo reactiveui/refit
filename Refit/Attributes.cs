@@ -209,12 +209,12 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Parameter)]
     public class RequestPropertyAttribute : Attribute
     {
-        public RequestPropertyAttribute(object value)
+        public RequestPropertyAttribute(string key)
         {
-            Value = value;
+            Key = key;
         }
 
-        public object Value { get; }
+        public string Key { get; }
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
