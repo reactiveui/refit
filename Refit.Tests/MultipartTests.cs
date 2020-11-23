@@ -301,7 +301,7 @@ namespace Refit.Tests
 
                     Assert.Single(parts);
 
-                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.Name);
                     Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
 
@@ -322,6 +322,37 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task MultipartUploadShouldWorkWithStreamPartWithEmptyFileName()
+        {
+            var handler = new MockHttpMessageHandler
+            {
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Single(parts);
+
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.FileName);
+                    Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
+
+                    using var str = await parts[0].ReadAsStreamAsync();
+                    using var src = GetTestFileStream("Test Files/Test.pdf");
+                    Assert.True(StreamsEqual(src, str));
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            using var stream = GetTestFileStream("Test Files/Test.pdf");
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadStreamPart(new StreamPart(stream, string.Empty, "application/pdf"));
+        }
+
+        [Fact]
         public async Task MultipartUploadShouldWorkWithStreamPartAndQuery()
         {
             var handler = new MockHttpMessageHandler
@@ -336,7 +367,7 @@ namespace Refit.Tests
 
                     Assert.Single(parts);
 
-                    Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.Name);
                     Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
 

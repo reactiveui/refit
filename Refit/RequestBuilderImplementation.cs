@@ -623,7 +623,7 @@ namespace Refit
 
                     if (!restMethod.AttachmentNameMap.TryGetValue(i, out var attachment))
                     {
-                        itemName = (param as StreamPart)?.FileName ?? restMethod.QueryParameterMap[i];
+                        itemName = !string.IsNullOrEmpty((param as StreamPart)?.FileName) ? (param as StreamPart)?.FileName : restMethod.QueryParameterMap[i];
                         parameterName = itemName;
                     }
                     else
