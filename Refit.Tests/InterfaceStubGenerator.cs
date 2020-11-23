@@ -41,7 +41,7 @@ namespace Refit.Tests
             var fixture = new InterfaceStubGenerator();
 
             var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
-            Assert.Equal(2, result.Count);
+            Assert.Equal(3, result.Count);
             Assert.Contains(result, x => x.Identifier.ValueText == "IGitHubApi");
 
             input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
