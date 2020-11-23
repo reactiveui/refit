@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.1</TargetFrameworks>
+    <TargetFrameworks>net5.0;netcoreapp2.1;netcoreapp3.1;net461</TargetFrameworks>
     <Deterministic>false</Deterministic> <!-- Some tests rely on CallerFilePath -->
   </PropertyGroup>
 
@@ -11,10 +11,10 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="1.3.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
-    <PackageReference Include="System.Reactive" Version="4.4.1" />
+    <PackageReference Include="System.Reactive" Version="5.0.0" />
     <PackageReference Include="RichardSzalay.MockHttp" Version="6.0.0" />
     <ProjectReference Include="..\InterfaceStubGenerator.App\InterfaceStubGenerator.App.csproj" />
     <ProjectReference Include="..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
@@ -26,10 +26,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="RefitStubs.*.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'net461' " Remove="RefitStubs.NetCore*.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp3.1' " Remove="RefitStubs.Net46.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Remove="RefitStubs.NetCore3.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'netcoreapp3.1' " Remove="RefitStubs.NetCore2.cs" />
+    <Compile Remove="RefitStubs.*.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'net461' " Include="RefitStubs.Net46.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Include="RefitStubs.NetCore2.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'netcoreapp3.1' " Include="RefitStubs.NetCore3.cs" />
+    <Compile Condition="'$(TargetFramework)' == 'net5.0' " Include="RefitStubs.Net5.cs" />
   </ItemGroup>
 
   <Target Name="GenerateRefitStubsFull" Condition="'$(DesignTimeBuild)' != 'true' and '$(MSBuildRuntimeType)' != 'Core' " BeforeTargets="CoreCompile">
@@ -37,6 +38,7 @@
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net461' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp3.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore3.cs</OutputStubsFile>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'net5.0' ">$(MSBuildThisFileDirectory)RefitStubs.Net5.cs</OutputStubsFile>
       <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />
@@ -56,6 +58,7 @@
       <OutputStubsFile Condition="'$(TargetFramework)' == 'net461' ">$(MSBuildThisFileDirectory)RefitStubs.Net46.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp2.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore2.cs</OutputStubsFile>
       <OutputStubsFile Condition="'$(TargetFramework)' == 'netcoreapp3.1' ">$(MSBuildThisFileDirectory)RefitStubs.NetCore3.cs</OutputStubsFile>
+      <OutputStubsFile Condition="'$(TargetFramework)' == 'net5.0' ">$(MSBuildThisFileDirectory)RefitStubs.Net5.cs</OutputStubsFile>
       <RefitParameterFile>$(MSBuildThisFileDirectory)$(IntermediateOutputPath)RefitParams.rsp</RefitParameterFile>
     </PropertyGroup>
     <WriteLinesToFile File="$(RefitParameterFile)" Lines="@(Compile)" Overwrite="true" />

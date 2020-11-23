@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Refit.Tests
 {
-    public class MySimpleQueryParams
+    public record MySimpleQueryParams
     {
         public string FirstName { get; set; }
 
@@ -26,7 +26,7 @@ namespace Refit.Tests
         public List<object> Other { get; set; } = new List<object>();
     }
 
-    public class Address
+    public record Address
     {
         [AliasAs("Zip")]
         public int Postcode { get; set; }

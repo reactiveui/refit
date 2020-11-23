@@ -221,6 +221,31 @@ namespace Refit.Tests
             Assert.NotNull(actualException.Content);
             Assert.Equal("Hello world", actualException.Content);
         }
+
+        [Fact]
+        public async Task ValidationApiException_HydratesBaseContent()
+        {
+            var expectedProblemDetails = new ProblemDetails
+            {
+                Detail = "detail",
+                Instance = "instance",
+                Status = 1,
+                Title = "title",
+                Type = "type"
+            };
+            var expectedContent = JsonConvert.SerializeObject(expectedProblemDetails);
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent(expectedContent)
+            };
+            expectedResponse.Content.Headers.ContentType = new MediaTypeHeaderValue("application/problem+json");
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                .Respond(req => expectedResponse);
+
+            var actualException = await Assert.ThrowsAsync<ValidationApiException>(() => fixture.GetTestObject());
+            var actualBaseException = actualException as ApiException;
+            Assert.Equal(expectedContent, actualBaseException.Content);
+        }
     }
 
     public sealed class ThrowOnGetLengthMemoryStream : MemoryStream

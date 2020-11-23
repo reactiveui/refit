@@ -131,6 +131,16 @@ public class MyQueryParams
     public string SortOrder { get; set; }
 
     public int Limit { get; set; }
+
+    public KindOptions Kind { get; set; }
+}
+
+public enum KindOptions
+{
+    Foo,
+
+    [EnumMember(Value = "bar")]
+    Bar
 }
 
 
@@ -143,12 +153,13 @@ Task<List<User>> GroupListWithAttribute([AliasAs("id")] int groupId, [Query(".",
 
 params.SortOrder = "desc";
 params.Limit = 10;
+params.Kind = KindOptions.Bar;
 
 GroupList(4, params)
->>> "/group/4/users?order=desc&Limit=10"
+>>> "/group/4/users?order=desc&Limit=10&Kind=bar"
 
 GroupListWithAttribute(4, params)
->>> "/group/4/users?search.order=desc&search.Limit=10"
+>>> "/group/4/users?search.order=desc&search.Limit=10&search.Kind=bar"
 ```
 
 A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no intellisense and/or type safety.
@@ -460,10 +471,23 @@ Task<User> GetUser(string user, [Header("Authorization")] string authorization);
 var user = await GetUser("octocat", "token OAUTH-TOKEN"); 
 ```
 
-#### Authorization (Dynamic Headers redux)
+#### Dynamic authorization header with scheme
 The most common reason to use headers is for authorization. Today most API's use some flavor of oAuth with access tokens that expire and refresh tokens that are longer lived.
 
-One way to encapsulate these kinds of token usage, a custom `HttpClientHandler` can be inserted instead.  
+If you want to set an access token at runtime and specify the authorization scheme (e.g. "Bearer"),
+you can add a dynamic value to a request by applying an `Authorize` attribute to a parameter:
+
+```csharp
+[Get("/users/{user}")]
+Task<User> GetUser(string user, [Authorize("Bearer")] string token);
+
+// Will add the header "Authorization: Bearer OAUTH-TOKEN}" to the request
+var user = await GetUser("octocat", "OAUTH-TOKEN"); 
+```
+
+#### Authorization (Dynamic Headers redux)
+
+Another way to encapsulate these kinds of token usage, a custom `HttpClientHandler` can be inserted instead.  
 There are two classes for doing this: one is `AuthenticatedHttpClientHandler`, which takes a `Func<Task<string>>` parameter, where a signature can be generated without knowing about the request.
 The other is `AuthenticatedParameterizedHttpClientHandler`, which takes a `Func<HttpRequestMessage, Task<string>>` parameter, where the signature requires information about the request (see earlier notes about Twitter's API)
 
@@ -918,6 +942,17 @@ catch (ApiException exception)
    // other exception handling
 }
 // ...
+```
+
+You can also override default exceptions behavior by providing custom exception factory in `RefitSettings`. For example, you can suppress all exceptions with the following: 
+
+```csharp
+var nullTask = Task.FromResult<Exception>(null);
+
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        ExceptionFactory = httpResponse => nullTask;
+    });
 ```
 
 ### MSBuild configuration
