@@ -93,6 +93,12 @@ namespace Refit.Tests
         Task<ApiResponse<User>> CreateUserWithMetadata(User user);
     }
 
+    public interface IGitHubApiDisposable : IDisposable
+    {
+        [Get("whatever")]
+        Task RefitMethod();
+    }
+
     public class TestNested
     {
         [Headers("User-Agent: Refit Integration Tests")]

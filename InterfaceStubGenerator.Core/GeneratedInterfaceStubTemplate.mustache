@@ -70,9 +70,12 @@ namespace {{Namespace}}
             var func = requestBuilder.BuildRestResultFuncForMethod("{{Name}}", new Type[] { {{ArgumentTypesList}} }{{#MethodTypeParameterList}}, new Type[] { {{.}} }{{/MethodTypeParameterList}});
             return ({{ReturnType}})func(Client, arguments);
             {{/IsRefitMethod}}
-            {{^IsRefitMethod}}
+            {{#IsDispose}}
+            Client?.Dispose();
+            {{/IsDispose}}
+            {{#UnsupportedMethod}}
             throw new NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
-            {{/IsRefitMethod}}
+            {{/UnsupportedMethod}}
         }
             {{/MethodList}}
         {{#HasAnyMethodsWithNullableArguments}}
