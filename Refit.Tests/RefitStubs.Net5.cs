@@ -2636,6 +2636,14 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
+        Task<HttpResponseMessage> IRunscopeApi.UploadStringWithHeaderAndRequestProperty(string authorization, string someProperty, string someString)
+        {
+            var arguments = new object[] { authorization, someProperty, someString };
+            var func = requestBuilder.BuildRestResultFuncForMethod("UploadStringWithHeaderAndRequestProperty", new Type[] { typeof(string), typeof(string), typeof(string) });
+            return (Task<HttpResponseMessage>)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
         Task<HttpResponseMessage> IRunscopeApi.UploadFileInfo(IEnumerable<FileInfo> fileInfos, FileInfo anotherFile)
         {
             var arguments = new object[] { fileInfos, anotherFile };

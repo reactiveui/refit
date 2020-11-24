@@ -435,7 +435,7 @@ namespace Refit
 
             return async paramList =>
             {
-                // make sure we strip out any cancelation tokens
+                // make sure we strip out any cancellation tokens
                 if (paramsContainsCancellationToken)
                 {
                     paramList = paramList.Where(o => o == null || o.GetType() != typeof(CancellationToken)).ToArray();
@@ -457,6 +457,8 @@ namespace Refit
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string>>();
                 var headersToAdd = new Dictionary<string, string>(restMethod.Headers);
+                var propertiesToAdd = new Dictionary<string, object>();
+
                 RestMethodParameterInfo parameterInfo = null;
 
                 for (var i = 0; i < paramList.Length; i++)
@@ -587,6 +589,13 @@ namespace Refit
                         headersToAdd["Authorization"] = $"{restMethod.AuthorizeParameterInfo.Item1} {param}";
                     }
 
+                    //if property, add to populate into HttpRequestMessage.Properties
+                    if (restMethod.RequestPropertyParameterMap.ContainsKey(i))
+                    {
+                        propertiesToAdd[restMethod.RequestPropertyParameterMap[i]] = param;
+                        isParameterMappedToRequest = true;
+                    }
+
                     // ignore nulls and already processed parameters
                     if (isParameterMappedToRequest || param == null) continue;
 
@@ -664,6 +673,11 @@ namespace Refit
                     {
                         SetHeader(ret, header.Key, header.Value);
                     }
+                }
+
+                foreach (var property in propertiesToAdd)
+                {
+                    ret.Properties[property.Key] = property.Value;
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this

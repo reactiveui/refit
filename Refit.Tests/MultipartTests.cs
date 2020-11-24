@@ -47,6 +47,10 @@ namespace Refit.Tests
 
         [Multipart]
         [Post("/")]
+        Task<HttpResponseMessage> UploadStringWithHeaderAndRequestProperty([Header("Authorization")] string authorization, [Property("SomeProperty")] string someProperty, [AliasAs("SomeStringAlias")]string someString);
+
+        [Multipart]
+        [Post("/")]
         Task<HttpResponseMessage> UploadFileInfo(IEnumerable<FileInfo> fileInfos, FileInfo anotherFile);
 
         [Multipart]
@@ -288,6 +292,46 @@ namespace Refit.Tests
 
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             var result = await fixture.UploadString(text);
+        }
+
+        [Fact]
+        public async Task MultipartUploadShouldWorkWithHeaderAndRequestProperty()
+        {
+            const string text = "This is random text";
+            const string someHeader = "someHeader";
+            const string someProperty = "someProperty";
+
+            var handler = new MockHttpMessageHandler
+            {
+                RequestAsserts = async message =>
+                {
+                    Assert.Equal(someHeader, message.Headers.Authorization.ToString());
+                    Assert.Single(message.Properties);
+                    Assert.Equal(someProperty, message.Properties["SomeProperty"]);
+                },
+                Asserts = async content =>
+                {
+                    var parts = content.ToList();
+
+                    Assert.Single(parts);
+
+                    Assert.Equal("SomeStringAlias", parts[0].Headers.ContentDisposition.Name);
+                    Assert.Null(parts[0].Headers.ContentDisposition.FileName);
+                    Assert.Equal("text/plain", parts[0].Headers.ContentType.MediaType);
+                    Assert.Equal("utf-8", parts[0].Headers.ContentType.CharSet);
+                    var str = await parts[0].ReadAsStringAsync();
+                    Assert.Equal(text, str);
+                }
+            };
+
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+
+            var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+            var result = await fixture.UploadStringWithHeaderAndRequestProperty(someHeader,someProperty, text);
         }
 
         [Fact]

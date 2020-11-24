@@ -61,7 +61,16 @@ namespace Refit.Tests
         Task<string> FetchSomeStuffWithDynamicHeader(int id, [Header("Authorization")] string authorization);
 
         [Get("/foo")]
-        Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray);
+        Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someValue);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey(int id, [Property("SomeProperty")] object someValue1, [Property("SomeProperty")] object someValue2);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestPropertyWithoutKey(int id, [Property] object someValue, [Property("")] object someOtherValue);
 
         [Post("/foo/{id}")]
         Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
@@ -540,12 +549,57 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.RequestPropertyParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
             Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.Equal(2, fixture.Headers.Count);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestProperty)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[1]);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesWithoutKeysShouldDefaultKeyToParameterName()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestPropertyWithoutKey)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Equal("someValue", fixture.RequestPropertyParameterMap[1]);
+            Assert.Equal("someOtherValue", fixture.RequestPropertyParameterMap[2]);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesWithDuplicateKeysDontBlowUp()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[1]);
+            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[2]);
         }
 
         [Fact]
@@ -668,6 +722,7 @@ namespace Refit.Tests
             Assert.Equal("GET", fixture.HttpMethod.Method);
             Assert.Equal(2, fixture.QueryParameterMap.Count);
             Assert.Single(fixture.HeaderParameterMap);
+            Assert.Single(fixture.RequestPropertyParameterMap);
         }
     }
 
@@ -720,6 +775,15 @@ namespace Refit.Tests
 
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someProperty);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey(int id, [Property("SomeProperty")] object someValue1, [Property("SomeProperty")] object someValue2);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicRequestPropertyWithoutKey(int id, [Property] object someValue, [Property("")] object someOtherValue);
 
         [Get("/string")]
         Task<string> FetchSomeStuffWithoutFullPath();
@@ -1435,6 +1499,45 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void DynamicRequestPropertiesShouldBeInProperties()
+        {
+            var someProperty = new object();
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestProperty));
+            var output = factory(new object[] { 6, someProperty });
+
+            Assert.NotEmpty(output.Properties);
+            Assert.Equal(someProperty, output.Properties["SomeProperty"]);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesWithDefaultKeysShouldBeInProperties()
+        {
+            var someProperty = new object();
+            var someOtherProperty = new object();
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
+            var output = factory(new object[] { 6, someProperty, someOtherProperty });
+
+            Assert.NotEmpty(output.Properties);
+            Assert.Equal(someProperty, output.Properties["someValue"]);
+            Assert.Equal(someOtherProperty, output.Properties["someOtherValue"]);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertiesWithDuplicateKeyShouldOverwritePreviousProperty()
+        {
+            var someProperty = new object();
+            var someOtherProperty = new object();
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey));
+            var output = factory(new object[] { 6, someProperty, someOtherProperty });
+
+            Assert.Single(output.Properties);
+            Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
+        }
+
+        [Fact]
         public void HttpClientShouldPrefixedAbsolutePathToTheRequestUri()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
@@ -2094,7 +2197,7 @@ namespace Refit.Tests
                 {
 
                 }
-                
+
                 return testHttpMessageHandler;
             };
         }
