@@ -677,7 +677,7 @@ namespace Refit
 
                 foreach (var property in propertiesToAdd)
                 {
-                    ret.Properties.Add(property.Key, property.Value);
+                    ret.Properties[property.Key] = property.Value;
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
