@@ -182,7 +182,7 @@ namespace Refit
             if (itemValue is MultipartItem multipartItem)
             {
                 var httpContent = multipartItem.ToContent();
-                multiPartContent.Add(httpContent, parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
+                multiPartContent.Add(httpContent, multipartItem.Name ?? parameterName, string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName);
                 return;
             }
 
@@ -623,7 +623,7 @@ namespace Refit
 
                     if (!restMethod.AttachmentNameMap.TryGetValue(i, out var attachment))
                     {
-                        itemName = !string.IsNullOrEmpty((param as StreamPart)?.FileName) ? (param as StreamPart)?.FileName : restMethod.QueryParameterMap[i];
+                        itemName = restMethod.QueryParameterMap[i];
                         parameterName = itemName;
                     }
                     else

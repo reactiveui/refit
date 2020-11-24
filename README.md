@@ -684,9 +684,11 @@ At this time, multipart methods support the following parameter types:
  - Stream
  - FileInfo
 
-By default the streamPart.FileName property will be used as the name of the field in the multipart data.
-If streamPart.FileName is empty ("") the parameter name will be used as the name of the field in the multipart data.
-This can be overridden with the `AliasAs` attribute.
+Name of the field in the multipart data priority precedence:
+
+* multipartItem.Name if specified and not null (optional); dynamic, allows naming form data part at execution time.
+* [AliasAs] attribute  (optional) that decorate the streamPart parameter in the method signature (see below); static, defined in code.
+* MultipartItem parameter name (default) as defined in the method signature; static, defined in code.
 
 A custom boundary can be specified with an optional string parameter to the `Multipart` attribute. If left empty, this defaults to `----MyGreatBoundary`.
 
