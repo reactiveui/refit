@@ -53,7 +53,7 @@ namespace Refit
         /// Adds a Refit client to the DI container
         /// </summary>
         /// <param name="services">container</param>
-        /// <param name="refitInterfaceType">Type of the Refit interface</typeparam>
+        /// <param name="refitInterfaceType">Type of the Refit interface</param>
         /// <param name="settings">Optional. Settings to configure the instance with</param>
         /// <returns></returns>
         public static IHttpClientBuilder AddRefitClient(this IServiceCollection services, Type refitInterfaceType, RefitSettings settings = null)
