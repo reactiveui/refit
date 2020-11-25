@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
-    public class AuthenticatedParameterizedHttpClientHandler : DelegatingHandler
+    class AuthenticatedParameterizedHttpClientHandler : DelegatingHandler
     {
         readonly Func<HttpRequestMessage, Task<string>> getToken;
 
