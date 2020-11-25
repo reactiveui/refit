@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Buffers;
-using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.Http;
@@ -10,6 +9,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Refit.Buffers;
 
@@ -72,10 +72,10 @@ namespace Refit
         }
 
         /// <inheritdoc/>
-        public async Task<T> DeserializeAsync<T>(HttpContent content)
+        public async Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
-            using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
 
+            using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             int streamLength;
 
             try
@@ -91,14 +91,18 @@ namespace Refit
                  * We're using a try/catch here instead of just checking Stream.CanSeek
                  * because some streams can report that property as false even though
                  * they actually let users access the Length property just fine. */
-                return await JsonSerializer.DeserializeAsync<T>(stream, jsonSerializerOptions).ConfigureAwait(false);
+                return await JsonSerializer.DeserializeAsync<T>(stream, jsonSerializerOptions, cancellationToken).ConfigureAwait(false);
             }
 
             var buffer = ArrayPool<byte>.Shared.Rent(streamLength);
 
             try
             {
-                var utf8Length = await stream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+#if NET5_0
+                var utf8Length = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
+#else
+                var utf8Length = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
+#endif
 
                 return Deserialize<T>(buffer, utf8Length, jsonSerializerOptions);
             }
@@ -118,7 +122,7 @@ namespace Refit
         /// <returns>A <typeparamref name="T"/> item deserialized from the UTF8 bytes within <paramref name="buffer"/></returns>
         [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static T Deserialize<T>(byte[] buffer, int length, JsonSerializerOptions jsonSerializerOptions)
+        static T? Deserialize<T>(byte[] buffer, int length, JsonSerializerOptions jsonSerializerOptions)
         {
             var span = new ReadOnlySpan<byte>(buffer, 0, length);
             var utf8JsonReader = new Utf8JsonReader(span);
@@ -141,7 +145,7 @@ namespace Refit
     public class ObjectToInferredTypesConverter
        : JsonConverter<object>
     {
-        public override object Read(
+        public override object? Read(
             ref Utf8JsonReader reader,
             Type typeToConvert,
             JsonSerializerOptions options)

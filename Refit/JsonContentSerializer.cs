@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Refit
@@ -15,7 +16,7 @@ namespace Refit
             throw new NotImplementedException();
         }
 
-        public Task<T> DeserializeAsync<T>(HttpContent content)
+        public Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

@@ -10,7 +10,7 @@ namespace Refit
     {
         readonly Func<Task<string>> getToken;
 
-        public AuthenticatedHttpClientHandler(Func<Task<string>> getToken, HttpMessageHandler innerHandler = null)
+        public AuthenticatedHttpClientHandler(Func<Task<string>> getToken, HttpMessageHandler? innerHandler = null)
             : base(innerHandler ?? new HttpClientHandler())
         {
             this.getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));

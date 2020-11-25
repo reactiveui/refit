@@ -986,11 +986,7 @@ namespace Refit.Tests
             RequestMessage = request;
             if (request.Content != null)
             {
-                SendContent = await request.Content.ReadAsStringAsync(
-#if NET5_0
-                       cancellationToken
-#endif
-                    ).ConfigureAwait(false);
+                SendContent = await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             }
 
             CancellationToken = cancellationToken;

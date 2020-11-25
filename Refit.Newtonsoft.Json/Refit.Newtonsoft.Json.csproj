@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Product>Refit Serializer for Newtonsoft.Json ($(TargetFramework))</Product>
     <Description>Refit Serializers for Newtonsoft.Json</Description>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net461</TargetFrameworks>
+    <TargetFrameworks>net5.0;netstandard2.0;netstandard2.1;net461</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <RootNamespace>Refit</RootNamespace>
   </PropertyGroup>

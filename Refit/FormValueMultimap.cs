@@ -13,11 +13,11 @@ namespace Refit
     /// <remarks>Performs field renaming and value formatting as specified in <see cref="QueryAttribute"/>s and
     /// <see cref="RefitSettings.FormUrlEncodedParameterFormatter"/>. A given key may appear multiple times with the
     /// same or different values.</remarks>
-    class FormValueMultimap : IEnumerable<KeyValuePair<string, string>>
+    class FormValueMultimap : IEnumerable<KeyValuePair<string?, string?>>
     {
         static readonly Dictionary<Type, PropertyInfo[]> PropertyCache = new();
 
-        readonly IList<KeyValuePair<string, string>> formEntries = new List<KeyValuePair<string, string>>();
+        readonly IList<KeyValuePair<string?, string?>> formEntries = new List<KeyValuePair<string?, string?>>();
 
         readonly IContentSerializer contentSerializer;
 
@@ -111,11 +111,11 @@ namespace Refit
         /// <summary>
         /// Returns a key for each entry. If multiple entries share the same key, the key is returned multiple times.
         /// </summary>
-        public IEnumerable<string> Keys => this.Select(it => it.Key);
+        public IEnumerable<string?> Keys => this.Select(it => it.Key);
 
-        void Add(string key, string value)
+        void Add(string? key, string? value)
         {
-            formEntries.Add(new KeyValuePair<string, string>(key, value));
+            formEntries.Add(new KeyValuePair<string?, string?>(key, value));
         }
 
         string GetFieldNameForProperty(PropertyInfo propertyInfo)
@@ -136,11 +136,11 @@ namespace Refit
         static PropertyInfo[] GetProperties(Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                       .Where(p => p.CanRead && p.GetMethod.IsPublic)
+                       .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
                        .ToArray();
         }
 
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+        public IEnumerator<KeyValuePair<string?, string?>> GetEnumerator()
         {
             return formEntries.GetEnumerator();
         }

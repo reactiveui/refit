@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -44,11 +45,11 @@ namespace Refit
         }
 
         /// <inheritdoc/>
-        public async Task<T> DeserializeAsync<T>(HttpContent content)
+        public async Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
             var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
-            using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+            using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             using var reader = new StreamReader(stream);
             using var jsonTextReader = new JsonTextReader(reader);
 

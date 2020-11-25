@@ -18,7 +18,7 @@ namespace Refit.Buffers
         /// <summary>
         /// The <see cref="byte"/> array current in use
         /// </summary>
-        private byte[] buffer;
+        private byte[] buffer = Array.Empty<byte>();
 
         /// <summary>
         /// The current position into <see cref="buffer"/>
@@ -92,7 +92,7 @@ namespace Refit.Buffers
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (buffer == null) return;
+            if (buffer.Length == 0) return;
 
             ArrayPool<byte>.Shared.Return(buffer);
         }
@@ -105,7 +105,7 @@ namespace Refit.Buffers
         {
             var stream = new PooledMemoryStream(this);
 
-            buffer = null;
+            buffer = Array.Empty<byte>();
 
             return stream;
         }

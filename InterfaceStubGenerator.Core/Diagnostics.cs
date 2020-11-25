@@ -2,6 +2,7 @@
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+#nullable enable
 
 namespace Refit.Generator
 {
@@ -15,9 +16,9 @@ namespace Refit.Generator
 
         public int? Character { get; protected set; }
         public string Code { get; }
-        public string File { get; protected set; }
+        public string? File { get; protected set; }
         public int? Line { get; protected set; }
-        public string Message { get; protected set; }
+        public string? Message { get; protected set; }
         public string Type { get; }
 
         public override string ToString()
@@ -45,7 +46,7 @@ namespace Refit.Generator
             return builder.ToString();
         }
 
-        protected void setLocation(Location location)
+        protected void SetLocation(Location location)
         {
             var line = location.GetMappedLineSpan().StartLinePosition;
 
@@ -71,7 +72,7 @@ namespace Refit.Generator
         public MissingRefitAttributeWarning(InterfaceDeclarationSyntax @interface, MethodDeclarationSyntax method)
             : base("RF001")
         {
-            setLocation(method.GetLocation());
+            SetLocation(method.GetLocation());
 
             InterfaceName = @interface.Identifier.Text;
             MethodName = method.Identifier.Text;

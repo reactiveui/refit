@@ -16,15 +16,15 @@ namespace Refit
     {
         public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
         {
-            this.innerBuilder = innerBuilder;
+            this.innerBuilder = innerBuilder ?? throw new ArgumentNullException(nameof(innerBuilder));
         }
 
         readonly IRequestBuilder innerBuilder;
-        readonly ConcurrentDictionary<string, Func<HttpClient, object[], object>> methodDictionary = new();
+        readonly ConcurrentDictionary<string, Func<HttpClient, object[], object?>> methodDictionary = new();
 
-        public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
+        public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(string methodName, Type[]? parameterTypes = null, Type[]? genericArgumentTypes = null)
         {
-            var cacheKey = GetCacheKey(methodName, parameterTypes, genericArgumentTypes);
+            var cacheKey = GetCacheKey(methodName, parameterTypes ?? Array.Empty<Type>(), genericArgumentTypes ?? Array.Empty<Type>());
             var func = methodDictionary.GetOrAdd(cacheKey, _ => innerBuilder.BuildRestResultFuncForMethod(methodName, parameterTypes, genericArgumentTypes));
 
             return func;
