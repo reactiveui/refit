@@ -1510,8 +1510,16 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestProperty));
             var output = factory(new object[] { 6, someProperty });
 
+#if NET5_0
+            Assert.NotEmpty(output.Options);
+            Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
             Assert.NotEmpty(output.Properties);
             Assert.Equal(someProperty, output.Properties["SomeProperty"]);
+#pragma warning restore CS0618 // Type or member is obsolete
+
         }
 
         [Fact]
@@ -1523,9 +1531,17 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
+#if NET5_0
+            Assert.NotEmpty(output.Options);
+            Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["someValue"]);
+            Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["someOtherValue"]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
             Assert.NotEmpty(output.Properties);
             Assert.Equal(someProperty, output.Properties["someValue"]);
             Assert.Equal(someOtherProperty, output.Properties["someOtherValue"]);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]
@@ -1537,8 +1553,16 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey));
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
+
+#if NET5_0
+            Assert.Single(output.Options);
+            Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
             Assert.Single(output.Properties);
             Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]

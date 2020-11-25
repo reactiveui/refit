@@ -306,8 +306,16 @@ namespace Refit.Tests
                 RequestAsserts = message =>
                 {
                     Assert.Equal(someHeader, message.Headers.Authorization.ToString());
+
+#if NET5_0
+                    Assert.Single(message.Options);
+                    Assert.Equal(someProperty, ((IDictionary<string, object>)message.Options)["SomeProperty"]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
                     Assert.Single(message.Properties);
                     Assert.Equal(someProperty, message.Properties["SomeProperty"]);
+#pragma warning restore CS0618 // Type or member is obsolete
                 },
                 Asserts = async content =>
                 {

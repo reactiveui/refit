@@ -133,7 +133,7 @@ namespace Refit
             return qattrib ?? name;
         }
 
-        PropertyInfo[] GetProperties(Type type)
+        static PropertyInfo[] GetProperties(Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                        .Where(p => p.CanRead && p.GetMethod.IsPublic)

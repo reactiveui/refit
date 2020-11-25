@@ -95,7 +95,7 @@ namespace Refit
 
                 var isGeneric = genericArgumentTypes?.Length > 0;
 
-                var possibleMethodsList = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Count());
+                var possibleMethodsList = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Length);
 
                 // If it's a generic method, add that filter
                 if (isGeneric)
@@ -667,7 +667,7 @@ namespace Refit
                     // sure we have an HttpContent object to add them to,
                     // provided the HttpClient will allow it for the method
                     if (ret.Content == null && !BodylessMethods.Contains(ret.Method))
-                        ret.Content = new ByteArrayContent(new byte[0]);
+                        ret.Content = new ByteArrayContent(Array.Empty<byte>());
 
                     foreach (var header in headersToAdd)
                     {
@@ -677,7 +677,11 @@ namespace Refit
 
                 foreach (var property in propertiesToAdd)
                 {
+#if NET5_0
+                    ret.Options.Set(new HttpRequestOptionsKey<object>(property.Key), property.Value);
+#else
                     ret.Properties[property.Key] = property.Value;
+#endif
                 }
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
