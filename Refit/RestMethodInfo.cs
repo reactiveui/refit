@@ -38,8 +38,8 @@ namespace Refit
         public bool IsApiResponse { get; }
         public bool ShouldDisposeResponse { get; private set; }
 
-        static readonly Regex ParameterRegex = new Regex(@"{(.*?)}");
-        static readonly HttpMethod PatchMethod = new HttpMethod("PATCH");
+        static readonly Regex ParameterRegex = new(@"{(.*?)}");
+        static readonly HttpMethod PatchMethod = new("PATCH");
 
         public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
         {

@@ -69,7 +69,7 @@ namespace Refit.Tests
 
             var resp = await fixture.Get(403);
 
-            Assert.True(!String.IsNullOrWhiteSpace(plainText));
+            Assert.True(!string.IsNullOrWhiteSpace(plainText));
             Assert.Equal(HttpStatusCode.Forbidden, resp.StatusCode);
 
         }

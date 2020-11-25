@@ -532,9 +532,9 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
-        Task IApiBindPathToObject.GetFoos2(List<int> Values)
+        Task IApiBindPathToObject.GetFoos2(List<int> values)
         {
-            var arguments = new object[] { Values };
+            var arguments = new object[] { values };
             var func = requestBuilder.BuildRestResultFuncForMethod("GetFoos2", new Type[] { typeof(List<int>) });
             return (Task)func(Client, arguments);
         }

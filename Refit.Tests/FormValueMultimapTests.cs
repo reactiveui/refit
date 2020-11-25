@@ -11,7 +11,7 @@ namespace Refit.Tests
 {
     public class FormValueMultimapTests
     {
-        readonly RefitSettings settings = new RefitSettings();
+        readonly RefitSettings settings = new();
 
         [Fact]
         public void EmptyIfNullPassedIn()

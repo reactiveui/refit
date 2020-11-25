@@ -284,7 +284,7 @@ namespace Refit
             };
         }
 
-        private async Task<T> DeserializeContentAsync<T>(HttpResponseMessage resp, HttpContent content)
+        async Task<T> DeserializeContentAsync<T>(HttpResponseMessage resp, HttpContent content)
         {
             T result;
             if (typeof(T) == typeof(HttpResponseMessage))

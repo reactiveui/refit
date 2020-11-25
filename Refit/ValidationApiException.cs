@@ -10,7 +10,7 @@ namespace Refit
     [Serializable]
     public class ValidationApiException : ApiException
     {
-        static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions();
+        static readonly JsonSerializerOptions SerializerOptions = new();
 
         static ValidationApiException()
         {

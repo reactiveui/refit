@@ -15,8 +15,7 @@ namespace Refit
     /// same or different values.</remarks>
     class FormValueMultimap : IEnumerable<KeyValuePair<string, string>>
     {
-        static readonly Dictionary<Type, PropertyInfo[]> PropertyCache
-            = new Dictionary<Type, PropertyInfo[]>();
+        static readonly Dictionary<Type, PropertyInfo[]> PropertyCache = new();
 
         readonly IList<KeyValuePair<string, string>> formEntries = new List<KeyValuePair<string, string>>();
 

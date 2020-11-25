@@ -78,7 +78,7 @@ namespace Refit.Tests
         Task GetFoos(PathBoundList request);
 
         [Get("/foos2/{values}")]
-        Task GetFoos2(List<int> Values);
+        Task GetFoos2(List<int> values);
 
         [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task PostFooBar(PathBoundObject request, [Body]object someObject);

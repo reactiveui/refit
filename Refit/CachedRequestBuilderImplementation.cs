@@ -20,7 +20,7 @@ namespace Refit
         }
 
         readonly IRequestBuilder innerBuilder;
-        readonly ConcurrentDictionary<string, Func<HttpClient, object[], object>> methodDictionary = new ConcurrentDictionary<string, Func<HttpClient, object[], object>>();
+        readonly ConcurrentDictionary<string, Func<HttpClient, object[], object>> methodDictionary = new();
 
         public Func<HttpClient, object[], object> BuildRestResultFuncForMethod(string methodName, Type[] parameterTypes = null, Type[] genericArgumentTypes = null)
         {

@@ -158,7 +158,7 @@ namespace Refit
 
             if (reader.TokenType == JsonTokenType.Number)
             {
-                if (reader.TryGetInt64(out long l))
+                if (reader.TryGetInt64(out var l))
                 {
                     return l;
                 }
@@ -168,7 +168,7 @@ namespace Refit
 
             if (reader.TokenType == JsonTokenType.String)
             {
-                if (reader.TryGetDateTime(out DateTime datetime))
+                if (reader.TryGetDateTime(out var datetime))
                 {
                     return datetime;
                 }
@@ -178,7 +178,7 @@ namespace Refit
 
             // Use JsonElement as fallback.
             // Newtonsoft uses JArray or JObject.
-            using JsonDocument document = JsonDocument.ParseValue(ref reader);
+            using var document = JsonDocument.ParseValue(ref reader);
             return document.RootElement.Clone();
         }
 
