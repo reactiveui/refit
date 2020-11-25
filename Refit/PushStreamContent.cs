@@ -126,8 +126,7 @@ namespace System.Net.Http
         /// </summary>
         /// <param name="stream">The <see cref="Stream"/> to which to write.</param>
         /// <param name="context">The associated <see cref="TransportContext"/>.</param>
-        /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception is passed as task result.")]
+        /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>        
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
         {
             var serializeToStreamTask = new TaskCompletionSource<bool>();
@@ -162,10 +161,6 @@ namespace System.Net.Http
                 this.serializeToStreamTask = serializeToStreamTask ?? throw new ArgumentNullException(nameof(serializeToStreamTask));
             }
 
-            [SuppressMessage(
-                "Microsoft.Usage",
-                "CA2215:Dispose methods should call base class dispose",
-                Justification = "See comments, this is intentional.")]
             protected override void Dispose(bool disposing)
             {
                 // We don't dispose the underlying stream because we don't own it. Dispose in this case just signifies
