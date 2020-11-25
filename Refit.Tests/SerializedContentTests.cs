@@ -91,12 +91,12 @@ namespace Refit.Tests
             var settings = new RefitSettings();
 
             Assert.NotNull(settings.ContentSerializer);
-            Assert.IsType<NewtonsoftJsonContentSerializer>(settings.ContentSerializer);
+            Assert.IsType<SystemTextJsonContentSerializer>(settings.ContentSerializer);
 
-            settings = new RefitSettings(new SystemTextJsonContentSerializer());
+            settings = new RefitSettings(new NewtonsoftJsonContentSerializer());
 
             Assert.NotNull(settings.ContentSerializer);
-            Assert.IsType<SystemTextJsonContentSerializer>(settings.ContentSerializer);
+            Assert.IsType<NewtonsoftJsonContentSerializer>(settings.ContentSerializer);
         }
 
         /// <summary>

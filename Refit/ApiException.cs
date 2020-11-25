@@ -21,12 +21,12 @@ namespace Refit
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
         public RefitSettings RefitSettings { get; set; }
 
-        protected ApiException(HttpRequestMessage message, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
-            this(CreateMessage(statusCode, reasonPhrase), message, httpMethod, statusCode, reasonPhrase, headers, refitSettings)
+        protected ApiException(HttpRequestMessage message, HttpMethod httpMethod, string content, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
+            this(CreateMessage(statusCode, reasonPhrase), message, httpMethod, content, statusCode, reasonPhrase, headers, refitSettings)
         {
         }
 
-        protected ApiException(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
+        protected ApiException(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, string content, HttpStatusCode statusCode, string reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings = null) :
             base(exceptionMessage)
         {
             RequestMessage = message;
@@ -35,10 +35,8 @@ namespace Refit
             ReasonPhrase = reasonPhrase;
             Headers = headers;
             RefitSettings = refitSettings;
+            Content = content;
         }
-
-        [Obsolete("Use GetContentAsAsync<T>() instead", false)]
-        public T GetContentAs<T>() => GetContentAsAsync<T>().ConfigureAwait(false).GetAwaiter().GetResult();
 
         public async Task<T> GetContentAsAsync<T>() => HasContent ?
                 await RefitSettings.ContentSerializer.DeserializeAsync<T>(new StringContent(Content)).ConfigureAwait(false) :
@@ -56,7 +54,7 @@ namespace Refit
         public static async Task<ApiException> Create(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings = null)
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
-            var exception = new ApiException(exceptionMessage, message, httpMethod, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
+            var exception = new ApiException(exceptionMessage, message, httpMethod, null, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
 
             if (response.Content == null)
             {
@@ -71,8 +69,7 @@ namespace Refit
 
                 if (response.Content.Headers?.ContentType?.MediaType?.Equals("application/problem+json") ?? false)
                 {
-                    exception = await ValidationApiException.Create(exception).ConfigureAwait(false);
-                    exception.Content = content;
+                    exception = ValidationApiException.Create(exception);                    
                 }
 
                 response.Content.Dispose();

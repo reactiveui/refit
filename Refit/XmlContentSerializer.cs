@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -49,6 +51,20 @@ namespace Refit
             using var input = new StringReader(await content.ReadAsStringAsync().ConfigureAwait(false));
             using var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings);
             return (T)xmlSerializer.Deserialize(reader);
+        }
+
+        public string GetFieldNameForProperty(PropertyInfo propertyInfo)
+        {
+            if (propertyInfo is null)
+                throw new ArgumentNullException(nameof(propertyInfo));
+
+            return propertyInfo.GetCustomAttributes<XmlElementAttribute>(true)
+                       .Select(a => a.ElementName)
+                       .FirstOrDefault()
+                  ??
+                  propertyInfo.GetCustomAttributes<XmlAttributeAttribute>(true)
+                       .Select(a => a.AttributeName)
+                       .FirstOrDefault();
         }
     }
 

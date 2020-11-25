@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Refit
@@ -9,24 +10,35 @@ namespace Refit
     [Serializable]
     public class ValidationApiException : ApiException
     {
+        static readonly JsonSerializerOptions SerializerOptions = new JsonSerializerOptions();
+
+        static ValidationApiException()
+        {
+            SerializerOptions.PropertyNameCaseInsensitive = true;
+            SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            SerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
+        } 
 
         ValidationApiException(ApiException apiException) :
-            base(apiException.RequestMessage, apiException.HttpMethod, apiException.StatusCode, apiException.ReasonPhrase, apiException.Headers, apiException.RefitSettings)
+            base(apiException.RequestMessage, apiException.HttpMethod, apiException.Content, apiException.StatusCode, apiException.ReasonPhrase, apiException.Headers, apiException.RefitSettings)
         {
         }
 
-#pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
         /// <summary>
         /// Creates a new instance of a ValidationException from an existing ApiException.
         /// </summary>
         /// <param name="exception">An instance of an ApiException to use to build a ValidationException.</param>
         /// <returns>ValidationApiException</returns>
-        public static async Task<ValidationApiException> Create(ApiException exception)
-#pragma warning restore VSTHRD200
+        public static ValidationApiException Create(ApiException exception)
         {
+            if (exception is null)
+                throw new ArgumentNullException(nameof(exception));
+            if (string.IsNullOrWhiteSpace(exception.Content))
+                throw new ArgumentException("Content must be an 'application/problem+json' compliant json string.");
+
             return new ValidationApiException(exception)
             {
-                Content = await exception.GetContentAsAsync<ProblemDetails>().ConfigureAwait(false)
+                Content = JsonSerializer.Deserialize<ProblemDetails>(exception.Content, SerializerOptions)
             };
         }
 

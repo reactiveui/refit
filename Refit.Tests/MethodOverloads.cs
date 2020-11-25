@@ -150,7 +150,7 @@ namespace Refit.Tests
             mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
                 .WithHeaders("X-Refit", "99")
                 .WithQueryString("param", "foo")
-                .Respond("application/json", "{'url': 'https://httpbin.org/get', 'args': {'param': 'foo'}}");
+                .Respond("application/json", "{\"url\": \"https://httpbin.org/get\", \"args\": {\"param\": \"foo\"}}");
 
             var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>("https://httpbin.org/", settings);
 
@@ -173,7 +173,7 @@ namespace Refit.Tests
             mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
                 .WithHeaders("X-Refit", "foo")
                 .WithQueryString("param", "99")
-                .Respond("application/json", "{'url': 'https://httpbin.org/get', 'args': {'param': '99'}}");
+                .Respond("application/json", "{\"url\": \"https://httpbin.org/get\", \"args\": {\"param\": \"99\"}}");
 
             var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>("https://httpbin.org/", settings);
 

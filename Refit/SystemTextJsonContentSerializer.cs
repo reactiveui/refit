@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Buffers;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Refit.Buffers;
 
@@ -19,12 +23,21 @@ namespace Refit
         /// <summary>
         /// The JSON serialization options to use
         /// </summary>
-        private readonly JsonSerializerOptions jsonSerializerOptions;
+        readonly JsonSerializerOptions jsonSerializerOptions;
 
         /// <summary>
         /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
         /// </summary>
-        public SystemTextJsonContentSerializer() : this(new JsonSerializerOptions()) { }
+        public SystemTextJsonContentSerializer() : this(new JsonSerializerOptions())
+        {
+
+            // Set some defaults
+            // Default to case insensitive property name matching as that's likely the behavior most users expect
+            jsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
+            jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        }
 
         /// <summary>
         /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
@@ -105,12 +118,76 @@ namespace Refit
         /// <returns>A <typeparamref name="T"/> item deserialized from the UTF8 bytes within <paramref name="buffer"/></returns>
         [Pure]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static T Deserialize<T>(byte[] buffer, int length, JsonSerializerOptions jsonSerializerOptions)
+        static T Deserialize<T>(byte[] buffer, int length, JsonSerializerOptions jsonSerializerOptions)
         {
             var span = new ReadOnlySpan<byte>(buffer, 0, length);
             var utf8JsonReader = new Utf8JsonReader(span);
 
             return JsonSerializer.Deserialize<T>(ref utf8JsonReader, jsonSerializerOptions);
         }
+
+        public string GetFieldNameForProperty(PropertyInfo propertyInfo)
+        {
+            if (propertyInfo is null)
+                throw new ArgumentNullException(nameof(propertyInfo));
+
+            return propertyInfo.GetCustomAttributes<JsonPropertyNameAttribute>(true)
+                       .Select(a => a.Name)
+                       .FirstOrDefault();
+        }
     }
+
+    // From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
+    public class ObjectToInferredTypesConverter
+       : JsonConverter<object>
+    {
+        public override object Read(
+            ref Utf8JsonReader reader,
+            Type typeToConvert,
+            JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.True)
+            {
+                return true;
+            }
+
+            if (reader.TokenType == JsonTokenType.False)
+            {
+                return false;
+            }
+
+            if (reader.TokenType == JsonTokenType.Number)
+            {
+                if (reader.TryGetInt64(out long l))
+                {
+                    return l;
+                }
+
+                return reader.GetDouble();
+            }
+
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                if (reader.TryGetDateTime(out DateTime datetime))
+                {
+                    return datetime;
+                }
+
+                return reader.GetString();
+            }
+
+            // Use JsonElement as fallback.
+            // Newtonsoft uses JArray or JObject.
+            using JsonDocument document = JsonDocument.ParseValue(ref reader);
+            return document.RootElement.Clone();
+        }
+
+        public override void Write(
+            Utf8JsonWriter writer,
+            object objectToWrite,
+            JsonSerializerOptions options) =>
+                throw new InvalidOperationException("Should not get here.");
+    }
+
 }
+

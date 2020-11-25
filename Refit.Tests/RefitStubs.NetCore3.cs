@@ -1857,6 +1857,7 @@ namespace Refit.Tests
     using global::Refit.Buffers;
     using global::Xunit;
     using JsonSerializer =  global::Newtonsoft.Json.JsonSerializer;
+    using global::System.Text.Json.Serialization;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]

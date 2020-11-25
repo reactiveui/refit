@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
 using Newtonsoft.Json;
 
@@ -328,10 +329,12 @@ namespace Refit.Tests
             public string Foo { get; set; }
 
             [JsonProperty(PropertyName = "b")]
+            [JsonPropertyName("b")]
             public string Bar { get; set; }
 
             [AliasAs("a")]
             [JsonProperty(PropertyName = "z")]
+            [JsonPropertyName("z")]
             public string Baz { get; set; }
 
 

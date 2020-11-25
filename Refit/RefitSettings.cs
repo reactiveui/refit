@@ -7,20 +7,17 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 
-using Newtonsoft.Json;
-
 namespace Refit
 {
     public class RefitSettings
-    {
-        JsonSerializerSettings jsonSerializerSettings;
+    {       
 
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the default parameters
         /// </summary>
         public RefitSettings()
         {
-            ContentSerializer = new NewtonsoftJsonContentSerializer();
+            ContentSerializer = new SystemTextJsonContentSerializer();
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
@@ -64,17 +61,6 @@ namespace Refit
         /// </summary>
         public Func<HttpResponseMessage, Task<Exception>> ExceptionFactory { get; set; }
 
-        [Obsolete("Set RefitSettings.ContentSerializer = new NewtonsoftJsonContentSerializer(JsonSerializerSettings) instead.", false)]
-        public JsonSerializerSettings JsonSerializerSettings
-        {
-            get => jsonSerializerSettings;
-            set
-            {
-                jsonSerializerSettings = value;
-                ContentSerializer = new JsonContentSerializer(value);
-            }
-        }
-
         public IContentSerializer ContentSerializer { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
@@ -87,6 +73,13 @@ namespace Refit
         Task<HttpContent> SerializeAsync<T>(T item);
 
         Task<T> DeserializeAsync<T>(HttpContent content);
+
+        /// <summary>
+        /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands
+        /// </summary>
+        /// <param name="propertyInfo"></param>
+        /// <returns></returns>
+        string GetFieldNameForProperty(PropertyInfo propertyInfo);
     }
 
     public interface IUrlParameterFormatter
