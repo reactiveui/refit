@@ -37,7 +37,7 @@ namespace System.Net.Http
     [ExcludeFromCodeCoverage]
     class PushStreamContent : HttpContent
     {
-        readonly Func<Stream, HttpContent, TransportContext, Task> _onStreamAvailable;
+        readonly Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PushStreamContent"/> class. The
@@ -47,8 +47,8 @@ namespace System.Net.Http
         /// HTTP request or response will be completed.
         /// </summary>
         /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
-        public PushStreamContent(Action<Stream, HttpContent, TransportContext> onStreamAvailable)
-            : this(Taskify(onStreamAvailable), (MediaTypeHeaderValue)null)
+        public PushStreamContent(Action<Stream, HttpContent, TransportContext?> onStreamAvailable)
+            : this(Taskify(onStreamAvailable), (MediaTypeHeaderValue?)null)
         {
         }
 
@@ -57,15 +57,15 @@ namespace System.Net.Http
         /// </summary>
         /// <param name="onStreamAvailable">The action to call when an output stream is available. The stream is automatically
         /// closed when the return task is completed.</param>
-        public PushStreamContent(Func<Stream, HttpContent, TransportContext, Task> onStreamAvailable)
-            : this(onStreamAvailable, (MediaTypeHeaderValue)null)
+        public PushStreamContent(Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable)
+            : this(onStreamAvailable, (MediaTypeHeaderValue?)null)
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given media type.
         /// </summary>
-        public PushStreamContent(Action<Stream, HttpContent, TransportContext> onStreamAvailable, string mediaType)
+        public PushStreamContent(Action<Stream, HttpContent, TransportContext?> onStreamAvailable, string mediaType)
             : this(Taskify(onStreamAvailable), new MediaTypeHeaderValue(mediaType))
         {
         }
@@ -73,7 +73,7 @@ namespace System.Net.Http
         /// <summary>
         /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given media type.
         /// </summary>
-        public PushStreamContent(Func<Stream, HttpContent, TransportContext, Task> onStreamAvailable, string mediaType)
+        public PushStreamContent(Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable, string mediaType)
             : this(onStreamAvailable, new MediaTypeHeaderValue(mediaType))
         {
         }
@@ -81,7 +81,7 @@ namespace System.Net.Http
         /// <summary>
         /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.
         /// </summary>
-        public PushStreamContent(Action<Stream, HttpContent, TransportContext> onStreamAvailable, MediaTypeHeaderValue mediaType)
+        public PushStreamContent(Action<Stream, HttpContent, TransportContext?> onStreamAvailable, MediaTypeHeaderValue? mediaType)
             : this(Taskify(onStreamAvailable), mediaType)
         {
         }
@@ -89,21 +89,21 @@ namespace System.Net.Http
         /// <summary>
         /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.
         /// </summary>
-        public PushStreamContent(Func<Stream, HttpContent, TransportContext, Task> onStreamAvailable, MediaTypeHeaderValue mediaType)
+        public PushStreamContent(Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable, MediaTypeHeaderValue? mediaType)
         {
-            _onStreamAvailable = onStreamAvailable ?? throw new ArgumentNullException(nameof(onStreamAvailable));
+            this.onStreamAvailable = onStreamAvailable ?? throw new ArgumentNullException(nameof(onStreamAvailable));
             Headers.ContentType = mediaType ?? new MediaTypeHeaderValue("application/octet-stream");
         }
 
-        static Func<Stream, HttpContent, TransportContext, Task> Taskify(
-            Action<Stream, HttpContent, TransportContext> onStreamAvailable)
+        static Func<Stream, HttpContent, TransportContext?, Task> Taskify(
+            Action<Stream, HttpContent, TransportContext?> onStreamAvailable)
         {
             if (onStreamAvailable == null)
             {
                 throw new ArgumentNullException(nameof(onStreamAvailable));
             }
 
-            return (Stream stream, HttpContent content, TransportContext transportContext) =>
+            return (Stream stream, HttpContent content, TransportContext? transportContext) =>
             {
                 onStreamAvailable(stream, content, transportContext);
                 // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L10
@@ -126,14 +126,13 @@ namespace System.Net.Http
         /// </summary>
         /// <param name="stream">The <see cref="Stream"/> to which to write.</param>
         /// <param name="context">The associated <see cref="TransportContext"/>.</param>
-        /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>
-        [SuppressMessage("Microsoft.Design", "CA1031:DoNotCatchGeneralExceptionTypes", Justification = "Exception is passed as task result.")]
-        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
+        /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>        
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
         {
             var serializeToStreamTask = new TaskCompletionSource<bool>();
 
             Stream wrappedStream = new CompleteTaskOnCloseStream(stream, serializeToStreamTask);
-            await _onStreamAvailable(wrappedStream, this, context);
+            await onStreamAvailable(wrappedStream, this, context);
 
             // wait for wrappedStream.Close/Dispose to get called.
             await serializeToStreamTask.Task;
@@ -153,24 +152,20 @@ namespace System.Net.Http
 
         internal class CompleteTaskOnCloseStream : DelegatingStream
         {
-            readonly TaskCompletionSource<bool> _serializeToStreamTask;
+            readonly TaskCompletionSource<bool> serializeToStreamTask;
 
             public CompleteTaskOnCloseStream(Stream innerStream, TaskCompletionSource<bool> serializeToStreamTask)
                 : base(innerStream)
             {
                 Contract.Assert(serializeToStreamTask != null);
-                _serializeToStreamTask = serializeToStreamTask;
+                this.serializeToStreamTask = serializeToStreamTask ?? throw new ArgumentNullException(nameof(serializeToStreamTask));
             }
 
-            [SuppressMessage(
-                "Microsoft.Usage",
-                "CA2215:Dispose methods should call base class dispose",
-                Justification = "See comments, this is intentional.")]
             protected override void Dispose(bool disposing)
             {
                 // We don't dispose the underlying stream because we don't own it. Dispose in this case just signifies
                 // that the user's action is finished.
-                _serializeToStreamTask.TrySetResult(true);
+                serializeToStreamTask.TrySetResult(true);
             }
         }
     }

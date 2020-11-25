@@ -25,7 +25,7 @@ namespace Refit.Generator
     // What if the Interface is in another module? (since we copy usings, should be fine)
     public class InterfaceStubGenerator
     {
-        static readonly HashSet<string> HttpMethodAttributeNames = new HashSet<string>(
+        static readonly HashSet<string> HttpMethodAttributeNames = new(
             new[] { "Get", "Head", "Post", "Put", "Delete", "Patch", "Options" }
                 .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
 

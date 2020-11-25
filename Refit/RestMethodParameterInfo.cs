@@ -16,7 +16,7 @@ namespace Refit
             IsObjectPropertyParameter = isObjectPropertyParameter;
             ParameterInfo = parameterInfo;
         }
-        public string Name { get; set; }
+        public string? Name { get; set; }
         public ParameterInfo ParameterInfo { get; set; }
         public bool IsObjectPropertyParameter { get; set; }
         public List<RestMethodParameterProperty> ParameterProperties { get; set; } = new List<RestMethodParameterProperty>();

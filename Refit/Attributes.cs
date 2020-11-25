@@ -189,7 +189,7 @@ namespace Refit
     {
         public HeadersAttribute(params string[] headers)
         {
-            Headers = headers ?? new string[0];
+            Headers = headers ?? Array.Empty<string>();
         }
 
         public string[] Headers { get; }
@@ -224,7 +224,7 @@ namespace Refit
         /// <summary>
         /// Specifies the key under which to store the value on the HttpRequestMessage.Properties dictionary.
         /// </summary>
-        public string Key { get; }
+        public string? Key { get; }
     }
 
     [AttributeUsage(AttributeTargets.Parameter)]
@@ -292,7 +292,7 @@ namespace Refit
         /// </code>
         /// will result in the encoded form having a field named <c>dontlog-password</c>.
         /// </example>
-        public string Prefix { get; protected set; }
+        public string? Prefix { get; protected set; }
 
         /// <summary>
         /// Used to customize the formatting of the encoded value.
@@ -307,7 +307,7 @@ namespace Refit
         /// </code>
         /// Calling <c>serverApi.addExpense(5)</c> will result in a URI of <c>{baseUri}/expenses?expense=5.00</c>.
         /// </example>
-        public string Format { get; set; }
+        public string? Format { get; set; }
 
         /// <summary>
         /// Specifies how the collection should be encoded.

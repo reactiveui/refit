@@ -36,15 +36,19 @@ namespace Refit
             if (string.IsNullOrWhiteSpace(exception.Content))
                 throw new ArgumentException("Content must be an 'application/problem+json' compliant json string.");
 
-            return new ValidationApiException(exception)
+            var ex = new ValidationApiException(exception);
+
+            if(!string.IsNullOrWhiteSpace(exception.Content))
             {
-                Content = JsonSerializer.Deserialize<ProblemDetails>(exception.Content, SerializerOptions)
-            };
+                ex.Content = JsonSerializer.Deserialize<ProblemDetails>(exception.Content!, SerializerOptions);
+            }
+
+            return ex;
         }
 
         /// <summary>
         /// The problem details of the RFC 7807 validation exception.
         /// </summary>
-        public new ProblemDetails Content { get; private set; }
+        public new ProblemDetails? Content { get; private set; }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
@@ -28,7 +29,7 @@ namespace Refit
         /// Creates a new <see cref="NewtonsoftJsonContentSerializer"/> instance with the specified parameters
         /// </summary>
         /// <param name="jsonSerializerSettings">The serialization settings to use for the current instance</param>
-        public NewtonsoftJsonContentSerializer(JsonSerializerSettings jsonSerializerSettings)
+        public NewtonsoftJsonContentSerializer(JsonSerializerSettings? jsonSerializerSettings)
         {
             this.jsonSerializerSettings = new Lazy<JsonSerializerSettings>(() => jsonSerializerSettings
                                                                                  ?? JsonConvert.DefaultSettings?.Invoke()
@@ -44,18 +45,18 @@ namespace Refit
         }
 
         /// <inheritdoc/>
-        public async Task<T> DeserializeAsync<T>(HttpContent content)
+        public async Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
             var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
-            using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+            using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
             using var reader = new StreamReader(stream);
             using var jsonTextReader = new JsonTextReader(reader);
 
             return serializer.Deserialize<T>(jsonTextReader);
         }
 
-        public string GetFieldNameForProperty(PropertyInfo propertyInfo)
+        public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
         {
             if (propertyInfo is null)
                 throw new ArgumentNullException(nameof(propertyInfo));

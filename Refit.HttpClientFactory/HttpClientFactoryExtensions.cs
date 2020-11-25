@@ -14,7 +14,7 @@ namespace Refit
         /// <param name="services">container</param>
         /// <param name="settings">Optional. Settings to configure the instance with</param>
         /// <returns></returns>
-        public static IHttpClientBuilder AddRefitClient<T>(this IServiceCollection services, RefitSettings settings = null) where T : class
+        public static IHttpClientBuilder AddRefitClient<T>(this IServiceCollection services, RefitSettings? settings = null) where T : class
         {
             services.AddSingleton(provider => RequestBuilder.ForType<T>(settings));
 
@@ -22,7 +22,7 @@ namespace Refit
                            .ConfigureHttpMessageHandlerBuilder(builder =>
                            {
                                // check to see if user provided custom auth token
-                               HttpMessageHandler innerHandler = null;
+                               HttpMessageHandler? innerHandler = null;
                                if (settings != null)
                                {
                                    if (settings.HttpMessageHandlerFactory != null)
@@ -46,7 +46,7 @@ namespace Refit
                                }    
 
                            })
-                           .AddTypedClient((client, serviceProvider) => RestService.For<T>(client, serviceProvider.GetService<IRequestBuilder<T>>()));
+                           .AddTypedClient((client, serviceProvider) => RestService.For<T>(client, serviceProvider.GetService<IRequestBuilder<T>>()!));
         }
 
         /// <summary>
@@ -56,13 +56,13 @@ namespace Refit
         /// <param name="refitInterfaceType">Type of the Refit interface</param>
         /// <param name="settings">Optional. Settings to configure the instance with</param>
         /// <returns></returns>
-        public static IHttpClientBuilder AddRefitClient(this IServiceCollection services, Type refitInterfaceType, RefitSettings settings = null)
+        public static IHttpClientBuilder AddRefitClient(this IServiceCollection services, Type refitInterfaceType, RefitSettings? settings = null)
         {
             return services.AddHttpClient(UniqueName.ForType(refitInterfaceType))
                             .ConfigureHttpMessageHandlerBuilder(builder =>
                             {
                                 // check to see if user provided custom auth token
-                                HttpMessageHandler innerHandler = null;
+                                HttpMessageHandler? innerHandler = null;
                                 if (settings != null)
                                 {
                                     if (settings.HttpMessageHandlerFactory != null)

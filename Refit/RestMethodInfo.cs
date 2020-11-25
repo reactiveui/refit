@@ -21,12 +21,12 @@ namespace Refit
         public string RelativePath { get; set; }
         public bool IsMultipart { get; private set; }
         public string MultipartBoundary { get; private set; }
-        public ParameterInfo CancellationToken { get; set; }
-        public Dictionary<string, string> Headers { get; set; }
+        public ParameterInfo? CancellationToken { get; set; }
+        public Dictionary<string, string?> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
         public Dictionary<int, string> RequestPropertyParameterMap { get; set; }
-        public Tuple<BodySerializationMethod, bool, int> BodyParameterInfo { get; set; }
-        public Tuple<string, int> AuthorizeParameterInfo { get; set; }
+        public Tuple<BodySerializationMethod, bool, int>? BodyParameterInfo { get; set; }
+        public Tuple<string, int>? AuthorizeParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
         public Dictionary<int, ParameterInfo> ParameterInfoMap { get; set; }
@@ -41,12 +41,14 @@ namespace Refit
         static readonly Regex ParameterRegex = new(@"{(.*?)}");
         static readonly HttpMethod PatchMethod = new("PATCH");
 
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings refitSettings = null)
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings? refitSettings = null)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             RefitSettings = refitSettings ?? new RefitSettings();
-            Type = targetInterface;
+            Type = targetInterface ?? throw new ArgumentNullException(nameof(targetInterface));
             Name = methodInfo.Name;
-            MethodInfo = methodInfo;
+            MethodInfo = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
 
             var hma = methodInfo.GetCustomAttributes(true)
                 .OfType<HttpMethodAttribute>()
@@ -59,7 +61,7 @@ namespace Refit
                 .OfType<MultipartAttribute>()
                 .Any();
 
-            MultipartBoundary = IsMultipart ? methodInfo.GetCustomAttribute<MultipartAttribute>(true).BoundaryText : string.Empty;
+            MultipartBoundary = IsMultipart ? methodInfo.GetCustomAttribute<MultipartAttribute>(true)?.BoundaryText ?? new MultipartAttribute().BoundaryText : string.Empty;
 
             VerifyUrlPathIsSane(RelativePath);
             DetermineReturnTypeInfo(methodInfo);
@@ -120,13 +122,13 @@ namespace Refit
 
             CancellationToken = ctParams.FirstOrDefault();
 
-            IsApiResponse = ReturnResultType.GetTypeInfo().IsGenericType &&
-                            (ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+            IsApiResponse = ReturnResultType!.GetTypeInfo().IsGenericType &&
+                            (ReturnResultType!.GetGenericTypeDefinition() == typeof(ApiResponse<>)
                              || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>)
                              || ReturnResultType == typeof(IApiResponse));
         }
 
-        private Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
+        static Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
         {
             var requestPropertyMap = new Dictionary<int, string>();
 
@@ -139,8 +141,8 @@ namespace Refit
 
                 if (requestProperty != null)
                 {
-                    var propertyKey = !string.IsNullOrEmpty(requestProperty.Key) ? requestProperty.Key : param.Name;
-                    requestPropertyMap[i] = propertyKey;
+                    var propertyKey = !string.IsNullOrEmpty(requestProperty.Key) ? requestProperty.Key : param.Name!;
+                    requestPropertyMap[i] = propertyKey!;
                 }
 
             }
@@ -148,14 +150,14 @@ namespace Refit
             return requestPropertyMap;
         }
 
-        private PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
+        static PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
         {
             return parameter.ParameterType
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.CanRead && p.GetMethod.IsPublic).ToArray();
+                .Where(p => p.CanRead && p.GetMethod?.IsPublic == true).ToArray();
         }
 
-        void VerifyUrlPathIsSane(string relativePath)
+        static void VerifyUrlPathIsSane(string relativePath)
         {
             if (relativePath == "")
                 return;
@@ -164,7 +166,7 @@ namespace Refit
                 throw new ArgumentException($"URL path {relativePath} must start with '/' and be of the form '/foo/bar/baz'");
         }
 
-        Dictionary<int, RestMethodParameterInfo> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
+        static Dictionary<int, RestMethodParameterInfo> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
         {
             var ret = new Dictionary<int, RestMethodParameterInfo>();
 
@@ -238,14 +240,15 @@ namespace Refit
             return ret;
         }
 
-        string GetUrlNameForParameter(ParameterInfo paramInfo)
+        static string GetUrlNameForParameter(ParameterInfo paramInfo)
         {
             var aliasAttr = paramInfo.GetCustomAttributes(true)
                 .OfType<AliasAsAttribute>()
                 .FirstOrDefault();
-            return aliasAttr != null ? aliasAttr.Name : paramInfo.Name;
+            return aliasAttr != null ? aliasAttr.Name : paramInfo.Name!;
         }
-        string GetUrlNameForProperty(PropertyInfo propInfo)
+
+        static string GetUrlNameForProperty(PropertyInfo propInfo)
         {
             var aliasAttr = propInfo.GetCustomAttributes(true)
                 .OfType<AliasAsAttribute>()
@@ -253,7 +256,7 @@ namespace Refit
             return aliasAttr != null ? aliasAttr.Name : propInfo.Name;
         }
 
-        string GetAttachmentNameForParameter(ParameterInfo paramInfo)
+        static string GetAttachmentNameForParameter(ParameterInfo paramInfo)
         {
 #pragma warning disable CS0618 // Type or member is obsolete
             var nameAttr = paramInfo.GetCustomAttributes<AttachmentNameAttribute>(true)
@@ -261,10 +264,10 @@ namespace Refit
                 .FirstOrDefault();
 
             // also check for AliasAs
-            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name;
+            return nameAttr?.Name ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name!;
         }
 
-        Tuple<BodySerializationMethod, bool, int> FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
+        Tuple<BodySerializationMethod, bool, int>? FindBodyParameter(IList<ParameterInfo> parameterList, bool isMultipart, HttpMethod method)
         {
 
             // The body parameter is found using the following logic / order of precedence:
@@ -296,7 +299,7 @@ namespace Refit
             if (bodyParams.Count == 1)
             {
                 var ret = bodyParams[0];
-                return Tuple.Create(ret.BodyAttribute.SerializationMethod, ret.BodyAttribute.Buffered ?? RefitSettings.Buffered,
+                return Tuple.Create(ret.BodyAttribute!.SerializationMethod, ret.BodyAttribute.Buffered ?? RefitSettings.Buffered,
                     parameterList.IndexOf(ret.Parameter));
             }
 
@@ -324,7 +327,7 @@ namespace Refit
             return null;
         }
 
-        Tuple<string, int> FindAuthorizationParameter(IList<ParameterInfo> parameterList)
+        static Tuple<string, int>? FindAuthorizationParameter(IList<ParameterInfo> parameterList)
         {
             var authorizeParams = parameterList
                 .Select(x => new { Parameter = x, AuthorizeAttribute = x.GetCustomAttributes(true).OfType<AuthorizeAttribute>().FirstOrDefault() })
@@ -339,23 +342,23 @@ namespace Refit
             if (authorizeParams.Count == 1)
             {
                 var ret = authorizeParams[0];
-                return Tuple.Create(ret.AuthorizeAttribute.Scheme, parameterList.IndexOf(ret.Parameter));
+                return Tuple.Create(ret.AuthorizeAttribute!.Scheme, parameterList.IndexOf(ret.Parameter));
             }
 
             return null;
         }
 
-        Dictionary<string, string> ParseHeaders(MethodInfo methodInfo)
+        static Dictionary<string, string?> ParseHeaders(MethodInfo methodInfo)
         {
-            var ret = new Dictionary<string, string>();
+            var ret = new Dictionary<string, string?>();
 
             var inheritedAttributes = methodInfo.DeclaringType != null
                 ? methodInfo.DeclaringType.GetInterfaces().SelectMany(i => i.GetTypeInfo().GetCustomAttributes(true)).Reverse()
-                : new Attribute[0];
+                : Array.Empty<Attribute>();
 
             var declaringTypeAttributes = methodInfo.DeclaringType != null
                 ? methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true)
-                : new Attribute[0];
+                : Array.Empty<Attribute>();
 
             // Headers set on the declaring type have to come first,
             // so headers set on the method can replace them. Switching
@@ -380,7 +383,7 @@ namespace Refit
             return ret;
         }
 
-        Dictionary<int, string> BuildHeaderParameterMap(List<ParameterInfo> parameterList)
+        static Dictionary<int, string> BuildHeaderParameterMap(List<ParameterInfo> parameterList)
         {
             var ret = new Dictionary<int, string>();
 
@@ -431,7 +434,7 @@ namespace Refit
                 throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
         }
 
-        private void DetermineIfResponseMustBeDisposed()
+        void DetermineIfResponseMustBeDisposed()
         {
             // Rest method caller will have to dispose if it's one of those 3
             ShouldDisposeResponse = DeserializedResultType != typeof(HttpResponseMessage) &&
