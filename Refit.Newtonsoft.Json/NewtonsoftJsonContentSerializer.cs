@@ -29,7 +29,7 @@ namespace Refit
         /// Creates a new <see cref="NewtonsoftJsonContentSerializer"/> instance with the specified parameters
         /// </summary>
         /// <param name="jsonSerializerSettings">The serialization settings to use for the current instance</param>
-        public NewtonsoftJsonContentSerializer(JsonSerializerSettings jsonSerializerSettings)
+        public NewtonsoftJsonContentSerializer(JsonSerializerSettings? jsonSerializerSettings)
         {
             this.jsonSerializerSettings = new Lazy<JsonSerializerSettings>(() => jsonSerializerSettings
                                                                                  ?? JsonConvert.DefaultSettings?.Invoke()
@@ -56,7 +56,7 @@ namespace Refit
             return serializer.Deserialize<T>(jsonTextReader);
         }
 
-        public string GetFieldNameForProperty(PropertyInfo propertyInfo)
+        public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
         {
             if (propertyInfo is null)
                 throw new ArgumentNullException(nameof(propertyInfo));

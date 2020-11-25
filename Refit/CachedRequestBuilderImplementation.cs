@@ -30,7 +30,7 @@ namespace Refit
             return func;
         }
 
-        string GetCacheKey(string methodName, Type[] parameterTypes, Type[] genericArgumentTypes)
+        static string GetCacheKey(string methodName, Type[] parameterTypes, Type[] genericArgumentTypes)
         {
             var genericDefinition = GetGenericString(genericArgumentTypes);
             var argumentString = GetArgumentString(parameterTypes);
@@ -38,7 +38,7 @@ namespace Refit
             return $"{methodName}{genericDefinition}({argumentString})";
         }
 
-        string GetArgumentString(Type[] parameterTypes)
+        static string GetArgumentString(Type[] parameterTypes)
         {
             if (parameterTypes == null || parameterTypes.Length == 0)
             {
@@ -48,7 +48,7 @@ namespace Refit
             return string.Join(", ", parameterTypes.Select(t => t.FullName));
         }
 
-        string GetGenericString(Type[] genericArgumentTypes)
+        static string GetGenericString(Type[] genericArgumentTypes)
         {
             if (genericArgumentTypes == null || genericArgumentTypes.Length == 0)
             {

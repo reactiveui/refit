@@ -73,7 +73,7 @@ namespace Refit
                                 case CollectionFormat.Multi:
                                     foreach (var item in enumerable)
                                     {
-                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib.Format));
+                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib?.Format));
                                     }
                                     break;
                                 case CollectionFormat.Csv:
@@ -90,7 +90,7 @@ namespace Refit
 
                                     var formattedValues = enumerable
                                         .Cast<object>()
-                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib.Format));
+                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib?.Format));
                                     Add(fieldName, string.Join(delimiter, formattedValues));
                                     break;
                                 default:

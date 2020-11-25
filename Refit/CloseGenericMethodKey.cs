@@ -17,7 +17,7 @@ namespace Refit
 
         public bool Equals(CloseGenericMethodKey other) => OpenMethodInfo == other.OpenMethodInfo && Types.SequenceEqual(other.Types);
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is CloseGenericMethodKey closeGenericMethodKey)
             {
@@ -30,9 +30,9 @@ namespace Refit
         {
             unchecked
             {
-                int hash = 17;
+                var hash = 17;
                 hash = hash * 23 + OpenMethodInfo.GetHashCode();
-                foreach (Type type in Types)
+                foreach (var type in Types)
                 {
                     hash = hash * 23 + type.GetHashCode();
                 }

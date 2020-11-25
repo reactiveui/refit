@@ -99,7 +99,7 @@ namespace Refit
 
                 // If it's a generic method, add that filter
                 if (isGeneric)
-                    possibleMethodsList = possibleMethodsList.Where(method => method.MethodInfo.IsGenericMethod && method.MethodInfo.GetGenericArguments().Length == genericArgumentTypes.Length);
+                    possibleMethodsList = possibleMethodsList.Where(method => method.MethodInfo.IsGenericMethod && method.MethodInfo.GetGenericArguments().Length == genericArgumentTypes!.Length);
                 else // exclude generic methods
                     possibleMethodsList = possibleMethodsList.Where(method => !method.MethodInfo.IsGenericMethod);
 
@@ -129,7 +129,7 @@ namespace Refit
 
         }
 
-        RestMethodInfo CloseGenericMethodIfNeeded(RestMethodInfo restMethodInfo, Type[] genericArgumentTypes)
+        RestMethodInfo CloseGenericMethodIfNeeded(RestMethodInfo restMethodInfo, Type[]? genericArgumentTypes)
         {
             if (genericArgumentTypes != null)
             {
@@ -317,14 +317,16 @@ namespace Refit
             return result;
         }
 
-        List<KeyValuePair<string, object>> BuildQueryMap(object @object, string? delimiter = null, RestMethodParameterInfo? parameterInfo = null)
+        List<KeyValuePair<string, object?>> BuildQueryMap(object? @object, string? delimiter = null, RestMethodParameterInfo? parameterInfo = null)
         {
             if (@object is IDictionary idictionary)
             {
                 return BuildQueryMap(idictionary, delimiter);
             }
 
-            var kvps = new List<KeyValuePair<string, object>>();
+            var kvps = new List<KeyValuePair<string, object?>>();
+
+            if (@object is null) return kvps;
 
             var props = @object.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public)
                 .Where(p => p.CanRead && p.GetMethod?.IsPublic == true);
@@ -366,7 +368,7 @@ namespace Refit
                 {
                     foreach (var value in ParseEnumerableQueryParameterValue(ienu, propertyInfo, propertyInfo.PropertyType, queryAttribute))
                     {
-                        kvps.Add(new KeyValuePair<string, object>(key, value));
+                        kvps.Add(new KeyValuePair<string, object?>(key, value));
                     }
 
                     continue;
@@ -374,7 +376,7 @@ namespace Refit
 
                 if (DoNotConvertToQueryMap(obj))
                 {
-                    kvps.Add(new KeyValuePair<string, object>(key, obj));
+                    kvps.Add(new KeyValuePair<string, object?>(key, obj));
                     continue;
                 }
 
@@ -383,7 +385,7 @@ namespace Refit
                     case IDictionary idict:
                         foreach (var keyValuePair in BuildQueryMap(idict, delimiter))
                         {
-                            kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                            kvps.Add(new KeyValuePair<string, object?>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
                         }
 
                         break;
@@ -391,7 +393,7 @@ namespace Refit
                     default:
                         foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
                         {
-                            kvps.Add(new KeyValuePair<string, object>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                            kvps.Add(new KeyValuePair<string, object?>($"{key}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
                         }
 
                         break;
@@ -401,9 +403,9 @@ namespace Refit
             return kvps;
         }
 
-        List<KeyValuePair<string, object>> BuildQueryMap(IDictionary dictionary, string delimiter = null)
+        List<KeyValuePair<string, object?>> BuildQueryMap(IDictionary dictionary, string? delimiter = null)
         {
-            var kvps = new List<KeyValuePair<string, object>>();
+            var kvps = new List<KeyValuePair<string, object?>>();
 
             foreach (var key in dictionary.Keys)
             {
@@ -414,15 +416,20 @@ namespace Refit
                 var keyType = key.GetType();
                 var formattedKey = settings.UrlParameterFormatter.Format(key, keyType, keyType);
 
+                if(string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
+                {
+                    continue;
+                }
+
                 if (DoNotConvertToQueryMap(obj))
                 {
-                    kvps.Add(new KeyValuePair<string, object>(formattedKey, obj));
+                    kvps.Add(new KeyValuePair<string, object?>(formattedKey!, obj));
                 }
                 else
                 {
                     foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
                     {
-                        kvps.Add(new KeyValuePair<string, object>($"{formattedKey}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
+                        kvps.Add(new KeyValuePair<string, object?>($"{formattedKey}{delimiter}{keyValuePair.Key}", keyValuePair.Value));
                     }
                 }
             }
@@ -447,7 +454,7 @@ namespace Refit
                 };
 
                 // set up multipart content
-                MultipartFormDataContent multiPartContent = null;
+                MultipartFormDataContent? multiPartContent = null;
                 if (restMethod.IsMultipart)
                 {
                     multiPartContent = new MultipartFormDataContent(restMethod.MultipartBoundary);
@@ -455,11 +462,11 @@ namespace Refit
                 }
 
                 var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
-                var queryParamsToAdd = new List<KeyValuePair<string, string>>();
+                var queryParamsToAdd = new List<KeyValuePair<string, string?>>();
                 var headersToAdd = new Dictionary<string, string?>(restMethod.Headers);
-                var propertiesToAdd = new Dictionary<string, object>();
+                var propertiesToAdd = new Dictionary<string, object?>();
 
-                RestMethodParameterInfo parameterInfo = null;
+                RestMethodParameterInfo? parameterInfo = null;
 
                 for (var i = 0; i < paramList.Length; i++)
                 {
@@ -491,7 +498,7 @@ namespace Refit
                             if (restMethod.ParameterMap[i].Type == ParameterType.RoundTripping)
                             {
                                 pattern = $@"{{\*\*{restMethod.ParameterMap[i].Name}}}";
-                                var paramValue = param as string;
+                                var paramValue = (string)param;
                                 replacement = string.Join(
                                     "/",
                                     paramValue.Split('/')
@@ -648,14 +655,14 @@ namespace Refit
 
                     if (typeIsCollection)
                     {
-                        foreach (var item in enumerable)
+                        foreach (var item in enumerable!)
                         {
-                            await AddMultipartItemAsync(multiPartContent, itemName, parameterName, item).ConfigureAwait(false);
+                            await AddMultipartItemAsync(multiPartContent!, itemName, parameterName, item).ConfigureAwait(false);
                         }
                     }
                     else
                     {
-                        await AddMultipartItemAsync(multiPartContent, itemName, parameterName, itemValue).ConfigureAwait(false);
+                        await AddMultipartItemAsync(multiPartContent!, itemName, parameterName, itemValue).ConfigureAwait(false);
                     }
                 }
 
@@ -678,7 +685,7 @@ namespace Refit
                 foreach (var property in propertiesToAdd)
                 {
 #if NET5_0
-                    ret.Options.Set(new HttpRequestOptionsKey<object>(property.Key), property.Value);
+                    ret.Options.Set(new HttpRequestOptionsKey<object?>(property.Key), property.Value);
 #else
                     ret.Properties[property.Key] = property.Value;
 #endif
@@ -691,13 +698,16 @@ namespace Refit
                 var query = HttpUtility.ParseQueryString(uri.Query ?? "");
                 foreach (var key in query.AllKeys)
                 {
-                    queryParamsToAdd.Insert(0, new KeyValuePair<string, string>(key, query[key]));
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        queryParamsToAdd.Insert(0, new KeyValuePair<string, string?>(key, query[key]));
+                    }
                 }
 
                 if (queryParamsToAdd.Any())
                 {
                     var pairs = queryParamsToAdd.Where(x => x.Key != null && x.Value != null)
-                                                .Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value));
+                                                .Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value ?? string.Empty));
                     uri.Query = string.Join("&", pairs);
                 }
                 else
@@ -711,22 +721,22 @@ namespace Refit
             };
         }
 
-        IEnumerable<KeyValuePair<string, string>> ParseQueryParameter(object param, ParameterInfo parameterInfo, string queryPath, QueryAttribute queryAttribute)
+        IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(object? param, ParameterInfo parameterInfo, string queryPath, QueryAttribute queryAttribute)
         {
             if (!(param is string) && param is IEnumerable paramValues)
             {
                 foreach (var value in ParseEnumerableQueryParameterValue(paramValues, parameterInfo, parameterInfo.ParameterType, queryAttribute))
                 {
-                    yield return new KeyValuePair<string, string>(queryPath, value);
+                    yield return new KeyValuePair<string, string?>(queryPath, value);
                 }
             }
             else
             {
-                yield return new KeyValuePair<string, string>(queryPath, settings.UrlParameterFormatter.Format(param, parameterInfo, parameterInfo.ParameterType));
+                yield return new KeyValuePair<string, string?>(queryPath, settings.UrlParameterFormatter.Format(param, parameterInfo, parameterInfo.ParameterType));
             }
         }
 
-        IEnumerable<string> ParseEnumerableQueryParameterValue(IEnumerable paramValues, ICustomAttributeProvider customAttributeProvider, Type type, QueryAttribute queryAttribute)
+        IEnumerable<string?> ParseEnumerableQueryParameterValue(IEnumerable paramValues, ICustomAttributeProvider customAttributeProvider, Type type, QueryAttribute? queryAttribute)
         {
             var collectionFormat = queryAttribute != null && queryAttribute.IsCollectionFormatSpecified
                 ? queryAttribute.CollectionFormat
@@ -759,7 +769,7 @@ namespace Refit
             }
         }
 
-        Func<HttpClient, object[], IObservable<T>> BuildRxFuncForMethod<T, TBody>(RestMethodInfo restMethod)
+        Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(RestMethodInfo restMethod)
         {
             var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
@@ -781,7 +791,7 @@ namespace Refit
             };
         }
 
-        Func<HttpClient, object[], Task<T>> BuildTaskFuncForMethod<T, TBody>(RestMethodInfo restMethod)
+        Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(RestMethodInfo restMethod)
         {
             var ret = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
@@ -823,7 +833,7 @@ namespace Refit
             };
         }
 
-        static bool DoNotConvertToQueryMap(object value)
+        static bool DoNotConvertToQueryMap(object? value)
         {
             if (value == null)
                 return false;
@@ -859,7 +869,7 @@ namespace Refit
             return ShouldReturn();
         }
 
-        static void SetHeader(HttpRequestMessage request, string name, string value)
+        static void SetHeader(HttpRequestMessage request, string name, string? value)
         {
             // Clear any existing version of this header that might be set, because
             // we want to allow removal/redefinition of headers.

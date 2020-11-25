@@ -12,12 +12,9 @@
     <PackageReference Condition="'$(TargetFramework)' != 'net5.0'" Include="System.Text.Json" Version="5.0.0" />
   </ItemGroup>
   
-  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies"
-                  Version="1.0.0"
-                  PrivateAssets="All" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">    
     <Reference Include="System.Web" />
-    <Reference Include="System.Net.Http" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
   <ItemGroup Label="Package">

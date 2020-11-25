@@ -9,10 +9,13 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
+#if !NET5_0
     static class HttpContentExtensions
     {
-#if !NET5_0
+
+#pragma warning disable IDE0060 // Remove unused parameter
         public static Task<Stream> ReadAsStreamAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+
         {
             return httpContent.ReadAsStreamAsync();
         }
@@ -21,6 +24,8 @@ namespace Refit
         {
             return httpContent.ReadAsStringAsync();
         }
-#endif
+
+#pragma warning restore IDE0060 // Remove unused parameter
     }
+#endif
 }

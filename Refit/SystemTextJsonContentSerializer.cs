@@ -130,7 +130,7 @@ namespace Refit
             return JsonSerializer.Deserialize<T>(ref utf8JsonReader, jsonSerializerOptions);
         }
 
-        public string GetFieldNameForProperty(PropertyInfo propertyInfo)
+        public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
         {
             if (propertyInfo is null)
                 throw new ArgumentNullException(nameof(propertyInfo));
