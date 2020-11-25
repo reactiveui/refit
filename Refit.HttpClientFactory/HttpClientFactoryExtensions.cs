@@ -89,7 +89,7 @@ namespace Refit
                            .AddTypedClient(refitInterfaceType, (client, serviceProvider) => RestService.For(refitInterfaceType, client, settings));
         }
 
-        private static IHttpClientBuilder AddTypedClient(this IHttpClientBuilder builder, Type type, Func<HttpClient, IServiceProvider, object> factory)
+        static IHttpClientBuilder AddTypedClient(this IHttpClientBuilder builder, Type type, Func<HttpClient, IServiceProvider, object> factory)
         {
             if (builder == null)
             {

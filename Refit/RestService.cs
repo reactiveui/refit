@@ -6,7 +6,7 @@ namespace Refit
 {
     public static class RestService
     {
-        static readonly ConcurrentDictionary<Type, Type> TypeMapping = new ConcurrentDictionary<Type, Type>();
+        static readonly ConcurrentDictionary<Type, Type> TypeMapping = new();
 
         public static T For<T>(HttpClient client, IRequestBuilder<T> builder)
         {
@@ -89,7 +89,7 @@ namespace Refit
 
         static Type GetGeneratedType(Type refitInterfaceType)
         {
-            string typeName = UniqueName.ForType(refitInterfaceType);
+            var typeName = UniqueName.ForType(refitInterfaceType);
 
             var generatedType = Type.GetType(typeName);
 

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace Refit
 {
@@ -18,7 +18,7 @@ namespace Refit
         /// Collection of ProblemDetails extensions
         /// </summary>
         [JsonExtensionData]
-        public IDictionary<string, object> Extensions { get; } = new Dictionary<string, object>(StringComparer.Ordinal);
+        public IDictionary<string, object> Extensions { get; set; } = new Dictionary<string, object>(StringComparer.Ordinal);
 
         /// <summary>
         /// A URI reference that identifies the problem type.

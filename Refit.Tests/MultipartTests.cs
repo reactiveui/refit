@@ -303,11 +303,19 @@ namespace Refit.Tests
 
             var handler = new MockHttpMessageHandler
             {
-                RequestAsserts = async message =>
+                RequestAsserts = message =>
                 {
                     Assert.Equal(someHeader, message.Headers.Authorization.ToString());
+
+#if NET5_0
+                    Assert.Single(message.Options);
+                    Assert.Equal(someProperty, ((IDictionary<string, object>)message.Options)["SomeProperty"]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
                     Assert.Single(message.Properties);
                     Assert.Equal(someProperty, message.Properties["SomeProperty"]);
+#pragma warning restore CS0618 // Type or member is obsolete
                 },
                 Asserts = async content =>
                 {
@@ -546,7 +554,7 @@ namespace Refit.Tests
         [InlineData(typeof(XmlContentSerializer), "application/xml")]
         public async Task MultipartUploadShouldWorkWithAnObject(Type contentSerializerType, string mediaType)
         {
-            if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
+            if (Activator.CreateInstance(contentSerializerType) is not IContentSerializer serializer)
             {
                 throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
             }
@@ -590,7 +598,7 @@ namespace Refit.Tests
         [InlineData(typeof(XmlContentSerializer), "application/xml")]
         public async Task MultipartUploadShouldWorkWithObjects(Type contentSerializerType, string mediaType)
         {
-            if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
+            if (Activator.CreateInstance(contentSerializerType) is not IContentSerializer serializer)
             {
                 throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
             }
@@ -787,7 +795,7 @@ namespace Refit.Tests
         {
             Assert.Throws<ArgumentNullException>(() =>
             {
-                var byteArrayPart = new ByteArrayPart(new byte[0], null, "application/pdf");
+                var byteArrayPart = new ByteArrayPart(Array.Empty<byte>(), null, "application/pdf");
             });
         }
 
@@ -831,7 +839,7 @@ namespace Refit.Tests
             return stream;
         }
 
-        bool StreamsEqual(Stream a, Stream b)
+        static bool StreamsEqual(Stream a, Stream b)
         {
             if (a == null &&
                 b == null)

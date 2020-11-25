@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -15,7 +17,7 @@ namespace Refit
         /// <summary>
         /// The <see cref="Lazy{T}"/> instance providing the JSON serialization settings to use
         /// </summary>
-        private readonly Lazy<JsonSerializerSettings> jsonSerializerSettings;
+        readonly Lazy<JsonSerializerSettings> jsonSerializerSettings;
 
         /// <summary>
         /// Creates a new <see cref="NewtonsoftJsonContentSerializer"/> instance
@@ -51,6 +53,16 @@ namespace Refit
             using var jsonTextReader = new JsonTextReader(reader);
 
             return serializer.Deserialize<T>(jsonTextReader);
+        }
+
+        public string GetFieldNameForProperty(PropertyInfo propertyInfo)
+        {
+            if (propertyInfo is null)
+                throw new ArgumentNullException(nameof(propertyInfo));
+
+            return propertyInfo.GetCustomAttributes<JsonPropertyAttribute>(true)
+                              .Select(a => a.PropertyName)
+                              .FirstOrDefault();
         }
     }
 }

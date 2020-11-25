@@ -5,8 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
-using Newtonsoft.Json;
-
 namespace Refit
 {
     /// <summary>
@@ -17,13 +15,18 @@ namespace Refit
     /// same or different values.</remarks>
     class FormValueMultimap : IEnumerable<KeyValuePair<string, string>>
     {
-        static readonly Dictionary<Type, PropertyInfo[]> PropertyCache
-            = new Dictionary<Type, PropertyInfo[]>();
+        static readonly Dictionary<Type, PropertyInfo[]> PropertyCache = new();
 
         readonly IList<KeyValuePair<string, string>> formEntries = new List<KeyValuePair<string, string>>();
 
+        readonly IContentSerializer contentSerializer;
+
         public FormValueMultimap(object source, RefitSettings settings)
         {
+            if (settings is null)
+                throw new ArgumentNullException(nameof(settings));
+            contentSerializer = settings.ContentSerializer;
+
             if (source == null) return;
 
             if (source is IDictionary dictionary)
@@ -120,12 +123,7 @@ namespace Refit
             var name = propertyInfo.GetCustomAttributes<AliasAsAttribute>(true)
                                .Select(a => a.Name)
                                .FirstOrDefault()
-                   ?? propertyInfo.GetCustomAttributes<JsonPropertyAttribute>(true)
-                                  .Select(a => a.PropertyName)
-                                  .FirstOrDefault()
-                   ?? propertyInfo.GetCustomAttributes<JsonPropertyNameAttribute>(true)
-                       .Select(a => a.Name)
-                       .FirstOrDefault()
+                   ?? contentSerializer.GetFieldNameForProperty(propertyInfo)
                    ?? propertyInfo.Name;
 
             var qattrib = propertyInfo.GetCustomAttributes<QueryAttribute>(true)
@@ -135,7 +133,7 @@ namespace Refit
             return qattrib ?? name;
         }
 
-        PropertyInfo[] GetProperties(Type type)
+        static PropertyInfo[] GetProperties(Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
                        .Where(p => p.CanRead && p.GetMethod.IsPublic)
