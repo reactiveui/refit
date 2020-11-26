@@ -91,9 +91,12 @@ namespace Refit.Buffers
 
                 try
                 {
+#if NETSTANDARD2_1 || NET5_0
+                    return CopyToInternalAsync(destination, cancellationToken);
+#else
                     CopyTo(destination, bufferSize);
-
                     return Task.CompletedTask;
+#endif
                 }
                 catch (OperationCanceledException e)
                 {

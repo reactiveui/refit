@@ -14,18 +14,17 @@ namespace Refit.Buffers
         private sealed partial class PooledMemoryStream : Stream
         {
             /// <inheritdoc/>
-            public override void CopyTo(Stream destination, int bufferSize)
+            public Task CopyToInternalAsync(Stream destination, CancellationToken cancellationToken)
             {
                 if (pooledBuffer is null) ThrowObjectDisposedException();
 
                 var bytesAvailable = length - position;
-                var spanLength = Math.Min(bytesAvailable, bufferSize);
 
-                var source = pooledBuffer.AsSpan(position, spanLength);
+                var source = pooledBuffer.AsMemory(position, bytesAvailable);
 
                 position += source.Length;
 
-                destination.Write(source);
+                return destination.WriteAsync(source, cancellationToken).AsTask();
             }
 
             /// <inheritdoc/>
