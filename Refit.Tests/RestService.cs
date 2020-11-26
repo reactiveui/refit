@@ -1343,7 +1343,7 @@ namespace Refit.Tests
                         async Task<bool> T()
                         {
                             using var s = await m.Content.ReadAsStreamAsync();
-                            var it = await System.Text.Json.JsonSerializer.DeserializeAsync<BigObject>(s, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+                            var it = await System.Text.Json.JsonSerializer.DeserializeAsync<BigObject>(s);
                             return it.BigData.SequenceEqual(bigObject.BigData);
                         }
 
