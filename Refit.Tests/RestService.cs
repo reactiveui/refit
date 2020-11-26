@@ -27,6 +27,11 @@ namespace Refit.Tests
     }
 #pragma warning restore IDE1006 // Naming Styles
 
+    public class BigObject
+    {
+        public byte[] BigData { get; set; }
+    }
+
     [Headers("User-Agent: Refit Integration Tests")]
     public interface INpmJs
     {
@@ -50,7 +55,11 @@ namespace Refit.Tests
 
         [Post("/1h3a5jm1")]
         Task PostGeneric<T>(T param);
+
+        [Post("/big")]
+        Task PostBig(BigObject big);
     }
+
     public interface IApiBindPathToObject
     {
         [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
@@ -1312,6 +1321,42 @@ namespace Refit.Tests
             }
         }
 
+        [Fact]
+        public async Task CanSerializeBigData()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = new SystemTextJsonContentSerializer()
+            };
+
+            var bigObject = new BigObject
+            {
+                BigData = Enumerable.Range(0, 800000).Select(x => (byte)(x % 256)).ToArray()
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/big")
+                    .With(m =>
+                    {
+                        async Task<bool> T()
+                        {
+                            using var s = await m.Content.ReadAsStreamAsync();
+                            var it = await System.Text.Json.JsonSerializer.DeserializeAsync<BigObject>(s, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
+                            return it.BigData.SequenceEqual(bigObject.BigData);
+                        }
+
+                        return T().Result;
+                    })
+                    .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+            await fixture.PostBig(bigObject);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
 
         [Fact]
         public async Task ErrorsFromApiReturnErrorContent()

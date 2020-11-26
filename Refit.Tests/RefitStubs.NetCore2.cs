@@ -2542,6 +2542,14 @@ namespace Refit.Tests
             var func = requestBuilder.BuildRestResultFuncForMethod("PostGeneric", new Type[] { typeof(T) }, new Type[] { typeof(T) });
             return (Task)func(Client, arguments);
         }
+
+        /// <inheritdoc />
+        Task IRequestBin.PostBig(BigObject big)
+        {
+            var arguments = new object[] { big };
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostBig", new Type[] { typeof(BigObject) });
+            return (Task)func(Client, arguments);
+        }
     }
 }
 
