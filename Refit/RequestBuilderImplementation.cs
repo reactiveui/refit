@@ -590,9 +590,9 @@ namespace Refit
                     }
 
                     //if property, add to populate into HttpRequestMessage.Properties
-                    if (restMethod.RequestPropertyParameterMap.ContainsKey(i))
+                    if (restMethod.PropertyParameterMap.ContainsKey(i))
                     {
-                        propertiesToAdd[restMethod.RequestPropertyParameterMap[i]] = param;
+                        propertiesToAdd[restMethod.PropertyParameterMap[i]] = param;
                         isParameterMappedToRequest = true;
                     }
 

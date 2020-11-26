@@ -54,7 +54,7 @@ namespace Refit.Tests
         IObservable<string> FetchSomeStuffWithAuthorizationSchemeSpecified([AliasAs("id")] int anId, [Authorize("Bearer")] string token);
 
         [Get("/foo/bar/{id}")]
-        [Headers("Api-Version: 2 ")]
+        [Headers("Api-Version: 2", "Accept: application/json")]
         Task<string> FetchSomeStuffWithHardcodedHeaders(int id);
 
         [Get("/foo/bar/{id}")]
@@ -62,6 +62,14 @@ namespace Refit.Tests
 
         [Get("/foo")]
         Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
+
+        //header collection tests
+
+        //get request with header collection
+        [Get("/foo/bar/{id}")]
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", "Accept: application/json")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
+
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someValue);
@@ -538,7 +546,9 @@ namespace Refit.Tests
             Assert.Equal("2", fixture.Headers["Api-Version"]);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
-            Assert.Equal(2, fixture.Headers.Count);
+            Assert.True(fixture.Headers.ContainsKey("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", fixture.Headers["Accept"]);
+            Assert.Equal(3, fixture.Headers.Count);
         }
 
         [Fact]
@@ -549,13 +559,38 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
-            Assert.Empty(fixture.RequestPropertyParameterMap);
+            Assert.Empty(fixture.PropertyParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
             Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.Equal(2, fixture.Headers.Count);
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollection)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap); //test is failing because it's treating this as a Query param atm..
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            //header parameter map will only have our hardcoded stuff as dynamic header keys from header collection are only known at runtime
+            Assert.Equal(3, fixture.HeaderParameterMap.Count);
+
+            //I reckon we ought to add a HeaderCollectionParameterMap here and assert that parameter at the correct position is our HeaderCollection!
+
+            Assert.True(fixture.Headers.ContainsKey("Authorization"), "Headers include Authorization header");
+            Assert.Equal("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", fixture.Headers["Authorization"]);
+            Assert.True(fixture.Headers.ContainsKey("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", fixture.Headers["Accept"]);
+            Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
+            Assert.Equal(3, fixture.Headers.Count);
         }
 
         [Fact]
@@ -569,7 +604,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.HeaderParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[1]);
+            Assert.Equal("SomeProperty", fixture.PropertyParameterMap[1]);
         }
 
         [Fact]
@@ -583,8 +618,8 @@ namespace Refit.Tests
             Assert.Empty(fixture.HeaderParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.Equal("someValue", fixture.RequestPropertyParameterMap[1]);
-            Assert.Equal("someOtherValue", fixture.RequestPropertyParameterMap[2]);
+            Assert.Equal("someValue", fixture.PropertyParameterMap[1]);
+            Assert.Equal("someOtherValue", fixture.PropertyParameterMap[2]);
         }
 
         [Fact]
@@ -598,8 +633,8 @@ namespace Refit.Tests
             Assert.Empty(fixture.HeaderParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[1]);
-            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[2]);
+            Assert.Equal("SomeProperty", fixture.PropertyParameterMap[1]);
+            Assert.Equal("SomeProperty", fixture.PropertyParameterMap[2]);
         }
 
         [Fact]
@@ -722,7 +757,7 @@ namespace Refit.Tests
             Assert.Equal("GET", fixture.HttpMethod.Method);
             Assert.Equal(2, fixture.QueryParameterMap.Count);
             Assert.Single(fixture.HeaderParameterMap);
-            Assert.Single(fixture.RequestPropertyParameterMap);
+            Assert.Single(fixture.PropertyParameterMap);
         }
     }
 
@@ -748,8 +783,8 @@ namespace Refit.Tests
         Task<string> FetchSomethingWithMultipleParametersPerSegment(int id, int width, int height);
 
         [Get("/foo/bar/{id}")]
-        [Headers("Api-Version: 2")]
-        Task<string> FetchSomeStuffWithHardcodedHeader(int id);
+        [Headers("Api-Version: 2", "Accept: application/json")]
+        Task<string> FetchSomeStuffWithHardcodedHeaders(int id);
 
         [Get("/foo/bar/{id}")]
         [Headers("Api-Version")]
@@ -775,6 +810,31 @@ namespace Refit.Tests
 
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
+
+        //get request with header collection
+        [Get("/foo/bar/{id}")]
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", "Accept: application/json")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
+
+        //post request with header collection
+        [Post("/foo/bar/{id}")]
+        Task<string> PostSomeStuffWithCustomHeaderCollection(int id, [Body] object body, [HeaderCollection] IDictionary<string, string> headers);
+
+        //request with method level headers, AND header collection
+        //request with method level headers, AND header collection, AND header?
+
+        //request with method level headers, AND header, AND header collection (same as above but flip order to see overwriting headers)
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithPathMemberInCustomHeaderAndDynamicHeaderCollection([Header("X-PathMember")] int id, [HeaderCollection] IDictionary<string, string> headers);
+
+        //request with header collection at start of params
+        //request with header collection in middle of params
+        //request with header collection + query attr / multipart
+        //request with header collection with custom headers
+        //request with header collection with empty headers (over writing / unsetting etc)
+        //request with header collection where headers are being overwritten by duplicate entries in the collection itself!
+        //request with header collection that is empty or null?
+        //request with header collection on something that doesn't support IEnumerable<KeyValuePair<string, string>> semantics?? bonus points for semantics beyond just IDictionary<string, string> but actually supporting multiple header values
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someProperty);
@@ -1368,13 +1428,15 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
 
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithHardcodedHeaders));
             var output = factory(new object[] { 6 });
 
             Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", output.Headers.UserAgent.ToString());
             Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
             Assert.Equal("2", output.Headers.GetValues("Api-Version").Single());
+            Assert.True(output.Headers.Contains("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", output.Headers.Accept.ToString());
         }
 
         [Fact]

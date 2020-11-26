@@ -184,6 +184,13 @@ namespace Refit
         public string Name { get; protected set; }
     }
 
+    //add summary doc
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class HeaderCollectionAttribute : Attribute
+    {
+
+    }
+
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
     public class HeadersAttribute : Attribute
     {

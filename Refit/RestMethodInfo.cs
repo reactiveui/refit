@@ -24,7 +24,7 @@ namespace Refit
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
-        public Dictionary<int, string> RequestPropertyParameterMap { get; set; }
+        public Dictionary<int, string> PropertyParameterMap { get; set; }
         public Tuple<BodySerializationMethod, bool, int> BodyParameterInfo { get; set; }
         public Tuple<string, int> AuthorizeParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
@@ -76,7 +76,7 @@ namespace Refit
 
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(parameterList);
-            RequestPropertyParameterMap = BuildRequestPropertyMap(parameterList);
+            PropertyParameterMap = BuildRequestPropertyMap(parameterList);
 
             // get names for multipart attachments
             AttachmentNameMap = new Dictionary<int, Tuple<string, string>>();
@@ -84,7 +84,7 @@ namespace Refit
             {
                 for (var i = 0; i < parameterList.Count; i++)
                 {
-                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || RequestPropertyParameterMap.ContainsKey(i))
+                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || PropertyParameterMap.ContainsKey(i))
                     {
                         continue;
                     }
@@ -102,7 +102,7 @@ namespace Refit
             {
                 if (ParameterMap.ContainsKey(i) ||
                     HeaderParameterMap.ContainsKey(i) ||
-                    RequestPropertyParameterMap.ContainsKey(i) ||
+                    PropertyParameterMap.ContainsKey(i) ||
                     (BodyParameterInfo != null && BodyParameterInfo.Item3 == i) ||
                     (AuthorizeParameterInfo != null && AuthorizeParameterInfo.Item2 == i))
                 {
