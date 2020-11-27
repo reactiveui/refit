@@ -41,11 +41,14 @@ Refit currently supports the following platforms and any .NET Standard 2.0 targe
 * Xamarin.Mac
 * Xamarin.iOS
 * Desktop .NET 4.6.1
-* .NET Core
+* .NET 5 / .NET Core
+* Blazor
 * Uno Platform
 
-#### Note about .NET Core
-For .NET Core build-time support, you must use the .NET Core 2 SDK. You can target any supported platform in your library, long as the 2.0+ SDK is used at build-time.
+#### Breaking changes in 6.x
+ 
+ Refit 6 makes the [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview) the default. If you'd like to continue to use `Newtonsoft.Json`, add the `Refit.Newtonsoft.Json` NuGet package and set your `ContentSerializer` to `NewtonsoftJsonContentSerializer` on your `RefitSettings` instance. `System.Text.Json` is faster and uses less memory, though not all features are supported. The [migration guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to?pivots=dotnet-5-0) contains more details.
+
 
 ### API Attributes
 
