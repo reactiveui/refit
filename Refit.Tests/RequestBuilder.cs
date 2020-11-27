@@ -575,9 +575,12 @@ namespace Refit.Tests
             var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollection)));
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
-            Assert.Empty(fixture.QueryParameterMap); //test is failing because it's treating this as a Query param atm..
+            Assert.Empty(fixture.QueryParameterMap);
             Assert.Empty(fixture.PropertyParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
+
+
+            //currently failing on assert below saying header parameter map count is zero...
 
             //header parameter map will only have our hardcoded stuff as dynamic header keys from header collection are only known at runtime
             Assert.Equal(3, fixture.HeaderParameterMap.Count);

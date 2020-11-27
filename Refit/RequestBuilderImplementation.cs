@@ -583,6 +583,20 @@ namespace Refit
                         isParameterMappedToRequest = true;
                     }
 
+                    //if header collection, add to request headers
+                    if (restMethod.HeaderCollectionParameterMap.Contains(i))
+                    {
+                        isParameterMappedToRequest = true;
+
+                        if (param is IEnumerable<KeyValuePair<string, string>> headerCollection)
+                        {
+                            foreach (var header in headerCollection)
+                            {
+                                headersToAdd[header.Key] = header.Value;
+                            }
+                        }
+                    }
+
                     //if authorize, add to request headers with scheme
                     if (restMethod.AuthorizeParameterInfo != null && restMethod.AuthorizeParameterInfo.Item2 == i)
                     {

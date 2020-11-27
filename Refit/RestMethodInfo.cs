@@ -24,6 +24,7 @@ namespace Refit
         public ParameterInfo CancellationToken { get; set; }
         public Dictionary<string, string> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
+        public ISet<int> HeaderCollectionParameterMap { get; set; }
         public Dictionary<int, string> PropertyParameterMap { get; set; }
         public Tuple<BodySerializationMethod, bool, int> BodyParameterInfo { get; set; }
         public Tuple<string, int> AuthorizeParameterInfo { get; set; }
@@ -76,6 +77,7 @@ namespace Refit
 
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(parameterList);
+            HeaderCollectionParameterMap = BuildHeaderCollectionParameterMap(parameterList);
             PropertyParameterMap = BuildRequestPropertyMap(parameterList);
 
             // get names for multipart attachments
@@ -84,7 +86,7 @@ namespace Refit
             {
                 for (var i = 0; i < parameterList.Count; i++)
                 {
-                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || PropertyParameterMap.ContainsKey(i))
+                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || PropertyParameterMap.ContainsKey(i) || HeaderCollectionParameterMap.Contains(i))
                     {
                         continue;
                     }
@@ -103,6 +105,7 @@ namespace Refit
                 if (ParameterMap.ContainsKey(i) ||
                     HeaderParameterMap.ContainsKey(i) ||
                     PropertyParameterMap.ContainsKey(i) ||
+                    HeaderCollectionParameterMap.Contains(i) ||
                     (BodyParameterInfo != null && BodyParameterInfo.Item3 == i) ||
                     (AuthorizeParameterInfo != null && AuthorizeParameterInfo.Item2 == i))
                 {
@@ -126,26 +129,46 @@ namespace Refit
                              || ReturnResultType == typeof(IApiResponse));
         }
 
-        private Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
+        private ISet<int> BuildHeaderCollectionParameterMap(List<ParameterInfo> parameterList)
         {
-            var requestPropertyMap = new Dictionary<int, string>();
+            var headerCollectionMap = new HashSet<int>();
 
             for (var i = 0; i < parameterList.Count; i++)
             {
-                var param = parameterList[i];
-                var requestProperty = param.GetCustomAttributes(true)
-                    .OfType<PropertyAttribute>()
+                var headerCollection = parameterList[i].GetCustomAttributes(true)
+                    .OfType<HeaderCollectionAttribute>()
                     .FirstOrDefault();
 
-                if (requestProperty != null)
+                if (headerCollection != null)
                 {
-                    var propertyKey = !string.IsNullOrEmpty(requestProperty.Key) ? requestProperty.Key : param.Name;
-                    requestPropertyMap[i] = propertyKey;
+                    headerCollectionMap.Add(i);
                 }
 
             }
 
-            return requestPropertyMap;
+            return headerCollectionMap;
+        }
+
+        private Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
+        {
+            var propertyMap = new Dictionary<int, string>();
+
+            for (var i = 0; i < parameterList.Count; i++)
+            {
+                var param = parameterList[i];
+                var propertyAttribute = param.GetCustomAttributes(true)
+                    .OfType<PropertyAttribute>()
+                    .FirstOrDefault();
+
+                if (propertyAttribute != null)
+                {
+                    var propertyKey = !string.IsNullOrEmpty(propertyAttribute.Key) ? propertyAttribute.Key : param.Name;
+                    propertyMap[i] = propertyKey;
+                }
+
+            }
+
+            return propertyMap;
         }
 
         private PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
