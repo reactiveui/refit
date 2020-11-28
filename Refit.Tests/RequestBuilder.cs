@@ -83,15 +83,11 @@ namespace Refit.Tests
         Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeader(int id, [Header("Authorization")] string value, [HeaderCollection] IDictionary<string, string> headers);
 
         [Get("/foo/bar/{id}")]
-        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped(int id, [HeaderCollection] IDictionary<string, string> headers, [Header("Authorize")] string value);
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped(int id, [HeaderCollection] IDictionary<string, string> headers, [Header("Authorization")] string value);
 
         //request with method level headers, AND header, AND header collection (same as above but flip order to see overwriting headers)
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithPathMemberInCustomHeaderAndDynamicHeaderCollection([Header("X-PathMember")] int id, [HeaderCollection] IDictionary<string, string> headers);
-
-        //request with header collection at start of params
-        [Get("/foo/bar")]
-        Task<string> FetchSomeStuffWithHeaderCollection([HeaderCollection] IDictionary<string, string> headers);
 
         //request with duplicate header collection
         [Get("/foo/bar")]
@@ -113,11 +109,14 @@ namespace Refit.Tests
         [Get("/foo/{bar}")]
         Task<string> FetchSomeStuffWithHeaderCollectionWithEnumerableKvpSemantics(int bar, [Query] MySimpleQueryParams query, [HeaderCollection] IEnumerable<KeyValuePair<string, string>> headers);
 
+        //[Post("/foo")] Task PostWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
+        //[Get("/foo")] Task GetWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
+        //[Put("/foo")] Task PutWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
+        //[Patch("/foo") Task PatchWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
         //request with header collection with custom headers
         //request with header collection with empty headers (over writing / unsetting etc)
         //request with header collection where headers are being overwritten by duplicate entries in the collection itself!
         //request with header collection that is empty or null?
-
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someValue);
@@ -692,6 +691,38 @@ namespace Refit.Tests
             Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
             Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(2));
+
+            input = typeof(IRestMethodInfoTests);
+            fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Single(fixture.HeaderParameterMap);
+            Assert.Equal("Authorization", fixture.HeaderParameterMap[2]);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWorkWithPathMemberDynamicHeader()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithPathMemberInCustomHeaderAndDynamicHeaderCollection)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Single(fixture.HeaderParameterMap);
+            Assert.Equal("X-PathMember", fixture.HeaderParameterMap[0]);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
         }
 
         [Fact]
