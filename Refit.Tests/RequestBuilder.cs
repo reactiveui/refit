@@ -89,13 +89,13 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithPathMemberInCustomHeaderAndDynamicHeaderCollection([Header("X-PathMember")] int id, [HeaderCollection] IDictionary<string, string> headers);
 
+        //request with header collection in middle of params
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers, int baz);
+
         //request with duplicate header collection
         [Get("/foo/bar")]
         Task<string> FetchSomeStuffWithDuplicateHeaderCollection([HeaderCollection] IDictionary<string, string> headers, [HeaderCollection] IDictionary<string, string> headers2);
-
-        //request with header collection in middle of params
-        [Get("/foo/bar/{id}/{baz}")]
-        Task<string> FetchSomeStuffWithHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers, int baz);
 
         //request with header collection + query attr / property
         [Get("/foo")]
@@ -113,6 +113,7 @@ namespace Refit.Tests
         //[Get("/foo")] Task GetWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
         //[Put("/foo")] Task PutWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
         //[Patch("/foo") Task PatchWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
+
         //request with header collection with custom headers
         //request with header collection with empty headers (over writing / unsetting etc)
         //request with header collection where headers are being overwritten by duplicate entries in the collection itself!
@@ -723,6 +724,30 @@ namespace Refit.Tests
             Assert.Equal("X-PathMember", fixture.HeaderParameterMap[0]);
             Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionInMiddleOfParamsShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithHeaderCollection)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Equal("baz", fixture.QueryParameterMap[2]);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldOnlyAllowOne()
+        {
+            var input = typeof(IRestMethodInfoTests);
+
+            Assert.Throws<ArgumentException>(() => new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDuplicateHeaderCollection))));
         }
 
         [Fact]

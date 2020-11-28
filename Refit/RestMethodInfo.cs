@@ -146,6 +146,9 @@ namespace Refit
 
             }
 
+            if (headerCollectionMap.Count > 1)
+                throw new ArgumentException("Only one parameter can be a HeaderCollection parameter");
+
             return headerCollectionMap;
         }
 
