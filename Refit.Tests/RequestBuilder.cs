@@ -102,8 +102,8 @@ namespace Refit.Tests
         Task<string> FetchSomeStuffWithHeaderCollectionQueryParamAndArrayQueryParam([HeaderCollection] IDictionary<string, string> headers, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
 
         //request with header collection on something that doesn't support IEnumerable<KeyValuePair<string, string>> semantics
-        [Get("/foo/{bar}")]
-        Task<string> FetchSomeStuffWithHeaderCollectionOfUnsupportedType(int bar, [Query] MySimpleQueryParams query, [HeaderCollection] string headers);
+        [Get("/foo")]
+        Task<string> FetchSomeStuffWithHeaderCollectionOfUnsupportedType([HeaderCollection] string headers);
 
         //request with header collection on something that supports IEnumerable<KeyValuePair<string, string>> semantics
         [Get("/foo/{bar}")]
@@ -766,6 +766,13 @@ namespace Refit.Tests
 
             Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(0));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldOnlyWorkWithSupportedSemantics()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            Assert.Throws<ArgumentException>(() => new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithHeaderCollectionOfUnsupportedType))));
         }
 
         [Fact]

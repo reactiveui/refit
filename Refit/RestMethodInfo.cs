@@ -135,12 +135,15 @@ namespace Refit
 
             for (var i = 0; i < parameterList.Count; i++)
             {
-                var headerCollection = parameterList[i].GetCustomAttributes(true)
+                var param = parameterList[i];
+                var headerCollection = param.GetCustomAttributes(true)
                     .OfType<HeaderCollectionAttribute>()
                     .FirstOrDefault();
 
                 if (headerCollection != null)
                 {
+                    //if param type doesn't have the right semantics then throw argument exception
+
                     headerCollectionMap.Add(i);
                 }
             }
