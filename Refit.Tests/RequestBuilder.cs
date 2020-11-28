@@ -751,6 +751,24 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void DynamicHeaderCollectionShouldWorkWithProperty()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithHeaderCollectionQueryParamAndArrayQueryParam)));
+            Assert.Null(fixture.BodyParameterInfo);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+
+            Assert.Equal(2, fixture.QueryParameterMap.Count);
+            Assert.Equal("id", fixture.QueryParameterMap[1]);
+            Assert.Equal("someArray", fixture.QueryParameterMap[2]);
+
+            Assert.Single(fixture.PropertyParameterMap);
+
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(0));
+        }
+
+        [Fact]
         public void DynamicRequestPropertiesShouldWork()
         {
             var input = typeof(IRestMethodInfoTests);

@@ -143,7 +143,6 @@ namespace Refit
                 {
                     headerCollectionMap.Add(i);
                 }
-
             }
 
             if (headerCollectionMap.Count > 1)
