@@ -64,7 +64,6 @@ namespace Refit.Tests
         Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
 
         //header collection tests
-
         //get request with header collection
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", "Accept: application/json")]
@@ -104,15 +103,6 @@ namespace Refit.Tests
         //request with header collection on something that doesn't support IDictionary<string, string> semantics
         [Get("/foo")]
         Task<string> FetchSomeStuffWithHeaderCollectionOfUnsupportedType([HeaderCollection] string headers);
-
-        //request with header collection on something that supports IEnumerable<KeyValuePair<string, string>> semantics
-        [Get("/foo/{bar}")]
-        Task<string> FetchSomeStuffWithHeaderCollectionWithEnumerableKvpSemantics(int bar, [Query] MySimpleQueryParams query, [HeaderCollection] IEnumerable<KeyValuePair<string, string>> headers);
-
-        //[Post("/foo")] Task PostWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
-        //[Get("/foo")] Task GetWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
-        //[Put("/foo")] Task PutWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
-        //[Patch("/foo") Task PatchWithBodyDetectedAndHeaderCollection(Dictionary<int, string> theData, [HeaderCollection] IDictionary<string, string> headers);
 
         //request with header collection with custom headers
         //request with header collection with empty headers (over writing / unsetting etc)
@@ -993,30 +983,17 @@ namespace Refit.Tests
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
 
-        //get request with header collection
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", "Accept: application/json")]
         Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
 
-        //post request with header collection
-        [Post("/foo/bar/{id}")]
-        Task<string> PostSomeStuffWithCustomHeaderCollection(int id, [Body] object body, [HeaderCollection] IDictionary<string, string> headers);
-
-        //request with method level headers, AND header collection
-        //request with method level headers, AND header collection, AND header?
-
-        //request with method level headers, AND header, AND header collection (same as above but flip order to see overwriting headers)
         [Get("/foo/bar/{id}")]
-        Task<string> FetchSomeStuffWithPathMemberInCustomHeaderAndDynamicHeaderCollection([Header("X-PathMember")] int id, [HeaderCollection] IDictionary<string, string> headers);
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeader(int id, [Header("Authorization")] string value, [HeaderCollection] IDictionary<string, string> headers);
 
-        //request with header collection at start of params
-        //request with header collection in middle of params
-        //request with header collection + query attr / multipart
-        //request with header collection with custom headers
-        //request with header collection with empty headers (over writing / unsetting etc)
-        //request with header collection where headers are being overwritten by duplicate entries in the collection itself!
-        //request with header collection that is empty or null?
-        //request with header collection on something that doesn't support IEnumerable<KeyValuePair<string, string>> semantics?? bonus points for semantics beyond just IDictionary<string, string> but actually supporting multiple header values
+        [Get("/foo/bar/{id}")]
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped(int id, [HeaderCollection] IDictionary<string, string> headers, [Header("Authorization")] string value);
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someProperty);
@@ -1740,6 +1717,96 @@ namespace Refit.Tests
             Assert.True(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
             Assert.False(output.Content.Headers.Contains("Api-Version"), "Content headers include Api-Version header");
             Assert.False(output.Content.Headers.Contains("X-Emoji"), "Content headers include X-Emoji header");
+        }
+
+        [Fact]
+        public void HeaderCollectionShouldBeInHeaders()
+        {
+            var headerCollection = new Dictionary<string, string>
+            {
+                {"key1", "val1"},
+                {"key2", "val2"}
+            };
+
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollection));
+            var output = factory(new object[] { 6, headerCollection });
+
+            Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", output.Headers.GetValues("User-Agent").First());
+            Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.Equal("1", output.Headers.GetValues("Api-Version").First());
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", output.Headers.GetValues("Authorization").First());
+            Assert.True(output.Headers.Contains("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", output.Headers.GetValues("Accept").First());
+
+            Assert.True(output.Headers.Contains("key1"), "Headers include key1 header");
+            Assert.Equal("val1", output.Headers.GetValues("key1").First());
+            Assert.True(output.Headers.Contains("key2"), "Headers include key2 header");
+            Assert.Equal("val2", output.Headers.GetValues("key2").First());
+        }
+
+        [Fact]
+        public void LastWriteWinsWhenHeaderCollectionAndDynamicHeader()
+        {
+            var authHeader = "LetMeIn";
+            var headerCollection = new Dictionary<string, string>
+            {
+                {"Authorization", "OpenSesame"}
+            };
+
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeader));
+            var output = factory(new object[] { 6, authHeader, headerCollection });
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal("OpenSesame", output.Headers.GetValues("Authorization").First());
+
+            fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped));
+            output = factory(new object[] { 6, headerCollection, authHeader });
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal(authHeader, output.Headers.GetValues("Authorization").First());
+        }
+
+        [Fact]
+        public void NullHeaderCollectionDoesntBlowUp()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollection));
+            var output = factory(new object[] { 6, null });
+
+            Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", output.Headers.GetValues("User-Agent").First());
+            Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.Equal("1", output.Headers.GetValues("Api-Version").First());
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", output.Headers.GetValues("Authorization").First());
+            Assert.True(output.Headers.Contains("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", output.Headers.GetValues("Accept").First());
+        }
+
+        [Fact]
+        public void HeaderCollectionCanUnsetHeaders()
+        {
+            var headerCollection = new Dictionary<string, string>
+            {
+                {"Authorization", ""},
+                {"Api-Version", null}
+            };
+
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollection));
+            var output = factory(new object[] { 6, headerCollection });
+
+            Assert.True(!output.Headers.Contains("Api-Version"), "Headers does not include Api-Version header");
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal("", output.Headers.GetValues("Authorization").First());
         }
 
         [Fact]

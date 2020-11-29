@@ -586,7 +586,7 @@ namespace Refit
                     //if header collection, add to request headers
                     if (restMethod.HeaderCollectionParameterMap.Contains(i))
                     {
-                        var headerCollection = param as IDictionary<string, string>;
+                        var headerCollection = param as IDictionary<string, string> ?? new Dictionary<string, string>();
 
                         foreach (var header in headerCollection)
                         {
