@@ -101,7 +101,7 @@ namespace Refit.Tests
         [Get("/foo")]
         Task<string> FetchSomeStuffWithHeaderCollectionQueryParamAndArrayQueryParam([HeaderCollection] IDictionary<string, string> headers, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
 
-        //request with header collection on something that doesn't support IEnumerable<KeyValuePair<string, string>> semantics
+        //request with header collection on something that doesn't support IDictionary<string, string> semantics
         [Get("/foo")]
         Task<string> FetchSomeStuffWithHeaderCollectionOfUnsupportedType([HeaderCollection] string headers);
 

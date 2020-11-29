@@ -586,15 +586,14 @@ namespace Refit
                     //if header collection, add to request headers
                     if (restMethod.HeaderCollectionParameterMap.Contains(i))
                     {
-                        isParameterMappedToRequest = true;
+                        var headerCollection = param as IDictionary<string, string>;
 
-                        if (param is IEnumerable<KeyValuePair<string, string>> headerCollection)
+                        foreach (var header in headerCollection)
                         {
-                            foreach (var header in headerCollection)
-                            {
-                                headersToAdd[header.Key] = header.Value;
-                            }
+                            headersToAdd[header.Key] = header.Value;
                         }
+
+                        isParameterMappedToRequest = true;
                     }
 
                     //if authorize, add to request headers with scheme

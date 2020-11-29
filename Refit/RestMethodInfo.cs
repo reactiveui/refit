@@ -142,9 +142,15 @@ namespace Refit
 
                 if (headerCollection != null)
                 {
-                    //if param type doesn't have the right semantics then throw argument exception
-
-                    headerCollectionMap.Add(i);
+                    //opted for IDictionary<string, string> semantics here as opposed to the looser IEnumerable<KeyValuePair<string, string>> because IDictionary will enforce uniqueness of keys
+                    if (param.ParameterType.IsAssignableFrom(typeof(IDictionary<string, string>)))
+                    {
+                        headerCollectionMap.Add(i);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"HeaderCollection parameter of type {param.ParameterType.Name} is not assignable from IDictionary<string, string>");
+                    }
                 }
             }
 
