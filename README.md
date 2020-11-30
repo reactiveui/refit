@@ -28,11 +28,41 @@ The `RestService` class generates an implementation of `IGitHubApi` that uses
 
 ```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com");
-
 var octocat = await gitHubApi.GetUser("octocat");
 ```
+.NET Core supports registering via HttpClientFactory
+```csharp
+services.AddRefitClient<IGitHubApi>("https://api.github.com");
+```
 
-Setup via dependency injection [using HttpClientFactory](#using-httpclientfactory) is also fully supported.
+#Table of Contents
+
+* [Where does this work?](#where-does-this-work)
+  * [Breaking changes in 6.x](#breaking-changes-in-6x)
+* [API Attributes](#api-attributes)
+* [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
+* [Collections as Querystring parameters](#collections-as-querystring-parameters)
+* [Unescape Querystring parameters](#unescape-querystring-parameters)
+* [Body content](#body-content)
+  * [Buffering and the Content-Length header](#buffering-and-the-content-length-header)
+  * [JSON content](#json-content)
+  * [XML Content](#xml-content)
+  * [Form posts](#form-posts)
+* [Setting request headers](#setting-request-headers)
+  * [Static headers](#static-headers)
+  * [Dynamic headers](#dynamic-headers)
+  * [Reducing Boilerplate with DelegatingHandlers](#reducing-boilerplate-with-delegatinghandlers)
+  * [Redefining headers](#redefining-headers)
+  * [Removing headers](#removing-headers)
+* [Passing state into custom HttpClient middleware](#passing-state-into-custom-httpclient-middleware)
+* [Multipart uploads](#multipart-uploads)
+* [Retrieving the response](#retrieving-the-response)
+* [Using generic interfaces](#using-generic-interfaces)
+* [Interface inheritance](#interface-inheritance)
+  * [Headers inheritance](#headers-inheritance)
+* [Using HttpClientFactory](#using-httpclientfactory)
+* [Handling exceptions](#handling-exceptions)
+* [MSBuild configuration](#msbuild-configuration)
 
 ### Where does this work?
 
