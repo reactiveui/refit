@@ -4,7 +4,7 @@
     <Product>Refit HTTP Client Factory Extensions</Product>
     <Description>Refit HTTP Client Factory Extensions</Description>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <DebugType>embedded</DebugType>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

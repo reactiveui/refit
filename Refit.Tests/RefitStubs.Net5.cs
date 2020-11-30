@@ -532,9 +532,9 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
-        Task IApiBindPathToObject.GetFoos2(List<int> Values)
+        Task IApiBindPathToObject.GetFoos2(List<int> values)
         {
-            var arguments = new object[] { Values };
+            var arguments = new object[] { values };
             var func = requestBuilder.BuildRestResultFuncForMethod("GetFoos2", new Type[] { typeof(List<int>) });
             return (Task)func(Client, arguments);
         }
@@ -1857,6 +1857,7 @@ namespace Refit.Tests
     using global::Refit.Buffers;
     using global::Xunit;
     using JsonSerializer =  global::Newtonsoft.Json.JsonSerializer;
+    using global::System.Text.Json.Serialization;
 
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
@@ -2539,6 +2540,14 @@ namespace Refit.Tests
         {
             var arguments = new object[] { param };
             var func = requestBuilder.BuildRestResultFuncForMethod("PostGeneric", new Type[] { typeof(T) }, new Type[] { typeof(T) });
+            return (Task)func(Client, arguments);
+        }
+
+        /// <inheritdoc />
+        Task IRequestBin.PostBig(BigObject big)
+        {
+            var arguments = new object[] { big };
+            var func = requestBuilder.BuildRestResultFuncForMethod("PostBig", new Type[] { typeof(BigObject) });
             return (Task)func(Client, arguments);
         }
     }

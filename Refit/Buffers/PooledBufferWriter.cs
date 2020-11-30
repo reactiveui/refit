@@ -8,7 +8,7 @@ namespace Refit.Buffers
     /// <summary>
     /// A <see langword="struct"/> that provides a fast implementation of a binary writer, leveraging <see cref="ArrayPool{T}"/> for memory pooling
     /// </summary>
-    internal sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposable
+    sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposable
     {
         /// <summary>
         /// The default size to use to create new <see cref="PooledBufferWriter"/> instances
@@ -18,12 +18,12 @@ namespace Refit.Buffers
         /// <summary>
         /// The <see cref="byte"/> array current in use
         /// </summary>
-        private byte[] buffer;
+        byte[] buffer = Array.Empty<byte>();
 
         /// <summary>
         /// The current position into <see cref="buffer"/>
         /// </summary>
-        private int position;
+        int position;
 
         /// <summary>
         /// Creates a new <see cref="PooledBufferWriter"/> instance
@@ -64,7 +64,7 @@ namespace Refit.Buffers
         /// </summary>
         /// <param name="count">The size in bytes of the new data to insert into the buffer</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void EnsureFreeCapacity(int count)
+void EnsureFreeCapacity(int count)
         {
             if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
 
@@ -92,7 +92,7 @@ namespace Refit.Buffers
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (buffer == null) return;
+            if (buffer.Length == 0) return;
 
             ArrayPool<byte>.Shared.Return(buffer);
         }
@@ -105,7 +105,7 @@ namespace Refit.Buffers
         {
             var stream = new PooledMemoryStream(this);
 
-            buffer = null;
+            buffer = Array.Empty<byte>();
 
             return stream;
         }

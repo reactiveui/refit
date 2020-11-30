@@ -5,8 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
 
-using Newtonsoft.Json;
-
 namespace Refit
 {
     /// <summary>
@@ -15,15 +13,20 @@ namespace Refit
     /// <remarks>Performs field renaming and value formatting as specified in <see cref="QueryAttribute"/>s and
     /// <see cref="RefitSettings.FormUrlEncodedParameterFormatter"/>. A given key may appear multiple times with the
     /// same or different values.</remarks>
-    class FormValueMultimap : IEnumerable<KeyValuePair<string, string>>
+    class FormValueMultimap : IEnumerable<KeyValuePair<string?, string?>>
     {
-        static readonly Dictionary<Type, PropertyInfo[]> PropertyCache
-            = new Dictionary<Type, PropertyInfo[]>();
+        static readonly Dictionary<Type, PropertyInfo[]> PropertyCache = new();
 
-        readonly IList<KeyValuePair<string, string>> formEntries = new List<KeyValuePair<string, string>>();
+        readonly IList<KeyValuePair<string?, string?>> formEntries = new List<KeyValuePair<string?, string?>>();
+
+        readonly IContentSerializer contentSerializer;
 
         public FormValueMultimap(object source, RefitSettings settings)
         {
+            if (settings is null)
+                throw new ArgumentNullException(nameof(settings));
+            contentSerializer = settings.ContentSerializer;
+
             if (source == null) return;
 
             if (source is IDictionary dictionary)
@@ -70,7 +73,7 @@ namespace Refit
                                 case CollectionFormat.Multi:
                                     foreach (var item in enumerable)
                                     {
-                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib.Format));
+                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib?.Format));
                                     }
                                     break;
                                 case CollectionFormat.Csv:
@@ -87,7 +90,7 @@ namespace Refit
 
                                     var formattedValues = enumerable
                                         .Cast<object>()
-                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib.Format));
+                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib?.Format));
                                     Add(fieldName, string.Join(delimiter, formattedValues));
                                     break;
                                 default:
@@ -108,11 +111,11 @@ namespace Refit
         /// <summary>
         /// Returns a key for each entry. If multiple entries share the same key, the key is returned multiple times.
         /// </summary>
-        public IEnumerable<string> Keys => this.Select(it => it.Key);
+        public IEnumerable<string?> Keys => this.Select(it => it.Key);
 
-        void Add(string key, string value)
+        void Add(string? key, string? value)
         {
-            formEntries.Add(new KeyValuePair<string, string>(key, value));
+            formEntries.Add(new KeyValuePair<string?, string?>(key, value));
         }
 
         string GetFieldNameForProperty(PropertyInfo propertyInfo)
@@ -120,12 +123,7 @@ namespace Refit
             var name = propertyInfo.GetCustomAttributes<AliasAsAttribute>(true)
                                .Select(a => a.Name)
                                .FirstOrDefault()
-                   ?? propertyInfo.GetCustomAttributes<JsonPropertyAttribute>(true)
-                                  .Select(a => a.PropertyName)
-                                  .FirstOrDefault()
-                   ?? propertyInfo.GetCustomAttributes<JsonPropertyNameAttribute>(true)
-                       .Select(a => a.Name)
-                       .FirstOrDefault()
+                   ?? contentSerializer.GetFieldNameForProperty(propertyInfo)
                    ?? propertyInfo.Name;
 
             var qattrib = propertyInfo.GetCustomAttributes<QueryAttribute>(true)
@@ -135,14 +133,14 @@ namespace Refit
             return qattrib ?? name;
         }
 
-        PropertyInfo[] GetProperties(Type type)
+        static PropertyInfo[] GetProperties(Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                       .Where(p => p.CanRead && p.GetMethod.IsPublic)
+                       .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
                        .ToArray();
         }
 
-        public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+        public IEnumerator<KeyValuePair<string?, string?>> GetEnumerator()
         {
             return formEntries.GetEnumerator();
         }

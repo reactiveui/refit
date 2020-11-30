@@ -6,23 +6,23 @@ namespace Refit
 {
     public static class RestService
     {
-        static readonly ConcurrentDictionary<Type, Type> TypeMapping = new ConcurrentDictionary<Type, Type>();
+        static readonly ConcurrentDictionary<Type, Type> TypeMapping = new();
 
         public static T For<T>(HttpClient client, IRequestBuilder<T> builder)
         {
             return (T)For(typeof(T), client, builder);            
         }
 
-        public static T For<T>(HttpClient client, RefitSettings settings)
+        public static T For<T>(HttpClient client, RefitSettings? settings)
         {
             var requestBuilder = RequestBuilder.ForType<T>(settings);
 
             return For(client, requestBuilder);
         }
 
-        public static T For<T>(HttpClient client) => For<T>(client, (RefitSettings)null);
+        public static T For<T>(HttpClient client) => For<T>(client, (RefitSettings?)null);
 
-        public static T For<T>(string hostUrl, RefitSettings settings)
+        public static T For<T>(string hostUrl, RefitSettings? settings)
         {
             var client = CreateHttpClient(hostUrl, settings);
 
@@ -35,19 +35,19 @@ namespace Refit
         {
             var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType(refitInterfaceType));
 
-            return Activator.CreateInstance(generatedType, client, builder);
+            return Activator.CreateInstance(generatedType, client, builder)!;
         }
 
-        public static object For(Type refitInterfaceType, HttpClient client, RefitSettings settings)
+        public static object For(Type refitInterfaceType, HttpClient client, RefitSettings? settings)
         {
             var requestBuilder = RequestBuilder.ForType(refitInterfaceType, settings);
 
             return For(refitInterfaceType, client, requestBuilder);
         }
 
-        public static object For(Type refitInterfaceType, HttpClient client) => For(refitInterfaceType, client, (RefitSettings)null);
+        public static object For(Type refitInterfaceType, HttpClient client) => For(refitInterfaceType, client, (RefitSettings?)null);
 
-        public static object For(Type refitInterfaceType, string hostUrl, RefitSettings settings)
+        public static object For(Type refitInterfaceType, string hostUrl, RefitSettings? settings)
         {
             var client = CreateHttpClient(hostUrl, settings);
             
@@ -56,7 +56,7 @@ namespace Refit
 
         public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);             
 
-        public static HttpClient CreateHttpClient(string hostUrl, RefitSettings settings)
+        public static HttpClient CreateHttpClient(string hostUrl, RefitSettings? settings)
         {
             if (string.IsNullOrWhiteSpace(hostUrl))
             {
@@ -66,7 +66,7 @@ namespace Refit
             }
 
             // check to see if user provided custom auth token
-            HttpMessageHandler innerHandler = null;
+            HttpMessageHandler? innerHandler = null;
             if (settings != null)
             {
                 if (settings.HttpMessageHandlerFactory != null)
@@ -89,7 +89,7 @@ namespace Refit
 
         static Type GetGeneratedType(Type refitInterfaceType)
         {
-            string typeName = UniqueName.ForType(refitInterfaceType);
+            var typeName = UniqueName.ForType(refitInterfaceType);
 
             var generatedType = Type.GetType(typeName);
 

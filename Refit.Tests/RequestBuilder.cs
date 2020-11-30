@@ -1190,7 +1190,7 @@ namespace Refit.Tests
             RequestMessage = request;
             if (request.Content != null)
             {
-                SendContent = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
+                SendContent = await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
             }
 
             CancellationToken = cancellationToken;
@@ -1234,7 +1234,7 @@ namespace Refit.Tests
             return base.Format(parameterValue, attributeProvider, type);
         }
 
-        public string StringParameterSuffix => "suffix";
+        public static string StringParameterSuffix => "suffix";
     }
 
     public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
@@ -1262,7 +1262,7 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation<ICancellableMethods>();
             var factory = fixture.RunRequest("GetWithCancellation");
-            var output = factory(new object[0]);
+            var output = factory(Array.Empty<object>());
 
             var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
             Assert.Equal("/foo", uri.PathAndQuery);
@@ -1802,8 +1802,16 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestProperty));
             var output = factory(new object[] { 6, someProperty });
 
+#if NET5_0
+            Assert.NotEmpty(output.Options);
+            Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
             Assert.NotEmpty(output.Properties);
             Assert.Equal(someProperty, output.Properties["SomeProperty"]);
+#pragma warning restore CS0618 // Type or member is obsolete
+
         }
 
         [Fact]
@@ -1815,9 +1823,17 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
+#if NET5_0
+            Assert.NotEmpty(output.Options);
+            Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["someValue"]);
+            Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["someOtherValue"]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
             Assert.NotEmpty(output.Properties);
             Assert.Equal(someProperty, output.Properties["someValue"]);
             Assert.Equal(someOtherProperty, output.Properties["someOtherValue"]);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]
@@ -1829,8 +1845,16 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey));
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
+
+#if NET5_0
+            Assert.Single(output.Options);
+            Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
             Assert.Single(output.Properties);
             Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]
@@ -1840,7 +1864,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithoutFullPath");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
-            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
+            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, Array.Empty<object>());
             task.Wait();
 
             Assert.Equal("http://api/foo/bar/string", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
@@ -1853,7 +1877,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRestResultFuncForMethod("FetchSomeStuffWithVoid");
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
-            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, new object[0]);
+            var task = (Task)factory(new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/foo/bar") }, Array.Empty<object>());
             task.Wait();
 
             Assert.Equal("http://api/foo/bar/void", testHttpMessageHandler.RequestMessage.RequestUri.ToString());
@@ -2387,7 +2411,7 @@ namespace Refit.Tests
             var output = factory(new object[] { dict });
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
-            Assert.Equal($"/foo?{(int)TestEnum.A}=value1{urlParameterFormatter.StringParameterSuffix}&{(int)TestEnum.B}=value2{urlParameterFormatter.StringParameterSuffix}", uri.PathAndQuery);
+            Assert.Equal($"/foo?{(int)TestEnum.A}=value1{TestEnumUrlParameterFormatter.StringParameterSuffix}&{(int)TestEnum.B}=value2{TestEnumUrlParameterFormatter.StringParameterSuffix}", uri.PathAndQuery);
         }
 
         [Fact]
@@ -2452,7 +2476,7 @@ namespace Refit.Tests
             var output = factory(new object[] { complexQuery });
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
-            Assert.Equal($"/foo?TestDictionary.{(int)TestEnum.A}=value1{urlParameterFormatter.StringParameterSuffix}&TestDictionary.{(int)TestEnum.B}=value2{urlParameterFormatter.StringParameterSuffix}", uri.PathAndQuery);
+            Assert.Equal($"/foo?TestDictionary.{(int)TestEnum.A}=value1{TestEnumUrlParameterFormatter.StringParameterSuffix}&TestDictionary.{(int)TestEnum.B}=value2{TestEnumUrlParameterFormatter.StringParameterSuffix}", uri.PathAndQuery);
         }
     }
 

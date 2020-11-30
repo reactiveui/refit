@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
-    public class AuthenticatedParameterizedHttpClientHandler : DelegatingHandler
+    class AuthenticatedParameterizedHttpClientHandler : DelegatingHandler
     {
         readonly Func<HttpRequestMessage, Task<string>> getToken;
 
-        public AuthenticatedParameterizedHttpClientHandler(Func<HttpRequestMessage, Task<string>> getToken, HttpMessageHandler innerHandler = null)
+        public AuthenticatedParameterizedHttpClientHandler(Func<HttpRequestMessage, Task<string>> getToken, HttpMessageHandler? innerHandler = null)
             : base(innerHandler ?? new HttpClientHandler())
         {
             this.getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));

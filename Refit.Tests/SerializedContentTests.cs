@@ -17,7 +17,7 @@ namespace Refit.Tests
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
         {
-            if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
+            if (Activator.CreateInstance(contentSerializerType) is not IContentSerializer serializer)
             {
                 throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
             }
@@ -45,7 +45,7 @@ namespace Refit.Tests
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
         {
-            if (!(Activator.CreateInstance(contentSerializerType) is IContentSerializer serializer))
+            if (Activator.CreateInstance(contentSerializerType) is not IContentSerializer serializer)
             {
                 throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
             }
@@ -91,12 +91,12 @@ namespace Refit.Tests
             var settings = new RefitSettings();
 
             Assert.NotNull(settings.ContentSerializer);
-            Assert.IsType<NewtonsoftJsonContentSerializer>(settings.ContentSerializer);
+            Assert.IsType<SystemTextJsonContentSerializer>(settings.ContentSerializer);
 
-            settings = new RefitSettings(new SystemTextJsonContentSerializer());
+            settings = new RefitSettings(new NewtonsoftJsonContentSerializer());
 
             Assert.NotNull(settings.ContentSerializer);
-            Assert.IsType<SystemTextJsonContentSerializer>(settings.ContentSerializer);
+            Assert.IsType<NewtonsoftJsonContentSerializer>(settings.ContentSerializer);
         }
 
         /// <summary>
@@ -137,10 +137,8 @@ namespace Refit.Tests
             var serializer = new SystemTextJsonContentSerializer();
 
             var json = await serializer.SerializeAsync(model);
-
-            var stream = await json.ReadAsStreamAsync();
-
-            var result = await System.Text.Json.JsonSerializer.DeserializeAsync<TestAliasObject>(stream);
+            
+            var result = await serializer.DeserializeAsync<TestAliasObject>(json);
 
             Assert.NotNull(result);
             Assert.Equal(model.ShortNameForAlias, result.ShortNameForAlias);

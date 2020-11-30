@@ -14,6 +14,7 @@ using Refit.Buffers;
 // for the code gen
 using Xunit;
 using JsonSerializer = Newtonsoft.Json.JsonSerializer;
+using System.Text.Json.Serialization;
 
 namespace Refit.Tests
 {
@@ -23,6 +24,7 @@ namespace Refit.Tests
         public string ShortNameForAlias { get; set; }
 
         [JsonProperty(PropertyName = "FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY")]
+        [JsonPropertyName("FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY")]
         public string ShortNameForJsonProperty { get; set; }
     }
 
@@ -52,7 +54,7 @@ namespace Refit.Tests
         public async Task JsonPropertyCanBeUsedToAliasFieldNamesInResponses()
         {
             mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
-                .Respond("application/json", "{FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS: 'Hello', FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY: 'World'}");
+                .Respond("application/json", "{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}");
 
             var result = await fixture.GetTestObject();
 
@@ -68,7 +70,7 @@ namespace Refit.Tests
         {
 
             mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
-                .Respond("application/json", "{FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS: 'Hello', FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY: 'World'}");
+                .Respond("application/json", "{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}");
 
             var result = await fixture.GetTestObject();
 
