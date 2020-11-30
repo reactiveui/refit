@@ -184,7 +184,9 @@ namespace Refit
         public string Name { get; protected set; }
     }
 
-    //add summary doc
+    /// <summary>
+    /// Allows you provide a Dictionary of headers to be added to the request.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
     public class HeaderCollectionAttribute : Attribute
     {
