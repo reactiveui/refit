@@ -32,7 +32,7 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com");
 var octocat = await gitHubApi.GetUser("octocat");
 ```
 
-Dependency injection via [HttpClientFactory](#using-httpclientfactory) is also fully supported.
+Setup via dependency injection [using HttpClientFactory](#using-httpclientfactory) is also fully supported.
 
 ### Where does this work?
 
@@ -48,7 +48,7 @@ Refit currently supports the following platforms and any .NET Standard 2.0 targe
 * Uno Platform
 
 #### Breaking changes in 6.x
- 
+
  Refit 6 makes the [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview) the default. If you'd like to continue to use `Newtonsoft.Json`, add the `Refit.Newtonsoft.Json` NuGet package and set your `ContentSerializer` to `NewtonsoftJsonContentSerializer` on your `RefitSettings` instance. `System.Text.Json` is faster and uses less memory, though not all features are supported. The [migration guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to?pivots=dotnet-5-0) contains more details.
 
 
@@ -476,23 +476,7 @@ Task<User> GetUser(string user, [Header("Authorization")] string authorization);
 var user = await GetUser("octocat", "token OAUTH-TOKEN");
 ```
 
-If you need to set multiple headers at runtime, you can add a header
-with a dynamic value to a request by applying a `HeaderCollection` attribute to a parameter of type `IDictionary<string, string>`:
-
-```csharp
-[Get("/users/{user}")]
-Task<User> GetUser(string user, [HeaderCollection] IDictionary<string, string> headers);
-
-var headers = new Dictionary<string, string> {{"Authorization","Bearer tokenGoesHere"}, {"TenantId","123"}};
-var user = await GetUser("octocat", headers);
-```
-
-#### Dynamic authorization header with scheme
-
-The most common reason to use headers is for authorization. Today most API's use some flavor of oAuth with access tokens that expire and refresh tokens that are longer lived.
-
-If you want to set an access token at runtime and specify the authorization scheme (e.g. "Bearer"),
-you can add a dynamic value to a request by applying an `Authorize` attribute to a parameter:
+Adding an `Authorization` header is such a common use case that you can add an access token to a request by applying an `Authorize` attribute to a parameter and optionally specifying the scheme:
 
 ```csharp
 [Get("/users/{user}")]
@@ -500,107 +484,110 @@ Task<User> GetUser(string user, [Authorize("Bearer")] string token);
 
 // Will add the header "Authorization: Bearer OAUTH-TOKEN}" to the request
 var user = await GetUser("octocat", "OAUTH-TOKEN");
+
+//note: the scheme defaults to Bearer if none provided
 ```
 
-#### Authorization (Dynamic Headers redux)
+If you need to set multiple headers at runtime, you can add a `IDictionary<string, string>`
+and apply a `HeaderCollection` attribute to the parameter and it will inject the headers into the request:
 
-Another way to encapsulate these kinds of token usage, a custom `HttpClientHandler` can be inserted instead.
-There are two classes for doing this: one is `AuthenticatedHttpClientHandler`, which takes a `Func<Task<string>>` parameter, where a signature can be generated without knowing about the request.
-The other is `AuthenticatedParameterizedHttpClientHandler`, which takes a `Func<HttpRequestMessage, Task<string>>` parameter, where the signature requires information about the request (see earlier notes about Twitter's API)
-
-For example:
 ```csharp
-class AuthenticatedHttpClientHandler : HttpClientHandler
-{
-    private readonly Func<Task<string>> getToken;
+[Get("/users/{user}")]
+Task<User> GetUser(string user, [HeaderCollection] IDictionary<string, string> headers);
 
-    public AuthenticatedHttpClientHandler(Func<Task<string>> getToken)
+var headers = new Dictionary<string, string> {{"Authorization","Bearer tokenGoesHere"}, {"X-Tenant-Id","123"}};
+var user = await GetUser("octocat", headers);
+```
+
+#### Reducing Boilerplate with DelegatingHandlers
+Although we make provisions for adding dynamic headers at runtime directly in Refit,
+most use-cases would likely benefit from registering a custom `DelegatingHandler` in order to inject the headers as part of the `HttpClient` middleware pipeline
+thus removing the need to add lots of `[Header]` or `[HeaderCollection]` attributes.
+
+In the example above we are leveraging a `[HeaderCollection]` parameter to inject an `Authorization` and `X-Tenant-Id` header.
+This is quite a common scenario if you are integrating with a 3rd party that uses OAuth2. While it's ok for the occasional endpoint,
+it would be quite cumbersome if we had to add that boilerplate to every method in our interface.
+
+In this example we will assume our application is a multi-tenant application that is able to pull information about a tenant through
+some interface `ITenantProvider` and has a data store `IAuthTokenStore` that can be used to retrieve an auth token to attach to the outbound request.
+
+```csharp
+
+ //Custom delegating handler for adding Auth headers to outbound requests
+ class AuthHeaderHandler : DelegatingHandler
+ {
+     private readonly ITenantProvider tenantProvider;
+     private readonly IAuthTokenStore authTokenStore;
+
+     public AuthHeaderHandler(ITenantProvider tenantProvider, IAuthTokenStore authTokenStore, HttpMessageHandler innerHandler = null)
+        : base(innerHandler ?? new HttpClientHandler())
     {
-        if (getToken == null) throw new ArgumentNullException(nameof(getToken));
-        this.getToken = getToken;
+         this.tenantProvider = tenantProvider ?? throw new ArgumentNullException(nameof(tenantProvider));
+         this.authTokenStore = authTokenStore ?? throw new ArgumentNullException(nameof(authTokenStore));
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        // See if the request has an authorize header
-        var auth = request.Headers.Authorization;
-        if (auth != null)
-        {
-            var token = await getToken().ConfigureAwait(false);
-            request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
-        }
+        var token = await authTokenStore.GetToken();
+
+        //potentially refresh token here if it has expired etc.
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Headers.Add("X-Tenant-Id", tenantProvider.GetTenantId());
 
         return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
     }
 }
-```
 
-Or:
-
-```csharp
-class AuthenticatedParameterizedHttpClientHandler : DelegatingHandler
-    {
-        readonly Func<HttpRequestMessage, Task<string>> getToken;
-
-        public AuthenticatedParameterizedHttpClientHandler(Func<HttpRequestMessage, Task<string>> getToken, HttpMessageHandler innerHandler = null)
-            : base(innerHandler ?? new HttpClientHandler())
-        {
-            this.getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
-        }
-
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            // See if the request has an authorize header
-            var auth = request.Headers.Authorization;
-            if (auth != null)
-            {
-                var token = await getToken(request).ConfigureAwait(false);
-                request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
-            }
-
-            return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
-        }
-    }
-```
-
-While HttpClient contains a nearly identical method signature, it is used differently. HttpClient.SendAsync is not called by Refit. The HttpClientHandler must be modified instead.
-
-This class is used like so (example uses the [ADAL](http://msdn.microsoft.com/en-us/library/azure/jj573266.aspx) library to manage auto-token refresh but the principal holds for Xamarin.Auth or any other library:
-
-```csharp
-class LoginViewModel
+//Startup.cs
+public void ConfigureServices(IServiceCollection services)
 {
-    AuthenticationContext context = new AuthenticationContext(...);
+    services.AddTransient<ITenantProvider, TenantProvider>();
+    services.AddTransient<IAuthTokenStore, AuthTokenStore>();
+    services.AddTransient<AuthHeaderHandler>();
 
-    private async Task<string> GetToken()
-    {
-        // The AcquireTokenAsync call will prompt with a UI if necessary
-        // Or otherwise silently use a refresh token to return
-        // a valid access token
-        var token = await context.AcquireTokenAsync("http://my.service.uri/app", "clientId", new Uri("callback://complete"));
+    //this will add our refit api implementation with an HttpClient
+    //that is configured to add auth headers to all requests
 
-        return token;
-    }
+    //note: AddRefitClient<T> requires a reference to Refit.HttpClientFactory
+    //note: the order of delegating handlers is important and they run in the order they are added!
 
-    public async Task LoginAndCallApi()
-    {
-        var api = RestService.For<IMyRestService>(new HttpClient(new AuthenticatedHttpClientHandler(GetToken)) { BaseAddress = new Uri("https://the.end.point/") });
-        var location = await api.GetLocationOfRebelBase();
-    }
+    services.AddRefitClient<ISomeThirdPartyApi>()
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"))
+        .AddHttpMessageHandler<AuthHeaderHandler>();
+        //you could add Polly here to handle HTTP 429 / HTTP 503 etc
 }
 
-interface IMyRestService
+//Your application code
+public class SomeImportantBusinessLogic
 {
-    [Get("/getPublicInfo")]
-    Task<Foobar> SomePublicMethod();
+    private ISomeThirdPartyApi thirdPartyApi;
 
-    [Get("/secretStuff")]
-    [Headers("Authorization: Bearer")]
-    Task<Location> GetLocationOfRebelBase();
+    public SomeImportantBusinessLogic(ISomeThirdPartyApi thirdPartyApi)
+    {
+        this.thirdPartyApi = thirdPartyApi;
+    }
+
+    public async Task DoStuffWithUser(string username)
+    {
+        var user = await thirdPartyApi.GetUser(username);
+        //do your thing
+    }
 }
 ```
 
-In the above example, any time a method that requires authentication is called, the `AuthenticatedHttpClientHandler` will try to get a fresh access token. It's up to the app to provide one, checking the expiration time of an existing access token and obtaining a new one if needed.
+If you aren't using dependency injection then you could achieve the same thing by doing something like this:
+
+```csharp
+var api = RestService.For<ISomeThirdPartyApi>(new HttpClient(new AuthHeaderHandler(tenantProvider, authTokenStore))
+    {
+        BaseAddress = new Uri("https://api.example.com")
+    }
+);
+
+var user = await thirdPartyApi.GetUser(username);
+//do your thing
+```
 
 #### Redefining headers
 
