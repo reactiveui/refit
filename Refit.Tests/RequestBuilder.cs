@@ -63,51 +63,36 @@ namespace Refit.Tests
         [Get("/foo")]
         Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
 
-        //header collection tests
-        //get request with header collection
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", "Accept: application/json")]
         Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
 
-        //post request with header collection
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeaderCollection(int id, [Body] object body, [HeaderCollection] IDictionary<string, string> headers);
 
-        //request with method level headers, AND header collection, AND authorize?
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndAuthorize(int id, [Authorize] string value, [HeaderCollection] IDictionary<string, string> headers);
 
-        //request with method level headers, AND header collection, AND header?
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeader(int id, [Header("Authorization")] string value, [HeaderCollection] IDictionary<string, string> headers);
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped(int id, [HeaderCollection] IDictionary<string, string> headers, [Header("Authorization")] string value);
 
-        //request with method level headers, AND header, AND header collection (same as above but flip order to see overwriting headers)
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithPathMemberInCustomHeaderAndDynamicHeaderCollection([Header("X-PathMember")] int id, [HeaderCollection] IDictionary<string, string> headers);
 
-        //request with header collection in middle of params
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers, int baz);
 
-        //request with duplicate header collection
         [Get("/foo/bar")]
         Task<string> FetchSomeStuffWithDuplicateHeaderCollection([HeaderCollection] IDictionary<string, string> headers, [HeaderCollection] IDictionary<string, string> headers2);
 
-        //request with header collection + query attr / property
         [Get("/foo")]
         Task<string> FetchSomeStuffWithHeaderCollectionQueryParamAndArrayQueryParam([HeaderCollection] IDictionary<string, string> headers, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
 
-        //request with header collection on something that doesn't support IDictionary<string, string> semantics
         [Get("/foo")]
         Task<string> FetchSomeStuffWithHeaderCollectionOfUnsupportedType([HeaderCollection] string headers);
-
-        //request with header collection with custom headers
-        //request with header collection with empty headers (over writing / unsetting etc)
-        //request with header collection where headers are being overwritten by duplicate entries in the collection itself!
-        //request with header collection that is empty or null?
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someValue);
