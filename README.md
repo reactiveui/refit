@@ -32,6 +32,8 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com");
 var octocat = await gitHubApi.GetUser("octocat");
 ```
 
+Dependency injection via [HttpClientFactory](#using-httpclientfactory) is also fully supported.
+
 ### Where does this work?
 
 Refit currently supports the following platforms and any .NET Standard 2.0 target:
