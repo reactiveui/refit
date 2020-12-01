@@ -51,10 +51,11 @@ services.AddRefitClient<IGitHubApi>("https://api.github.com");
 * [Setting request headers](#setting-request-headers)
   * [Static headers](#static-headers)
   * [Dynamic headers](#dynamic-headers)
-  * [Reducing Boilerplate with DelegatingHandlers](#reducing-boilerplate-with-delegatinghandlers)
+  * [Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)](#reducing-header-boilerplate-with-delegatinghandlers-authorization-headers-worked-example)
   * [Redefining headers](#redefining-headers)
   * [Removing headers](#removing-headers)
-* [Passing state into custom HttpClient middleware](#passing-state-into-custom-httpclient-middleware)
+* [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
+  * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -529,7 +530,7 @@ var headers = new Dictionary<string, string> {{"Authorization","Bearer tokenGoes
 var user = await GetUser("octocat", headers);
 ```
 
-#### Reducing Boilerplate with DelegatingHandlers
+#### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
 Although we make provisions for adding dynamic headers at runtime directly in Refit,
 most use-cases would likely benefit from registering a custom `DelegatingHandler` in order to inject the headers as part of the `HttpClient` middleware pipeline
 thus removing the need to add lots of `[Header]` or `[HeaderCollection]` attributes.
@@ -628,7 +629,7 @@ a similar approach to the approach ASP.NET MVC takes with action filters &mdash;
 
 * `Headers` attribute on the interface _(lowest priority)_
 * `Headers` attribute on the method
-* `Header` attribute on a method parameter _(highest priority)_
+* `Header` attribute or `HeaderCollection` attribute on a method parameter _(highest priority)_
 
 ```csharp
 [Headers("X-Emoji: :rocket:")]
@@ -708,7 +709,7 @@ await CreateUser(user, null);
 await CreateUser(user, "");
 ```
 
-### Passing state into custom HttpClient middleware
+### Passing state into DelegatingHandlers
 
 If there is runtime state that you need to pass to a `DelegatingHandler` you can add a property with a dynamic value to the underlying `HttpRequestMessage.Properties`
 by applying a `Property` attribute to a parameter:
@@ -753,6 +754,14 @@ class RequestPropertyHandler : DelegatingHandler
     }
 }
 ```
+
+Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
+
+#### Support for Polly and Polly.Context
+
+Because Refit supports `HttpClientFactory` it is possible to configure Polly policies on your HttpClient.
+If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PollyExecutionContext")] Polly.Context context`
+as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PollyExecutionContext` and is of type `Polly.Context`
 
 ### Multipart uploads
 
