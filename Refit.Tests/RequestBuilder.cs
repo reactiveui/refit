@@ -54,7 +54,7 @@ namespace Refit.Tests
         IObservable<string> FetchSomeStuffWithAuthorizationSchemeSpecified([AliasAs("id")] int anId, [Authorize("Bearer")] string token);
 
         [Get("/foo/bar/{id}")]
-        [Headers("Api-Version: 2 ")]
+        [Headers("Api-Version: 2", "Accept: application/json")]
         Task<string> FetchSomeStuffWithHardcodedHeaders(int id);
 
         [Get("/foo/bar/{id}")]
@@ -62,6 +62,37 @@ namespace Refit.Tests
 
         [Get("/foo")]
         Task<string> FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam([Header("Authorization")] string authorization, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", "Accept: application/json")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
+
+        [Post("/foo/bar/{id}")]
+        Task<string> PostSomeStuffWithCustomHeaderCollection(int id, [Body] object body, [HeaderCollection] IDictionary<string, string> headers);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndAuthorize(int id, [Authorize] string value, [HeaderCollection] IDictionary<string, string> headers);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeader(int id, [Header("Authorization")] string value, [HeaderCollection] IDictionary<string, string> headers);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped(int id, [HeaderCollection] IDictionary<string, string> headers, [Header("Authorization")] string value);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithPathMemberInCustomHeaderAndDynamicHeaderCollection([Header("X-PathMember")] int id, [HeaderCollection] IDictionary<string, string> headers);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers, int baz);
+
+        [Get("/foo/bar")]
+        Task<string> FetchSomeStuffWithDuplicateHeaderCollection([HeaderCollection] IDictionary<string, string> headers, [HeaderCollection] IDictionary<string, string> headers2);
+
+        [Get("/foo")]
+        Task<string> FetchSomeStuffWithHeaderCollectionQueryParamAndArrayQueryParam([HeaderCollection] IDictionary<string, string> headers, int id, [Query(CollectionFormat.Multi)] string[] someArray, [Property("SomeProperty")] object someValue);
+
+        [Get("/foo")]
+        Task<string> FetchSomeStuffWithHeaderCollectionOfUnsupportedType([HeaderCollection] string headers);
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someValue);
@@ -538,7 +569,9 @@ namespace Refit.Tests
             Assert.Equal("2", fixture.Headers["Api-Version"]);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
-            Assert.Equal(2, fixture.Headers.Count);
+            Assert.True(fixture.Headers.ContainsKey("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", fixture.Headers["Accept"]);
+            Assert.Equal(3, fixture.Headers.Count);
         }
 
         [Fact]
@@ -549,13 +582,172 @@ namespace Refit.Tests
             Assert.Equal("id", fixture.ParameterMap[0].Name);
             Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
             Assert.Empty(fixture.QueryParameterMap);
-            Assert.Empty(fixture.RequestPropertyParameterMap);
+            Assert.Empty(fixture.PropertyParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
             Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
             Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
             Assert.Equal(2, fixture.Headers.Count);
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollection)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.True(fixture.Headers.ContainsKey("Authorization"), "Headers include Authorization header");
+            Assert.Equal("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", fixture.Headers["Authorization"]);
+            Assert.True(fixture.Headers.ContainsKey("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", fixture.Headers["Accept"]);
+            Assert.True(fixture.Headers.ContainsKey("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", fixture.Headers["User-Agent"]);
+            Assert.True(fixture.Headers.ContainsKey("Api-Version"), "Headers include Api-Version header");
+            Assert.Equal("1", fixture.Headers["Api-Version"]);
+
+            Assert.Equal(4, fixture.Headers.Count);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWorkWithBody()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostSomeStuffWithCustomHeaderCollection)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.NotNull(fixture.BodyParameterInfo);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(2));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWorkWithAuthorize()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollectionAndAuthorize)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.NotNull(fixture.AuthorizeParameterInfo);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(2));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWorkWithDynamicHeader()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeader)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Single(fixture.HeaderParameterMap);
+            Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(2));
+
+            input = typeof(IRestMethodInfoTests);
+            fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Single(fixture.HeaderParameterMap);
+            Assert.Equal("Authorization", fixture.HeaderParameterMap[2]);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWorkWithPathMemberDynamicHeader()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithPathMemberInCustomHeaderAndDynamicHeaderCollection)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Single(fixture.HeaderParameterMap);
+            Assert.Equal("X-PathMember", fixture.HeaderParameterMap[0]);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionInMiddleOfParamsShouldWork()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithHeaderCollection)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+
+            Assert.Equal("baz", fixture.QueryParameterMap[2]);
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldOnlyAllowOne()
+        {
+            var input = typeof(IRestMethodInfoTests);
+
+            Assert.Throws<ArgumentException>(() => new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithDuplicateHeaderCollection))));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWorkWithProperty()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithHeaderCollectionQueryParamAndArrayQueryParam)));
+            Assert.Null(fixture.BodyParameterInfo);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+
+            Assert.Equal(2, fixture.QueryParameterMap.Count);
+            Assert.Equal("id", fixture.QueryParameterMap[1]);
+            Assert.Equal("someArray", fixture.QueryParameterMap[2]);
+
+            Assert.Single(fixture.PropertyParameterMap);
+
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(0));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldOnlyWorkWithSupportedSemantics()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            Assert.Throws<ArgumentException>(() => new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithHeaderCollectionOfUnsupportedType))));
         }
 
         [Fact]
@@ -569,7 +761,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.HeaderParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[1]);
+            Assert.Equal("SomeProperty", fixture.PropertyParameterMap[1]);
         }
 
         [Fact]
@@ -583,8 +775,8 @@ namespace Refit.Tests
             Assert.Empty(fixture.HeaderParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.Equal("someValue", fixture.RequestPropertyParameterMap[1]);
-            Assert.Equal("someOtherValue", fixture.RequestPropertyParameterMap[2]);
+            Assert.Equal("someValue", fixture.PropertyParameterMap[1]);
+            Assert.Equal("someOtherValue", fixture.PropertyParameterMap[2]);
         }
 
         [Fact]
@@ -598,8 +790,8 @@ namespace Refit.Tests
             Assert.Empty(fixture.HeaderParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
 
-            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[1]);
-            Assert.Equal("SomeProperty", fixture.RequestPropertyParameterMap[2]);
+            Assert.Equal("SomeProperty", fixture.PropertyParameterMap[1]);
+            Assert.Equal("SomeProperty", fixture.PropertyParameterMap[2]);
         }
 
         [Fact]
@@ -722,7 +914,7 @@ namespace Refit.Tests
             Assert.Equal("GET", fixture.HttpMethod.Method);
             Assert.Equal(2, fixture.QueryParameterMap.Count);
             Assert.Single(fixture.HeaderParameterMap);
-            Assert.Single(fixture.RequestPropertyParameterMap);
+            Assert.Single(fixture.PropertyParameterMap);
         }
     }
 
@@ -748,8 +940,8 @@ namespace Refit.Tests
         Task<string> FetchSomethingWithMultipleParametersPerSegment(int id, int width, int height);
 
         [Get("/foo/bar/{id}")]
-        [Headers("Api-Version: 2")]
-        Task<string> FetchSomeStuffWithHardcodedHeader(int id);
+        [Headers("Api-Version: 2", "Accept: application/json")]
+        Task<string> FetchSomeStuffWithHardcodedHeaders(int id);
 
         [Get("/foo/bar/{id}")]
         [Headers("Api-Version")]
@@ -775,6 +967,18 @@ namespace Refit.Tests
 
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", "Accept: application/json")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeader(int id, [Header("Authorization")] string value, [HeaderCollection] IDictionary<string, string> headers);
+
+        [Get("/foo/bar/{id}")]
+        [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
+        Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped(int id, [HeaderCollection] IDictionary<string, string> headers, [Header("Authorization")] string value);
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someProperty);
@@ -1368,13 +1572,15 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
 
-            var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithHardcodedHeader");
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithHardcodedHeaders));
             var output = factory(new object[] { 6 });
 
             Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
             Assert.Equal("RefitTestClient", output.Headers.UserAgent.ToString());
             Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
             Assert.Equal("2", output.Headers.GetValues("Api-Version").Single());
+            Assert.True(output.Headers.Contains("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", output.Headers.Accept.ToString());
         }
 
         [Fact]
@@ -1496,6 +1702,96 @@ namespace Refit.Tests
             Assert.True(output.Headers.Contains("X-Emoji"), "Headers include X-Emoji header");
             Assert.False(output.Content.Headers.Contains("Api-Version"), "Content headers include Api-Version header");
             Assert.False(output.Content.Headers.Contains("X-Emoji"), "Content headers include X-Emoji header");
+        }
+
+        [Fact]
+        public void HeaderCollectionShouldBeInHeaders()
+        {
+            var headerCollection = new Dictionary<string, string>
+            {
+                {"key1", "val1"},
+                {"key2", "val2"}
+            };
+
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollection));
+            var output = factory(new object[] { 6, headerCollection });
+
+            Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", output.Headers.GetValues("User-Agent").First());
+            Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.Equal("1", output.Headers.GetValues("Api-Version").First());
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", output.Headers.GetValues("Authorization").First());
+            Assert.True(output.Headers.Contains("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", output.Headers.GetValues("Accept").First());
+
+            Assert.True(output.Headers.Contains("key1"), "Headers include key1 header");
+            Assert.Equal("val1", output.Headers.GetValues("key1").First());
+            Assert.True(output.Headers.Contains("key2"), "Headers include key2 header");
+            Assert.Equal("val2", output.Headers.GetValues("key2").First());
+        }
+
+        [Fact]
+        public void LastWriteWinsWhenHeaderCollectionAndDynamicHeader()
+        {
+            var authHeader = "LetMeIn";
+            var headerCollection = new Dictionary<string, string>
+            {
+                {"Authorization", "OpenSesame"}
+            };
+
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeader));
+            var output = factory(new object[] { 6, authHeader, headerCollection });
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal("OpenSesame", output.Headers.GetValues("Authorization").First());
+
+            fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped));
+            output = factory(new object[] { 6, headerCollection, authHeader });
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal(authHeader, output.Headers.GetValues("Authorization").First());
+        }
+
+        [Fact]
+        public void NullHeaderCollectionDoesntBlowUp()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollection));
+            var output = factory(new object[] { 6, null });
+
+            Assert.True(output.Headers.Contains("User-Agent"), "Headers include User-Agent header");
+            Assert.Equal("RefitTestClient", output.Headers.GetValues("User-Agent").First());
+            Assert.True(output.Headers.Contains("Api-Version"), "Headers include Api-Version header");
+            Assert.Equal("1", output.Headers.GetValues("Api-Version").First());
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==", output.Headers.GetValues("Authorization").First());
+            Assert.True(output.Headers.Contains("Accept"), "Headers include Accept header");
+            Assert.Equal("application/json", output.Headers.GetValues("Accept").First());
+        }
+
+        [Fact]
+        public void HeaderCollectionCanUnsetHeaders()
+        {
+            var headerCollection = new Dictionary<string, string>
+            {
+                {"Authorization", ""},
+                {"Api-Version", null}
+            };
+
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollection));
+            var output = factory(new object[] { 6, headerCollection });
+
+            Assert.True(!output.Headers.Contains("Api-Version"), "Headers does not include Api-Version header");
+
+            Assert.True(output.Headers.Contains("Authorization"), "Headers include Authorization header");
+            Assert.Equal("", output.Headers.GetValues("Authorization").First());
         }
 
         [Fact]

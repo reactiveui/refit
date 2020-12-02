@@ -590,6 +590,19 @@ namespace Refit
                         isParameterMappedToRequest = true;
                     }
 
+                    //if header collection, add to request headers
+                    if (restMethod.HeaderCollectionParameterMap.Contains(i))
+                    {
+                        var headerCollection = param as IDictionary<string, string> ?? new Dictionary<string, string>();
+
+                        foreach (var header in headerCollection)
+                        {
+                            headersToAdd[header.Key] = header.Value;
+                        }
+
+                        isParameterMappedToRequest = true;
+                    }
+
                     //if authorize, add to request headers with scheme
                     if (restMethod.AuthorizeParameterInfo != null && restMethod.AuthorizeParameterInfo.Item2 == i)
                     {
@@ -597,9 +610,9 @@ namespace Refit
                     }
 
                     //if property, add to populate into HttpRequestMessage.Properties
-                    if (restMethod.RequestPropertyParameterMap.ContainsKey(i))
+                    if (restMethod.PropertyParameterMap.ContainsKey(i))
                     {
-                        propertiesToAdd[restMethod.RequestPropertyParameterMap[i]] = param;
+                        propertiesToAdd[restMethod.PropertyParameterMap[i]] = param;
                         isParameterMappedToRequest = true;
                     }
 

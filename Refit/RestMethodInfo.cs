@@ -24,7 +24,8 @@ namespace Refit
         public ParameterInfo? CancellationToken { get; set; }
         public Dictionary<string, string?> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
-        public Dictionary<int, string> RequestPropertyParameterMap { get; set; }
+        public ISet<int> HeaderCollectionParameterMap { get; set; }
+        public Dictionary<int, string> PropertyParameterMap { get; set; }
         public Tuple<BodySerializationMethod, bool, int>? BodyParameterInfo { get; set; }
         public Tuple<string, int>? AuthorizeParameterInfo { get; set; }
         public Dictionary<int, string> QueryParameterMap { get; set; }
@@ -78,7 +79,8 @@ namespace Refit
 
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(parameterList);
-            RequestPropertyParameterMap = BuildRequestPropertyMap(parameterList);
+            HeaderCollectionParameterMap = BuildHeaderCollectionParameterMap(parameterList);
+            PropertyParameterMap = BuildRequestPropertyMap(parameterList);
 
             // get names for multipart attachments
             AttachmentNameMap = new Dictionary<int, Tuple<string, string>>();
@@ -86,7 +88,7 @@ namespace Refit
             {
                 for (var i = 0; i < parameterList.Count; i++)
                 {
-                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || RequestPropertyParameterMap.ContainsKey(i))
+                    if (ParameterMap.ContainsKey(i) || HeaderParameterMap.ContainsKey(i) || PropertyParameterMap.ContainsKey(i) || HeaderCollectionParameterMap.Contains(i))
                     {
                         continue;
                     }
@@ -104,7 +106,8 @@ namespace Refit
             {
                 if (ParameterMap.ContainsKey(i) ||
                     HeaderParameterMap.ContainsKey(i) ||
-                    RequestPropertyParameterMap.ContainsKey(i) ||
+                    PropertyParameterMap.ContainsKey(i) ||
+                    HeaderCollectionParameterMap.Contains(i) ||
                     (BodyParameterInfo != null && BodyParameterInfo.Item3 == i) ||
                     (AuthorizeParameterInfo != null && AuthorizeParameterInfo.Item2 == i))
                 {
@@ -128,26 +131,57 @@ namespace Refit
                              || ReturnResultType == typeof(IApiResponse));
         }
 
-        static Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
+        private ISet<int> BuildHeaderCollectionParameterMap(List<ParameterInfo> parameterList)
         {
-            var requestPropertyMap = new Dictionary<int, string>();
+            var headerCollectionMap = new HashSet<int>();
 
             for (var i = 0; i < parameterList.Count; i++)
             {
                 var param = parameterList[i];
-                var requestProperty = param.GetCustomAttributes(true)
+                var headerCollection = param.GetCustomAttributes(true)
+                    .OfType<HeaderCollectionAttribute>()
+                    .FirstOrDefault();
+
+                if (headerCollection != null)
+                {
+                    //opted for IDictionary<string, string> semantics here as opposed to the looser IEnumerable<KeyValuePair<string, string>> because IDictionary will enforce uniqueness of keys
+                    if (param.ParameterType.IsAssignableFrom(typeof(IDictionary<string, string>)))
+                    {
+                        headerCollectionMap.Add(i);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"HeaderCollection parameter of type {param.ParameterType.Name} is not assignable from IDictionary<string, string>");
+                    }
+                }
+            }
+
+            if (headerCollectionMap.Count > 1)
+                throw new ArgumentException("Only one parameter can be a HeaderCollection parameter");
+
+            return headerCollectionMap;
+        }
+
+        static Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
+        {
+            var propertyMap = new Dictionary<int, string>();
+
+            for (var i = 0; i < parameterList.Count; i++)
+            {
+                var param = parameterList[i];
+                var propertyAttribute = param.GetCustomAttributes(true)
                     .OfType<PropertyAttribute>()
                     .FirstOrDefault();
 
-                if (requestProperty != null)
+                if (propertyAttribute != null)
                 {
-                    var propertyKey = !string.IsNullOrEmpty(requestProperty.Key) ? requestProperty.Key : param.Name!;
-                    requestPropertyMap[i] = propertyKey!;
+                    var propertyKey = !string.IsNullOrEmpty(propertyAttribute.Key) ? propertyAttribute.Key : param.Name!;
+                    propertyMap[i] = propertyKey!;
                 }
 
             }
 
-            return requestPropertyMap;
+            return propertyMap;
         }
 
         static PropertyInfo[] GetParameterProperties(ParameterInfo parameter)

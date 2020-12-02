@@ -184,6 +184,15 @@ namespace Refit
         public string Name { get; protected set; }
     }
 
+    /// <summary>
+    /// Allows you provide a Dictionary of headers to be added to the request.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Parameter)]
+    public class HeaderCollectionAttribute : Attribute
+    {
+
+    }
+
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
     public class HeadersAttribute : Attribute
     {
