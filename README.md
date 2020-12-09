@@ -522,13 +522,16 @@ var user = await GetUser("octocat", "OAUTH-TOKEN");
 If you need to set multiple headers at runtime, you can add a `IDictionary<string, string>`
 and apply a `HeaderCollection` attribute to the parameter and it will inject the headers into the request:
 
+[//]: # ({% raw %})
 ```csharp
+
 [Get("/users/{user}")]
 Task<User> GetUser(string user, [HeaderCollection] IDictionary<string, string> headers);
 
 var headers = new Dictionary<string, string> {{"Authorization","Bearer tokenGoesHere"}, {"X-Tenant-Id","123"}};
 var user = await GetUser("octocat", headers);
 ```
+[//]: # ({% endraw %})
 
 #### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
 Although we make provisions for adding dynamic headers at runtime directly in Refit,
