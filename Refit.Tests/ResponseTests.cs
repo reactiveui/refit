@@ -248,6 +248,57 @@ namespace Refit.Tests
             var actualBaseException = actualException as ApiException;
             Assert.Equal(expectedContent, actualBaseException.Content);
         }
+
+
+        [Fact]
+        public async Task WithHtmlResponse_ShouldReturnApiException()
+        {
+            const string htmlResponse = "<html><body>Hello world</body></html>";
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(htmlResponse)
+            };
+            expectedResponse.Content.Headers.Clear();
+
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                       .Respond(req => expectedResponse);
+
+            var actualException = await Assert.ThrowsAsync<ApiException>(() => fixture.GetTestObject());
+
+            Assert.IsType<System.Text.Json.JsonException>(actualException.InnerException);
+            Assert.NotNull(actualException.Content);
+            Assert.Equal(htmlResponse, actualException.Content);
+        }
+
+        [Fact]
+        public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiException()
+        {
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHandler,
+                ContentSerializer = new NewtonsoftJsonContentSerializer()
+            };
+
+            var newtonSoftFixture = RestService.For<IMyAliasService>("http://api", settings);
+
+            const string nonJsonResponse = "bad response";
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(nonJsonResponse)
+            };
+            expectedResponse.Content.Headers.Clear();
+
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                       .Respond(req => expectedResponse);
+
+            var actualException = await Assert.ThrowsAsync<ApiException>(() => newtonSoftFixture.GetTestObject());
+
+            Assert.IsType<JsonReaderException>(actualException.InnerException);
+            Assert.NotNull(actualException.Content);
+            Assert.Equal(nonJsonResponse, actualException.Content);
+        }
+
+
     }
 
     public sealed class ThrowOnGetLengthMemoryStream : MemoryStream
