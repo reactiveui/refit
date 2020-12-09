@@ -21,13 +21,13 @@ namespace Refit
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
         public RefitSettings RefitSettings { get; }
 
-        protected ApiException(HttpRequestMessage message, HttpMethod httpMethod, string? content, HttpStatusCode statusCode, string? reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings) :
-            this(CreateMessage(statusCode, reasonPhrase), message, httpMethod, content, statusCode, reasonPhrase, headers, refitSettings)
+        protected ApiException(HttpRequestMessage message, HttpMethod httpMethod, string? content, HttpStatusCode statusCode, string? reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings, Exception? innerException = null) :
+            this(CreateMessage(statusCode, reasonPhrase), message, httpMethod, content, statusCode, reasonPhrase, headers, refitSettings, innerException)
         {
         }
 
-        protected ApiException(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, string? content, HttpStatusCode statusCode, string? reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings) :
-            base(exceptionMessage)
+        protected ApiException(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, string? content, HttpStatusCode statusCode, string? reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings, Exception? innerException = null) :
+            base(exceptionMessage, innerException)
         {
             RequestMessage = message;
             HttpMethod = httpMethod;
@@ -43,18 +43,18 @@ namespace Refit
                 default;
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
-        public static Task<ApiException> Create(HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings)
+        public static Task<ApiException> Create(HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings, Exception? innerException = null)
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
             var exceptionMessage = CreateMessage(response.StatusCode, response.ReasonPhrase);
-            return Create(exceptionMessage, message, httpMethod, response, refitSettings);
+            return Create(exceptionMessage, message, httpMethod, response, refitSettings, innerException);
         }
 
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
-        public static async Task<ApiException> Create(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings)
+        public static async Task<ApiException> Create(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings, Exception? innerException = null)
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
-            var exception = new ApiException(exceptionMessage, message, httpMethod, null, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings);
+            var exception = new ApiException(exceptionMessage, message, httpMethod, null, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings, innerException);
 
             if (response.Content == null)
             {
