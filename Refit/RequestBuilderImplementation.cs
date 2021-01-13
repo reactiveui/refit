@@ -63,7 +63,12 @@ namespace Refit
 
         void AddInterfaceHttpMethods(Type interfaceType, Dictionary<string, List<RestMethodInfo>> methods)
         {
-            foreach (var methodInfo in interfaceType.GetMethods())
+            // Consider public (the implicit visibility) and non-public abstract members of the interfaceType
+            var methodInfos = interfaceType
+                .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                .Where(i => i.IsAbstract);
+
+            foreach (var methodInfo in methodInfos)
             {
                 var attrs = methodInfo.GetCustomAttributes(true);
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();

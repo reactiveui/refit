@@ -82,7 +82,7 @@ namespace Refit.Generator
             return list
                 .Where(i => i.DescendantsAndSelf(a => a.BaseList?.Types.Select(b => b.GetSimpleName())
                     .Where(b => b != null).Select(b => b.GetInterfaceDeclaration(list)))
-                    .Any(b => b.Members.OfType<MethodDeclarationSyntax>().Any(HasRefitHttpMethodAttribute)))
+                    .Any(b => b.Members.OfType<MethodDeclarationSyntax>().Any(m => m.Body is null && HasRefitHttpMethodAttribute(m))))
                 .ToList();
         }
 
@@ -146,6 +146,7 @@ namespace Refit.Generator
 
             ret.MethodList = interfaceTree.Members
                                           .OfType<MethodDeclarationSyntax>()
+                                          .Where(x => x.Body is null) // skip non-abstract methods (e.g. DIMs)
                                           .Select(x =>
                                           {
                                               var mti = new MethodTemplateInfo
@@ -365,7 +366,7 @@ namespace Refit.Generator
                                                Interface = i,
                                                Method = m
                                            }))
-                                           .Where(x => !HasRefitHttpMethodAttribute(x.Method))
+                                           .Where(x => x.Method.Body is null && !HasRefitHttpMethodAttribute(x.Method))
                                            .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
 
 

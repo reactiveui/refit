@@ -115,6 +115,25 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void GenerateClassInfoForInterfaceWithDimSmokeTest()
+        {
+            var file = CSharpSyntaxTree.ParseText(
+                File.ReadAllText(IntegrationTestHelper.GetPath("DefaultInterfaceMethodTests.cs")),
+                new CSharpParseOptions(preprocessorSymbols: new []{"NET5_0"}));
+            var fixture = new InterfaceStubGenerator();
+
+            var input = file.GetRoot().DescendantNodes()
+                .OfType<InterfaceDeclarationSyntax>()
+                .First(x => x.Identifier.ValueText == "IHaveDims");
+
+            var result = fixture.GenerateClassInfoForInterface(input);
+
+            Assert.Single(result.MethodList);
+            Assert.Equal("GetInternal", result.MethodList[0].Name);
+            Assert.Equal("IHaveDims", result.InterfaceName);
+        }
+
+        [Fact]
         public void GenerateClassInfoForNestedInterfaceSmokeTest()
         {
             var file = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs")));
