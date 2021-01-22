@@ -15,28 +15,29 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">    
     <Reference Include="System.Web" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <ItemGroup Label="Package">
-    <None Include="targets\refit.targets" PackagePath="build\net461" Pack="true" />
-    <None Include="targets\refit.targets" PackagePath="buildTransitive\net461" Pack="true" />
+  <ItemGroup Label="Package">    
     <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true" />
-    <None Include="targets\refit.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true" />
-    <!--<None Include="..\InterfaceStubGenerator.BuildTasks\bin\$(Configuration)\net461\publish\**\*.*" LinkBase="build\MSBuildFull46" PackagePath="build\MSBuildFull46" Pack="true" />-->
-    <!--<None Include="..\InterfaceStubGenerator.BuildTasks\bin\$(Configuration)\netcoreapp2.1\publish\**\*.*" LinkBase="build\MSBuildCore20" PackagePath="build\MSBuildCore20" Pack="true" />-->
-  </ItemGroup>
+    <None Include="targets\refit.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true" />    
+    <None Include="targets\refit.props" PackagePath="build\netstandard2.0" Pack="true" />
+    <None Include="targets\refit.props" PackagePath="buildTransitive\netstandard2.0" Pack="true" />
 
-  <!--<Target Name="BuildAndPublishStubGenerator" BeforeTargets="CoreBuild" Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-      <RefitExecCmd46>dotnet publish "$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj" -c $(Configuration) -f net461</RefitExecCmd46>
-      <RefitExecCmd20>dotnet publish "$(MSBuildThisFileDirectory)..\InterfaceStubGenerator.BuildTasks\InterfaceStubGenerator.BuildTasks.csproj" -c $(Configuration) -f netcoreapp2.1</RefitExecCmd20>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-      <RefitExecCmd46>dotnet publish "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.BuildTasks/InterfaceStubGenerator.BuildTasks.csproj" -c $(Configuration) -f net461</RefitExecCmd46>
-      <RefitExecCmd20>dotnet publish "$(MSBuildThisFileDirectory)../InterfaceStubGenerator.BuildTasks/InterfaceStubGenerator.BuildTasks.csproj" -c $(Configuration) -f netcoreapp2.1</RefitExecCmd20>
-    </PropertyGroup>
-    <Exec Command="$(RefitExecCmd46)" />
-    <Exec Command="$(RefitExecCmd20)" />
-  </Target>-->
+    <None Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\InterfaceStubGenerator.Core.dll"
+          PackagePath="analyzers\cs\"
+          Pack="true"
+          Visible="false" />
+    
+    <None Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\Nustache.Core.dll"
+          PackagePath="analyzers\cs\"
+          Pack="true"
+          Visible="false" />
+    
+    <None Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\GeneratedInterfaceStubTemplate.mustache"
+          PackagePath="analyzers\cs\"
+          Pack="true"
+          Visible="false" />    
+  </ItemGroup>
 
 </Project>
