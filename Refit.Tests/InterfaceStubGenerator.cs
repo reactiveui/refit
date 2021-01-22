@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 using Microsoft.CodeAnalysis;
@@ -18,21 +19,37 @@ namespace Refit.Tests
 {
     public class InterfaceStubGeneratorTests
     {
-        //[Fact]
-        //public void GenerateInterfaceStubsSmokeTest()
-        //{
-        //    var fixture = new InterfaceStubGenerator();
+        [Fact]
+        public void GenerateInterfaceStubsSmokeTest()
+        {
+            var fixture = new InterfaceStubGenerator();
 
-        //    var result = fixture.GenerateInterfaceStubs(new[] {
-        //        IntegrationTestHelper.GetPath("RestService.cs"),
-        //        IntegrationTestHelper.GetPath("GitHubApi.cs"),
-        //        IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
-        //        IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs"),
-        //    });
+            var driver = CSharpGeneratorDriver.Create(fixture);
 
-        //    Assert.Contains("IGitHubApi", result);
-        //    Assert.Contains("IAmInterfaceC", result);
-        //}
+
+            var inputCompilation = CreateCompilation(
+                IntegrationTestHelper.GetPath("RestService.cs"),
+                IntegrationTestHelper.GetPath("GitHubApi.cs"),
+                IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
+                IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs"));
+
+            var runDriver = driver.RunGenerators(inputCompilation);
+
+            var runResult = runDriver.GetRunResult();
+
+            var generated = runResult.Results[0];
+
+            var text = generated.GeneratedSources.First().SourceText.ToString();
+
+            Assert.Contains("IGitHubApi", text);
+            Assert.Contains("IAmInterfaceC", text);
+        }
+
+        static Compilation CreateCompilation(params string[] sourceFiles)
+            => CSharpCompilation.Create("compilation",
+                sourceFiles.Select(source => CSharpSyntaxTree.ParseText(File.ReadAllText(source))),
+                new[] { MetadataReference.CreateFromFile(typeof(GetAttribute).GetTypeInfo().Assembly.Location) },
+                new CSharpCompilationOptions(OutputKind.ConsoleApplication));
 
         [Fact]
         public void FindInterfacesSmokeTest()
@@ -265,7 +282,7 @@ namespace Refit.Tests
             var expected = usingCsv.Split(',');
             Assert.Equal(usingList, expected);
 
-            IEnumerable<InterfaceDeclarationSyntax> getInterfaces(string fileName)
+            static IEnumerable<InterfaceDeclarationSyntax> getInterfaces(string fileName)
             {
                 var syntaxTree = CSharpSyntaxTree.ParseText(File.ReadAllText(IntegrationTestHelper.GetPath(fileName)));
                 return syntaxTree.GetRoot().DescendantNodes().OfType<InterfaceDeclarationSyntax>();
@@ -288,17 +305,25 @@ namespace Refit.Tests
             Assert.Contains("global::Refit", usingList);
         }
 
-        //[Fact]
-        //public void GenerateInterfaceStubsWithoutNamespaceSmokeTest()
-        //{
-        //    var fixture = new InterfaceStubGenerator();
+        [Fact]
+        public void GenerateInterfaceStubsWithoutNamespaceSmokeTest()
+        {
+            var fixture = new InterfaceStubGenerator();
 
-        //    var result = fixture.GenerateInterfaceStubs(new[] {
-        //        IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
-        //    });
+            var driver = CSharpGeneratorDriver.Create(fixture);
 
-        //    Assert.Contains("IServiceWithoutNamespace", result);
-        //}
+            var inputCompilation = CreateCompilation(IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs"));
+
+            var runDriver = driver.RunGenerators(inputCompilation);
+
+            var runResult = runDriver.GetRunResult();
+
+            var generated = runResult.Results[0];
+
+            var result = generated.GeneratedSources.First().SourceText.ToString();
+
+            Assert.Contains("IServiceWithoutNamespace", result);
+        }
     }
 
     public static class ThisIsDumbButMightHappen
