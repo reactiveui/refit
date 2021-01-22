@@ -348,9 +348,7 @@ namespace Refit.Generator
             }
         }
 
-        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate, GeneratorExecutionContext context)
-        {
-            var descriptor = new DiagnosticDescriptor(
+        static readonly DiagnosticDescriptor InvalidRefitMember = new DiagnosticDescriptor(
                 "RF001",
                 "Refit types must have Refit HTTP method attributes",
                 "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
@@ -358,6 +356,8 @@ namespace Refit.Generator
                 DiagnosticSeverity.Warning,
                 true);
 
+        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate, GeneratorExecutionContext context)
+        {
             var missingAttributeWarnings = interfacesToGenerate
                                            .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new
                                            {
@@ -366,7 +366,7 @@ namespace Refit.Generator
                                            }))
                                            .Where(x => !x.Method.Modifiers.Any(SyntaxKind.StaticKeyword)) // Don't warn on static methods, they should not have the attribute
                                            .Where(x => !HasRefitHttpMethodAttribute(x.Method))
-                                           .Select(x => Diagnostic.Create(descriptor, x.Method.GetLocation(), x.Interface.Identifier.ToString(), x.Method.Identifier.ToString()));
+                                           .Select(x => Diagnostic.Create(InvalidRefitMember, x.Method.GetLocation(), x.Interface.Identifier.ToString(), x.Method.Identifier.ToString()));
 
 
             var diagnostics = missingAttributeWarnings;
