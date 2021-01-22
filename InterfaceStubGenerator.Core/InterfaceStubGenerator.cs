@@ -366,7 +366,7 @@ namespace Refit.Generator
                                            }))
                                            .Where(x => !x.Method.Modifiers.Any(SyntaxKind.StaticKeyword)) // Don't warn on static methods, they should not have the attribute
                                            .Where(x => !HasRefitHttpMethodAttribute(x.Method))
-                                           .Select(x => Diagnostic.Create(descriptor, x.Method.GetLocation(), x.Interface, x.Method));
+                                           .Select(x => Diagnostic.Create(descriptor, x.Method.GetLocation(), x.Interface.Identifier.ToString(), x.Method.Identifier.ToString()));
 
 
             var diagnostics = missingAttributeWarnings;
