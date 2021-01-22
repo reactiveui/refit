@@ -28,14 +28,6 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net461' ">
     <Reference Include="System.Net.Http" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="RefitStubs.*.cs" />
-    <Compile Remove="RefitStubs.*.cs" />
-    <!--<Compile Condition="'$(TargetFramework)' == 'net461' " Include="RefitStubs.Net46.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Include="RefitStubs.NetCore2.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'netcoreapp3.1' " Include="RefitStubs.NetCore3.cs" />
-    <Compile Condition="'$(TargetFramework)' == 'net5.0' " Include="RefitStubs.Net5.cs" />-->
-  </ItemGroup>
 
   <Import Project="..\Refit\targets\refit.targets"/>
 </Project>
