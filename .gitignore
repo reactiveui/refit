@@ -90,3 +90,4 @@ packages/
 Refit-Tests/test-results
 /InterfaceStubGenerator.App/Properties/launchSettings.json
 *.binlog
+/Refit.Tests/Properties/launchSettings.json

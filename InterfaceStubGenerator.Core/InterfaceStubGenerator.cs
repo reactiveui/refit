@@ -151,6 +151,7 @@ namespace Refit.Generator
 
             ret.MethodList = interfaceTree.Members
                                           .OfType<MethodDeclarationSyntax>()
+                                          .Where(mti => !mti.Modifiers.Any(SyntaxKind.StaticKeyword)) // Generated methods can't be static on the interface
                                           .Select(x =>
                                           {
                                               var mti = new MethodTemplateInfo
@@ -198,13 +199,14 @@ namespace Refit.Generator
 
             var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
 
+            //var options = context.Compilation.
+
             var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate);
 
             GenerateWarnings(interfacesToGenerate, context);
 
             Encoders.HtmlEncode = s => s;
             var text = Render.StringToString(ExtractTemplateSource(), templateInfo);
-
 
             context.AddSource("Refit.GeneratedStubs.cs", text);
         }
@@ -380,6 +382,7 @@ namespace Refit.Generator
                                                Interface = i,
                                                Method = m
                                            }))
+                                           .Where(x => !x.Method.Modifiers.Any(SyntaxKind.StaticKeyword)) // Don't warn on static methods, they should not have the attribute
                                            .Where(x => !HasRefitHttpMethodAttribute(x.Method))
                                            .Select(x => Diagnostic.Create(descriptor, x.Method.GetLocation(), x.Interface, x.Method));
 
