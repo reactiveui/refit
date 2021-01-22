@@ -18,21 +18,21 @@ namespace Refit.Tests
 {
     public class InterfaceStubGeneratorTests
     {
-        [Fact]
-        public void GenerateInterfaceStubsSmokeTest()
-        {
-            var fixture = new InterfaceStubGenerator();
+        //[Fact]
+        //public void GenerateInterfaceStubsSmokeTest()
+        //{
+        //    var fixture = new InterfaceStubGenerator();
 
-            var result = fixture.GenerateInterfaceStubs(new[] {
-                IntegrationTestHelper.GetPath("RestService.cs"),
-                IntegrationTestHelper.GetPath("GitHubApi.cs"),
-                IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
-                IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs"),
-            });
+        //    var result = fixture.GenerateInterfaceStubs(new[] {
+        //        IntegrationTestHelper.GetPath("RestService.cs"),
+        //        IntegrationTestHelper.GetPath("GitHubApi.cs"),
+        //        IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
+        //        IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs"),
+        //    });
 
-            Assert.Contains("IGitHubApi", result);
-            Assert.Contains("IAmInterfaceC", result);
-        }
+        //    Assert.Contains("IGitHubApi", result);
+        //    Assert.Contains("IAmInterfaceC", result);
+        //}
 
         [Fact]
         public void FindInterfacesSmokeTest()
@@ -288,17 +288,17 @@ namespace Refit.Tests
             Assert.Contains("global::Refit", usingList);
         }
 
-        [Fact]
-        public void GenerateInterfaceStubsWithoutNamespaceSmokeTest()
-        {
-            var fixture = new InterfaceStubGenerator();
+        //[Fact]
+        //public void GenerateInterfaceStubsWithoutNamespaceSmokeTest()
+        //{
+        //    var fixture = new InterfaceStubGenerator();
 
-            var result = fixture.GenerateInterfaceStubs(new[] {
-                IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
-            });
+        //    var result = fixture.GenerateInterfaceStubs(new[] {
+        //        IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
+        //    });
 
-            Assert.Contains("IServiceWithoutNamespace", result);
-        }
+        //    Assert.Contains("IServiceWithoutNamespace", result);
+        //}
     }
 
     public static class ThisIsDumbButMightHappen

@@ -23,21 +23,28 @@ namespace Refit.Generator
     //   guess the class name based on our template
     //
     // What if the Interface is in another module? (since we copy usings, should be fine)
-    public class InterfaceStubGenerator
+    [Generator]
+    public class InterfaceStubGenerator : ISourceGenerator
     {
         static readonly HashSet<string> HttpMethodAttributeNames = new(
             new[] { "Get", "Head", "Post", "Put", "Delete", "Patch", "Options" }
                 .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
 
-        public InterfaceStubGenerator() : this(null, null) { }
 
-        public InterfaceStubGenerator(Action<string> logWarning) : this(null, logWarning) { }
+        
 
-        public InterfaceStubGenerator(string refitInternalNamespace) : this(refitInternalNamespace, null) { }
+        public void Execute(GeneratorExecutionContext context)
+        {
+            GenerateInterfaceStubs(context);            
+        }
+
+        public InterfaceStubGenerator() : this(null, null)
+        {
+
+        }
 
         public InterfaceStubGenerator(string refitInternalNamespace, Action<string> logWarning)
         {
-            Log = logWarning;
 
             if (!string.IsNullOrWhiteSpace(refitInternalNamespace))
             {
@@ -46,8 +53,6 @@ namespace Refit.Generator
         }
 
         public string RefitInternalNamespace { get; }
-
-        public Action<string> Log { get; }
 
         public static string ExtractTemplateSource()
         {
@@ -187,19 +192,21 @@ namespace Refit.Generator
             return ret;
         }
 
-        public string GenerateInterfaceStubs(string[] paths)
-        {
-            var trees = paths.Select(x => CSharpSyntaxTree.ParseText(File.ReadAllText(x))).ToList();
+        public void GenerateInterfaceStubs(GeneratorExecutionContext context)
+        {            
+            var trees = context.Compilation.SyntaxTrees.Where(c => c is CSharpSyntaxTree).ToList();
 
             var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
 
             var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate);
 
-            GenerateWarnings(interfacesToGenerate);
+            GenerateWarnings(interfacesToGenerate, context);
 
             Encoders.HtmlEncode = s => s;
             var text = Render.StringToString(ExtractTemplateSource(), templateInfo);
-            return text;
+
+
+            context.AddSource("Refit.GeneratedStubs.cs", text);
         }
 
         public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList)
@@ -357,8 +364,16 @@ namespace Refit.Generator
             }
         }
 
-        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate)
+        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate, GeneratorExecutionContext context)
         {
+            var descriptor = new DiagnosticDescriptor(
+                "RF001",
+                "Refit types must have Refit HTTP method attributes",
+                "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
+                "Refit",
+                DiagnosticSeverity.Warning,
+                true);
+
             var missingAttributeWarnings = interfacesToGenerate
                                            .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new
                                            {
@@ -366,14 +381,14 @@ namespace Refit.Generator
                                                Method = m
                                            }))
                                            .Where(x => !HasRefitHttpMethodAttribute(x.Method))
-                                           .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
+                                           .Select(x => Diagnostic.Create(descriptor, x.Method.GetLocation(), x.Interface, x.Method));
 
 
             var diagnostics = missingAttributeWarnings;
 
             foreach (var diagnostic in diagnostics)
             {
-                Log?.Invoke(diagnostic.ToString());
+                context.ReportDiagnostic(diagnostic);
             }
         }
 
@@ -401,6 +416,8 @@ namespace Refit.Generator
 
             return identifier.ValueText;
         }
+
+        public void Initialize(GeneratorInitializationContext context) { /* No init required */ }
     }
 
     public class UsingDeclaration
