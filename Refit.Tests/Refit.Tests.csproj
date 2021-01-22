@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="..\Refit\targets\refit.props"/>
+  
   <PropertyGroup>
     <TargetFrameworks>net5.0;netcoreapp2.1;netcoreapp3.1;net461</TargetFrameworks>
     <Deterministic>false</Deterministic> <!-- Some tests rely on CallerFilePath -->
@@ -33,6 +35,7 @@
     <Compile Condition="'$(TargetFramework)' == 'netcoreapp2.1' " Include="RefitStubs.NetCore2.cs" />
     <Compile Condition="'$(TargetFramework)' == 'netcoreapp3.1' " Include="RefitStubs.NetCore3.cs" />
     <Compile Condition="'$(TargetFramework)' == 'net5.0' " Include="RefitStubs.Net5.cs" />-->
-  </ItemGroup>  
+  </ItemGroup>
 
+  <Import Project="..\Refit\targets\refit.targets"/>
 </Project>

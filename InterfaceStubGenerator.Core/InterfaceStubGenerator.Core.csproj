@@ -6,6 +6,7 @@
     <IsPackable>false</IsPackable>
     <AssemblyOriginatorKeyFile>..\buildtask.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
+    <IsRoslynComponent>true</IsRoslynComponent>
   </PropertyGroup>
 
   <ItemGroup>

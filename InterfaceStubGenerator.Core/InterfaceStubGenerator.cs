@@ -31,28 +31,10 @@ namespace Refit.Generator
                 .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
 
 
-        
-
         public void Execute(GeneratorExecutionContext context)
         {
             GenerateInterfaceStubs(context);            
         }
-
-        public InterfaceStubGenerator() : this(null, null)
-        {
-
-        }
-
-        public InterfaceStubGenerator(string refitInternalNamespace, Action<string> logWarning)
-        {
-
-            if (!string.IsNullOrWhiteSpace(refitInternalNamespace))
-            {
-                RefitInternalNamespace = $"{refitInternalNamespace.Trim().TrimEnd('.')}.";
-            }
-        }
-
-        public string RefitInternalNamespace { get; }
 
         public static string ExtractTemplateSource()
         {
@@ -199,9 +181,9 @@ namespace Refit.Generator
 
             var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
 
-            //var options = context.Compilation.
+            context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.RefitInternalNamespace", out var refitInternalNamespace);
 
-            var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate);
+            var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate, refitInternalNamespace);
 
             GenerateWarnings(interfacesToGenerate, context);
 
@@ -211,13 +193,13 @@ namespace Refit.Generator
             context.AddSource("Refit.GeneratedStubs.cs", text);
         }
 
-        public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList)
+        public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList, string refitInternalNamespace = null)
         {
             interfaceList = interfaceList.OrderBy(i => i.Identifier.Text).ToList();
 
             var ret = new TemplateInformation
             {
-                RefitInternalNamespace = RefitInternalNamespace ?? string.Empty,
+                RefitInternalNamespace = refitInternalNamespace ?? string.Empty,
                 ClassList = interfaceList.Select(GenerateClassInfoForInterface).ToList(),
             };
 
