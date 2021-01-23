@@ -53,31 +53,7 @@ namespace Refit.Generator
             src.CopyTo(ms);
             return Encoding.UTF8.GetString(ms.ToArray());
         }
-
-        /// <summary>
-        /// Loop over the candidates to find the interfaces that actually matter
-        /// </summary>
-        /// <param name="compilation"></param>
-        /// <param name="candidateMethods"></param>
-        /// <returns></returns>
-        public List<IGrouping<INamedTypeSymbol, IMethodSymbol>> FindInterfacesToGenerate(Compilation compilation, List<MethodDeclarationSyntax> candidateMethods, HashSet<ISymbol> httpMethodAttributes)
-        {            
-            var methodSymbols = new List<IMethodSymbol>();
-
-            foreach(var method in candidateMethods)
-            {
-                var model = compilation.GetSemanticModel(method.SyntaxTree);
-             
-                // Get the symbol being declared by the method
-                var methodSymbol = model.GetDeclaredSymbol(method);
-                if(methodSymbol.GetAttributes().Any(ad => httpMethodAttributes.Contains(ad.AttributeClass)))
-                {
-                    methodSymbols.Add(methodSymbol);
-                }             
-            }
-
-            return methodSymbols.GroupBy(m => m.ContainingType).ToList();
-        }
+               
 
         public List<InterfaceDeclarationSyntax> FindInterfacesToGenerate(SyntaxTree tree)
         {
@@ -242,48 +218,296 @@ namespace {refitInternalNamespace}
 
             // get the newly bound attribute
             var preserveAttributeSymbol = compilation.GetTypeByMetadataName($"{refitInternalNamespace}.PreserveAttribute");
+            var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable");
 
             // Get the type names of the attributes we're looking for
-            var httpMethodAttibutes = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.GetAttribute"));
-            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.HeadAttribute"));
-            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.PostAttribute"));
-            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.PutAttribute"));
-            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.DeleteAttribute"));
-            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.PatchAttribute"));
-            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.OptionsAttribute"));
+            var httpMethodAttibutes = new HashSet<ISymbol>(SymbolEqualityComparer.Default)
+            {
+                compilation.GetTypeByMetadataName("Refit.GetAttribute"),
+                compilation.GetTypeByMetadataName("Refit.HeadAttribute"),
+                compilation.GetTypeByMetadataName("Refit.PostAttribute"),
+                compilation.GetTypeByMetadataName("Refit.PutAttribute"),
+                compilation.GetTypeByMetadataName("Refit.DeleteAttribute"),
+                compilation.GetTypeByMetadataName("Refit.PatchAttribute"),
+                compilation.GetTypeByMetadataName("Refit.OptionsAttribute")
+            };
+
+            // Check the candidates and keep the ones we're actually interested in
+            var methodSymbols = new List<IMethodSymbol>();
+            foreach (var method in receiver.CandidateMethods)
+            {
+                var model = compilation.GetSemanticModel(method.SyntaxTree);
+
+                // Get the symbol being declared by the method
+                var methodSymbol = model.GetDeclaredSymbol(method);
+                if (IsRefitMethod(methodSymbol, httpMethodAttibutes))
+                {
+                    methodSymbols.Add(methodSymbol);
+                }
+            }
+
+            var keyCount = new Dictionary<string, int>();
+
+            // group the fields by interface and generate the source
+            foreach (var group in methodSymbols.GroupBy(m => m.ContainingType))
+            {
+                // each group is keyed by the Interface INamedTypeSymbol and contains the members
+                // with a refit attribute on them. Types may contain other members, without the attribute, which we'll
+                // need to check for and error out on
+
+                var classSource = ProcessInterface(group.Key, group.ToList(), preserveAttributeSymbol, disposableInterfaceSymbol, httpMethodAttibutes, context);
+             
+                var keyName = group.Key.Name;
+                if(keyCount.TryGetValue(keyName, out var value))
+                {
+                    keyName = $"{keyName}{++value}";
+                }
+                keyCount[keyName] = value;
+
+                context.AddSource($"{keyName}_refit.cs", SourceText.From(classSource, Encoding.UTF8));
+            }
+
+
+            ///var trees = context.Compilation.SyntaxTrees.Where(c => c is CSharpSyntaxTree).ToList();
 
 
 
+            //var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
 
 
+            //var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate, refitInternalNamespace);
 
+          //  GenerateWarnings(interfacesToGenerate, context);
 
-            var interfacesToGen = FindInterfacesToGenerate(context.Compilation, receiver.CandidateMethods, httpMethodAttibutes);
+            //Encoders.HtmlEncode = s => s;
+            //var text = Render.StringToString(ExtractTemplateSource(), templateInfo);
 
-
-
-
-
-
-            var trees = context.Compilation.SyntaxTrees.Where(c => c is CSharpSyntaxTree).ToList();
-
-
-
-            var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
-
-
-            var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate, refitInternalNamespace);
-
-            GenerateWarnings(interfacesToGenerate, context);
-
-            Encoders.HtmlEncode = s => s;
-            var text = Render.StringToString(ExtractTemplateSource(), templateInfo);
-
-            context.AddSource("Refit.GeneratedStubs.cs", text);
+            //context.AddSource("Refit.GeneratedStubs.cs", text);
         }
 
-  
+
+        string ProcessInterface(INamedTypeSymbol interfaceSymbol,
+                                List<IMethodSymbol> refitMethods,
+                                ISymbol preserveAttributeSymbol,
+                                ISymbol disposableInterfaceSymbol,
+                                HashSet<ISymbol> httpMethodAttributeSymbols,
+                                GeneratorExecutionContext context)
+        {
+            //var parent = interfaceSymbol.ContainingSymbol;
+            //while(parent != null && !(parent is INamespaceSymbol))
+            //{
+            //    parent = parent.ContainingSymbol;
+            //}
+
+            var classSuffix = $"{interfaceSymbol.ContainingType?.Name}{interfaceSymbol.Name}";
+            
+            var ns = interfaceSymbol.ContainingNamespace?.ToDisplayString();
+
+            var className = interfaceSymbol.ToDisplayString();
+            var lastDot = className.LastIndexOf('.');
+            if(lastDot > 0)
+            {
+                className = className.Substring(lastDot+1);
+            }
+
+            var classDeclaration = $"{interfaceSymbol.ContainingType?.Name}{className}";
+
+            var source = new StringBuilder($@"
+#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+#pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
+
+namespace {ns}
+{{
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [{preserveAttributeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    partial class AutoGenerated{classDeclaration}
+        : {interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}{GenerateConstraints(interfaceSymbol)}
+
+    {{
+        /// <inheritdoc />
+        public global::System.Net.Http.HttpClient Client {{ get; }}
+        readonly global::Refit.IRequestBuilder requestBuilder;
+
+        /// <inheritdoc />
+        public AutoGenerated{classSuffix}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
+        {{
+            Client = client;
+            this.requestBuilder = requestBuilder;
+        }}
+    
+");
+            // Get any other methods on the refit interfaces. We'll need to generate something for them and warn
+            var nonRefitMethods = interfaceSymbol.GetMembers().OfType<IMethodSymbol>().Except(refitMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToList();
+
+            // get methods for all inherited
+            var derivedMethods = interfaceSymbol.AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>()).ToList();
+
+            // Look for disposable
+            var disposeMethod = derivedMethods.Find(m => m.ContainingType?.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default) == true);
+            if(disposeMethod != null)
+            {
+                //remove it from the derived methods list so we don't process it with the rest
+                derivedMethods.Remove(disposeMethod);
+            }
+
+            // Pull out the refit methods from the derived types
+            var derivedRefitMethods = derivedMethods.Where(m => IsRefitMethod(m, httpMethodAttributeSymbols)).ToList();
+            var derivedNonRefitMethods = derivedMethods.Except(derivedMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToList();
+
+            // Handle Refit Methods
+            var anyMethodsHaveNullableAgs = false;
+
+            foreach(var method in refitMethods.Concat(derivedRefitMethods))
+            {
+                ProcessRefitMethod(source, method, out var anyNullable);
+                if(anyNullable)
+                {
+                    anyMethodsHaveNullableAgs = true;
+                }
+            }
+
+            // Handle non-refit Methods that aren't static or properties
+            foreach(var method in nonRefitMethods.Concat(derivedNonRefitMethods))
+            {
+                if (method.IsStatic || method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet)
+                    continue;
+
+                ProcessNonRefitMethod(source, method, context);
+            }
+
+            // Handle Dispose
+            if(disposeMethod != null)
+            {
+                ProcessDisposableMethod(source, disposeMethod);
+            }
+
+            // If any types have nullable arguments
+            if(anyMethodsHaveNullableAgs)
+            {
+                source.Append(@"
+        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
+");
+            }
+
+            source.Append(@"
+    }
+}
+#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
+#pragma warning restore CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
+");
+            return source.ToString();
+        }
+
+        void ProcessRefitMethod(StringBuilder source, IMethodSymbol methodSymbol, out bool anyMethodsAreNullable)
+        {
+            anyMethodsAreNullable = false;
+            WriteMethodOpening(source, methodSymbol);
+
+            source.Append("     throw new System.NotImplementedException();");
+
+            WriteMethodClosing(source);
+        }
+
+        void ProcessDisposableMethod(StringBuilder source, IMethodSymbol methodSymbol)
+        {
+            WriteMethodOpening(source, methodSymbol);
+
+            source.Append(@"
+                Client?.Dispose();
+");
+
+            WriteMethodClosing(source);
+        }
+
+        string GenerateConstraints(INamedTypeSymbol iface)
+        {
+            var source = new StringBuilder();
+            // Need to loop over the constraints and create them
+            foreach(var typeParameter in iface.TypeParameters)
+            {
+                WriteConstraitsForTypeParameter(source, typeParameter);
+            }
+
+            return source.ToString();
+        }
+
+        void WriteConstraitsForTypeParameter(StringBuilder source, ITypeParameterSymbol typeParameter)
+        {
+            var parameters = new List<string>();
+            if(typeParameter.HasReferenceTypeConstraint)
+            {
+                parameters.Add("class");
+            }
+            if (typeParameter.HasUnmanagedTypeConstraint)
+            {
+                parameters.Add("unmanaged");
+            }
+            if (typeParameter.HasValueTypeConstraint)
+            {
+                parameters.Add("struct");
+            }
+            if (typeParameter.HasNotNullConstraint)
+            {
+                parameters.Add("notnull");
+            }
+            foreach(var typeConstraint in typeParameter.ConstraintTypes)
+            {
+                parameters.Add(typeConstraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            }
+            // new constraint has to be last
+            if (typeParameter.HasConstructorConstraint)
+            {
+                parameters.Add("new()");
+            }
+
+            if(parameters.Count > 0)
+            {
+                source.Append(@$"
+         where {typeParameter.Name} : {string.Join(", ", parameters)}");
+            }
+
+        }
+
+        void ProcessNonRefitMethod(StringBuilder source, IMethodSymbol methodSymbol, GeneratorExecutionContext context)
+        {
+            WriteMethodOpening(source, methodSymbol);
+
+            source.Append(@"
+                throw new NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");
+");
+
+            WriteMethodClosing(source);
+
+            foreach(var location in methodSymbol.Locations)
+            {
+                var diagnostic = Diagnostic.Create(InvalidRefitMember, location, methodSymbol.ContainingType.Name, methodSymbol.Name);
+                context.ReportDiagnostic(diagnostic);
+            }            
+        }
+
+        void WriteMethodOpening(StringBuilder source, IMethodSymbol methodSymbol)
+        {
+            source.Append(@$"
+
+        /// <ineritdoc />
+        {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {methodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{methodSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(");
+
+            source.Append(string.Join(", ", methodSymbol.Parameters.Select(p => $"{p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {p.MetadataName}")));
+
+           source.Append(@")
+        {");
+        }
+
+        void WriteMethodClosing(StringBuilder source) => source.Append(@"        }");
+
+
+        bool IsRefitMethod(IMethodSymbol methodSymbol, HashSet<ISymbol> httpMethodAttibutes)
+        {
+            return methodSymbol.GetAttributes().Any(ad => httpMethodAttibutes.Contains(ad.AttributeClass));
+        }
 
         public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList, string refitInternalNamespace = null)
         {
