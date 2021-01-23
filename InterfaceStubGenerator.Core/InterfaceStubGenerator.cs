@@ -8,6 +8,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 using Nustache.Core;
 
@@ -53,6 +54,31 @@ namespace Refit.Generator
             return Encoding.UTF8.GetString(ms.ToArray());
         }
 
+        /// <summary>
+        /// Loop over the candidates to find the interfaces that actually matter
+        /// </summary>
+        /// <param name="compilation"></param>
+        /// <param name="candidateMethods"></param>
+        /// <returns></returns>
+        public List<IGrouping<INamedTypeSymbol, IMethodSymbol>> FindInterfacesToGenerate(Compilation compilation, List<MethodDeclarationSyntax> candidateMethods, HashSet<ISymbol> httpMethodAttributes)
+        {            
+            var methodSymbols = new List<IMethodSymbol>();
+
+            foreach(var method in candidateMethods)
+            {
+                var model = compilation.GetSemanticModel(method.SyntaxTree);
+             
+                // Get the symbol being declared by the method
+                var methodSymbol = model.GetDeclaredSymbol(method);
+                if(methodSymbol.GetAttributes().Any(ad => httpMethodAttributes.Contains(ad.AttributeClass)))
+                {
+                    methodSymbols.Add(methodSymbol);
+                }             
+            }
+
+            return methodSymbols.GroupBy(m => m.ContainingType).ToList();
+        }
+
         public List<InterfaceDeclarationSyntax> FindInterfacesToGenerate(SyntaxTree tree)
         {
             var nodes = tree.GetRoot().DescendantNodes().ToList();
@@ -72,6 +98,8 @@ namespace Refit.Generator
                     .Any(b => b.Members.OfType<MethodDeclarationSyntax>().Any(HasRefitHttpMethodAttribute)))
                 .ToList();
         }
+
+
 
         public ClassTemplateInfo GenerateClassInfoForInterface(InterfaceDeclarationSyntax interfaceTree)
         {
@@ -176,12 +204,74 @@ namespace Refit.Generator
         }
 
         public void GenerateInterfaceStubs(GeneratorExecutionContext context)
-        {            
+        {
+            context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.RefitInternalNamespace", out var refitInternalNamespace);
+
+            refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
+
+            string attributeText = @$"
+using System;
+#pragma warning disable
+namespace {refitInternalNamespace}
+{{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [AttributeUsage (AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Event | AttributeTargets.Interface | AttributeTargets.Delegate)]
+    sealed class PreserveAttribute : Attribute
+    {{
+        //
+        // Fields
+        //
+        public bool AllMembers;
+
+        public bool Conditional;
+    }}
+}}
+#pragma warning restore
+";
+
+            // add the attribute text
+            context.AddSource("PreserveAttribute", SourceText.From(attributeText, Encoding.UTF8));
+
+            if (!(context.SyntaxReceiver is SyntaxReceiver receiver))
+                return;
+
+            // we're going to create a new compilation that contains the attribute.
+            // TODO: we should allow source generators to provide source during initialize, so that this step isn't required.
+            var options = (context.Compilation as CSharpCompilation).SyntaxTrees[0].Options as CSharpParseOptions;
+            var compilation = context.Compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(attributeText, Encoding.UTF8), options));
+
+            // get the newly bound attribute
+            var preserveAttributeSymbol = compilation.GetTypeByMetadataName($"{refitInternalNamespace}.PreserveAttribute");
+
+            // Get the type names of the attributes we're looking for
+            var httpMethodAttibutes = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.GetAttribute"));
+            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.HeadAttribute"));
+            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.PostAttribute"));
+            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.PutAttribute"));
+            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.DeleteAttribute"));
+            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.PatchAttribute"));
+            httpMethodAttibutes.Add(compilation.GetTypeByMetadataName("Refit.OptionsAttribute"));
+
+
+
+
+
+
+
+            var interfacesToGen = FindInterfacesToGenerate(context.Compilation, receiver.CandidateMethods, httpMethodAttibutes);
+
+
+
+
+
+
             var trees = context.Compilation.SyntaxTrees.Where(c => c is CSharpSyntaxTree).ToList();
+
+
 
             var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
 
-            context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.RefitInternalNamespace", out var refitInternalNamespace);
 
             var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate, refitInternalNamespace);
 
@@ -192,6 +282,8 @@ namespace Refit.Generator
 
             context.AddSource("Refit.GeneratedStubs.cs", text);
         }
+
+  
 
         public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList, string refitInternalNamespace = null)
         {
@@ -402,7 +494,26 @@ namespace Refit.Generator
             return identifier.ValueText;
         }
 
-        public void Initialize(GeneratorInitializationContext context) { /* No init required */ }
+        public void Initialize(GeneratorInitializationContext context)
+        {
+            context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
+        }
+
+        class SyntaxReceiver : ISyntaxReceiver
+        {
+            public List<MethodDeclarationSyntax> CandidateMethods { get; } = new();
+
+            public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
+            {
+                // We're looking for interfaces that have a method with an attribute
+                if(syntaxNode is MethodDeclarationSyntax methodDeclarationSyntax &&
+                   methodDeclarationSyntax.Parent is InterfaceDeclarationSyntax iface &&
+                   methodDeclarationSyntax.AttributeLists.Count > 0)
+                {
+                    CandidateMethods.Add(methodDeclarationSyntax);
+                }
+            }
+        }
     }
 
     public class UsingDeclaration
