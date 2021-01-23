@@ -7,22 +7,11 @@
     <AssemblyOriginatorKeyFile>..\buildtask.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <IsRoslynComponent>true</IsRoslynComponent>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
-    <PackageReference Include="Nustache" Version="1.16.0.10" GeneratePathProperty="true" PrivateAssets="all" />    
-  </ItemGroup>
-
-  <PropertyGroup>
-    <GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="GeneratedInterfaceStubTemplate.mustache">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
   </ItemGroup>
 
   <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">
@@ -30,12 +19,6 @@
       <Version>$(BuildVersion)</Version>
       <AssemblyVersion>$(BuildVersionSimple)</AssemblyVersion>
     </PropertyGroup>
-  </Target>
-
-  <Target Name="GetDependencyTargetPaths">
-    <ItemGroup>
-      <TargetPathWithTargetPlatformMoniker Include="$(PkgNustache)\lib\net20\Nustache.Core.dll" IncludeRuntimeDependency="false" />
-    </ItemGroup>
   </Target>
 
 </Project>

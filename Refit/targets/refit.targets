@@ -7,6 +7,16 @@
     Can be overriden by user in case of namespace clashes.
     -->
     <RefitInternalNamespace Condition=" '$(RefitInternalNamespace)' == '' ">$(RootNamespace)</RefitInternalNamespace>
+
+    <_RefitMSBuildMinVersion>16.8.0</_RefitMSBuildMinVersion>
+    
   </PropertyGroup>
 
+
+  <Target Name="_RefitMSBuildVersionCheck"
+          Condition=" '$([System.Version]::Parse($(_RefitMSBuildMinVersion)).CompareTo($([System.Version]::Parse($(MSBuildVersion)))))' &gt;= '0' "
+     BeforeTargets="ResolveAssemblyReferences;Build;Rebuild">
+    <Error
+        Text = "Projects using Refit cannot build using MSBuild '$(MSBuildVersion)'. MSBuild '$(_RefitMSBuildMinVersion)' or later is required." />
+  </Target>
 </Project>

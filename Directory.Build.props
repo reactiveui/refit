@@ -13,7 +13,7 @@
     <NoWarn>$(NoWarn);1701;1702;CS1591;NU1701</NoWarn>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Refit.ruleset</CodeAnalysisRuleSet>
-    <LangVersion>latest</LangVersion>
+    <LangVersion>preview</LangVersion>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)buildtask.snk</AssemblyOriginatorKeyFile>

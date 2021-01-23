@@ -26,16 +26,6 @@
           PackagePath="analyzers\cs\"
           Pack="true"
           Visible="false" />
-    
-    <None Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\Nustache.Core.dll"
-          PackagePath="analyzers\cs\"
-          Pack="true"
-          Visible="false" />
-    
-    <None Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\GeneratedInterfaceStubTemplate.mustache"
-          PackagePath="analyzers\cs\"
-          Pack="true"
-          Visible="false" />    
   </ItemGroup>
 
 </Project>
