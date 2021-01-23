@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
@@ -16,26 +14,24 @@ namespace Refit.Generator
     //   and make sure there's at least one Refit attribute on one
     // * Generate the data we need for the template based on interface method
     //   defn's
-    // * Get this into an EXE in tools, write a targets file to beforeBuild execute it
-    // * Get a props file that adds a dummy file to the project
-    // * Write an implementation of RestService that just takes the interface name to
-    //   guess the class name based on our template
-    //
-    // What if the Interface is in another module? (since we copy usings, should be fine)
+
     [Generator]
     public class InterfaceStubGenerator : ISourceGenerator
     {
-        static readonly HashSet<string> HttpMethodAttributeNames = new(
-            new[] { "Get", "Head", "Post", "Put", "Delete", "Patch", "Options" }
-                .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
-
+#pragma warning disable RS2008 // Enable analyzer release tracking
+        static readonly DiagnosticDescriptor InvalidRefitMember = new(
+                "RF001",
+                "Refit types must have Refit HTTP method attributes",
+                "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
+                "Refit",
+                DiagnosticSeverity.Warning,
+                true);
+#pragma warning restore RS2008 // Enable analyzer release tracking
 
         public void Execute(GeneratorExecutionContext context)
         {
             GenerateInterfaceStubs(context);            
-        }
-
-      
+        }      
 
         public void GenerateInterfaceStubs(GeneratorExecutionContext context)
         {
@@ -126,7 +122,6 @@ namespace {refitInternalNamespace}
             }
 
         }
-
 
         string ProcessInterface(INamedTypeSymbol interfaceSymbol,
                                 List<IMethodSymbol> refitMethods,
@@ -356,7 +351,7 @@ namespace {ns}
         {
             source.Append(@$"
 
-        /// <ineritdoc />
+        /// <inheritdoc />
         {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {methodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{methodSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(");
 
             if(methodSymbol.Parameters.Length > 0)
@@ -384,60 +379,6 @@ namespace {ns}
             return methodSymbol.GetAttributes().Any(ad => httpMethodAttibutes.Contains(ad.AttributeClass));
         }
 
-        static readonly DiagnosticDescriptor InvalidRefitMember = new(
-                "RF001",
-                "Refit types must have Refit HTTP method attributes",
-                "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
-                "Refit",
-                DiagnosticSeverity.Warning,
-                true);
-
-        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate, GeneratorExecutionContext context)
-        {
-            var missingAttributeWarnings = interfacesToGenerate
-                                           .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new
-                                           {
-                                               Interface = i,
-                                               Method = m
-                                           }))
-                                           .Where(x => !x.Method.Modifiers.Any(SyntaxKind.StaticKeyword)) // Don't warn on static methods, they should not have the attribute
-                                           .Where(x => !HasRefitHttpMethodAttribute(x.Method))
-                                           .Select(x => Diagnostic.Create(InvalidRefitMember, x.Method.GetLocation(), x.Interface.Identifier.ToString(), x.Method.Identifier.ToString()));
-
-
-            var diagnostics = missingAttributeWarnings;
-
-            foreach (var diagnostic in diagnostics)
-            {
-                context.ReportDiagnostic(diagnostic);
-            }
-        }
-
-        public bool HasRefitHttpMethodAttribute(MethodDeclarationSyntax method)
-        {
-            // We could also verify that the single argument is a string,
-            // but what if somebody is dumb and uses a constant?
-            // Could be turtles all the way down.
-            return method.AttributeLists.SelectMany(a => a.Attributes)
-                         .Any(a => HttpMethodAttributeNames.Contains(a.Name.ToString().Split('.').Last()) &&
-                                   a.ArgumentList.Arguments.Count == 1 &&
-                                   a.ArgumentList.Arguments[0].Expression.Kind() == SyntaxKind.StringLiteralExpression);
-        }
-
-        string GetInterfaceName(SyntaxToken identifier)
-        {
-            if (identifier == null) return "";
-            var interfaceParent = identifier.Parent != null ? identifier.Parent.Parent : identifier.Parent;
-
-            if ((interfaceParent as ClassDeclarationSyntax) != null)
-            {
-                var classParent = (interfaceParent as ClassDeclarationSyntax).Identifier;
-                return classParent + "." + identifier.ValueText;
-            }
-
-            return identifier.ValueText;
-        }
-
         public void Initialize(GeneratorInitializationContext context)
         {
             context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
@@ -449,7 +390,7 @@ namespace {ns}
 
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {
-                // We're looking for interfaces that have a method with an attribute
+                // We're looking for methods with an attribute that are in an interfaces 
                 if(syntaxNode is MethodDeclarationSyntax methodDeclarationSyntax &&
                    methodDeclarationSyntax.Parent is InterfaceDeclarationSyntax &&
                    methodDeclarationSyntax.AttributeLists.Count > 0)
@@ -457,7 +398,6 @@ namespace {ns}
                     CandidateMethods.Add(methodDeclarationSyntax);
                 }
             }
-        }    }
-
-
+        }
+    }
 }
