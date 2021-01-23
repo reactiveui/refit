@@ -315,9 +315,15 @@ namespace {refitInternalNamespace}
             var source = new StringBuilder($@"
 #pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
 #pragma warning disable CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
+");
 
+            if(interfaceSymbol.ContainingNamespace != null && !interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
+            {
+                source.Append(@$"
 namespace {ns}
-{{
+{{");
+            }
+            source.Append(@$"
     /// <inheritdoc />
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.Diagnostics.DebuggerNonUserCode]
@@ -394,7 +400,16 @@ namespace {ns}
 
             source.Append(@"
     }
-}
+");
+            if(interfaceSymbol.ContainingNamespace != null && !interfaceSymbol.ContainingNamespace.IsGlobalNamespace)
+            {
+                source.Append(@"
+
+}");
+            }
+
+            source.Append(@"
+
 #pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
 #pragma warning restore CS8669 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. Auto-generated code requires an explicit '#nullable' directive in source.
 ");
