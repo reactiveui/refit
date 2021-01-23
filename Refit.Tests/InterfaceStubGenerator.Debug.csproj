@@ -1,0 +1,7 @@
+﻿<Project Sdk="Kittitas.SDK/0.0.5-alpha">
+
+  <ItemGroup>
+    <LaunchProject Include="Refit.Tests.csproj" />
+  </ItemGroup>
+
+</Project>

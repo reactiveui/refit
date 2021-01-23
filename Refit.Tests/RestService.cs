@@ -166,7 +166,7 @@ namespace Refit.Tests
         [Get("")]
         Task Get();
 
-#if NETCOREAPP3_1
+#if NETCOREAPP3_1_OR_GREATER
         public static IRefitInterfaceWithStaticMethod Create()
         {
             // This is a C# 8 factory method
@@ -272,7 +272,7 @@ namespace Refit.Tests
 
     public class RestServiceIntegrationTests
     {
-#if NETCOREAPP3_1
+#if NETCOREAPP3_1_OR_GREATER
         [Fact]
         public void CanCreateInstanceUsingStaticMethod()
         {

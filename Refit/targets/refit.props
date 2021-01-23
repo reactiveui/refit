@@ -1,0 +1,7 @@
+<Project>
+
+  <ItemGroup>
+    <CompilerVisibleProperty Include="RefitInternalNamespace" />
+  </ItemGroup>
+
+</Project>

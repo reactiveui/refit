@@ -23,31 +23,18 @@ namespace Refit.Generator
     //   guess the class name based on our template
     //
     // What if the Interface is in another module? (since we copy usings, should be fine)
-    public class InterfaceStubGenerator
+    [Generator]
+    public class InterfaceStubGenerator : ISourceGenerator
     {
         static readonly HashSet<string> HttpMethodAttributeNames = new(
             new[] { "Get", "Head", "Post", "Put", "Delete", "Patch", "Options" }
                 .SelectMany(x => new[] { "{0}", "{0}Attribute" }.Select(f => string.Format(f, x))));
 
-        public InterfaceStubGenerator() : this(null, null) { }
 
-        public InterfaceStubGenerator(Action<string> logWarning) : this(null, logWarning) { }
-
-        public InterfaceStubGenerator(string refitInternalNamespace) : this(refitInternalNamespace, null) { }
-
-        public InterfaceStubGenerator(string refitInternalNamespace, Action<string> logWarning)
+        public void Execute(GeneratorExecutionContext context)
         {
-            Log = logWarning;
-
-            if (!string.IsNullOrWhiteSpace(refitInternalNamespace))
-            {
-                RefitInternalNamespace = $"{refitInternalNamespace.Trim().TrimEnd('.')}.";
-            }
+            GenerateInterfaceStubs(context);            
         }
-
-        public string RefitInternalNamespace { get; }
-
-        public Action<string> Log { get; }
 
         public static string ExtractTemplateSource()
         {
@@ -146,6 +133,7 @@ namespace Refit.Generator
 
             ret.MethodList = interfaceTree.Members
                                           .OfType<MethodDeclarationSyntax>()
+                                          .Where(mti => !mti.Modifiers.Any(SyntaxKind.StaticKeyword)) // Generated methods can't be static on the interface
                                           .Select(x =>
                                           {
                                               var mti = new MethodTemplateInfo
@@ -187,28 +175,31 @@ namespace Refit.Generator
             return ret;
         }
 
-        public string GenerateInterfaceStubs(string[] paths)
-        {
-            var trees = paths.Select(x => CSharpSyntaxTree.ParseText(File.ReadAllText(x))).ToList();
+        public void GenerateInterfaceStubs(GeneratorExecutionContext context)
+        {            
+            var trees = context.Compilation.SyntaxTrees.Where(c => c is CSharpSyntaxTree).ToList();
 
             var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
 
-            var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate);
+            context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.RefitInternalNamespace", out var refitInternalNamespace);
 
-            GenerateWarnings(interfacesToGenerate);
+            var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate, refitInternalNamespace);
+
+            GenerateWarnings(interfacesToGenerate, context);
 
             Encoders.HtmlEncode = s => s;
             var text = Render.StringToString(ExtractTemplateSource(), templateInfo);
-            return text;
+
+            context.AddSource("Refit.GeneratedStubs.cs", text);
         }
 
-        public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList)
+        public TemplateInformation GenerateTemplateInfoForInterfaceList(List<InterfaceDeclarationSyntax> interfaceList, string refitInternalNamespace = null)
         {
             interfaceList = interfaceList.OrderBy(i => i.Identifier.Text).ToList();
 
             var ret = new TemplateInformation
             {
-                RefitInternalNamespace = RefitInternalNamespace ?? string.Empty,
+                RefitInternalNamespace = refitInternalNamespace ?? string.Empty,
                 ClassList = interfaceList.Select(GenerateClassInfoForInterface).ToList(),
             };
 
@@ -357,7 +348,15 @@ namespace Refit.Generator
             }
         }
 
-        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate)
+        static readonly DiagnosticDescriptor InvalidRefitMember = new DiagnosticDescriptor(
+                "RF001",
+                "Refit types must have Refit HTTP method attributes",
+                "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
+                "Refit",
+                DiagnosticSeverity.Warning,
+                true);
+
+        public void GenerateWarnings(List<InterfaceDeclarationSyntax> interfacesToGenerate, GeneratorExecutionContext context)
         {
             var missingAttributeWarnings = interfacesToGenerate
                                            .SelectMany(i => i.Members.OfType<MethodDeclarationSyntax>().Select(m => new
@@ -365,15 +364,16 @@ namespace Refit.Generator
                                                Interface = i,
                                                Method = m
                                            }))
+                                           .Where(x => !x.Method.Modifiers.Any(SyntaxKind.StaticKeyword)) // Don't warn on static methods, they should not have the attribute
                                            .Where(x => !HasRefitHttpMethodAttribute(x.Method))
-                                           .Select(x => new MissingRefitAttributeWarning(x.Interface, x.Method));
+                                           .Select(x => Diagnostic.Create(InvalidRefitMember, x.Method.GetLocation(), x.Interface.Identifier.ToString(), x.Method.Identifier.ToString()));
 
 
             var diagnostics = missingAttributeWarnings;
 
             foreach (var diagnostic in diagnostics)
             {
-                Log?.Invoke(diagnostic.ToString());
+                context.ReportDiagnostic(diagnostic);
             }
         }
 
@@ -401,6 +401,8 @@ namespace Refit.Generator
 
             return identifier.ValueText;
         }
+
+        public void Initialize(GeneratorInitializationContext context) { /* No init required */ }
     }
 
     public class UsingDeclaration
