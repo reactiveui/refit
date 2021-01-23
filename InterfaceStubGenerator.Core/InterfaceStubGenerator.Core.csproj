@@ -7,7 +7,7 @@
     <AssemblyOriginatorKeyFile>..\buildtask.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <IsRoslynComponent>true</IsRoslynComponent>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>

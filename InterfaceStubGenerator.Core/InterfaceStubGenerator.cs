@@ -26,6 +26,14 @@ namespace Refit.Generator
                 "Refit",
                 DiagnosticSeverity.Warning,
                 true);
+
+        static readonly DiagnosticDescriptor RefitNotReferenced = new(
+                "RF002",
+                "Refit must be referenced",
+                "Refit is not referenced. Add a reference to Refit.",
+                "Refit",
+                DiagnosticSeverity.Error,
+                true);
 #pragma warning restore RS2008 // Enable analyzer release tracking
 
         public void Execute(GeneratorExecutionContext context)
@@ -67,36 +75,31 @@ namespace {refitInternalNamespace}
 
             // we're going to create a new compilation that contains the attribute.
             // TODO: we should allow source generators to provide source during initialize, so that this step isn't required.
-            var options = (context.Compilation as CSharpCompilation).SyntaxTrees[0].Options as CSharpParseOptions;
+            var options = (context.Compilation as CSharpCompilation)!.SyntaxTrees[0].Options as CSharpParseOptions;
             var compilation = context.Compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(attributeText, Encoding.UTF8), options));
 
             // get the newly bound attribute
-            var preserveAttributeSymbol = compilation.GetTypeByMetadataName($"{refitInternalNamespace}.PreserveAttribute");
-            var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable");
+            var preserveAttributeSymbol = compilation.GetTypeByMetadataName($"{refitInternalNamespace}.PreserveAttribute")!;
+            var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable")!;
+            var httpMethodBaseAttributeSymbol = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute");
 
-            // Get the type names of the attributes we're looking for
-            var httpMethodAttibutes = new HashSet<ISymbol>(SymbolEqualityComparer.Default)
+            if(httpMethodBaseAttributeSymbol == null)
             {
-                compilation.GetTypeByMetadataName("Refit.GetAttribute"),
-                compilation.GetTypeByMetadataName("Refit.HeadAttribute"),
-                compilation.GetTypeByMetadataName("Refit.PostAttribute"),
-                compilation.GetTypeByMetadataName("Refit.PutAttribute"),
-                compilation.GetTypeByMetadataName("Refit.DeleteAttribute"),
-                compilation.GetTypeByMetadataName("Refit.PatchAttribute"),
-                compilation.GetTypeByMetadataName("Refit.OptionsAttribute")
-            };
+                context.ReportDiagnostic(Diagnostic.Create(RefitNotReferenced, null));
+                return;
+            }
 
             // Check the candidates and keep the ones we're actually interested in
             var methodSymbols = new List<IMethodSymbol>();
             foreach (var method in receiver.CandidateMethods)
             {
                 var model = compilation.GetSemanticModel(method.SyntaxTree);
-
+                
                 // Get the symbol being declared by the method
                 var methodSymbol = model.GetDeclaredSymbol(method);
-                if (IsRefitMethod(methodSymbol, httpMethodAttibutes))
+                if (IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
                 {
-                    methodSymbols.Add(methodSymbol);
+                    methodSymbols.Add(methodSymbol!);
                 }
             }
 
@@ -109,7 +112,7 @@ namespace {refitInternalNamespace}
                 // with a refit attribute on them. Types may contain other members, without the attribute, which we'll
                 // need to check for and error out on
 
-                var classSource = ProcessInterface(group.Key, group.ToList(), preserveAttributeSymbol, disposableInterfaceSymbol, httpMethodAttibutes, context);
+                var classSource = ProcessInterface(group.Key, group.ToList(), preserveAttributeSymbol, disposableInterfaceSymbol, httpMethodBaseAttributeSymbol, context);
              
                 var keyName = group.Key.Name;
                 if(keyCount.TryGetValue(keyName, out var value))
@@ -127,7 +130,7 @@ namespace {refitInternalNamespace}
                                 List<IMethodSymbol> refitMethods,
                                 ISymbol preserveAttributeSymbol,
                                 ISymbol disposableInterfaceSymbol,
-                                HashSet<ISymbol> httpMethodAttributeSymbols,
+                                INamedTypeSymbol httpMethodBaseAttributeSymbol,
                                 GeneratorExecutionContext context)
         {
 
@@ -193,7 +196,7 @@ namespace {ns}
             }
 
             // Pull out the refit methods from the derived types
-            var derivedRefitMethods = derivedMethods.Where(m => IsRefitMethod(m, httpMethodAttributeSymbols)).ToList();
+            var derivedRefitMethods = derivedMethods.Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol)).ToList();
             var derivedNonRefitMethods = derivedMethods.Except(derivedMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToList();
 
             // Handle Refit Methods            
@@ -367,9 +370,9 @@ namespace {ns}
         void WriteMethodClosing(StringBuilder source) => source.Append(@"        }");
 
 
-        bool IsRefitMethod(IMethodSymbol methodSymbol, HashSet<ISymbol> httpMethodAttibutes)
+        bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttibute)
         {
-            return methodSymbol.GetAttributes().Any(ad => httpMethodAttibutes.Contains(ad.AttributeClass));
+            return methodSymbol?.GetAttributes().Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttibute) == true) == true;
         }
 
         public void Initialize(GeneratorInitializationContext context)
