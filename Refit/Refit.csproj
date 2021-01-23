@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup Label="Package">        
-    <None Include="targets\refit.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true" />        
-    <None Include="targets\refit.props" PackagePath="buildTransitive\netstandard2.0" Pack="true" />
+    <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true" />        
+    <None Include="targets\refit.props" PackagePath="build\netstandard2.0" Pack="true" />
 
     <None Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\InterfaceStubGenerator.Core.dll"
           PackagePath="analyzers\cs\"
