@@ -205,10 +205,14 @@ namespace {ns}
                 ProcessRefitMethod(source, method);
             }
 
-            // Handle non-refit Methods that aren't static or properties
+            // Handle non-refit Methods that aren't static or properties or have a method body
             foreach(var method in nonRefitMethods.Concat(derivedNonRefitMethods))
             {
-                if (method.IsStatic || method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet)
+                if (method.IsStatic ||
+                    method.MethodKind == MethodKind.PropertyGet ||
+                    method.MethodKind == MethodKind.PropertySet ||
+                    (method.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is MethodDeclarationSyntax methodSyntax && methodSyntax.Body is not null)
+                    )
                     continue;
 
                 ProcessNonRefitMethod(source, method, context);
