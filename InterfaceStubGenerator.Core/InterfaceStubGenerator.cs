@@ -10,8 +10,6 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-using Nustache.Core;
-
 namespace Refit.Generator
 {
     // * Search for all Interfaces, find the method definitions
@@ -36,46 +34,6 @@ namespace Refit.Generator
         {
             GenerateInterfaceStubs(context);            
         }
-
-        public static string ExtractTemplateSource()
-        {
-            var ourPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "GeneratedInterfaceStubTemplate.mustache");
-
-            // Try to return a flat file from the same directory, if it doesn't
-            // exist, use the built-in resource version
-            if (File.Exists(ourPath))
-            {
-                return File.ReadAllText(ourPath, Encoding.UTF8);
-            }
-
-            using var src = typeof(InterfaceStubGenerator).Assembly.GetManifestResourceStream("Refit.Generator.GeneratedInterfaceStubTemplate.mustache");
-            var ms = new MemoryStream();
-            src.CopyTo(ms);
-            return Encoding.UTF8.GetString(ms.ToArray());
-        }
-               
-
-        public List<InterfaceDeclarationSyntax> FindInterfacesToGenerate(SyntaxTree tree)
-        {
-            var nodes = tree.GetRoot().DescendantNodes().ToList();
-
-            // Make sure this file imports Refit. If not, we're not going to
-            // find any Refit interfaces
-            // NB: This falls down in the tests unless we add an explicit "using Refit;",
-            // but we can rely on this being there in any other file
-            if (nodes.OfType<UsingDirectiveSyntax>().All(u => u.Name.ToFullString() != "Refit"))
-                return new List<InterfaceDeclarationSyntax>();
-
-            var list = nodes.OfType<InterfaceDeclarationSyntax>();
-
-            return list
-                .Where(i => i.DescendantsAndSelf(a => a.BaseList?.Types.Select(b => b.GetSimpleName())
-                    .Where(b => b != null).Select(b => b.GetInterfaceDeclaration(list)))
-                    .Any(b => b.Members.OfType<MethodDeclarationSyntax>().Any(HasRefitHttpMethodAttribute)))
-                .ToList();
-        }
-
-
 
         public ClassTemplateInfo GenerateClassInfoForInterface(InterfaceDeclarationSyntax interfaceTree)
         {
@@ -185,7 +143,7 @@ namespace Refit.Generator
 
             refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
 
-            string attributeText = @$"
+            var attributeText = @$"
 using System;
 #pragma warning disable
 namespace {refitInternalNamespace}
@@ -208,7 +166,7 @@ namespace {refitInternalNamespace}
             // add the attribute text
             context.AddSource("PreserveAttribute", SourceText.From(attributeText, Encoding.UTF8));
 
-            if (!(context.SyntaxReceiver is SyntaxReceiver receiver))
+            if (context.SyntaxReceiver is not SyntaxReceiver receiver)
                 return;
 
             // we're going to create a new compilation that contains the attribute.
@@ -267,22 +225,6 @@ namespace {refitInternalNamespace}
                 context.AddSource($"{keyName}_refit.cs", SourceText.From(classSource, Encoding.UTF8));
             }
 
-
-            ///var trees = context.Compilation.SyntaxTrees.Where(c => c is CSharpSyntaxTree).ToList();
-
-
-
-            //var interfacesToGenerate = trees.SelectMany(FindInterfacesToGenerate).ToList();
-
-
-            //var templateInfo = GenerateTemplateInfoForInterfaceList(interfacesToGenerate, refitInternalNamespace);
-
-          //  GenerateWarnings(interfacesToGenerate, context);
-
-            //Encoders.HtmlEncode = s => s;
-            //var text = Render.StringToString(ExtractTemplateSource(), templateInfo);
-
-            //context.AddSource("Refit.GeneratedStubs.cs", text);
         }
 
 
@@ -293,11 +235,6 @@ namespace {refitInternalNamespace}
                                 HashSet<ISymbol> httpMethodAttributeSymbols,
                                 GeneratorExecutionContext context)
         {
-            //var parent = interfaceSymbol.ContainingSymbol;
-            //while(parent != null && !(parent is INamespaceSymbol))
-            //{
-            //    parent = parent.ContainingSymbol;
-            //}
 
             var classSuffix = $"{interfaceSymbol.ContainingType?.Name}{interfaceSymbol.Name}";
             
@@ -363,16 +300,10 @@ namespace {ns}
             var derivedRefitMethods = derivedMethods.Where(m => IsRefitMethod(m, httpMethodAttributeSymbols)).ToList();
             var derivedNonRefitMethods = derivedMethods.Except(derivedMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToList();
 
-            // Handle Refit Methods
-            var anyMethodsHaveNullableAgs = false;
-
+            // Handle Refit Methods            
             foreach(var method in refitMethods.Concat(derivedRefitMethods))
             {
-                ProcessRefitMethod(source, method, out var anyNullable);
-                if(anyNullable)
-                {
-                    anyMethodsHaveNullableAgs = true;
-                }
+                ProcessRefitMethod(source, method);
             }
 
             // Handle non-refit Methods that aren't static or properties
@@ -388,15 +319,7 @@ namespace {ns}
             if(disposeMethod != null)
             {
                 ProcessDisposableMethod(source, disposeMethod);
-            }
-
-            // If any types have nullable arguments
-            if(anyMethodsHaveNullableAgs)
-            {
-                source.Append(@"
-        private static Type ToNullable(Type type) => !type.IsValueType ? type : typeof(Nullable<>).MakeGenericType(type);
-");
-            }
+            }          
 
             source.Append(@"
     }
@@ -416,12 +339,38 @@ namespace {ns}
             return source.ToString();
         }
 
-        void ProcessRefitMethod(StringBuilder source, IMethodSymbol methodSymbol, out bool anyMethodsAreNullable)
+        void ProcessRefitMethod(StringBuilder source, IMethodSymbol methodSymbol)
         {
-            anyMethodsAreNullable = false;
             WriteMethodOpening(source, methodSymbol);
 
-            source.Append("     throw new System.NotImplementedException();");
+            // Build the list of args for the array
+            var argList = new List<string>();
+            foreach(var param in methodSymbol.Parameters)
+            {
+                argList.Add($"@{param.MetadataName}");
+            }
+
+            // List of types. For nullable one, wrap in ToNullable()
+            var typeList = new List<string>();
+            foreach(var param in methodSymbol.Parameters)
+            {
+                typeList.Add($"typeof({param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})");                
+            }
+
+            // List of generic arguments
+            var genericList = new List<string>();            
+            foreach(var typeParam in methodSymbol.TypeParameters)
+            {
+                genericList.Add($"typeof({typeParam.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})");
+            }
+
+            var genericString = genericList.Count > 0 ? $", new global::System.Type[] {{ {string.Join(", ", genericList)} }}" : string.Empty;            
+
+            source.Append(@$"
+            var arguments = new object[] {{ {string.Join(", ", argList)} }};
+            var func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", new global::System.Type[] {{ {string.Join(", ", typeList)} }}{genericString} );
+            return ({methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})func(Client, arguments);
+");
 
             WriteMethodClosing(source);
         }
@@ -491,7 +440,7 @@ namespace {ns}
             WriteMethodOpening(source, methodSymbol);
 
             source.Append(@"
-                throw new NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");
+                throw new global::System.NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");
 ");
 
             WriteMethodClosing(source);
@@ -510,8 +459,19 @@ namespace {ns}
         /// <ineritdoc />
         {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {methodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{methodSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(");
 
-            source.Append(string.Join(", ", methodSymbol.Parameters.Select(p => $"{p.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} @{p.MetadataName}")));
+            if(methodSymbol.Parameters.Length > 0)
+            {
+                var list = new List<string>();
+                foreach(var param in methodSymbol.Parameters)
+                {
+                    var annotation = !param.Type.IsValueType && param.NullableAnnotation == NullableAnnotation.Annotated;
 
+                    list.Add($@"{param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}{(annotation ? '?' : string.Empty)} @{param.MetadataName}");
+                }
+
+                source.Append(string.Join(", ", list));
+            }
+            
            source.Append(@")
         {");
         }
@@ -679,7 +639,7 @@ namespace {ns}
             }
         }
 
-        static readonly DiagnosticDescriptor InvalidRefitMember = new DiagnosticDescriptor(
+        static readonly DiagnosticDescriptor InvalidRefitMember = new(
                 "RF001",
                 "Refit types must have Refit HTTP method attributes",
                 "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
@@ -746,7 +706,7 @@ namespace {ns}
             {
                 // We're looking for interfaces that have a method with an attribute
                 if(syntaxNode is MethodDeclarationSyntax methodDeclarationSyntax &&
-                   methodDeclarationSyntax.Parent is InterfaceDeclarationSyntax iface &&
+                   methodDeclarationSyntax.Parent is InterfaceDeclarationSyntax &&
                    methodDeclarationSyntax.AttributeLists.Count > 0)
                 {
                     CandidateMethods.Add(methodDeclarationSyntax);

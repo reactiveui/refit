@@ -57,18 +57,20 @@ namespace Refit.Tests
             var input = IntegrationTestHelper.GetPath("GitHubApi.cs");
             var fixture = new InterfaceStubGenerator();
 
-            var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
-            Assert.Equal(3, result.Count);
-            Assert.Contains(result, x => x.Identifier.ValueText == "IGitHubApi");
+            //var result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
+            //Assert.Equal(3, result.Count);
+            //Assert.Contains(result, x => x.Identifier.ValueText == "IGitHubApi");
 
-            input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
+            //input = IntegrationTestHelper.GetPath("InterfaceStubGenerator.cs");
 
-            result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
-            Assert.Equal(3, result.Count);
-            Assert.Contains(result, x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe");
-            Assert.Contains(result, x => x.Identifier.ValueText == "IBoringCrudApi");
-            Assert.Contains(result, x => x.Identifier.ValueText == "INonGenericInterfaceWithGenericMethod");
-            Assert.True(result.All(x => x.Identifier.ValueText != "IAmNotARefitInterface"));
+            //result = fixture.FindInterfacesToGenerate(CSharpSyntaxTree.ParseText(File.ReadAllText(input)));
+            //Assert.Equal(3, result.Count);
+            //Assert.Contains(result, x => x.Identifier.ValueText == "IAmARefitInterfaceButNobodyUsesMe");
+            //Assert.Contains(result, x => x.Identifier.ValueText == "IBoringCrudApi");
+            //Assert.Contains(result, x => x.Identifier.ValueText == "INonGenericInterfaceWithGenericMethod");
+            //Assert.True(result.All(x => x.Identifier.ValueText != "IAmNotARefitInterface"));
+
+            Assert.False(true);
         }
 
         [Fact]
@@ -320,7 +322,7 @@ namespace Refit.Tests
 
             var generated = runResult.Results[0];
 
-            var result = generated.GeneratedSources.First().SourceText.ToString();
+            var result = generated.GeneratedSources.Last().SourceText.ToString();
 
             Assert.Contains("IServiceWithoutNamespace", result);
         }
