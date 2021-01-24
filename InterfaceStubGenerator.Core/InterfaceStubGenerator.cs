@@ -102,18 +102,47 @@ namespace {refitInternalNamespace}
                 {
                     methodSymbols.Add(methodSymbol!);
                 }
+            }            
+
+            var interfaces = methodSymbols.GroupBy(m => m.ContainingType).ToDictionary(g => g.Key, v => v.ToList());
+
+            // Look through the candidate interfaces
+            var interfaceSymbols = new List<INamedTypeSymbol>();
+            foreach(var iface in receiver.CandidateInterfaces)
+            {
+                var model = compilation.GetSemanticModel(iface.SyntaxTree);
+
+                // get the symbol belonging to the interface
+                var ifaceSymbol = model.GetDeclaredSymbol(iface);
+
+                // See if we already know about it, might be a dup
+                if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
+                    continue;
+
+                // The interface has no refit methods, but its base interfaces might
+                var hasDerivedRefit = ifaceSymbol.AllInterfaces
+                                                 .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
+                                                 .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
+                                                 .Any();
+
+                if(hasDerivedRefit)
+                {
+                    // Add the interface to the generation list with an empty set of methods
+                    // The logic already looks for base refit methods
+                    interfaces.Add(ifaceSymbol, new List<IMethodSymbol>());
+                }
             }
 
             var keyCount = new Dictionary<string, int>();
 
             // group the fields by interface and generate the source
-            foreach (var group in methodSymbols.GroupBy(m => m.ContainingType))
+            foreach (var group in interfaces)
             {
                 // each group is keyed by the Interface INamedTypeSymbol and contains the members
                 // with a refit attribute on them. Types may contain other members, without the attribute, which we'll
                 // need to check for and error out on
 
-                var classSource = ProcessInterface(group.Key, group.ToList(), preserveAttributeSymbol, disposableInterfaceSymbol, httpMethodBaseAttributeSymbol, context);
+                var classSource = ProcessInterface(group.Key, group.Value, preserveAttributeSymbol, disposableInterfaceSymbol, httpMethodBaseAttributeSymbol, context);
              
                 var keyName = group.Key.Name;
                 if(keyCount.TryGetValue(keyName, out var value))
@@ -123,7 +152,7 @@ namespace {refitInternalNamespace}
                 keyCount[keyName] = value;
 
                 context.AddSource($"{keyName}_refit.cs", SourceText.From(classSource, Encoding.UTF8));
-            }
+            }           
 
         }
 
@@ -390,6 +419,8 @@ namespace {ns}
         {
             public List<MethodDeclarationSyntax> CandidateMethods { get; } = new();
 
+            public List<InterfaceDeclarationSyntax> CandidateInterfaces { get; } = new();
+
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {
                 // We're looking for methods with an attribute that are in an interfaces 
@@ -398,6 +429,13 @@ namespace {ns}
                    methodDeclarationSyntax.AttributeLists.Count > 0)
                 {
                     CandidateMethods.Add(methodDeclarationSyntax);
+                }
+
+                // We also look for interfaces that derive from others, so we can see if any base methods contain
+                // Refit methods
+                if(syntaxNode is InterfaceDeclarationSyntax iface && iface.BaseList is not null)
+                {
+                    CandidateInterfaces.Add(iface);
                 }
             }
         }

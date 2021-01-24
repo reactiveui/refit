@@ -1685,6 +1685,31 @@ namespace Refit.Tests
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
+
+        [Fact]
+        public async Task InheritedInterfaceWithOnlyBaseMethodsTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            var fixture = RestService.For<IContainAandB>("https://httpbin.org", settings);
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get").Respond("application/json", nameof(IAmInterfaceA.Ping));
+            var resp = await fixture.Ping();
+            Assert.Equal(nameof(IAmInterfaceA.Ping), resp);
+            mockHttp.VerifyNoOutstandingExpectation();
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", nameof(IAmInterfaceB.Pong));
+            resp = await fixture.Pong();
+            Assert.Equal(nameof(IAmInterfaceB.Pong), resp);
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
         [Fact]
         public async Task DictionaryDynamicQueryparametersTest()
         {
