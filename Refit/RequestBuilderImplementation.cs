@@ -621,6 +621,7 @@ namespace Refit
                     if (restMethod.AuthorizeParameterInfo != null && restMethod.AuthorizeParameterInfo.Item2 == i)
                     {
                         headersToAdd["Authorization"] = $"{restMethod.AuthorizeParameterInfo.Item1} {param}";
+                        isParameterMappedToRequest = true;
                     }
 
                     //if property, add to populate into HttpRequestMessage.Properties

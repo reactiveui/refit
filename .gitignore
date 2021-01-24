@@ -91,3 +91,4 @@ Refit-Tests/test-results
 /InterfaceStubGenerator.App/Properties/launchSettings.json
 *.binlog
 /InterfaceStubGenerator.Core/Properties/launchSettings.json
+*.svclog
