@@ -47,6 +47,11 @@ namespace Refit.Tests
         [Get("/get-requiring-using")]
         Task<ResponseModel> Get(List<Guid> guids);
     }
+
+    public interface IContainAandB : IAmInterfaceB, IAmInterfaceA
+    {
+
+    }
 }
 
 namespace Refit.Tests.SeparateNamespaceWithModel
