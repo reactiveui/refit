@@ -65,7 +65,6 @@ services.AddRefitClient<IGitHubApi>("https://api.github.com");
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
 * [Handling exceptions](#handling-exceptions)
-* [MSBuild configuration](#msbuild-configuration)
 
 ### Where does this work?
 
@@ -1104,7 +1103,3 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
         ExceptionFactory = httpResponse => nullTask;
     });
 ```
-
-### MSBuild configuration
-
-- `RefitDisableGenerateRefitStubs`: This property allows for other Roslyn-based source generators to disable the Refit's stubs generation during they own generation phase.
