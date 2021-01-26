@@ -712,7 +712,7 @@ namespace Refit
 
                 foreach (var property in propertiesToAdd)
                 {
-#if NET5_0
+#if NET5_0_OR_GREATER
                     ret.Options.Set(new HttpRequestOptionsKey<object?>(property.Key), property.Value);
 #else
                     ret.Properties[property.Key] = property.Value;

@@ -307,7 +307,7 @@ namespace Refit.Tests
                 {
                     Assert.Equal(someHeader, message.Headers.Authorization.ToString());
 
-#if NET5_0
+#if NET5_0_OR_GREATER
                     Assert.Single(message.Options);
                     Assert.Equal(someProperty, ((IDictionary<string, object>)message.Options)["SomeProperty"]);
 #endif

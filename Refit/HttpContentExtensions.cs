@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
-#if !NET5_0
+#if !NET5_0_OR_GREATER
     static class HttpContentExtensions
     {
 #pragma warning disable IDE0079 // Remove unnecessary suppression
