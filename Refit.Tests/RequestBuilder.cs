@@ -1815,6 +1815,26 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void InterfaceTypeShouldBeInProperties()
+        {
+            var someProperty = new object();
+            var fixture = new RequestBuilderImplementation<IContainAandB>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] {  });
+
+#if NET5_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            Assert.Equal(typeof(IContainAandB), ((IDictionary<string, object>)output.Options)[HttpRequestMessageOptions.InterfaceType]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            Assert.Equal(typeof(IContainAandB), output.Properties[HttpRequestMessageOptions.InterfaceType]);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+        }
+
+        [Fact]
         public void DynamicRequestPropertiesWithDefaultKeysShouldBeInProperties()
         {
             var someProperty = new object();
