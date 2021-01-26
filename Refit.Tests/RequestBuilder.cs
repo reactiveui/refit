@@ -1867,12 +1867,12 @@ namespace Refit.Tests
 
 
 #if NET5_0_OR_GREATER
-            Assert.Single(output.Options);
+            Assert.Equal(2, output.Options.Count());
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
-            Assert.Single(output.Properties);
+            Assert.Equal(2, output.Properties.Count);
             Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
 #pragma warning restore CS0618 // Type or member is obsolete
         }
