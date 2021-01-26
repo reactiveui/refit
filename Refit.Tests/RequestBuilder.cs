@@ -1831,7 +1831,7 @@ namespace Refit.Tests
             Assert.NotEmpty(output.Properties);
             Assert.Equal(typeof(IContainAandB), output.Properties[HttpRequestMessageOptions.InterfaceType]);
 #pragma warning restore CS0618 // Type or member is obsolete
-
+           
         }
 
         [Fact]

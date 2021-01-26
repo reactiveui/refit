@@ -57,6 +57,7 @@ services.AddRefitClient<IGitHubApi>("https://api.github.com");
   * [Removing headers](#removing-headers)
 * [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
   * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
+  * [Target Interface type](#target-interface-type)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -777,6 +778,54 @@ Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and R
 Because Refit supports `HttpClientFactory` it is possible to configure Polly policies on your HttpClient.
 If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PollyExecutionContext")] Polly.Context context`
 as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PollyExecutionContext` and is of type `Polly.Context`
+
+#### Target Interface Type
+
+There may be times when you want to know what the target interface type is of the Refit instance. An example is where you
+have a derived interface that implements a common base like this:
+
+```csharp
+public interface IGetAPI<TEntity> 
+{
+    [Get("/{key}")]
+    Task<TEntity> Get(long key);
+}
+
+public interface IUsersAPI : IGetAPI<User> 
+{
+}
+
+public interface IOrdersAPI : IGetAPI<Order> 
+{
+}
+```
+
+You can access the concrete type of the interface for use in a handler, such as to alter the URL of the request:
+
+[//]: # ({% raw %})
+```csharp
+class RequestPropertyHandler : DelegatingHandler
+{
+    public RequestPropertyHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // Get the type of the target interface
+        Type interfaceType = (Type)request.Properties[HttpMessageRequestOptions.InterfaceType];
+
+        var builder = new UriBuilder(request.RequestUri);
+        // Alter the Path in some way based on the interface or an attribute on it
+        builder.Path = $"/{interfaceType.Name}{builder.Path}";
+        // Set the new Uri on the outgoing message
+        request.RequestUri = builder.Uri;
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+[//]: # ({% endraw %})
+
+Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
 
 ### Multipart uploads
 
