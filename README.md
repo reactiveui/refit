@@ -32,7 +32,9 @@ var octocat = await gitHubApi.GetUser("octocat");
 ```
 .NET Core supports registering via HttpClientFactory
 ```csharp
-services.AddRefitClient<IGitHubApi>("https://api.github.com");
+services
+    .AddRefitClient<IGitHubApi>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
 ```
 
 #Table of Contents
