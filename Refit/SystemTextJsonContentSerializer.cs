@@ -98,7 +98,7 @@ namespace Refit
 
             try
             {
-#if NET5_0
+#if NET5_0_OR_GREATER
                 var utf8Length = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
 #else
                 var utf8Length = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);

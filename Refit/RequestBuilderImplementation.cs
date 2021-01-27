@@ -712,12 +712,21 @@ namespace Refit
 
                 foreach (var property in propertiesToAdd)
                 {
-#if NET5_0
+#if NET5_0_OR_GREATER
                     ret.Options.Set(new HttpRequestOptionsKey<object?>(property.Key), property.Value);
 #else
                     ret.Properties[property.Key] = property.Value;
 #endif
                 }
+
+                // Always add the top-level type of the interface to the properties               
+#if NET5_0_OR_GREATER
+                ret.Options.Set(new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType), TargetType);
+#else
+                ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
+#endif
+
+                ;
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
