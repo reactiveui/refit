@@ -33,6 +33,11 @@ namespace Refit.Tests
                 IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
                 IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs"));
 
+            var diags = inputCompilation.GetDiagnostics();
+
+            // Make sure we don't have any errors
+            Assert.Empty(diags.Where(d => d.Severity == DiagnosticSeverity.Error));
+
             var rundriver = driver.RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompiliation, out var diagnostics);
             
             var runResult = rundriver.GetRunResult();
@@ -47,9 +52,24 @@ namespace Refit.Tests
 
         static Compilation CreateCompilation(params string[] sourceFiles)
         {
+            var keyReferences = new[]
+            {
+                typeof(Binder),
+                typeof(GetAttribute),
+                typeof(RichardSzalay.MockHttp.MockHttpMessageHandler),
+                typeof(System.Reactive.Unit),
+                typeof(System.Linq.Enumerable),
+                typeof(Newtonsoft.Json.JsonConvert),
+                typeof(Xunit.FactAttribute),
+                typeof(System.Net.Http.HttpContent),
+                typeof(ModelObject),
+                typeof(Attribute)
+            };
+
+
             return CSharpCompilation.Create("compilation",
                 sourceFiles.Select(source => CSharpSyntaxTree.ParseText(File.ReadAllText(source))),
-                new[] { MetadataReference.CreateFromFile(typeof(GetAttribute).GetTypeInfo().Assembly.Location) },
+                                   keyReferences.Select(t => MetadataReference.CreateFromFile(t.Assembly.Location)),
                 new CSharpCompilationOptions(OutputKind.ConsoleApplication));
 
         }
