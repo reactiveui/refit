@@ -33,7 +33,11 @@ namespace Refit.Tests
         Task<T> Create([Body] T payload);
 
         [Get("")]
-        Task<List<T>> ReadAll();
+        Task<List<T>> ReadAll<TFoo>() where TFoo : new();
+
+        [Get("")]
+        Task<List<T>> ReadAll<TFoo, TBar>() where TFoo : new()
+                                            where TBar : struct;
 
         [Get("/{key}")]
         Task<T> ReadOne(TKey key);
