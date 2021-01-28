@@ -243,8 +243,7 @@ namespace {ns}
                 if (method.IsStatic ||
                     method.MethodKind == MethodKind.PropertyGet ||
                     method.MethodKind == MethodKind.PropertySet ||
-                    (method.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is MethodDeclarationSyntax methodSyntax && methodSyntax.Body is not null)
-                    )
+                    !method.IsAbstract) // If an interface method has a body, it won't be abstract
                     continue;
 
                 ProcessNonRefitMethod(source, method, context);
