@@ -37,7 +37,7 @@ services
     .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
 ```
 
-#Table of Contents
+# Table of Contents
 
 * [Where does this work?](#where-does-this-work)
   * [Breaking changes in 6.x](#breaking-changes-in-6x)
