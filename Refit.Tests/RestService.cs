@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Reactive.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Newtonsoft.Json;
@@ -1000,6 +1001,73 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task HitTheGitHubOrgMembersApiInParallel()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+            };
+
+            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
+                  .Respond("application/json", "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]");
+            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
+                  .Respond("application/json", "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]");
+
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+            var task1 = fixture.GetOrgMembers("github");
+            var task2 = fixture.GetOrgMembers("github");
+
+            await Task.WhenAll(task1, task2);
+
+            Assert.True(task1.Result.Count > 0);
+            Assert.Contains(task1.Result, member => member.Type == "User");
+
+            Assert.True(task2.Result.Count > 0);
+            Assert.Contains(task2.Result, member => member.Type == "User");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task RequestCanceledBeforeResponseRead()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+            };
+
+            var cts = new CancellationTokenSource();
+
+            mockHttp.When(HttpMethod.Get, "https://api.github.com/orgs/github/members")
+                    .Respond(req =>
+                    {
+                        // Cancel the request
+                        cts.Cancel();
+
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent("[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]", Encoding.UTF8, "application/json")
+                        };
+                    });
+            
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+            
+
+            await Assert.ThrowsAsync<TaskCanceledException>(async () => await fixture.GetOrgMembers("github", cts.Token));            
+        }
+
+
+        [Fact]
         public async Task HitTheGitHubUserSearchApi()
         {
             var mockHttp = new MockHttpMessageHandler();
@@ -1939,6 +2007,9 @@ namespace Refit.Tests
             Assert.IsType<CollisionA.SomeType>(respA);
             Assert.IsType<CollisionB.SomeType>(respB);
         }
+
+
+
 
         internal static Stream GetTestFileStream(string relativeFilePath)
         {

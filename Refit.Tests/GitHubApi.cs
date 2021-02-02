@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Refit; // InterfaceStubGenerator looks for this
 
@@ -63,7 +64,7 @@ namespace Refit.Tests
         IObservable<User> GetUserCamelCase(string userName);
 
         [Get("/orgs/{orgname}/members")]
-        Task<List<User>> GetOrgMembers(string orgName);
+        Task<List<User>> GetOrgMembers(string orgName, CancellationToken cancellationToken = default);
 
         [Get("/search/users")]
         Task<UserSearchResult> FindUsers(string q);
