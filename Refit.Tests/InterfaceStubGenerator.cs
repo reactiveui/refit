@@ -178,10 +178,10 @@ namespace Refit.Tests
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetOrgMembers(string @orgName) 
+        global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken) 
         {
-            var arguments = new object[] { @orgName };
-            var func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
+            var arguments = new object[] { @orgName, @cancellationToken };
+            var func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
             return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)func(Client, arguments);
         }
 
