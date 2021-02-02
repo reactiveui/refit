@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Reactive.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Newtonsoft.Json;
@@ -1030,6 +1031,39 @@ namespace Refit.Tests
             Assert.Contains(task2.Result, member => member.Type == "User");
 
             mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task RequestCanceledBeforeResponseRead()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+            };
+
+            var cts = new CancellationTokenSource();
+
+            mockHttp.When(HttpMethod.Get, "https://api.github.com/orgs/github/members")
+                    .Respond(req =>
+                    {
+                        // Cancel the request
+                        cts.Cancel();
+
+                        return new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent("[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]", Encoding.UTF8, "application/json")
+                        };
+                    });
+            
+
+            var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+            
+
+            await Assert.ThrowsAsync<TaskCanceledException>(async () => await fixture.GetOrgMembers("github", cts.Token));            
         }
 
 
