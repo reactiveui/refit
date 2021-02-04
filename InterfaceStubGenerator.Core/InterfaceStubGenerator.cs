@@ -320,9 +320,9 @@ namespace Refit.Implementation
             var genericString = genericList.Count > 0 ? $", new global::System.Type[] {{ {string.Join(", ", genericList)} }}" : string.Empty;            
 
             source.Append(@$"
-            var arguments = new object[] {{ {string.Join(", ", argList)} }};
-            var func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", new global::System.Type[] {{ {string.Join(", ", typeList)} }}{genericString} );
-            return ({methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})func(Client, arguments);
+            var ______arguments = new object[] {{ {string.Join(", ", argList)} }};
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", new global::System.Type[] {{ {string.Join(", ", typeList)} }}{genericString} );
+            return ({methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})______func(this.Client, ______arguments);
 ");
 
             WriteMethodClosing(source);
