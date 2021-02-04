@@ -11,9 +11,9 @@ using Newtonsoft.Json;
 namespace Refit
 {
     /// <summary>
-    /// A <see langword="class"/> implementing <see cref="IContentSerializer"/> using the Newtonsoft.Json APIs
+    /// A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the Newtonsoft.Json APIs
     /// </summary>
-    public sealed class NewtonsoftJsonContentSerializer : IContentSerializer
+    public sealed class NewtonsoftJsonContentSerializer : IHttpContentSerializer
     {
         /// <summary>
         /// The <see cref="Lazy{T}"/> instance providing the JSON serialization settings to use
@@ -37,15 +37,15 @@ namespace Refit
         }
 
         /// <inheritdoc/>
-        public Task<HttpContent> SerializeAsync<T>(T item)
+        public HttpContent ToHttpContent<T>(T item)
         {
             var content = new StringContent(JsonConvert.SerializeObject(item, jsonSerializerSettings.Value), Encoding.UTF8, "application/json");
 
-            return Task.FromResult((HttpContent)content);
+            return content;
         }
 
         /// <inheritdoc/>
-        public async Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
             var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 

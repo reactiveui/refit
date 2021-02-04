@@ -22,12 +22,12 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public async Task MediaTypeShouldBeApplicationXmlAsync()
+        public void MediaTypeShouldBeApplicationXmlAsync()
         {
             var dto = BuildDto();
             var sut = new XmlContentSerializer();
 
-            var content = await sut.SerializeAsync(dto);
+            var content = sut.ToHttpContent(dto);
 
             Assert.Equal("application/xml", content.Headers.ContentType.MediaType);
         }
@@ -38,7 +38,7 @@ namespace Refit.Tests
             var dto = BuildDto();
             var sut = new XmlContentSerializer();
 
-            var content = await sut.SerializeAsync(dto);
+            var content = sut.ToHttpContent(dto);
             var document = new XmlDocument();
             document.LoadXml(await content.ReadAsStringAsync());
 
@@ -59,7 +59,7 @@ namespace Refit.Tests
             serializerSettings.XmlAttributeOverrides.Add(dto.GetType(), attributes);
             var sut = new XmlContentSerializer(serializerSettings);
 
-            var content = await sut.SerializeAsync(dto);
+            var content = sut.ToHttpContent(dto);
             var document = new XmlDocument();
             document.LoadXml(await content.ReadAsStringAsync());
 
@@ -76,7 +76,7 @@ namespace Refit.Tests
             serializerSettings.XmlNamespaces.Add(prefix, "https://google.com");
             var sut = new XmlContentSerializer(serializerSettings);
 
-            var content = await sut.SerializeAsync(dto);
+            var content = sut.ToHttpContent(dto);
             var document = new XmlDocument();
             document.LoadXml(await content.ReadAsStringAsync());
 
@@ -89,7 +89,7 @@ namespace Refit.Tests
             var serializerSettings = new XmlContentSerializerSettings { XmlNamespaces = new XmlSerializerNamespaces() };
             var sut = new XmlContentSerializer(serializerSettings);
 
-            var dto = await sut.DeserializeAsync<Dto>(new StringContent("<Dto><Identifier>123</Identifier></Dto>"));
+            var dto = await sut.FromHttpContentAsync<Dto>(new StringContent("<Dto><Identifier>123</Identifier></Dto>"));
 
             Assert.Equal("123", dto.Identifier);
         }
@@ -111,7 +111,7 @@ namespace Refit.Tests
             var sut = new XmlContentSerializer(serializerSettings);
 
             var dto = BuildDto();
-            var content = await sut.SerializeAsync(dto);
+            var content = sut.ToHttpContent(dto);
             var xml = XDocument.Parse(await content.ReadAsStringAsync());
             var documentEncoding = xml.Declaration.Encoding;
             Assert.Equal(encoding.WebName, documentEncoding);

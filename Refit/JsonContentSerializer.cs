@@ -9,14 +9,14 @@ using System.Threading.Tasks;
 namespace Refit
 {
     [Obsolete("Use NewtonsoftJsonContentSerializer in the Refit.Newtonsoft.Json package instead", true)]
-    public class JsonContentSerializer : IContentSerializer
+    public class JsonContentSerializer : IHttpContentSerializer
     {
-        public Task<HttpContent> SerializeAsync<T>(T item)
+        public HttpContent ToHttpContent<T>(T item)
         {
             throw new NotImplementedException();
         }
 
-        public Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

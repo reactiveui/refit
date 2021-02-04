@@ -31,7 +31,7 @@ namespace Refit
         };
         readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
         readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
-        readonly IContentSerializer serializer;
+        readonly IHttpContentSerializer serializer;
         readonly RefitSettings settings;
         public Type TargetType { get; }
 
@@ -222,7 +222,7 @@ namespace Refit
             Exception e;
             try
             {
-                multiPartContent.Add(await settings.ContentSerializer.SerializeAsync(itemValue).ConfigureAwait(false), parameterName);
+                multiPartContent.Add(settings.ContentSerializer.ToHttpContent(itemValue), parameterName);
                 return;
             }
             catch (Exception ex)
@@ -321,7 +321,7 @@ namespace Refit
                 }
                 else
                 {
-                    result = await serializer.DeserializeAsync<T>(content, cancellationToken).ConfigureAwait(false);
+                    result = await serializer.FromHttpContentAsync<T>(content, cancellationToken).ConfigureAwait(false);
                 }
                 return result;
             }
@@ -570,7 +570,7 @@ namespace Refit
                                 case BodySerializationMethod.Json:
 #pragma warning restore CS0618 // Type or member is obsolete
                                 case BodySerializationMethod.Serialized:
-                                    var content = await serializer.SerializeAsync(param).ConfigureAwait(false);
+                                    var content = serializer.ToHttpContent(param);
                                     switch (restMethod.BodyParameterInfo.Item2)
                                     {
                                         case false:
