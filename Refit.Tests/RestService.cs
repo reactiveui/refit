@@ -59,6 +59,10 @@ namespace Refit.Tests
 
         [Post("/big")]
         Task PostBig(BigObject big);
+
+
+        [Get("/foo/{arguments}")]
+        Task SomeApiThatUsesVariableNameFromCodeGen(string arguments);
     }
 
     public interface IApiBindPathToObject
@@ -1355,6 +1359,26 @@ namespace Refit.Tests
                     .Respond(HttpStatusCode.OK);
 
             await fixture.PostGeneric("4");
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task UseMethodWithArgumentsParameter()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+            mockHttp.Expect(HttpMethod.Get, "http://httpbin.org/foo/something")
+                    .Respond(HttpStatusCode.OK);
+
+            await fixture.SomeApiThatUsesVariableNameFromCodeGen("something");
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
