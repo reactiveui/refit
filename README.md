@@ -291,7 +291,7 @@ Task CreateUser([Body(buffered: true)] User user);
 
 #### JSON content
 
-JSON requests and responses are serialized/deserialized using an instance of the `IContentSerializer` interface. Refit provides two implementations out of the box: `SystemTextJsonContentSerializer` (which is the default JSON serializer) and `NewtonsoftJsonContentSerializer`. The first uses `System.Text.Json` APIs and is focused on high performance and low memory usage, while the latter uss the known `Newtonsoft.Json` library and is more versatile and customizable. You can read more about the two serializers and the main differences between the two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
+JSON requests and responses are serialized/deserialized using an instance of the `IHttpContentSerializer` interface. Refit provides two implementations out of the box: `SystemTextJsonContentSerializer` (which is the default JSON serializer) and `NewtonsoftJsonContentSerializer`. The first uses `System.Text.Json` APIs and is focused on high performance and low memory usage, while the latter uss the known `Newtonsoft.Json` library and is more versatile and customizable. You can read more about the two serializers and the main differences between the two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
 
 For instance, here is how to create a new `RefitSettings` instance using the `Newtonsoft.Json`-based serializer (you'll also need to add a `PackageReference` to `Refit.Newtonsoft.Json`):
 

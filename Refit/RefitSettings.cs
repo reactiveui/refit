@@ -27,11 +27,11 @@ namespace Refit
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
         /// </summary>
-        /// <param name="contentSerializer">The <see cref="IContentSerializer"/> instance to use</param>
+        /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use</param>
         /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
         public RefitSettings(
-            IContentSerializer contentSerializer,
+            IHttpContentSerializer contentSerializer,
             IUrlParameterFormatter? urlParameterFormatter = null,
             IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null)
         {
@@ -62,18 +62,18 @@ namespace Refit
         /// </summary>
         public Func<HttpResponseMessage, Task<Exception?>> ExceptionFactory { get; set; }
 
-        public IContentSerializer ContentSerializer { get; set; }
+        public IHttpContentSerializer ContentSerializer { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
         public bool Buffered { get; set; } = true;
     }
 
-    public interface IContentSerializer
+    public interface IHttpContentSerializer
     {
-        Task<HttpContent> SerializeAsync<T>(T item);
+        HttpContent ToHttpContent<T>(T item);
 
-        Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default);
+        Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands

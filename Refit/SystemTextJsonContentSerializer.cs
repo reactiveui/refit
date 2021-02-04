@@ -17,9 +17,9 @@ using Refit.Buffers;
 namespace Refit
 {
     /// <summary>
-    /// A <see langword="class"/> implementing <see cref="IContentSerializer"/> using the System.Text.Json APIs
+    /// A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the System.Text.Json APIs
     /// </summary>
-    public sealed class SystemTextJsonContentSerializer : IContentSerializer
+    public sealed class SystemTextJsonContentSerializer : IHttpContentSerializer
     {
         /// <summary>
         /// The JSON serialization options to use
@@ -50,15 +50,15 @@ namespace Refit
         }
 
         /// <inheritdoc/>
-        public Task<HttpContent> SerializeAsync<T>(T item)
+        public HttpContent ToHttpContent<T>(T item)
         {
-            var content = JsonContent.Create(item, options: jsonSerializerOptions);            
+            var content = JsonContent.Create(item, options: jsonSerializerOptions);
 
-            return Task.FromResult<HttpContent>(content);
+            return content;
         }
 
         /// <inheritdoc/>
-        public async Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
             var item = await content.ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken).ConfigureAwait(false);
             return item;

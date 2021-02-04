@@ -19,7 +19,7 @@ namespace Refit
 
         readonly IList<KeyValuePair<string?, string?>> formEntries = new List<KeyValuePair<string?, string?>>();
 
-        readonly IContentSerializer contentSerializer;
+        readonly IHttpContentSerializer contentSerializer;
 
         public FormValueMultimap(object source, RefitSettings settings)
         {

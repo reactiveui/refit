@@ -554,9 +554,9 @@ namespace Refit.Tests
         [InlineData(typeof(XmlContentSerializer), "application/xml")]
         public async Task MultipartUploadShouldWorkWithAnObject(Type contentSerializerType, string mediaType)
         {
-            if (Activator.CreateInstance(contentSerializerType) is not IContentSerializer serializer)
+            if (Activator.CreateInstance(contentSerializerType) is not IHttpContentSerializer serializer)
             {
-                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
+                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
             }
 
             var model1 = new ModelObject
@@ -576,7 +576,7 @@ namespace Refit.Tests
                     Assert.Equal("theObject", parts[0].Headers.ContentDisposition.Name);
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal(mediaType, parts[0].Headers.ContentType.MediaType);
-                    var result0 = await serializer.DeserializeAsync<ModelObject>(parts[0]).ConfigureAwait(false);
+                    var result0 = await serializer.FromHttpContentAsync<ModelObject>(parts[0]).ConfigureAwait(false);
                     Assert.Equal(model1.Property1, result0.Property1);
                     Assert.Equal(model1.Property2, result0.Property2);
                 }
@@ -598,9 +598,9 @@ namespace Refit.Tests
         [InlineData(typeof(XmlContentSerializer), "application/xml")]
         public async Task MultipartUploadShouldWorkWithObjects(Type contentSerializerType, string mediaType)
         {
-            if (Activator.CreateInstance(contentSerializerType) is not IContentSerializer serializer)
+            if (Activator.CreateInstance(contentSerializerType) is not IHttpContentSerializer serializer)
             {
-                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IContentSerializer)}");
+                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
             }
 
             var model1 = new ModelObject
@@ -625,7 +625,7 @@ namespace Refit.Tests
                     Assert.Equal("theObjects", parts[0].Headers.ContentDisposition.Name);
                     Assert.Null(parts[0].Headers.ContentDisposition.FileName);
                     Assert.Equal(mediaType, parts[0].Headers.ContentType.MediaType);
-                    var result0 = await serializer.DeserializeAsync<ModelObject>(parts[0]).ConfigureAwait(false);
+                    var result0 = await serializer.FromHttpContentAsync<ModelObject>(parts[0]).ConfigureAwait(false);
                     Assert.Equal(model1.Property1, result0.Property1);
                     Assert.Equal(model1.Property2, result0.Property2);
 
@@ -633,7 +633,7 @@ namespace Refit.Tests
                     Assert.Equal("theObjects", parts[1].Headers.ContentDisposition.Name);
                     Assert.Null(parts[1].Headers.ContentDisposition.FileName);
                     Assert.Equal(mediaType, parts[1].Headers.ContentType.MediaType);
-                    var result1 = await serializer.DeserializeAsync<ModelObject>(parts[1]).ConfigureAwait(false);
+                    var result1 = await serializer.FromHttpContentAsync<ModelObject>(parts[1]).ConfigureAwait(false);
                     Assert.Equal(model2.Property1, result1.Property1);
                     Assert.Equal(model2.Property2, result1.Property2);
                 }
