@@ -568,8 +568,7 @@ some interface `ITenantProvider` and has a data store `IAuthTokenStore` that can
      private readonly ITenantProvider tenantProvider;
      private readonly IAuthTokenStore authTokenStore;
 
-     public AuthHeaderHandler(ITenantProvider tenantProvider, IAuthTokenStore authTokenStore, HttpMessageHandler innerHandler = null)
-        : base(innerHandler ?? new HttpClientHandler())
+    public AuthHeaderHandler(ITenantProvider tenantProvider, IAuthTokenStore authTokenStore)
     {
          this.tenantProvider = tenantProvider ?? throw new ArgumentNullException(nameof(tenantProvider));
          this.authTokenStore = authTokenStore ?? throw new ArgumentNullException(nameof(authTokenStore));
