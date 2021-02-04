@@ -13,6 +13,7 @@ using Microsoft.CodeAnalysis.Testing;
 using Microsoft.CodeAnalysis.Text;
 
 using Refit.Generator;
+using Refit.Implementation;
 
 using Xunit;
 
