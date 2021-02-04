@@ -1132,6 +1132,9 @@ namespace Refit.Tests
         [Get("/query")]
         [QueryUriFormat(UriFormat.Unescaped)]
         Task UnescapedQueryParamsWithFilter(string q, string filter);
+
+        [Get("/api/foo/{id}/file_{id}?query={id}")]
+        Task SomeApiThatUsesParameterMoreThanOnceInTheUrl(string id);
     }
 
     interface ICancellableMethods
@@ -1456,6 +1459,17 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/foo/bar/6?baz=bamf&search_for=foo", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ParameterizedValuesShouldBeInUrlMoreThanOnce()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.SomeApiThatUsesParameterMoreThanOnceInTheUrl));
+            var output = factory(new object[] { 6 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/api/foo/6/file_6?query=6", uri.PathAndQuery);
         }
 
         [Theory]

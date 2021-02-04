@@ -240,7 +240,15 @@ namespace Refit
                         }
                         var parameterType = isRoundTripping ? ParameterType.RoundTripping : ParameterType.Normal;
                         var restMethodParameterInfo = new RestMethodParameterInfo(name, paramValidationDict[name]) { Type = parameterType };
-                        ret.Add(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
+#if NETSTANDARD2_1 || NET5_0_OR_GREATER
+                        ret.TryAdd(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
+#else
+                        var idx = parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo);
+                        if (!ret.ContainsKey(idx))
+                        {
+                            ret.Add(idx, restMethodParameterInfo);
+                        }
+#endif
                     }
                     //else if it's a property on a object parameter
                     else if (objectParamValidationDict.ContainsKey(name) && !isRoundTripping)
@@ -261,7 +269,16 @@ namespace Refit
                         {
                             var restMethodParameterInfo = new RestMethodParameterInfo(true, property.Item1);
                             restMethodParameterInfo.ParameterProperties.Add(new RestMethodParameterProperty(name, property.Item2));
-                            ret.Add(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
+#if NETSTANDARD2_1 || NET5_0_OR_GREATER
+                            ret.TryAdd(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
+#else
+                            // Do the contains check
+                            var idx = parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo);
+                            if(!ret.ContainsKey(idx))
+                            {
+                                ret.Add(idx, restMethodParameterInfo);
+                            }
+#endif
                         }
                     }
                     else
