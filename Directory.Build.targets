@@ -1,0 +1,10 @@
+<Project>  
+  
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net5.0'">
+    <DefineConstants>$(DefineConstants);NET5_0_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+ 
+
+</Project>

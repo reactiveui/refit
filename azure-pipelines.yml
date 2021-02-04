@@ -33,7 +33,7 @@ stages:
     - task: UseDotNet@2
       displayName: Use .NET Core 5.x SDK
       inputs:
-        version: 5.x
+        version: 5.0.x
         performMultiLevelLookup: true
         includePreviewVersions: true
 

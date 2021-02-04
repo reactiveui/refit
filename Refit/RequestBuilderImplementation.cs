@@ -176,7 +176,7 @@ namespace Refit
             return (client, args) => rxFunc!.DynamicInvoke(client, args);
         }
 
-        async Task AddMultipartItemAsync(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
+        void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
 
             if (itemValue is HttpContent content)
@@ -242,7 +242,7 @@ namespace Refit
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
                 var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
-                var rq = await factory(paramList).ConfigureAwait(false);
+                var rq = factory(paramList);
                 HttpResponseMessage? resp = null;
                 HttpContent? content = null;
                 var disposeResponse = true;
@@ -451,10 +451,9 @@ namespace Refit
             return kvps;
         }
 
-        Func<object[], Task<HttpRequestMessage>> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
+        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
         {
-
-            return async paramList =>
+            return paramList =>
             {
                 // make sure we strip out any cancellation tokens
                 if (paramsContainsCancellationToken)
@@ -685,12 +684,12 @@ namespace Refit
                     {
                         foreach (var item in enumerable!)
                         {
-                            await AddMultipartItemAsync(multiPartContent!, itemName, parameterName, item).ConfigureAwait(false);
+                            AddMultipartItem(multiPartContent!, itemName, parameterName, item);
                         }
                     }
                     else
                     {
-                        await AddMultipartItemAsync(multiPartContent!, itemName, parameterName, itemValue).ConfigureAwait(false);
+                        AddMultipartItem(multiPartContent!, itemName, parameterName, itemValue);
                     }
                 }
 
@@ -851,7 +850,7 @@ namespace Refit
                     throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
 
                 var factory = BuildRequestFactoryForMethod(restMethod, client.BaseAddress.AbsolutePath, restMethod.CancellationToken != null);
-                var rq = await factory(paramList).ConfigureAwait(false);
+                var rq = factory(paramList);
 
                 var ct = CancellationToken.None;
 
