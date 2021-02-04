@@ -158,8 +158,6 @@ namespace Refit.Tests
 
             var json = await serializer.SerializeAsync(model);
 
-            Assert.NotNull(json.Headers.ContentLength);
-            Assert.True(json.Headers.ContentLength.Value > 0);
             Assert.NotNull(json.Headers.ContentType);
             Assert.Equal("utf-8", json.Headers.ContentType.CharSet);
             Assert.Equal("application/json", json.Headers.ContentType.MediaType);

@@ -4,6 +4,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -51,22 +52,7 @@ namespace Refit
         /// <inheritdoc/>
         public Task<HttpContent> SerializeAsync<T>(T item)
         {
-            using var utf8BufferWriter = new PooledBufferWriter();
-
-            var utf8JsonWriter = new Utf8JsonWriter(utf8BufferWriter);
-
-            JsonSerializer.Serialize(utf8JsonWriter, item, jsonSerializerOptions);
-
-            var stream = utf8BufferWriter.DetachStream();
-
-            var content = new StreamContent(stream)
-            {
-                Headers =
-                {
-                    ContentLength = stream.Length,
-                    ContentType = new MediaTypeHeaderValue("application/json") { CharSet = Encoding.UTF8.WebName }
-                }
-            };
+            var content = JsonContent.Create(item, options: jsonSerializerOptions);            
 
             return Task.FromResult<HttpContent>(content);
         }
@@ -74,60 +60,8 @@ namespace Refit
         /// <inheritdoc/>
         public async Task<T?> DeserializeAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
-
-            using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-            int streamLength;
-
-            try
-            {
-                streamLength = (int)stream.Length;
-            }
-            catch (NotSupportedException)
-            {
-                /* If the stream doesn't support seeking, the Stream.Length property
-                 * cannot be used, which means we can't retrieve the size of a buffer
-                 * to rent from the pool. In this case, we just deserialize directly
-                 * from the input stream, with the Async equivalent API.
-                 * We're using a try/catch here instead of just checking Stream.CanSeek
-                 * because some streams can report that property as false even though
-                 * they actually let users access the Length property just fine. */
-                return await JsonSerializer.DeserializeAsync<T>(stream, jsonSerializerOptions, cancellationToken).ConfigureAwait(false);
-            }
-
-            var buffer = ArrayPool<byte>.Shared.Rent(streamLength);
-
-            try
-            {
-#if NET5_0_OR_GREATER
-                var utf8Length = await stream.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-#else
-                var utf8Length = await stream.ReadAsync(buffer, 0, buffer.Length, cancellationToken).ConfigureAwait(false);
-#endif
-
-                return Deserialize<T>(buffer, utf8Length, jsonSerializerOptions);
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(buffer);
-            }
-        }
-
-        /// <summary>
-        /// Deserializes an item of a specific type from a given UTF8 buffer
-        /// </summary>
-        /// <typeparam name="T">The type of item to deserialize</typeparam>
-        /// <param name="buffer">The input buffer of UTF8 bytes to read</param>
-        /// <param name="length">The length of the usable data within <paramref name="buffer"/></param>
-        /// <param name="jsonSerializerOptions">The JSON serialization settings to use</param>
-        /// <returns>A <typeparamref name="T"/> item deserialized from the UTF8 bytes within <paramref name="buffer"/></returns>
-        [Pure]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static T? Deserialize<T>(byte[] buffer, int length, JsonSerializerOptions jsonSerializerOptions)
-        {
-            var span = new ReadOnlySpan<byte>(buffer, 0, length);
-            var utf8JsonReader = new Utf8JsonReader(span);
-
-            return JsonSerializer.Deserialize<T>(ref utf8JsonReader, jsonSerializerOptions);
+            var item = await content.ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken).ConfigureAwait(false);
+            return item;
         }
 
         public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
