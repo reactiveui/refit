@@ -109,7 +109,7 @@ namespace Refit.Implementation
 }}
 #pragma warning restore
 ";
-            context.AddSource("GeneratorShell", SourceText.From(generatedClassText, Encoding.UTF8));
+            context.AddSource("Generated", SourceText.From(generatedClassText, Encoding.UTF8));
 
             compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(generatedClassText, Encoding.UTF8), options));
 
