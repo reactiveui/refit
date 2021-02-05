@@ -90,6 +90,7 @@ Refit 6 requires at Visual Studio 16.8 or higher, or the .NET SDK 5.0.100 or hig
 
  Refit 6 makes the [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview) the default. If you'd like to continue to use `Newtonsoft.Json`, add the `Refit.Newtonsoft.Json` NuGet package and set your `ContentSerializer` to `NewtonsoftJsonContentSerializer` on your `RefitSettings` instance. `System.Text.Json` is faster and uses less memory, though not all features are supported. The [migration guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to?pivots=dotnet-5-0) contains more details.
 
+`IContentSerializer` was renamed to `IHttpContentSerializer` to better reflect its purpose. Additionally, two of its methods were renamed, `SerializeAsync<T>` -> `ToHttpContent<T>` and `DeserializeAsync<T>` -> `FromHttpContnentAsync<T>`. Any existing of these will need to be updated, though the changes should be minor.
 
 ### API Attributes
 
