@@ -259,13 +259,19 @@ namespace Refit.Implementation
             var derivedNonRefitMethods = derivedMethods.Except(derivedMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToList();
 
             // Handle Refit Methods            
-            foreach(var method in refitMethods.Concat(derivedRefitMethods))
+            foreach(var method in refitMethods)
             {
-                ProcessRefitMethod(source, method);
+                ProcessRefitMethod(source, method, true);
             }
 
+            foreach (var method in refitMethods.Concat(derivedRefitMethods))
+            {
+                ProcessRefitMethod(source, method, false);
+            }
+
+
             // Handle non-refit Methods that aren't static or properties or have a method body
-            foreach(var method in nonRefitMethods.Concat(derivedNonRefitMethods))
+            foreach (var method in nonRefitMethods.Concat(derivedNonRefitMethods))
             {
                 if (method.IsStatic ||
                     method.MethodKind == MethodKind.PropertyGet ||
@@ -292,9 +298,15 @@ namespace Refit.Implementation
             return source.ToString();
         }
 
-        void ProcessRefitMethod(StringBuilder source, IMethodSymbol methodSymbol)
+        /// <summary>
+        /// Generates the body of the Refit method
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="methodSymbol"></param>
+        /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
+        void ProcessRefitMethod(StringBuilder source, IMethodSymbol methodSymbol, bool isTopLevel)
         {
-            WriteMethodOpening(source, methodSymbol);
+            WriteMethodOpening(source, methodSymbol, !isTopLevel);
 
             // Build the list of args for the array
             var argList = new List<string>();
@@ -330,7 +342,7 @@ namespace Refit.Implementation
 
         void ProcessDisposableMethod(StringBuilder source, IMethodSymbol methodSymbol)
         {
-            WriteMethodOpening(source, methodSymbol);
+            WriteMethodOpening(source, methodSymbol, true);
 
             source.Append(@"
                 Client?.Dispose();
@@ -396,7 +408,7 @@ namespace Refit.Implementation
 
         void ProcessNonRefitMethod(StringBuilder source, IMethodSymbol methodSymbol, GeneratorExecutionContext context)
         {
-            WriteMethodOpening(source, methodSymbol);
+            WriteMethodOpening(source, methodSymbol, true);
 
             source.Append(@"
                 throw new global::System.NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");
@@ -411,12 +423,20 @@ namespace Refit.Implementation
             }            
         }
 
-        void WriteMethodOpening(StringBuilder source, IMethodSymbol methodSymbol)
+        void WriteMethodOpening(StringBuilder source, IMethodSymbol methodSymbol, bool isExplicitInterface)
         {
+            var visibility = !isExplicitInterface ? "public " : string.Empty;
+
             source.Append(@$"
 
         /// <inheritdoc />
-        {methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} {methodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.{methodSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(");
+        {visibility}{methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} ");
+
+            if(isExplicitInterface)
+            {
+                source.Append(@$"{methodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.");
+            }
+            source.Append(@$"{methodSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(");            
 
             if(methodSymbol.Parameters.Length > 0)
             {

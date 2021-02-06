@@ -1802,6 +1802,44 @@ namespace Refit.Tests
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
+
+        [Fact]
+        public async Task InheritedInterfaceWithoutRefitInBaseMethodsTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            var fixture = RestService.For<IImplementTheInterfaceAndUseRefit>("https://httpbin.org", settings);
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/doSomething")
+                    .WithQueryString("parameter", "4")
+                    .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomething));
+
+            await fixture.DoSomething(4);
+            mockHttp.VerifyNoOutstandingExpectation();
+
+
+
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
+                .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse));
+            await fixture.DoSomethingElse();
+            mockHttp.VerifyNoOutstandingExpectation();
+
+
+            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
+    .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse));
+            await ((IAmInterfaceEWithNoRefit<int>)fixture).DoSomethingElse();
+            mockHttp.VerifyNoOutstandingExpectation();
+
+
+            Assert.Throws<InvalidOperationException>(() => RestService.For<IAmInterfaceEWithNoRefit<int>>("https://httpbin.org"));
+        }
+
         [Fact]
         public async Task DictionaryDynamicQueryparametersTest()
         {
