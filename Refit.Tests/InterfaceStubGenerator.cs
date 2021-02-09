@@ -623,11 +623,11 @@ namespace Refit.Implementation
                     Sources =
                     {
                         input,                        
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\PreserveAttribute.cs", SourceText.From(output1, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\Generated.cs", SourceText.From(output1_5, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IGitHubApi_refit.cs", SourceText.From(output2, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IGitHubApiDisposable_refit.cs", SourceText.From(output3, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\INestedGitHubApi_refit.cs", SourceText.From(output4, Encoding.UTF8)),
+                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\PreserveAttribute.g.cs", SourceText.From(output1, Encoding.UTF8)),
+                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\Generated.g.cs", SourceText.From(output1_5, Encoding.UTF8)),
+                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IGitHubApi.g.cs", SourceText.From(output2, Encoding.UTF8)),
+                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IGitHubApiDisposable.g.cs", SourceText.From(output3, Encoding.UTF8)),
+                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\INestedGitHubApi.g.cs", SourceText.From(output4, Encoding.UTF8)),
                     },
                 },
             }.RunAsync();
@@ -757,9 +757,9 @@ namespace Refit.Implementation
                     Sources =
                     {
                         input,
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\PreserveAttribute.cs", SourceText.From(output1, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\Generated.cs", SourceText.From(output1_5, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IServiceWithoutNamespace_refit.cs", SourceText.From(output2, Encoding.UTF8)),
+                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\PreserveAttribute.g.cs", SourceText.From(output1, Encoding.UTF8)),
+                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\Generated.g.cs", SourceText.From(output1_5, Encoding.UTF8)),
+                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IServiceWithoutNamespace.g.cs", SourceText.From(output2, Encoding.UTF8)),
                     },
                 },
             }.RunAsync();
