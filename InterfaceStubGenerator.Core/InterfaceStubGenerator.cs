@@ -114,47 +114,65 @@ namespace Refit.Implementation
             compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(generatedClassText, Encoding.UTF8), options));
 
             // Check the candidates and keep the ones we're actually interested in
-            var methodSymbols = new List<IMethodSymbol>();
-            foreach (var method in receiver.CandidateMethods)
-            {
-                var model = compilation.GetSemanticModel(method.SyntaxTree);
-                
-                // Get the symbol being declared by the method
-                var methodSymbol = model.GetDeclaredSymbol(method);
-                if (IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
-                {
-                    methodSymbols.Add(methodSymbol!);
-                }
-            }            
 
-            var interfaces = methodSymbols.GroupBy(m => m.ContainingType).ToDictionary(g => g.Key, v => v.ToList());
+            var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>();
+            var methodSymbols = new List<IMethodSymbol>();
+            foreach (var group in receiver.CandidateMethods.GroupBy(m => m.SyntaxTree))
+            {
+                var model = compilation.GetSemanticModel(group.Key);             
+                foreach (var method in group)
+                {
+                    // Get the symbol being declared by the method
+                    var methodSymbol = model.GetDeclaredSymbol(method);
+                    if (IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
+                    {
+                        var isAnnotated = context.Compilation.Options.NullableContextOptions == NullableContextOptions.Enable ||
+                            model.GetNullableContext(method.SpanStart) == NullableContext.Enabled;
+                        interfaceToNullableEnabledMap[methodSymbol!.ContainingType] = isAnnotated;
+
+                        methodSymbols.Add(methodSymbol!);
+                    }
+                }
+            }
+
+            var interfaces = methodSymbols.GroupBy(m => m.ContainingType)
+                                          .ToDictionary(g => g.Key, v => v.ToList());
 
             // Look through the candidate interfaces
             var interfaceSymbols = new List<INamedTypeSymbol>();
-            foreach(var iface in receiver.CandidateInterfaces)
+            foreach(var group in receiver.CandidateInterfaces.GroupBy(i => i.SyntaxTree))
             {
-                var model = compilation.GetSemanticModel(iface.SyntaxTree);
-
-                // get the symbol belonging to the interface
-                var ifaceSymbol = model.GetDeclaredSymbol(iface);
-
-                // See if we already know about it, might be a dup
-                if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
-                    continue;
-
-                // The interface has no refit methods, but its base interfaces might
-                var hasDerivedRefit = ifaceSymbol.AllInterfaces
-                                                 .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
-                                                 .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
-                                                 .Any();
-
-                if(hasDerivedRefit)
+                var model = compilation.GetSemanticModel(group.Key);
+                foreach (var iface in group)
                 {
-                    // Add the interface to the generation list with an empty set of methods
-                    // The logic already looks for base refit methods
-                    interfaces.Add(ifaceSymbol, new List<IMethodSymbol>());
+                    // get the symbol belonging to the interface
+                    var ifaceSymbol = model.GetDeclaredSymbol(iface);
+
+                    // See if we already know about it, might be a dup
+                    if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
+                        continue;
+
+                    // The interface has no refit methods, but its base interfaces might
+                    var hasDerivedRefit = ifaceSymbol.AllInterfaces
+                                                     .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
+                                                     .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
+                                                     .Any();
+
+                    if (hasDerivedRefit)
+                    {
+                        // Add the interface to the generation list with an empty set of methods
+                        // The logic already looks for base refit methods
+                        interfaces.Add(ifaceSymbol, new List<IMethodSymbol>() );
+                        var isAnnotated = context.Compilation.Options.NullableContextOptions == NullableContextOptions.Enable ||
+                                            model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
+
+                        interfaceToNullableEnabledMap[ifaceSymbol] = isAnnotated;
+                    }
                 }
             }
+           
+
+            var supportsNullable = ((CSharpParseOptions)context.ParseOptions).LanguageVersion >= LanguageVersion.CSharp8;
 
             var keyCount = new Dictionary<string, int>();
 
@@ -165,7 +183,14 @@ namespace Refit.Implementation
                 // with a refit attribute on them. Types may contain other members, without the attribute, which we'll
                 // need to check for and error out on
 
-                var classSource = ProcessInterface(group.Key, group.Value, preserveAttributeSymbol, disposableInterfaceSymbol, httpMethodBaseAttributeSymbol, context);
+                var classSource = ProcessInterface(group.Key,
+                                                   group.Value,
+                                                   preserveAttributeSymbol,
+                                                   disposableInterfaceSymbol,
+                                                   httpMethodBaseAttributeSymbol,
+                                                   supportsNullable,
+                                                   interfaceToNullableEnabledMap[group.Key],
+                                                   context);
              
                 var keyName = group.Key.Name;
                 if(keyCount.TryGetValue(keyName, out var value))
@@ -184,6 +209,8 @@ namespace Refit.Implementation
                                 ISymbol preserveAttributeSymbol,
                                 ISymbol disposableInterfaceSymbol,
                                 INamedTypeSymbol httpMethodBaseAttributeSymbol,
+                                bool supportsNullable,
+                                bool nullableEnabled,
                                 GeneratorExecutionContext context)
         {
 
@@ -210,7 +237,25 @@ namespace Refit.Implementation
             // Remove dots
             ns = ns!.Replace(".", "");
 
-            var source = new StringBuilder($@"
+            // See what the nullable context is
+
+
+            var source = new StringBuilder();
+            if(supportsNullable)
+            {
+                source.Append("#nullable ");
+
+                if(nullableEnabled)
+                {
+                    source.Append("enable");
+                }
+                else
+                {
+                    source.Append("disable");
+                }
+            }
+
+            source.Append($@"
 #pragma warning disable
 namespace Refit.Implementation
 {{
@@ -315,7 +360,7 @@ namespace Refit.Implementation
                 argList.Add($"@{param.MetadataName}");
             }
 
-            // List of types. For nullable one, wrap in ToNullable()
+            // List of types. 
             var typeList = new List<string>();
             foreach(var param in methodSymbol.Parameters)
             {
