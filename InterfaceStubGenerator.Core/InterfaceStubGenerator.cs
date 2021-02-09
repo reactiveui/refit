@@ -70,7 +70,7 @@ namespace {refitInternalNamespace}
 
 
             // add the attribute text
-            context.AddSource("PreserveAttribute", SourceText.From(attributeText, Encoding.UTF8));
+            context.AddSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
 
             if (context.SyntaxReceiver is not SyntaxReceiver receiver)
                 return;
@@ -109,7 +109,7 @@ namespace Refit.Implementation
 }}
 #pragma warning restore
 ";
-            context.AddSource("Generated", SourceText.From(generatedClassText, Encoding.UTF8));
+            context.AddSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
 
             compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(generatedClassText, Encoding.UTF8), options));
 
@@ -174,7 +174,7 @@ namespace Refit.Implementation
                 }
                 keyCount[keyName] = value;
 
-                context.AddSource($"{keyName}_refit.cs", SourceText.From(classSource, Encoding.UTF8));
+                context.AddSource($"{keyName}.g.cs", SourceText.From(classSource, Encoding.UTF8));
             }           
 
         }
