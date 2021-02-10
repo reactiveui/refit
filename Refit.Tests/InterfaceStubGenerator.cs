@@ -143,7 +143,7 @@ namespace Refit.Implementation
 #pragma warning restore
 ";
 
-            var output2 = @"
+            var output2 = @"#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -387,7 +387,7 @@ namespace Refit.Implementation
 
 #pragma warning restore
 ";
-            var output3 = @"
+            var output3 = @"#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -445,7 +445,7 @@ namespace Refit.Implementation
 
 #pragma warning restore
 ";
-            var output4 = @"
+            var output4 = @"#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -675,7 +675,7 @@ namespace Refit.Implementation
 #pragma warning restore
 ";
 
-            var output2 = @"
+            var output2 = @"#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {

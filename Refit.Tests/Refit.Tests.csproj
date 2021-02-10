@@ -5,6 +5,7 @@
   <PropertyGroup>
     <TargetFrameworks>net5.0;netcoreapp2.1;netcoreapp3.1;net461</TargetFrameworks>
     <Deterministic>false</Deterministic> <!-- Some tests rely on CallerFilePath -->
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
