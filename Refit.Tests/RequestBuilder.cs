@@ -1034,6 +1034,9 @@ namespace Refit.Tests
         [Get("/query")]
         Task QueryWithArray(int[] numbers);
 
+        [Get("/query?q1={param1}&q2={param2}")]
+        Task QueryWithExplicitParameters(string param1, string param2);
+
         [Get("/query")]
         Task QueryWithArrayFormattedAsMulti([Query(CollectionFormat.Multi)]int[] numbers);
 
@@ -1497,6 +1500,18 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal("/foo?name=", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ParametersShouldBePutAsExplicitQueryString()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.QueryWithExplicitParameters));
+            var output = factory(new object[] { "value1", "value2" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);            
+
+            Assert.Equal("/query?q2=value2&q1=value1", uri.PathAndQuery);
         }
 
         [Fact]
