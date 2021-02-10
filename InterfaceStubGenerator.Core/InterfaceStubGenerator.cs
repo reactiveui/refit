@@ -163,8 +163,7 @@ namespace Refit.Implementation
                         // Add the interface to the generation list with an empty set of methods
                         // The logic already looks for base refit methods
                         interfaces.Add(ifaceSymbol, new List<IMethodSymbol>() );
-                        var isAnnotated = context.Compilation.Options.NullableContextOptions == NullableContextOptions.Enable ||
-                                            model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
+                        var isAnnotated = model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
 
                         interfaceToNullableEnabledMap[ifaceSymbol] = isAnnotated;
                     }
