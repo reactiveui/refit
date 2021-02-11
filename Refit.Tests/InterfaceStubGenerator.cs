@@ -101,6 +101,28 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task NoRefitInterfacesSmokeTest()
+        {
+            var input = File.ReadAllText(IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs"));
+            await new VerifyCS.Test
+            {
+                ReferenceAssemblies = ReferenceAssemblies,
+                TestState =
+                {
+                    AdditionalReferences = { RefitAssembly },
+                    Sources = { input },
+                },
+                FixedState =
+                {
+                    Sources =
+                    {
+                        input
+                    },
+                },
+            }.RunAsync();
+        }
+
+        [Fact]
         public async Task FindInterfacesSmokeTest()
         {
             var input = File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs"));
