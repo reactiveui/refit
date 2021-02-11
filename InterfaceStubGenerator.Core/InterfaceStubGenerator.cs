@@ -44,44 +44,18 @@ namespace Refit.Generator
 
         public void GenerateInterfaceStubs(GeneratorExecutionContext context)
         {
+            if (context.SyntaxReceiver is not SyntaxReceiver receiver)
+                return;
+
             context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.RefitInternalNamespace", out var refitInternalNamespace);
 
             refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
 
-            var attributeText = @$"
-#pragma warning disable
-namespace {refitInternalNamespace}
-{{
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
-    sealed class PreserveAttribute : global::System.Attribute
-    {{
-        //
-        // Fields
-        //
-        public bool AllMembers;
-
-        public bool Conditional;
-    }}
-}}
-#pragma warning restore
-";
-
-
-            // add the attribute text
-            context.AddSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
-
-            if (context.SyntaxReceiver is not SyntaxReceiver receiver)
-                return;
-
             // we're going to create a new compilation that contains the attribute.
             // TODO: we should allow source generators to provide source during initialize, so that this step isn't required.
             var options = (context.Compilation as CSharpCompilation)!.SyntaxTrees[0].Options as CSharpParseOptions;
-            var compilation = context.Compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(attributeText, Encoding.UTF8), options));
+            var compilation = context.Compilation;
 
-            // get the newly bound attribute
-            var preserveAttributeSymbol = compilation.GetTypeByMetadataName($"{refitInternalNamespace}.PreserveAttribute")!;
             var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable")!;
             var httpMethodBaseAttributeSymbol = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute");
 
@@ -91,27 +65,6 @@ namespace {refitInternalNamespace}
                 return;
             }
 
-
-            var generatedClassText = @$"
-#pragma warning disable
-namespace Refit.Implementation
-{{
-
-    /// <inheritdoc />
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    [global::System.Diagnostics.DebuggerNonUserCode]
-    [{preserveAttributeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}]
-    [global::System.Reflection.Obfuscation(Exclude=true)]
-    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    internal static partial class Generated
-    {{
-    }}
-}}
-#pragma warning restore
-";
-            context.AddSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
-
-            compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(generatedClassText, Encoding.UTF8), options));
 
             // Check the candidates and keep the ones we're actually interested in
 
@@ -169,11 +122,66 @@ namespace Refit.Implementation
                     }
                 }
             }
+
+            // Bail out if there aren't any interfaces to generate code for. This may be the case with transitives
+            if(!interfaces.Any()) return;
            
 
             var supportsNullable = ((CSharpParseOptions)context.ParseOptions).LanguageVersion >= LanguageVersion.CSharp8;
 
             var keyCount = new Dictionary<string, int>();
+
+            var attributeText = @$"
+#pragma warning disable
+namespace {refitInternalNamespace}
+{{
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
+    sealed class PreserveAttribute : global::System.Attribute
+    {{
+        //
+        // Fields
+        //
+        public bool AllMembers;
+
+        public bool Conditional;
+    }}
+}}
+#pragma warning restore
+";
+
+
+            compilation = context.Compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(attributeText, Encoding.UTF8), options));
+
+            // add the attribute text
+            context.AddSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
+
+            // get the newly bound attribute
+            var preserveAttributeSymbol = compilation.GetTypeByMetadataName($"{refitInternalNamespace}.PreserveAttribute")!;
+
+            var generatedClassText = @$"
+#pragma warning disable
+namespace Refit.Implementation
+{{
+
+    /// <inheritdoc />
+    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+    [global::System.Diagnostics.DebuggerNonUserCode]
+    [{preserveAttributeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}]
+    [global::System.Reflection.Obfuscation(Exclude=true)]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    internal static partial class Generated
+    {{
+    }}
+}}
+#pragma warning restore
+";
+            context.AddSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
+
+            compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(generatedClassText, Encoding.UTF8), options));
+
+
 
             // group the fields by interface and generate the source
             foreach (var group in interfaces)
