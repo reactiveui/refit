@@ -6,18 +6,13 @@ namespace Meow
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
             .MinimumLevel.Verbose()
             .CreateLogger();
 
-            Task.Run(() => AsyncMain()).Wait();
-        }
-
-        static async Task AsyncMain()
-        {
             var service = new CatsService(new Uri("https://api.thecatapi.com"));
             var results = await service.Search("bengal");
 
