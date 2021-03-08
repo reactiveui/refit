@@ -18,7 +18,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Include="System.Reactive" Version="5.0.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="3.8.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.0.1-beta1.21117.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.0.1-beta1.21155.2" />
     <PackageReference Include="RichardSzalay.MockHttp" Version="6.0.0" />
     <ProjectReference Include="..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
     <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
