@@ -64,7 +64,9 @@ namespace Refit
 
             MultipartBoundary = IsMultipart ? methodInfo.GetCustomAttribute<MultipartAttribute>(true)?.BoundaryText ?? new MultipartAttribute().BoundaryText : string.Empty;
 
-            VerifyUrlPathIsSane(RelativePath);
+            if (refitSettings?.BypassUrlVerification != true)
+                VerifyUrlPathIsSane(RelativePath);
+
             DetermineReturnTypeInfo(methodInfo);
             DetermineIfResponseMustBeDisposed();
 

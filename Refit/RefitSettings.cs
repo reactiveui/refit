@@ -67,6 +67,7 @@ namespace Refit
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
         public bool Buffered { get; set; } = true;
+        public bool BypassUrlVerification { get; set; } = false;
     }
 
     public interface IHttpContentSerializer
