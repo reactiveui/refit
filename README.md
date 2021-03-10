@@ -790,17 +790,17 @@ There may be times when you want to know what the target interface type is of th
 have a derived interface that implements a common base like this:
 
 ```csharp
-public interface IGetAPI<TEntity> 
+public interface IGetAPI<TEntity>
 {
     [Get("/{key}")]
     Task<TEntity> Get(long key);
 }
 
-public interface IUsersAPI : IGetAPI<User> 
+public interface IUsersAPI : IGetAPI<User>
 {
 }
 
-public interface IOrdersAPI : IGetAPI<Order> 
+public interface IOrdersAPI : IGetAPI<Order>
 {
 }
 ```
@@ -1099,6 +1099,14 @@ services.AddRefitClient<IWebApi>(settings)
         // Add additional IHttpClientBuilder chained methods as required here:
         // .AddHttpMessageHandler<MyHandler>()
         // .SetHandlerLifetime(TimeSpan.FromMinutes(2));
+
+// or injected from the container
+services.AddRefitClient<IWebApi>(provider => new RefitSettings() { /* configure settings */ })
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+        // Add additional IHttpClientBuilder chained methods as required here:
+        // .AddHttpMessageHandler<MyHandler>()
+        // .SetHandlerLifetime(TimeSpan.FromMinutes(2));
+
 ```
 Note that some of the properties of `RefitSettings` will be ignored because the `HttpClient` and `HttpClientHandlers` will be managed by the `HttpClientFactory` instead of Refit.
 
