@@ -104,7 +104,7 @@ namespace Refit.Tests
         Task<string> FetchSomeStuffWithDynamicRequestPropertyWithoutKey(int id, [Property] object someValue, [Property("")] object someOtherValue);
 
         [Post("/foo/{id}")]
-        Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
+        Task<bool> OhYeahValueTypes(int id, [Body(buffered: true)] int whatever);
 
         [Post("/foo/{id}")]
         Task<bool> OhYeahValueTypesUnbuffered(int id, [Body(buffered: false)] int whatever);
