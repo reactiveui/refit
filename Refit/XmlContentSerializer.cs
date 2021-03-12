@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -13,10 +14,17 @@ using System.Xml.Serialization;
 namespace Refit
 {
 
+   
     public class XmlContentSerializer : IHttpContentSerializer
     {
+        struct XmlContentTypeSettingsCacheEntry
+        {
+            public Type Type;
+            public XmlContentSerializerSettings Settings;
+        }
+
         readonly XmlContentSerializerSettings settings;
-        static readonly ConcurrentDictionary<Type, XmlSerializer> serializerCache = new();
+        static readonly ConcurrentDictionary<TypeSettingsCacheEntry, XmlSerializer> serializerCache = new();
 
         public XmlContentSerializer() : this(new XmlContentSerializerSettings())
         {
@@ -31,7 +39,8 @@ namespace Refit
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
 
-            var xmlSerializer = serializerCache.GetOrAdd(item.GetType(), t => new XmlSerializer(t, settings.XmlAttributeOverrides));
+            
+            var xmlSerializer = serializerCache.GetOrAdd(new TypeSettingsCacheEntry{ Type = item.GetType(), Settings = settings}, t => new XmlSerializer(t.Type, t.Settings.XmlAttributeOverrides));
 
             using var stream = new MemoryStream();
             using var writer = XmlWriter.Create(stream, settings.XmlReaderWriterSettings.WriterSettings);
@@ -44,9 +53,9 @@ namespace Refit
 
         public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
-            var xmlSerializer = serializerCache.GetOrAdd(typeof(T), t => new XmlSerializer(
-                t,
-                settings.XmlAttributeOverrides,
+            var xmlSerializer = serializerCache.GetOrAdd(new TypeSettingsCacheEntry { Type = typeof(T), Settings = settings } , t => new XmlSerializer(
+                t.Type,
+                t.Settings.XmlAttributeOverrides,
                 Array.Empty<Type>(),
                 null,
                 settings.XmlDefaultNamespace));
