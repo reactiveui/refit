@@ -24,7 +24,7 @@ namespace Refit
         }
 
         readonly XmlContentSerializerSettings settings;
-        static readonly ConcurrentDictionary<TypeSettingsCacheEntry, XmlSerializer> serializerCache = new();
+        static readonly ConcurrentDictionary<XmlContentTypeSettingsCacheEntry, XmlSerializer> serializerCache = new();
 
         public XmlContentSerializer() : this(new XmlContentSerializerSettings())
         {
@@ -40,7 +40,7 @@ namespace Refit
             if (item is null) throw new ArgumentNullException(nameof(item));
 
             
-            var xmlSerializer = serializerCache.GetOrAdd(new TypeSettingsCacheEntry{ Type = item.GetType(), Settings = settings}, t => new XmlSerializer(t.Type, t.Settings.XmlAttributeOverrides));
+            var xmlSerializer = serializerCache.GetOrAdd(new XmlContentTypeSettingsCacheEntry{ Type = item.GetType(), Settings = settings}, t => new XmlSerializer(t.Type, t.Settings.XmlAttributeOverrides));
 
             using var stream = new MemoryStream();
             using var writer = XmlWriter.Create(stream, settings.XmlReaderWriterSettings.WriterSettings);
@@ -53,7 +53,7 @@ namespace Refit
 
         public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
-            var xmlSerializer = serializerCache.GetOrAdd(new TypeSettingsCacheEntry { Type = typeof(T), Settings = settings } , t => new XmlSerializer(
+            var xmlSerializer = serializerCache.GetOrAdd(new XmlContentTypeSettingsCacheEntry { Type = typeof(T), Settings = settings } , t => new XmlSerializer(
                 t.Type,
                 t.Settings.XmlAttributeOverrides,
                 Array.Empty<Type>(),
