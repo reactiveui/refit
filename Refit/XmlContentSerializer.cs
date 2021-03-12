@@ -16,7 +16,7 @@ namespace Refit
     public class XmlContentSerializer : IHttpContentSerializer
     {
         readonly XmlContentSerializerSettings settings;
-        readonly ConcurrentDictionary<Type, XmlSerializer> serializerCache = new();
+        static readonly ConcurrentDictionary<Type, XmlSerializer> serializerCache = new();
 
         public XmlContentSerializer() : this(new XmlContentSerializerSettings())
         {
