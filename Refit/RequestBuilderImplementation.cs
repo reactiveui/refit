@@ -248,6 +248,11 @@ namespace Refit
                 var disposeResponse = true;
                 try
                 {
+                    //Load the data into buffer when body should be buffered.
+                    if (restMethod.BodyParameterInfo?.Item2 ?? false && (rq.Content != null))
+                    {
+                        await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
+                    }
                     resp = await client.SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
                     content = resp.Content ?? new StringContent(string.Empty);
                     Exception? e = null;
