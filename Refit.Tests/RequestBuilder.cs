@@ -70,6 +70,9 @@ namespace Refit.Tests
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeaderCollection(int id, [Body] object body, [HeaderCollection] IDictionary<string, string> headers);
 
+        [Post("/foo/bar/{id}")]
+        Task<string> PostSomeStuffWithoutBodyAndCustomHeaderCollection(int id, [HeaderCollection] IDictionary<string, string> headers);
+
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicHeaderCollectionAndAuthorize(int id, [Authorize] string value, [HeaderCollection] IDictionary<string, string> headers);
 
@@ -632,6 +635,23 @@ namespace Refit.Tests
 
             Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(2));
+        }
+
+        [Fact]
+        public void DynamicHeaderCollectionShouldWorkWithoutBody()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostSomeStuffWithoutBodyAndCustomHeaderCollection)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Empty(fixture.PropertyParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+
+            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
         }
 
         [Fact]
@@ -1509,7 +1529,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.QueryWithExplicitParameters));
             var output = factory(new object[] { "value1", "value2" });
 
-            var uri = new Uri(new Uri("http://api"), output.RequestUri);            
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/query?q2=value2&q1=value1", uri.PathAndQuery);
         }
@@ -1860,7 +1880,7 @@ namespace Refit.Tests
             Assert.NotEmpty(output.Properties);
             Assert.Equal(typeof(IContainAandB), output.Properties[HttpRequestMessageOptions.InterfaceType]);
 #pragma warning restore CS0618 // Type or member is obsolete
-           
+
         }
 
         [Fact]
