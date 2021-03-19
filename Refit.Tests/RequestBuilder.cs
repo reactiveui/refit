@@ -100,6 +100,13 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someValue);
 
+        [Post("/foo/bar/{id}")]
+        Task<string> PostSomeStuffWithDynamicRequestProperty(int id, [Body] object body, [Property("SomeProperty")] object someValue);
+
+        [Post("/foo/bar/{id}")]
+        Task<string> PostSomeStuffWithoutBodyAndWithDynamicRequestProperty(int id, [Property("SomeProperty")] object someValue);
+
+
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey(int id, [Property("SomeProperty")] object someValue1, [Property("SomeProperty")] object someValue2);
 
@@ -783,6 +790,39 @@ namespace Refit.Tests
 
             Assert.Equal("SomeProperty", fixture.PropertyParameterMap[1]);
         }
+
+        [Fact]
+        public void DynamicRequestPropertyShouldWorkWithBody()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostSomeStuffWithDynamicRequestProperty)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.NotNull(fixture.BodyParameterInfo);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.HeaderCollectionParameterMap);
+
+            Assert.Equal("SomeProperty", fixture.PropertyParameterMap[2]);
+        }
+
+        [Fact]
+        public void DynamicRequestPropertyShouldWorkWithoutBody()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PostSomeStuffWithoutBodyAndWithDynamicRequestProperty)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Empty(fixture.HeaderParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+            Assert.Null(fixture.AuthorizeParameterInfo);
+            Assert.Empty(fixture.HeaderCollectionParameterMap);
+
+            Assert.Equal("SomeProperty", fixture.PropertyParameterMap[1]);
+        }
+
 
         [Fact]
         public void DynamicRequestPropertiesWithoutKeysShouldDefaultKeyToParameterName()
