@@ -503,7 +503,7 @@ namespace Refit.Implementation
                 source.Append(string.Join(", ", list));
             }
             
-           source.Append(@$") {GenerateConstraints(methodSymbol.TypeParameters, true)}
+           source.Append(@$") {GenerateConstraints(methodSymbol.TypeParameters, isExplicitInterface)}
         {{");
         }
 
