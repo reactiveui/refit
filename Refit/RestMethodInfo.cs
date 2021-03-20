@@ -361,8 +361,14 @@ namespace Refit
             }
 
             // see if we're a post/put/patch
-            // BH: explicitly skip [Query]-denoted params
-            var refParams = parameterList.Where(pi => !pi.ParameterType.GetTypeInfo().IsValueType && pi.ParameterType != typeof(string) && pi.GetCustomAttribute<QueryAttribute>() == null).ToList();
+            // explicitly skip [Query], [HeaderCollection], and [Property]-denoted params
+            var refParams = parameterList.Where(pi =>
+                    !pi.ParameterType.GetTypeInfo().IsValueType &&
+                    pi.ParameterType != typeof(string) &&
+                    pi.GetCustomAttribute<QueryAttribute>() == null &&
+                    pi.GetCustomAttribute<HeaderCollectionAttribute>() == null &&
+                    pi.GetCustomAttribute<PropertyAttribute>() == null)
+                .ToList();
 
             // Check for rule #3
             if (refParams.Count > 1)
