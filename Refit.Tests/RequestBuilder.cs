@@ -181,7 +181,7 @@ namespace Refit.Tests
         #endregion
 
         [Post("/foo/{id}")]
-        Task<bool> OhYeahValueTypes(int id, [Body] int whatever);
+        Task<bool> OhYeahValueTypes(int id, [Body(buffered: true)] int whatever);
 
         [Post("/foo/{id}")]
         Task<bool> OhYeahValueTypesUnbuffered(int id, [Body(buffered: false)] int whatever);
