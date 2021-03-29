@@ -4,13 +4,11 @@ using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Text;
 
 using Refit.Generator;
 
@@ -111,13 +109,6 @@ namespace Refit.Tests
                 {
                     AdditionalReferences = { RefitAssembly },
                     Sources = { input },
-                },
-                FixedState =
-                {
-                    Sources =
-                    {
-                        input
-                    },
                 },
             }.RunAsync();
         }
@@ -639,17 +630,13 @@ namespace Refit.Implementation
                 {
                     AdditionalReferences = { RefitAssembly },
                     Sources = { input },
-                },
-                FixedState =
-                {
-                    Sources =
+                    GeneratedSources =
                     {
-                        input,                        
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\PreserveAttribute.g.cs", SourceText.From(output1, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\Generated.g.cs", SourceText.From(output1_5, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IGitHubApi.g.cs", SourceText.From(output2, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IGitHubApiDisposable.g.cs", SourceText.From(output3, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\INestedGitHubApi.g.cs", SourceText.From(output4, Encoding.UTF8)),
+                        (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
+                        (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
+                        (typeof(InterfaceStubGenerator), "IGitHubApi.g.cs", output2),
+                        (typeof(InterfaceStubGenerator), "IGitHubApiDisposable.g.cs", output3),
+                        (typeof(InterfaceStubGenerator), "INestedGitHubApi.g.cs", output4),
                     },
                 },
             }.RunAsync();
@@ -773,15 +760,11 @@ namespace Refit.Implementation
                 {
                     AdditionalReferences = { RefitAssembly },
                     Sources = { input },
-                },
-                FixedState =
-                {
-                    Sources =
+                    GeneratedSources =
                     {
-                        input,
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\PreserveAttribute.g.cs", SourceText.From(output1, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\Generated.g.cs", SourceText.From(output1_5, Encoding.UTF8)),
-                        (@"InterfaceStubGenerator.Core\Refit.Generator.InterfaceStubGenerator\IServiceWithoutNamespace.g.cs", SourceText.From(output2, Encoding.UTF8)),
+                        (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
+                        (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
+                        (typeof(InterfaceStubGenerator), "IServiceWithoutNamespace.g.cs", output2),
                     },
                 },
             }.RunAsync();
