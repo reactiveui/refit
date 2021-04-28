@@ -1,0 +1,37 @@
+version: 2
+updates:
+- package-ecosystem: nuget
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "00:00"
+  open-pull-requests-limit: 10
+  ignore:
+  - dependency-name: Microsoft.AspNetCore.WebUtilities
+    versions:
+    - "> 1.1.2"
+  - dependency-name: Microsoft.Build.Tasks.Core
+    versions:
+    - "> 14.3"
+  - dependency-name: Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit
+    versions:
+    - 1.0.1-beta1.21102.1
+    - 1.0.1-beta1.21108.2
+    - 1.0.1-beta1.21111.3
+    - 1.0.1-beta1.21123.3
+    - 1.0.1-beta1.21126.1
+    - 1.0.1-beta1.21155.2
+    - 1.0.1-beta1.21159.2
+    - 1.0.1-beta1.21160.1
+    - 1.0.1-beta1.21161.2
+    - 1.0.1-beta1.21162.1
+    - 1.0.1-beta1.21165.1
+    - 1.0.1-beta1.21166.2
+    - 1.0.1-beta1.21167.1
+    - 1.0.1-beta1.21168.1
+    - 1.0.1-beta1.21172.1
+    - 1.0.1-beta1.21177.1
+    - 1.0.1-beta1.21180.1
+    - 1.0.1-beta1.21201.1
+    - 1.0.1-beta1.21203.1
+    - 1.0.1-beta1.21208.1
