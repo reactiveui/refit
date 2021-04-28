@@ -549,7 +549,7 @@ var user = await GetUser("octocat", headers);
 
 Most APIs need some sort of Authentication. The most common is OAuth Bearer authentication. A header is added to each request of the form: `Authorization: Bearer <token>`. Refit makes it easy to insert your logic to get the token however your app needs, so you don't have to pass a token into each method.
 
-1. Add `[Headers("Authorization: Bearer")]` to the interface or methods which need need the token.
+1. Add `[Headers("Authorization: Bearer")]` to the interface or methods which need the token.
 2. Set either `AuthorizationHeaderValueGetter` or `AuthorizationHeaderValueWithParamGetter` in the `RefitSettings` instance. The difference is that latter one passes the `HttpRequestMessage` into the function in case you need to take action based on the specific request. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
 
 #### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
