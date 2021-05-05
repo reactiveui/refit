@@ -263,13 +263,22 @@ namespace Refit
                         e = await settings.ExceptionFactory(resp).ConfigureAwait(false);
                     }
 
-                    
                     if (restMethod.IsApiResponse)
                     {
-                        // Only attempt to deserialize content if no error present for backward-compatibility
-                        var body = e == null
-                            ? await DeserializeContentAsync<TBody>(resp, content, ct).ConfigureAwait(false)
-                            : default;
+                        var body = default(TBody);
+
+                        try
+                        {
+                            // Only attempt to deserialize content if no error present for backward-compatibility
+                            body = e == null
+                                ? await DeserializeContentAsync<TBody>(resp, content, ct).ConfigureAwait(false)
+                                : default;
+                        }
+                        catch (ApiException ex)
+                        {
+                            //if an error occured while attempting to deserialize return the wrapped ApiException
+                            e = ex;
+                        }
 
                         return ApiResponse.Create<T, TBody>(resp, body, settings, e as ApiException);
                     }
@@ -280,7 +289,6 @@ namespace Refit
                     }
                     else
                         return await DeserializeContentAsync<T>(resp, content, ct).ConfigureAwait(false);
-                      
                 }
                 finally
                 {
@@ -333,7 +341,7 @@ namespace Refit
             catch(Exception ex) // wrap the exception as an ApiException
             {
                 throw await ApiException.Create("An error occured deserializing the response.", resp.RequestMessage!, resp.RequestMessage!.Method, resp, settings, ex);
-            }            
+            }
         }
 
         List<KeyValuePair<string, object?>> BuildQueryMap(object? @object, string? delimiter = null, RestMethodParameterInfo? parameterInfo = null)
@@ -723,7 +731,7 @@ namespace Refit
 #endif
                 }
 
-                // Always add the top-level type of the interface to the properties               
+                // Always add the top-level type of the interface to the properties
 #if NET5_0_OR_GREATER
                 ret.Options.Set(new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType), TargetType);
 #else

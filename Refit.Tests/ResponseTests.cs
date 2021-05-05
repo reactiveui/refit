@@ -48,6 +48,9 @@ namespace Refit.Tests
         {
             [Get("/aliasTest")]
             Task<TestAliasObject> GetTestObject();
+
+            [Get("/aliasTest")]
+            Task<ApiResponse<TestAliasObject>> GetApiResponseTestObject();
         }
 
         [Fact]
@@ -225,6 +228,26 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task BadRequestWithEmptyContent_ShouldReturnApiResponse()
+        {
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("Hello world")
+            };
+            expectedResponse.Content.Headers.Clear();
+
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                .Respond(req => expectedResponse);
+
+            var apiResponse = await fixture.GetApiResponseTestObject();
+
+            Assert.NotNull(apiResponse);
+            Assert.NotNull(apiResponse.Error);
+            Assert.NotNull(apiResponse.Error.Content);
+            Assert.Equal("Hello world", apiResponse.Error.Content);
+        }
+
+        [Fact]
         public async Task ValidationApiException_HydratesBaseContent()
         {
             var expectedProblemDetails = new ProblemDetails
@@ -271,6 +294,27 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task WithHtmlResponse_ShouldReturnApiResponse()
+        {
+            const string htmlResponse = "<html><body>Hello world</body></html>";
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(htmlResponse)
+            };
+            expectedResponse.Content.Headers.Clear();
+
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                .Respond(req => expectedResponse);
+
+            var apiResponse = await fixture.GetApiResponseTestObject();
+
+            Assert.NotNull(apiResponse.Error);
+            Assert.IsType<System.Text.Json.JsonException>(apiResponse.Error.InnerException);
+            Assert.NotNull(apiResponse.Error.Content);
+            Assert.Equal(htmlResponse, apiResponse.Error.Content);
+        }
+
+        [Fact]
         public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiException()
         {
             var settings = new RefitSettings
@@ -299,6 +343,34 @@ namespace Refit.Tests
         }
 
 
+        [Fact]
+        public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiResponse()
+        {
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHandler,
+                ContentSerializer = new NewtonsoftJsonContentSerializer()
+            };
+
+            var newtonSoftFixture = RestService.For<IMyAliasService>("http://api", settings);
+
+            const string nonJsonResponse = "bad response";
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(nonJsonResponse)
+            };
+            expectedResponse.Content.Headers.Clear();
+
+            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                .Respond(req => expectedResponse);
+
+            var apiResponse = await newtonSoftFixture.GetApiResponseTestObject();
+
+            Assert.NotNull(apiResponse.Error);
+            Assert.IsType<JsonReaderException>(apiResponse.Error.InnerException);
+            Assert.NotNull(apiResponse.Error.Content);
+            Assert.Equal(nonJsonResponse, apiResponse.Error.Content);
+        }
     }
 
     public sealed class ThrowOnGetLengthMemoryStream : MemoryStream
