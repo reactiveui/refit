@@ -84,7 +84,7 @@ Refit currently supports the following platforms and any .NET Standard 2.0 targe
 
 ### SDK Requirements
 
-Refit 6 requires at Visual Studio 16.8 or higher, or the .NET SDK 5.0.100 or higher. It can target any .NET Standard 2.0 platform.
+Refit 6 requires Visual Studio 16.8 or higher, or the .NET SDK 5.0.100 or higher. It can target any .NET Standard 2.0 platform.
 
 Refit 6 does not support the old `packages.config` format for NuGet references (as they do not support analyzers/source generators). You must
 [migrate to PackageReference](https://devblogs.microsoft.com/nuget/migrate-packages-config-to-package-reference/) to use Refit v6 and later.
@@ -295,7 +295,7 @@ Task CreateUser([Body(buffered: true)] User user);
 
 #### JSON content
 
-JSON requests and responses are serialized/deserialized using an instance of the `IHttpContentSerializer` interface. Refit provides two implementations out of the box: `SystemTextJsonContentSerializer` (which is the default JSON serializer) and `NewtonsoftJsonContentSerializer`. The first uses `System.Text.Json` APIs and is focused on high performance and low memory usage, while the latter uss the known `Newtonsoft.Json` library and is more versatile and customizable. You can read more about the two serializers and the main differences between the two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
+JSON requests and responses are serialized/deserialized using an instance of the `IHttpContentSerializer` interface. Refit provides two implementations out of the box: `SystemTextJsonContentSerializer` (which is the default JSON serializer) and `NewtonsoftJsonContentSerializer`. The first uses `System.Text.Json` APIs and is focused on high performance and low memory usage, while the latter uses the known `Newtonsoft.Json` library and is more versatile and customizable. You can read more about the two serializers and the main differences between the two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
 
 For instance, here is how to create a new `RefitSettings` instance using the `Newtonsoft.Json`-based serializer (you'll also need to add a `PackageReference` to `Refit.Newtonsoft.Json`):
 
@@ -549,8 +549,8 @@ var user = await GetUser("octocat", headers);
 
 Most APIs need some sort of Authentication. The most common is OAuth Bearer authentication. A header is added to each request of the form: `Authorization: Bearer <token>`. Refit makes it easy to insert your logic to get the token however your app needs, so you don't have to pass a token into each method.
 
-1. Add `[Headers("Authorization: Bearer")]` to the interface or methods which need need the token.
-2. Set either `AuthorizationHeaderValueGetter` or `AuthorizationHeaderValueWithParamGetter` in the `RefitSettings` instance. The difference is that latter one passes the `HttpRequestMessage` into the function in case you need to take action based on the specific request. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
+1. Add `[Headers("Authorization: Bearer")]` to the interface or methods which need the token.
+2. Set either `AuthorizationHeaderValueGetter` or `AuthorizationHeaderValueWithParamGetter` in the `RefitSettings` instance. The difference is that the latter one passes the `HttpRequestMessage` into the function in case you need to take action based on the specific request. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
 
 #### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
 Although we make provisions for adding dynamic headers at runtime directly in Refit,
@@ -905,10 +905,10 @@ Task<string> GetUser(string user);
 IObservable<HttpResponseMessage> GetUser(string user);
 ```
 
-There is also a generic wrapper class called `ApiResponse<T>` that can be used as a return type. Using this class as a return type allows you to retrieve not just the content as an object, but also any meta data associated with the request/response. This includes information such as response headers, the http status code and reason phrase (e.g. 404 Not Found), the response version, the original request message that was sent and in the case of an error, an `ApiException` object containing details of the error. Following are some examples of how you can retrieve the response meta data.
+There is also a generic wrapper class called `ApiResponse<T>` that can be used as a return type. Using this class as a return type allows you to retrieve not just the content as an object, but also any metadata associated with the request/response. This includes information such as response headers, the http status code and reason phrase (e.g. 404 Not Found), the response version, the original request message that was sent and in the case of an error, an `ApiException` object containing details of the error. Following are some examples of how you can retrieve the response metadata.
 
 ```csharp
-//Returns the content within a wrapper class containing meta data about the request/response
+//Returns the content within a wrapper class containing metadata about the request/response
 [Get("/users/{user}")]
 Task<ApiResponse<User>> GetUser(string user);
 
@@ -1000,7 +1000,7 @@ In this example, the `IDerivedServiceA` interface will expose both the `GetResou
 
 #### Headers inheritance
 
-When using inheritance, existing header attributes will passed along as well, and the inner-most ones will have precedence:
+When using inheritance, existing header attributes will be passed along as well, and the inner-most ones will have precedence:
 
 ```csharp
 [Headers("User-Agent: AAA")]
