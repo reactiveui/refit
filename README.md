@@ -68,6 +68,8 @@ services
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
 * [Handling exceptions](#handling-exceptions)
+  * [When returning Task<ApiResponse<T>>](#when-returning-taskapiresponset)
+  * [When returning Task<T>](#when-returning-taskt)
 
 ### Where does this work?
 
