@@ -70,6 +70,7 @@ services
 * [Handling exceptions](#handling-exceptions)
   * [When returning Task<ApiResponse<T>>](#when-returning-taskapiresponset)
   * [When returning Task<T>](#when-returning-taskt)
+  * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
 
 ### Where does this work?
 
@@ -1191,6 +1192,8 @@ catch (ApiException exception)
 }
 // ...
 ```
+
+#### Providing a custom `ExceptionFactory`
 
 You can also override default exceptions behavior that are raised by the `ExceptionFactory` when processing the result by providing a custom exception factory in `RefitSettings`. For example, you can suppress all exceptions with the following:
 
