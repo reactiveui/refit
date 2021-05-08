@@ -1142,7 +1142,7 @@ Refit traps any `ApiException` raised by the `ExceptionFactory` when processing 
 You can then decide what to do like so:
 
     var response = await _myRefitClient.GetSomeStuff();
-    if(response.IsSuccess)
+    if(response.IsSuccessStatusCode)
     {
        //do your thing
     }
