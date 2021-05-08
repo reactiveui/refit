@@ -49,7 +49,7 @@ namespace Refit.Tests
             [Get("/aliasTest")]
             Task<TestAliasObject> GetTestObject();
 
-            [Get("/aliasTest")]
+            [Get("/GetApiResponseTestObject")]
             Task<ApiResponse<TestAliasObject>> GetApiResponseTestObject();
         }
 
@@ -135,6 +135,9 @@ namespace Refit.Tests
 
             expectedResponse.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/problem+json");
             mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+                .Respond(req => expectedResponse);
+
+            mockHandler.Expect(HttpMethod.Get, "http://api/soloyolo")
                 .Respond(req => expectedResponse);
 
             var actualException = await Assert.ThrowsAsync<ValidationApiException>(() => fixture.GetTestObject());
@@ -236,7 +239,7 @@ namespace Refit.Tests
             };
             expectedResponse.Content.Headers.Clear();
 
-            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+            mockHandler.Expect(HttpMethod.Get, $"http://api/{nameof(fixture.GetApiResponseTestObject)}")
                 .Respond(req => expectedResponse);
 
             var apiResponse = await fixture.GetApiResponseTestObject();
@@ -303,7 +306,7 @@ namespace Refit.Tests
             };
             expectedResponse.Content.Headers.Clear();
 
-            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+            mockHandler.Expect(HttpMethod.Get, $"http://api/{nameof(fixture.GetApiResponseTestObject)}")
                 .Respond(req => expectedResponse);
 
             var apiResponse = await fixture.GetApiResponseTestObject();
@@ -361,7 +364,7 @@ namespace Refit.Tests
             };
             expectedResponse.Content.Headers.Clear();
 
-            mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest")
+            mockHandler.Expect(HttpMethod.Get, $"http://api/{nameof(fixture.GetApiResponseTestObject)}")
                 .Respond(req => expectedResponse);
 
             var apiResponse = await newtonSoftFixture.GetApiResponseTestObject();
