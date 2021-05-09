@@ -263,7 +263,7 @@ namespace Refit
                         e = await settings.ExceptionFactory(resp).ConfigureAwait(false);
                     }
 
-                    
+
                     if (restMethod.IsApiResponse)
                     {
                         // Only attempt to deserialize content if no error present for backward-compatibility
@@ -280,7 +280,7 @@ namespace Refit
                     }
                     else
                         return await DeserializeContentAsync<T>(resp, content, ct).ConfigureAwait(false);
-                      
+
                 }
                 finally
                 {
@@ -333,7 +333,7 @@ namespace Refit
             catch(Exception ex) // wrap the exception as an ApiException
             {
                 throw await ApiException.Create("An error occured deserializing the response.", resp.RequestMessage!, resp.RequestMessage!.Method, resp, settings, ex);
-            }            
+            }
         }
 
         List<KeyValuePair<string, object?>> BuildQueryMap(object? @object, string? delimiter = null, RestMethodParameterInfo? parameterInfo = null)
@@ -714,6 +714,16 @@ namespace Refit
                     }
                 }
 
+                var providedProperties = restMethod.RefitSettings.PropertyProviderFactory?.Invoke(restMethod.MethodInfo, TargetType);
+
+                if (providedProperties != null)
+                {
+                    foreach (var kvp in providedProperties)
+                    {
+                        propertiesToAdd[kvp.Key] = kvp.Value;
+                    }
+                }
+
                 foreach (var property in propertiesToAdd)
                 {
 #if NET5_0_OR_GREATER
@@ -722,15 +732,6 @@ namespace Refit
                     ret.Properties[property.Key] = property.Value;
 #endif
                 }
-
-                // Always add the top-level type of the interface to the properties               
-#if NET5_0_OR_GREATER
-                ret.Options.Set(new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType), TargetType);
-#else
-                ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
-#endif
-
-                ;
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 namespace Refit
 {
     public class RefitSettings
-    {       
+    {
 
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the default parameters
@@ -22,6 +23,7 @@ namespace Refit
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
+            PropertyProviderFactory = new DefaultPropertyProviderFactory().GetDefaultProperties;
         }
 
         /// <summary>
@@ -39,6 +41,7 @@ namespace Refit
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
+            PropertyProviderFactory = new DefaultPropertyProviderFactory().GetDefaultProperties;
         }
 
         /// <summary>
@@ -61,6 +64,12 @@ namespace Refit
         /// If function returns null - no exception is thrown.
         /// </summary>
         public Func<HttpResponseMessage, Task<Exception?>> ExceptionFactory { get; set; }
+
+        /// <summary>
+        /// Supply a function to provide a <see cref="IDictionary{TKey,TValue}"/> of properties to store in HttpRequestMessage.Properties/Options
+        /// based on the <see cref="MethodInfo"/> of the request and the <see cref="Type"/> of the Refit target interface
+        /// </summary>
+        public Func<MethodInfo, Type, IDictionary<string, object>> PropertyProviderFactory { get; set; }
 
         public IHttpContentSerializer ContentSerializer { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
@@ -152,6 +161,16 @@ namespace Refit
                                      ? "{0}"
                                      : $"{{0:{formatString}}}",
                                  enummember?.Value ?? parameterValue);
+        }
+    }
+
+    public class DefaultPropertyProviderFactory
+    {
+        public IDictionary<string, object> GetDefaultProperties(MethodInfo methodInfo, Type targetType)
+        {
+            var properties = new Dictionary<string, object> {{HttpRequestMessageOptions.InterfaceType, targetType}};
+
+            return properties;
         }
     }
 
