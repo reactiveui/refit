@@ -70,6 +70,7 @@ namespace Refit.Tests.Extensions.Properties
             Assert.Equal(dummyObject, result1);
             Assert.Equal(dummyObject, result2.Content);
             Assert.Equal(propertyValue, result2.RequestMessage?.Properties["someProperty"]);
+            Assert.Equal(1, result2.RequestMessage?.Properties.Count);
         }
 
         [Fact]
@@ -108,6 +109,121 @@ namespace Refit.Tests.Extensions.Properties
             Assert.Equal(dummyObject, result1);
             Assert.Equal(dummyObject, result2.Content);
             Assert.IsAssignableFrom<MethodInfo>(result2.RequestMessage?.Properties[methodInfoKey]);
+            Assert.Equal(2, result2.RequestMessage?.Properties.Count);
+        }
+
+        [Fact]
+        public async Task GivenPropertyProviderReturnsNull_WhenInvokeRefit_Success()
+        {
+            var propertyValue = "somePropertyValue";
+            var dummyObject = new MyDummyObject
+            {
+                SomeValue = "AValue",
+                AnotherValue = 1
+            };
+            var methodInfoKey = "methodInfo";
+
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => handler,
+                PropertyProviderFactory = (methodInfo, targetType) => null
+            };
+
+            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+
+            var fixture = RestService.For<IMyService>("http://api", settings);
+
+            var result1 = await fixture.GetWithResult(propertyValue);
+            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal(dummyObject, result1);
+            Assert.Equal(dummyObject, result2.Content);
+            Assert.Equal(propertyValue, result2.RequestMessage?.Properties["someProperty"]);
+            Assert.Equal(1, result2.RequestMessage?.Properties.Count);
+        }
+
+        [Fact]
+        public async Task GivenPropertyProviderOverwritesAProperty_WhenInvokeRefit_LastWriteWins()
+        {
+            var propertyValue = "somePropertyValue";
+            var overwrittenPropertyValue = "aDifferentPropertyValue";
+            var existingPropertyKey = "someProperty";
+            var dummyObject = new MyDummyObject
+            {
+                SomeValue = "AValue",
+                AnotherValue = 1
+            };
+
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => handler,
+                PropertyProviderFactory = (methodInfo, targetType) => new Dictionary<string, object>
+                {
+                    {existingPropertyKey, overwrittenPropertyValue}
+                }
+            };
+
+            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+
+            var fixture = RestService.For<IMyService>("http://api", settings);
+
+            var result1 = await fixture.GetWithResult(propertyValue);
+            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal(dummyObject, result1);
+            Assert.Equal(dummyObject, result2.Content);
+            Assert.Equal(overwrittenPropertyValue, result2.RequestMessage?.Properties[existingPropertyKey]);
+            Assert.Equal(1, result2.RequestMessage?.Properties.Count);
+        }
+
+        [Fact]
+        public async Task GivenPropertyProviderThrowsException_WhenInvokeRefit_PopulatesExceptionToProperties()
+        {
+            var propertyValue = "somePropertyValue";
+            var existingPropertyKey = "someProperty";
+            var dummyObject = new MyDummyObject
+            {
+                SomeValue = "AValue",
+                AnotherValue = 1
+            };
+            var tantrum = new Exception("I'm very unhappy about this...kaboom!");
+
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => handler,
+                PropertyProviderFactory = (methodInfo, targetType) => throw tantrum
+            };
+
+            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+
+            var fixture = RestService.For<IMyService>("http://api", settings);
+
+            var result1 = await fixture.GetWithResult(propertyValue);
+            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal(dummyObject, result1);
+            Assert.Equal(dummyObject, result2.Content);
+            Assert.Equal(2, result2.RequestMessage?.Properties.Count);
+            Assert.Equal(propertyValue, result2.RequestMessage?.Properties[existingPropertyKey]);
+            Assert.Equal(tantrum, result2.RequestMessage?.Properties[HttpRequestMessageOptions.PropertyProviderException]);
         }
     }
 }
