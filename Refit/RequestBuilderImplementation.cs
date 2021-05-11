@@ -714,27 +714,28 @@ namespace Refit
                     }
                 }
 
-                try
+                if (restMethod.RefitSettings.PropertyProviderFactory != null)
                 {
-                    var providedProperties =
-                        restMethod.RefitSettings.PropertyProviderFactory?.Invoke(restMethod.MethodInfo, TargetType);
-
-                    if (providedProperties != null)
+                    try
                     {
-                        foreach (var kvp in providedProperties)
+                        var providedProperties = restMethod.RefitSettings.PropertyProviderFactory.Invoke(restMethod.MethodInfo, TargetType);
+
+                        if (providedProperties != null)
                         {
-                            propertiesToAdd[kvp.Key] = kvp.Value;
+                            foreach (var kvp in providedProperties)
+                            {
+                                propertiesToAdd[kvp.Key] = kvp.Value;
+                            }
                         }
                     }
+                    catch(Exception e)
+                    {
+                        /*don't let the request blow up if a custom property provider throws an exception
+                         but give the developer a way to know what went wrong
+                         */
+                        propertiesToAdd[HttpRequestMessageOptions.PropertyProviderException] = e;
+                    }
                 }
-                catch(Exception e)
-                {
-                     /*don't let the request blow up if a custom property provider throws an exception
-                      but give the developer a way to know what went wrong
-                      */
-                     propertiesToAdd[HttpRequestMessageOptions.PropertyProviderException] = e;
-                }
-
 
                 foreach (var property in propertiesToAdd)
                 {

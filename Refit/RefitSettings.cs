@@ -25,7 +25,7 @@ namespace Refit
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
-            PropertyProviderFactory = new DefaultPropertyProvider().GetDefaultProperties;
+            PropertyProviderFactory = Refit.Extensions.Properties.PropertyProviderFactory.DefaultPropertyProvider;
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Refit
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
-            PropertyProviderFactory = new DefaultPropertyProvider().GetDefaultProperties;
+            PropertyProviderFactory = Refit.Extensions.Properties.PropertyProviderFactory.DefaultPropertyProvider;
         }
 
         /// <summary>

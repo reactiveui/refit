@@ -4,12 +4,15 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+
+using Refit.Extensions.Properties;
+
 using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace Refit.Tests.Extensions.Properties
 {
-    public class PropertyProviderEndToEndTests
+    public class PropertyProviderTests
     {
         public class MyDummyObject
         {
@@ -88,10 +91,7 @@ namespace Refit.Tests.Extensions.Properties
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => handler,
-                PropertyProviderFactory = (methodInfo, targetType) => new Dictionary<string, object>
-                {
-                    {methodInfoKey, methodInfo}
-                }
+                PropertyProviderFactory = PropertyProviderFactory.MethodInfoPropertyProvider
             };
 
             handler.Expect(HttpMethod.Get, "http://api/get-with-result")
@@ -108,7 +108,7 @@ namespace Refit.Tests.Extensions.Properties
 
             Assert.Equal(dummyObject, result1);
             Assert.Equal(dummyObject, result2.Content);
-            Assert.IsAssignableFrom<MethodInfo>(result2.RequestMessage?.Properties[methodInfoKey]);
+            Assert.IsAssignableFrom<MethodInfo>(result2.RequestMessage?.Properties[HttpRequestMessageOptions.MethodInfo]);
             Assert.Equal(2, result2.RequestMessage?.Properties.Count);
         }
 
@@ -127,7 +127,7 @@ namespace Refit.Tests.Extensions.Properties
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => handler,
-                PropertyProviderFactory = (methodInfo, targetType) => null
+                PropertyProviderFactory = PropertyProviderFactory.NullPropertyProvider
             };
 
             handler.Expect(HttpMethod.Get, "http://api/get-with-result")
