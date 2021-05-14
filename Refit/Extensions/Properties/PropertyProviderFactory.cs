@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 
@@ -10,7 +11,7 @@ namespace Refit.Extensions.Properties
         /// <summary>
         /// Populates the Refit interface type into the <see cref="HttpRequestMessage"/> properties
         /// </summary>
-        public static IDictionary<string, object> DefaultPropertyProvider(MethodInfo methodInfo, Type targetType)
+        public static IDictionary<string, object> RefitInterfaceTypePropertyProvider(MethodInfo methodInfo, Type targetType)
         {
             var properties = new Dictionary<string, object> {{HttpRequestMessageOptions.InterfaceType, targetType}};
 
@@ -43,14 +44,26 @@ namespace Refit.Extensions.Properties
             Type targetType)
         {
             var properties = new Dictionary<string, object>();
-            foreach (var attr in methodInfo.GetCustomAttributes())
+
+            foreach (var interfaceAttribute in targetType.GetCustomAttributes())
             {
-                if (attr is RefitAttribute)
+                //just select custom attributes where not this type
+                if (interfaceAttribute is RefitAttribute)
                 {
                     continue;
                 }
 
-                properties[attr.GetType().Name] = attr;
+                properties[interfaceAttribute.GetType().Name] = interfaceAttribute;
+            }
+
+            foreach (var methodAttribute in methodInfo.GetCustomAttributes())
+            {
+                if (methodAttribute is RefitAttribute)
+                {
+                    continue;
+                }
+
+                properties[methodAttribute.GetType().Name] = methodAttribute;
             }
 
             return properties;

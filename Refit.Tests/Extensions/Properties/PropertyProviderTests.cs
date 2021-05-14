@@ -13,7 +13,7 @@ namespace Refit.Tests.Extensions.Properties
 {
     public class PropertyProviderTests
     {
-        [AttributeUsage(AttributeTargets.Method)]
+        [AttributeUsage(AttributeTargets.Method | AttributeTargets.Interface)]
         private class RetryAttribute : Attribute
         {
             public int Times { get; }
@@ -40,34 +40,55 @@ namespace Refit.Tests.Extensions.Properties
             public int AnotherValue { get; set; }
         }
 
+        private const int TargetInterfaceRetryTimes = 0;
         private const int PostMutlipartRetryTimes = 1;
         private const int PutHeadersRetryTimes = 2;
         private const int GetApiResponseRetryTimes = 3;
         private const int DeleteQueryUriFormatRetryTimes = 4;
+        private const string GetWithResult = "get-with-result";
+        private const string PostMultipart = "post-multipart";
+        private const string PutHeaders = "put-headers";
+        private const string GetApiResponse = "get-api-response";
+        private const string DeleteQueryUriFormat = "delete-query-uri-format";
+        private const string HeadInterface = "head-interface";
 
+        /*
+         * This is a sample of how an end users might use a property provider
+         * to feed metadata into a delegating handler in order to control certain behaviors.
+         * Polly's integration with HttpClient via HttpClientFactory allows you to set behaviors
+         * that apply across the board to an entire HttpClient, but sometimes that isn't granular enough.
+         * This feature provides the possibility of more fine-grained control.
+         * You could for example still define policies with Polly and store them in a policy registry
+         * and then leverage the CustomAttributePropertyProvider to build an attribute and
+         * DelegatingHandler that allows you to select which Polly policy to apply!
+         */
+        [Retry(TargetInterfaceRetryTimes)]
         public interface IMyService
         {
-            [Get("/get-with-result")]
+            [Get("/" + PropertyProviderTests.GetWithResult)]
             Task<MyDummyObject> GetWithResult([Property] string someProperty);
 
             [Retry(PostMutlipartRetryTimes)]
             [Multipart]
-            [Post("/post-multipart")]
+            [Post("/" + PropertyProviderTests.PostMultipart)]
             Task<ApiResponse<MyDummyObject>> PostMultipart(string multipartValue, [Property] string someProperty);
 
             [Retry(PutHeadersRetryTimes)]
             [Headers("User-Agent: AAA")]
-            [Put("/put-headers")]
+            [Put("/" + PropertyProviderTests.PutHeaders)]
             Task<ApiResponse<MyDummyObject>> PutHeaders([Property] string someProperty);
 
             [Retry(GetApiResponseRetryTimes)]
-            [Get("/get-api-response-with-result")]
+            [Get("/" + PropertyProviderTests.GetApiResponse)]
             Task<ApiResponse<MyDummyObject>> GetApiResponse([Property] string someProperty);
 
             [Retry(DeleteQueryUriFormatRetryTimes)]
             [QueryUriFormat(UriFormat.Unescaped)]
-            [Delete("/delete-query-uri-format")]
+            [Delete("/" + PropertyProviderTests.DeleteQueryUriFormat)]
             Task<ApiResponse<MyDummyObject>> DeleteQueryUriFormat([Property] string someProperty);
+
+            [Head("/" + PropertyProviderTests.HeadInterface)]
+            Task<ApiResponse<MyDummyObject>> HeadInterface([Property] string someProperty);
         }
 
         [Fact]
@@ -82,9 +103,9 @@ namespace Refit.Tests.Extensions.Properties
                 HttpMessageHandlerFactory = () => handler, PropertyProviderFactory = null!
             };
 
-            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetWithResult}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
-            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetApiResponse}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
@@ -105,7 +126,6 @@ namespace Refit.Tests.Extensions.Properties
         {
             var propertyValue = "somePropertyValue";
             var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};
-            var methodInfoKey = "methodInfo";
 
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings
@@ -114,9 +134,9 @@ namespace Refit.Tests.Extensions.Properties
                 PropertyProviderFactory = PropertyProviderFactory.MethodInfoPropertyProvider
             };
 
-            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetWithResult}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
-            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetApiResponse}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
@@ -138,7 +158,6 @@ namespace Refit.Tests.Extensions.Properties
         {
             var propertyValue = "somePropertyValue";
             var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};
-            var methodInfoKey = "methodInfo";
 
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings
@@ -147,9 +166,9 @@ namespace Refit.Tests.Extensions.Properties
                 PropertyProviderFactory = PropertyProviderFactory.NullPropertyProvider
             };
 
-            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetWithResult}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
-            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetApiResponse}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
@@ -183,9 +202,9 @@ namespace Refit.Tests.Extensions.Properties
                 }
             };
 
-            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetWithResult}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
-            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetApiResponse}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
@@ -216,9 +235,9 @@ namespace Refit.Tests.Extensions.Properties
                 PropertyProviderFactory = (methodInfo, targetType) => throw tantrum
             };
 
-            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetWithResult}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
-            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetApiResponse}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
@@ -241,7 +260,6 @@ namespace Refit.Tests.Extensions.Properties
         {
             var propertyValue = "somePropertyValue";
             var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};
-            var methodInfoKey = "methodInfo";
 
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings
@@ -250,11 +268,17 @@ namespace Refit.Tests.Extensions.Properties
                 PropertyProviderFactory = PropertyProviderFactory.CustomAttributePropertyProvider
             };
 
-            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetWithResult}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
-            handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
+            handler.Expect(HttpMethod.Get, $"http://api/{GetApiResponse}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
-            handler.Expect(HttpMethod.Post, "http://api/post-multipart")
+            handler.Expect(HttpMethod.Post, $"http://api/{PostMultipart}")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+            handler.Expect(HttpMethod.Put, $"http://api/{PutHeaders}")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+            handler.Expect(HttpMethod.Delete, $"http://api/{DeleteQueryUriFormat}")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+            handler.Expect(HttpMethod.Head, $"http://api/{HeadInterface}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
@@ -264,6 +288,7 @@ namespace Refit.Tests.Extensions.Properties
             var postMultipartResult = await fixture.PostMultipart("multipart", propertyValue);
             var putHeadersResult = await fixture.PutHeaders(propertyValue);
             var deleteQueryUriFormatResult = await fixture.DeleteQueryUriFormat(propertyValue);
+            var patchResult = await fixture.HeadInterface(propertyValue);
 
             handler.VerifyNoOutstandingExpectation();
 
@@ -274,6 +299,7 @@ namespace Refit.Tests.Extensions.Properties
             Assert.Equal(2, postMultipartResult.RequestMessage.Options.Count());
             Assert.Equal(2, putHeadersResult.RequestMessage.Options.Count());
             Assert.Equal(2, deleteQueryUriFormatResult.RequestMessage.Options.Count());
+            Assert.Equal(2, patchResult.RequestMessage.Options.Count());
 
             RetryAttribute retryAttribute;
 
@@ -288,11 +314,15 @@ namespace Refit.Tests.Extensions.Properties
 
             Assert.True(deleteQueryUriFormatResult.RequestMessage.Options.TryGetValue(new HttpRequestOptionsKey<RetryAttribute>(nameof(RetryAttribute)), out retryAttribute));
             Assert.Equal(DeleteQueryUriFormatRetryTimes, retryAttribute.Times);
+
+            Assert.True(patchResult.RequestMessage.Options.TryGetValue(new HttpRequestOptionsKey<RetryAttribute>(nameof(RetryAttribute)), out retryAttribute));
+            Assert.Equal(TargetInterfaceRetryTimes, retryAttribute.Times);
 #else
             Assert.Equal(2, getApiResponseResult.RequestMessage.Properties.Count);
             Assert.Equal(2, postMultipartResult.RequestMessage.Properties.Count);
             Assert.Equal(2, putHeadersResult.RequestMessage.Properties.Count);
             Assert.Equal(2, deleteQueryUriFormatResult.RequestMessage.Properties.Count);
+            Assert.Equal(2, patchResult.RequestMessage.Properties.Count);
 
             RetryAttribute retryAttribute;
 
@@ -311,6 +341,10 @@ namespace Refit.Tests.Extensions.Properties
             retryAttribute = deleteQueryUriFormatResult.RequestMessage.Properties[nameof(RetryAttribute)] as RetryAttribute;
             Assert.NotNull(retryAttribute);
             Assert.Equal(DeleteQueryUriFormatRetryTimes, retryAttribute.Times);
+
+            retryAttribute = patchResult.RequestMessage.Properties[nameof(RetryAttribute)] as RetryAttribute;
+            Assert.NotNull(retryAttribute);
+            Assert.Equal(TargetInterfaceRetryTimes, retryAttribute.Times);
 #endif
         }
     }
