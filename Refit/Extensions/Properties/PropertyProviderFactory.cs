@@ -36,7 +36,8 @@ namespace Refit.Extensions.Properties
         }
 
         /// <summary>
-        /// Populates the any custom <see cref="Attribute"/>s present on the currently executing method on the Refit interface into the <see cref="HttpRequestMessage"/> properties
+        /// Populates any custom <see cref="Attribute"/> present on the currently executing method on the Refit interface that is not a subclass of <see cref="RefitAttribute"/>
+        /// into the <see cref="HttpRequestMessage"/> properties with the key as the Name property on the <see cref="Type"/> of the <see cref="Attribute"/>
         /// </summary>
         public static IDictionary<string, object> CustomAttributePropertyProvider(MethodInfo methodInfo,
             Type targetType)
@@ -44,19 +45,7 @@ namespace Refit.Extensions.Properties
             var properties = new Dictionary<string, object>();
             foreach (var attr in methodInfo.GetCustomAttributes())
             {
-                if (attr is HttpMethodAttribute ||
-                    attr is AuthorizeAttribute ||
-                    attr is MultipartAttribute ||
-                    attr is PropertyAttribute ||
-                    attr is BodyAttribute ||
-                    attr is AliasAsAttribute ||
-                    attr is AttachmentNameAttribute ||
-                    attr is HeaderCollectionAttribute ||
-                    attr is HeaderAttribute ||
-                    attr is HeadersAttribute ||
-                    attr is PropertyAttribute ||
-                    attr is QueryAttribute ||
-                    attr is QueryUriFormatAttribute)
+                if (attr is RefitAttribute)
                 {
                     continue;
                 }

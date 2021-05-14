@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-
 using Refit.Extensions.Properties;
-
 using RichardSzalay.MockHttp;
-
 using Xunit;
 
 namespace Refit.Tests.Extensions.Properties
@@ -42,14 +40,34 @@ namespace Refit.Tests.Extensions.Properties
             public int AnotherValue { get; set; }
         }
 
+        private const int PostMutlipartRetryTimes = 1;
+        private const int PutHeadersRetryTimes = 2;
+        private const int GetApiResponseRetryTimes = 3;
+        private const int DeleteQueryUriFormatRetryTimes = 4;
+
         public interface IMyService
         {
-            [Retry(3)]
-            [Get("/get-api-response-with-result")]
-            Task<ApiResponse<MyDummyObject>> GetApiResponseWithResult([Property] string someProperty);
-
             [Get("/get-with-result")]
             Task<MyDummyObject> GetWithResult([Property] string someProperty);
+
+            [Retry(PostMutlipartRetryTimes)]
+            [Multipart]
+            [Post("/post-multipart")]
+            Task<ApiResponse<MyDummyObject>> PostMultipart(string multipartValue, [Property] string someProperty);
+
+            [Retry(PutHeadersRetryTimes)]
+            [Headers("User-Agent: AAA")]
+            [Put("/put-headers")]
+            Task<ApiResponse<MyDummyObject>> PutHeaders([Property] string someProperty);
+
+            [Retry(GetApiResponseRetryTimes)]
+            [Get("/get-api-response-with-result")]
+            Task<ApiResponse<MyDummyObject>> GetApiResponse([Property] string someProperty);
+
+            [Retry(DeleteQueryUriFormatRetryTimes)]
+            [QueryUriFormat(UriFormat.Unescaped)]
+            [Delete("/delete-query-uri-format")]
+            Task<ApiResponse<MyDummyObject>> DeleteQueryUriFormat([Property] string someProperty);
         }
 
         [Fact]
@@ -72,7 +90,7 @@ namespace Refit.Tests.Extensions.Properties
             var fixture = RestService.For<IMyService>("http://api", settings);
 
             var result1 = await fixture.GetWithResult(propertyValue);
-            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+            var result2 = await fixture.GetApiResponse(propertyValue);
 
             handler.VerifyNoOutstandingExpectation();
 
@@ -104,7 +122,7 @@ namespace Refit.Tests.Extensions.Properties
             var fixture = RestService.For<IMyService>("http://api", settings);
 
             var result1 = await fixture.GetWithResult(propertyValue);
-            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+            var result2 = await fixture.GetApiResponse(propertyValue);
 
             handler.VerifyNoOutstandingExpectation();
 
@@ -137,7 +155,7 @@ namespace Refit.Tests.Extensions.Properties
             var fixture = RestService.For<IMyService>("http://api", settings);
 
             var result1 = await fixture.GetWithResult(propertyValue);
-            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+            var result2 = await fixture.GetApiResponse(propertyValue);
 
             handler.VerifyNoOutstandingExpectation();
 
@@ -173,7 +191,7 @@ namespace Refit.Tests.Extensions.Properties
             var fixture = RestService.For<IMyService>("http://api", settings);
 
             var result1 = await fixture.GetWithResult(propertyValue);
-            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+            var result2 = await fixture.GetApiResponse(propertyValue);
 
             handler.VerifyNoOutstandingExpectation();
 
@@ -206,7 +224,7 @@ namespace Refit.Tests.Extensions.Properties
             var fixture = RestService.For<IMyService>("http://api", settings);
 
             var result1 = await fixture.GetWithResult(propertyValue);
-            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+            var result2 = await fixture.GetApiResponse(propertyValue);
 
             handler.VerifyNoOutstandingExpectation();
 
@@ -236,22 +254,63 @@ namespace Refit.Tests.Extensions.Properties
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
             handler.Expect(HttpMethod.Get, "http://api/get-api-response-with-result")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+            handler.Expect(HttpMethod.Post, "http://api/post-multipart")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
 
             var result1 = await fixture.GetWithResult(propertyValue);
-            var result2 = await fixture.GetApiResponseWithResult(propertyValue);
+            var getApiResponseResult = await fixture.GetApiResponse(propertyValue);
+            var postMultipartResult = await fixture.PostMultipart("multipart", propertyValue);
+            var putHeadersResult = await fixture.PutHeaders(propertyValue);
+            var deleteQueryUriFormatResult = await fixture.DeleteQueryUriFormat(propertyValue);
 
             handler.VerifyNoOutstandingExpectation();
 
             Assert.Equal(dummyObject, result1);
-            Assert.Equal(dummyObject, result2.Content);
-            Assert.Equal(2, result2.RequestMessage?.Properties.Count);
+            Assert.Equal(dummyObject, getApiResponseResult.Content);
 #if NET5_0_OR_GREATER
-            RetryAttribute retryAttribute = default;
-            Assert.True(result2.RequestMessage.Options.TryGetValue(
-                new HttpRequestOptionsKey<RetryAttribute>(nameof(RetryAttribute)), out retryAttribute));
-            Assert.Equal(3, retryAttribute.Times);
+            Assert.Equal(2, getApiResponseResult.RequestMessage.Options.Count());
+            Assert.Equal(2, postMultipartResult.RequestMessage.Options.Count());
+            Assert.Equal(2, putHeadersResult.RequestMessage.Options.Count());
+            Assert.Equal(2, deleteQueryUriFormatResult.RequestMessage.Options.Count());
+
+            RetryAttribute retryAttribute;
+
+            Assert.True(postMultipartResult.RequestMessage.Options.TryGetValue(new HttpRequestOptionsKey<RetryAttribute>(nameof(RetryAttribute)), out retryAttribute));
+            Assert.Equal(PostMutlipartRetryTimes, retryAttribute.Times);
+
+            Assert.True(putHeadersResult.RequestMessage.Options.TryGetValue(new HttpRequestOptionsKey<RetryAttribute>(nameof(RetryAttribute)), out retryAttribute));
+            Assert.Equal(PutHeadersRetryTimes, retryAttribute.Times);
+
+            Assert.True(getApiResponseResult.RequestMessage.Options.TryGetValue(new HttpRequestOptionsKey<RetryAttribute>(nameof(RetryAttribute)), out retryAttribute));
+            Assert.Equal(GetApiResponseRetryTimes, retryAttribute.Times);
+
+            Assert.True(deleteQueryUriFormatResult.RequestMessage.Options.TryGetValue(new HttpRequestOptionsKey<RetryAttribute>(nameof(RetryAttribute)), out retryAttribute));
+            Assert.Equal(DeleteQueryUriFormatRetryTimes, retryAttribute.Times);
+#else
+            Assert.Equal(2, getApiResponseResult.RequestMessage.Properties.Count);
+            Assert.Equal(2, postMultipartResult.RequestMessage.Properties.Count);
+            Assert.Equal(2, putHeadersResult.RequestMessage.Properties.Count);
+            Assert.Equal(2, deleteQueryUriFormatResult.RequestMessage.Properties.Count);
+
+            RetryAttribute retryAttribute;
+
+            retryAttribute = getApiResponseResult.RequestMessage.Properties[nameof(RetryAttribute)] as RetryAttribute;
+            Assert.NotNull(retryAttribute);
+            Assert.Equal(GetApiResponseRetryTimes, retryAttribute.Times);
+
+            retryAttribute = postMultipartResult.RequestMessage.Properties[nameof(RetryAttribute)] as RetryAttribute;
+            Assert.NotNull(retryAttribute);
+            Assert.Equal(PostMutlipartRetryTimes, retryAttribute.Times);
+
+            retryAttribute = putHeadersResult.RequestMessage.Properties[nameof(RetryAttribute)] as RetryAttribute;
+            Assert.NotNull(retryAttribute);
+            Assert.Equal(PutHeadersRetryTimes, retryAttribute.Times);
+
+            retryAttribute = deleteQueryUriFormatResult.RequestMessage.Properties[nameof(RetryAttribute)] as RetryAttribute;
+            Assert.NotNull(retryAttribute);
+            Assert.Equal(DeleteQueryUriFormatRetryTimes, retryAttribute.Times);
 #endif
         }
     }
