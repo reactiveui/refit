@@ -256,7 +256,7 @@ namespace Refit.Tests.Extensions.Properties
         }
 
         [Fact]
-        public async Task GivenCustomAttributePropertyProvider_WhenInvokeRefit_CustomAttributesPopulatedIntoProperties()
+        public async Task GivenCustomAttributePropertyProvider_WhenInvokeRefitReturningTaskApiResponseT_CustomAttributesPopulatedIntoProperties()
         {
             var propertyValue = "somePropertyValue";
             var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};
@@ -268,8 +268,6 @@ namespace Refit.Tests.Extensions.Properties
                 PropertyProviderFactory = PropertyProviderFactory.CustomAttributePropertyProvider
             };
 
-            handler.Expect(HttpMethod.Get, $"http://api/{GetWithResult}")
-                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
             handler.Expect(HttpMethod.Get, $"http://api/{GetApiResponse}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
             handler.Expect(HttpMethod.Post, $"http://api/{PostMultipart}")
@@ -283,7 +281,6 @@ namespace Refit.Tests.Extensions.Properties
 
             var fixture = RestService.For<IMyService>("http://api", settings);
 
-            var result1 = await fixture.GetWithResult(propertyValue);
             var getApiResponseResult = await fixture.GetApiResponse(propertyValue);
             var postMultipartResult = await fixture.PostMultipart("multipart", propertyValue);
             var putHeadersResult = await fixture.PutHeaders(propertyValue);
@@ -292,7 +289,6 @@ namespace Refit.Tests.Extensions.Properties
 
             handler.VerifyNoOutstandingExpectation();
 
-            Assert.Equal(dummyObject, result1);
             Assert.Equal(dummyObject, getApiResponseResult.Content);
 #if NET5_0_OR_GREATER
             Assert.Equal(2, getApiResponseResult.RequestMessage.Options.Count());
@@ -346,6 +342,31 @@ namespace Refit.Tests.Extensions.Properties
             Assert.NotNull(retryAttribute);
             Assert.Equal(TargetInterfaceRetryTimes, retryAttribute.Times);
 #endif
+        }
+
+        [Fact]
+        public async Task GivenCustomAttributePropertyProvider_WhenInvokeRefitReturningTaskT_Success()
+        {
+            var propertyValue = "somePropertyValue";
+            var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};
+
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => handler,
+                PropertyProviderFactory = PropertyProviderFactory.CustomAttributePropertyProvider
+            };
+
+            handler.Expect(HttpMethod.Get, $"http://api/{GetWithResult}")
+                .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
+
+            var fixture = RestService.For<IMyService>("http://api", settings);
+
+            var result1 = await fixture.GetWithResult(propertyValue);
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal(dummyObject, result1);
         }
     }
 }
