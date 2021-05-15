@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 
@@ -37,8 +36,9 @@ namespace Refit.Extensions.Properties
         }
 
         /// <summary>
-        /// Populates any custom <see cref="Attribute"/> present on the currently executing method on the Refit interface that is not a subclass of <see cref="RefitAttribute"/>
-        /// into the <see cref="HttpRequestMessage"/> properties with the key as the Name property on the <see cref="Type"/> of the <see cref="Attribute"/>
+        /// Populates any custom <see cref="Attribute"/> present on the Refit interface and/or the currently executing method on the Refit interface that is not a subclass of <see cref="RefitAttribute"/>
+        /// into the <see cref="HttpRequestMessage"/> properties with the key as the Name property on the <see cref="Type"/> of the <see cref="Attribute"/>.
+        /// When the same attribute is present on both the Refit interface and the interface method, the one on the method takes precedence.
         /// </summary>
         public static IDictionary<string, object> CustomAttributePropertyProvider(MethodInfo methodInfo,
             Type targetType)
@@ -47,7 +47,6 @@ namespace Refit.Extensions.Properties
 
             foreach (var interfaceAttribute in targetType.GetCustomAttributes())
             {
-                //just select custom attributes where not this type
                 if (interfaceAttribute is RefitAttribute)
                 {
                     continue;
