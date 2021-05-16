@@ -48,15 +48,15 @@ namespace Refit.Benchmarks
 
         //Task<<T>> - throws
         [Get("/users")]
-        public Task<IEnumerable<User>> GetUsersTaskTAsync();
+        public Task<List<User>> GetUsersTaskTAsync();
         [Post("/users")]
-        public Task<IEnumerable<User>> PostUsersTaskTAsync([Body] IEnumerable<User> users);
+        public Task<List<User>> PostUsersTaskTAsync([Body] IEnumerable<User> users);
 
         //Task<ApiResponse<T>>
         [Get("/users")]
-        public Task<ApiResponse<IEnumerable<User>>> GetUsersTaskApiResponseTAsync();
+        public Task<ApiResponse<List<User>>> GetUsersTaskApiResponseTAsync();
         [Post("/users")]
-        public Task<ApiResponse<IEnumerable<User>>> PostUsersTaskApiResponseTAsync([Body] IEnumerable<User> users);
+        public Task<ApiResponse<List<User>>> PostUsersTaskApiResponseTAsync([Body] IEnumerable<User> users);
     }
 
     public class User

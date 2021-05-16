@@ -42,7 +42,6 @@ namespace Refit.Benchmarks
         private const int OneUser = 1;
         private const int TenUsers = 10;
         private const int HundredUsers = 100;
-        private const int ThousandUsers = 1000;
 
         public enum SerializationStrategy
         {
@@ -97,20 +96,16 @@ namespace Refit.Benchmarks
             await SetupDummyDataAsync(OneUser);
             await SetupDummyDataAsync(TenUsers);
             await SetupDummyDataAsync(HundredUsers);
-            await SetupDummyDataAsync(ThousandUsers);
 
             ValidateDummyDataCount(OneUser);
             ValidateDummyDataCount(TenUsers);
             ValidateDummyDataCount(HundredUsers);
-            ValidateDummyDataCount(ThousandUsers);
 
             ValidateDummyDataLength(SerializationStrategy.SystemTextJson, OneUser, TenUsers);
             ValidateDummyDataLength(SerializationStrategy.SystemTextJson, TenUsers, HundredUsers);
-            ValidateDummyDataLength(SerializationStrategy.SystemTextJson, HundredUsers, ThousandUsers);
 
             ValidateDummyDataLength(SerializationStrategy.NewtonsoftJson, OneUser, TenUsers);
             ValidateDummyDataLength(SerializationStrategy.NewtonsoftJson, TenUsers, HundredUsers);
-            ValidateDummyDataLength(SerializationStrategy.NewtonsoftJson, HundredUsers, ThousandUsers);
         }
 
         /*
@@ -123,7 +118,7 @@ namespace Refit.Benchmarks
         [Params(200, 500)]
         public int HttpStatusCode { get; set; }
 
-        [Params(OneUser, TenUsers, HundredUsers, ThousandUsers)]
+        [Params(OneUser, TenUsers, HundredUsers)]
         public int ModelCount { get; set; }
 
         [Params(HttpVerb.Get, HttpVerb.Post)]
@@ -259,7 +254,7 @@ namespace Refit.Benchmarks
         }
 
         [Benchmark]
-        public async Task<IEnumerable<User>> TaskT_Async()
+        public async Task<List<User>> TaskT_Async()
         {
             try
             {
@@ -283,7 +278,7 @@ namespace Refit.Benchmarks
         }
 
         [Benchmark]
-        public async Task<ApiResponse<IEnumerable<User>>> TaskApiResponseT_Async()
+        public async Task<ApiResponse<List<User>>> TaskApiResponseT_Async()
         {
             handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
             switch (Verb)
