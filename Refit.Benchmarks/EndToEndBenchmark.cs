@@ -8,14 +8,11 @@ using System.Net.Mime;
 using System.Threading.Tasks;
 using AutoFixture;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 using RichardSzalay.MockHttp;
 
 namespace Refit.Benchmarks
 {
     [MemoryDiagnoser]
-    [SimpleJob(RuntimeMoniker.NetCoreApp50)]
-    [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     public class EndToEndBenchmark
     {
         private readonly Fixture autoFixture = new();
@@ -111,9 +108,14 @@ namespace Refit.Benchmarks
         /*
          * The handler.Expect() is in the [IterationSetup] because if we set the expectation in the [GlobalSetup] method
          * it gets garbage collected and Refit returns HTTP 404 (Not Found) during the benchmark!
-         * It's the secret sauce that will help us find the holy grail... and now for something completely different!
+         * Fun fact #1: if you put it in the benchmark itself it causes a memory leak and the benchmarks take hours and not minutes.
+         * Fun fact #2: the docs say not to use it for microbenchmarks...
          *
-         * Each [Benchmark] tests one return type that Refit allows and is parameterized to test different payload sizes, serializers, and http methods.
+         * Might be a smarter idea to ditch RichardSzalay.MockHttp here and hardcode some HttpMessageHandlerFactory
+         * which just return the expected payload for the given desired ModelCount / serialization strategy.
+         *
+         * That being said the benchmark numbers for execution time and allocations come up more or less the same
+         * whether it's in the benchmark itself or not but the execution time and memory usage of the process running the benchmark is vastly different.
          */
 
         [IterationSetup]
@@ -128,16 +130,20 @@ namespace Refit.Benchmarks
             handler.Clear();
         }
 
+        /*
+         * Each [Benchmark] tests one return type that Refit allows and is parameterized to test different payload sizes, serializers, and http methods
+         */
+
         [Params(200, 500)]
         public int HttpStatusCode { get; set; }
 
         [Params(OneUser, TenUsers, HundredUsers)]
         public int ModelCount { get; set; }
 
-        [Params(HttpVerb.Get, HttpVerb.Post)]
+        [ParamsAllValues]
         public HttpVerb Verb { get; set; }
 
-        [Params(SerializationStrategy.SystemTextJson, SerializationStrategy.NewtonsoftJson)]
+        [ParamsAllValues]
         public SerializationStrategy Serializer { get; set; }
 
         [Benchmark]

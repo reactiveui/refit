@@ -4,9 +4,6 @@ namespace Refit.Benchmarks
 {
     class Program
     {
-        static void Main(string[] args)
-        {
-            BenchmarkRunner.Run<EndToEndBenchmark>();
-        }
+        static void Main(string[] args) => BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
     }
 }
