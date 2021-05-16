@@ -28,7 +28,7 @@ namespace Refit.Benchmarks
         [Post("/users")]
         public Task<Stream> PostUsersTaskStreamAsync([Body] IEnumerable<User> users);
 
-        //Task<HttpContent> - throws?
+        //Task<HttpContent> - throws
         [Get("/users")]
         public Task<HttpContent> GetUsersTaskHttpContentAsync();
         [Post("/users")]
