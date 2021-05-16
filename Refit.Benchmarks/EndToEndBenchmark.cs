@@ -109,11 +109,24 @@ namespace Refit.Benchmarks
         }
 
         /*
-         * The handler.Expect() business is these benchmarks are here because if we set the expectation in the setup method it gets garbage collected and Refit returns HTTP 404 (Not Found) during the benchmark!
+         * The handler.Expect() is in the [IterationSetup] because if we set the expectation in the [GlobalSetup] method
+         * it gets garbage collected and Refit returns HTTP 404 (Not Found) during the benchmark!
          * It's the secret sauce that will help us find the holy grail... and now for something completely different!
          *
          * Each [Benchmark] tests one return type that Refit allows and is parameterized to test different payload sizes, serializers, and http methods.
          */
+
+        [IterationSetup]
+        public void SetExpectation()
+        {
+            handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
+        }
+
+        [IterationCleanup]
+        public void TearDownExpectation()
+        {
+            handler.Clear();
+        }
 
         [Params(200, 500)]
         public int HttpStatusCode { get; set; }
@@ -132,7 +145,6 @@ namespace Refit.Benchmarks
         {
             try
             {
-                handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
                 switch (Verb)
                 {
                     case HttpVerb.Get:
@@ -156,7 +168,6 @@ namespace Refit.Benchmarks
         {
             try
             {
-                handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
                 switch (Verb)
                 {
                     case HttpVerb.Get:
@@ -180,7 +191,6 @@ namespace Refit.Benchmarks
         {
             try
             {
-                handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
                 switch (Verb)
                 {
                     case HttpVerb.Get:
@@ -204,7 +214,6 @@ namespace Refit.Benchmarks
         {
             try
             {
-                handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
                 switch (Verb)
                 {
                     case HttpVerb.Get:
@@ -226,7 +235,6 @@ namespace Refit.Benchmarks
         [Benchmark]
         public async Task<HttpResponseMessage> TaskHttpResponseMessage_Async()
         {
-            handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
             switch (Verb)
             {
                 case HttpVerb.Get:
@@ -241,7 +249,6 @@ namespace Refit.Benchmarks
         [Benchmark]
         public IObservable<HttpResponseMessage> ObservableHttpResponseMessage()
         {
-            handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
             switch (Verb)
             {
                 case HttpVerb.Get:
@@ -258,7 +265,6 @@ namespace Refit.Benchmarks
         {
             try
             {
-                handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
                 switch (Verb)
                 {
                     case HttpVerb.Get:
@@ -280,7 +286,6 @@ namespace Refit.Benchmarks
         [Benchmark]
         public async Task<ApiResponse<List<User>>> TaskApiResponseT_Async()
         {
-            handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
             switch (Verb)
             {
                 case HttpVerb.Get:
