@@ -18,22 +18,15 @@ namespace Refit.Benchmarks
     [SimpleJob(RuntimeMoniker.NetCoreApp31)]
     public class EndToEndBenchmark
     {
-        private Fixture autoFixture = new();
+        private readonly Fixture autoFixture = new();
         private const string Host = "https://github.com";
         private const string Url = "https://github.com/users";
-        private IGitHubService systemTextJsonFixture;
-        private IGitHubService newtonSoftJsonFixture;
-        private User user;
         private MockHttpMessageHandler handler;
         private RefitSettings systemTextJsonRefitSettings;
         private RefitSettings newtonSoftJsonRefitSettings;
         private SystemTextJsonContentSerializer systemTextJsonContentSerializer;
         private NewtonsoftJsonContentSerializer newtonsoftJsonContentSerializer;
-        private string systemTextJsonSerializedMockResponsePayload;
-        private string newtonSoftJsonSerializedMockResponsePayload;
         private readonly IDictionary<int, IEnumerable<User>> users = new Dictionary<int, IEnumerable<User>>();
-        private readonly IDictionary<int, string> systemTextJsonMockResponses = new Dictionary<int, string>();
-        private readonly IDictionary<int, string> newtonSoftJsonMockResponses = new Dictionary<int, string>();
         private readonly IDictionary<SerializationStrategy, IGitHubService> refitClient = new Dictionary<SerializationStrategy, IGitHubService>();
         private readonly IDictionary<SerializationStrategy, IDictionary<int, string>> mockResponse = new Dictionary<SerializationStrategy, IDictionary<int, string>>
         {
