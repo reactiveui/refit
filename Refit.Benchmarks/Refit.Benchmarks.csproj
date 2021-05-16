@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+        <LangVersion>9</LangVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
+      <ProjectReference Include="..\Refit\Refit.csproj" />
+      <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoFixture" Version="4.17.0" />
+      <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
+      <PackageReference Include="RichardSzalay.MockHttp" Version="6.0.0" />
+    </ItemGroup>
+
+</Project>
