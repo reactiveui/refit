@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Mime;
 using System.Threading.Tasks;
 using AutoFixture;
 using BenchmarkDotNet.Attributes;
-using RichardSzalay.MockHttp;
 
 namespace Refit.Benchmarks
 {
@@ -17,18 +14,13 @@ namespace Refit.Benchmarks
     {
         private readonly Fixture autoFixture = new();
         private const string Host = "https://github.com";
-        private const string Url = "https://github.com/users";
-        private MockHttpMessageHandler handler;
-        private RefitSettings systemTextJsonRefitSettings;
-        private RefitSettings newtonSoftJsonRefitSettings;
         private SystemTextJsonContentSerializer systemTextJsonContentSerializer;
         private NewtonsoftJsonContentSerializer newtonsoftJsonContentSerializer;
         private readonly IDictionary<int, IEnumerable<User>> users = new Dictionary<int, IEnumerable<User>>();
-        private readonly IDictionary<SerializationStrategy, IGitHubService> refitClient = new Dictionary<SerializationStrategy, IGitHubService>();
-        private readonly IDictionary<SerializationStrategy, IDictionary<int, string>> mockResponse = new Dictionary<SerializationStrategy, IDictionary<int, string>>
+        private readonly IDictionary<SerializationStrategy, IDictionary<HttpStatusCode ,IGitHubService>> refitClient = new Dictionary<SerializationStrategy, IDictionary<HttpStatusCode ,IGitHubService>>
         {
-            {SerializationStrategy.SystemTextJson, new Dictionary<int, string>()},
-            {SerializationStrategy.NewtonsoftJson, new Dictionary<int, string>()}
+            {SerializationStrategy.SystemTextJson, new Dictionary<HttpStatusCode, IGitHubService>()},
+            {SerializationStrategy.NewtonsoftJson, new Dictionary<HttpStatusCode, IGitHubService>()}
         };
 
         private readonly IDictionary<HttpVerb, HttpMethod> httpMethod = new Dictionary<HttpVerb, HttpMethod>
@@ -50,74 +42,39 @@ namespace Refit.Benchmarks
             Post
         }
 
-        private async Task SetupDummyDataAsync(int desiredModelCount)
-        {
-            users[desiredModelCount] = autoFixture.CreateMany<User>(desiredModelCount);
-            mockResponse[SerializationStrategy.SystemTextJson][desiredModelCount] = await systemTextJsonContentSerializer.ToHttpContent(users[desiredModelCount]).ReadAsStringAsync();
-            mockResponse[SerializationStrategy.NewtonsoftJson][desiredModelCount] = await newtonsoftJsonContentSerializer.ToHttpContent(users[desiredModelCount]).ReadAsStringAsync();
-        }
-
-        private void ValidateDummyDataCount(int expectedCount)
-        {
-            if (users[expectedCount].Count() != expectedCount)
-                throw new ArgumentOutOfRangeException($"expected {expectedCount} user(s) but got {users[expectedCount].Count()}");
-        }
-
         [GlobalSetup]
         public async Task SetupAsync()
         {
-            handler = new MockHttpMessageHandler();
 
             systemTextJsonContentSerializer = new SystemTextJsonContentSerializer();
-            systemTextJsonRefitSettings = new RefitSettings(systemTextJsonContentSerializer)
+            refitClient[SerializationStrategy.SystemTextJson][HttpStatusCode.OK] = RestService.For<IGitHubService>(Host, new RefitSettings(systemTextJsonContentSerializer)
             {
-                HttpMessageHandlerFactory = () => handler
-            };
-            refitClient[SerializationStrategy.SystemTextJson] = RestService.For<IGitHubService>(Host, systemTextJsonRefitSettings);
+                HttpMessageHandlerFactory = () => new StaticFileHttpResponseHandler("system-text-json-10-users.json", HttpStatusCode.OK)
+            });
+            refitClient[SerializationStrategy.SystemTextJson][HttpStatusCode.InternalServerError] = RestService.For<IGitHubService>(Host, new RefitSettings(systemTextJsonContentSerializer)
+            {
+                HttpMessageHandlerFactory = () => new StaticFileHttpResponseHandler("system-text-json-10-users.json", HttpStatusCode.InternalServerError)
+            });
 
             newtonsoftJsonContentSerializer = new NewtonsoftJsonContentSerializer();
-            newtonSoftJsonRefitSettings = new RefitSettings(newtonsoftJsonContentSerializer)
+            refitClient[SerializationStrategy.NewtonsoftJson][HttpStatusCode.OK] = RestService.For<IGitHubService>(Host, new RefitSettings(newtonsoftJsonContentSerializer)
             {
-                HttpMessageHandlerFactory = () => handler
-            };
-            refitClient[SerializationStrategy.NewtonsoftJson] = RestService.For<IGitHubService>(Host, newtonSoftJsonRefitSettings);
+                HttpMessageHandlerFactory = () => new StaticFileHttpResponseHandler("newtonsoft-json-10-users.json", System.Net.HttpStatusCode.OK)
+            });
+            refitClient[SerializationStrategy.NewtonsoftJson][HttpStatusCode.InternalServerError] = RestService.For<IGitHubService>(Host, new RefitSettings(newtonsoftJsonContentSerializer)
+            {
+                HttpMessageHandlerFactory = () => new StaticFileHttpResponseHandler("newtonsoft-json-10-users.json", System.Net.HttpStatusCode.InternalServerError)
+            });
 
-            await SetupDummyDataAsync(TenUsers);
-
-            ValidateDummyDataCount(TenUsers);
+            users[TenUsers] = autoFixture.CreateMany<User>(TenUsers);
         }
 
         /*
-         * The handler.Expect() is in the [IterationSetup] because if we set the expectation in the [GlobalSetup] method
-         * it gets garbage collected and Refit returns HTTP 404 (Not Found) during the benchmark!
-         * Fun fact #1: if you put it in the benchmark itself it causes a memory leak and the benchmarks take hours and not minutes.
-         * Fun fact #2: the docs say not to use it for microbenchmarks...
-         *
-         * Might be a smarter idea to ditch RichardSzalay.MockHttp here and hardcode some HttpMessageHandlerFactory
-         * which just return the expected payload for the given desired ModelCount / serialization strategy.
-         *
-         * That being said the benchmark numbers for execution time and allocations come up more or less the same
-         * whether it's in the benchmark itself or not but the execution time and memory usage of the process running the benchmark is vastly different.
+         * Each [Benchmark] tests one return type that Refit allows and is parameterized to test different, serializers, and http methods, and status codes
          */
 
-        [IterationSetup]
-        public void SetExpectation()
-        {
-            handler.Expect(httpMethod[Verb], Url).Respond((HttpStatusCode)HttpStatusCode, MediaTypeNames.Application.Json, mockResponse[Serializer][ModelCount]);
-        }
-
-        [IterationCleanup]
-        public void TearDownExpectation()
-        {
-            handler.Clear();
-        }
-
-        /*
-         * Each [Benchmark] tests one return type that Refit allows and is parameterized to test different payload sizes, serializers, and http methods
-         */
-
-        [Params(200, 500)]
-        public int HttpStatusCode { get; set; }
+        [Params(HttpStatusCode.OK, HttpStatusCode.InternalServerError)]
+        public HttpStatusCode HttpStatusCode { get; set; }
 
         [Params(TenUsers)]
         public int ModelCount { get; set; }
@@ -136,10 +93,10 @@ namespace Refit.Benchmarks
                 switch (Verb)
                 {
                     case HttpVerb.Get:
-                        await refitClient[Serializer].GetUsersTaskAsync();
+                        await refitClient[Serializer][HttpStatusCode].GetUsersTaskAsync();
                         break;
                     case HttpVerb.Post:
-                        await refitClient[Serializer].PostUsersTaskAsync(users[ModelCount]);
+                        await refitClient[Serializer][HttpStatusCode].PostUsersTaskAsync(users[ModelCount]);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
@@ -147,7 +104,7 @@ namespace Refit.Benchmarks
             }
             catch
             {
-                //swallow - Bridgekeeper: What... is the air-speed velocity of an unladen swallow?
+                //swallow
             }
         }
 
@@ -159,16 +116,16 @@ namespace Refit.Benchmarks
                 switch (Verb)
                 {
                     case HttpVerb.Get:
-                        return await refitClient[Serializer].GetUsersTaskStringAsync();
+                        return await refitClient[Serializer][HttpStatusCode].GetUsersTaskStringAsync();
                     case HttpVerb.Post:
-                        return await refitClient[Serializer].PostUsersTaskStringAsync(users[ModelCount]);
+                        return await refitClient[Serializer][HttpStatusCode].PostUsersTaskStringAsync(users[ModelCount]);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
                 }
             }
             catch
             {
-                //swallow - King Arthur: What do you mean? An African or a European swallow?
+                //swallow
             }
 
             return default;
@@ -182,16 +139,16 @@ namespace Refit.Benchmarks
                 switch (Verb)
                 {
                     case HttpVerb.Get:
-                        return await refitClient[Serializer].GetUsersTaskStreamAsync();
+                        return await refitClient[Serializer][HttpStatusCode].GetUsersTaskStreamAsync();
                     case HttpVerb.Post:
-                        return await refitClient[Serializer].PostUsersTaskStreamAsync(users[ModelCount]);
+                        return await refitClient[Serializer][HttpStatusCode].PostUsersTaskStreamAsync(users[ModelCount]);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
                 }
             }
             catch
             {
-                //swallow - Bridgekeeper: Huh? I... I don't know that. [he is thrown over by his own spell] AUUUUUUUGGGGGGGGGGGHHH!!
+                //swallow
             }
 
             return default;
@@ -205,16 +162,16 @@ namespace Refit.Benchmarks
                 switch (Verb)
                 {
                     case HttpVerb.Get:
-                        return await refitClient[Serializer].GetUsersTaskHttpContentAsync();
+                        return await refitClient[Serializer][HttpStatusCode].GetUsersTaskHttpContentAsync();
                     case HttpVerb.Post:
-                        return await refitClient[Serializer].PostUsersTaskHttpContentAsync(users[ModelCount]);
+                        return await refitClient[Serializer][HttpStatusCode].PostUsersTaskHttpContentAsync(users[ModelCount]);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
                 }
             }
             catch
             {
-                //swallow - Sir Bedevere: How do you know so much about swallows?
+                //swallow
             }
 
             return default;
@@ -226,9 +183,9 @@ namespace Refit.Benchmarks
             switch (Verb)
             {
                 case HttpVerb.Get:
-                    return await refitClient[Serializer].GetUsersTaskHttpResponseMessageAsync();
+                    return await refitClient[Serializer][HttpStatusCode].GetUsersTaskHttpResponseMessageAsync();
                 case HttpVerb.Post:
-                    return await refitClient[Serializer].PostUsersTaskHttpResponseMessageAsync(users[ModelCount]);
+                    return await refitClient[Serializer][HttpStatusCode].PostUsersTaskHttpResponseMessageAsync(users[ModelCount]);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Verb));
             }
@@ -240,9 +197,9 @@ namespace Refit.Benchmarks
             switch (Verb)
             {
                 case HttpVerb.Get:
-                    return refitClient[Serializer].GetUsersObservableHttpResponseMessage();
+                    return refitClient[Serializer][HttpStatusCode].GetUsersObservableHttpResponseMessage();
                 case HttpVerb.Post:
-                    return refitClient[Serializer].PostUsersObservableHttpResponseMessage(users[ModelCount]);
+                    return refitClient[Serializer][HttpStatusCode].PostUsersObservableHttpResponseMessage(users[ModelCount]);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Verb));
             }
@@ -256,16 +213,16 @@ namespace Refit.Benchmarks
                 switch (Verb)
                 {
                     case HttpVerb.Get:
-                        return await refitClient[Serializer].GetUsersTaskTAsync();
+                        return await refitClient[Serializer][HttpStatusCode].GetUsersTaskTAsync();
                     case HttpVerb.Post:
-                        return await refitClient[Serializer].PostUsersTaskTAsync(users[ModelCount]);
+                        return await refitClient[Serializer][HttpStatusCode].PostUsersTaskTAsync(users[ModelCount]);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
                 }
             }
             catch
             {
-                //swallow - King Arthur: Well, you have to know these things when you're a king, you know.
+                //swallow
             }
 
             return default;
@@ -277,9 +234,9 @@ namespace Refit.Benchmarks
             switch (Verb)
             {
                 case HttpVerb.Get:
-                    return await refitClient[Serializer].GetUsersTaskApiResponseTAsync();
+                    return await refitClient[Serializer][HttpStatusCode].GetUsersTaskApiResponseTAsync();
                 case HttpVerb.Post:
-                    return await refitClient[Serializer].PostUsersTaskApiResponseTAsync(users[ModelCount]);
+                    return await refitClient[Serializer][HttpStatusCode].PostUsersTaskApiResponseTAsync(users[ModelCount]);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Verb));
             }

@@ -14,8 +14,18 @@
 
     <ItemGroup>
       <PackageReference Include="AutoFixture" Version="4.17.0" />
-      <PackageReference Include="BenchmarkDotNet" Version="0.12.1" />
-      <PackageReference Include="RichardSzalay.MockHttp" Version="6.0.0" />
+      <PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="newtonsoft-json-10-users.json" />
+      <EmbeddedResource Include="newtonsoft-json-10-users.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="system-text-json-10-users.json" />
+      <EmbeddedResource Include="system-text-json-10-users.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
     </ItemGroup>
 
 </Project>
