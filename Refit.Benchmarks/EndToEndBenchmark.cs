@@ -36,9 +36,7 @@ namespace Refit.Benchmarks
             {HttpVerb.Get, HttpMethod.Get}, {HttpVerb.Post, HttpMethod.Post}
         };
 
-        private const int OneUser = 1;
         private const int TenUsers = 10;
-        private const int HundredUsers = 100;
 
         public enum SerializationStrategy
         {
@@ -65,12 +63,6 @@ namespace Refit.Benchmarks
                 throw new ArgumentOutOfRangeException($"expected {expectedCount} user(s) but got {users[expectedCount].Count()}");
         }
 
-        private void ValidateDummyDataLength(SerializationStrategy serializer, int lowerModelCount, int higherModelCount)
-        {
-            if (mockResponse[serializer][lowerModelCount].Length >= mockResponse[serializer][higherModelCount].Length)
-                throw new ArgumentOutOfRangeException($"expected payload of {lowerModelCount} user(s) to be shorter than that of {higherModelCount} users for {serializer}");
-        }
-
         [GlobalSetup]
         public async Task SetupAsync()
         {
@@ -90,19 +82,9 @@ namespace Refit.Benchmarks
             };
             refitClient[SerializationStrategy.NewtonsoftJson] = RestService.For<IGitHubService>(Host, newtonSoftJsonRefitSettings);
 
-            await SetupDummyDataAsync(OneUser);
             await SetupDummyDataAsync(TenUsers);
-            await SetupDummyDataAsync(HundredUsers);
 
-            ValidateDummyDataCount(OneUser);
             ValidateDummyDataCount(TenUsers);
-            ValidateDummyDataCount(HundredUsers);
-
-            ValidateDummyDataLength(SerializationStrategy.SystemTextJson, OneUser, TenUsers);
-            ValidateDummyDataLength(SerializationStrategy.SystemTextJson, TenUsers, HundredUsers);
-
-            ValidateDummyDataLength(SerializationStrategy.NewtonsoftJson, OneUser, TenUsers);
-            ValidateDummyDataLength(SerializationStrategy.NewtonsoftJson, TenUsers, HundredUsers);
         }
 
         /*
@@ -137,7 +119,7 @@ namespace Refit.Benchmarks
         [Params(200, 500)]
         public int HttpStatusCode { get; set; }
 
-        [Params(OneUser, TenUsers, HundredUsers)]
+        [Params(TenUsers)]
         public int ModelCount { get; set; }
 
         [ParamsAllValues]
