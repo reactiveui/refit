@@ -714,26 +714,32 @@ namespace Refit
                     }
                 }
 
-                if (restMethod.RefitSettings.PropertyProviderFactory != null)
+                var propertyProviders = restMethod.RefitSettings.PropertyProviders;
+                if (propertyProviders != null && propertyProviders.Any())
                 {
-                    try
+                    foreach (var propertyProvider in propertyProviders)
                     {
-                        var providedProperties = restMethod.RefitSettings.PropertyProviderFactory.Invoke(restMethod.MethodInfo, TargetType);
-
-                        if (providedProperties != null)
+                        try
                         {
-                            foreach (var kvp in providedProperties)
+                            var providedProperties = propertyProvider.Invoke(restMethod.MethodInfo, TargetType);
+
+                            if (providedProperties != null)
                             {
-                                propertiesToAdd[kvp.Key] = kvp.Value;
+                                foreach (var providedProperty in providedProperties)
+                                {
+                                    propertiesToAdd[providedProperty.Key] = providedProperty.Value;
+                                }
                             }
                         }
-                    }
-                    catch(Exception e)
-                    {
-                        /*don't let the request blow up if a custom property provider throws an exception
-                         but give the developer a way to know what went wrong
-                         */
-                        propertiesToAdd[HttpRequestMessageOptions.PropertyProviderException] = e;
+                        catch(Exception e)
+                        {
+                            /*don't let the request blow up if a custom property provider throws an exception
+                             but give the developer a way to know what went wrong
+                             */
+
+                            //make this a list I guess...
+                            propertiesToAdd[HttpRequestMessageOptions.PropertyProviderException] = e;
+                        }
                     }
                 }
 

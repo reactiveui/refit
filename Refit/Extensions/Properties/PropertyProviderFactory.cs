@@ -5,34 +5,19 @@ using System.Reflection;
 
 namespace Refit.Extensions.Properties
 {
-    public static class PropertyProviderFactory
+    public class PropertyProviderBuilder
     {
-        /// <summary>
-        /// Populates the Refit interface type into the <see cref="HttpRequestMessage"/> properties
-        /// </summary>
-        public static IDictionary<string, object> RefitInterfaceTypePropertyProvider(MethodInfo methodInfo, Type targetType)
-        {
-            var properties = new Dictionary<string, object> {{HttpRequestMessageOptions.InterfaceType, targetType}};
-
-            return properties;
-        }
+        private List<Func<MethodInfo, Type, IDictionary<string, object>>> propertyProviders = new();
 
         /// <summary>
-        /// Doesn't populate any properties into the <see cref="HttpRequestMessage"/> properties. Can be used to override the default behavior.
+        /// Sets <see cref="HttpRequestMessage"/> properties to null. Can be used to override the default behavior.
         /// </summary>
-        public static IDictionary<string, object> NullPropertyProvider(MethodInfo methodInfo, Type targetType)
+        public List<Func<MethodInfo, Type, IDictionary<string, object>>> None()
         {
-            return null;
-        }
-
-        /// <summary>
-        /// Populates the <see cref="MethodInfo"/> of the currently executing method on the Refit interface into the <see cref="HttpRequestMessage"/> properties
-        /// </summary>
-        public static IDictionary<string, object> MethodInfoPropertyProvider(MethodInfo methodInfo, Type targetType)
-        {
-            var properties = new Dictionary<string, object> {{HttpRequestMessageOptions.MethodInfo, methodInfo}};
-
-            return properties;
+            return new List<Func<MethodInfo, Type, IDictionary<string, object>>>
+            {
+                NullPropertyProvider
+            };
         }
 
         /// <summary>
@@ -40,7 +25,61 @@ namespace Refit.Extensions.Properties
         /// into the <see cref="HttpRequestMessage"/> properties with the key as the Name property on the <see cref="Type"/> of the <see cref="Attribute"/>.
         /// When the same attribute is present on both the Refit interface and the interface method, the one on the method takes precedence.
         /// </summary>
-        public static IDictionary<string, object> CustomAttributePropertyProvider(MethodInfo methodInfo,
+        public PropertyProviderBuilder CustomAttributePropertyProvider()
+        {
+            return PropertyProvider(CustomAttributePropertyProvider);
+        }
+
+        /// <summary>
+        /// Populates the <see cref="MethodInfo"/> of the currently executing method on the Refit interface into the <see cref="HttpRequestMessage"/> properties
+        /// </summary>
+        public PropertyProviderBuilder MethodInfoPropertyProvider()
+        {
+            return PropertyProvider(MethodInfoPropertyProvider);
+        }
+
+        /// <summary>
+        /// Populates the Refit interface type into the <see cref="HttpRequestMessage"/> properties
+        /// </summary>
+        public PropertyProviderBuilder RefitInterfaceTypePropertyProvider()
+        {
+            return PropertyProvider(RefitInterfaceTypePropertyProvider);
+        }
+
+        public PropertyProviderBuilder PropertyProvider(
+            Func<MethodInfo, Type, IDictionary<string, object>> propertyProvider)
+        {
+            if (propertyProvider == null)
+                throw new ArgumentNullException(nameof(propertyProvider));
+            propertyProviders.Add(propertyProvider);
+            return this;
+        }
+
+        public List<Func<MethodInfo, Type, IDictionary<string, object>>> Build()
+        {
+            return propertyProviders;
+        }
+
+        private static IDictionary<string, object> RefitInterfaceTypePropertyProvider(MethodInfo methodInfo, Type targetType)
+        {
+            var properties = new Dictionary<string, object> {{HttpRequestMessageOptions.InterfaceType, targetType}};
+
+            return properties;
+        }
+
+        private static IDictionary<string, object> NullPropertyProvider(MethodInfo methodInfo, Type targetType)
+        {
+            return null;
+        }
+
+        private static IDictionary<string, object> MethodInfoPropertyProvider(MethodInfo methodInfo, Type targetType)
+        {
+            var properties = new Dictionary<string, object> {{HttpRequestMessageOptions.MethodInfo, methodInfo}};
+
+            return properties;
+        }
+
+        private static IDictionary<string, object> CustomAttributePropertyProvider(MethodInfo methodInfo,
             Type targetType)
         {
             var properties = new Dictionary<string, object>();
@@ -66,6 +105,13 @@ namespace Refit.Extensions.Properties
             }
 
             return properties;
+        }
+    }
+    public static class PropertyProviderFactory
+    {
+        public static PropertyProviderBuilder WithPropertyProviders()
+        {
+            return new ();
         }
     }
 }

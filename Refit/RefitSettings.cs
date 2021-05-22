@@ -25,7 +25,7 @@ namespace Refit
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
-            PropertyProviderFactory = Refit.Extensions.Properties.PropertyProviderFactory.RefitInterfaceTypePropertyProvider;
+            PropertyProviders = PropertyProviderFactory.WithPropertyProviders().RefitInterfaceTypePropertyProvider().Build();
         }
 
         /// <summary>
@@ -37,13 +37,21 @@ namespace Refit
         public RefitSettings(
             IHttpContentSerializer contentSerializer,
             IUrlParameterFormatter? urlParameterFormatter = null,
-            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null)
+            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null,
+            PropertyProviderBuilder propertyProviderBuilder = null)
         {
             ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
-            PropertyProviderFactory = Refit.Extensions.Properties.PropertyProviderFactory.RefitInterfaceTypePropertyProvider;
+            if (propertyProviderBuilder == null)
+            {
+                PropertyProviders = PropertyProviderFactory.WithPropertyProviders().RefitInterfaceTypePropertyProvider().Build();
+            }
+            else
+            {
+                PropertyProviders = propertyProviderBuilder.Build();
+            }
         }
 
         /// <summary>
@@ -71,7 +79,7 @@ namespace Refit
         /// Supply a function to provide a <see cref="IDictionary{TKey,TValue}"/> of properties to store in HttpRequestMessage.Properties/Options
         /// based on the <see cref="MethodInfo"/> of the request and the <see cref="Type"/> of the Refit target interface
         /// </summary>
-        public Func<MethodInfo, Type, IDictionary<string, object>> PropertyProviderFactory { get; set; }
+        public List<Func<MethodInfo, Type, IDictionary<string, object>>> PropertyProviders { get; set; }
 
         public IHttpContentSerializer ContentSerializer { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }

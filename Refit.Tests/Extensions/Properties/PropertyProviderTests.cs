@@ -59,7 +59,6 @@ namespace Refit.Tests.Extensions.Properties
         private const int RetryGetApiResponse = 3;
         private const int RetryDeleteQueryUriFormat = 4;
 
-        private const string UrlGetWithResult = "get-with-result";
         private const string UrlPostMultipart = "post-multipart";
         private const string UrlPutHeaders = "put-headers";
         private const string UrlGetApiResponse = "get-api-response";
@@ -130,7 +129,10 @@ namespace Refit.Tests.Extensions.Properties
         {
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT;
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
-            Func<MethodInfo, Type, IDictionary<string, object>> propertyProvider = PropertyProviderFactory.CustomAttributePropertyProvider;
+            var propertyProviders = PropertyProviderFactory
+                .WithPropertyProviders()
+                .CustomAttributePropertyProvider()
+                .Build();
             IDictionary<string, object> expectedProperties;
 
             refitMethodTaskApiResponseT = refitClient => refitClient.GetTaskApiResponseT(ParamPropertyValue);
@@ -142,7 +144,7 @@ namespace Refit.Tests.Extensions.Properties
             };
             yield return new object[]
             {
-                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProvider, expectedProperties
+                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProviders, expectedProperties
             };
 
             refitMethodTaskApiResponseT = refitClient => refitClient.PostMultipartTaskApiResponseT("multipart", ParamPropertyValue);
@@ -154,7 +156,7 @@ namespace Refit.Tests.Extensions.Properties
             };
             yield return new object[]
             {
-                HttpMethod.Post, UrlPostMultipart, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProvider, expectedProperties
+                HttpMethod.Post, UrlPostMultipart, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProviders, expectedProperties
             };
 
             refitMethodTaskApiResponseT = refitClient => refitClient.PutHeadersTaskApiResponseT(ParamPropertyValue);
@@ -166,7 +168,7 @@ namespace Refit.Tests.Extensions.Properties
             };
             yield return new object[]
             {
-                HttpMethod.Put, UrlPutHeaders, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProvider, expectedProperties
+                HttpMethod.Put, UrlPutHeaders, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProviders, expectedProperties
             };
 
             refitMethodTaskApiResponseT = refitClient => refitClient.DeleteQueryUriFormatTaskApiResponseT(ParamPropertyValue);
@@ -178,7 +180,7 @@ namespace Refit.Tests.Extensions.Properties
             };
             yield return new object[]
             {
-                HttpMethod.Delete, UrlDeleteQueryUriFormat, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProvider, expectedProperties
+                HttpMethod.Delete, UrlDeleteQueryUriFormat, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProviders, expectedProperties
             };
 
             refitMethodTaskApiResponseT = refitClient => refitClient.HeadInterfaceTaskApiResponseT(ParamPropertyValue);
@@ -190,7 +192,7 @@ namespace Refit.Tests.Extensions.Properties
             };
             yield return new object[]
             {
-                HttpMethod.Head, UrlHeadInterface, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProvider, expectedProperties
+                HttpMethod.Head, UrlHeadInterface, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProviders, expectedProperties
             };
         }
 
@@ -198,7 +200,7 @@ namespace Refit.Tests.Extensions.Properties
         {
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT;
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
-            Func<MethodInfo, Type, IDictionary<string, object>> propertyProvider = PropertyProviderFactory.NullPropertyProvider;
+            var propertyProviders = PropertyProviderFactory.WithPropertyProviders().None();
             IDictionary<string, object> expectedProperties;
 
             refitMethodTaskApiResponseT = refitClient => refitClient.GetTaskApiResponseT(ParamPropertyValue);
@@ -209,7 +211,7 @@ namespace Refit.Tests.Extensions.Properties
             };
             yield return new object[]
             {
-                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProvider, expectedProperties
+                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProviders, expectedProperties
             };
         }
 
@@ -218,7 +220,10 @@ namespace Refit.Tests.Extensions.Properties
             var overwrittenPropertyValue = "aDifferentPropertyValue";
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT;
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
-            Func<MethodInfo, Type, IDictionary<string, object>> propertyProvider = (methodInfo, targetType) => new Dictionary<string, object> {{ParamPropertyKey, overwrittenPropertyValue}};
+            var propertyProviders = PropertyProviderFactory
+                .WithPropertyProviders()
+                .PropertyProvider((methodInfo, targetType) => new Dictionary<string, object> {{ParamPropertyKey, overwrittenPropertyValue}})
+                .Build();
             IDictionary<string, object> expectedProperties;
 
             refitMethodTaskApiResponseT = refitClient => refitClient.GetTaskApiResponseT(ParamPropertyValue);
@@ -229,7 +234,7 @@ namespace Refit.Tests.Extensions.Properties
             };
             yield return new object[]
             {
-                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProvider, expectedProperties
+                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponseT, propertyProviders, expectedProperties
             };
         }
 
@@ -239,7 +244,9 @@ namespace Refit.Tests.Extensions.Properties
 
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponeT;
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
-            Func<MethodInfo, Type, IDictionary<string, object>> propertyProvider = (methodInfo, targetType) => throw tantrum;
+            var propertyProviders = PropertyProviderFactory.WithPropertyProviders()
+                .PropertyProvider((methodInfo, targetType) => throw tantrum)
+                .Build();
             IDictionary<string, object> expectedProperties;
 
             refitMethodTaskApiResponeT = refitClient => refitClient.GetTaskApiResponseT(ParamPropertyValue);
@@ -251,7 +258,7 @@ namespace Refit.Tests.Extensions.Properties
             };
             yield return new object[]
             {
-                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponeT, propertyProvider, expectedProperties
+                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponeT, propertyProviders, expectedProperties
             };
         }
 
@@ -265,7 +272,7 @@ namespace Refit.Tests.Extensions.Properties
             string url,
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT,
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT,
-            Func<MethodInfo, Type, IDictionary<string, object>> propertyProvider,
+            List<Func<MethodInfo, Type, IDictionary<string, object>>> propertyProviders,
             IDictionary<string, object> expectedProperties)
         {
             var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};
@@ -274,8 +281,9 @@ namespace Refit.Tests.Extensions.Properties
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => handler,
-                PropertyProviderFactory = propertyProvider
+                PropertyProviders = propertyProviders
             };
+
             handler.Expect(httpMethod, $"http://api/{url}")
                 .Respond(HttpStatusCode.OK, settings.ContentSerializer.ToHttpContent(dummyObject));
             var fixture = RestService.For<IMyService>("http://api", settings);
@@ -314,7 +322,7 @@ namespace Refit.Tests.Extensions.Properties
             string url,
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT,
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT,
-            Func<MethodInfo, Type, IDictionary<string, object>> propertyProvider,
+            List<Func<MethodInfo, Type, IDictionary<string, object>>> propertyProviders,
             IDictionary<string, object> expectedProperties)
         {
             var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};
@@ -323,7 +331,7 @@ namespace Refit.Tests.Extensions.Properties
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => handler,
-                PropertyProviderFactory = propertyProvider
+                PropertyProviders = propertyProviders
             };
 
             handler.Expect(httpMethod, $"http://api/{url}")
@@ -346,7 +354,10 @@ namespace Refit.Tests.Extensions.Properties
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => handler,
-                PropertyProviderFactory = PropertyProviderFactory.MethodInfoPropertyProvider
+                PropertyProviders = PropertyProviderFactory
+                    .WithPropertyProviders()
+                    .MethodInfoPropertyProvider()
+                    .Build()
             };
 
             handler.Expect(HttpMethod.Get, $"http://api/{UrlGetApiResponse}")
