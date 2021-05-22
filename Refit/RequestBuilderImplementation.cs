@@ -715,7 +715,7 @@ namespace Refit
                 }
 
                 var propertyProviders = restMethod.RefitSettings.PropertyProviders;
-                if (propertyProviders != null && propertyProviders.Any())
+                if (propertyProviders != null)
                 {
                     foreach (var propertyProvider in propertyProviders)
                     {

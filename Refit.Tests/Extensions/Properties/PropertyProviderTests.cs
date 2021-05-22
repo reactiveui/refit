@@ -262,11 +262,37 @@ namespace Refit.Tests.Extensions.Properties
             };
         }
 
+        public static IEnumerable<object[]> MultiplePropertyProvidersTestData()
+        {
+            var expectedProperty1 = new KeyValuePair<string, object>($"{ParamPropertyKey}1", $"{ParamPropertyValue}1");
+            var expectedProperty2 = new KeyValuePair<string, object>($"{ParamPropertyKey}2", $"{ParamPropertyValue}2");
+            Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponeT;
+            Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
+            var propertyProviders = PropertyProviderFactory.WithPropertyProviders()
+                .PropertyProvider((info, type) => new Dictionary<string, object> {{expectedProperty1.Key, expectedProperty1.Value}})
+                .PropertyProvider((info, type) => new Dictionary<string, object> {{expectedProperty2.Key, expectedProperty2.Value}})
+                .Build();
+            IDictionary<string, object> expectedProperties;
+
+            refitMethodTaskApiResponeT = refitClient => refitClient.GetTaskApiResponseT(ParamPropertyValue);
+            refitMethodTaskT = refitClient => refitClient.GetTaskT(ParamPropertyValue);
+            expectedProperties = new Dictionary<string, object>
+            {
+                {expectedProperty1.Key, expectedProperty1.Value},
+                {expectedProperty2.Key, expectedProperty2.Value}
+            };
+            yield return new object[]
+            {
+                HttpMethod.Get, UrlGetApiResponse, refitMethodTaskT, refitMethodTaskApiResponeT, propertyProviders, expectedProperties
+            };
+        }
+
         [Theory]
-        [MemberData(nameof(CustomAttributePropertyProviderTestData))]
+        /*[MemberData(nameof(CustomAttributePropertyProviderTestData))]
         [MemberData(nameof(NullPropertyProviderTestData))]
         [MemberData(nameof(LastWriteWinsTestData))]
-        [MemberData(nameof(ExceptionThrowingPropertyProviderTestData))]
+        [MemberData(nameof(ExceptionThrowingPropertyProviderTestData))]*/
+        [MemberData(nameof(MultiplePropertyProvidersTestData))]
         public async Task GivenPropertyProvider_WhenInvokeRefitReturningTaskApiResponseT_ExpectedPropertiesPopulated(
             HttpMethod httpMethod,
             string url,
@@ -313,10 +339,11 @@ namespace Refit.Tests.Extensions.Properties
         }
 
         [Theory]
-        [MemberData(nameof(CustomAttributePropertyProviderTestData))]
+        /*[MemberData(nameof(CustomAttributePropertyProviderTestData))]
         [MemberData(nameof(NullPropertyProviderTestData))]
         [MemberData(nameof(LastWriteWinsTestData))]
-        [MemberData(nameof(ExceptionThrowingPropertyProviderTestData))]
+        [MemberData(nameof(ExceptionThrowingPropertyProviderTestData))]*/
+        [MemberData(nameof(MultiplePropertyProvidersTestData))]
         public async Task GivenPropertyProvider_WhenInvokeRefitReturningTaskT_Success(
             HttpMethod httpMethod,
             string url,
