@@ -13,6 +13,37 @@ namespace Refit.Tests.Extensions.Properties
 {
     public class PropertyProviderTests
     {
+        private class HardcodedPropertyProvider : PropertyProvider
+        {
+            private readonly string key;
+            private readonly string value;
+
+            public HardcodedPropertyProvider(string key, string value)
+            {
+                this.key = key;
+                this.value = value;
+            }
+
+            public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitInterfaceType)
+            {
+                properties[key] = value;
+            }
+        }
+
+        private class ExceptionThrowingPropertyProvider : PropertyProvider
+        {
+            private readonly Exception exception;
+
+            public ExceptionThrowingPropertyProvider(Exception exception)
+            {
+                this.exception = exception;
+            }
+            public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitInterfaceType)
+            {
+                throw exception;
+            }
+        }
+
         [AttributeUsage(AttributeTargets.Method | AttributeTargets.Interface)]
         private class RetryAttribute : Attribute
         {
@@ -125,6 +156,9 @@ namespace Refit.Tests.Extensions.Properties
             Task<MyDummyObject> HeadInterfaceTaskT([Property(ParamPropertyKey)] string someProperty);
         }
 
+        /// <summary>
+        /// Verify that CustomAttributePropertyProvider populates all custom attributes into the request properties that are not a subclass of RefitAttribute
+        /// </summary>
         public static IEnumerable<object[]> CustomAttributePropertyProviderTestData()
         {
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT;
@@ -196,11 +230,14 @@ namespace Refit.Tests.Extensions.Properties
             };
         }
 
-        public static IEnumerable<object[]> NullPropertyProviderTestData()
+        /// <summary>
+        /// Verify that the behavior of adding the refit interface type to the properties is overridable and can be nulled out, and a property provider returning null doesn't cause the request to fail
+        /// </summary>
+        public static IEnumerable<object[]> WithoutPropertyProvidersTestData()
         {
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT;
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
-            var propertyProviders = PropertyProviderFactory.WithPropertyProviders().None();
+            var propertyProviders = PropertyProviderFactory.WithoutPropertyProviders();
             IDictionary<string, object> expectedProperties;
 
             refitMethodTaskApiResponseT = refitClient => refitClient.GetTaskApiResponseT(ParamPropertyValue);
@@ -215,6 +252,9 @@ namespace Refit.Tests.Extensions.Properties
             };
         }
 
+        /// <summary>
+        /// Verify that when a property provider writes a property that already exists the request succeeds and the last write wins
+        /// </summary>
         public static IEnumerable<object[]> LastWriteWinsTestData()
         {
             var overwrittenPropertyValue = "aDifferentPropertyValue";
@@ -222,7 +262,7 @@ namespace Refit.Tests.Extensions.Properties
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
             var propertyProviders = PropertyProviderFactory
                 .WithPropertyProviders()
-                .PropertyProvider((methodInfo, targetType) => new Dictionary<string, object> {{ParamPropertyKey, overwrittenPropertyValue}})
+                .PropertyProvider(new HardcodedPropertyProvider(ParamPropertyKey, overwrittenPropertyValue))
                 .Build();
             IDictionary<string, object> expectedProperties;
 
@@ -238,14 +278,16 @@ namespace Refit.Tests.Extensions.Properties
             };
         }
 
+        /// <summary>
+        /// Verify that when a property provider throws an exception, the request still succeeds and the exception is recorded in HttpRequestMessageOptions.PropertyProviderException
+        /// </summary>
         public static IEnumerable<object[]> ExceptionThrowingPropertyProviderTestData()
         {
-            var tantrum = new Exception("I'm very unhappy about this...kaboom!");
-
+            var exception = new Exception("I'm very unhappy about this...kaboom!");
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponeT;
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
             var propertyProviders = PropertyProviderFactory.WithPropertyProviders()
-                .PropertyProvider((methodInfo, targetType) => throw tantrum)
+                .PropertyProvider(new ExceptionThrowingPropertyProvider(exception))
                 .Build();
             IDictionary<string, object> expectedProperties;
 
@@ -254,7 +296,7 @@ namespace Refit.Tests.Extensions.Properties
             expectedProperties = new Dictionary<string, object>
             {
                 {ParamPropertyKey, ParamPropertyValue},
-                {HttpRequestMessageOptions.PropertyProviderException, tantrum}
+                {HttpRequestMessageOptions.PropertyProviderException, exception}
             };
             yield return new object[]
             {
@@ -262,15 +304,16 @@ namespace Refit.Tests.Extensions.Properties
             };
         }
 
+        /// <summary>
+        /// Verify that properties from the interface method as well as multiple property providers wind up in the request properties
+        /// </summary>
         public static IEnumerable<object[]> MultiplePropertyProvidersTestData()
         {
-            var expectedProperty1 = new KeyValuePair<string, object>($"{ParamPropertyKey}1", $"{ParamPropertyValue}1");
-            var expectedProperty2 = new KeyValuePair<string, object>($"{ParamPropertyKey}2", $"{ParamPropertyValue}2");
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponeT;
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT;
             var propertyProviders = PropertyProviderFactory.WithPropertyProviders()
-                .PropertyProvider((info, type) => new Dictionary<string, object> {{expectedProperty1.Key, expectedProperty1.Value}})
-                .PropertyProvider((info, type) => new Dictionary<string, object> {{expectedProperty2.Key, expectedProperty2.Value}})
+                .PropertyProvider(new HardcodedPropertyProvider($"{ParamPropertyKey}2", $"{ParamPropertyValue}2"))
+                .PropertyProvider(new HardcodedPropertyProvider($"{ParamPropertyKey}3", $"{ParamPropertyValue}3"))
                 .Build();
             IDictionary<string, object> expectedProperties;
 
@@ -278,8 +321,9 @@ namespace Refit.Tests.Extensions.Properties
             refitMethodTaskT = refitClient => refitClient.GetTaskT(ParamPropertyValue);
             expectedProperties = new Dictionary<string, object>
             {
-                {expectedProperty1.Key, expectedProperty1.Value},
-                {expectedProperty2.Key, expectedProperty2.Value}
+                {ParamPropertyKey, ParamPropertyValue},
+                {$"{ParamPropertyKey}2", $"{ParamPropertyValue}2"},
+                {$"{ParamPropertyKey}3", $"{ParamPropertyValue}3"}
             };
             yield return new object[]
             {
@@ -288,17 +332,17 @@ namespace Refit.Tests.Extensions.Properties
         }
 
         [Theory]
-        /*[MemberData(nameof(CustomAttributePropertyProviderTestData))]
-        [MemberData(nameof(NullPropertyProviderTestData))]
+        [MemberData(nameof(CustomAttributePropertyProviderTestData))]
+        [MemberData(nameof(WithoutPropertyProvidersTestData))]
         [MemberData(nameof(LastWriteWinsTestData))]
-        [MemberData(nameof(ExceptionThrowingPropertyProviderTestData))]*/
+        [MemberData(nameof(ExceptionThrowingPropertyProviderTestData))]
         [MemberData(nameof(MultiplePropertyProvidersTestData))]
         public async Task GivenPropertyProvider_WhenInvokeRefitReturningTaskApiResponseT_ExpectedPropertiesPopulated(
             HttpMethod httpMethod,
             string url,
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT,
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT,
-            List<Func<MethodInfo, Type, IDictionary<string, object>>> propertyProviders,
+            List<PropertyProvider> propertyProviders,
             IDictionary<string, object> expectedProperties)
         {
             var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};
@@ -339,17 +383,17 @@ namespace Refit.Tests.Extensions.Properties
         }
 
         [Theory]
-        /*[MemberData(nameof(CustomAttributePropertyProviderTestData))]
-        [MemberData(nameof(NullPropertyProviderTestData))]
+        [MemberData(nameof(CustomAttributePropertyProviderTestData))]
+        [MemberData(nameof(WithoutPropertyProvidersTestData))]
         [MemberData(nameof(LastWriteWinsTestData))]
-        [MemberData(nameof(ExceptionThrowingPropertyProviderTestData))]*/
+        [MemberData(nameof(ExceptionThrowingPropertyProviderTestData))]
         [MemberData(nameof(MultiplePropertyProvidersTestData))]
         public async Task GivenPropertyProvider_WhenInvokeRefitReturningTaskT_Success(
             HttpMethod httpMethod,
             string url,
             Func<IMyService, Task<MyDummyObject>> refitMethodTaskT,
             Func<IMyService, Task<ApiResponse<MyDummyObject>>> refitMethodTaskApiResponseT,
-            List<Func<MethodInfo, Type, IDictionary<string, object>>> propertyProviders,
+            List<PropertyProvider> propertyProviders,
             IDictionary<string, object> expectedProperties)
         {
             var dummyObject = new MyDummyObject {SomeValue = "AValue", AnotherValue = 1};

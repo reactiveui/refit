@@ -715,21 +715,14 @@ namespace Refit
                 }
 
                 var propertyProviders = restMethod.RefitSettings.PropertyProviders;
+
                 if (propertyProviders != null)
                 {
                     foreach (var propertyProvider in propertyProviders)
                     {
                         try
                         {
-                            var providedProperties = propertyProvider.Invoke(restMethod.MethodInfo, TargetType);
-
-                            if (providedProperties != null)
-                            {
-                                foreach (var providedProperty in providedProperties)
-                                {
-                                    propertiesToAdd[providedProperty.Key] = providedProperty.Value;
-                                }
-                            }
+                            propertyProvider.ProvideProperties(propertiesToAdd, restMethod.MethodInfo, TargetType);
                         }
                         catch(Exception e)
                         {

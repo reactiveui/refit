@@ -57,9 +57,11 @@ services
   * [Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)](#reducing-header-boilerplate-with-delegatinghandlers-authorization-headers-worked-example)
   * [Redefining headers](#redefining-headers)
   * [Removing headers](#removing-headers)
-* [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
-  * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
-  * [Target Interface type](#target-interface-type)
+* [Passing state into HttpRequestMessage.Properties](#passing-state-into-httprequestmessageproperties)
+  * [Via the \[Property\] attribute](#via-the-property-attribute)
+  * [Via RefitSettings.PropertyProviders](#via-refitsettingspropertyproviders)
+    * [Target Interface type](#target-interface-type)
+    * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -730,8 +732,20 @@ await CreateUser(user, null);
 await CreateUser(user, "");
 ```
 
-### Passing state into DelegatingHandlers
+### Passing state into HttpRequestMessage.Properties
 
+Refit is built on top of [HttpClient](https://docs.microsoft.com/en-us/dotnet/api/system.net.http.httpclient?view=net-5.0) which itself allows you to customize its behavior through custom
+[HttpClient message handlers](https://docs.microsoft.com/en-us/aspnet/web-api/overview/advanced/httpclient-message-handlers). To support this there is a property called `HttpRequestMessage.Properties`
+which is intended to allow developers to pass state from calls to `HttpClient` into their `HttpClient` message handlers.
+
+Refit supports this in two ways:
+ - Passing dynamic runtime state directly via the `[Property]` attribute on individual Refit client interface methods
+ - Customizing `RefitSettings.PropertyProviders` with a list of property providers that each take in the `MethodInfo` of the executing Refit method, and the `Type` of the Refit client interface and return any arbitrary properties.
+
+**Note**: in .NET 5+ `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
+This documentation refers to `HttpRequestMessage.Properties`, but Refit supports both, and you should use the one that is appropriate for your version of .NET.
+
+#### Via the [Property] attribute
 If there is runtime state that you need to pass to a `DelegatingHandler` you can add a property with a dynamic value to the underlying `HttpRequestMessage.Properties`
 by applying a `Property` attribute to a parameter:
 
@@ -775,16 +789,21 @@ class RequestPropertyHandler : DelegatingHandler
     }
 }
 ```
+#### Via `RefitSettings.PropertyProviders`
 
-Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
+```
+var settings = new RefitSettings
+{
+    PropertyProviders = PropertyProviderFactory
+        .WithPropertyProviders()
+        .RefitInterfaceTypePropertyProvider()
+        .MethodInfoPropertyProvider()
+        .CustomAttributePropertyProvider()
+        .Build()
+};
+```
 
-#### Support for Polly and Polly.Context
-
-Because Refit supports `HttpClientFactory` it is possible to configure Polly policies on your HttpClient.
-If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PollyExecutionContext")] Polly.Context context`
-as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PollyExecutionContext` and is of type `Polly.Context`
-
-#### Target Interface Type
+##### Target Interface Type
 
 There may be times when you want to know what the target interface type is of the Refit instance. An example is where you
 have a derived interface that implements a common base like this:
@@ -830,7 +849,13 @@ class RequestPropertyHandler : DelegatingHandler
 ```
 [//]: # ({% endraw %})
 
-Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
+##### Support for Polly and Polly.Context
+
+Because Refit supports `HttpClientFactory` it is possible to configure Polly policies on your HttpClient.
+If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PollyExecutionContext")] Polly.Context context`
+as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PollyExecutionContext` and is of type `Polly.Context`.
+
+Alternatively if you simply wanted to populate an empty `Polly.Context` automatically on every request you could do it with a custom property provider.
 
 ### Multipart uploads
 
