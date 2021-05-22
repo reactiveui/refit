@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Refit.Extensions.Properties
 {
-    public class PropertyProviderBuilder
+    public class PropertyProviderFactory
     {
         private readonly List<PropertyProvider> propertyProviders = new();
 
@@ -14,7 +14,7 @@ namespace Refit.Extensions.Properties
         /// into the <see cref="HttpRequestMessage"/> properties with the key as the Name property on the <see cref="Type"/> of the <see cref="Attribute"/>.
         /// When the same attribute is present on both the Refit interface and the interface method, the one on the method takes precedence.
         /// </summary>
-        public PropertyProviderBuilder CustomAttributePropertyProvider()
+        public PropertyProviderFactory CustomAttributePropertyProvider()
         {
             return PropertyProvider(new CustomAttributePropertyProvider());
         }
@@ -22,7 +22,7 @@ namespace Refit.Extensions.Properties
         /// <summary>
         /// Populates the <see cref="MethodInfo"/> of the currently executing method on the Refit interface into the <see cref="HttpRequestMessage"/> properties
         /// </summary>
-        public PropertyProviderBuilder MethodInfoPropertyProvider()
+        public PropertyProviderFactory MethodInfoPropertyProvider()
         {
             return PropertyProvider(new MethodInfoPropertyProvider());
         }
@@ -30,12 +30,15 @@ namespace Refit.Extensions.Properties
         /// <summary>
         /// Populates the Refit interface type into the <see cref="HttpRequestMessage"/> properties
         /// </summary>
-        public PropertyProviderBuilder RefitInterfaceTypePropertyProvider()
+        public PropertyProviderFactory RefitTargetInterfaceTypePropertyProvider()
         {
-            return PropertyProvider(new RefitInterfaceTypePropertyProvider());
+            return PropertyProvider(new RefitTargetInterfaceTypePropertyProvider());
         }
 
-        public PropertyProviderBuilder PropertyProvider(PropertyProvider propertyProvider)
+        /// <summary>
+        /// Add a custom <see cref="PropertyProvider"/>
+        /// </summary>
+        public PropertyProviderFactory PropertyProvider(PropertyProvider propertyProvider)
         {
             if (propertyProvider == null)
                 throw new ArgumentNullException(nameof(propertyProvider));
@@ -50,24 +53,20 @@ namespace Refit.Extensions.Properties
             return propertyProviders;
         }
 
-    }
-
-    public static class PropertyProviderFactory
-    {
         /// <summary>
         /// This allows you to build up a list of <see cref="PropertyProvider"/> implementations that will populate data into the <see cref="HttpRequestMessage"/> properties for use inside <see cref="HttpClient"/> middleware.
         /// </summary>
-        public static PropertyProviderBuilder WithPropertyProviders()
+        public static PropertyProviderFactory WithPropertyProviders()
         {
-            return new ();
+            return new PropertyProviderFactory();
         }
 
         /// <summary>
-        /// By default if no <see cref="PropertyProvider"/> implementations are configured a <see cref="RefitInterfaceTypePropertyProvider"/> will be used.
+        /// By default if no <see cref="PropertyProvider"/> implementations are configured a <see cref="RefitTargetInterfaceTypePropertyProvider"/> will be used.
         /// </summary>
         public static List<PropertyProvider> WithDefaultPropertyProviders()
         {
-            return new List<PropertyProvider> { new RefitInterfaceTypePropertyProvider() };
+            return new List<PropertyProvider> { new RefitTargetInterfaceTypePropertyProvider() };
         }
 
         /// <summary>

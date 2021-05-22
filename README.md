@@ -60,7 +60,9 @@ services
 * [Passing state into HttpRequestMessage.Properties](#passing-state-into-httprequestmessageproperties)
   * [Via the \[Property\] attribute](#via-the-property-attribute)
   * [Via RefitSettings.PropertyProviders](#via-refitsettingspropertyproviders)
-    * [Target Interface type](#target-interface-type)
+    * [RefitTargetInterfaceTypePropertyProvider](#refittargetinterfacetypepropertyprovider)
+    * [MethodInfoPropertyProvider](#methodinfopropertyprovider)
+    * [CustomAttributePropertyProvider](#customattributepropertyprovider)
     * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
@@ -791,19 +793,37 @@ class RequestPropertyHandler : DelegatingHandler
 ```
 #### Via `RefitSettings.PropertyProviders`
 
+A `List<PropertyProvider>` can be configured via `RefitSettings.PropertyProviders` like so:
+
 ```
 var settings = new RefitSettings
 {
     PropertyProviders = PropertyProviderFactory
         .WithPropertyProviders()
-        .RefitInterfaceTypePropertyProvider()
+        .RefitTargetInterfaceTypePropertyProvider()
         .MethodInfoPropertyProvider()
         .CustomAttributePropertyProvider()
+        .PropertyProvider(new MyCustomPropertyProvider())
         .Build()
 };
 ```
 
-##### Target Interface Type
+If no `PropertyProviders` are specified a `RefitTargetInterfaceTypePropertyProvider` will be configured by default.
+
+A `PropertyProvider` is simply a class that implements the following interface:
+
+```
+public interface PropertyProvider
+{
+    void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType);
+}
+```
+
+It takes a `IDictionary<string, object?>` which you can populate properties into, the `MethodInfo` of the currently executing method on the Refit instance, and the target `Type` of the Refit instance.
+
+##### RefitTargetInterfaceTypePropertyProvider
+
+This property provider adds a property to `HttpRequestMessage.Properties` under the key `HttpMessageRequestOptions.InterfaceType` that contains the target `Type` of the Refit instance.
 
 There may be times when you want to know what the target interface type is of the Refit instance. An example is where you
 have a derived interface that implements a common base like this:
@@ -849,13 +869,47 @@ class RequestPropertyHandler : DelegatingHandler
 ```
 [//]: # ({% endraw %})
 
+##### MethodInfoPropertyProvider
+
+This property provider adds a property to `HttpRequestMessage.Properties` under the key `HttpMessageRequestOptions.MethodInfo` that contains the `MethodInfo` of the currently executing method on the Refit instance.
+
+##### CustomAttributePropertyProvider
+
+This property provider adds properties into `HttpRequestMessage.Properties` for every custom `Attribute` on the currently executing method of the Refit instance,
+as well as every custom `Attribute` on the Refit interface itself. The key will be the name of the `Attribute` and the value will be the instance of the `Attribute`.
+
 ##### Support for Polly and Polly.Context
 
-Because Refit supports `HttpClientFactory` it is possible to configure Polly policies on your HttpClient.
-If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PollyExecutionContext")] Polly.Context context`
-as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PollyExecutionContext` and is of type `Polly.Context`.
+Because Refit supports `HttpClientFactory` it is possible to configure [Polly](https://github.com/App-vNext/Polly) policies on your HttpClient.
+If your policy makes use of `Polly.Context` this can be passed via Refit by either adding a `[Property]` attribute on your Refit interface method like:
 
-Alternatively if you simply wanted to populate an empty `Polly.Context` automatically on every request you could do it with a custom property provider.
+```
+public interface IGitHubApi
+{
+    [Post("/users/new")]
+    Task CreateUser([Body] User user, [Property("PollyExecutionContext")] Polly.Context context);
+}
+```
+
+Or, if you simply wanted to populate an empty `Polly.Context` automatically on every request you could do it with a custom property provider like:
+
+```
+public class PollyContextPropertyProvider : PropertyProvider
+{
+    public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType)
+    {
+        properties["PollyExecutionContext"] = new Polly.Context();
+    }
+}
+
+var settings = new RefitSettings
+{
+    PropertyProviders = PropertyProviderFactory
+        .WithPropertyProviders()
+        .PropertyProvider(new PollyContextPropertyProvider())
+        .Build()
+};
+```
 
 ### Multipart uploads
 

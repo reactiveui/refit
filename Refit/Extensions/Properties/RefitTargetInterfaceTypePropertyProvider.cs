@@ -4,11 +4,11 @@ using System.Reflection;
 
 namespace Refit.Extensions.Properties
 {
-    public class MethodInfoPropertyProvider : PropertyProvider
+    public class RefitTargetInterfaceTypePropertyProvider : PropertyProvider
     {
         public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType)
         {
-            properties[HttpRequestMessageOptions.MethodInfo] = methodInfo;
+            properties[HttpRequestMessageOptions.InterfaceType] = refitTargetInterfaceType;
         }
     }
 }

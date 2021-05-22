@@ -6,6 +6,6 @@ namespace Refit.Extensions.Properties
 {
     public interface PropertyProvider
     {
-        void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitInterfaceType);
+        void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType);
     }
 }

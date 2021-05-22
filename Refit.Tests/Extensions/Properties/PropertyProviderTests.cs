@@ -24,7 +24,7 @@ namespace Refit.Tests.Extensions.Properties
                 this.value = value;
             }
 
-            public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitInterfaceType)
+            public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType)
             {
                 properties[key] = value;
             }
@@ -38,7 +38,7 @@ namespace Refit.Tests.Extensions.Properties
             {
                 this.exception = exception;
             }
-            public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitInterfaceType)
+            public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType)
             {
                 throw exception;
             }

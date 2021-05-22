@@ -6,9 +6,9 @@ namespace Refit.Extensions.Properties
 {
     public class CustomAttributePropertyProvider : PropertyProvider
     {
-        public void ProvideProperties(IDictionary<string, object> properties, MethodInfo methodInfo, Type refitInterfaceType)
+        public void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType)
         {
-            foreach (var interfaceAttribute in refitInterfaceType.GetCustomAttributes())
+            foreach (var interfaceAttribute in refitTargetInterfaceType.GetCustomAttributes())
             {
                 if (interfaceAttribute is RefitAttribute)
                 {
