@@ -63,6 +63,7 @@ services
     * [RefitTargetInterfaceTypePropertyProvider](#refittargetinterfacetypepropertyprovider)
     * [MethodInfoPropertyProvider](#methodinfopropertyprovider)
     * [CustomAttributePropertyProvider](#customattributepropertyprovider)
+    * [Extending Refit by writing your own PropertyProvider](#extending-refit-by-writing-your-own-propertyprovider)
     * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
@@ -793,6 +794,9 @@ class RequestPropertyHandler : DelegatingHandler
 ```
 #### Via `RefitSettings.PropertyProviders`
 
+Refit provides some `PropertyProvider` implementations out of the box to support common use cases for customising the behavior of the underlying `HttpClient` instance
+through `HttpClient` middleware using information placed into `HttpRequestMessage.Properties` by the configured `List<PropertyProvider>`.
+
 A `List<PropertyProvider>` can be configured via `RefitSettings.PropertyProviders` like so:
 
 ```
@@ -810,16 +814,16 @@ var settings = new RefitSettings
 
 If no `PropertyProviders` are specified a `RefitTargetInterfaceTypePropertyProvider` will be configured by default.
 
-A `PropertyProvider` is simply a class that implements the following interface:
+If you want to remove the default `PropertyProviders` and have none at all you can do it as follows:
 
 ```
-public interface PropertyProvider
+var settings = new RefitSettings
 {
-    void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType);
-}
+    PropertyProviders = PropertyProviderFactory.WithoutPropertyProviders();
+};
 ```
 
-It takes a `IDictionary<string, object?>` which you can populate properties into, the `MethodInfo` of the currently executing method on the Refit instance, and the target `Type` of the Refit instance.
+**Note**: If a `PropertyProvider` throws an exception the `Exception` instance will be populated into the `HttpRequestMessage.Properties` under the key `HttpMessageRequestOptions.PropertyProviderException`;
 
 ##### RefitTargetInterfaceTypePropertyProvider
 
@@ -876,7 +880,51 @@ This property provider adds a property to `HttpRequestMessage.Properties` under 
 ##### CustomAttributePropertyProvider
 
 This property provider adds properties into `HttpRequestMessage.Properties` for every custom `Attribute` on the currently executing method of the Refit instance,
-as well as every custom `Attribute` on the Refit interface itself. The key will be the name of the `Attribute` and the value will be the instance of the `Attribute`.
+as well as every custom `Attribute` on the Refit interface itself that is not a subclass of `RefitAttribute`. The key will be the name of the `Attribute` and the value will be the instance of the `Attribute`.
+
+This allows you to extend Refit by decorating your Refit client interface with custom attributes and then making decisions based on that data inside a custom `DelegatingHandler` like:
+
+```
+public interface IGitHubApi
+{
+    [SomeBehavior("someValue")]
+    [Get("/users/{name}")]
+    Task<User> CreateUser(string name);
+
+    [Post("/users/new")]
+    Task CreateUser([Body] User user);
+}
+
+class SomeBehaviorHandler : DelegatingHandler
+{
+    public SomeBehaviorHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // Get the attribute instance
+        SomeBehaviorAttribute someBehavior = (SomeBehaviorAttribute)request.Properties[nameof(SomeBehaviorAttribute)];
+
+        //do some custom behavior
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+##### Extending Refit by writing your own PropertyProvider
+
+A `PropertyProvider` is simply a class that implements the following interface:
+
+```
+public interface PropertyProvider
+{
+    void ProvideProperties(IDictionary<string, object?> properties, MethodInfo methodInfo, Type refitTargetInterfaceType);
+}
+```
+
+It takes a `IDictionary<string, object?>` which you can populate properties into, the `MethodInfo` of the currently executing method on the Refit instance, and the target `Type` of the Refit instance.
+
+Next let's take a look at an example of how this could be used.
 
 ##### Support for Polly and Polly.Context
 
