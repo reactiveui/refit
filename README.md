@@ -73,6 +73,9 @@ services
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
 * [Handling exceptions](#handling-exceptions)
+  * [When returning Task<ApiResponse<T>>](#when-returning-taskapiresponset)
+  * [When returning Task<T>](#when-returning-taskt)
+  * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
 
 ### Where does this work?
 
@@ -1258,8 +1261,43 @@ public class HomeController : Controller
 ```
 
 ### Handling exceptions
+Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they return `Task<ApiResponse<T>>`.
 
-To encapsulate any exceptions that may come from a service, you can catch an `ApiException` which contains request- and response information. Refit also supports the catching of validation exceptions that are thrown by a service implementing the RFC 7807 specification for problem details due to bad requests. For specific information on the problem details of the validation exception, simply catch `ValidationApiException`:
+#### When returning `Task<ApiResponse<T>>`
+Refit traps any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that occur when attempting to deserialize the response to `Task<ApiResponse<T>>` and populates the exception into the `Error` property on `ApiResponse<T>` without throwing the exception.
+
+You can then decide what to do like so:
+
+    var response = await _myRefitClient.GetSomeStuff();
+    if(response.IsSuccessStatusCode)
+    {
+       //do your thing
+    }
+    else
+    {
+       _logger.LogError(response.Error, response.Error.Content);
+    }
+
+
+#### When returning `Task<T>`
+Refit throws any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that occur when attempting to deserialize the response to `Task<T>`.
+
+```csharp
+// ...
+try
+{
+   var result = await awesomeApi.GetFooAsync("bar");
+}
+catch (ApiException exception)
+{
+   //exception handling
+}
+// ...
+```
+
+Refit can also throw `ValidationApiException` instead which in addition to the information present on `ApiException` also contains `ProblemDetails` when the service implements the [RFC 7807](https://tools.ietf.org/html/rfc7807) specification for problem details and the response content type is `application/problem+json`
+
+For specific information on the problem details of the validation exception, simply catch `ValidationApiException`:
 
 ```csharp
 // ...
@@ -1282,7 +1320,9 @@ catch (ApiException exception)
 // ...
 ```
 
-You can also override default exceptions behavior by providing custom exception factory in `RefitSettings`. For example, you can suppress all exceptions with the following:
+#### Providing a custom `ExceptionFactory`
+
+You can also override default exceptions behavior that are raised by the `ExceptionFactory` when processing the result by providing a custom exception factory in `RefitSettings`. For example, you can suppress all exceptions with the following:
 
 ```csharp
 var nullTask = Task.FromResult<Exception>(null);
@@ -1292,3 +1332,5 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
         ExceptionFactory = httpResponse => nullTask;
     });
 ```
+
+Note that exceptions raised when attempting to deserialize the response are not affected by this.

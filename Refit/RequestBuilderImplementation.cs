@@ -263,13 +263,22 @@ namespace Refit
                         e = await settings.ExceptionFactory(resp).ConfigureAwait(false);
                     }
 
-
                     if (restMethod.IsApiResponse)
                     {
-                        // Only attempt to deserialize content if no error present for backward-compatibility
-                        var body = e == null
-                            ? await DeserializeContentAsync<TBody>(resp, content, ct).ConfigureAwait(false)
-                            : default;
+                        var body = default(TBody);
+
+                        try
+                        {
+                            // Only attempt to deserialize content if no error present for backward-compatibility
+                            body = e == null
+                                ? await DeserializeContentAsync<TBody>(resp, content, ct).ConfigureAwait(false)
+                                : default;
+                        }
+                        catch (Exception ex)
+                        {
+                            //if an error occured while attempting to deserialize return the wrapped ApiException
+                            e = await ApiException.Create("An error occured deserializing the response.", resp.RequestMessage!, resp.RequestMessage!.Method, resp, settings, ex);
+                        }
 
                         return ApiResponse.Create<T, TBody>(resp, body, settings, e as ApiException);
                     }
@@ -279,8 +288,16 @@ namespace Refit
                         throw e;
                     }
                     else
-                        return await DeserializeContentAsync<T>(resp, content, ct).ConfigureAwait(false);
-
+                    {
+                        try
+                        {
+                            return await DeserializeContentAsync<T>(resp, content, ct).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            throw await ApiException.Create("An error occured deserializing the response.", resp.RequestMessage!, resp.RequestMessage!.Method, resp, settings, ex);
+                        }
+                    }
                 }
                 finally
                 {
@@ -298,42 +315,35 @@ namespace Refit
 
         async Task<T?> DeserializeContentAsync<T>(HttpResponseMessage resp, HttpContent content, CancellationToken cancellationToken)
         {
-            try
+            T? result;
+            if (typeof(T) == typeof(HttpResponseMessage))
             {
-                T? result;
-                if (typeof(T) == typeof(HttpResponseMessage))
-                {
-                    // NB: This double-casting manual-boxing hate crime is the only way to make
-                    // this work without a 'class' generic constraint. It could blow up at runtime
-                    // and would be A Bad Idea if we hadn't already vetted the return type.
-                    result = (T)(object)resp;
-                }
-                else if (typeof(T) == typeof(HttpContent))
-                {
-                    result = (T)(object)content;
-                }
-                else if (typeof(T) == typeof(Stream))
-                {
-                    var stream = (object)await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                    result = (T)stream;
-                }
-                else if (typeof(T) == typeof(string))
-                {
-                    using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                    using var reader = new StreamReader(stream);
-                    var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
-                    result = (T)str;
-                }
-                else
-                {
-                    result = await serializer.FromHttpContentAsync<T>(content, cancellationToken).ConfigureAwait(false);
-                }
-                return result;
+                // NB: This double-casting manual-boxing hate crime is the only way to make
+                // this work without a 'class' generic constraint. It could blow up at runtime
+                // and would be A Bad Idea if we hadn't already vetted the return type.
+                result = (T)(object)resp;
             }
-            catch(Exception ex) // wrap the exception as an ApiException
+            else if (typeof(T) == typeof(HttpContent))
             {
-                throw await ApiException.Create("An error occured deserializing the response.", resp.RequestMessage!, resp.RequestMessage!.Method, resp, settings, ex);
+                result = (T)(object)content;
             }
+            else if (typeof(T) == typeof(Stream))
+            {
+                var stream = (object)await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                result = (T)stream;
+            }
+            else if (typeof(T) == typeof(string))
+            {
+                using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+                using var reader = new StreamReader(stream);
+                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                result = (T)str;
+            }
+            else
+            {
+                result = await serializer.FromHttpContentAsync<T>(content, cancellationToken).ConfigureAwait(false);
+            }
+            return result;
         }
 
         List<KeyValuePair<string, object?>> BuildQueryMap(object? @object, string? delimiter = null, RestMethodParameterInfo? parameterInfo = null)
