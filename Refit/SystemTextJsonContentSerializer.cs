@@ -58,15 +58,13 @@ namespace Refit
         }
 
         /// <inheritdoc/>
-        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, HttpResponseMessage? responseMessage = null, CancellationToken cancellationToken = default)
         {
-            if (content.Headers.ContentType != null && content.Headers.ContentType.MediaType == "application/json")
-            {
-                var item = await content.ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken).ConfigureAwait(false);
-                return item;
-            }
+            if (responseMessage?.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return default;
 
-            return default;
+            var item = await content.ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken).ConfigureAwait(false);
+            return item;
         }
 
         public string? GetFieldNameForProperty(PropertyInfo propertyInfo)

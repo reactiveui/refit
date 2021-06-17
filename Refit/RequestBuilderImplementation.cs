@@ -341,7 +341,7 @@ namespace Refit
             }
             else
             {
-                result = await serializer.FromHttpContentAsync<T>(content, cancellationToken).ConfigureAwait(false);
+                result = await serializer.FromHttpContentAsync<T>(content, resp, cancellationToken).ConfigureAwait(false);
             }
             return result;
         }

@@ -42,7 +42,7 @@ namespace Refit
             return content;
         }
 
-        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, HttpResponseMessage? responseMessage = null, CancellationToken cancellationToken = default)
         {
             var xmlSerializer = serializerCache.GetOrAdd(typeof(T), t => new XmlSerializer(
                 t,

@@ -73,7 +73,7 @@ namespace Refit
     {
         HttpContent ToHttpContent<T>(T item);
 
-        Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default);
+        Task<T?> FromHttpContentAsync<T>(HttpContent content, HttpResponseMessage? responseMessage = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands

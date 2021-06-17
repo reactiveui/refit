@@ -16,7 +16,7 @@ namespace Refit
             throw new NotImplementedException();
         }
 
-        public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public Task<T?> FromHttpContentAsync<T>(HttpContent content, HttpResponseMessage? responseMessage = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

@@ -45,8 +45,11 @@ namespace Refit
         }
 
         /// <inheritdoc/>
-        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, HttpResponseMessage? responseMessage, CancellationToken cancellationToken = default)
         {
+            if (responseMessage?.StatusCode == System.Net.HttpStatusCode.NoContent)
+                return default;
+
             var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
             using var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
