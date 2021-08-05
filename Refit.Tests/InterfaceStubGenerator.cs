@@ -98,7 +98,7 @@ namespace Refit.Tests
 
         }
 
-        [Fact(Skip = "Needs fixing on netfx")]
+        [Fact]
         public async Task NoRefitInterfacesSmokeTest()
         {
             var input = File.ReadAllText(IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs"));
@@ -113,7 +113,7 @@ namespace Refit.Tests
             }.RunAsync();
         }
 
-        [Fact(Skip = "Needs fixing on netfx")]
+        [Fact]
         public async Task FindInterfacesSmokeTest()
         {
             var input = File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs"));
@@ -643,7 +643,7 @@ namespace Refit.Implementation
         }
 
 
-        [Fact(Skip = "Needs fixing on netfx")]
+        [Fact]
         public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
         {
             var input = File.ReadAllText(IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs"));
