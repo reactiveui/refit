@@ -39,7 +39,9 @@ namespace Refit.Tests
 #if NET461
             ReferenceAssemblies = ReferenceAssemblies
                 .AddAssemblies(ImmutableArray.Create("System.Web"))
-                .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4")));
+                .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4"))
+                            //               .Add(new PackageIdentity("Newtonsoft.Json", "12.0.1"))
+                            );
 #endif
         }
 
