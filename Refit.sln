@@ -25,7 +25,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.Newtonsoft.Json", "Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Core", "InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj", "{72869789-0310-4916-9A41-20D16A01C1B8}"
 EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "InterfaceStubGenerator.Shared", "InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.shproj", "{B591423D-F92D-4E00-B0EB-615C9853506C}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{72869789-0310-4916-9a41-20d16a01c1b8}*SharedItemsImports = 5
+		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{b591423d-f92d-4e00-b0eb-615c9853506c}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|ARM = Debug|ARM
