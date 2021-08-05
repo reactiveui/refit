@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <DisableImplicitNamespaceImports>true</DisableImplicitNamespaceImports>
+    <RootNamespace>Refit.Generator</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embedded assemblies -->
+    <EmbeddedResource Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\InterfaceStubGenerator.Impl.dll" Visible="False" LogicalName="InterfaceStubGenerator.Roslyn38.dll" />
+  </ItemGroup>
+
+  <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">
+    <PropertyGroup>
+      <Version>$(BuildVersion)</Version>
+      <AssemblyVersion>$(BuildVersionSimple)</AssemblyVersion>
+    </PropertyGroup>
+  </Target>
+
+</Project>

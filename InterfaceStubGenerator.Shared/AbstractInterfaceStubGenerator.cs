@@ -16,14 +16,13 @@ namespace Refit.Generator
     // * Generate the data we need for the template based on interface method
     //   defn's
 
-    [Generator]
-    public class InterfaceStubGenerator : ISourceGenerator
+    public abstract class AbstractInterfaceStubGenerator : ISourceGenerator
     {
 #pragma warning disable RS2008 // Enable analyzer release tracking
         static readonly DiagnosticDescriptor InvalidRefitMember = new(
                 "RF001",
                 "Refit types must have Refit HTTP method attributes",
-                "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.",
+                "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument",
                 "Refit",
                 DiagnosticSeverity.Warning,
                 true);
@@ -68,7 +67,9 @@ namespace Refit.Generator
 
             // Check the candidates and keep the ones we're actually interested in
 
-            var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>();
+#pragma warning disable RS1024 // Compare symbols correctly
+            var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>(SymbolEqualityComparer.Default);
+#pragma warning restore RS1024 // Compare symbols correctly
             var methodSymbols = new List<IMethodSymbol>();
             foreach (var group in receiver.CandidateMethods.GroupBy(m => m.SyntaxTree))
             {
@@ -88,7 +89,7 @@ namespace Refit.Generator
                 }
             }
 
-            var interfaces = methodSymbols.GroupBy(m => m.ContainingType)
+            var interfaces = methodSymbols.GroupBy<IMethodSymbol, INamedTypeSymbol>(m => m.ContainingType, SymbolEqualityComparer.Default)
                                           .ToDictionary(g => g.Key, v => v.ToList());
 
             // Look through the candidate interfaces
