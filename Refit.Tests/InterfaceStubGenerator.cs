@@ -641,7 +641,7 @@ namespace Refit.Implementation
                 },
             }.RunAsync();
         }
-     
+
 
         [Fact]
         public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
