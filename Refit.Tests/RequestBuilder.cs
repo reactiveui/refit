@@ -10,6 +10,8 @@ using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.WebUtilities;
+
 using Xunit;
 
 namespace Refit.Tests
@@ -25,6 +27,12 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuff(int id);
+
+        [Get("/foo/bar/{id}?param1={id}&param2={id}")]
+        Task<string> FetchSomeStuffWithTheSameId(int id);
+
+        [Get("/foo/bar?param=first {id} and second {id}")]
+        Task<string> FetchSomeStuffWithTheIdInAParameterMultipleTimes(int id);
 
         [Get("/foo/bar/{**path}/{id}")]
         Task<string> FetchSomeStuffWithRoundTrippingParam(string path, int id);
@@ -503,6 +511,29 @@ namespace Refit.Tests
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
+        
+        [Fact]
+        public void ParameterMappingWithTheSameIdInAFewPlaces()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithTheSameId)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+        }
+
+        [Fact]
+        public void ParameterMappingWithTheSameIdInTheQueryParameter()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuffWithTheIdInAParameterMultipleTimes)));
+            Assert.Equal("id", fixture.ParameterMap[0].Name);
+            Assert.Equal(ParameterType.Normal, fixture.ParameterMap[0].Type);
+            Assert.Empty(fixture.QueryParameterMap);
+            Assert.Null(fixture.BodyParameterInfo);
+        }
+
 
         [Fact]
         public void ParameterMappingWithRoundTrippingSmokeTest()
@@ -1149,6 +1180,12 @@ namespace Refit.Tests
         [Get("/foo/bar/{id}")]
         [Headers("Api-Version: ")]
         Task<string> FetchSomeStuffWithEmptyHardcodedHeader(int id);
+
+        [Get("/foo/bar/{id}?param1={id}&param2={id}")]
+        Task<string> FetchSomeStuffWithTheSameId(int id);
+
+        [Get("/foo/bar?param=first {id} and second {id}")]
+        Task<string> FetchSomeStuffWithTheIdInAParameterMultipleTimes(int id);
 
         [Post("/foo/bar/{id}")]
         [Headers("Content-Type: literally/anything")]
@@ -2335,6 +2372,36 @@ namespace Refit.Tests
 
             Assert.Equal("/query?numbers=1%2C2%2C3", output.RequestUri.PathAndQuery);
         }
+
+        [Fact]
+        public void RequestWithParameterInMultiplePlaces()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithTheSameId));
+            var output = factory(new object[] { "theId" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            var builder = new UriBuilder(uri);
+            var qs = QueryHelpers.ParseQuery(uri.Query);
+            Assert.Equal("/foo/bar/theId", builder.Path);
+            Assert.Equal("theId", qs["param1"]);
+            Assert.Equal("theId", qs["param2"]);
+        }
+
+        [Fact]
+        public void RequestWithParameterInAQueryParameterMultipleTimes()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithTheIdInAParameterMultipleTimes));
+            var output = factory(new object[] { "theId" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/foo/bar?param=first%20theId%20and%20second%20theId", uri.PathAndQuery);
+        }
+
 
         [Theory]
         [InlineData("QueryWithArrayFormattedAsMulti", "/query?numbers=1&numbers=2&numbers=3")]
