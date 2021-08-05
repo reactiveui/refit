@@ -29,6 +29,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "InterfaceStubGenerator.Shar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InterfaceStubGenerator.Shim", "InterfaceStubGenerator.Shim\InterfaceStubGenerator.Shim.csproj", "{6CC908B5-D02D-4D99-8B1C-76B0E927599E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InterfaceStubGenerator.Roslyn40", "InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj", "{A4B61169-3314-41DB-8156-BE9677C90C9F}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{72869789-0310-4916-9a41-20d16a01c1b8}*SharedItemsImports = 5
@@ -141,6 +143,22 @@ Global
 		{6CC908B5-D02D-4D99-8B1C-76B0E927599E}.Release|x64.Build.0 = Release|Any CPU
 		{6CC908B5-D02D-4D99-8B1C-76B0E927599E}.Release|x86.ActiveCfg = Release|Any CPU
 		{6CC908B5-D02D-4D99-8B1C-76B0E927599E}.Release|x86.Build.0 = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|ARM.Build.0 = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|x64.Build.0 = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|x86.Build.0 = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|ARM.ActiveCfg = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|ARM.Build.0 = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x64.ActiveCfg = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x64.Build.0 = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x86.ActiveCfg = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

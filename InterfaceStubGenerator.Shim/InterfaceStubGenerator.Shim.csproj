@@ -8,11 +8,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" />
+    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj" BuildReference="false" ReferenceOutputAssembly="False" SkipGetTargetFrameworkProperties="True" Private="False" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Embedded assemblies -->
     <EmbeddedResource Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\InterfaceStubGenerator.Impl.dll" Visible="False" LogicalName="InterfaceStubGenerator.Roslyn38.dll" />
+    <EmbeddedResource Include="..\InterfaceStubGenerator.Roslyn40\bin\$(Configuration)\netstandard2.0\InterfaceStubGenerator.Impl.dll" Visible="False" LogicalName="InterfaceStubGenerator.Roslyn40.dll" />
   </ItemGroup>
 
   <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">

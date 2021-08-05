@@ -21,6 +21,7 @@ namespace Refit.Generator
 
                 var implementationName = version switch
                 {
+                    { Major: >= 4 } => "InterfaceStubGenerator.Roslyn40.dll",
                     _ => "InterfaceStubGenerator.Roslyn38.dll",
                 };
 
