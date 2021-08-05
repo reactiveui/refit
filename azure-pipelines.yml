@@ -33,9 +33,16 @@ stages:
     - task: UseDotNet@2
       displayName: Use .NET Core 5.x SDK
       inputs:
-        version: 5.0.x
+        version: 6.x
         performMultiLevelLookup: true
         includePreviewVersions: true
+
+    - task: UseDotNet@2
+      displayName: Use .NET Core 5.x Runtime
+      inputs:
+        version: 5.0.x
+        packageType: runtime
+        performMultiLevelLookup: true
 
     - task: DotNetCoreCLI@2
       inputs:
