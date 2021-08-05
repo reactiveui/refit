@@ -4,4 +4,17 @@
     <CompilerVisibleProperty Include="RefitInternalNamespace" />
   </ItemGroup>
 
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' >= '17.0' AND '$(DesignTimeBuild)' == 'True'">
+      <ItemGroup>
+        <Analyzer Include="$(MSBuildThisFileDirectory)../../analyzers/cs/roslyn40/*.dll" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <Analyzer Include="$(MSBuildThisFileDirectory)../../analyzers/cs/roslyn38/*.dll" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
 </Project>
