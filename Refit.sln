@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.HttpClientFactory", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.Newtonsoft.Json", "Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj", "{2210E606-1C91-4EA0-8876-3B2F501F2669}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Core", "InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj", "{72869789-0310-4916-9A41-20D16A01C1B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Roslyn38", "InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj", "{72869789-0310-4916-9A41-20D16A01C1B8}"
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "InterfaceStubGenerator.Shared", "InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.shproj", "{B591423D-F92D-4E00-B0EB-615C9853506C}"
 EndProject
