@@ -1,18 +1,20 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
+
+using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator
 {
-    internal static class ModuleInitializer
+    static class ModuleInitializer
     {
+        [ModuleInitializer]
         internal static void Initialize()
         {
             try
             {
-                var codeAnalysis = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(
-                    assembly => assembly.GetName().Name == "Microsoft.CodeAnalysis");
+                var codeAnalysis = typeof(GeneratorAttribute).Assembly;
                 var codeAnalysisVersion = codeAnalysis.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
                 if (!Version.TryParse(codeAnalysisVersion, out var version))
                 {

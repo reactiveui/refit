@@ -16,6 +16,7 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">    
     <Reference Include="System.Web" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <ProjectReference Include="..\InterfaceStubGenerator\InterfaceStubGenerator.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\InterfaceStubGenerator.Shim\InterfaceStubGenerator.Shim.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
@@ -25,7 +26,12 @@
 
     <!-- We need this one to catch older clients -->
     <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true" />
-    
+
+    <None Include="..\InterfaceStubGenerator\bin\$(Configuration)\netstandard2.0\InterfaceStubGenerator.dll"
+          PackagePath="analyzers\cs\"
+          Pack="true"
+          Visible="false" />
+
     <None Include="..\InterfaceStubGenerator.Shim\bin\$(Configuration)\netstandard2.0\InterfaceStubGenerator.Shim.dll"
           PackagePath="analyzers\cs\"
           Pack="true"

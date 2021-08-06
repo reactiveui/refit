@@ -25,6 +25,10 @@
     <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj"
                             OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\InterfaceStubGenerator\InterfaceStubGenerator.csproj"
+                            OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\InterfaceStubGenerator.Shim\InterfaceStubGenerator.Shim.csproj"
+                            OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net461' ">
