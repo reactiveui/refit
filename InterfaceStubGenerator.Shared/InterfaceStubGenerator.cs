@@ -17,7 +17,11 @@ namespace Refit.Generator
     //   defn's
 
     [Generator]
+#if ROSLYN_4
+    public class InterfaceStubGeneratorV2 : ISourceGenerator
+#else
     public class InterfaceStubGenerator : ISourceGenerator
+#endif
     {
 #pragma warning disable RS2008 // Enable analyzer release tracking
         static readonly DiagnosticDescriptor InvalidRefitMember = new(
