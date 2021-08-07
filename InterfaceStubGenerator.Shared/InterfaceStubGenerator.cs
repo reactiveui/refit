@@ -7,7 +7,6 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Refit.Generator
@@ -49,12 +48,14 @@ namespace Refit.Generator
             if (context.SyntaxReceiver is not SyntaxReceiver receiver)
                 return;
 
+            context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.RefitInternalNamespace", out var refitInternalNamespace);
+
             GenerateInterfaceStubs(
                 context,
                 static (context, diagnostic) => context.ReportDiagnostic(diagnostic),
                 static (context, hintName, sourceText) => context.AddSource(hintName, sourceText),
                 (CSharpCompilation)context.Compilation,
-                context.AnalyzerConfigOptions,
+                refitInternalNamespace,
                 receiver.CandidateMethods.ToImmutableArray(),
                 receiver.CandidateInterfaces.ToImmutableArray());
         }
@@ -66,12 +67,10 @@ namespace Refit.Generator
             Action<TContext, Diagnostic> reportDiagnostic,
             Action<TContext, string, SourceText> addSource,
             CSharpCompilation compilation,
-            AnalyzerConfigOptionsProvider analyzerConfigOptions,
+            string? refitInternalNamespace,
             ImmutableArray<MethodDeclarationSyntax> candidateMethods,
             ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces)
         {
-            analyzerConfigOptions.GlobalOptions.TryGetValue("build_property.RefitInternalNamespace", out var refitInternalNamespace);
-
             refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
 
             // we're going to create a new compilation that contains the attribute.
@@ -556,12 +555,15 @@ namespace Refit.Implementation
                 (syntax, cancellationToken) => syntax is InterfaceDeclarationSyntax { BaseList: not null },
                 (context, cancellationToken) => (InterfaceDeclarationSyntax)context.Node);
 
+            var refitInternalNamespace = context.AnalyzerConfigOptionsProvider.Select(
+                (analyzerConfigOptionsProvider, cancellationToken) => analyzerConfigOptionsProvider.GlobalOptions.TryGetValue("build_property.RefitInternalNamespace", out var refitInternalNamespace) ? refitInternalNamespace : null);
+
             var inputs = candidateMethodsProvider.Collect()
                 .Combine(candidateInterfacesProvider.Collect())
                 .Select((combined, cancellationToken) => (candidateMethods: combined.Left, candidateInterfaces: combined.Right))
-                .Combine(context.AnalyzerConfigOptionsProvider)
+                .Combine(refitInternalNamespace)
                 .Combine(context.CompilationProvider)
-                .Select((combined, cancellationToken) => (combined.Left.Left.candidateMethods, combined.Left.Left.candidateInterfaces, analyzerConfigOptions: combined.Left.Right, compilation: combined.Right));
+                .Select((combined, cancellationToken) => (combined.Left.Left.candidateMethods, combined.Left.Left.candidateInterfaces, refitInternalNamespace: combined.Left.Right, compilation: combined.Right));
 
             context.RegisterSourceOutput(
                 inputs,
@@ -572,7 +574,7 @@ namespace Refit.Implementation
                         static (context, diagnostic) => context.ReportDiagnostic(diagnostic),
                         static (context, hintName, sourceText) => context.AddSource(hintName, sourceText),
                         (CSharpCompilation)collectedValues.compilation,
-                        collectedValues.analyzerConfigOptions,
+                        collectedValues.refitInternalNamespace,
                         collectedValues.candidateMethods,
                         collectedValues.candidateInterfaces);
                 });
