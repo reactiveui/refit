@@ -16,7 +16,7 @@ using Xunit;
 
 using Task = System.Threading.Tasks.Task;
 using VerifyCS = Refit.Tests.CSharpSourceGeneratorVerifier<Refit.Generator.InterfaceStubGenerator>;
-using VerifyCSV2 = Refit.Tests.CSharpSourceGeneratorVerifier<Refit.Generator.InterfaceStubGeneratorV2>;
+using VerifyCSV2 = Refit.Tests.CSharpIncrementalSourceGeneratorVerifier<Refit.Generator.InterfaceStubGeneratorV2>;
 
 namespace Refit.Tests
 {
