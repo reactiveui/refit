@@ -2142,6 +2142,26 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void MethodInfoShouldBeInProperties()
+        {
+            var fixture = new RequestBuilderImplementation<IContainAandB>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] {  });
+
+#if NET5_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            Assert.Equal(typeof(IAmInterfaceA).GetMethod(nameof(IAmInterfaceA.Ping)),
+                ((IDictionary<string, object>)output.Options)[HttpRequestMessageOptions.MethodInfo]);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            Assert.Equal(typeof(IAmInterfaceA).GetMethod(nameof(IAmInterfaceA.Ping)),
+                output.Properties[HttpRequestMessageOptions.MethodInfo]);
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
         public void DynamicRequestPropertiesWithDefaultKeysShouldBeInProperties()
         {
             var someProperty = new object();
@@ -2174,12 +2194,12 @@ namespace Refit.Tests
 
 
 #if NET5_0_OR_GREATER
-            Assert.Equal(2, output.Options.Count());
+            Assert.Equal(3, output.Options.Count());
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
-            Assert.Equal(2, output.Properties.Count);
+            Assert.Equal(3, output.Properties.Count);
             Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
 #pragma warning restore CS0618 // Type or member is obsolete
         }

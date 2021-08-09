@@ -787,7 +787,7 @@ Because Refit supports `HttpClientFactory` it is possible to configure Polly pol
 If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PollyExecutionContext")] Polly.Context context`
 as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PollyExecutionContext` and is of type `Polly.Context`
 
-#### Target Interface Type
+#### Target Interface Type and MethodInfo
 
 There may be times when you want to know what the target interface type is of the Refit instance. An example is where you
 have a derived interface that implements a common base like this:
@@ -807,8 +807,9 @@ public interface IOrdersAPI : IGetAPI<Order>
 {
 }
 ```
-
-You can access the concrete type of the interface for use in a handler, such as to alter the URL of the request:
+You may want to know the information of the current method as well. Then you can add path or tag for metrics and telemetry.
+Even more that you may want to set custom attributes to the method.
+You can access the concrete type of the interface and the current method for use in a handler, such as to alter the URL of the request:
 
 [//]: # ({% raw %})
 ```csharp
@@ -819,7 +820,12 @@ class RequestPropertyHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         // Get the type of the target interface
-        Type interfaceType = (Type)request.Properties[HttpMessageRequestOptions.InterfaceType];
+        var interfaceType = (Type)request.Properties[HttpMessageRequestOptions.InterfaceType];
+
+        // Get the methodInfo of the current method
+        var methodInfo = (MethodInfo)request.Properties[HttpMessageRequestOptions.MethodInfo];
+
+        // do something with methodInfo with method name, custom attributes and etc.
 
         var builder = new UriBuilder(request.RequestUri);
         // Alter the Path in some way based on the interface or an attribute on it

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Refit
 {
@@ -12,8 +8,13 @@ namespace Refit
     public static class HttpRequestMessageOptions
     {
         /// <summary>
-        /// Returns the <see cref="System.Type"/> of the top-level interface where the method was called from
+        /// Returns the <see cref="Type"/> of the top-level interface where the method was called from.
         /// </summary>
-        public static string InterfaceType { get; } = "Refit.InterfaceType";
+        public static string InterfaceType => "Refit.InterfaceType";
+
+        /// <summary>
+        /// Returns the <see cref="System.Reflection.MethodInfo"/> of the executing method.
+        /// </summary>
+        public static string MethodInfo => "Refit.MethodInfo";
     }
 }

@@ -308,12 +308,12 @@ namespace Refit.Tests
                     Assert.Equal(someHeader, message.Headers.Authorization.ToString());
 
 #if NET5_0_OR_GREATER
-                    Assert.Equal(2, message.Options.Count());
+                    Assert.Equal(3, message.Options.Count());
                     Assert.Equal(someProperty, ((IDictionary<string, object>)message.Options)["SomeProperty"]);
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
-                    Assert.Equal(2, message.Properties.Count);
+                    Assert.Equal(3, message.Properties.Count);
                     Assert.Equal(someProperty, message.Properties["SomeProperty"]);
 #pragma warning restore CS0618 // Type or member is obsolete
                 },
