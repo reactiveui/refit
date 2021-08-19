@@ -5,7 +5,7 @@
   </ItemGroup>
 
   <Choose>
-    <When Condition="'$(VisualStudioVersion)' >= '17.0' AND '$(DesignTimeBuild)' == 'True'">
+    <When Condition="$([MSBuild]::VersionGreaterThanOrEquals($(VisualStudioVersion), '17.0')) AND '$(DesignTimeBuild)' == 'True'">
       <ItemGroup>
         <Analyzer Include="$(MSBuildThisFileDirectory)../../analyzers/cs/roslyn40/*.dll" />
       </ItemGroup>
