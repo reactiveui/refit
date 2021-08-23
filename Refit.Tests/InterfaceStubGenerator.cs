@@ -16,6 +16,7 @@ using Xunit;
 
 using Task = System.Threading.Tasks.Task;
 using VerifyCS = Refit.Tests.CSharpSourceGeneratorVerifier<Refit.Generator.InterfaceStubGenerator>;
+using VerifyCSV2 = Refit.Tests.CSharpIncrementalSourceGeneratorVerifier<Refit.Generator.InterfaceStubGeneratorV2>;
 
 namespace Refit.Tests
 {
@@ -102,7 +103,18 @@ namespace Refit.Tests
         public async Task NoRefitInterfacesSmokeTest()
         {
             var input = File.ReadAllText(IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs"));
+
             await new VerifyCS.Test
+            {
+                ReferenceAssemblies = ReferenceAssemblies,
+                TestState =
+                {
+                    AdditionalReferences = { RefitAssembly },
+                    Sources = { input },
+                },
+            }.RunAsync();
+
+            await new VerifyCSV2.Test
             {
                 ReferenceAssemblies = ReferenceAssemblies,
                 TestState =
@@ -640,6 +652,24 @@ namespace Refit.Implementation
                     },
                 },
             }.RunAsync();
+
+            await new VerifyCSV2.Test
+            {
+                ReferenceAssemblies = ReferenceAssemblies,
+                TestState =
+                {
+                    AdditionalReferences = { RefitAssembly },
+                    Sources = { input },
+                    GeneratedSources =
+                    {
+                        (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
+                        (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
+                        (typeof(InterfaceStubGeneratorV2), "IGitHubApi.g.cs", output2),
+                        (typeof(InterfaceStubGeneratorV2), "IGitHubApiDisposable.g.cs", output3),
+                        (typeof(InterfaceStubGeneratorV2), "INestedGitHubApi.g.cs", output4),
+                    },
+                },
+            }.RunAsync();
         }
 
 
@@ -765,6 +795,22 @@ namespace Refit.Implementation
                         (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
                         (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
                         (typeof(InterfaceStubGenerator), "IServiceWithoutNamespace.g.cs", output2),
+                    },
+                },
+            }.RunAsync();
+
+            await new VerifyCSV2.Test
+            {
+                ReferenceAssemblies = ReferenceAssemblies,
+                TestState =
+                {
+                    AdditionalReferences = { RefitAssembly },
+                    Sources = { input },
+                    GeneratedSources =
+                    {
+                        (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
+                        (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
+                        (typeof(InterfaceStubGeneratorV2), "IServiceWithoutNamespace.g.cs", output2),
                     },
                 },
             }.RunAsync();
