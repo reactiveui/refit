@@ -83,6 +83,11 @@ namespace Refit
         string? GetFieldNameForProperty(PropertyInfo propertyInfo);
     }
 
+    public interface IHttpResponseMessageSerializer : IHttpContentSerializer
+    {
+        Task<T?> FromHttpContentAsync<T>(HttpResponseMessage response, HttpContent content, CancellationToken cancellationToken = default);
+    }
+
     public interface IUrlParameterFormatter
     {
         string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type);

@@ -162,5 +162,37 @@ namespace Refit.Tests
             Assert.Equal("utf-8", json.Headers.ContentType.CharSet);
             Assert.Equal("application/json", json.Headers.ContentType.MediaType);
         }
+
+        [Theory]
+        [InlineData("param1", "test")]
+        public async Task WhenAResponseHasHeadersThenAppendHeadersToResult(string headerName, string headerValue)
+        {
+            var users = new[]
+            {
+                new User
+                {
+                    Name = "Wile E. Coyote",
+                    CreatedAt = new DateTime(1949, 9, 16).ToString(),
+                    Company = "ACME",
+                },
+            };
+
+            var serializer = new CustomContentSerializer(new SystemTextJsonContentSerializer());
+
+            var json = serializer.ToHttpContent(users);
+
+            var responseMessage = new HttpResponseMessage(HttpStatusCode.OK);
+            responseMessage.Headers.Add(headerName, headerValue);
+
+            var result = await serializer.FromHttpContentAsync<System.Collections.Generic.IEnumerable<User>>(responseMessage, json);
+
+            Assert.NotNull(result);
+            Assert.IsType<Collections.EnumerableExtended<User>>(result);
+
+            var extended = (Collections.EnumerableExtended<User>)result;
+
+            Assert.NotEmpty(extended.Parameters);
+            Assert.Contains(headerName, extended.Parameters);
+        }
     }
 }
