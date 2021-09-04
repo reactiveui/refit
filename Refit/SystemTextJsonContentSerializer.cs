@@ -29,15 +29,8 @@ namespace Refit
         /// <summary>
         /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
         /// </summary>
-        public SystemTextJsonContentSerializer() : this(new JsonSerializerOptions())
+        public SystemTextJsonContentSerializer() : this(GetDefaultJsonSerializerOptions())
         {
-
-            // Set some defaults
-            // Default to case insensitive property name matching as that's likely the behavior most users expect
-            jsonSerializerOptions.PropertyNameCaseInsensitive = true;
-            jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-            jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
         }
 
         /// <summary>
@@ -72,6 +65,21 @@ namespace Refit
             return propertyInfo.GetCustomAttributes<JsonPropertyNameAttribute>(true)
                        .Select(a => a.Name)
                        .FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters
+        /// </summary>
+        public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
+        {
+            var jsonSerializerOptions = new JsonSerializerOptions();
+            // Default to case insensitive property name matching as that's likely the behavior most users expect
+            jsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
+            jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+
+            return jsonSerializerOptions;
         }
     }
 
