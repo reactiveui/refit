@@ -29,15 +29,8 @@ namespace Refit
         /// <summary>
         /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
         /// </summary>
-        public SystemTextJsonContentSerializer() : this(new JsonSerializerOptions())
+        public SystemTextJsonContentSerializer() : this(GetDefaultJsonSerializerOptions())
         {
-
-            // Set some defaults
-            // Default to case insensitive property name matching as that's likely the behavior most users expect
-            jsonSerializerOptions.PropertyNameCaseInsensitive = true;
-            jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-            jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
         }
 
         /// <summary>
@@ -73,6 +66,21 @@ namespace Refit
                        .Select(a => a.Name)
                        .FirstOrDefault();
         }
+
+        /// <summary>
+        /// Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters
+        /// </summary>
+        public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
+        {
+            var jsonSerializerOptions = new JsonSerializerOptions();
+            // Default to case insensitive property name matching as that's likely the behavior most users expect
+            jsonSerializerOptions.PropertyNameCaseInsensitive = true;
+            jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
+            jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+
+            return jsonSerializerOptions;
+        }
     }
 
     // From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
@@ -101,4 +109,3 @@ namespace Refit
     }
 
 }
-
