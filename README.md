@@ -71,6 +71,7 @@ services
   * [When returning Task<ApiResponse<T>>](#when-returning-taskapiresponset)
   * [When returning Task<T>](#when-returning-taskt)
   * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
+  * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
 
 ### Where does this work?
 
