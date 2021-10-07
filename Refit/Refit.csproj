@@ -28,12 +28,12 @@
     <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true" />
 
     <None Include="..\InterfaceStubGenerator.Roslyn38\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV1.dll"
-          PackagePath="build\analyzers\roslyn38"
+          PackagePath="analyzers\dotnet\roslyn3.8\cs"
           Pack="true"
           Visible="false" />
 
     <None Include="..\InterfaceStubGenerator.Roslyn40\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll"
-          PackagePath="build\analyzers\roslyn40"
+          PackagePath="analyzers\dotnet\roslyn4.0\cs"
           Pack="true"
           Visible="false" />
   </ItemGroup>

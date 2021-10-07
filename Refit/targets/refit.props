@@ -4,18 +4,4 @@
     <CompilerVisibleProperty Include="RefitInternalNamespace" />
   </ItemGroup>
 
-  <Choose>
-    <!-- TODO: Remove the LangVersion restriction once the incremental source generator APIs stabilize (https://github.com/dotnet/roslyn/issues/55848) -->
-    <When Condition="$([MSBuild]::VersionGreaterThanOrEquals($(VisualStudioVersion), '17.0')) AND '$(DesignTimeBuild)' == 'True' AND '$(LangVersion)' == 'preview'">
-      <ItemGroup>
-        <Analyzer Include="$(MSBuildThisFileDirectory)../../build/analyzers/cs/roslyn40/*.dll" />
-      </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <Analyzer Include="$(MSBuildThisFileDirectory)../../build/analyzers/cs/roslyn38/*.dll" />
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
-
 </Project>
