@@ -71,6 +71,7 @@ services
   * [When returning Task<ApiResponse<T>>](#when-returning-taskapiresponset)
   * [When returning Task<T>](#when-returning-taskt)
   * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
+  * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
 
 ### Where does this work?
 
@@ -1207,3 +1208,9 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
 ```
 
 Note that exceptions raised when attempting to deserialize the response are not affected by this.
+
+#### `ApiException` deconstruction with Serilog
+
+For users of [Serilog](https://serilog.net), you can enrich the logging of `ApiException` using the
+[Serilog.Exceptions.Refit](https://www.nuget.org/packages/Serilog.Exceptions) NuGet package. Details of how to
+integrate this package into your applications can be found [here](https://github.com/RehanSaeed/Serilog.Exceptions#serilogexceptionsrefit).
