@@ -1212,5 +1212,5 @@ Note that exceptions raised when attempting to deserialize the response are not 
 #### `ApiException` deconstruction with Serilog
 
 For users of [Serilog](https://serilog.net), you can enrich the logging of `ApiException` using the
-[Serilog.Exceptions.Refit](https://www.nuget.org/packages/Serilog.Exceptions) NuGet package. Details of how to
+[Serilog.Exceptions.Refit](https://www.nuget.org/packages/Serilog.Exceptions.Refit) NuGet package. Details of how to
 integrate this package into your applications can be found [here](https://github.com/RehanSaeed/Serilog.Exceptions#serilogexceptionsrefit).
