@@ -95,15 +95,28 @@ namespace Refit
     /// </summary>
     public interface IHttpContentSerializer
     {
+        /// <summary>
+        /// Serializes an object of type <typeparamref name="T"/> to <see cref="HttpContent"/>
+        /// </summary>
+        /// <typeparam name="T">Type of the object to serialize from.</typeparam>
+        /// <param name="item">Object to serialize.</param>
+        /// <returns><see cref="HttpContent"/> that contains the serialized <typeparamref name="T"/> object.</returns>
         HttpContent ToHttpContent<T>(T item);
 
+        /// <summary>
+        /// Deserializes an object of type <typeparamref name="T"/> from an <see cref="HttpContent"/> object.
+        /// </summary>
+        /// <typeparam name="T">Type of the object to serialize to.</typeparam>
+        /// <param name="content">HttpContent object to deserialize.</param>
+        /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
+        /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
         Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands
         /// </summary>
-        /// <param name="propertyInfo"></param>
-        /// <returns></returns>
+        /// <param name="propertyInfo">A PropertyInfo object.</param>
+        /// <returns>The calculated field name.</returns>
         string? GetFieldNameForProperty(PropertyInfo propertyInfo);
     }
 
