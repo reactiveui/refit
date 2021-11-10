@@ -10,9 +10,11 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
+    /// <summary>
+    /// Defines various parameters on how Refit should work.
+    /// </summary>
     public class RefitSettings
-    {       
-
+    {
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the default parameters
         /// </summary>
@@ -62,13 +64,35 @@ namespace Refit
         /// </summary>
         public Func<HttpResponseMessage, Task<Exception?>> ExceptionFactory { get; set; }
 
+        /// <summary>
+        /// Defines how requests' content should be serialized. (defaults to <see cref="SystemTextJsonContentSerializer"/>)
+        /// </summary>
         public IHttpContentSerializer ContentSerializer { get; set; }
+
+        /// <summary>
+        /// The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)
+        /// </summary>
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
+
+        /// <summary>
+        /// The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)
+        /// </summary>
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
+
+        /// <summary>
+        /// Sets the default collection format to use. (defaults to <see cref="CollectionFormat.RefitParameterFormatter"/>)
+        /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
+
+        /// <summary>
+        /// Sets the default behavior when sending a request's body content. (defaults to false, request body is not streamed to the server)
+        /// </summary>
         public bool Buffered { get; set; } = false;
     }
 
+    /// <summary>
+    /// Provides content serialization to <see cref="HttpContent"/>.
+    /// </summary>
     public interface IHttpContentSerializer
     {
         HttpContent ToHttpContent<T>(T item);
@@ -83,16 +107,25 @@ namespace Refit
         string? GetFieldNameForProperty(PropertyInfo propertyInfo);
     }
 
+    /// <summary>
+    /// Provides Url parameter formatting.
+    /// </summary>
     public interface IUrlParameterFormatter
     {
         string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type);
     }
 
+    /// <summary>
+    /// Provides form Url-encoded parameter formatting.
+    /// </summary>
     public interface IFormUrlEncodedParameterFormatter
     {
         string? Format(object? value, string? formatString);
     }
 
+    /// <summary>
+    /// Default Url parameter formater.
+    /// </summary>
     public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     {
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache = new();
@@ -128,6 +161,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Default form Url-encoded parameter formatter.
+    /// </summary>
     public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
     {
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache
@@ -155,6 +191,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Default Api exception factory.
+    /// </summary>
     public class DefaultApiExceptionFactory
     {
         static readonly Task<Exception?> NullTask = Task.FromResult<Exception?>(null);

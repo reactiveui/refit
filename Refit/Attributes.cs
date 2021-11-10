@@ -135,6 +135,9 @@ namespace Refit
 
     }
 
+    /// <summary>
+    /// Defines methods to serialize HTTP requests' bodies.
+    /// </summary>
     public enum BodySerializationMethod
     {
         /// <summary>
