@@ -357,6 +357,20 @@ public class Foo
 }
 ```
 
+##### JSON source generator
+
+To apply the benefits of the new [JSON source generator](https://devblogs.microsoft.com/dotnet/try-the-new-system-text-json-source-generator/) for System.Text.Json added in .NET 6, you can use `SystemTextJsonContentSerializer` with a custom instance of `RefitSettings` and `JsonSerializerOptions`:
+
+```csharp
+var options = new JsonSerializerOptions();
+options.AddContext<MyJsonSerializerContext>();
+
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        ContentSerializer = new SystemTextJsonContentSerializer(options)
+    });
+```
+
 #### XML Content
 
 XML requests and responses are serialized/deserialized using _System.Xml.Serialization.XmlSerializer_.
