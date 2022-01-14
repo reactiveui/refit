@@ -376,6 +376,29 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void PostWithCustomQueryParameterKeyFormatterHasCorrectQuerystring()
+        {
+            var settings = new RefitSettings() {
+                UrlParameterKeyFormatter = new TestUrlParameterKeyFormatter()
+            };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                TestAlias1 = "one",
+                TestAlias2 = "two"
+            };
+
+            var output = factory(new object[] { param });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?test-query-alias=one&testalias2=two", uri.PathAndQuery);
+        }
+
+        [Fact]
         public void PostWithObjectQueryParameterWithEnumList_Multi()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
@@ -1520,6 +1543,21 @@ namespace Refit.Tests
             }
 
             return base.Format(parameterValue, attributeProvider, type);
+        }
+    }
+
+    public class TestUrlLowercaseParameterKeyFormatter : IUrlParameterKeyFormatter
+    {
+        readonly string constantParameterOutput;
+
+        public TestUrlLowercaseParameterKeyFormatter(string constantOutput)
+        {
+            constantParameterOutput = constantOutput;
+        }
+
+        public string Format(object key, ICustomAttributeProvider attributeProvider, Type type)
+        {
+            return constantParameterOutput;
         }
     }
 
