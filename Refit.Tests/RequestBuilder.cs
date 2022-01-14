@@ -376,7 +376,30 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void PostWithCustomUrlParameterKeyFormatterHasCorrectQuerystring()
+        public void PostWithCustomUrlParameterKeyFormatterShouldFormatNonAliasedComplexQueryObjectKeys()
+        {
+            var settings = new RefitSettings()
+            {
+                UrlParameterKeyFormatter = new TestUrlLowercaseParameterKeyFormatter()
+            };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                TestAlias2 = "two"
+            };
+
+            var output = factory(new object[] { param });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?testalias2=two", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void PostWithCustomUrlParameterKeyFormatterShould_Not_FormatAliasedComplexQueryObjectKeys()
         {
             var settings = new RefitSettings()
             {
