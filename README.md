@@ -42,9 +42,11 @@ services
 * [Where does this work?](#where-does-this-work)
   * [Breaking changes in 6.x](#breaking-changes-in-6x)
 * [API Attributes](#api-attributes)
-* [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
-* [Collections as Querystring parameters](#collections-as-querystring-parameters)
-* [Unescape Querystring parameters](#unescape-querystring-parameters)
+* [Querystrings](#querystrings)
+  * [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
+  * [Collections as Querystring parameters](#collections-as-querystring-parameters)
+  * [Unescape Querystring parameters](#unescape-querystring-parameters)
+  * [Customize Querystring parameter formatting](#customize-querystring-parameter-formatting)
 * [Body content](#body-content)
   * [Buffering and the Content-Length header](#buffering-and-the-content-length-header)
   * [JSON content](#json-content)
@@ -170,7 +172,9 @@ Search("admin/products");
 >>> "/search/admin/products"
 ```
 
-### Dynamic Querystring Parameters
+### Querystrings
+
+#### Dynamic Querystring Parameters
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
 This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to Twitter's hybrid API that insists on non-GET requests with querystring parameters.
@@ -224,9 +228,9 @@ Task<Tweet> PostTweet([Query]TweetParams params);
 
 Where `TweetParams` is a POCO, and properties will also support `[AliasAs]` attributes.
 
-### Collections as Querystring parameters
+#### Collections as Querystring parameters
 
-Use the `Query` attribute to specify format in which collections should be formatted in query string
+Use the `Query` attribute to specify format in which collections should be formatted in querystring
 
 ```csharp
 [Get("/users/list")]
@@ -251,7 +255,7 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     });
 ```
 
-### Unescape Querystring parameters
+#### Unescape Querystring parameters
 
 Use the `QueryUriFormat` attribute to specify if the query parameters should be url escaped
 
@@ -262,6 +266,92 @@ Task Query(string q);
 
 Query("Select+Id,Name+From+Account")
 >>> "/query?q=Select+Id,Name+From+Account"
+```
+
+#### Customize Querystring parameter formatting
+
+Using `RefitSettings.UrlParameterKeyFormatter` and `RefitSettings.UrlParameterFormatter`, you can customize the way querystrings
+are formatted in URLs.
+
+**Parameter key formatting**
+
+The `DefaultUrlParameterKeyFormatter` will use the object or parameter property name by default, otherwise it looks for an `[AliasAs]` attribute
+to determine the name:
+
+```c#
+public class MyQueryParams
+{
+    [AliasAs("order")]
+    public string SortOrder { get; set; }
+
+    public int Limit { get; set; }
+}
+
+[Get("/group/{id}/users")]
+Task<List<User>> GroupList([AliasAs("id")] int groupId, MyQueryParams params);
+
+
+params.SortOrder = "desc";
+params.Limit = 10;
+
+GroupList(1, params);
+>>> "/group/1/users?order=desc&Limit=10"
+```
+
+If you specify your own implementation of `IUrlParameterKeyFormatter`, you can choose to inherit the default functionality or 
+override it:
+
+```c#
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        // override entire implementation
+        UrlParameterKeyFormatter = new LowercaseUrlParameterKeyFormatter(),
+
+        // or, preserve default
+        UrlParameterKeyFormatter = new LowercasePreserveDefaultUrlParameterKeyFormatter()
+    });
+```
+
+Example with lowercasing all property keys:
+
+```c#
+class LowercaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter 
+{
+    public string Format(string key, ICustomAttributeProvider attributeProvider)
+    {
+        return key.ToLowerInvariant();
+    }
+}
+
+GroupList(1, params);
+>>> "/group/1/users?sortorder=desc&limit=10"
+                    |
+                    |__ All keys are lowercase even if [AliasAs] is used
+```
+
+Example preserving default key formatting and only lowercasing if the properties match:
+
+```c#
+class LowercasePreserveDefaultUrlParameterKeyFormatter : DefaultUrlParameterKeyFormatter 
+{
+    public override string Format(string key, ICustomAttributeProvider attributeProvider)
+    {
+        var defaultKey = base.Format(key, attributeProvider);
+        var preserveDefault = defaultKey != key;
+
+        if (preserveDefault) {
+            return defaultKey;
+        }
+
+        return key.ToLowerInvariant();
+    }
+}
+
+GroupList(1, params);
+>>> "/group/1/users?order=desc&limit=10"
+                    |          |__ "Limit" is lowercased
+                    |
+                    |__ [AliasAs] is preserved
 ```
 
 ### Body content
