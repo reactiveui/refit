@@ -382,8 +382,13 @@ namespace Refit
 
                 var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
                 if (aliasAttribute != null)
+                {
                     key = aliasAttribute.Name;
-
+                }
+                else
+                {
+                    key = settings.UrlParameterKeyFormatter.Format(key);
+                }
 
                 // Look to see if the property has a Query attribute, and if so, format it accordingly
                 var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
@@ -445,7 +450,7 @@ namespace Refit
                 var keyType = key.GetType();
                 var formattedKey = settings.UrlParameterFormatter.Format(key, keyType, keyType);
 
-                if(string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
+                if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
                 {
                     continue;
                 }
