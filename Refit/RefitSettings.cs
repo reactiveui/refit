@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Refit
 {
     public class RefitSettings
-    {       
+    {
 
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the default parameters
@@ -20,6 +20,7 @@ namespace Refit
         {
             ContentSerializer = new SystemTextJsonContentSerializer();
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
+            UrlParameterKeyFormatter = new DefaultUrlParameterKeyFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
         }
@@ -30,13 +31,16 @@ namespace Refit
         /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use</param>
         /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
+        /// /// <param name="urlParameterKeyFormatter">The <see cref="IUrlParameterKeyFormatter"/> instance to use to format query key names (defaults to <see cref="DefaultUrlParameterKeyFormatter"/> which passes through original names)</param>
         public RefitSettings(
             IHttpContentSerializer contentSerializer,
             IUrlParameterFormatter? urlParameterFormatter = null,
-            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null)
+            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null,
+            IUrlParameterKeyFormatter? urlParameterKeyFormatter = null)
         {
             ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
+            UrlParameterKeyFormatter = urlParameterKeyFormatter ?? new DefaultUrlParameterKeyFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
         }
@@ -64,6 +68,7 @@ namespace Refit
 
         public IHttpContentSerializer ContentSerializer { get; set; }
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
+        public IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
         public bool Buffered { get; set; } = false;
@@ -86,6 +91,13 @@ namespace Refit
     public interface IUrlParameterFormatter
     {
         string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type);
+    }
+
+    /// <summary>
+    /// Formats the key name of URL query parameters (e.g. `TestProperty1=true` => `test_property_1=true`).
+    /// </summary>
+    public interface IUrlParameterKeyFormatter {
+        string? Format(string key);
     }
 
     public interface IFormUrlEncodedParameterFormatter
@@ -125,6 +137,14 @@ namespace Refit
                                            ? "{0}"
                                            : $"{{0:{formatString}}}",
                                        enummember?.Value ?? parameterValue);
+        }
+    }
+
+    public class DefaultUrlParameterKeyFormatter : IUrlParameterKeyFormatter
+    {
+        public string? Format(string key)
+        {
+            return key;
         }
     }
 
