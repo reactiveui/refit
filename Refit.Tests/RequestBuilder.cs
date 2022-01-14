@@ -380,7 +380,7 @@ namespace Refit.Tests
         {
             var settings = new RefitSettings()
             {
-                UrlParameterKeyFormatter = new TestUrlLowercaseParameterKeyFormatter()
+                UrlParameterKeyFormatter = new TestUrlParameterKeyFormatterUsesLowercaseExceptAliased()
             };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
@@ -399,11 +399,11 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void PostWithCustomUrlParameterKeyFormatterShould_Not_FormatAliasedComplexQueryObjectKeys()
+        public void PostWithCustomUrlParameterKeyFormatterThatInheritsDefaultFormatterShould_Not_FormatAliasedComplexQueryObjectKeys()
         {
             var settings = new RefitSettings()
             {
-                UrlParameterKeyFormatter = new TestUrlLowercaseParameterKeyFormatter()
+                UrlParameterKeyFormatter = new TestUrlParameterKeyFormatterUsesLowercaseExceptAliased()
             };
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
@@ -1570,10 +1570,18 @@ namespace Refit.Tests
         }
     }
 
-    public class TestUrlLowercaseParameterKeyFormatter : IUrlParameterKeyFormatter
+    public class TestUrlParameterKeyFormatterUsesLowercaseExceptAliased : DefaultUrlParameterKeyFormatter
     {
-        public string Format(string key)
+        public override string Format(string key, ICustomAttributeProvider attributeProvider)
         {
+            var baseKey = base.Format(key, attributeProvider);
+            var isAliased = baseKey != key;
+
+            if (isAliased) 
+            {
+                return baseKey;
+            }
+
             return key.ToLowerInvariant();
         }
     }

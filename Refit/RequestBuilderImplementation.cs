@@ -378,17 +378,7 @@ namespace Refit
                     }
                 }
 
-                var key = propertyInfo.Name;
-
-                var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
-                if (aliasAttribute != null)
-                {
-                    key = aliasAttribute.Name;
-                }
-                else
-                {
-                    key = settings.UrlParameterKeyFormatter.Format(key);
-                }
+                var key = settings.UrlParameterKeyFormatter.Format(propertyInfo.Name, propertyInfo);
 
                 // Look to see if the property has a Query attribute, and if so, format it accordingly
                 var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();

@@ -31,7 +31,7 @@ namespace Refit
         /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use</param>
         /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
-        /// /// <param name="urlParameterKeyFormatter">The <see cref="IUrlParameterKeyFormatter"/> instance to use to format query key names (defaults to <see cref="DefaultUrlParameterKeyFormatter"/> which passes through original names)</param>
+        /// /// <param name="urlParameterKeyFormatter">The <see cref="IUrlParameterKeyFormatter"/> instance to use to format query key names (defaults to <see cref="DefaultUrlParameterKeyFormatter"/>)</param>
         public RefitSettings(
             IHttpContentSerializer contentSerializer,
             IUrlParameterFormatter? urlParameterFormatter = null,
@@ -96,8 +96,9 @@ namespace Refit
     /// <summary>
     /// Formats the key name of URL query parameters (e.g. `TestProperty1=true` => `test_property_1=true`).
     /// </summary>
-    public interface IUrlParameterKeyFormatter {
-        string? Format(string key);
+    public interface IUrlParameterKeyFormatter
+    {
+        string? Format(string key, ICustomAttributeProvider attributeProvider);
     }
 
     public interface IFormUrlEncodedParameterFormatter
@@ -142,9 +143,19 @@ namespace Refit
 
     public class DefaultUrlParameterKeyFormatter : IUrlParameterKeyFormatter
     {
-        public string? Format(string key)
+        public virtual string? Format(string key, ICustomAttributeProvider attributeProvider)
         {
-            return key;
+            var aliasAs = attributeProvider.GetCustomAttributes(typeof(AliasAsAttribute), true)
+                .OfType<AliasAsAttribute>()
+                .FirstOrDefault()?.Name;
+            if (aliasAs != null)
+            {
+                return aliasAs;
+            }
+            else
+            {
+                return key;
+            }
         }
     }
 
