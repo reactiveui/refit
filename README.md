@@ -1149,10 +1149,10 @@ public class HomeController : Controller
 ```
 
 ### Handling exceptions
-Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they return `Task<ApiResponse<T>>`.
+Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they return `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`.
 
-#### When returning `Task<ApiResponse<T>>`
-Refit traps any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that occur when attempting to deserialize the response to `Task<ApiResponse<T>>` and populates the exception into the `Error` property on `ApiResponse<T>` without throwing the exception.
+#### When returning `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`
+Refit traps any `ApiException` raised by the `ExceptionFactory` when processing the response, and any errors that occur when attempting to deserialize the response to `ApiResponse<T>`, and populates the exception into the `Error` property on `ApiResponse<T>` without throwing the exception.
 
 You can then decide what to do like so:
 
