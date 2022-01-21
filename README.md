@@ -68,8 +68,8 @@ services
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
 * [Handling exceptions](#handling-exceptions)
-  * [When returning Task<ApiResponse<T>>](#when-returning-taskapiresponset)
-  * [When returning Task<T>](#when-returning-taskt)
+  * [When returning Task&lt;IApiResponse&gt;, Task&lt;IApiResponse&lt;T&gt;&gt;, or Task&lt;ApiResponse&lt;T&gt;&gt;](#when-returning-taskiapiresponse-taskiapiresponset-or-taskapiresponset)
+  * [When returning Task&lt;T&gt;](#when-returning-taskt)
   * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
   * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
 
@@ -1152,7 +1152,7 @@ public class HomeController : Controller
 ### Handling exceptions
 Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they return `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`.
 
-#### When returning `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`
+#### <a id="when-returning-taskapiresponset"></a>When returning `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`
 Refit traps any `ApiException` raised by the `ExceptionFactory` when processing the response, and any errors that occur when attempting to deserialize the response to `ApiResponse<T>`, and populates the exception into the `Error` property on `ApiResponse<T>` without throwing the exception.
 
 You can then decide what to do like so:
