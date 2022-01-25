@@ -57,9 +57,14 @@ namespace Refit.Tests
         [Post("/1h3a5jm1")]
         Task PostGeneric<T>(T param);
 
+        [Post("/foo")]
+        Task PostVoidReturnBodyBuffered<T>([Body(buffered: true)] T param);
+
+        [Post("/foo")]
+        Task<string> PostNonVoidReturnBodyBuffered<T>([Body(buffered: true)] T param);
+
         [Post("/big")]
         Task PostBig(BigObject big);
-
 
         [Get("/foo/{arguments}")]
         Task SomeApiThatUsesVariableNameFromCodeGen(string arguments);
@@ -388,7 +393,7 @@ namespace Refit.Tests
 
             await client.GetAsync("/firstRequest"); ;
 
-            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);            
+            var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
             await fixture.Get();
             mockHttp.VerifyNoOutstandingExpectation();
@@ -410,7 +415,7 @@ namespace Refit.Tests
 
             await fixture.Get();
             mockHttp.VerifyNoOutstandingExpectation();
-        }   
+        }
 
         [Fact]
         public async Task GetWithPathBoundObject()
@@ -742,7 +747,7 @@ namespace Refit.Tests
             };
 
             mockHttp.Expect(HttpMethod.Get, "http://foo/nobody")
-                // We can't add HttpContent to a GET request, 
+                // We can't add HttpContent to a GET request,
                 // because HttpClient doesn't allow it and it will
                 // blow up at runtime
                 .With(r => r.Content == null)
@@ -765,7 +770,7 @@ namespace Refit.Tests
             };
 
             mockHttp.Expect(HttpMethod.Head, "http://foo/nobody")
-                // We can't add HttpContent to a HEAD request, 
+                // We can't add HttpContent to a HEAD request,
                 // because HttpClient doesn't allow it and it will
                 // blow up at runtime
                 .With(r => r.Content == null)
@@ -1061,13 +1066,13 @@ namespace Refit.Tests
                             Content = new StringContent("[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]", Encoding.UTF8, "application/json")
                         };
                     });
-            
+
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-            
 
-            await Assert.ThrowsAsync<TaskCanceledException>(async () => await fixture.GetOrgMembers("github", cts.Token));            
+
+            await Assert.ThrowsAsync<TaskCanceledException>(async () => await fixture.GetOrgMembers("github", cts.Token));
         }
 
 
@@ -1197,7 +1202,7 @@ namespace Refit.Tests
 
             Assert.NotNull(result);
             Assert.True(result.IsSuccessStatusCode);
-        }       
+        }
 
         [Fact]
         public async Task ShouldRetHttpResponseMessageWithNestedInterface()
@@ -1361,6 +1366,63 @@ namespace Refit.Tests
             await fixture.PostGeneric("4");
 
             mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostWithVoidReturnBufferedBodyExpectContentLengthHeader()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            var postBody = new Dictionary<string, string>
+            {
+                { "some", "body" },
+                { "once", "told me" }
+            };
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                .With(request => request.Content?.Headers.ContentLength > 0)
+                .Respond(HttpStatusCode.OK);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+            await fixture.PostVoidReturnBodyBuffered(postBody);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PostWithNonVoidReturnBufferedBodyExpectContentLengthHeader()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            var postBody = new Dictionary<string, string>
+            {
+                { "some", "body" },
+                { "once", "told me" }
+            };
+            const string expectedResponse = "some response";
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                .With(request => request.Content?.Headers.ContentLength > 0)
+                .Respond("text/plain", expectedResponse);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+            var result = await fixture.PostNonVoidReturnBodyBuffered(postBody);
+
+            mockHttp.VerifyNoOutstandingExpectation();
+
+            Assert.Equal(expectedResponse, result);
         }
 
         [Fact]
@@ -1913,7 +1975,7 @@ namespace Refit.Tests
             };
 
             mockHttp.Expect(HttpMethod.Get, "http://foo/")
-                // We can't add HttpContent to a GET request, 
+                // We can't add HttpContent to a GET request,
                 // because HttpClient doesn't allow it and it will
                 // blow up at runtime
                 .With(r => r.Content == null)

@@ -248,8 +248,8 @@ namespace Refit
                 var disposeResponse = true;
                 try
                 {
-                    //Load the data into buffer when body should be buffered.
-                    if (restMethod.BodyParameterInfo?.Item2 ?? false && (rq.Content != null))
+                    // Load the data into buffer when body should be buffered.
+                    if (IsBodyBuffered(restMethod, rq))
                     {
                         await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
                     }
@@ -874,6 +874,11 @@ namespace Refit
                     ct = paramList.OfType<CancellationToken>().FirstOrDefault();
                 }
 
+                // Load the data into buffer when body should be buffered.
+                if (IsBodyBuffered(restMethod, rq))
+                {
+                    await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
+                }
                 using var resp = await client.SendAsync(rq, ct).ConfigureAwait(false);
 
                 var exception = await settings.ExceptionFactory(resp).ConfigureAwait(false);
@@ -882,6 +887,11 @@ namespace Refit
                     throw exception;
                 }
             };
+        }
+
+        private static bool IsBodyBuffered(RestMethodInfo restMethod, HttpRequestMessage? request)
+        {
+            return (restMethod.BodyParameterInfo?.Item2 ?? false) && (request?.Content != null);
         }
 
         static bool DoNotConvertToQueryMap(object? value)
