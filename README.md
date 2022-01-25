@@ -778,13 +778,13 @@ class RequestPropertyHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         // See if the request has a the property
-        if(request.Properties.ContainsKey("SomeKey")
+        if(request.Properties.ContainsKey("SomeKey"))
         {
             var someProperty = request.Properties["SomeKey"];
             //do stuff
         }
 
-        if(request.Properties.ContainsKey("someOtherKey")
+        if(request.Properties.ContainsKey("someOtherKey"))
         {
             var someOtherProperty = request.Properties["someOtherKey"];
             //do stuff
