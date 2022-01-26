@@ -30,8 +30,10 @@ namespace Refit.Tests
 
         static InterfaceStubGeneratorTests()
         {
-#if NET5_0_OR_GREATER
+#if NET5_0
             ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+#elif NET6_0
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
 #else
             ReferenceAssemblies = ReferenceAssemblies.Default
                 .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Text.Json", "6.0.1")));
