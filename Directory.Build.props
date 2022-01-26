@@ -6,7 +6,6 @@
     <Authors>.NET Foundation and Contributors</Authors>
     <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
     <PackageIcon>refit_logo.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <DefaultLanguage>en-US</DefaultLanguage>
     <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
@@ -27,8 +26,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)refit_logo.png" Pack="true" PackagePath="\" Visible="false"  />
-    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false"  />
+    <None Include="$(MSBuildThisFileDirectory)refit_logo.png" Pack="true" PackagePath="\" Visible="false"  />    
   </ItemGroup>
   
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
