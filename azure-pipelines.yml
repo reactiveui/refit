@@ -31,11 +31,10 @@ stages:
 
     steps:
     - task: UseDotNet@2
-      displayName: Use .NET Core 5.x SDK
+      displayName: Use .NET 6.x SDK
       inputs:
         version: 6.x
         performMultiLevelLookup: true
-        includePreviewVersions: true
 
     - task: UseDotNet@2
       displayName: Use .NET Core 5.x Runtime

@@ -2,15 +2,15 @@
 
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
-    <TargetFrameworks>net5.0;netstandard2.0;netstandard2.1;net461</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netstandard2.0;netstandard2.1;net461</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
   
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Condition="'$(TargetFramework)' != 'net5.0'" Include="System.Text.Json" Version="5.0.2" />
-    <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net6.0'" Include="System.Text.Json" Version="6.0.1" />
+    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">    
