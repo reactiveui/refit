@@ -30,11 +30,11 @@ namespace Refit.Tests
 
         static InterfaceStubGeneratorTests()
         {
-#if NET5_0
+#if NET5_0_OR_GREATER
             ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
 #else
             ReferenceAssemblies = ReferenceAssemblies.Default
-                .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Text.Json", "5.0.1")));
+                .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Text.Json", "6.0.1")));
 #endif
 
 #if NET461
@@ -64,7 +64,7 @@ namespace Refit.Tests
             Assert.Empty(diags.Where(d => d.Severity == DiagnosticSeverity.Error));
 
             var rundriver = driver.RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompiliation, out var diagnostics);
-            
+
             var runResult = rundriver.GetRunResult();
 
             var generated = runResult.Results[0];
@@ -858,7 +858,7 @@ namespace Refit.Implementation
         Task<T> ReadOne(TKey key);
 
         [Put("/{key}")]
-        Task Update(TKey key, [Body]T payload);
+        Task Update(TKey key, [Body] T payload);
 
         [Delete("/{key}")]
         Task Delete(TKey key);
