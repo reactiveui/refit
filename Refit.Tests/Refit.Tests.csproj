@@ -3,7 +3,7 @@
   <Import Project="..\Refit\targets\refit.props" />
   
   <PropertyGroup>
-    <TargetFrameworks>net6.0;netcoreapp3.1;net461</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netcoreapp3.1;net461</TargetFrameworks>
     <Deterministic>false</Deterministic> <!-- Some tests rely on CallerFilePath -->
   </PropertyGroup>
 
