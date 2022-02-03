@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -53,6 +54,11 @@ namespace Refit
         
         public HttpContentHeaders? ContentHeaders => response.Content?.Headers;
         
+#if NET5_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Content))]
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
 
         public string? ReasonPhrase => response.ReasonPhrase;
