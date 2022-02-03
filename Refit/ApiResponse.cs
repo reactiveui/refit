@@ -56,6 +56,7 @@ namespace Refit
         
 #if NET5_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Content))]
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
