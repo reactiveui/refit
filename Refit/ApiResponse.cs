@@ -53,6 +53,10 @@ namespace Refit
         
         public HttpContentHeaders? ContentHeaders => response.Content?.Headers;
         
+#if NET5_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Content))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
 
         public string? ReasonPhrase => response.ReasonPhrase;
