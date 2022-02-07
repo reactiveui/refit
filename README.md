@@ -1157,16 +1157,17 @@ Refit traps any `ApiException` raised by the `ExceptionFactory` when processing 
 
 You can then decide what to do like so:
 
-    var response = await _myRefitClient.GetSomeStuff();
-    if(response.IsSuccessStatusCode)
-    {
-       //do your thing
-    }
-    else
-    {
-       _logger.LogError(response.Error, response.Error.Content);
-    }
-
+```csharp
+var response = await _myRefitClient.GetSomeStuff();
+if(response.IsSuccessStatusCode)
+{
+   //do your thing
+}
+else
+{
+   _logger.LogError(response.Error, response.Error.Content);
+}
+```
 
 #### When returning `Task<T>`
 Refit throws any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that occur when attempting to deserialize the response to `Task<T>`.
