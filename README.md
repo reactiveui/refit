@@ -99,6 +99,12 @@ Refit 6 makes [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/standar
 
 `IContentSerializer` was renamed to `IHttpContentSerializer` to better reflect its purpose. Additionally, two of its methods were renamed, `SerializeAsync<T>` -> `ToHttpContent<T>` and `DeserializeAsync<T>` -> `FromHttpContentAsync<T>`. Any existing implementations of these will need to be updated, though the changes should be minor.
 
+##### Updates in 6.3
+
+Refit 6.3 splits out the XML serialization via `XmlContentSerializer` into a separate package, `Refit.Xml`. This
+is to reduce the dependency size when using Refit with Web Assembly (WASM) applications. If you require XML, add a reference
+to `Refit.Xml`.
+
 ### API Attributes
 
 Every method must have an HTTP attribute that provides the request method and
