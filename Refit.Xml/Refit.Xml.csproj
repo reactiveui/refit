@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Product>Refit Xml Serializer ($(TargetFramework))</Product>
+    <Description>Refit Serializers for Xml</Description>
+    <TargetFrameworks>net6.0;net5.0;netstandard2.0;net461</TargetFrameworks>
+    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
+    <RootNamespace>Refit</RootNamespace>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>  
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies"
+                      Version="1.0.2"
+                      PrivateAssets="All" />
+    <Reference Include="System.Web" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Refit\Refit.csproj" />
+  </ItemGroup>
+
+</Project>
