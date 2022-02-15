@@ -733,14 +733,14 @@ namespace Refit
 #endif
                 }
 
-                // Always add the top-level type of the interface to the properties
+                // Always add the top-level type of the interface and the rest method info to the options/properties
 #if NET5_0_OR_GREATER
-                ret.Options.Set(new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType), TargetType);
+                ret.Options.Set(HttpRequestMessageOptions.InterfaceTypeKey, TargetType);
+                ret.Options.Set(HttpRequestMessageOptions.RestMethodInfoKey, restMethod);
 #else
                 ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
+                ret.Properties[HttpRequestMessageOptions.RestMethodInfo] = restMethod;
 #endif
-
-                ;
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
