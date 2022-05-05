@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="System.Linq.Expressions" Version="4.3.0" />
     <PackageReference Condition="'$(TargetFramework)' != 'net6.0'" Include="System.Text.Json" Version="6.0.1" />
     <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
   </ItemGroup>
@@ -27,15 +28,9 @@
     <!-- We need this one to catch older clients -->
     <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true" />
 
-    <None Include="..\InterfaceStubGenerator.Roslyn38\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV1.dll"
-          PackagePath="analyzers\dotnet\roslyn3.8\cs"
-          Pack="true"
-          Visible="false" />
+    <None Include="..\InterfaceStubGenerator.Roslyn38\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV1.dll" PackagePath="analyzers\dotnet\roslyn3.8\cs" Pack="true" Visible="false" />
 
-    <None Include="..\InterfaceStubGenerator.Roslyn40\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll"
-          PackagePath="analyzers\dotnet\roslyn4.0\cs"
-          Pack="true"
-          Visible="false" />
+    <None Include="..\InterfaceStubGenerator.Roslyn40\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll" PackagePath="analyzers\dotnet\roslyn4.0\cs" Pack="true" Visible="false" />
   </ItemGroup>
 
 </Project>

@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq.Expressions;
 using System.Net.Http;
 
 namespace Refit
 {
     public static class RestService
     {
-        static readonly ConcurrentDictionary<Type, Type> TypeMapping = new();
-
+        static readonly ConcurrentDictionary<Type, Func<HttpClient, IRequestBuilder, object>> TypeMapping = new();
         /// <summary>
         /// Generate a Refit implementation of the specified interface.
         /// </summary>
@@ -73,9 +73,9 @@ namespace Refit
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
         public static object For(Type refitInterfaceType, HttpClient client, IRequestBuilder builder)
         {
-            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType);
+            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedTypeCreator);
 
-            return Activator.CreateInstance(generatedType, client, builder)!;
+            return generatedType(client, builder)!;
         }
 
         /// <summary>
@@ -158,6 +158,14 @@ namespace Refit
             }
 
             return new HttpClient(innerHandler ?? new HttpClientHandler()) { BaseAddress = new Uri(hostUrl.TrimEnd('/')) };
+        }
+
+        static Func<HttpClient, IRequestBuilder, object> GetGeneratedTypeCreator(Type type)
+        {
+            ParameterExpression parameterHttpClient = Expression.Parameter(typeof(HttpClient));
+            ParameterExpression parameterIRequestBuilder = Expression.Parameter(typeof(IRequestBuilder));
+            var newExp = Expression.New(GetGeneratedType(type).GetConstructors()[0], parameterHttpClient, parameterIRequestBuilder);
+            return Expression.Lambda<Func<HttpClient, IRequestBuilder, object>>(newExp, parameterHttpClient, parameterIRequestBuilder).Compile();
         }
 
         static Type GetGeneratedType(Type refitInterfaceType)
