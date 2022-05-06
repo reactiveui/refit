@@ -724,6 +724,19 @@ namespace Refit
                     }
                 }
 
+                // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
+                if (this.settings.HttpRequestMessageOptions != null)
+                {
+                    foreach(var p in this.settings.HttpRequestMessageOptions)
+                    {
+#if NET5_0_OR_GREATER
+                        ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+#else
+                        ret.Properties.Add(p);
+#endif
+                    }
+                }
+
                 foreach (var property in propertiesToAdd)
                 {
 #if NET5_0_OR_GREATER

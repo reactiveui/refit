@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -88,6 +89,11 @@ namespace Refit
         /// Sets the default behavior when sending a request's body content. (defaults to false, request body is not streamed to the server)
         /// </summary>
         public bool Buffered { get; set; } = false;
+
+        /// <summary>
+        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>. 
+        /// </summary>
+        public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
     }
 
     /// <summary>
