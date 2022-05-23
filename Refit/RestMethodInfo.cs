@@ -463,8 +463,8 @@ namespace Refit
         void DetermineReturnTypeInfo(MethodInfo methodInfo)
         {
             var returnType = methodInfo.ReturnType;
-            if (returnType.IsGenericType && (methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(Task<>)
-                                             || methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(IObservable<>)))
+            if (returnType.IsGenericType && (methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)
+                                             || methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(IObservable<>)))
             {
                 ReturnType = returnType;
                 ReturnResultType = returnType.GetGenericArguments()[0];
