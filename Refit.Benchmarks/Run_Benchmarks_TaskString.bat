@@ -1,1 +1,0 @@
-dotnet run -c Release --filter *TaskString_Async*
