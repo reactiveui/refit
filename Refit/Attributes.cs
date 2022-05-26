@@ -19,6 +19,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Send the request with HTTP method 'GET'.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class GetAttribute : HttpMethodAttribute
     {
@@ -30,6 +33,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Send the request with HTTP method 'POST'.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class PostAttribute : HttpMethodAttribute
     {
@@ -41,6 +47,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Send the request with HTTP method 'PUT'.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class PutAttribute : HttpMethodAttribute
     {
@@ -52,6 +61,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Send the request with HTTP method 'DELETE'.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class DeleteAttribute : HttpMethodAttribute
     {
@@ -63,6 +75,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Send the request with HTTP method 'PATCH'.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class PatchAttribute : HttpMethodAttribute
     {
@@ -74,6 +89,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Send the request with HTTP method 'OPTION'.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class OptionsAttribute : HttpMethodAttribute
     {
@@ -85,6 +103,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Send the request with HTTP method 'HEAD'.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Method)]
     public class HeadAttribute : HttpMethodAttribute
     {
@@ -96,6 +117,12 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Send the request as multipart.
+    /// </summary>
+    /// <remarks>
+    /// Currently, multipart methods only support the following parameter types: <see cref="string"/>, <see cref="byte"/> array, <see cref="System.IO.Stream"/>, <see cref="System.IO.FileInfo"/>.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Method)]
     public class MultipartAttribute : Attribute
     {
@@ -108,6 +135,9 @@ namespace Refit
 
     }
 
+    /// <summary>
+    /// Defines methods to serialize HTTP requests' bodies.
+    /// </summary>
     public enum BodySerializationMethod
     {
         /// <summary>
@@ -132,6 +162,17 @@ namespace Refit
         Serialized
     }
 
+    /// <summary>
+    /// Set a parameter to be sent as the HTTP request's body.
+    /// </summary>
+    /// <remarks>
+    /// There are four behaviors when sending a parameter as the request body:<br/>
+    /// - If the type is/implements <see cref="System.IO.Stream"/>, the content will be streamed via <see cref="StreamContent"/>.<br/>
+    /// - If the type is <see cref="string"/>, it will be used directly as the content unless <c>[Body(BodySerializationMethod.Json)]</c> is set
+    /// which will send it as a <see cref="StringContent"/>.<br/>
+    /// - If the parameter has the attribute <c>[Body(BodySerializationMethod.UrlEncoded)]</c>, the content will be URL-encoded.<br/>
+    /// - For all other types, the object will be serialized using the content serializer specified in the request's <see cref="RefitSettings"/>.
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Parameter)]
     public class BodyAttribute : Attribute
     {
@@ -161,6 +202,9 @@ namespace Refit
         public BodySerializationMethod SerializationMethod { get; protected set; } = BodySerializationMethod.Default;
     }
 
+    /// <summary>
+    /// Override the key that will be sent in the query string.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
     public class AliasAsAttribute : Attribute
     {
@@ -185,7 +229,7 @@ namespace Refit
     }
 
     /// <summary>
-    /// Allows you provide a Dictionary of headers to be added to the request.
+    /// Allows you to provide a Dictionary of headers to be added to the request.
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
     public class HeaderCollectionAttribute : Attribute
@@ -193,6 +237,9 @@ namespace Refit
 
     }
 
+    /// <summary>
+    /// Add multiple headers to the request.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
     public class HeadersAttribute : Attribute
     {
@@ -204,6 +251,9 @@ namespace Refit
         public string[] Headers { get; }
     }
 
+    /// <summary>
+    /// Add a header to the request.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
     public class HeaderAttribute : Attribute
     {
@@ -236,6 +286,12 @@ namespace Refit
         public string? Key { get; }
     }
 
+    /// <summary>
+    /// Add the Authorize header to the request with the value of the associated parameter.
+    /// </summary>
+    /// <remarks>
+    /// Default authorization scheme: Bearer
+    /// </remarks>
     [AttributeUsage(AttributeTargets.Parameter)]
     public class AuthorizeAttribute : Attribute
     {
@@ -247,8 +303,10 @@ namespace Refit
         public string Scheme { get; }
     }
 
+    /// <summary>
+    /// Associated value will be added to the request Uri as query-string, using a delimiter to split the values. (default: '.')
+    /// </summary>
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)] // Property is to allow for form url encoded data
-
     public class QueryAttribute : Attribute
     {
         CollectionFormat? collectionFormat;
@@ -332,7 +390,6 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Method)]
-
     public class QueryUriFormatAttribute : Attribute
     {
         public QueryUriFormatAttribute(UriFormat uriFormat)

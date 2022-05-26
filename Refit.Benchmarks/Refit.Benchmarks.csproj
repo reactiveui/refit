@@ -1,15 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+    <Import Project="..\Refit\targets\refit.props" />
+  
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>netcoreapp3.1</TargetFramework>
-        <LangVersion>9</LangVersion>
     </PropertyGroup>
-
+  
     <ItemGroup>
       <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
       <ProjectReference Include="..\Refit\Refit.csproj" />
-      <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+      <ProjectReference Include="..\Refit.Xml\Refit.Xml.csproj" />
+      <ProjectReference Include="..\InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+      <ProjectReference Include="..\InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -27,5 +30,6 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </EmbeddedResource>
     </ItemGroup>
-
+  
+    <Import Project="..\Refit\targets\refit.targets" />
 </Project>

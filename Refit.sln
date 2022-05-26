@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.28621.142
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32207.482
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{4F1C8991-7097-4471-A9A6-A72005AB594D}"
 	ProjectSection(SolutionItems) = preProject
@@ -23,11 +23,22 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.HttpClientFactory", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.Newtonsoft.Json", "Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj", "{2210E606-1C91-4EA0-8876-3B2F501F2669}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Core", "InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj", "{72869789-0310-4916-9A41-20D16A01C1B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Roslyn38", "InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj", "{72869789-0310-4916-9A41-20D16A01C1B8}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "InterfaceStubGenerator.Shared", "InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.shproj", "{B591423D-F92D-4E00-B0EB-615C9853506C}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Roslyn40", "InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj", "{A4B61169-3314-41DB-8156-BE9677C90C9F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.Xml", "Refit.Xml\Refit.Xml.csproj", "{C4E38B33-3D17-47A7-A47F-8F3900F07499}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit.Benchmarks", "Refit.Benchmarks\Refit.Benchmarks.csproj", "{ABD72A27-9C30-481A-8303-D8F825A8FD47}"
 EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{72869789-0310-4916-9a41-20d16a01c1b8}*SharedItemsImports = 5
+		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{a4b61169-3314-41db-8156-be9677c90c9f}*SharedItemsImports = 5
+		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{b591423d-f92d-4e00-b0eb-615c9853506c}*SharedItemsImports = 13
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|ARM = Debug|ARM
@@ -119,6 +130,38 @@ Global
 		{72869789-0310-4916-9A41-20D16A01C1B8}.Release|x64.Build.0 = Release|Any CPU
 		{72869789-0310-4916-9A41-20D16A01C1B8}.Release|x86.ActiveCfg = Release|Any CPU
 		{72869789-0310-4916-9A41-20D16A01C1B8}.Release|x86.Build.0 = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|ARM.Build.0 = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|x64.Build.0 = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Debug|x86.Build.0 = Debug|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|ARM.ActiveCfg = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|ARM.Build.0 = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x64.ActiveCfg = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x64.Build.0 = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x86.ActiveCfg = Release|Any CPU
+		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x86.Build.0 = Release|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|ARM.Build.0 = Debug|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|x64.Build.0 = Debug|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|x86.Build.0 = Debug|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Release|ARM.ActiveCfg = Release|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Release|ARM.Build.0 = Release|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Release|x64.ActiveCfg = Release|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Release|x64.Build.0 = Release|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Release|x86.ActiveCfg = Release|Any CPU
+		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Release|x86.Build.0 = Release|Any CPU
 		{ABD72A27-9C30-481A-8303-D8F825A8FD47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{ABD72A27-9C30-481A-8303-D8F825A8FD47}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ABD72A27-9C30-481A-8303-D8F825A8FD47}.Debug|ARM.ActiveCfg = Debug|Any CPU

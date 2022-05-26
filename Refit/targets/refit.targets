@@ -12,6 +12,34 @@
     
   </PropertyGroup>
 
+  <Target Name="_RefitGatherAnalyzers">
+    <ItemGroup>
+      <_RefitAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'Refit'" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_RefitAnalyzerMultiTargeting" 
+          Condition="'$(SupportsRoslynComponentVersioning)' != 'true'" 
+          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
+          DependsOnTargets="_RefitGatherAnalyzers">
+
+    <ItemGroup>
+      <!-- Remove our analyzers targeting roslyn4.x -->
+      <Analyzer Remove="@(_RefitAnalyzer)"
+                Condition="$([System.String]::Copy('%(_RefitAnalyzer.Identity)').IndexOf('roslyn4')) &gt;= 0"/>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_RefitRemoveAnalyzers" 
+          Condition="'$(DisableRefitSourceGenerator)' == 'true'"
+          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
+          DependsOnTargets="_RefitGatherAnalyzers">
+
+    <!-- Remove all our analyzers -->
+    <ItemGroup>
+      <Analyzer Remove="@(_RefitAnalyzer)" />
+    </ItemGroup>
+  </Target>
 
   <Target Name="_RefitMSBuildVersionCheck"
           Condition=" '$([System.Version]::Parse($(_RefitMSBuildMinVersion)).CompareTo($([System.Version]::Parse($(MSBuildVersion)))))' &gt; '0' "

@@ -10,9 +10,11 @@ using System.Threading.Tasks;
 
 namespace Refit
 {
+    /// <summary>
+    /// Defines various parameters on how Refit should work.
+    /// </summary>
     public class RefitSettings
-    {       
-
+    {
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the default parameters
         /// </summary>
@@ -62,37 +64,81 @@ namespace Refit
         /// </summary>
         public Func<HttpResponseMessage, Task<Exception?>> ExceptionFactory { get; set; }
 
+        /// <summary>
+        /// Defines how requests' content should be serialized. (defaults to <see cref="SystemTextJsonContentSerializer"/>)
+        /// </summary>
         public IHttpContentSerializer ContentSerializer { get; set; }
+
+        /// <summary>
+        /// The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)
+        /// </summary>
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
+
+        /// <summary>
+        /// The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)
+        /// </summary>
         public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
+
+        /// <summary>
+        /// Sets the default collection format to use. (defaults to <see cref="CollectionFormat.RefitParameterFormatter"/>)
+        /// </summary>
         public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
+
+        /// <summary>
+        /// Sets the default behavior when sending a request's body content. (defaults to false, request body is not streamed to the server)
+        /// </summary>
         public bool Buffered { get; set; } = false;
     }
 
+    /// <summary>
+    /// Provides content serialization to <see cref="HttpContent"/>.
+    /// </summary>
     public interface IHttpContentSerializer
     {
+        /// <summary>
+        /// Serializes an object of type <typeparamref name="T"/> to <see cref="HttpContent"/>
+        /// </summary>
+        /// <typeparam name="T">Type of the object to serialize from.</typeparam>
+        /// <param name="item">Object to serialize.</param>
+        /// <returns><see cref="HttpContent"/> that contains the serialized <typeparamref name="T"/> object.</returns>
         HttpContent ToHttpContent<T>(T item);
 
+        /// <summary>
+        /// Deserializes an object of type <typeparamref name="T"/> from an <see cref="HttpContent"/> object.
+        /// </summary>
+        /// <typeparam name="T">Type of the object to serialize to.</typeparam>
+        /// <param name="content">HttpContent object to deserialize.</param>
+        /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
+        /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
         Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands
         /// </summary>
-        /// <param name="propertyInfo"></param>
-        /// <returns></returns>
+        /// <param name="propertyInfo">A PropertyInfo object.</param>
+        /// <returns>The calculated field name.</returns>
         string? GetFieldNameForProperty(PropertyInfo propertyInfo);
     }
 
+    /// <summary>
+    /// Provides Url parameter formatting.
+    /// </summary>
     public interface IUrlParameterFormatter
     {
         string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type);
     }
 
+    /// <summary>
+    /// Provides form Url-encoded parameter formatting.
+    /// </summary>
     public interface IFormUrlEncodedParameterFormatter
     {
         string? Format(object? value, string? formatString);
     }
 
+    /// <summary>
+    /// Default Url parameter formater.
+    /// </summary>
     public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     {
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache = new();
@@ -128,6 +174,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Default form Url-encoded parameter formatter.
+    /// </summary>
     public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
     {
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache
@@ -155,6 +204,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Default Api exception factory.
+    /// </summary>
     public class DefaultApiExceptionFactory
     {
         static readonly Task<Exception?> NullTask = Task.FromResult<Exception?>(null);

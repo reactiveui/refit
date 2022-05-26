@@ -68,9 +68,10 @@ services
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
 * [Handling exceptions](#handling-exceptions)
-  * [When returning Task<ApiResponse<T>>](#when-returning-taskapiresponset)
-  * [When returning Task<T>](#when-returning-taskt)
+  * [When returning Task&lt;IApiResponse&gt;, Task&lt;IApiResponse&lt;T&gt;&gt;, or Task&lt;ApiResponse&lt;T&gt;&gt;](#when-returning-taskiapiresponse-taskiapiresponset-or-taskapiresponset)
+  * [When returning Task&lt;T&gt;](#when-returning-taskt)
   * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
+  * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
 
 ### Where does this work?
 
@@ -97,6 +98,12 @@ Refit 6 does not support the old `packages.config` format for NuGet references (
 Refit 6 makes [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview) the default JSON serializer. If you'd like to continue to use `Newtonsoft.Json`, add the `Refit.Newtonsoft.Json` NuGet package and set your `ContentSerializer` to `NewtonsoftJsonContentSerializer` on your `RefitSettings` instance. `System.Text.Json` is faster and uses less memory, though not all features are supported. The [migration guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to?pivots=dotnet-5-0) contains more details.
 
 `IContentSerializer` was renamed to `IHttpContentSerializer` to better reflect its purpose. Additionally, two of its methods were renamed, `SerializeAsync<T>` -> `ToHttpContent<T>` and `DeserializeAsync<T>` -> `FromHttpContentAsync<T>`. Any existing implementations of these will need to be updated, though the changes should be minor.
+
+##### Updates in 6.3
+
+Refit 6.3 splits out the XML serialization via `XmlContentSerializer` into a separate package, `Refit.Xml`. This
+is to reduce the dependency size when using Refit with Web Assembly (WASM) applications. If you require XML, add a reference
+to `Refit.Xml`.
 
 ### API Attributes
 
@@ -356,6 +363,20 @@ public class Foo
 }
 ```
 
+##### JSON source generator
+
+To apply the benefits of the new [JSON source generator](https://devblogs.microsoft.com/dotnet/try-the-new-system-text-json-source-generator/) for System.Text.Json added in .NET 6, you can use `SystemTextJsonContentSerializer` with a custom instance of `RefitSettings` and `JsonSerializerOptions`:
+
+```csharp
+var options = new JsonSerializerOptions();
+options.AddContext<MyJsonSerializerContext>();
+
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        ContentSerializer = new SystemTextJsonContentSerializer(options)
+    });
+```
+
 #### XML Content
 
 XML requests and responses are serialized/deserialized using _System.Xml.Serialization.XmlSerializer_.
@@ -579,6 +600,7 @@ some interface `ITenantProvider` and has a data store `IAuthTokenStore` that can
     {
          this.tenantProvider = tenantProvider ?? throw new ArgumentNullException(nameof(tenantProvider));
          this.authTokenStore = authTokenStore ?? throw new ArgumentNullException(nameof(authTokenStore));
+         InnerHandler = new HttpClientHandler();
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -762,13 +784,13 @@ class RequestPropertyHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         // See if the request has a the property
-        if(request.Properties.ContainsKey("SomeKey")
+        if(request.Properties.ContainsKey("SomeKey"))
         {
             var someProperty = request.Properties["SomeKey"];
             //do stuff
         }
 
-        if(request.Properties.ContainsKey("someOtherKey")
+        if(request.Properties.ContainsKey("someOtherKey"))
         {
             var someOtherProperty = request.Properties["someOtherKey"];
             //do stuff
@@ -1134,23 +1156,24 @@ public class HomeController : Controller
 ```
 
 ### Handling exceptions
-Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they return `Task<ApiResponse<T>>`.
+Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they return `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`.
 
-#### When returning `Task<ApiResponse<T>>`
-Refit traps any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that occur when attempting to deserialize the response to `Task<ApiResponse<T>>` and populates the exception into the `Error` property on `ApiResponse<T>` without throwing the exception.
+#### <a id="when-returning-taskapiresponset"></a>When returning `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`
+Refit traps any `ApiException` raised by the `ExceptionFactory` when processing the response, and any errors that occur when attempting to deserialize the response to `ApiResponse<T>`, and populates the exception into the `Error` property on `ApiResponse<T>` without throwing the exception.
 
 You can then decide what to do like so:
 
-    var response = await _myRefitClient.GetSomeStuff();
-    if(response.IsSuccessStatusCode)
-    {
-       //do your thing
-    }
-    else
-    {
-       _logger.LogError(response.Error, response.Error.Content);
-    }
-
+```csharp
+var response = await _myRefitClient.GetSomeStuff();
+if(response.IsSuccessStatusCode)
+{
+   //do your thing
+}
+else
+{
+   _logger.LogError(response.Error, response.Error.Content);
+}
+```
 
 #### When returning `Task<T>`
 Refit throws any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that occur when attempting to deserialize the response to `Task<T>`.
@@ -1207,3 +1230,9 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
 ```
 
 Note that exceptions raised when attempting to deserialize the response are not affected by this.
+
+#### `ApiException` deconstruction with Serilog
+
+For users of [Serilog](https://serilog.net), you can enrich the logging of `ApiException` using the
+[Serilog.Exceptions.Refit](https://www.nuget.org/packages/Serilog.Exceptions.Refit) NuGet package. Details of how to
+integrate this package into your applications can be found [here](https://github.com/RehanSaeed/Serilog.Exceptions#serilogexceptionsrefit).

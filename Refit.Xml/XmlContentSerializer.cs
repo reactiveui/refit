@@ -12,7 +12,9 @@ using System.Xml.Serialization;
 
 namespace Refit
 {
-
+    /// <summary>
+    /// A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> which provides Xml content serialization.
+    /// </summary>
     public class XmlContentSerializer : IHttpContentSerializer
     {
         readonly XmlContentSerializerSettings settings;
@@ -27,6 +29,13 @@ namespace Refit
             this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
         }
 
+        /// <summary>
+        /// Serialize object of type <typeparamref name="T"/> to a <see cref="HttpContent"/> with Xml.
+        /// </summary>
+        /// <typeparam name="T">Type of the object to serialize from.</typeparam>
+        /// <param name="item">Object to serialize.</param>
+        /// <returns><see cref="HttpContent"/> that contains the serialized <typeparamref name="T"/> object in Xml.</returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public HttpContent ToHttpContent<T>(T item)
         {
             if (item is null) throw new ArgumentNullException(nameof(item));
@@ -42,6 +51,13 @@ namespace Refit
             return content;
         }
 
+        /// <summary>
+        /// Deserializes an object of type <typeparamref name="T"/> from a <see cref="HttpContent"/> object that contains Xml content.
+        /// </summary>
+        /// <typeparam name="T">Type of the object to deserialize to.</typeparam>
+        /// <param name="content">HttpContent object with Xml content to deserialize.</param>
+        /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
+        /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
         public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
         {
             var xmlSerializer = serializerCache.GetOrAdd(typeof(T), t => new XmlSerializer(
@@ -58,6 +74,7 @@ namespace Refit
             return (T?)xmlSerializer.Deserialize(reader);
         }
 
+        /// <inheritdoc/>
         public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
         {
             if (propertyInfo is null)

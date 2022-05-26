@@ -51,6 +51,9 @@ namespace Refit.Tests
 
             [Get("/GetApiResponseTestObject")]
             Task<ApiResponse<TestAliasObject>> GetApiResponseTestObject();
+
+            [Get("/GetIApiResponse")]
+            Task<IApiResponse> GetIApiResponse();
         }
 
         [Fact]
@@ -243,6 +246,26 @@ namespace Refit.Tests
                 .Respond(req => expectedResponse);
 
             var apiResponse = await fixture.GetApiResponseTestObject();
+
+            Assert.NotNull(apiResponse);
+            Assert.NotNull(apiResponse.Error);
+            Assert.NotNull(apiResponse.Error.Content);
+            Assert.Equal("Hello world", apiResponse.Error.Content);
+        }
+
+        [Fact]
+        public async Task BadRequestWithStringContent_ShouldReturnIApiResponse()
+        {
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("Hello world")
+            };
+            expectedResponse.Content.Headers.Clear();
+
+            mockHandler.Expect(HttpMethod.Get, $"http://api/{nameof(fixture.GetIApiResponse)}")
+                .Respond(req => expectedResponse);
+
+            var apiResponse = await fixture.GetIApiResponse();
 
             Assert.NotNull(apiResponse);
             Assert.NotNull(apiResponse.Error);

@@ -126,9 +126,9 @@ namespace Refit
             CancellationToken = ctParams.FirstOrDefault();
 
             IsApiResponse = ReturnResultType!.GetTypeInfo().IsGenericType &&
-                            (ReturnResultType!.GetGenericTypeDefinition() == typeof(ApiResponse<>)
-                             || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>)
-                             || ReturnResultType == typeof(IApiResponse));
+                              (ReturnResultType!.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+                              || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>))
+                            || ReturnResultType == typeof(IApiResponse);
         }
 
         private ISet<int> BuildHeaderCollectionParameterMap(List<ParameterInfo> parameterList)

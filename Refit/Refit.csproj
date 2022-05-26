@@ -2,21 +2,22 @@
 
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
-    <TargetFrameworks>net5.0;netstandard2.0;netstandard2.1;net461</TargetFrameworks>
+    <TargetFrameworks>net6.0;net5.0;netstandard2.0;netstandard2.1;net461</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
   
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Condition="'$(TargetFramework)' != 'net5.0'" Include="System.Text.Json" Version="5.0.2" />
-    <PackageReference Include="System.Net.Http.Json" Version="5.0.0" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net6.0'" Include="System.Text.Json" Version="6.0.1" />
+    <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
   </ItemGroup>
   
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">    
     <Reference Include="System.Web" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
-    <ProjectReference Include="..\InterfaceStubGenerator.Core\InterfaceStubGenerator.Core.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup Label="Package">        
@@ -25,9 +26,14 @@
 
     <!-- We need this one to catch older clients -->
     <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true" />
-    
-    <None Include="..\InterfaceStubGenerator.Core\bin\$(Configuration)\netstandard2.0\InterfaceStubGenerator.Core.dll"
-          PackagePath="analyzers\cs\"
+
+    <None Include="..\InterfaceStubGenerator.Roslyn38\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV1.dll"
+          PackagePath="analyzers\dotnet\roslyn3.8\cs"
+          Pack="true"
+          Visible="false" />
+
+    <None Include="..\InterfaceStubGenerator.Roslyn40\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll"
+          PackagePath="analyzers\dotnet\roslyn4.0\cs"
           Pack="true"
           Visible="false" />
   </ItemGroup>

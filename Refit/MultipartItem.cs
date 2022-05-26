@@ -38,6 +38,9 @@ namespace Refit
         protected abstract HttpContent CreateContent();
     }
 
+    /// <summary>
+    /// Allows the use of a generic <see cref="Stream"/> in a multipart form body.
+    /// </summary>
     public class StreamPart : MultipartItem
     {
         public StreamPart(Stream value, string fileName, string? contentType = null, string? name = null) :
@@ -54,6 +57,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Allows the use of a <see cref="byte"/> array in a multipart form body.
+    /// </summary>
     public class ByteArrayPart : MultipartItem
     {
         public ByteArrayPart(byte[] value, string fileName, string? contentType = null, string? name = null) :
@@ -70,6 +76,9 @@ namespace Refit
         }
     }
 
+    /// <summary>
+    /// Allows the use of a <see cref="FileInfo"/> object in a multipart form body.
+    /// </summary>
     public class FileInfoPart : MultipartItem
     {
         public FileInfoPart(FileInfo value, string fileName, string? contentType = null, string? name = null) :

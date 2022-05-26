@@ -43,7 +43,7 @@ namespace Refit.Benchmarks
         }
 
         [GlobalSetup]
-        public async Task SetupAsync()
+        public Task SetupAsync()
         {
 
             systemTextJsonContentSerializer = new SystemTextJsonContentSerializer();
@@ -67,6 +67,8 @@ namespace Refit.Benchmarks
             });
 
             users[TenUsers] = autoFixture.CreateMany<User>(TenUsers);
+
+            return Task.CompletedTask;
         }
 
         /*
