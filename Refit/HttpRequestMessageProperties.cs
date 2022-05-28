@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace Refit
 {
@@ -15,5 +11,25 @@ namespace Refit
         /// Returns the <see cref="System.Type"/> of the top-level interface where the method was called from
         /// </summary>
         public static string InterfaceType { get; } = "Refit.InterfaceType";
+
+#if NET5_0_OR_GREATER
+        /// <summary>
+        /// A typed key to access the <see cref="System.Type"/> of the top-level interface where the method was called from
+        /// on the <see cref="System.Net.Http.HttpRequestMessage.Options"/>.
+        /// </summary>
+        public static System.Net.Http.HttpRequestOptionsKey<System.Type> InterfaceTypeKey { get; } = new(InterfaceType);
+#endif
+
+        /// <summary>
+        /// Returns the <see cref="System.Reflection.MethodInfo"/> of the method that was called
+        /// </summary>
+        public static string MethodInfo { get; } = "Refit.MethodInfo";
+
+#if NET5_0_OR_GREATER
+        /// <summary>
+        /// A typed key to access the <see cref="System.Reflection.MethodInfo"/> of the method that was called
+        /// </summary>
+        public static System.Net.Http.HttpRequestOptionsKey<MethodInfo> MethodInfoKey { get; } = new(MethodInfo);
+#endif
     }
 }

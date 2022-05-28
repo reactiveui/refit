@@ -60,6 +60,7 @@ services
 * [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
   * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
   * [Target Interface type](#target-interface-type)
+  * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -856,6 +857,54 @@ class RequestPropertyHandler : DelegatingHandler
 [//]: # ({% endraw %})
 
 Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
+
+#### MethodInfo of the method on the Refit client interface that was invoked
+
+There may be times when you want access to the `MethodInfo` of the method on the Refit client interface that was invoked. An example is where you
+want to decorate the method with a custom attribute in order to control some aspect of behavior in a `DelegatingHandler`:
+
+```csharp
+public interface ISomeAPI
+{
+    [SomeCustomAttribute("SomeValue")]
+    [Get("/{id}")]
+    Task<ApiResponse<SomeClass>> GetById(int id);
+}
+```
+To make the `MethodInfo` available you need to opt-in via the `RefitSettings` like so:
+
+```csharp
+services.AddRefitClient<ISomeAPI>(provider => new RefitSettings
+            {
+                InjectMethodInfoAsProperty = true
+            })
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+```
+
+You can access the `MethodInfo` for use in a handler and then get the custom attributes:
+
+```csharp
+class RequestPropertyHandler : DelegatingHandler
+{
+    public RequestPropertyHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // Get the MethodInfo
+        MethodInfo methodInfo;
+        request.Options.TryGetValue(HttpRequestMessageOptions.MethodInfoKey, out methodInfo);
+
+        //get the custom attributes
+        var customAttributes = methodInfo.CustomAttributes;
+
+        //insert your logic here
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+Note: for .NET Core 3.1 and lower this will be available via `HttpRequestMessage.Properties[HttpRequestMessageOptions.MethodInfo]`.
 
 ### Multipart uploads
 

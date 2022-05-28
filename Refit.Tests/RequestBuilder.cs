@@ -511,7 +511,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
-        
+
         [Fact]
         public void ParameterMappingWithTheSameIdInAFewPlaces()
         {
@@ -2139,6 +2139,54 @@ namespace Refit.Tests
             Assert.Equal(typeof(IContainAandB), output.Properties[HttpRequestMessageOptions.InterfaceType]);
 #pragma warning restore CS0618 // Type or member is obsolete
 
+        }
+
+        [Fact]
+        public void MethodInfoShouldBeInPropertiesIfInjectMethodInfoAsPropertyTrue()
+        {
+            var fixture = new RequestBuilderImplementation<IContainAandB>(new RefitSettings
+            {
+                InjectMethodInfoAsProperty = true
+            });
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] {  });
+
+            MethodInfo methodInfo;
+#if NET5_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            output.Options.TryGetValue(HttpRequestMessageOptions.MethodInfoKey, out methodInfo);
+            Assert.NotNull(methodInfo);
+            Assert.Equal(nameof(IContainAandB.Ping), methodInfo.Name);
+            Assert.Equal(typeof(IAmInterfaceA), methodInfo.DeclaringType);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            methodInfo = (MethodInfo)(output.Properties[HttpRequestMessageOptions.MethodInfo]);
+            Assert.NotNull(methodInfo);
+            Assert.Equal(nameof(IContainAandB.Ping), methodInfo.Name);
+            Assert.Equal(typeof(IAmInterfaceA), methodInfo.DeclaringType);
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void MethodInfoShouldNotBeInPropertiesIfInjectMethodInfoAsPropertyFalse()
+        {
+            var fixture = new RequestBuilderImplementation<IContainAandB>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] {  });
+
+            MethodInfo methodInfo;
+#if NET5_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            output.Options.TryGetValue(HttpRequestMessageOptions.MethodInfoKey, out methodInfo);
+            Assert.Null(methodInfo);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            Assert.False(output.Properties.ContainsKey(HttpRequestMessageOptions.MethodInfo));
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]
