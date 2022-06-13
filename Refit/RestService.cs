@@ -164,7 +164,16 @@ namespace Refit
         {
             var typeName = UniqueName.ForType(refitInterfaceType);
 
-            var generatedType = Type.GetType(typeName);
+            var generatedType = Type.GetType(typeName, assemblyName =>
+            {
+                Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(x => x.FullName == assemblyName.FullName);
+                return assembly;
+            }, (assembly, name, isCaseSensitive) =>
+            {
+                assembly = assembly ?? Assembly.GetExecutingAssembly();
+                Type type = assembly.GetType(name, false, !isCaseSensitive);
+                return type;
+            });
 
             if (generatedType == null)
             {
