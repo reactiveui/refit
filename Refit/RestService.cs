@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Reflection;
+using System.Linq;
 
 namespace Refit
 {
