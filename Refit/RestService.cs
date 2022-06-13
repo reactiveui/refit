@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Net.Http;
+using System.Reflection;
 
 namespace Refit
 {
@@ -171,7 +172,7 @@ namespace Refit
             }, (assembly, name, isCaseSensitive) =>
             {
                 assembly = assembly ?? Assembly.GetExecutingAssembly();
-                Type type = assembly.GetType(name, false, !isCaseSensitive);
+                Type type = assembly.GetType(name, throwOnError: false, ignoreCase: !isCaseSensitive);
                 return type;
             });
 
