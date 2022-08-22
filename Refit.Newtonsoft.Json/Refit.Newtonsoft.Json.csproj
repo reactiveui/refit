@@ -16,7 +16,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies"
-                      Version="1.0.2"
+                      Version="1.0.3"
                       PrivateAssets="All" />
     <Reference Include="System.Web" />
   </ItemGroup>
