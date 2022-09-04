@@ -102,11 +102,15 @@ namespace Refit
 
                 if (settings.AuthorizationHeaderValueGetter != null)
                 {
-                    innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, innerHandler);
+                    innerHandler = new AuthenticatedHttpClientHandler((_, _) => settings.AuthorizationHeaderValueGetter(), innerHandler);
                 }
                 else if (settings.AuthorizationHeaderValueWithParamGetter != null)
                 {
-                    innerHandler = new AuthenticatedParameterizedHttpClientHandler(settings.AuthorizationHeaderValueWithParamGetter, innerHandler);
+                    innerHandler = new AuthenticatedHttpClientHandler((request, _) => settings.AuthorizationHeaderValueWithParamGetter(request), innerHandler);
+                }
+                else if (settings.AuthorizationHeaderValueWithCancellationTokenGetter != null)
+                {
+                    innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueWithCancellationTokenGetter, innerHandler);
                 }
             }
 
