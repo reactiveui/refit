@@ -6,10 +6,12 @@
     <SharedGUID>b591423d-f92d-4e00-b0eb-615c9853506c</SharedGUID>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
-    <Import_RootNamespace>InterfaceStubGenerator.Shared</Import_RootNamespace>
+    <Import_RootNamespace>Refit.Generator</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)RefitClientModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)InterfaceStubGenerator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ITypeSymbolExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RefitMetadata.cs" />
   </ItemGroup>
 </Project>
