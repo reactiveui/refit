@@ -6,6 +6,8 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 
+using Refit.HttpClientFactory;
+
 namespace Refit
 {
     public static class HttpClientFactoryExtensions
@@ -55,6 +57,7 @@ namespace Refit
         {
             services.AddSingleton(provider => new SettingsFor<T>(settingsAction?.Invoke(provider)));
             services.AddSingleton(provider => RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings));
+            services.AddScoped<IRefitHttpClientFactory, RefitHttpClientFactory>();
 
             return services
                 .AddHttpClient(name ?? UniqueName.ForType<T>())
@@ -66,7 +69,7 @@ namespace Refit
                         builder.PrimaryHandler = innerHandler;
                     }
                 })
-                .AddTypedClient((client, serviceProvider) => RestService.For<T>(client, serviceProvider.GetService<IRequestBuilder<T>>()!));
+                .AddTypedClient((client, serviceProvider) => RestService.For(client, serviceProvider.GetService<IRequestBuilder<T>>()!));
         }
 
         /// <summary>
