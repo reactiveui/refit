@@ -12,7 +12,7 @@
 CI Feed: `https://pkgs.dev.azure.com/dotnet/ReactiveUI/_packaging/Refit/nuget/v3/index.json`
 
 Refit is a library heavily inspired by Square's
-[Retrofit](http://square.github.io/retrofit) library, and it turns your REST
+[Retrofit](https://square.github.io/retrofit) library, and it turns your REST
 API into a live interface:
 
 ```csharp
