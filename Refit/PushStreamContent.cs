@@ -1,6 +1,6 @@
 ﻿// Copyright(c) Microsoft Open Technologies, Inc.All rights reserved.
 // Microsoft Open Technologies would like to thank its contributors, a list
-// of whom are at http://aspnetwebstack.codeplex.com/wikipage?title=Contributors.
+// of whom are at https://aspnetwebstack.codeplex.com/wikipage?title=Contributors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you
 // may not use this file except in compliance with the License. You may
@@ -30,7 +30,7 @@ namespace System.Net.Http
 {
     /// <summary>
     /// Provides an <see cref="HttpContent"/> implementation that exposes an output <see cref="Stream"/>
-    /// which can be written to directly. The ability to push data to the output stream differs from the 
+    /// which can be written to directly. The ability to push data to the output stream differs from the
     /// <see cref="StreamContent"/> where data is pulled and not pushed.
     /// </summary>
     // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/PushStreamContent.cs
@@ -42,8 +42,8 @@ namespace System.Net.Http
         /// <summary>
         /// Initializes a new instance of the <see cref="PushStreamContent"/> class. The
         /// <paramref name="onStreamAvailable"/> action is called when an output stream
-        /// has become available allowing the action to write to it directly. When the 
-        /// stream is closed, it will signal to the content that is has completed and the 
+        /// has become available allowing the action to write to it directly. When the
+        /// stream is closed, it will signal to the content that is has completed and the
         /// HTTP request or response will be completed.
         /// </summary>
         /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
@@ -53,7 +53,7 @@ namespace System.Net.Http
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="PushStreamContent"/> class. 
+        /// Initializes a new instance of the <see cref="PushStreamContent"/> class.
         /// </summary>
         /// <param name="onStreamAvailable">The action to call when an output stream is available. The stream is automatically
         /// closed when the return task is completed.</param>
@@ -120,13 +120,13 @@ namespace System.Net.Http
         }
 
         /// <summary>
-        /// When this method is called, it calls the action provided in the constructor with the output 
-        /// stream to write to. Once the action has completed its work it closes the stream which will 
+        /// When this method is called, it calls the action provided in the constructor with the output
+        /// stream to write to. Once the action has completed its work it closes the stream which will
         /// close this content instance and complete the HTTP request or response.
         /// </summary>
         /// <param name="stream">The <see cref="Stream"/> to which to write.</param>
         /// <param name="context">The associated <see cref="TransportContext"/>.</param>
-        /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>        
+        /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
         {
             var serializeToStreamTask = new TaskCompletionSource<bool>();
@@ -171,7 +171,7 @@ namespace System.Net.Http
     }
 
     /// <summary>
-    /// Stream that delegates to inner stream. 
+    /// Stream that delegates to inner stream.
     /// This is taken from System.Net.Http
     /// </summary>
     // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/Internal/DelegatingStream.cs
