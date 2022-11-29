@@ -86,7 +86,7 @@ namespace Refit
         {
             if (!IsSuccessStatusCode)
             {
-                var exception = await ApiException.Create(response.RequestMessage!, response.RequestMessage!.Method, response, Settings).ConfigureAwait(false);
+                var exception = Error ?? await ApiException.Create(response.RequestMessage!, response.RequestMessage!.Method, response, Settings).ConfigureAwait(false);
 
                 Dispose();
 
