@@ -142,16 +142,17 @@ namespace Refit.Tests
             mockHandler.Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
                 .Respond(req => expectedResponse);
 
-            try
-            {
-                using var response = await fixture.GetApiResponseTestObject();
-                await response.EnsureSuccessStatusCodeAsync();
-            }
-            catch (Exception ex)
-            {
-                Assert.True(ex is ValidationApiException);
-                Assert.NotNull((ex as ValidationApiException)?.Content);
-            }
+            using var response = await fixture.GetApiResponseTestObject();
+            var actualException = await Assert.ThrowsAsync<ValidationApiException>(() => response.EnsureSuccessStatusCodeAsync());
+
+            Assert.NotNull(actualException.Content);
+            Assert.Equal("detail", actualException.Content.Detail);
+            Assert.Equal("Problem1", actualException.Content.Errors["Field1"][0]);
+            Assert.Equal("Problem2", actualException.Content.Errors["Field2"][0]);
+            Assert.Equal("instance", actualException.Content.Instance);
+            Assert.Equal(1, actualException.Content.Status);
+            Assert.Equal("title", actualException.Content.Title);
+            Assert.Equal("type", actualException.Content.Type);
         }
 
         [Fact]
