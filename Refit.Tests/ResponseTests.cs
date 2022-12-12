@@ -116,6 +116,43 @@ namespace Refit.Tests
             Assert.Equal("title", actualException.Content.Title);
             Assert.Equal("type", actualException.Content.Type);
         }
+        
+        /// <summary>
+        /// Test to verify if EnsureSuccessStatusCodeAsync throws a ValidationApiException for a Bad Request in terms of RFC 7807
+        /// </summary>
+        [Fact]
+        public async Task When_BadRequest_EnsureSuccessStatusCodeAsync_ThrowsValidationException()
+        {
+            var expectedContent = new ProblemDetails
+            {
+                Detail = "detail",
+                Errors = { { "Field1", new string[] { "Problem1" } }, { "Field2", new string[] { "Problem2" } } },
+                Instance = "instance",
+                Status = 1,
+                Title = "title",
+                Type = "type"
+            };
+
+            var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
+            };
+
+            expectedResponse.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/problem+json");
+            mockHandler.Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
+                .Respond(req => expectedResponse);
+
+            try
+            {
+                using var response = await fixture.GetApiResponseTestObject();
+                await response.EnsureSuccessStatusCodeAsync();
+            }
+            catch (Exception ex)
+            {
+                Assert.True(ex is ValidationApiException);
+                Assert.NotNull((ex as ValidationApiException)?.Content);
+            }
+        }
 
         [Fact]
         public async Task WhenProblemDetailsResponseContainsExtensions_ShouldHydrateExtensions()
