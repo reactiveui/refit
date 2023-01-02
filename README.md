@@ -600,7 +600,6 @@ some interface `ITenantProvider` and has a data store `IAuthTokenStore` that can
     {
          this.tenantProvider = tenantProvider ?? throw new ArgumentNullException(nameof(tenantProvider));
          this.authTokenStore = authTokenStore ?? throw new ArgumentNullException(nameof(authTokenStore));
-         InnerHandler = new HttpClientHandler();
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
