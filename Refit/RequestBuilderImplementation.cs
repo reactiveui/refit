@@ -489,7 +489,21 @@ namespace Refit
                     ret.Content = multiPartContent;
                 }
 
-                var urlTarget = (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
+                string urlTarget;
+                if (basePath == "/")
+                {
+                    urlTarget = restMethod.RelativePath;
+                }
+                else
+                {
+                    urlTarget = (basePath.EndsWith("/"), restMethod.RelativePath.StartsWith("/")) switch
+                    {
+                        (true, true) => basePath + restMethod.RelativePath.Substring(0, restMethod.RelativePath.Length - 1),
+                        (true, false) => basePath + restMethod.RelativePath,
+                        (false, true) => basePath + restMethod.RelativePath,
+                        _ => $"{basePath}/{restMethod.RelativePath}"
+                    };
+                }
                 var queryParamsToAdd = new List<KeyValuePair<string, string?>>();
                 var headersToAdd = new Dictionary<string, string?>(restMethod.Headers);
                 var propertiesToAdd = new Dictionary<string, object?>();
