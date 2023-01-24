@@ -191,13 +191,14 @@ namespace Refit
                 .Where(p => p.CanRead && p.GetMethod?.IsPublic == true).ToArray();
         }
 
+        static readonly Regex PathRegex = new Regex(@"^\/?([\.\w{}*-]+\/?)+(\?([\w{}*-]+=[\w\s{}*-]+)*(&[\w{}*-]+=[\w\s{}*-]+)*)*$");
         static void VerifyUrlPathIsSane(string relativePath)
         {
-            if (relativePath == "")
+            if (relativePath == "" || relativePath == "/")
                 return;
 
-            if (!relativePath.StartsWith("/"))
-                throw new ArgumentException($"URL path {relativePath} must start with '/' and be of the form '/foo/bar/baz'");
+            if (!PathRegex.IsMatch(relativePath))
+                throw new ArgumentException($"URL path {relativePath} must be correct path value");
         }
 
         static Dictionary<int, RestMethodParameterInfo> BuildParameterMap(string relativePath, List<ParameterInfo> parameterInfo)
