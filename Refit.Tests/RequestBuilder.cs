@@ -22,6 +22,9 @@ namespace Refit.Tests
         [Get("@)!@_!($_!@($\\\\|||::::")]
         Task<string> GarbagePath();
 
+        [Get("foo/bar")]
+        Task<string> NoLeadingSlash();
+
         [Get("/foo/bar/{id}")]
         Task<string> FetchSomeStuffMissingParameters();
 
@@ -484,6 +487,24 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void PathWithoutLeadingSlashDoNotThrow()
+        {
+            var throwed = false;
+
+            try
+            {
+                var input = typeof(IRestMethodInfoTests);
+                var fixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.NoLeadingSlash)));
+            }
+            catch
+            {
+                throwed = true;
+            }
+
+            Assert.False(throwed);
+        }
+
+        [Fact]
         public void MissingParametersShouldBlowUp()
         {
             var shouldDie = true;
@@ -511,7 +532,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
-        
+
         [Fact]
         public void ParameterMappingWithTheSameIdInAFewPlaces()
         {
