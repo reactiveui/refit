@@ -135,7 +135,8 @@ namespace Refit
         /// Indicates whether the request was successful.
         /// </summary>
 #if NET5_0_OR_GREATER
-        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, nameof(Error))]
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
 #endif
         bool IsSuccessStatusCode { get; }
 
