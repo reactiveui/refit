@@ -67,6 +67,7 @@ services
   * [Headers inheritance](#headers-inheritance)
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
+* [Providing a custom HttpClient](#providing-a-custom-httpclient)
 * [Handling exceptions](#handling-exceptions)
   * [When returning Task&lt;IApiResponse&gt;, Task&lt;IApiResponse&lt;T&gt;&gt;, or Task&lt;ApiResponse&lt;T&gt;&gt;](#when-returning-taskiapiresponse-taskiapiresponset-or-taskapiresponset)
   * [When returning Task&lt;T&gt;](#when-returning-taskt)
@@ -1153,6 +1154,48 @@ public class HomeController : Controller
         return View(thing);
     }
 }
+```
+
+### Providing a custom HttpClient
+
+You can supply a custom `HttpClient` instance by simply passing it as a parameter to the `RestService.For<T>` method:
+
+```csharp
+RestService.For<ISomeApi>(new HttpClient()
+{
+    BaseAddress = new Uri("https://www.someapi.com/api/")
+});
+```
+
+However, when supplying a custom `HttpClient` instance the following `RefitSettings` properties will not work:
+
+* `AuthorizationHeaderValueGetter`
+* `AuthorizationHeaderValueWithParamGetter`
+* `HttpMessageHandlerFactory`
+
+If you still want to be able to configure the `HtttpClient` instance that `Refit` provides while still making use of the above settings, simply expose the `HttpClient` on the API interface:
+
+```csharp
+interface ISomeApi
+{
+    // This will automagically be populated by Refit if the property exists
+    HttpClient Client { get; }
+
+    [Headers("Authorization: Bearer")]
+    [Get("/endpoint")]
+    Task<string> SomeApiEndpoint();
+}
+```
+
+Then, after creating the REST service, you can set any `HttpClient` property you want, e.g. `Timeout`:
+
+```csharp
+SomeApi = RestService.For<ISomeApi>("https://www.someapi.com/api/", new RefitSettings()
+{
+    AuthorizationHeaderValueGetter = () => GetTokenAsync()
+});
+
+SomeApi.Client.Timeout = timeout;
 ```
 
 ### Handling exceptions
