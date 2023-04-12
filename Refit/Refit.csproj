@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Condition="'$(TargetFramework)' != 'net6.0'" Include="System.Text.Json" Version="6.0.1" />
+    <PackageReference Condition="'$(TargetFramework)' != 'net6.0'" Include="System.Text.Json" Version="7.0.2" />
     <PackageReference Include="System.Net.Http.Json" Version="6.0.0" />
   </ItemGroup>
   
