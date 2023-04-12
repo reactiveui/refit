@@ -2222,12 +2222,12 @@ namespace Refit.Tests
 
 
 #if NET6_0_OR_GREATER
-            Assert.Equal(3, output.Options.Count());
+            Assert.Equal(2, output.Options.Count());
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
-            Assert.Equal(3, output.Properties.Count);
+            Assert.Equal(2, output.Properties.Count);
             Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
 #pragma warning restore CS0618 // Type or member is obsolete
         }
