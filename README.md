@@ -181,7 +181,7 @@ Search("admin/products");
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
 This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to Twitter's hybrid API that insists on non-GET requests with querystring parameters.
-Use the `Query` attribute the change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
+Use the `Query` attribute to change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
 public class MyQueryParams
@@ -807,8 +807,8 @@ Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and R
 #### Support for Polly and Polly.Context
 
 Because Refit supports `HttpClientFactory` it is possible to configure Polly policies on your HttpClient.
-If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PollyExecutionContext")] Polly.Context context`
-as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PollyExecutionContext` and is of type `Polly.Context`
+If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PolicyExecutionContext")] Polly.Context context`
+as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PolicyExecutionContext` and is of type `Polly.Context`. It's only recommended to pass the `Polly.Context` this way if your use case requires that the `Polly.Context` be initialized with dynamic content only known at runtime. If your `Polly.Context` only requires the same content every time (e.g an `ILogger` that you want to use to log from inside your policies) a cleaner approach is to inject the `Polly.Context` via a `DelegatingHandler` as described in [#801](https://github.com/reactiveui/refit/issues/801#issuecomment-1137318526)
 
 #### Target Interface Type
 
