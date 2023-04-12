@@ -16,6 +16,8 @@ jobs:
       useVisualStudioPreview: false
       useMauiCheckDotNetTool: false
       srcFolder: './'
+      dotNetBuild: true
+      installWorkflows: false
     secrets:
       SIGN_CLIENT_USER_ID: ${{ secrets.SIGN_CLIENT_USER_ID }}
       SIGN_CLIENT_SECRET: ${{ secrets.SIGN_CLIENT_SECRET }}
