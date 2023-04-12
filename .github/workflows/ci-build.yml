@@ -19,5 +19,4 @@ jobs:
       useMauiCheckDotNetTool: false
       srcFolder: './'
       dotNetBuild: true
-      useVisualStudioPreview: false
       installWorkflows: false
