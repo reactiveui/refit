@@ -1,0 +1,22 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  productNamespacePrefix: "Refit"
+
+jobs:
+  build:
+    uses: reactiveui/actions-common/.github/workflows/workflow-common-setup-and-build.yml@main
+    with:
+      configuration: Release
+      productNamespacePrefix: "Refit"
+      useVisualStudioPreview: false
+      useMauiCheckDotNetTool: false
+      srcFolder: "./"
+      dotNetBuild: true
+      installWorkflows: false

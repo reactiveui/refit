@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions
+    url: https://github.com/reactiveui/refit/discussions
+    about: 'For general questions about Refit, ask in the GitHub discussions'
+  - name: Chat
+    url: https://www.reactiveui.net/slack
+    about: 'Our slack chat community invite'

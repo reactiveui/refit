@@ -6,6 +6,8 @@ using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 
+using Refit.HttpClientFactory;
+
 namespace Refit
 {
     public static class HttpClientFactoryExtensions
@@ -41,13 +43,24 @@ namespace Refit
         /// <param name="services">container</param>
         /// <param name="settingsAction">Optional. Action to configure refit settings.  This method is called once and only once, avoid using any scoped dependencies that maybe be disposed automatically.</param>
         /// <returns></returns>
-        public static IHttpClientBuilder AddRefitClient<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings?>? settingsAction) where T : class
+        public static IHttpClientBuilder AddRefitClient<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings?>? settingsAction) where T : class => AddRefitClient<T>(services, null, settingsAction);
+
+        /// <summary>
+        /// Adds a Refit client to the DI container
+        /// </summary>
+        /// <typeparam name="T">Type of the Refit interface</typeparam>
+        /// <param name="services">container</param>
+        /// <param name="name">Named http client</param>
+        /// <param name="settingsAction">Optional. Action to configure refit settings.  This method is called once and only once, avoid using any scoped dependencies that maybe be disposed automatically.</param>
+        /// <returns></returns>
+        public static IHttpClientBuilder AddRefitClient<T>(this IServiceCollection services, string? name, Func<IServiceProvider, RefitSettings?>? settingsAction) where T : class
         {
             services.AddSingleton(provider => new SettingsFor<T>(settingsAction?.Invoke(provider)));
             services.AddSingleton(provider => RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings));
+            services.AddScoped<IRefitHttpClientFactory, RefitHttpClientFactory>();
 
             return services
-                .AddHttpClient(UniqueName.ForType<T>())
+                .AddHttpClient(name ?? UniqueName.ForType<T>())
                 .ConfigureHttpMessageHandlerBuilder(builder =>
                 {
                     // check to see if user provided custom auth token
@@ -56,7 +69,7 @@ namespace Refit
                         builder.PrimaryHandler = innerHandler;
                     }
                 })
-                .AddTypedClient((client, serviceProvider) => RestService.For<T>(client, serviceProvider.GetService<IRequestBuilder<T>>()!));
+                .AddTypedClient((client, serviceProvider) => RestService.For(client, serviceProvider.GetService<IRequestBuilder<T>>()!));
         }
 
         /// <summary>
