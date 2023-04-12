@@ -393,7 +393,7 @@ namespace Refit
                 }
 
                 // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
-                if (!(obj is string) && obj is IEnumerable ienu && !(obj is IDictionary))
+                if (obj is not string && obj is IEnumerable ienu && obj is not IDictionary)
                 {
                     foreach (var value in ParseEnumerableQueryParameterValue(ienu, propertyInfo, propertyInfo.PropertyType, queryAttribute))
                     {
@@ -726,7 +726,7 @@ namespace Refit
 
                 foreach (var property in propertiesToAdd)
                 {
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
                     ret.Options.Set(new HttpRequestOptionsKey<object?>(property.Key), property.Value);
 #else
                     ret.Properties[property.Key] = property.Value;
@@ -734,13 +734,13 @@ namespace Refit
                 }
 
                 // Always add the top-level type of the interface to the properties
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
                 ret.Options.Set(new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType), TargetType);
+                ret.Options.Set(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), restMethod);
 #else
                 ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
-#endif
-
-                ;
+                ret.Properties[HttpRequestMessageOptions.RestMethodInfo] = restMethod;
+#endif                
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
@@ -774,7 +774,7 @@ namespace Refit
 
         IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(object? param, ParameterInfo parameterInfo, string queryPath, QueryAttribute queryAttribute)
         {
-            if (!(param is string) && param is IEnumerable paramValues)
+            if (param is not string && param is IEnumerable paramValues)
             {
                 foreach (var value in ParseEnumerableQueryParameterValue(paramValues, parameterInfo, parameterInfo.ParameterType, queryAttribute))
                 {

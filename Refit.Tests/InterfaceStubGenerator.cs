@@ -36,7 +36,7 @@ namespace Refit.Tests
             ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
 #else
             ReferenceAssemblies = ReferenceAssemblies.Default
-                .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Text.Json", "6.0.1")));
+                .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Text.Json", "7.0.2")));
 #endif
 
 #if NET461
