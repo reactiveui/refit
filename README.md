@@ -2,14 +2,11 @@
 
 ## Refit: The automatic type-safe REST library for .NET Core, Xamarin and .NET
 
-[![Build Status](https://dev.azure.com/dotnet/ReactiveUI/_apis/build/status/Refit-CI?branchName=master)](https://dev.azure.com/dotnet/ReactiveUI/_build/latest?definitionId=17)
+[![Build](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml/badge.svg)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml)
 
 ||Refit|Refit.HttpClientFactory|Refit.Newtonsoft.Json|
 |-|-|-|-|
 |*NuGet*|[![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/)|[![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/)|[![NuGet](https://img.shields.io/nuget/v/Refit.Newtonsoft.Json.svg)](https://www.nuget.org/packages/Refit.Newtonsoft.Json/)|
-|*Azure<br />Artifacts*|[![Refit package in Refit feed in Azure Artifacts](https://azpkgsshield.azurevoodoo.net/dotnet/ReactiveUI/Refit/Refit)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=2f65cb3b-df09-4050-a84e-b868ed95fd28&preferRelease=true)|[![Refit.HttpClientFactory package in Refit feed in Azure Artifacts](https://azpkgsshield.azurevoodoo.net/dotnet/ReactiveUI/Refit/Refit.HttpClientFactory)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=d87934cb-2f7b-44b7-83b8-3872ac965ef2&preferRelease=true)|[![Refit.Newtonsoft.Json package in Refit feed in Azure Artifacts](https://azpkgsshield.azurevoodoo.net/dotnet/ReactiveUI/Refit/Refit.Newtonsoft.Json)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=d87934cb-2f7b-44b7-83b8-3872ac965ef2&preferRelease=true)|
-
-CI Feed: `https://pkgs.dev.azure.com/dotnet/ReactiveUI/_packaging/Refit/nuget/v3/index.json`
 
 Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
