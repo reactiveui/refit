@@ -2,27 +2,32 @@
   
   <PropertyGroup>
     <MinClientVersion>2.12</MinClientVersion>
-    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
+    <DebugType>embedded</DebugType>
     <Authors>.NET Foundation and Contributors</Authors>
+    <Copyright>Copyright (c) .NET Foundation and Contributors</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
     <PackageIcon>refit_logo.png</PackageIcon>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
     <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
-    <NoWarn>$(NoWarn);1701;1702;CS1591;NU1701</NoWarn>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Refit.ruleset</CodeAnalysisRuleSet>
     <LangVersion>preview</LangVersion>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Net Analyzers config taken from : https://docs.microsoft.com/en-gb/visualstudio/code-quality/migrate-from-fxcop-analyzers-to-net-analyzers?view=vs-2019 -->
+    <EnableNETAnalyzers>True</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <ImplicitUsings>true</ImplicitUsings>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)buildtask.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
-    <DebugType>embedded</DebugType>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>    
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <ItemGroup>
