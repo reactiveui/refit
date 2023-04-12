@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Refit
 {
@@ -21,15 +21,15 @@ namespace Refit
 #endif
 
         /// <summary>
-        /// Returns the <see cref="System.Reflection.MethodInfo"/> of the method that was called
+        /// Returns the <see cref="Refit.RestMethodInfo"/> of the method that was called
         /// </summary>
-        public static string MethodInfo { get; } = "Refit.MethodInfo";
+        public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
 
 #if NET6_0_OR_GREATER
         /// <summary>
-        /// A typed key to access the <see cref="System.Reflection.MethodInfo"/> of the method that was called
+        /// A typed key to access the <see cref="Refit.RestMethodInfo"/> of the method that was called
         /// </summary>
-        public static System.Net.Http.HttpRequestOptionsKey<MethodInfo> MethodInfoKey { get; } = new(MethodInfo);
+        public static System.Net.Http.HttpRequestOptionsKey<RestMethodInfo> RestMethodInfoKey { get; } = new(RestMethodInfo);
 #endif
     }
 }

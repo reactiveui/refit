@@ -729,7 +729,7 @@ namespace Refit
                 {
                     foreach(var p in this.settings.HttpRequestMessageOptions)
                     {
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
                         ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
 #else
                         ret.Properties.Add(p);
@@ -751,18 +751,16 @@ namespace Refit
                 ret.Options.Set(HttpRequestMessageOptions.InterfaceTypeKey, TargetType);
                 if (settings.InjectMethodInfoAsProperty)
                 {
-                    ret.Options.Set(HttpRequestMessageOptions.MethodInfoKey, restMethod.MethodInfo);
+                    ret.Options.Set(HttpRequestMessageOptions.RestMethodInfoKey, restMethod);
                 }
 #else
                 ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
                 if (settings.InjectMethodInfoAsProperty)
                 {
-                    ret.Properties[HttpRequestMessageOptions.MethodInfo] = restMethod.MethodInfo;
+                    ret.Properties[HttpRequestMessageOptions.RestMethodInfo] = restMethod;
                 }
 
 #endif
-
-                ;
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
