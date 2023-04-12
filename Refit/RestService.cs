@@ -73,7 +73,7 @@ namespace Refit
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
         public static object For(Type refitInterfaceType, HttpClient client, IRequestBuilder builder)
         {
-            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType(refitInterfaceType));
+            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType);
 
             return Activator.CreateInstance(generatedType, client, builder)!;
         }
