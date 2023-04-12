@@ -393,7 +393,7 @@ namespace Refit
                 }
 
                 // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
-                if (!(obj is string) && obj is IEnumerable ienu && !(obj is IDictionary))
+                if (obj is not string && obj is IEnumerable ienu && obj is not IDictionary)
                 {
                     foreach (var value in ParseEnumerableQueryParameterValue(ienu, propertyInfo, propertyInfo.PropertyType, queryAttribute))
                     {
@@ -726,7 +726,7 @@ namespace Refit
 
                 foreach (var property in propertiesToAdd)
                 {
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
                     ret.Options.Set(new HttpRequestOptionsKey<object?>(property.Key), property.Value);
 #else
                     ret.Properties[property.Key] = property.Value;
@@ -734,7 +734,7 @@ namespace Refit
                 }
 
                 // Always add the top-level type of the interface to the options/properties and include the MethodInfo if the developer has opted-in to that behavior
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
                 ret.Options.Set(HttpRequestMessageOptions.InterfaceTypeKey, TargetType);
                 if (settings.InjectMethodInfoAsProperty)
                 {
@@ -783,7 +783,7 @@ namespace Refit
 
         IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(object? param, ParameterInfo parameterInfo, string queryPath, QueryAttribute queryAttribute)
         {
-            if (!(param is string) && param is IEnumerable paramValues)
+            if (param is not string && param is IEnumerable paramValues)
             {
                 foreach (var value in ParseEnumerableQueryParameterValue(paramValues, parameterInfo, parameterInfo.ParameterType, queryAttribute))
                 {

@@ -12,7 +12,7 @@ namespace Refit
         /// </summary>
         public static string InterfaceType { get; } = "Refit.InterfaceType";
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         /// <summary>
         /// A typed key to access the <see cref="System.Type"/> of the top-level interface where the method was called from
         /// on the <see cref="System.Net.Http.HttpRequestMessage.Options"/>.
@@ -25,7 +25,7 @@ namespace Refit
         /// </summary>
         public static string MethodInfo { get; } = "Refit.MethodInfo";
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         /// <summary>
         /// A typed key to access the <see cref="System.Reflection.MethodInfo"/> of the method that was called
         /// </summary>
