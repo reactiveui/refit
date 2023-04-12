@@ -1,0 +1,1 @@
+dotnet run --project ../../Refit.Benchmarks.csproj -c Release --filter *Task_Async* --framework=net6.0
