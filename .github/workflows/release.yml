@@ -15,7 +15,7 @@ jobs:
       productNamespacePrefix: "Refit"
       useVisualStudioPreview: false
       useMauiCheckDotNetTool: false
-      srcFolder: './'
+      srcFolder: "./"
       dotNetBuild: true
       installWorkflows: false
     secrets:
