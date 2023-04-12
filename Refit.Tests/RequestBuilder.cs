@@ -2109,7 +2109,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(interfaceMethodName);
             var output = factory(new object[] { 6, someProperty });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
@@ -2129,7 +2129,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
             var output = factory(new object[] {  });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(typeof(IContainAandB), ((IDictionary<string, object>)output.Options)[HttpRequestMessageOptions.InterfaceType]);
 #endif
@@ -2150,7 +2150,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["someValue"]);
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["someOtherValue"]);
@@ -2173,7 +2173,7 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.Equal(2, output.Options.Count());
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
