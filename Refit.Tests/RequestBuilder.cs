@@ -2142,6 +2142,26 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void RestMethodInfoShouldBeInProperties()
+        {
+            var someProperty = new object();
+            var fixture = new RequestBuilderImplementation<IContainAandB>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] { });
+
+#if NET5_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            Assert.True(output.Options.TryGetValue(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), out var restMethodInfo));
+#else
+            Assert.NotEmpty(output.Properties);
+            Assert.True(output.Properties.TryGetValue(HttpRequestMessageOptions.RestMethodInfo, out var restMethodInfoObj));
+            Assert.IsType<RestMethodInfo>(restMethodInfoObj);
+            var restMethodInfo = restMethodInfoObj as RestMethodInfo;
+#endif
+            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
+        }
+
+        [Fact]
         public void DynamicRequestPropertiesWithDefaultKeysShouldBeInProperties()
         {
             var someProperty = new object();

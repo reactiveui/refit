@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <Import Project="..\Refit\targets\refit.props" />
+  
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net6.0;net5.0;netcoreapp3.1</TargetFrameworks>
+    </PropertyGroup>
+  
+    <ItemGroup>
+      <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
+      <ProjectReference Include="..\Refit\Refit.csproj" />
+      <ProjectReference Include="..\Refit.Xml\Refit.Xml.csproj" />
+      <ProjectReference Include="..\InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+      <ProjectReference Include="..\InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoFixture" Version="4.17.0" />
+      <PackageReference Include="BenchmarkDotNet" Version="0.13.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="newtonsoft-json-10-users.json" />
+      <EmbeddedResource Include="newtonsoft-json-10-users.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+      <None Remove="system-text-json-10-users.json" />
+      <EmbeddedResource Include="system-text-json-10-users.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </EmbeddedResource>
+    </ItemGroup>
+  
+    <Import Project="..\Refit\targets\refit.targets" />
+</Project>
