@@ -28,7 +28,7 @@ namespace Refit
         }
 
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
         /// </summary>

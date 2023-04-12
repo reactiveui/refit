@@ -313,7 +313,7 @@ namespace Refit.Tests
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
-                    Assert.Equal(3, message.Properties.Count);
+                    Assert.Equal(2, message.Properties.Count);
                     Assert.Equal(someProperty, message.Properties["SomeProperty"]);
 #pragma warning restore CS0618 // Type or member is obsolete
                 },
