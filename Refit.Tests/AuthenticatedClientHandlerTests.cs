@@ -24,6 +24,15 @@ namespace Refit.Tests
 
             [Get("/auth")]
             Task<string> GetAuthenticatedWithTokenInMethod([Authorize("Bearer")] string token);
+
+            [Get("/auth")]
+            Task<string> GetAuthenticatedWithAuthorizeAttributeAndHeaderCollection([Authorize("Bearer")] string token, [HeaderCollection] IDictionary<string, string> headers);
+
+            [Get("/auth")]
+            Task<string> GetAuthenticatedWithTokenInHeaderCollection([HeaderCollection] IDictionary<string, string> headers);
+
+            [Post("/auth/{id}")]
+            Task<string> PostAuthenticatedWithTokenInHeaderCollection(int id, SomeRequestData content, [HeaderCollection] IDictionary<string, string> headers);
         }
 
         public interface IInheritedAuthenticatedServiceWithHeaders : IAuthenticatedServiceWithHeaders
@@ -42,15 +51,7 @@ namespace Refit.Tests
         [Fact]
         public void DefaultHandlerIsHttpClientHandler()
         {
-            var handler = new AuthenticatedHttpClientHandler((() => Task.FromResult(string.Empty)));
-
-            Assert.IsType<HttpClientHandler>(handler.InnerHandler);
-        }
-
-        [Fact]
-        public void DefaultHandlerIsHttpClientHandlerWithParam()
-        {
-            var handler = new AuthenticatedParameterizedHttpClientHandler(((request) => Task.FromResult(string.Empty)));
+            var handler = new AuthenticatedHttpClientHandler(((_, _) => Task.FromResult(string.Empty)));
 
             Assert.IsType<HttpClientHandler>(handler.InnerHandler);
         }
@@ -59,12 +60,6 @@ namespace Refit.Tests
         public void NullTokenGetterThrows()
         {
             Assert.Throws<ArgumentNullException>(() => new AuthenticatedHttpClientHandler(null));
-        }
-
-        [Fact]
-        public void NullTokenGetterThrowsWithParam()
-        {
-            Assert.Throws<ArgumentNullException>(() => new AuthenticatedParameterizedHttpClientHandler(null));
         }
 
         [Fact]
@@ -142,7 +137,7 @@ namespace Refit.Tests
         {
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings()
-            {                
+            {
                 HttpMessageHandlerFactory = () => handler
             };
 
@@ -153,6 +148,139 @@ namespace Refit.Tests
             var fixture = RestService.For<IMyAuthenticatedService>("http://api", settings);
 
             var result = await fixture.GetAuthenticatedWithTokenInMethod("tokenValue");
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal("Ok", result);
+        }
+
+        [Fact]
+        public async void AuthenticatedHandlerWithTokenInHeaderCollectionUsesAuth()
+        {
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            var headers = new Dictionary<string, string>
+            {
+                {"User-Agent", "Refit"},
+                {"Authorization", "Bearer tokenValue"}
+            };
+
+            handler.Expect(HttpMethod.Get, "http://api/auth")
+                .WithHeaders(headers)
+                .Respond("text/plain", "Ok");
+
+            var fixture = RestService.For<IMyAuthenticatedService>("http://api", settings);
+
+            var result = await fixture.GetAuthenticatedWithTokenInHeaderCollection(headers);
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal("Ok", result);
+        }
+
+        [Fact]
+        public async void AuthenticatedHandlerWithAuthorizeAttributeAndHeaderCollectionUsesAuth()
+        {
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            var expectedHeaders = new Dictionary<string, string>
+            {
+                {"Authorization", "Bearer tokenValue"},
+                {"User-Agent", "Refit"},
+                {"X-Forwarded-For", "Refit"}
+            };
+
+            var headerCollectionHeaders = new Dictionary<string, string>
+            {
+                {"User-Agent", "Refit"},
+                {"X-Forwarded-For", "Refit"}
+            };
+
+            handler.Expect(HttpMethod.Get, "http://api/auth")
+                .WithHeaders(expectedHeaders)
+                .Respond("text/plain", "Ok");
+
+            var fixture = RestService.For<IMyAuthenticatedService>("http://api", settings);
+
+            var result = await fixture.GetAuthenticatedWithAuthorizeAttributeAndHeaderCollection("tokenValue", headerCollectionHeaders);
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal("Ok", result);
+        }
+
+        [Fact]
+        public async void AuthenticatedHandlerWithDuplicatedAuthorizationHeaderUsesAuth()
+        {
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            var expectedHeaders = new Dictionary<string, string>
+            {
+                {"Authorization", "Bearer tokenValue2"},
+                {"User-Agent", "Refit"},
+                {"X-Forwarded-For", "Refit"}
+            };
+
+            var headerCollectionHeaders = new Dictionary<string, string>
+            {
+                {"Authorization", "Bearer tokenValue2"},
+                {"User-Agent", "Refit"},
+                {"X-Forwarded-For", "Refit"}
+            };
+
+            handler.Expect(HttpMethod.Get, "http://api/auth")
+                .WithHeaders(expectedHeaders)
+                .Respond("text/plain", "Ok");
+
+            var fixture = RestService.For<IMyAuthenticatedService>("http://api", settings);
+
+            var result = await fixture.GetAuthenticatedWithAuthorizeAttributeAndHeaderCollection("tokenValue", headerCollectionHeaders);
+
+            handler.VerifyNoOutstandingExpectation();
+
+            Assert.Equal("Ok", result);
+        }
+
+        [Fact]
+        public async void AuthenticatedHandlerPostTokenInHeaderCollectionUsesAuth()
+        {
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings()
+            {
+                HttpMessageHandlerFactory = () => handler
+            };
+
+            var id = 1;
+            var someRequestData = new SomeRequestData
+            {
+                ReadablePropertyName = 1
+            };
+
+            var headers = new Dictionary<string, string>
+            {
+                {"Authorization", "Bearer tokenValue2"},
+                {"ThingId", id.ToString()}
+            };
+
+            handler.Expect(HttpMethod.Post, $"http://api/auth/{id}")
+                .WithHeaders(headers)
+                .Respond("text/plain", "Ok");
+
+            var fixture = RestService.For<IMyAuthenticatedService>("http://api", settings);
+
+            var result = await fixture.PostAuthenticatedWithTokenInHeaderCollection(id, someRequestData, headers);
 
             handler.VerifyNoOutstandingExpectation();
 

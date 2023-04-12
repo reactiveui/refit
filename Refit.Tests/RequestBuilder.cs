@@ -2109,7 +2109,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(interfaceMethodName);
             var output = factory(new object[] { 6, someProperty });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
@@ -2120,6 +2120,42 @@ namespace Refit.Tests
 #pragma warning restore CS0618 // Type or member is obsolete
 
         }
+        [Fact]
+        public void OptionsFromSettingsShouldBeInProperties()
+        {
+            const string nameProp1 = "UnitTest.Property1";
+            string valueProp1 = "TestValue";
+            const string nameProp2 = "UnitTest.Property2";
+            object valueProp2 = new List<string>() { "123", "345"};
+            var fixture = new RequestBuilderImplementation<IContainAandB>(new RefitSettings()
+            {
+                HttpRequestMessageOptions=new Dictionary<string, object>()
+                {
+                    [nameProp1] = valueProp1,
+                    [nameProp2] = valueProp2,
+                },
+            });
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] { });
+
+#if NET5_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            Assert.True(output.Options.TryGetValue(new HttpRequestOptionsKey<string>(nameProp1), out var resultValueProp1));
+            Assert.Equal(valueProp1, resultValueProp1);
+
+            Assert.True(output.Options.TryGetValue(new HttpRequestOptionsKey<List<string>>(nameProp2), out var resultValueProp2));
+            Assert.Equal(valueProp2, resultValueProp2);            
+#else
+            Assert.NotEmpty(output.Properties);
+            Assert.True(output.Properties.TryGetValue(nameProp1, out var resultValueProp1));
+            Assert.IsType<string>(resultValueProp1);
+            Assert.Equal(valueProp1, (string)resultValueProp1);
+
+            Assert.True(output.Properties.TryGetValue(nameProp2, out var resultValueProp2));            
+            Assert.IsType<List<string>>(resultValueProp2);
+            Assert.Equal(valueProp2, (List<string>)resultValueProp2);
+#endif
+        }
 
         [Fact]
         public void InterfaceTypeShouldBeInProperties()
@@ -2128,7 +2164,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
             var output = factory(new object[] {  });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             output.Options.TryGetValue(HttpRequestMessageOptions.InterfaceTypeKey, out var interfaceType);
             Assert.Equal(typeof(IContainAandB), interfaceType);
@@ -2139,6 +2175,54 @@ namespace Refit.Tests
             Assert.Equal(typeof(IContainAandB), output.Properties[HttpRequestMessageOptions.InterfaceType]);
 #pragma warning restore CS0618 // Type or member is obsolete
 
+        }
+
+        [Fact]
+        public void MethodInfoShouldBeInPropertiesIfInjectMethodInfoAsPropertyTrue()
+        {
+            var fixture = new RequestBuilderImplementation<IContainAandB>(new RefitSettings
+            {
+                InjectMethodInfoAsProperty = true
+            });
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] {  });
+
+            MethodInfo methodInfo;
+#if NET6_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            output.Options.TryGetValue(HttpRequestMessageOptions.MethodInfoKey, out methodInfo);
+            Assert.NotNull(methodInfo);
+            Assert.Equal(nameof(IContainAandB.Ping), methodInfo.Name);
+            Assert.Equal(typeof(IAmInterfaceA), methodInfo.DeclaringType);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            methodInfo = (MethodInfo)(output.Properties[HttpRequestMessageOptions.MethodInfo]);
+            Assert.NotNull(methodInfo);
+            Assert.Equal(nameof(IContainAandB.Ping), methodInfo.Name);
+            Assert.Equal(typeof(IAmInterfaceA), methodInfo.DeclaringType);
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void MethodInfoShouldNotBeInPropertiesIfInjectMethodInfoAsPropertyFalse()
+        {
+            var fixture = new RequestBuilderImplementation<IContainAandB>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] {  });
+
+            MethodInfo methodInfo;
+#if NET6_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            output.Options.TryGetValue(HttpRequestMessageOptions.MethodInfoKey, out methodInfo);
+            Assert.Null(methodInfo);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            Assert.False(output.Properties.ContainsKey(HttpRequestMessageOptions.MethodInfo));
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]
@@ -2175,7 +2259,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["someValue"]);
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["someOtherValue"]);
@@ -2198,8 +2282,8 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
 
-#if NET5_0_OR_GREATER
-            Assert.Equal(3, output.Options.Count());
+#if NET6_0_OR_GREATER
+            Assert.Equal(2, output.Options.Count());
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
 
