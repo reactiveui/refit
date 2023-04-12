@@ -180,7 +180,7 @@ Search("admin/products");
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
 This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to Twitter's hybrid API that insists on non-GET requests with querystring parameters.
-Use the `Query` attribute the change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
+Use the `Query` attribute to change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
 public class MyQueryParams
