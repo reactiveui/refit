@@ -60,6 +60,7 @@ services
 * [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
   * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
   * [Target Interface type](#target-interface-type)
+  * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -67,6 +68,7 @@ services
   * [Headers inheritance](#headers-inheritance)
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
+* [Providing a custom HttpClient](#providing-a-custom-httpclient)
 * [Handling exceptions](#handling-exceptions)
   * [When returning Task&lt;IApiResponse&gt;, Task&lt;IApiResponse&lt;T&gt;&gt;, or Task&lt;ApiResponse&lt;T&gt;&gt;](#when-returning-taskiapiresponse-taskiapiresponset-or-taskapiresponset)
   * [When returning Task&lt;T&gt;](#when-returning-taskt)
@@ -857,6 +859,54 @@ class RequestPropertyHandler : DelegatingHandler
 
 Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
 
+#### MethodInfo of the method on the Refit client interface that was invoked
+
+There may be times when you want access to the `MethodInfo` of the method on the Refit client interface that was invoked. An example is where you
+want to decorate the method with a custom attribute in order to control some aspect of behavior in a `DelegatingHandler`:
+
+```csharp
+public interface ISomeAPI
+{
+    [SomeCustomAttribute("SomeValue")]
+    [Get("/{id}")]
+    Task<ApiResponse<SomeClass>> GetById(int id);
+}
+```
+To make the `MethodInfo` available you need to opt-in via the `RefitSettings` like so:
+
+```csharp
+services.AddRefitClient<ISomeAPI>(provider => new RefitSettings
+            {
+                InjectMethodInfoAsProperty = true
+            })
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+```
+
+You can access the `MethodInfo` for use in a handler and then get the custom attributes:
+
+```csharp
+class RequestPropertyHandler : DelegatingHandler
+{
+    public RequestPropertyHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // Get the MethodInfo
+        MethodInfo methodInfo;
+        request.Options.TryGetValue(HttpRequestMessageOptions.MethodInfoKey, out methodInfo);
+
+        //get the custom attributes
+        var customAttributes = methodInfo.CustomAttributes;
+
+        //insert your logic here
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+
+Note: for .NET Core 3.1 and lower this will be available via `HttpRequestMessage.Properties[HttpRequestMessageOptions.MethodInfo]`.
+
 ### Multipart uploads
 
 Methods decorated with `Multipart` attribute will be submitted with multipart content type.
@@ -1153,6 +1203,48 @@ public class HomeController : Controller
         return View(thing);
     }
 }
+```
+
+### Providing a custom HttpClient
+
+You can supply a custom `HttpClient` instance by simply passing it as a parameter to the `RestService.For<T>` method:
+
+```csharp
+RestService.For<ISomeApi>(new HttpClient()
+{
+    BaseAddress = new Uri("https://www.someapi.com/api/")
+});
+```
+
+However, when supplying a custom `HttpClient` instance the following `RefitSettings` properties will not work:
+
+* `AuthorizationHeaderValueGetter`
+* `AuthorizationHeaderValueWithParamGetter`
+* `HttpMessageHandlerFactory`
+
+If you still want to be able to configure the `HtttpClient` instance that `Refit` provides while still making use of the above settings, simply expose the `HttpClient` on the API interface:
+
+```csharp
+interface ISomeApi
+{
+    // This will automagically be populated by Refit if the property exists
+    HttpClient Client { get; }
+
+    [Headers("Authorization: Bearer")]
+    [Get("/endpoint")]
+    Task<string> SomeApiEndpoint();
+}
+```
+
+Then, after creating the REST service, you can set any `HttpClient` property you want, e.g. `Timeout`:
+
+```csharp
+SomeApi = RestService.For<ISomeApi>("https://www.someapi.com/api/", new RefitSettings()
+{
+    AuthorizationHeaderValueGetter = () => GetTokenAsync()
+});
+
+SomeApi.Client.Timeout = timeout;
 ```
 
 ### Handling exceptions
