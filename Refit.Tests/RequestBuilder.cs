@@ -234,19 +234,19 @@ namespace Refit.Tests
         Task ManyComplexTypes(Dictionary<int, string> theData, [Body] Dictionary<int, string> theData1);
 
         [Post("/foo")]
-        Task PostWithDictionaryQuery([Query]Dictionary<int, string> theData);
+        Task PostWithDictionaryQuery([Query] Dictionary<int, string> theData);
 
         [Post("/foo")]
-        Task PostWithComplexTypeQuery([Query]ComplexQueryObject queryParams);
+        Task PostWithComplexTypeQuery([Query] ComplexQueryObject queryParams);
 
         [Post("/foo")]
         Task ImpliedComplexQueryType(ComplexQueryObject queryParams, [Body] Dictionary<int, string> theData1);
 
         [Get("/api/{id}")]
-        Task MultipleQueryAttributes(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+        Task MultipleQueryAttributes(int id, [Query] string text = null, [Query] int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)] string[] filters = null);
 
         [Get("/api/{id}")]
-        Task NullableValues(int id, string text = null, int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+        Task NullableValues(int id, string text = null, int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)] string[] filters = null);
 
         [Get("/api/{id}")]
         Task IEnumerableThrowingError([Query(CollectionFormat.Multi)] IEnumerable<string> values);
@@ -511,7 +511,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
-        
+
         [Fact]
         public void ParameterMappingWithTheSameIdInAFewPlaces()
         {
@@ -1199,7 +1199,7 @@ namespace Refit.Tests
         Task<string> FetchSomeStuffWithCustomHeader(int id, [Header("X-Emoji")] string custom);
 
         [Get("/foo/bar/{id}")]
-        Task<string> FetchSomeStuffWithPathMemberInCustomHeader([Header("X-PathMember")]int id, [Header("X-Emoji")] string custom);
+        Task<string> FetchSomeStuffWithPathMemberInCustomHeader([Header("X-PathMember")] int id, [Header("X-Emoji")] string custom);
 
         [Post("/foo/bar/{id}")]
         Task<string> PostSomeStuffWithCustomHeader(int id, [Body] object body, [Header("X-Emoji")] string emoji);
@@ -1302,19 +1302,19 @@ namespace Refit.Tests
         Task QueryWithExplicitParameters(string param1, string param2);
 
         [Get("/query")]
-        Task QueryWithArrayFormattedAsMulti([Query(CollectionFormat.Multi)]int[] numbers);
+        Task QueryWithArrayFormattedAsMulti([Query(CollectionFormat.Multi)] int[] numbers);
 
         [Get("/query")]
-        Task QueryWithArrayFormattedAsCsv([Query(CollectionFormat.Csv)]int[] numbers);
+        Task QueryWithArrayFormattedAsCsv([Query(CollectionFormat.Csv)] int[] numbers);
 
         [Get("/query")]
-        Task QueryWithArrayFormattedAsSsv([Query(CollectionFormat.Ssv)]int[] numbers);
+        Task QueryWithArrayFormattedAsSsv([Query(CollectionFormat.Ssv)] int[] numbers);
 
         [Get("/query")]
-        Task QueryWithArrayFormattedAsTsv([Query(CollectionFormat.Tsv)]int[] numbers);
+        Task QueryWithArrayFormattedAsTsv([Query(CollectionFormat.Tsv)] int[] numbers);
 
         [Get("/query")]
-        Task QueryWithArrayFormattedAsPipes([Query(CollectionFormat.Pipes)]int[] numbers);
+        Task QueryWithArrayFormattedAsPipes([Query(CollectionFormat.Pipes)] int[] numbers);
 
         [Get("/foo")]
         Task ComplexQueryObjectWithDictionary([Query] ComplexQueryObject query);
@@ -1329,19 +1329,19 @@ namespace Refit.Tests
         Task QueryWithDictionaryWithNumericKey([Query] IDictionary<int, string> query);
 
         [Get("/query")]
-        Task QueryWithEnumerableFormattedAsMulti([Query(CollectionFormat.Multi)]IEnumerable<string> lines);
+        Task QueryWithEnumerableFormattedAsMulti([Query(CollectionFormat.Multi)] IEnumerable<string> lines);
 
         [Get("/query")]
-        Task QueryWithEnumerableFormattedAsCsv([Query(CollectionFormat.Csv)]IEnumerable<string> lines);
+        Task QueryWithEnumerableFormattedAsCsv([Query(CollectionFormat.Csv)] IEnumerable<string> lines);
 
         [Get("/query")]
-        Task QueryWithEnumerableFormattedAsSsv([Query(CollectionFormat.Ssv)]IEnumerable<string> lines);
+        Task QueryWithEnumerableFormattedAsSsv([Query(CollectionFormat.Ssv)] IEnumerable<string> lines);
 
         [Get("/query")]
-        Task QueryWithEnumerableFormattedAsTsv([Query(CollectionFormat.Tsv)]IEnumerable<string> lines);
+        Task QueryWithEnumerableFormattedAsTsv([Query(CollectionFormat.Tsv)] IEnumerable<string> lines);
 
         [Get("/query")]
-        Task QueryWithEnumerableFormattedAsPipes([Query(CollectionFormat.Pipes)]IEnumerable<string> lines);
+        Task QueryWithEnumerableFormattedAsPipes([Query(CollectionFormat.Pipes)] IEnumerable<string> lines);
 
         [Get("/query")]
         Task QueryWithObjectWithPrivateGetters(Person person);
@@ -1357,7 +1357,7 @@ namespace Refit.Tests
         Task QueryWithTypeWithEnum(TypeFooWithEnumMember foo);
 
         [Get("/api/{id}")]
-        Task QueryWithOptionalParameters(int id, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+        Task QueryWithOptionalParameters(int id, [Query] string text = null, [Query] int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)] string[] filters = null);
 
         [Delete("/api/bar")]
         Task ClearWithEnumMember([Query] FooWithEnumMember foo);
@@ -1380,13 +1380,13 @@ namespace Refit.Tests
 
 
         [Post("/foo")]
-        Task PostWithComplexTypeQuery([Query]ComplexQueryObject queryParams);
+        Task PostWithComplexTypeQuery([Query] ComplexQueryObject queryParams);
 
         [Get("/foo")]
-        Task ComplexTypeQueryWithInnerCollection([Query]ComplexQueryObject queryParams);
+        Task ComplexTypeQueryWithInnerCollection([Query] ComplexQueryObject queryParams);
 
         [Get("/api/{obj.someProperty}")]
-        Task QueryWithOptionalParametersPathBoundObject(PathBoundObject obj, [Query]string text = null, [Query]int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)]string[] filters = null);
+        Task QueryWithOptionalParametersPathBoundObject(PathBoundObject obj, [Query] string text = null, [Query] int? optionalId = null, [Query(CollectionFormat = CollectionFormat.Multi)] string[] filters = null);
 
         [Headers("Accept:application/json", "X-API-V: 125")]
         [Get("/api/someModule/deviceList?controlId={control_id}")]
@@ -2109,7 +2109,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(interfaceMethodName);
             var output = factory(new object[] { 6, someProperty });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
@@ -2120,18 +2120,54 @@ namespace Refit.Tests
 #pragma warning restore CS0618 // Type or member is obsolete
 
         }
+        [Fact]
+        public void OptionsFromSettingsShouldBeInProperties()
+        {
+            const string nameProp1 = "UnitTest.Property1";
+            string valueProp1 = "TestValue";
+            const string nameProp2 = "UnitTest.Property2";
+            object valueProp2 = new List<string>() { "123", "345" };
+            var fixture = new RequestBuilderImplementation<IContainAandB>(new RefitSettings()
+            {
+                HttpRequestMessageOptions = new Dictionary<string, object>()
+                {
+                    [nameProp1] = valueProp1,
+                    [nameProp2] = valueProp2,
+                },
+            });
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(Array.Empty<object>());
+
+#if NET6_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            Assert.True(output.Options.TryGetValue(new HttpRequestOptionsKey<string>(nameProp1), out var resultValueProp1));
+            Assert.Equal(valueProp1, resultValueProp1);
+
+            Assert.True(output.Options.TryGetValue(new HttpRequestOptionsKey<List<string>>(nameProp2), out var resultValueProp2));
+            Assert.Equal(valueProp2, resultValueProp2);
+#else
+            Assert.NotEmpty(output.Properties);
+            Assert.True(output.Properties.TryGetValue(nameProp1, out var resultValueProp1));
+            Assert.IsType<string>(resultValueProp1);
+            Assert.Equal(valueProp1, (string)resultValueProp1);
+
+            Assert.True(output.Properties.TryGetValue(nameProp2, out var resultValueProp2));            
+            Assert.IsType<List<string>>(resultValueProp2);
+            Assert.Equal(valueProp2, (List<string>)resultValueProp2);
+#endif
+        }
 
         [Fact]
         public void InterfaceTypeShouldBeInProperties()
         {
-            var someProperty = new object();
             var fixture = new RequestBuilderImplementation<IContainAandB>();
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
-            var output = factory(new object[] {  });
+            var output = factory(Array.Empty<object>());
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
-            Assert.Equal(typeof(IContainAandB), ((IDictionary<string, object>)output.Options)[HttpRequestMessageOptions.InterfaceType]);
+            output.Options.TryGetValue(HttpRequestMessageOptions.InterfaceTypeKey, out var interfaceType);
+            Assert.Equal(typeof(IContainAandB), interfaceType);
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
@@ -2139,6 +2175,78 @@ namespace Refit.Tests
             Assert.Equal(typeof(IContainAandB), output.Properties[HttpRequestMessageOptions.InterfaceType]);
 #pragma warning restore CS0618 // Type or member is obsolete
 
+        }
+
+        [Fact]
+        public void MethodInfoShouldBeInPropertiesIfInjectMethodInfoAsPropertyTrue()
+        {
+            var fixture = new RequestBuilderImplementation<IContainAandB>(new RefitSettings
+            {
+                InjectMethodInfoAsProperty = true
+            });
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(Array.Empty<object>());
+
+            RestMethodInfo restMethodInfo;
+#if NET6_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            output.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out restMethodInfo);
+            Assert.NotNull(restMethodInfo);
+            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
+            Assert.Equal(typeof(IAmInterfaceA), restMethodInfo.MethodInfo.DeclaringType);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            restMethodInfo = (RestMethodInfo)(output.Properties[HttpRequestMessageOptions.RestMethodInfo]);
+            Assert.NotNull(restMethodInfo);
+            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
+            Assert.Equal(typeof(IAmInterfaceA), restMethodInfo.MethodInfo.DeclaringType);
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void MethodInfoShouldNotBeInPropertiesIfInjectMethodInfoAsPropertyFalse()
+        {
+            var fixture = new RequestBuilderImplementation<IContainAandB>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(Array.Empty<object>());
+
+            RestMethodInfo restMethodInfo;
+#if NET6_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            output.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out restMethodInfo);
+            Assert.Null(restMethodInfo);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            Assert.False(output.Properties.ContainsKey(HttpRequestMessageOptions.RestMethodInfo));
+#pragma warning restore CS0618 // Type or member is obsolete
+        }
+
+        [Fact]
+        public void RestMethodInfoShouldBeInProperties()
+        {
+            var fixture = new RequestBuilderImplementation<IContainAandB>(new() { InjectMethodInfoAsProperty = true });
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(Array.Empty<object>());
+            RestMethodInfo restMethodInfo;
+#if NET6_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            output.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out restMethodInfo);
+            Assert.NotNull(restMethodInfo);
+            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
+            Assert.Equal(typeof(IAmInterfaceA), restMethodInfo.MethodInfo.DeclaringType);
+#endif
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.NotEmpty(output.Properties);
+            restMethodInfo = (RestMethodInfo)(output.Properties[HttpRequestMessageOptions.RestMethodInfo]);
+            Assert.NotNull(restMethodInfo);
+            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
+            Assert.Equal(typeof(IAmInterfaceA), restMethodInfo.MethodInfo.DeclaringType);
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]
@@ -2150,7 +2258,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["someValue"]);
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["someOtherValue"]);
@@ -2173,7 +2281,7 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.Equal(2, output.Options.Count());
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
@@ -2870,7 +2978,7 @@ namespace Refit.Tests
                 {
                     task.Wait();
                 }
-                catch(AggregateException e) when (e.InnerException is TaskCanceledException)
+                catch (AggregateException e) when (e.InnerException is TaskCanceledException)
                 {
 
                 }
