@@ -1,0 +1,1 @@
+dotnet run --project ../../Refit.Benchmarks.csproj -c Release --filter *ObservableHttpResponseMessage* --framework=netcoreapp3.1

@@ -241,7 +241,7 @@ namespace Refit
                         }
                         var parameterType = isRoundTripping ? ParameterType.RoundTripping : ParameterType.Normal;
                         var restMethodParameterInfo = new RestMethodParameterInfo(name, paramValidationDict[name]) { Type = parameterType };
-#if NETSTANDARD2_1 || NET5_0_OR_GREATER
+#if NETSTANDARD2_1 || NET6_0_OR_GREATER
                         ret.TryAdd(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
 #else
                         var idx = parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo);
@@ -270,7 +270,7 @@ namespace Refit
                         {
                             var restMethodParameterInfo = new RestMethodParameterInfo(true, property.Item1);
                             restMethodParameterInfo.ParameterProperties.Add(new RestMethodParameterProperty(name, property.Item2));
-#if NETSTANDARD2_1 || NET5_0_OR_GREATER
+#if NETSTANDARD2_1 || NET6_0_OR_GREATER
                             ret.TryAdd(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
 #else
                             // Do the contains check

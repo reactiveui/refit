@@ -2130,7 +2130,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(interfaceMethodName);
             var output = factory(new object[] { 6, someProperty });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
@@ -2150,7 +2150,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
             var output = factory(new object[] {  });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(typeof(IContainAandB), ((IDictionary<string, object>)output.Options)[HttpRequestMessageOptions.InterfaceType]);
 #endif
@@ -2163,6 +2163,26 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void RestMethodInfoShouldBeInProperties()
+        {
+            var someProperty = new object();
+            var fixture = new RequestBuilderImplementation<IContainAandB>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
+            var output = factory(new object[] { });
+
+#if NET6_0_OR_GREATER
+            Assert.NotEmpty(output.Options);
+            Assert.True(output.Options.TryGetValue(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), out var restMethodInfo));
+#else
+            Assert.NotEmpty(output.Properties);
+            Assert.True(output.Properties.TryGetValue(HttpRequestMessageOptions.RestMethodInfo, out var restMethodInfoObj));
+            Assert.IsType<RestMethodInfo>(restMethodInfoObj);
+            var restMethodInfo = restMethodInfoObj as RestMethodInfo;
+#endif
+            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
+        }
+
+        [Fact]
         public void DynamicRequestPropertiesWithDefaultKeysShouldBeInProperties()
         {
             var someProperty = new object();
@@ -2171,7 +2191,7 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
             Assert.Equal(someProperty, ((IDictionary<string, object>)output.Options)["someValue"]);
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["someOtherValue"]);
@@ -2194,13 +2214,13 @@ namespace Refit.Tests
             var output = factory(new object[] { 6, someProperty, someOtherProperty });
 
 
-#if NET5_0_OR_GREATER
-            Assert.Equal(2, output.Options.Count());
+#if NET6_0_OR_GREATER
+            Assert.Equal(3, output.Options.Count());
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
-            Assert.Equal(2, output.Properties.Count);
+            Assert.Equal(3, output.Properties.Count);
             Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
 #pragma warning restore CS0618 // Type or member is obsolete
         }
