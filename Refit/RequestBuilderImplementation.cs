@@ -724,6 +724,19 @@ namespace Refit
                     }
                 }
 
+                // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
+                if (this.settings.HttpRequestMessageOptions != null)
+                {
+                    foreach(var p in this.settings.HttpRequestMessageOptions)
+                    {
+#if NET5_0_OR_GREATER
+                        ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+#else
+                        ret.Properties.Add(p);
+#endif
+                    }
+                }
+
                 foreach (var property in propertiesToAdd)
                 {
 #if NET6_0_OR_GREATER
@@ -733,14 +746,23 @@ namespace Refit
 #endif
                 }
 
-                // Always add the top-level type of the interface to the properties
+                // Always add the top-level type of the interface to the options/properties and include the MethodInfo if the developer has opted-in to that behavior
 #if NET6_0_OR_GREATER
-                ret.Options.Set(new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType), TargetType);
-                ret.Options.Set(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), restMethod);
+                ret.Options.Set(HttpRequestMessageOptions.InterfaceTypeKey, TargetType);
+                if (settings.InjectMethodInfoAsProperty)
+                {
+                    ret.Options.Set(HttpRequestMessageOptions.MethodInfoKey, restMethod.MethodInfo);
+                }
 #else
                 ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
-                ret.Properties[HttpRequestMessageOptions.RestMethodInfo] = restMethod;
-#endif                
+                if (settings.InjectMethodInfoAsProperty)
+                {
+                    ret.Properties[HttpRequestMessageOptions.MethodInfo] = restMethod.MethodInfo;
+                }
+
+#endif
+
+                ;
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
