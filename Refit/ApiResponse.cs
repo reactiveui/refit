@@ -134,7 +134,7 @@ namespace Refit
         /// <summary>
         /// Indicates whether the request was successful.
         /// </summary>
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif

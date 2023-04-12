@@ -26,11 +26,19 @@ namespace Refit.Tests
                 });
             }
 
-            protected override IEnumerable<ISourceGenerator> GetSourceGenerators()
+            /// <summary>
+            /// Gets the source generators.
+            /// </summary>
+            /// <returns></returns>
+            protected override IEnumerable<Type> GetSourceGenerators()
             {
-                yield return new TIncrementalGenerator().AsSourceGenerator();
+                yield return new TIncrementalGenerator().AsSourceGenerator().GetGeneratorType();
             }
 
+            /// <summary>
+            /// Creates the parse options.
+            /// </summary>
+            /// <returns></returns>
             protected override ParseOptions CreateParseOptions()
             {
                 var parseOptions = (CSharpParseOptions)base.CreateParseOptions();

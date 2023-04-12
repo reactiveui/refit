@@ -59,7 +59,7 @@ services
   * [Removing headers](#removing-headers)
 * [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
   * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
-  * [Target Interface type](#target-interface-type)
+  * [Target Interface type and method info](#target-interface-type-and-method-info)
   * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
@@ -811,7 +811,7 @@ Because Refit supports `HttpClientFactory` it is possible to configure Polly pol
 If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PolicyExecutionContext")] Polly.Context context`
 as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PolicyExecutionContext` and is of type `Polly.Context`. It's only recommended to pass the `Polly.Context` this way if your use case requires that the `Polly.Context` be initialized with dynamic content only known at runtime. If your `Polly.Context` only requires the same content every time (e.g an `ILogger` that you want to use to log from inside your policies) a cleaner approach is to inject the `Polly.Context` via a `DelegatingHandler` as described in [#801](https://github.com/reactiveui/refit/issues/801#issuecomment-1137318526)
 
-#### Target Interface Type
+#### Target Interface Type and method info
 
 There may be times when you want to know what the target interface type is of the Refit instance. An example is where you
 have a derived interface that implements a common base like this:
@@ -857,7 +857,33 @@ class RequestPropertyHandler : DelegatingHandler
 ```
 [//]: # ({% endraw %})
 
-Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
+The full method information (`RestMethodInfo`) is also always available in the request options. The `RestMethodInfo` contains more information about the method being called such as the full `MethodInfo` when using reflection is needed:
+
+[//]: # ({% raw %})
+```csharp
+class RequestPropertyHandler : DelegatingHandler
+{
+    public RequestPropertyHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // Get the method info
+        if (request.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out RestMethodInfo restMethodInfo))
+        {
+            var builder = new UriBuilder(request.RequestUri);
+            // Alter the Path in some way based on the method info or an attribute on it
+            builder.Path = $"/{restMethodInfo.MethodInfo.Name}{builder.Path}";
+            // Set the new Uri on the outgoing message
+            request.RequestUri = builder.Uri;
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+[//]: # ({% endraw %})
+
+Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOptions.InterfaceTypeKey` and `HttpRequestMessageOptions.RestMethodInfoKey` to respectively access the interface type and REST method info from the options.
 
 #### MethodInfo of the method on the Refit client interface that was invoked
 
