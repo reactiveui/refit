@@ -51,15 +51,7 @@ namespace Refit.Tests
         [Fact]
         public void DefaultHandlerIsHttpClientHandler()
         {
-            var handler = new AuthenticatedHttpClientHandler((() => Task.FromResult(string.Empty)));
-
-            Assert.IsType<HttpClientHandler>(handler.InnerHandler);
-        }
-
-        [Fact]
-        public void DefaultHandlerIsHttpClientHandlerWithParam()
-        {
-            var handler = new AuthenticatedParameterizedHttpClientHandler(((request) => Task.FromResult(string.Empty)));
+            var handler = new AuthenticatedHttpClientHandler(((_, _) => Task.FromResult(string.Empty)));
 
             Assert.IsType<HttpClientHandler>(handler.InnerHandler);
         }
@@ -68,12 +60,6 @@ namespace Refit.Tests
         public void NullTokenGetterThrows()
         {
             Assert.Throws<ArgumentNullException>(() => new AuthenticatedHttpClientHandler(null));
-        }
-
-        [Fact]
-        public void NullTokenGetterThrowsWithParam()
-        {
-            Assert.Throws<ArgumentNullException>(() => new AuthenticatedParameterizedHttpClientHandler(null));
         }
 
         [Fact]

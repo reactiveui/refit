@@ -8,9 +8,9 @@ namespace Refit
 {
     class AuthenticatedHttpClientHandler : DelegatingHandler
     {
-        readonly Func<Task<string>> getToken;
+        readonly Func<HttpRequestMessage, CancellationToken, Task<string>> getToken;
 
-        public AuthenticatedHttpClientHandler(Func<Task<string>> getToken, HttpMessageHandler? innerHandler = null)
+        public AuthenticatedHttpClientHandler(Func<HttpRequestMessage, CancellationToken, Task<string>> getToken, HttpMessageHandler? innerHandler = null)
             : base(innerHandler ?? new HttpClientHandler())
         {
             this.getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
@@ -22,7 +22,7 @@ namespace Refit
             var auth = request.Headers.Authorization;
             if (auth != null)
             {
-                var token = await getToken().ConfigureAwait(false);
+                var token = await getToken(request, cancellationToken).ConfigureAwait(false);
                 request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
             }
 
