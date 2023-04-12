@@ -2228,7 +2228,7 @@ namespace Refit.Tests
         [Fact]
         public void RestMethodInfoShouldBeInProperties()
         {
-            var fixture = new RequestBuilderImplementation<IContainAandB>(new RefitSettings { InjectMethodInfoAsProperty = true });
+            var fixture = new RequestBuilderImplementation<IContainAandB>(new() { InjectMethodInfoAsProperty = true });
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
             var output = factory(Array.Empty<object>());
             RestMethodInfo restMethodInfo;

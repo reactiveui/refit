@@ -123,7 +123,7 @@ namespace Refit
         /// Controls injecting the <see cref="MethodInfo"/> of the method on the Refit client interface that was invoked into the HttpRequestMessage.Properties (defaults to false)
         /// </summary>
 #endif
-        public bool InjectMethodInfoAsProperty { get; set; } = false;
+        public bool InjectMethodInfoAsProperty { get; set; }
     }
 
     /// <summary>
