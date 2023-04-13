@@ -250,6 +250,9 @@ namespace Refit.Tests
 
         [Get("/api/{id}")]
         Task IEnumerableThrowingError([Query(CollectionFormat.Multi)] IEnumerable<string> values);
+        
+        [Get("/foo")]
+        List<string> InvalidGenericReturnType();
     }
 
     public enum TestEnum { A, B, C }
@@ -1145,6 +1148,14 @@ namespace Refit.Tests
             Assert.Equal(2, fixture.QueryParameterMap.Count);
             Assert.Single(fixture.HeaderParameterMap);
             Assert.Single(fixture.PropertyParameterMap);
+        }
+        
+        [Fact]
+        public void GenericReturnTypeIsNotTaskOrObservableShouldThrow()
+        {
+            var input = typeof(IRestMethodInfoTests);
+            Assert.Throws<ArgumentException>(() => new RestMethodInfo(input,
+                input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.InvalidGenericReturnType))));
         }
     }
 
