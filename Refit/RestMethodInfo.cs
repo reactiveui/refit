@@ -463,8 +463,9 @@ namespace Refit
         void DetermineReturnTypeInfo(MethodInfo methodInfo)
         {
             var returnType = methodInfo.ReturnType;
-            if (returnType.IsGenericType && (methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(Task<>)
-                                             || methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(IObservable<>)))
+            if (returnType.IsGenericType && (methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)
+                                             || methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(ValueTask<>)
+                                             || methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(IObservable<>)))
             {
                 ReturnType = returnType;
                 ReturnResultType = returnType.GetGenericArguments()[0];
@@ -488,7 +489,7 @@ namespace Refit
                 DeserializedResultType = typeof(void);
             }
             else
-                throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
+                throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>");
         }
 
         void DetermineIfResponseMustBeDisposed()
