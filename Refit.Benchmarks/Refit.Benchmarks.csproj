@@ -3,8 +3,9 @@
     <Import Project="..\Refit\targets\refit.props" />
   
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFrameworks>net6.0</TargetFrameworks>
+      <OutputType>Exe</OutputType>
+      <TargetFrameworks>net6.0</TargetFrameworks>
+      <IsPackable>false</IsPackable>
     </PropertyGroup>
   
     <ItemGroup>
