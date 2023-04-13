@@ -2,7 +2,7 @@
 
 ## Refit: The automatic type-safe REST library for .NET Core, Xamarin and .NET
 
-[![Build](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml/badge.svg)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml)
+[![Build](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml/badge.svg)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml) [![codecov](https://codecov.io/github/reactiveui/refit/branch/main/graph/badge.svg?token=2guEgHsDU2)](https://codecov.io/github/reactiveui/refit)
 
 ||Refit|Refit.HttpClientFactory|Refit.Newtonsoft.Json|
 |-|-|-|-|
