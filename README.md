@@ -573,7 +573,7 @@ var user = await GetUser("octocat", headers);
 Most APIs need some sort of Authentication. The most common is OAuth Bearer authentication. A header is added to each request of the form: `Authorization: Bearer <token>`. Refit makes it easy to insert your logic to get the token however your app needs, so you don't have to pass a token into each method.
 
 1. Add `[Headers("Authorization: Bearer")]` to the interface or methods which need the token.
-2. Set either `AuthorizationHeaderValueGetter` or `AuthorizationHeaderValueWithParamGetter` in the `RefitSettings` instance. The difference is that the latter one passes the `HttpRequestMessage` into the function in case you need to take action based on the specific request. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
+2. Set `AuthorizationHeaderValueGetter` in the `RefitSettings` instance. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
 
 #### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
 Although we make provisions for adding dynamic headers at runtime directly in Refit,
@@ -1242,7 +1242,6 @@ RestService.For<ISomeApi>(new HttpClient()
 However, when supplying a custom `HttpClient` instance the following `RefitSettings` properties will not work:
 
 * `AuthorizationHeaderValueGetter`
-* `AuthorizationHeaderValueWithParamGetter`
 * `HttpMessageHandlerFactory`
 
 If you still want to be able to configure the `HtttpClient` instance that `Refit` provides while still making use of the above settings, simply expose the `HttpClient` on the API interface:
@@ -1264,7 +1263,7 @@ Then, after creating the REST service, you can set any `HttpClient` property you
 ```csharp
 SomeApi = RestService.For<ISomeApi>("https://www.someapi.com/api/", new RefitSettings()
 {
-    AuthorizationHeaderValueGetter = () => GetTokenAsync()
+    AuthorizationHeaderValueGetter = (rq, ct) => GetTokenAsync()
 });
 
 SomeApi.Client.Timeout = timeout;

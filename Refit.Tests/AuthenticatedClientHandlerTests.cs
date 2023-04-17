@@ -68,7 +68,7 @@ namespace Refit.Tests
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings()
             {
-                AuthorizationHeaderValueGetter = () => Task.FromResult("tokenValue"),
+                AuthorizationHeaderValueGetter = (_, __) => Task.FromResult("tokenValue"),
                 HttpMessageHandlerFactory = () => handler
             };
 
@@ -91,7 +91,7 @@ namespace Refit.Tests
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings()
             {
-                AuthorizationHeaderValueGetter = () => Task.FromResult("tokenValue"),
+                AuthorizationHeaderValueGetter = (_, __) => Task.FromResult("tokenValue"),
                 HttpMessageHandlerFactory = () => handler
             };
 
@@ -114,7 +114,7 @@ namespace Refit.Tests
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings()
             {
-                AuthorizationHeaderValueWithParamGetter = (request) => Task.FromResult("tokenValue"),
+                AuthorizationHeaderValueGetter = (request, _) => Task.FromResult("tokenValue"),
                 HttpMessageHandlerFactory = () => handler
             };
 
@@ -293,7 +293,7 @@ namespace Refit.Tests
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings()
             {
-                AuthorizationHeaderValueGetter = () => Task.FromResult("tokenValue"),
+                AuthorizationHeaderValueGetter = (_, __) => Task.FromResult("tokenValue"),
                 HttpMessageHandlerFactory = () => handler
             };
 
@@ -316,7 +316,7 @@ namespace Refit.Tests
             var handler = new MockHttpMessageHandler();
             var settings = new RefitSettings()
             {
-                AuthorizationHeaderValueGetter = () => Task.FromResult("tokenValue"),
+                AuthorizationHeaderValueGetter = (_, __) => Task.FromResult("tokenValue"),
                 HttpMessageHandlerFactory = () => handler
             };
 

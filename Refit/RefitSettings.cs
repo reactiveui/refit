@@ -37,7 +37,7 @@ namespace Refit
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
         /// <param name="injectMethodInfoAsProperty">Controls injecting the <see cref="MethodInfo"/> of the method on the Refit client interface that was invoked into the HttpRequestMessage.Options (defaults to false)</param>
 #else
-                /// <summary>
+        /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
         /// </summary>
         /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use</param>
@@ -61,17 +61,7 @@ namespace Refit
         /// <summary>
         /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
         /// </summary>
-        public Func<Task<string>>? AuthorizationHeaderValueGetter { get; set; }
-
-        /// <summary>
-        /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
-        /// </summary>
-        public Func<HttpRequestMessage, Task<string>>? AuthorizationHeaderValueWithParamGetter { get; set; }
-
-        /// <summary>
-        /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
-        /// </summary>
-        public Func<HttpRequestMessage, CancellationToken, Task<string>>? AuthorizationHeaderValueWithCancellationTokenGetter { get; set; }
+        public Func<HttpRequestMessage, CancellationToken, Task<string>>? AuthorizationHeaderValueGetter { get; set; }
 
         /// <summary>
         /// Supply a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.
@@ -113,7 +103,7 @@ namespace Refit
         /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>. 
         /// </summary>
         public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
-        
+
 #if NET6_0_OR_GREATER
         /// <summary>
         /// Controls injecting the <see cref="MethodInfo"/> of the method on the Refit client interface that was invoked into the HttpRequestMessage.Options (defaults to false)
