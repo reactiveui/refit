@@ -288,7 +288,6 @@ namespace Refit.Tests
 
     public class RestMethodInfoTests
     {
-
         [Fact]
         public void TooManyComplexTypesThrows()
         {
@@ -514,7 +513,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
-
+        
         [Fact]
         public void ParameterMappingWithTheSameIdInAFewPlaces()
         {
@@ -2175,12 +2174,6 @@ namespace Refit.Tests
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
             var output = factory(Array.Empty<object>());
 
-#if NET6_0_OR_GREATER
-            Assert.NotEmpty(output.Options);
-            output.Options.TryGetValue(HttpRequestMessageOptions.InterfaceTypeKey, out var interfaceType);
-            Assert.Equal(typeof(IContainAandB), interfaceType);
-#endif
-
 #pragma warning disable CS0618 // Type or member is obsolete
             Assert.NotEmpty(output.Properties);
             Assert.Equal(typeof(IContainAandB), output.Properties[HttpRequestMessageOptions.InterfaceType]);
@@ -2189,75 +2182,23 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public void MethodInfoShouldBeInPropertiesIfInjectMethodInfoAsPropertyTrue()
-        {
-            var fixture = new RequestBuilderImplementation<IContainAandB>(new RefitSettings
-            {
-                InjectMethodInfoAsProperty = true
-            });
-            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
-            var output = factory(Array.Empty<object>());
-
-            RestMethodInfo restMethodInfo;
-#if NET6_0_OR_GREATER
-            Assert.NotEmpty(output.Options);
-            output.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out restMethodInfo);
-            Assert.NotNull(restMethodInfo);
-            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
-            Assert.Equal(typeof(IAmInterfaceA), restMethodInfo.MethodInfo.DeclaringType);
-#endif
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            Assert.NotEmpty(output.Properties);
-            restMethodInfo = (RestMethodInfo)(output.Properties[HttpRequestMessageOptions.RestMethodInfo]);
-            Assert.NotNull(restMethodInfo);
-            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
-            Assert.Equal(typeof(IAmInterfaceA), restMethodInfo.MethodInfo.DeclaringType);
-#pragma warning restore CS0618 // Type or member is obsolete
-        }
-
-        [Fact]
-        public void MethodInfoShouldNotBeInPropertiesIfInjectMethodInfoAsPropertyFalse()
-        {
-            var fixture = new RequestBuilderImplementation<IContainAandB>();
-            var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
-            var output = factory(Array.Empty<object>());
-
-            RestMethodInfo restMethodInfo;
-#if NET6_0_OR_GREATER
-            Assert.NotEmpty(output.Options);
-            output.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out restMethodInfo);
-            Assert.Null(restMethodInfo);
-#endif
-
-#pragma warning disable CS0618 // Type or member is obsolete
-            Assert.NotEmpty(output.Properties);
-            Assert.False(output.Properties.ContainsKey(HttpRequestMessageOptions.RestMethodInfo));
-#pragma warning restore CS0618 // Type or member is obsolete
-        }
-
-        [Fact]
         public void RestMethodInfoShouldBeInProperties()
         {
-            var fixture = new RequestBuilderImplementation<IContainAandB>(new() { InjectMethodInfoAsProperty = true });
+            var someProperty = new object();
+            var fixture = new RequestBuilderImplementation<IContainAandB>();
             var factory = fixture.BuildRequestFactoryForMethod(nameof(IContainAandB.Ping));
-            var output = factory(Array.Empty<object>());
-            RestMethodInfo restMethodInfo;
+            var output = factory(new object[] { });
+
 #if NET6_0_OR_GREATER
             Assert.NotEmpty(output.Options);
-            output.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out restMethodInfo);
-            Assert.NotNull(restMethodInfo);
-            Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
-            Assert.Equal(typeof(IAmInterfaceA), restMethodInfo.MethodInfo.DeclaringType);
-#endif
-
-#pragma warning disable CS0618 // Type or member is obsolete
+            Assert.True(output.Options.TryGetValue(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), out var restMethodInfo));
+#else
             Assert.NotEmpty(output.Properties);
-            restMethodInfo = (RestMethodInfo)(output.Properties[HttpRequestMessageOptions.RestMethodInfo]);
-            Assert.NotNull(restMethodInfo);
+            Assert.True(output.Properties.TryGetValue(HttpRequestMessageOptions.RestMethodInfo, out var restMethodInfoObj));
+            Assert.IsType<RestMethodInfo>(restMethodInfoObj);
+            var restMethodInfo = restMethodInfoObj as RestMethodInfo;
+#endif
             Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
-            Assert.Equal(typeof(IAmInterfaceA), restMethodInfo.MethodInfo.DeclaringType);
-#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         [Fact]
@@ -2293,12 +2234,12 @@ namespace Refit.Tests
 
 
 #if NET6_0_OR_GREATER
-            Assert.Equal(2, output.Options.Count());
+            Assert.Equal(3, output.Options.Count());
             Assert.Equal(someOtherProperty, ((IDictionary<string, object>)output.Options)["SomeProperty"]);
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
-            Assert.Equal(2, output.Properties.Count);
+            Assert.Equal(3, output.Properties.Count);
             Assert.Equal(someOtherProperty, output.Properties["SomeProperty"]);
 #pragma warning restore CS0618 // Type or member is obsolete
         }
