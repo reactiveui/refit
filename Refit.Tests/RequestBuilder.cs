@@ -2195,8 +2195,8 @@ namespace Refit.Tests
 #else
             Assert.NotEmpty(output.Properties);
             Assert.True(output.Properties.TryGetValue(HttpRequestMessageOptions.RestMethodInfo, out var restMethodInfoObj));
-            Assert.IsType<RestMethodInfoInternal>(restMethodInfoObj);
-            var restMethodInfo = restMethodInfoObj as RestMethodInfoInternal;
+            Assert.IsType<RestMethodInfo>(restMethodInfoObj);
+            var restMethodInfo = restMethodInfoObj as RestMethodInfo;
 #endif
             Assert.Equal(nameof(IContainAandB.Ping), restMethodInfo.Name);
         }

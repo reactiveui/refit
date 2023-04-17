@@ -19,7 +19,7 @@ namespace System.Runtime.CompilerServices
 
 namespace Refit
 {
-    public record RestMethodInfo(string name, Type hostingType, MethodInfo methodInfo, string relativePath, Type returnType);
+    public record RestMethodInfo(string Name, Type HostingType, MethodInfo MethodInfo, string RelativePath, Type ReturnType);
 
     [DebuggerDisplay("{MethodInfo}")]
     internal class RestMethodInfoInternal

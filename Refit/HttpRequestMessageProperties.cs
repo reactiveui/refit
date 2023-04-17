@@ -13,6 +13,6 @@ namespace Refit
         /// <summary>
         /// Returns the <see cref="Refit.RestMethodInfoInternal"/> of the top-level interface
         /// </summary>
-        //public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
+        public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
     }
 }
