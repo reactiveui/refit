@@ -9,8 +9,18 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Threading;
 
+// Enable support for C# 9 record types
+#if NETSTANDARD2_1 || !NET6_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+{
+    internal static class IsExternalInit { }
+}
+#endif
+
 namespace Refit
 {
+    public record RestMethodInfo(string name, Type hostingType, MethodInfo methodInfo, string relativePath, Type returnType);
+
     [DebuggerDisplay("{MethodInfo}")]
     internal class RestMethodInfoInternal
     {
@@ -161,6 +171,8 @@ namespace Refit
 
             return headerCollectionMap;
         }
+
+        public RestMethodInfo ToRestMethodInfo() => new RestMethodInfo(Name, Type, MethodInfo, RelativePath, ReturnType);
 
         static Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
         {
