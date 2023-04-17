@@ -11,8 +11,8 @@ namespace Refit
         public static string InterfaceType { get; } = "Refit.InterfaceType";
 
         /// <summary>
-        /// Returns the <see cref="Refit.RestMethodInfo"/> of the top-level interface
+        /// Returns the <see cref="Refit.RestMethodInfoInternal"/> of the top-level interface
         /// </summary>
-        public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
+        //public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
     }
 }

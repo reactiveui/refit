@@ -12,7 +12,7 @@ using System.Threading;
 namespace Refit
 {
     [DebuggerDisplay("{MethodInfo}")]
-    public class RestMethodInfo
+    internal class RestMethodInfoInternal
     {
         public string Name { get; set; }
         public Type Type { get; set; }
@@ -43,7 +43,7 @@ namespace Refit
         static readonly HttpMethod PatchMethod = new("PATCH");
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings? refitSettings = null)
+        public RestMethodInfoInternal(Type targetInterface, MethodInfo methodInfo, RefitSettings? refitSettings = null)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             RefitSettings = refitSettings ?? new RefitSettings();
@@ -127,7 +127,7 @@ namespace Refit
 
             IsApiResponse = ReturnResultType!.GetTypeInfo().IsGenericType &&
                               (ReturnResultType!.GetGenericTypeDefinition() == typeof(ApiResponse<>)
-                              || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>))
+                              || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>))
                             || ReturnResultType == typeof(IApiResponse);
         }
 

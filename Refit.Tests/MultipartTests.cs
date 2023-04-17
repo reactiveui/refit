@@ -159,7 +159,7 @@ namespace Refit.Tests
             }
 
             var input = typeof(IRunscopeApi);
-            var methodFixture = new RestMethodInfo(input, input.GetMethods().First(x => x.Name == "UploadStreamWithCustomBoundary"));
+            var methodFixture = new RestMethodInfoInternal(input, input.GetMethods().First(x => x.Name == "UploadStreamWithCustomBoundary"));
             Assert.Equal("-----SomeCustomBoundary", methodFixture.MultipartBoundary);
         }
 
