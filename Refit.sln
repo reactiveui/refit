@@ -10,7 +10,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.build.props = Directory.build.props
 		LICENSE = LICENSE
 		README.md = README.md
-		Refit.ruleset = Refit.ruleset
 		.github\workflows\release.yml = .github\workflows\release.yml
 		version.json = version.json
 	EndProjectSection
