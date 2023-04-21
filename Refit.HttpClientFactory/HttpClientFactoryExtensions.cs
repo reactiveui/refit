@@ -40,14 +40,18 @@ namespace Refit
         /// <typeparam name="T">Type of the Refit interface</typeparam>
         /// <param name="services">container</param>
         /// <param name="settingsAction">Optional. Action to configure refit settings.  This method is called once and only once, avoid using any scoped dependencies that maybe be disposed automatically.</param>
+        /// <param name="httpClientName">Optional. Allows users to change the HttpClient name as provided to IServiceCollection.AddHttpClient. Useful for logging scenarios.</param>
         /// <returns></returns>
-        public static IHttpClientBuilder AddRefitClient<T>(this IServiceCollection services, Func<IServiceProvider, RefitSettings?>? settingsAction) where T : class
+        public static IHttpClientBuilder AddRefitClient<T>(
+                this IServiceCollection services, 
+                Func<IServiceProvider, RefitSettings?>? settingsAction, 
+                string? httpClientName = null) where T : class
         {
             services.AddSingleton(provider => new SettingsFor<T>(settingsAction?.Invoke(provider)));
             services.AddSingleton(provider => RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings));
 
             return services
-                .AddHttpClient(UniqueName.ForType<T>())
+                .AddHttpClient(httpClientName ?? UniqueName.ForType<T>())
                 .ConfigureHttpMessageHandlerBuilder(builder =>
                 {
                     // check to see if user provided custom auth token
@@ -65,8 +69,13 @@ namespace Refit
         /// <param name="services">container</param>
         /// <param name="refitInterfaceType">Type of the Refit interface</param>
         /// <param name="settingsAction">Optional. Action to configure refit settings.  This method is called once and only once, avoid using any scoped dependencies that maybe be disposed automatically.</param>
+        /// <param name="httpClientName">Optional. Allows users to change the HttpClient name as provided to IServiceCollection.AddHttpClient. Useful for logging scenarios.</param>
         /// <returns></returns>
-        public static IHttpClientBuilder AddRefitClient(this IServiceCollection services, Type refitInterfaceType, Func<IServiceProvider, RefitSettings?>? settingsAction)
+        public static IHttpClientBuilder AddRefitClient(
+                this IServiceCollection services,
+                Type refitInterfaceType,
+                Func<IServiceProvider, RefitSettings?>? settingsAction,
+                string? httpClientName = null)
         {
             var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
             var requestBuilderType = typeof(IRequestBuilder<>).MakeGenericType(refitInterfaceType);
@@ -74,7 +83,7 @@ namespace Refit
             services.AddSingleton(requestBuilderType, provider => RequestBuilderGenericForTypeMethod.MakeGenericMethod(refitInterfaceType).Invoke(null, new object?[] { ((ISettingsFor)provider.GetRequiredService(settingsType)).Settings })!);
 
             return services
-                .AddHttpClient(UniqueName.ForType(refitInterfaceType))
+                .AddHttpClient(httpClientName ?? UniqueName.ForType(refitInterfaceType))
                 .ConfigureHttpMessageHandlerBuilder(builder =>
                 {
                     // check to see if user provided custom auth token
