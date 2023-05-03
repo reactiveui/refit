@@ -411,7 +411,14 @@ namespace Refit.Implementation
             source.Append(@$"
             var ______arguments = new object[] {{ {string.Join(", ", argList)} }};
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", new global::System.Type[] {{ {string.Join(", ", typeList)} }}{genericString} );
-            return ({methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})______func(this.Client, ______arguments);
+            try
+            {{
+                return ({methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})______func(this.Client, ______arguments);
+            }}
+            catch (global::System.Exception ex)
+            {{
+                throw ex;
+            }}
 ");
 
             WriteMethodClosing(source);

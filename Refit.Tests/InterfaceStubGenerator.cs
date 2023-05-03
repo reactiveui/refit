@@ -208,7 +208,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -216,7 +223,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -224,7 +238,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -232,7 +253,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
-            return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -240,7 +268,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -248,7 +283,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -256,7 +298,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
-            return (global::System.IObservable<string>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<string>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -264,7 +313,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -272,7 +328,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHereWithMetadata"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -280,7 +343,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserWithMetadata"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -288,7 +358,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservableWithMetadata"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -296,7 +373,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUser"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -304,7 +388,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUserWithMetadata"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -312,7 +403,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -320,7 +418,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -328,7 +433,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -336,7 +448,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
-            return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -344,7 +463,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -352,7 +478,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -360,7 +493,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
-            return (global::System.IObservable<string>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<string>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -368,7 +508,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -376,7 +523,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHereWithMetadata"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -384,7 +538,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserWithMetadata"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -392,7 +553,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservableWithMetadata"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -400,7 +568,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUser"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -408,7 +583,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUserWithMetadata"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
     }
     }
@@ -452,7 +634,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -460,7 +649,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -510,7 +706,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -518,7 +721,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -526,7 +736,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -534,7 +751,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @orgName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -542,7 +766,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -550,7 +781,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -558,7 +796,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
-            return (global::System.IObservable<string>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<string>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -566,7 +811,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -574,7 +826,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -582,7 +841,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -590,7 +856,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
-            return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -598,7 +871,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @orgName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -606,7 +886,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
-            return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -614,7 +901,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -622,7 +916,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
-            return (global::System.IObservable<string>)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.IObservable<string>)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -630,7 +931,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
     }
     }
@@ -754,7 +1062,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -762,7 +1077,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -770,7 +1092,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
 
         /// <inheritdoc />
@@ -778,7 +1107,14 @@ namespace Refit.Implementation
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", new global::System.Type[] {  } );
-            return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            try
+            {
+                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+            }
+            catch (global::System.Exception ex)
+            {
+                throw ex;
+            }
         }
     }
     }
