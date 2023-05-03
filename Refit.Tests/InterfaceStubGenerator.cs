@@ -204,13 +204,13 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
+        public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -249,13 +249,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
+        public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -264,13 +264,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
+        public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -279,13 +279,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
+        public async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -309,13 +309,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> NothingToSeeHere()
+        public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> NothingToSeeHere()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -324,13 +324,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> NothingToSeeHereWithMetadata()
+        public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> NothingToSeeHereWithMetadata()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHereWithMetadata"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -339,13 +339,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName)
+        public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserWithMetadata"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -369,13 +369,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> CreateUser(global::Refit.Tests.User @user)
+        public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> CreateUser(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUser"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -384,13 +384,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> CreateUserWithMetadata(global::Refit.Tests.User @user)
+        public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> CreateUserWithMetadata(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUserWithMetadata"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -399,13 +399,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUser(string @userName)
+        async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -444,13 +444,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
+        async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -459,13 +459,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.IGitHubApi.FindUsers(string @q)
+        async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.IGitHubApi.FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -474,13 +474,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.IGitHubApi.GetIndex()
+        async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.IGitHubApi.GetIndex()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -504,13 +504,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.NothingToSeeHere()
+        async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.NothingToSeeHere()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -519,13 +519,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.NothingToSeeHereWithMetadata()
+        async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.NothingToSeeHereWithMetadata()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHereWithMetadata"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -534,13 +534,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserWithMetadata(string @userName)
+        async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserWithMetadata"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -564,13 +564,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.CreateUser(global::Refit.Tests.User @user)
+        async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.CreateUser(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUser"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -579,13 +579,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.CreateUserWithMetadata(global::Refit.Tests.User @user)
+        async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.CreateUserWithMetadata(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUserWithMetadata"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -630,13 +630,13 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task RefitMethod()
+        public async global::System.Threading.Tasks.Task RefitMethod()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -645,13 +645,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task global::Refit.Tests.IGitHubApiDisposable.RefitMethod()
+        async global::System.Threading.Tasks.Task global::Refit.Tests.IGitHubApiDisposable.RefitMethod()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -702,13 +702,13 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
+        public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -747,13 +747,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName)
+        public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName)
         {
             var ______arguments = new object[] { @orgName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -762,13 +762,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
+        public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -777,13 +777,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
+        public async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -807,13 +807,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task NothingToSeeHere()
+        public async global::System.Threading.Tasks.Task NothingToSeeHere()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -822,13 +822,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUser(string @userName)
+        async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -867,13 +867,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.TestNested.INestedGitHubApi.GetOrgMembers(string @orgName)
+        async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.TestNested.INestedGitHubApi.GetOrgMembers(string @orgName)
         {
             var ______arguments = new object[] { @orgName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -882,13 +882,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.TestNested.INestedGitHubApi.FindUsers(string @q)
+        async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.TestNested.INestedGitHubApi.FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -897,13 +897,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.TestNested.INestedGitHubApi.GetIndex()
+        async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.TestNested.INestedGitHubApi.GetIndex()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
+                return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -927,13 +927,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task global::Refit.Tests.TestNested.INestedGitHubApi.NothingToSeeHere()
+        async global::System.Threading.Tasks.Task global::Refit.Tests.TestNested.INestedGitHubApi.NothingToSeeHere()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -1058,13 +1058,13 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task GetRoot()
+        public async global::System.Threading.Tasks.Task GetRoot()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -1073,13 +1073,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task PostRoot()
+        public async global::System.Threading.Tasks.Task PostRoot()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -1088,13 +1088,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.GetRoot()
+        async global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.GetRoot()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {
@@ -1103,13 +1103,13 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.PostRoot()
+        async global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.PostRoot()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", new global::System.Type[] {  } );
             try
             {
-                return (global::System.Threading.Tasks.Task)______func(this.Client, ______arguments);
+                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
             catch (global::System.Exception ex)
             {

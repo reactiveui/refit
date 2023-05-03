@@ -383,7 +383,15 @@ namespace Refit.Implementation
         /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
         void ProcessRefitMethod(StringBuilder source, IMethodSymbol methodSymbol, bool isTopLevel)
         {
-            WriteMethodOpening(source, methodSymbol, !isTopLevel);
+            var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var (isAsync, @return, configureAwait) = methodSymbol.ReturnType.MetadataName switch
+            {
+                "Task" => (true, "await (", ").ConfigureAwait(false)"),
+                "Task`1" or "ValueTask`1" => (true, "return await (", ").ConfigureAwait(false)"),
+                _ => (false, "return ", ""),
+            };
+
+            WriteMethodOpening(source, methodSymbol, !isTopLevel, isAsync);
 
             // Build the list of args for the array
             var argList = new List<string>();
@@ -413,7 +421,7 @@ namespace Refit.Implementation
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", new global::System.Type[] {{ {string.Join(", ", typeList)} }}{genericString} );
             try
             {{
-                return ({methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})______func(this.Client, ______arguments);
+                {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
             }}
             catch (global::System.Exception ex)
             {{
@@ -507,14 +515,15 @@ namespace Refit.Implementation
             }            
         }
 
-        void WriteMethodOpening(StringBuilder source, IMethodSymbol methodSymbol, bool isExplicitInterface)
+        void WriteMethodOpening(StringBuilder source, IMethodSymbol methodSymbol, bool isExplicitInterface, bool isAsync = false)
         {
             var visibility = !isExplicitInterface ? "public " : string.Empty;
+            var async = isAsync ? "async " : "";
 
             source.Append(@$"
 
         /// <inheritdoc />
-        {visibility}{methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} ");
+        {visibility}{async}{methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} ");
 
             if(isExplicitInterface)
             {
