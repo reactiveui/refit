@@ -204,7 +204,7 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName) 
+        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
@@ -212,7 +212,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName) 
+        public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
@@ -220,7 +220,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName) 
+        public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
@@ -228,7 +228,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken) 
+        public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
@@ -236,7 +236,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q) 
+        public global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
@@ -244,7 +244,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex() 
+        public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
@@ -252,7 +252,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.IObservable<string> GetIndexObservable() 
+        public global::System.IObservable<string> GetIndexObservable()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
@@ -260,7 +260,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> NothingToSeeHere() 
+        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> NothingToSeeHere()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
@@ -268,7 +268,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> NothingToSeeHereWithMetadata() 
+        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> NothingToSeeHereWithMetadata()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHereWithMetadata"", new global::System.Type[] {  } );
@@ -276,7 +276,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName) 
+        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserWithMetadata"", new global::System.Type[] { typeof(string) } );
@@ -284,7 +284,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserObservableWithMetadata(string @userName) 
+        public global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserObservableWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservableWithMetadata"", new global::System.Type[] { typeof(string) } );
@@ -292,7 +292,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> CreateUser(global::Refit.Tests.User @user) 
+        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> CreateUser(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUser"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
@@ -300,7 +300,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> CreateUserWithMetadata(global::Refit.Tests.User @user) 
+        public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> CreateUserWithMetadata(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUserWithMetadata"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
@@ -308,7 +308,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUser(string @userName) 
+        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
@@ -316,7 +316,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUserObservable(string @userName) 
+        global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
@@ -324,7 +324,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUserCamelCase(string @userName) 
+        global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
@@ -332,7 +332,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken) 
+        global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
@@ -340,7 +340,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.IGitHubApi.FindUsers(string @q) 
+        global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.IGitHubApi.FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
@@ -348,7 +348,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.IGitHubApi.GetIndex() 
+        global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.IGitHubApi.GetIndex()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
@@ -356,7 +356,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.IObservable<string> global::Refit.Tests.IGitHubApi.GetIndexObservable() 
+        global::System.IObservable<string> global::Refit.Tests.IGitHubApi.GetIndexObservable()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
@@ -364,7 +364,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.NothingToSeeHere() 
+        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.NothingToSeeHere()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
@@ -372,7 +372,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.NothingToSeeHereWithMetadata() 
+        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.NothingToSeeHereWithMetadata()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHereWithMetadata"", new global::System.Type[] {  } );
@@ -380,7 +380,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserWithMetadata(string @userName) 
+        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserWithMetadata"", new global::System.Type[] { typeof(string) } );
@@ -388,7 +388,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserObservableWithMetadata(string @userName) 
+        global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserObservableWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservableWithMetadata"", new global::System.Type[] { typeof(string) } );
@@ -396,7 +396,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.CreateUser(global::Refit.Tests.User @user) 
+        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.CreateUser(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUser"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
@@ -404,7 +404,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.CreateUserWithMetadata(global::Refit.Tests.User @user) 
+        global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.CreateUserWithMetadata(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUserWithMetadata"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
@@ -448,7 +448,7 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task RefitMethod() 
+        public global::System.Threading.Tasks.Task RefitMethod()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", new global::System.Type[] {  } );
@@ -456,7 +456,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task global::Refit.Tests.IGitHubApiDisposable.RefitMethod() 
+        global::System.Threading.Tasks.Task global::Refit.Tests.IGitHubApiDisposable.RefitMethod()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", new global::System.Type[] {  } );
@@ -464,7 +464,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        void global::System.IDisposable.Dispose() 
+        void global::System.IDisposable.Dispose()
         {
                 Client?.Dispose();
         }
@@ -506,7 +506,7 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName) 
+        public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
@@ -514,7 +514,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName) 
+        public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
@@ -522,7 +522,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName) 
+        public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
@@ -530,7 +530,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName) 
+        public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName)
         {
             var ______arguments = new object[] { @orgName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
@@ -538,7 +538,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q) 
+        public global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
@@ -546,7 +546,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex() 
+        public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
@@ -554,7 +554,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.IObservable<string> GetIndexObservable() 
+        public global::System.IObservable<string> GetIndexObservable()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
@@ -562,7 +562,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task NothingToSeeHere() 
+        public global::System.Threading.Tasks.Task NothingToSeeHere()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
@@ -570,7 +570,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUser(string @userName) 
+        global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
@@ -578,7 +578,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUserObservable(string @userName) 
+        global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
@@ -586,7 +586,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUserCamelCase(string @userName) 
+        global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
@@ -594,7 +594,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.TestNested.INestedGitHubApi.GetOrgMembers(string @orgName) 
+        global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.TestNested.INestedGitHubApi.GetOrgMembers(string @orgName)
         {
             var ______arguments = new object[] { @orgName };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
@@ -602,7 +602,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.TestNested.INestedGitHubApi.FindUsers(string @q) 
+        global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.TestNested.INestedGitHubApi.FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
@@ -610,7 +610,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.TestNested.INestedGitHubApi.GetIndex() 
+        global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.TestNested.INestedGitHubApi.GetIndex()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
@@ -618,7 +618,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.IObservable<string> global::Refit.Tests.TestNested.INestedGitHubApi.GetIndexObservable() 
+        global::System.IObservable<string> global::Refit.Tests.TestNested.INestedGitHubApi.GetIndexObservable()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
@@ -626,7 +626,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task global::Refit.Tests.TestNested.INestedGitHubApi.NothingToSeeHere() 
+        global::System.Threading.Tasks.Task global::Refit.Tests.TestNested.INestedGitHubApi.NothingToSeeHere()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
@@ -750,7 +750,7 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task GetRoot() 
+        public global::System.Threading.Tasks.Task GetRoot()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", new global::System.Type[] {  } );
@@ -758,7 +758,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public global::System.Threading.Tasks.Task PostRoot() 
+        public global::System.Threading.Tasks.Task PostRoot()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", new global::System.Type[] {  } );
@@ -766,7 +766,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.GetRoot() 
+        global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.GetRoot()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", new global::System.Type[] {  } );
@@ -774,7 +774,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.PostRoot() 
+        global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.PostRoot()
         {
             var ______arguments = new object[] {  };
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", new global::System.Type[] {  } );
