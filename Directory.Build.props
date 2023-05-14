@@ -13,7 +13,6 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
     <NoPackageAnalysis>true</NoPackageAnalysis>
-    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Refit.ruleset</CodeAnalysisRuleSet>
     <LangVersion>preview</LangVersion>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <!-- Net Analyzers config taken from : https://docs.microsoft.com/en-gb/visualstudio/code-quality/migrate-from-fxcop-analyzers-to-net-analyzers?view=vs-2019 -->

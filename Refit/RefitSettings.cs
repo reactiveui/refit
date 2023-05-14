@@ -27,35 +27,21 @@ namespace Refit
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
         }
 
-
-#if NET6_0_OR_GREATER
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
         /// </summary>
         /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use</param>
         /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
-        /// <param name="injectMethodInfoAsProperty">Controls injecting the <see cref="MethodInfo"/> of the method on the Refit client interface that was invoked into the HttpRequestMessage.Options (defaults to false)</param>
-#else
-        /// <summary>
-        /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
-        /// </summary>
-        /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use</param>
-        /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
-        /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
-        /// <param name="injectMethodInfoAsProperty">Controls injecting the <see cref="MethodInfo"/> of the method on the Refit client interface that was invoked into the HttpRequestMessage.Properties (defaults to false)</param>
-#endif
         public RefitSettings(
             IHttpContentSerializer contentSerializer,
             IUrlParameterFormatter? urlParameterFormatter = null,
-            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null,
-            bool injectMethodInfoAsProperty = false)
+            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null)
         {
             ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
-            InjectMethodInfoAsProperty = injectMethodInfoAsProperty;
         }
 
         /// <summary>
@@ -103,17 +89,6 @@ namespace Refit
         /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>. 
         /// </summary>
         public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
-
-#if NET6_0_OR_GREATER
-        /// <summary>
-        /// Controls injecting the <see cref="MethodInfo"/> of the method on the Refit client interface that was invoked into the HttpRequestMessage.Options (defaults to false)
-        /// </summary>
-#else
-        /// <summary>
-        /// Controls injecting the <see cref="MethodInfo"/> of the method on the Refit client interface that was invoked into the HttpRequestMessage.Properties (defaults to false)
-        /// </summary>
-#endif
-        public bool InjectMethodInfoAsProperty { get; set; }
     }
 
     /// <summary>

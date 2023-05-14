@@ -9,10 +9,20 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Threading;
 
+// Enable support for C# 9 record types
+#if NETSTANDARD2_1 || !NET6_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+{
+    internal static class IsExternalInit { }
+}
+#endif
+
 namespace Refit
 {
+    public record RestMethodInfo(string Name, Type HostingType, MethodInfo MethodInfo, string RelativePath, Type ReturnType);
+
     [DebuggerDisplay("{MethodInfo}")]
-    public class RestMethodInfo
+    internal class RestMethodInfoInternal
     {
         public string Name { get; set; }
         public Type Type { get; set; }
@@ -43,7 +53,7 @@ namespace Refit
         static readonly HttpMethod PatchMethod = new("PATCH");
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings? refitSettings = null)
+        public RestMethodInfoInternal(Type targetInterface, MethodInfo methodInfo, RefitSettings? refitSettings = null)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             RefitSettings = refitSettings ?? new RefitSettings();
@@ -127,7 +137,7 @@ namespace Refit
 
             IsApiResponse = ReturnResultType!.GetTypeInfo().IsGenericType &&
                               (ReturnResultType!.GetGenericTypeDefinition() == typeof(ApiResponse<>)
-                              || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>))
+                              || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>))
                             || ReturnResultType == typeof(IApiResponse);
         }
 
@@ -161,6 +171,8 @@ namespace Refit
 
             return headerCollectionMap;
         }
+
+        public RestMethodInfo ToRestMethodInfo() => new RestMethodInfo(Name, Type, MethodInfo, RelativePath, ReturnType);
 
         static Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
         {
