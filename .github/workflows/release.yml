@@ -13,7 +13,7 @@ jobs:
     with:
       configuration: Release
       productNamespacePrefix: "Refit"
-      useVisualStudioPreview: false
+      useVisualStudioPreview: true
       useMauiCheckDotNetTool: false
       srcFolder: "./"
       installWorkflows: false
