@@ -2120,16 +2120,57 @@ namespace Refit.Tests
             mockHttp.Expect(HttpMethod.Get, Url)
                 .Respond("application/json", "{ }");
 
-            var fixtureA = RestService.For<ITypeCollisionApiA>(Url);
+            var fixtureA = RestService.For<ITypeCollisionApiA>(Url, settings);
 
             var respA = await fixtureA.SomeARequest();
 
-            var fixtureB = RestService.For<ITypeCollisionApiB>(Url);
+            mockHttp.Expect(HttpMethod.Get, Url)
+                .Respond("application/json", "{ }");
+
+            var fixtureB = RestService.For<ITypeCollisionApiB>(Url, settings);
 
             var respB = await fixtureB.SomeBRequest();
 
             Assert.IsType<CollisionA.SomeType>(respA);
             Assert.IsType<CollisionB.SomeType>(respB);
+        }
+
+        [Fact]
+        public async Task SameTypeNameInMultipleNamespacesTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+            };
+
+            const string Url = "https://httpbin.org/get";
+
+            mockHttp.Expect(HttpMethod.Get, Url + "/")
+                .Respond("application/json", "{ }");
+
+            var fixtureA = RestService.For<INamespaceCollisionApi>(Url, settings);
+
+            var respA = await fixtureA.SomeRequest();
+
+            mockHttp.Expect(HttpMethod.Get, Url + "/")
+                .Respond("application/json", "{ }");
+
+            var fixtureB = RestService.For<CollisionA.INamespaceCollisionApi>(Url, settings);
+
+            var respB = await fixtureB.SomeRequest();
+
+            mockHttp.Expect(HttpMethod.Get, Url + "/")
+                .Respond("application/json", "{ }");
+
+            var fixtureC = RestService.For<CollisionB.INamespaceCollisionApi>(Url, settings);
+
+            var respC = await fixtureC.SomeRequest();
+
+            Assert.IsType<CollisionA.SomeType>(respA);
+            Assert.IsType<CollisionA.SomeType>(respB);
+            Assert.IsType<CollisionB.SomeType>(respC);
         }
 
 

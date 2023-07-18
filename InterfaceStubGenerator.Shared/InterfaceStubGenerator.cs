@@ -95,7 +95,7 @@ namespace Refit.Generator
             var methodSymbols = new List<IMethodSymbol>();
             foreach (var group in candidateMethods.GroupBy(m => m.SyntaxTree))
             {
-                var model = compilation.GetSemanticModel(group.Key);             
+                var model = compilation.GetSemanticModel(group.Key);
                 foreach (var method in group)
                 {
                     // Get the symbol being declared by the method
@@ -148,7 +148,7 @@ namespace Refit.Generator
 
             // Bail out if there aren't any interfaces to generate code for. This may be the case with transitives
             if(!interfaces.Any()) return;
-           
+
 
             var supportsNullable = options.LanguageVersion >= LanguageVersion.CSharp8;
 
@@ -222,16 +222,17 @@ namespace Refit.Implementation
                                                    httpMethodBaseAttributeSymbol,
                                                    supportsNullable,
                                                    interfaceToNullableEnabledMap[group.Key]);
-             
+
                 var keyName = group.Key.Name;
-                if(keyCount.TryGetValue(keyName, out var value))
+                int value;
+                while(keyCount.TryGetValue(keyName, out value))
                 {
                     keyName = $"{keyName}{++value}";
                 }
                 keyCount[keyName] = value;
 
                 addSource(context, $"{keyName}.g.cs", SourceText.From(classSource, Encoding.UTF8));
-            }           
+            }
 
         }
 
@@ -315,7 +316,7 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }}
-    
+
 ");
             // Get any other methods on the refit interfaces. We'll need to generate something for them and warn
             var nonRefitMethods = interfaceSymbol.GetMembers().OfType<IMethodSymbol>().Except(refitMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToList();
@@ -335,7 +336,7 @@ namespace Refit.Implementation
             var derivedRefitMethods = derivedMethods.Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol)).ToList();
             var derivedNonRefitMethods = derivedMethods.Except(derivedMethods, SymbolEqualityComparer.Default).Cast<IMethodSymbol>().ToList();
 
-            // Handle Refit Methods            
+            // Handle Refit Methods
             foreach(var method in refitMethods)
             {
                 ProcessRefitMethod(source, method, true);
@@ -363,7 +364,7 @@ namespace Refit.Implementation
             if(disposeMethod != null)
             {
                 ProcessDisposableMethod(source, disposeMethod);
-            }          
+            }
 
             source.Append(@"
     }
@@ -392,21 +393,21 @@ namespace Refit.Implementation
                 argList.Add($"@{param.MetadataName}");
             }
 
-            // List of types. 
+            // List of types.
             var typeList = new List<string>();
             foreach(var param in methodSymbol.Parameters)
             {
-                typeList.Add($"typeof({param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})");                
+                typeList.Add($"typeof({param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})");
             }
 
             // List of generic arguments
-            var genericList = new List<string>();            
+            var genericList = new List<string>();
             foreach(var typeParam in methodSymbol.TypeParameters)
             {
                 genericList.Add($"typeof({typeParam.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})");
             }
 
-            var genericString = genericList.Count > 0 ? $", new global::System.Type[] {{ {string.Join(", ", genericList)} }}" : string.Empty;            
+            var genericString = genericList.Count > 0 ? $", new global::System.Type[] {{ {string.Join(", ", genericList)} }}" : string.Empty;
 
             source.Append(@$"
             var ______arguments = new object[] {{ {string.Join(", ", argList)} }};
@@ -468,7 +469,7 @@ namespace Refit.Implementation
                     parameters.Add(typeConstraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
                 }
             }
-            
+
             // new constraint has to be last
             if (typeParameter.HasConstructorConstraint && !isOverrideOrExplicitImplementation)
             {
@@ -497,7 +498,7 @@ namespace Refit.Implementation
             {
                 var diagnostic = Diagnostic.Create(InvalidRefitMember, location, methodSymbol.ContainingType.Name, methodSymbol.Name);
                 reportDiagnostic(context, diagnostic);
-            }            
+            }
         }
 
         void WriteMethodOpening(StringBuilder source, IMethodSymbol methodSymbol, bool isExplicitInterface)
@@ -513,7 +514,7 @@ namespace Refit.Implementation
             {
                 source.Append(@$"{methodSymbol.ContainingType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}.");
             }
-            source.Append(@$"{methodSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(");            
+            source.Append(@$"{methodSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}(");
 
             if(methodSymbol.Parameters.Length > 0)
             {
@@ -527,7 +528,7 @@ namespace Refit.Implementation
 
                 source.Append(string.Join(", ", list));
             }
-            
+
            source.Append(@$") {GenerateConstraints(methodSymbol.TypeParameters, isExplicitInterface)}
         {{");
         }
@@ -595,7 +596,7 @@ namespace Refit.Implementation
 
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {
-                // We're looking for methods with an attribute that are in an interfaces 
+                // We're looking for methods with an attribute that are in an interfaces
                 if(syntaxNode is MethodDeclarationSyntax methodDeclarationSyntax &&
                    methodDeclarationSyntax.Parent is InterfaceDeclarationSyntax &&
                    methodDeclarationSyntax.AttributeLists.Count > 0)
