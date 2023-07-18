@@ -1,0 +1,24 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+    
+env:
+  productNamespacePrefix: "Refit"
+
+jobs:
+  release:
+    uses: reactiveui/actions-common/.github/workflows/workflow-common-release.yml@main
+    with:
+      configuration: Release
+      productNamespacePrefix: "Refit"
+      useVisualStudioPreview: false
+      useMauiCheckDotNetTool: false
+      srcFolder: "./"
+      installWorkflows: false
+    secrets:
+      SIGN_CLIENT_USER_ID: ${{ secrets.SIGN_CLIENT_USER_ID }}
+      SIGN_CLIENT_SECRET: ${{ secrets.SIGN_CLIENT_SECRET }}
+      SIGN_CLIENT_CONFIG: ${{ secrets.SIGN_CLIENT_CONFIG }}
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

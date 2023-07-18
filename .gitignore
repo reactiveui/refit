@@ -92,3 +92,4 @@ Refit-Tests/test-results
 *.binlog
 /InterfaceStubGenerator.Core/Properties/launchSettings.json
 *.svclog
+**/BenchmarkDotNet.Artifacts

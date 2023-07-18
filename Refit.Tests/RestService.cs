@@ -1071,8 +1071,9 @@ namespace Refit.Tests
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
 
+            var result = await Assert.ThrowsAsync<TaskCanceledException>(async () => await fixture.GetOrgMembers("github", cts.Token));
 
-            await Assert.ThrowsAsync<TaskCanceledException>(async () => await fixture.GetOrgMembers("github", cts.Token));
+            AssertFirstLineContains(nameof(IGitHubApi.GetOrgMembers), result.StackTrace);
         }
 
 
@@ -1532,6 +1533,7 @@ namespace Refit.Tests
 
             var result = await Assert.ThrowsAsync<ApiException>(async () => await fixture.CreateUser(new User { Name = "foo" }));
 
+            AssertFirstLineContains(nameof(IGitHubApi.CreateUser), result.StackTrace);
 
             var errors = await result.GetContentAsAsync<ErrorResponse>();
 
@@ -1647,7 +1649,9 @@ namespace Refit.Tests
             var fixture = RestService.For<IGitHubApi>(client);
 
             // We should get an InvalidOperationException if we call a method without a base address set
-            await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.GetUser(null));
+            var result = await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.GetUser(null));
+
+            AssertFirstLineContains(nameof(IGitHubApi.GetUser), result.StackTrace);
         }
 
         [Fact]
@@ -2205,6 +2209,13 @@ namespace Refit.Tests
             }
 
             return stream;
+        }
+
+        public void AssertFirstLineContains(string expectedSubstring, string actualString)
+        {
+            var eolIndex = actualString.IndexOf('\n');
+            var firstLine = eolIndex < 0 ? actualString : actualString.Substring(0, eolIndex);
+            Assert.Contains(expectedSubstring, firstLine);
         }
     }
 }

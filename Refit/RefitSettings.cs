@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -46,12 +47,7 @@ namespace Refit
         /// <summary>
         /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
         /// </summary>
-        public Func<Task<string>>? AuthorizationHeaderValueGetter { get; set; }
-
-        /// <summary>
-        /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
-        /// </summary>
-        public Func<HttpRequestMessage, Task<string>>? AuthorizationHeaderValueWithParamGetter { get; set; }
+        public Func<HttpRequestMessage, CancellationToken, Task<string>>? AuthorizationHeaderValueGetter { get; set; }
 
         /// <summary>
         /// Supply a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.
@@ -88,6 +84,11 @@ namespace Refit
         /// Sets the default behavior when sending a request's body content. (defaults to false, request body is not streamed to the server)
         /// </summary>
         public bool Buffered { get; set; } = false;
+
+        /// <summary>
+        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>. 
+        /// </summary>
+        public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
     }
 
     /// <summary>

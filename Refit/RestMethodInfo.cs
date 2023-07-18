@@ -9,10 +9,20 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Threading;
 
+// Enable support for C# 9 record types
+#if NETSTANDARD2_1 || !NET6_0_OR_GREATER
+namespace System.Runtime.CompilerServices
+{
+    internal static class IsExternalInit { }
+}
+#endif
+
 namespace Refit
 {
+    public record RestMethodInfo(string Name, Type HostingType, MethodInfo MethodInfo, string RelativePath, Type ReturnType);
+
     [DebuggerDisplay("{MethodInfo}")]
-    public class RestMethodInfo
+    internal class RestMethodInfoInternal
     {
         public string Name { get; set; }
         public Type Type { get; set; }
@@ -43,7 +53,7 @@ namespace Refit
         static readonly HttpMethod PatchMethod = new("PATCH");
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public RestMethodInfo(Type targetInterface, MethodInfo methodInfo, RefitSettings? refitSettings = null)
+        public RestMethodInfoInternal(Type targetInterface, MethodInfo methodInfo, RefitSettings? refitSettings = null)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             RefitSettings = refitSettings ?? new RefitSettings();
@@ -127,7 +137,7 @@ namespace Refit
 
             IsApiResponse = ReturnResultType!.GetTypeInfo().IsGenericType &&
                               (ReturnResultType!.GetGenericTypeDefinition() == typeof(ApiResponse<>)
-                              || ReturnResultType.GetGenericTypeDefinition()  == typeof(IApiResponse<>))
+                              || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>))
                             || ReturnResultType == typeof(IApiResponse);
         }
 
@@ -161,6 +171,8 @@ namespace Refit
 
             return headerCollectionMap;
         }
+
+        public RestMethodInfo ToRestMethodInfo() => new RestMethodInfo(Name, Type, MethodInfo, RelativePath, ReturnType);
 
         static Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
         {
@@ -240,7 +252,7 @@ namespace Refit
                         }
                         var parameterType = isRoundTripping ? ParameterType.RoundTripping : ParameterType.Normal;
                         var restMethodParameterInfo = new RestMethodParameterInfo(name, paramValidationDict[name]) { Type = parameterType };
-#if NETSTANDARD2_1 || NET5_0_OR_GREATER
+#if NETSTANDARD2_1 || NET6_0_OR_GREATER
                         ret.TryAdd(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
 #else
                         var idx = parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo);
@@ -269,7 +281,7 @@ namespace Refit
                         {
                             var restMethodParameterInfo = new RestMethodParameterInfo(true, property.Item1);
                             restMethodParameterInfo.ParameterProperties.Add(new RestMethodParameterProperty(name, property.Item2));
-#if NETSTANDARD2_1 || NET5_0_OR_GREATER
+#if NETSTANDARD2_1 || NET6_0_OR_GREATER
                             ret.TryAdd(parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo), restMethodParameterInfo);
 #else
                             // Do the contains check
@@ -463,8 +475,9 @@ namespace Refit
         void DetermineReturnTypeInfo(MethodInfo methodInfo)
         {
             var returnType = methodInfo.ReturnType;
-            if (returnType.IsGenericType && (methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(Task<>)
-                                             || methodInfo.ReturnType.GetGenericTypeDefinition() != typeof(IObservable<>)))
+            if (returnType.IsGenericType && (methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)
+                                             || methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(ValueTask<>)
+                                             || methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(IObservable<>)))
             {
                 ReturnType = returnType;
                 ReturnResultType = returnType.GetGenericArguments()[0];
@@ -488,7 +501,7 @@ namespace Refit
                 DeserializedResultType = typeof(void);
             }
             else
-                throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or IObservable<T>");
+                throw new ArgumentException($"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>");
         }
 
         void DetermineIfResponseMustBeDisposed()

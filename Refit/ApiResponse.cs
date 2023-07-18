@@ -54,7 +54,7 @@ namespace Refit
         
         public HttpContentHeaders? ContentHeaders => response.Content?.Headers;
         
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
@@ -86,7 +86,7 @@ namespace Refit
         {
             if (!IsSuccessStatusCode)
             {
-                var exception = await ApiException.Create(response.RequestMessage!, response.RequestMessage!.Method, response, Settings).ConfigureAwait(false);
+                var exception = Error ?? await ApiException.Create(response.RequestMessage!, response.RequestMessage!.Method, response, Settings).ConfigureAwait(false);
 
                 Dispose();
 
@@ -134,6 +134,10 @@ namespace Refit
         /// <summary>
         /// Indicates whether the request was successful.
         /// </summary>
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
         bool IsSuccessStatusCode { get; }
 
         /// <summary>

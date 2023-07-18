@@ -29,8 +29,8 @@ namespace Refit
             HttpMethod.Get,
             HttpMethod.Head
         };
-        readonly Dictionary<string, List<RestMethodInfo>> interfaceHttpMethods;
-        readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo> interfaceGenericHttpMethods;
+        readonly Dictionary<string, List<RestMethodInfoInternal>> interfaceHttpMethods;
+        readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfoInternal> interfaceGenericHttpMethods;
         readonly IHttpContentSerializer serializer;
         readonly RefitSettings settings;
         public Type TargetType { get; }
@@ -41,7 +41,7 @@ namespace Refit
 
             settings = refitSettings ?? new RefitSettings();
             serializer = settings.ContentSerializer;
-            interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfo>();
+            interfaceGenericHttpMethods = new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfoInternal>();
 
             if (refitInterfaceType == null || !refitInterfaceType.GetTypeInfo().IsInterface)
             {
@@ -50,7 +50,7 @@ namespace Refit
 
             TargetType = refitInterfaceType;
 
-            var dict = new Dictionary<string, List<RestMethodInfo>>();
+            var dict = new Dictionary<string, List<RestMethodInfoInternal>>();
 
             AddInterfaceHttpMethods(refitInterfaceType, dict);
             foreach (var inheritedInterface in targetInterfaceInheritedInterfaces)
@@ -61,7 +61,7 @@ namespace Refit
             interfaceHttpMethods = dict;
         }
 
-        void AddInterfaceHttpMethods(Type interfaceType, Dictionary<string, List<RestMethodInfo>> methods)
+        void AddInterfaceHttpMethods(Type interfaceType, Dictionary<string, List<RestMethodInfoInternal>> methods)
         {
             // Consider public (the implicit visibility) and non-public abstract members of the interfaceType
             var methodInfos = interfaceType
@@ -76,16 +76,16 @@ namespace Refit
                 {
                     if (!methods.ContainsKey(methodInfo.Name))
                     {
-                        methods.Add(methodInfo.Name, new List<RestMethodInfo>());
+                        methods.Add(methodInfo.Name, new List<RestMethodInfoInternal>());
                     }
 
-                    var restinfo = new RestMethodInfo(interfaceType, methodInfo, settings);
+                    var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, settings);
                     methods[methodInfo.Name].Add(restinfo);
                 }
             }
         }
 
-        RestMethodInfo FindMatchingRestMethodInfo(string key, Type[]? parameterTypes, Type[]? genericArgumentTypes)
+        RestMethodInfoInternal FindMatchingRestMethodInfo(string key, Type[]? parameterTypes, Type[]? genericArgumentTypes)
         {
             if (interfaceHttpMethods.TryGetValue(key, out var httpMethods))
             {
@@ -134,12 +134,12 @@ namespace Refit
 
         }
 
-        RestMethodInfo CloseGenericMethodIfNeeded(RestMethodInfo restMethodInfo, Type[]? genericArgumentTypes)
+        RestMethodInfoInternal CloseGenericMethodIfNeeded(RestMethodInfoInternal restMethodInfo, Type[]? genericArgumentTypes)
         {
             if (genericArgumentTypes != null)
             {
                 return interfaceGenericHttpMethods.GetOrAdd(new CloseGenericMethodKey(restMethodInfo.MethodInfo, genericArgumentTypes),
-                    _ => new RestMethodInfo(restMethodInfo.Type, restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes), restMethodInfo.RefitSettings));
+                    _ => new RestMethodInfoInternal(restMethodInfo.Type, restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes), restMethodInfo.RefitSettings));
             }
             return restMethodInfo;
         }
@@ -234,7 +234,7 @@ namespace Refit
             throw new ArgumentException($"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, Byte array and anything that's JSON serializable", nameof(itemValue), e);
         }
 
-        Func<HttpClient, CancellationToken, object[], Task<T?>> BuildCancellableTaskFuncForMethod<T, TBody>(RestMethodInfo restMethod)
+        Func<HttpClient, CancellationToken, object[], Task<T?>> BuildCancellableTaskFuncForMethod<T, TBody>(RestMethodInfoInternal restMethod)
         {
             return async (client, ct, paramList) =>
             {
@@ -393,7 +393,7 @@ namespace Refit
                 }
 
                 // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
-                if (!(obj is string) && obj is IEnumerable ienu && !(obj is IDictionary))
+                if (obj is not string && obj is IEnumerable ienu && obj is not IDictionary)
                 {
                     foreach (var value in ParseEnumerableQueryParameterValue(ienu, propertyInfo, propertyInfo.PropertyType, queryAttribute))
                     {
@@ -466,7 +466,7 @@ namespace Refit
             return kvps;
         }
 
-        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfo restMethod, string basePath, bool paramsContainsCancellationToken)
+        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(RestMethodInfoInternal restMethod, string basePath, bool paramsContainsCancellationToken)
         {
             return paramList =>
             {
@@ -724,9 +724,22 @@ namespace Refit
                     }
                 }
 
+                // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
+                if (this.settings.HttpRequestMessageOptions != null)
+                {
+                    foreach(var p in this.settings.HttpRequestMessageOptions)
+                    {
+#if NET6_0_OR_GREATER
+                        ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+#else
+                        ret.Properties.Add(p);
+#endif
+                    }
+                }
+
                 foreach (var property in propertiesToAdd)
                 {
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
                     ret.Options.Set(new HttpRequestOptionsKey<object?>(property.Key), property.Value);
 #else
                     ret.Properties[property.Key] = property.Value;
@@ -734,13 +747,13 @@ namespace Refit
                 }
 
                 // Always add the top-level type of the interface to the properties
-#if NET5_0_OR_GREATER
+#if NET6_0_OR_GREATER
                 ret.Options.Set(new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType), TargetType);
+                ret.Options.Set(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), restMethod.ToRestMethodInfo());
 #else
                 ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
-#endif
-
-                ;
+                ret.Properties[HttpRequestMessageOptions.RestMethodInfo] = restMethod.ToRestMethodInfo();
+#endif                
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
@@ -774,7 +787,7 @@ namespace Refit
 
         IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(object? param, ParameterInfo parameterInfo, string queryPath, QueryAttribute queryAttribute)
         {
-            if (!(param is string) && param is IEnumerable paramValues)
+            if (param is not string && param is IEnumerable paramValues)
             {
                 foreach (var value in ParseEnumerableQueryParameterValue(paramValues, parameterInfo, parameterInfo.ParameterType, queryAttribute))
                 {
@@ -820,7 +833,7 @@ namespace Refit
             }
         }
 
-        Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(RestMethodInfo restMethod)
+        Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(RestMethodInfoInternal restMethod)
         {
             var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
@@ -842,7 +855,7 @@ namespace Refit
             };
         }
 
-        Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(RestMethodInfo restMethod)
+        Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(RestMethodInfoInternal restMethod)
         {
             var ret = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
@@ -857,7 +870,7 @@ namespace Refit
             };
         }
 
-        Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(RestMethodInfo restMethod)
+        Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(RestMethodInfoInternal restMethod)
         {
             return async (client, paramList) =>
             {
@@ -889,7 +902,7 @@ namespace Refit
             };
         }
 
-        private static bool IsBodyBuffered(RestMethodInfo restMethod, HttpRequestMessage? request)
+        private static bool IsBodyBuffered(RestMethodInfoInternal restMethod, HttpRequestMessage? request)
         {
             return (restMethod.BodyParameterInfo?.Item2 ?? false) && (request?.Content != null);
         }

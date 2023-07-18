@@ -73,7 +73,7 @@ namespace Refit
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
         public static object For(Type refitInterfaceType, HttpClient client, IRequestBuilder builder)
         {
-            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType(refitInterfaceType));
+            var generatedType = TypeMapping.GetOrAdd(refitInterfaceType, GetGeneratedType);
 
             return Activator.CreateInstance(generatedType, client, builder)!;
         }
@@ -110,7 +110,7 @@ namespace Refit
         public static object For(Type refitInterfaceType, string hostUrl, RefitSettings? settings)
         {
             var client = CreateHttpClient(hostUrl, settings);
-            
+
             return For(refitInterfaceType, client, settings);
         }
 
@@ -120,7 +120,7 @@ namespace Refit
         /// <param name="refitInterfaceType">Interface to create the implementation for.</param>
         /// <param name="hostUrl">Base address the implementation will use.</param>
         /// <returns>An instance that implements <paramref name="refitInterfaceType"/>.</returns>
-        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);             
+        public static object For(Type refitInterfaceType, string hostUrl) => For(refitInterfaceType, hostUrl, null);
 
         /// <summary>
         /// Create an <see cref="HttpClient"/> with <paramref name="hostUrl"/> as the base address.
@@ -150,10 +150,6 @@ namespace Refit
                 if (settings.AuthorizationHeaderValueGetter != null)
                 {
                     innerHandler = new AuthenticatedHttpClientHandler(settings.AuthorizationHeaderValueGetter, innerHandler);
-                }
-                else if (settings.AuthorizationHeaderValueWithParamGetter != null)
-                {
-                    innerHandler = new AuthenticatedParameterizedHttpClientHandler(settings.AuthorizationHeaderValueWithParamGetter, innerHandler);
                 }
             }
 

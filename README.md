@@ -2,14 +2,11 @@
 
 ## Refit: The automatic type-safe REST library for .NET Core, Xamarin and .NET
 
-[![Build Status](https://dev.azure.com/dotnet/ReactiveUI/_apis/build/status/Refit-CI?branchName=master)](https://dev.azure.com/dotnet/ReactiveUI/_build/latest?definitionId=17)
+[![Build](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml/badge.svg)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml) [![codecov](https://codecov.io/github/reactiveui/refit/branch/main/graph/badge.svg?token=2guEgHsDU2)](https://codecov.io/github/reactiveui/refit)
 
 ||Refit|Refit.HttpClientFactory|Refit.Newtonsoft.Json|
 |-|-|-|-|
 |*NuGet*|[![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/)|[![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/)|[![NuGet](https://img.shields.io/nuget/v/Refit.Newtonsoft.Json.svg)](https://www.nuget.org/packages/Refit.Newtonsoft.Json/)|
-|*Azure<br />Artifacts*|[![Refit package in Refit feed in Azure Artifacts](https://azpkgsshield.azurevoodoo.net/dotnet/ReactiveUI/Refit/Refit)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=2f65cb3b-df09-4050-a84e-b868ed95fd28&preferRelease=true)|[![Refit.HttpClientFactory package in Refit feed in Azure Artifacts](https://azpkgsshield.azurevoodoo.net/dotnet/ReactiveUI/Refit/Refit.HttpClientFactory)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=d87934cb-2f7b-44b7-83b8-3872ac965ef2&preferRelease=true)|[![Refit.Newtonsoft.Json package in Refit feed in Azure Artifacts](https://azpkgsshield.azurevoodoo.net/dotnet/ReactiveUI/Refit/Refit.Newtonsoft.Json)](https://dev.azure.com/dotnet/ReactiveUI/_packaging?_a=package&feed=6368ad76-9653-4c2f-a6c6-da8c790ae826&package=d87934cb-2f7b-44b7-83b8-3872ac965ef2&preferRelease=true)|
-
-CI Feed: `https://pkgs.dev.azure.com/dotnet/ReactiveUI/_packaging/Refit/nuget/v3/index.json`
 
 Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
@@ -60,6 +57,7 @@ services
 * [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
   * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
   * [Target Interface type](#target-interface-type)
+  * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -67,6 +65,7 @@ services
   * [Headers inheritance](#headers-inheritance)
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
+* [Providing a custom HttpClient](#providing-a-custom-httpclient)
 * [Handling exceptions](#handling-exceptions)
   * [When returning Task&lt;IApiResponse&gt;, Task&lt;IApiResponse&lt;T&gt;&gt;, or Task&lt;ApiResponse&lt;T&gt;&gt;](#when-returning-taskiapiresponse-taskiapiresponset-or-taskapiresponset)
   * [When returning Task&lt;T&gt;](#when-returning-taskt)
@@ -180,7 +179,7 @@ Search("admin/products");
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
 This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to Twitter's hybrid API that insists on non-GET requests with querystring parameters.
-Use the `Query` attribute the change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
+Use the `Query` attribute to change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
 public class MyQueryParams
@@ -574,7 +573,7 @@ var user = await GetUser("octocat", headers);
 Most APIs need some sort of Authentication. The most common is OAuth Bearer authentication. A header is added to each request of the form: `Authorization: Bearer <token>`. Refit makes it easy to insert your logic to get the token however your app needs, so you don't have to pass a token into each method.
 
 1. Add `[Headers("Authorization: Bearer")]` to the interface or methods which need the token.
-2. Set either `AuthorizationHeaderValueGetter` or `AuthorizationHeaderValueWithParamGetter` in the `RefitSettings` instance. The difference is that the latter one passes the `HttpRequestMessage` into the function in case you need to take action based on the specific request. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
+2. Set `AuthorizationHeaderValueGetter` in the `RefitSettings` instance. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
 
 #### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
 Although we make provisions for adding dynamic headers at runtime directly in Refit,
@@ -806,10 +805,10 @@ Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and R
 #### Support for Polly and Polly.Context
 
 Because Refit supports `HttpClientFactory` it is possible to configure Polly policies on your HttpClient.
-If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PollyExecutionContext")] Polly.Context context`
-as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PollyExecutionContext` and is of type `Polly.Context`
+If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PolicyExecutionContext")] Polly.Context context`
+as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PolicyExecutionContext` and is of type `Polly.Context`. It's only recommended to pass the `Polly.Context` this way if your use case requires that the `Polly.Context` be initialized with dynamic content only known at runtime. If your `Polly.Context` only requires the same content every time (e.g an `ILogger` that you want to use to log from inside your policies) a cleaner approach is to inject the `Polly.Context` via a `DelegatingHandler` as described in [#801](https://github.com/reactiveui/refit/issues/801#issuecomment-1137318526)
 
-#### Target Interface Type
+#### Target Interface Type and method info
 
 There may be times when you want to know what the target interface type is of the Refit instance. An example is where you
 have a derived interface that implements a common base like this:
@@ -855,7 +854,33 @@ class RequestPropertyHandler : DelegatingHandler
 ```
 [//]: # ({% endraw %})
 
-Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
+The full method information (`RestMethodInfo`) is also always available in the request options. The `RestMethodInfo` contains more information about the method being called such as the full `MethodInfo` when using reflection is needed:
+
+[//]: # ({% raw %})
+```csharp
+class RequestPropertyHandler : DelegatingHandler
+{
+    public RequestPropertyHandler(HttpMessageHandler innerHandler = null) : base(innerHandler ?? new HttpClientHandler()) {}
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        // Get the method info
+        if (request.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out RestMethodInfo restMethodInfo))
+        {
+            var builder = new UriBuilder(request.RequestUri);
+            // Alter the Path in some way based on the method info or an attribute on it
+            builder.Path = $"/{restMethodInfo.MethodInfo.Name}{builder.Path}";
+            // Set the new Uri on the outgoing message
+            request.RequestUri = builder.Uri;
+        }
+
+        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+    }
+}
+```
+[//]: # ({% endraw %})
+
+Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOptions.InterfaceTypeKey` and `HttpRequestMessageOptions.RestMethodInfoKey` to respectively access the interface type and REST method info from the options.
 
 ### Multipart uploads
 
@@ -1153,6 +1178,47 @@ public class HomeController : Controller
         return View(thing);
     }
 }
+```
+
+### Providing a custom HttpClient
+
+You can supply a custom `HttpClient` instance by simply passing it as a parameter to the `RestService.For<T>` method:
+
+```csharp
+RestService.For<ISomeApi>(new HttpClient()
+{
+    BaseAddress = new Uri("https://www.someapi.com/api/")
+});
+```
+
+However, when supplying a custom `HttpClient` instance the following `RefitSettings` properties will not work:
+
+* `AuthorizationHeaderValueGetter`
+* `HttpMessageHandlerFactory`
+
+If you still want to be able to configure the `HtttpClient` instance that `Refit` provides while still making use of the above settings, simply expose the `HttpClient` on the API interface:
+
+```csharp
+interface ISomeApi
+{
+    // This will automagically be populated by Refit if the property exists
+    HttpClient Client { get; }
+
+    [Headers("Authorization: Bearer")]
+    [Get("/endpoint")]
+    Task<string> SomeApiEndpoint();
+}
+```
+
+Then, after creating the REST service, you can set any `HttpClient` property you want, e.g. `Timeout`:
+
+```csharp
+SomeApi = RestService.For<ISomeApi>("https://www.someapi.com/api/", new RefitSettings()
+{
+    AuthorizationHeaderValueGetter = (rq, ct) => GetTokenAsync()
+});
+
+SomeApi.Client.Timeout = timeout;
 ```
 
 ### Handling exceptions

@@ -384,7 +384,15 @@ namespace Refit.Implementation
         /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
         void ProcessRefitMethod(StringBuilder source, IMethodSymbol methodSymbol, bool isTopLevel)
         {
-            WriteMethodOpening(source, methodSymbol, !isTopLevel);
+            var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var (isAsync, @return, configureAwait) = methodSymbol.ReturnType.MetadataName switch
+            {
+                "Task" => (true, "await (", ").ConfigureAwait(false)"),
+                "Task`1" or "ValueTask`1" => (true, "return await (", ").ConfigureAwait(false)"),
+                _ => (false, "return ", ""),
+            };
+
+            WriteMethodOpening(source, methodSymbol, !isTopLevel, isAsync);
 
             // Build the list of args for the array
             var argList = new List<string>();
@@ -412,7 +420,14 @@ namespace Refit.Implementation
             source.Append(@$"
             var ______arguments = new object[] {{ {string.Join(", ", argList)} }};
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", new global::System.Type[] {{ {string.Join(", ", typeList)} }}{genericString} );
-            return ({methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})______func(this.Client, ______arguments);
+            try
+            {{
+                {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
+            }}
+            catch (global::System.Exception ex)
+            {{
+                throw ex;
+            }}
 ");
 
             WriteMethodClosing(source);
@@ -443,7 +458,7 @@ namespace Refit.Implementation
 
         void WriteConstraitsForTypeParameter(StringBuilder source, ITypeParameterSymbol typeParameter, bool isOverrideOrExplicitImplementation)
         {
-            // Explicit interface implementations and ovverrides can only have class or struct constraints
+            // Explicit interface implementations and overrides can only have class or struct constraints
 
             var parameters = new List<string>();
             if(typeParameter.HasReferenceTypeConstraint)
@@ -501,14 +516,15 @@ namespace Refit.Implementation
             }
         }
 
-        void WriteMethodOpening(StringBuilder source, IMethodSymbol methodSymbol, bool isExplicitInterface)
+        void WriteMethodOpening(StringBuilder source, IMethodSymbol methodSymbol, bool isExplicitInterface, bool isAsync = false)
         {
             var visibility = !isExplicitInterface ? "public " : string.Empty;
+            var async = isAsync ? "async " : "";
 
             source.Append(@$"
 
         /// <inheritdoc />
-        {visibility}{methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} ");
+        {visibility}{async}{methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)} ");
 
             if(isExplicitInterface)
             {
