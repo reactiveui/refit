@@ -219,7 +219,30 @@ GroupListWithAttribute(4, params)
 >>> "/group/4/users?search.order=desc&search.Limit=10&search.Kind=bar"
 ```
 
-A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no intellisense and/or type safety.
+Also you can use `JsonPropertyName`.
+```csharp
+public class MyQueryParams
+{
+    [JsonPropertyName("order")]
+    public string SortOrder { get; set; }
+
+    public int Limit { get; set; }
+
+    public KindOptions Kind { get; set; }
+}
+
+[Get("/group/{id}/users")]
+Task<List<User>> GroupList([AliasAs("id")] int groupId, MyQueryParams params);
+
+params.SortOrder = "desc";
+params.Limit = 10;
+params.Kind = KindOptions.Bar;
+
+GroupList(4, params)
+>>> "/group/4/users?order=desc&Limit=10&Kind=bar"
+```
+
+A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs`, `JsonPropertyName` attributes and of course no intellisense and/or type safety.
 
 You can also specify querystring parameters with [Query] and have them flattened in non-GET requests, similar to:
 ```csharp

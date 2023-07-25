@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -250,7 +251,7 @@ namespace Refit.Tests
 
         [Get("/api/{id}")]
         Task IEnumerableThrowingError([Query(CollectionFormat.Multi)] IEnumerable<string> values);
-        
+
         [Get("/foo")]
         List<string> InvalidGenericReturnType();
     }
@@ -263,6 +264,13 @@ namespace Refit.Tests
         public string TestAlias1 { get; set; }
 
         public string TestAlias2 { get; set; }
+
+        [JsonPropertyName("json-property")]
+        public string TestJsonPropertyName { get; set; }
+
+        [AliasAs("test-alias")]
+        [JsonPropertyName("test-json-property")]
+        public string TestAliAsWithJsonProperty { get; set; }
 
         public IEnumerable<int> TestCollection { get; set; }
 
@@ -367,7 +375,7 @@ namespace Refit.Tests
             var param = new ComplexQueryObject
             {
                 TestAlias1 = "one",
-                TestAlias2 = "two"
+                TestAlias2 = "two",
             };
 
             var output = factory(new object[] { param });
@@ -375,6 +383,48 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/foo?test-query-alias=one&TestAlias2=two", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameterAndJsonPropertyNameHasCorrectQuerystring()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                TestAlias1 = "one",
+                TestAlias2 = "two",
+                TestJsonPropertyName = "json"
+            };
+
+            var output = factory(new object[] { param });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?test-query-alias=one&TestAlias2=two&json-property=json", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameterAndAliasAndJsonPropertyNameHasCorrectQuerystring()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.PostWithComplexTypeQuery));
+
+            var param = new ComplexQueryObject
+            {
+                TestAlias1 = "one",
+                TestAlias2 = "two",
+                TestAliAsWithJsonProperty = "test-alias-value"
+            };
+
+            var output = factory(new object[] { param });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?test-query-alias=one&TestAlias2=two&test-alias=test-alias-value", uri.PathAndQuery);
         }
 
         [Fact]
@@ -513,7 +563,7 @@ namespace Refit.Tests
             Assert.Empty(fixture.QueryParameterMap);
             Assert.Null(fixture.BodyParameterInfo);
         }
-        
+
         [Fact]
         public void ParameterMappingWithTheSameIdInAFewPlaces()
         {
@@ -1148,7 +1198,7 @@ namespace Refit.Tests
             Assert.Single(fixture.HeaderParameterMap);
             Assert.Single(fixture.PropertyParameterMap);
         }
-        
+
         [Fact]
         public void GenericReturnTypeIsNotTaskOrObservableShouldThrow()
         {
@@ -2161,7 +2211,7 @@ namespace Refit.Tests
             Assert.IsType<string>(resultValueProp1);
             Assert.Equal(valueProp1, (string)resultValueProp1);
 
-            Assert.True(output.Properties.TryGetValue(nameProp2, out var resultValueProp2));            
+            Assert.True(output.Properties.TryGetValue(nameProp2, out var resultValueProp2));
             Assert.IsType<List<string>>(resultValueProp2);
             Assert.Equal(valueProp2, (List<string>)resultValueProp2);
 #endif

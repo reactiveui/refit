@@ -378,12 +378,8 @@ namespace Refit
                     }
                 }
 
-                var key = propertyInfo.Name;
-
-                var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
-                if (aliasAttribute != null)
-                    key = aliasAttribute.Name;
-
+                var key = propertyInfo.GetCustomAttribute<AliasAsAttribute>()?.Name ??
+                          serializer.GetFieldNameForProperty(propertyInfo) ?? propertyInfo.Name;
 
                 // Look to see if the property has a Query attribute, and if so, format it accordingly
                 var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
@@ -753,7 +749,7 @@ namespace Refit
 #else
                 ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
                 ret.Properties[HttpRequestMessageOptions.RestMethodInfo] = restMethod.ToRestMethodInfo();
-#endif                
+#endif
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
