@@ -16,9 +16,6 @@
             return string.Create(key.Length, key, (chars, name) =>
             {
                 name
-#if !NETCOREAPP
-                .AsSpan()
-#endif
                 .CopyTo(chars);
                 FixCasing(chars);
             });
