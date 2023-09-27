@@ -39,9 +39,11 @@ services
 * [Where does this work?](#where-does-this-work)
   * [Breaking changes in 6.x](#breaking-changes-in-6x)
 * [API Attributes](#api-attributes)
-* [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
-* [Collections as Querystring parameters](#collections-as-querystring-parameters)
-* [Unescape Querystring parameters](#unescape-querystring-parameters)
+* [Querystrings](#querystrings)
+  * [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
+  * [Collections as Querystring parameters](#collections-as-querystring-parameters)
+  * [Unescape Querystring parameters](#unescape-querystring-parameters)
+  * [Custom Querystring Parameter formatting](#custom-querystring-parameter-formatting)
 * [Body content](#body-content)
   * [Buffering and the Content-Length header](#buffering-and-the-content-length-header)
   * [JSON content](#json-content)
@@ -175,7 +177,9 @@ Search("admin/products");
 >>> "/search/admin/products"
 ```
 
-### Dynamic Querystring Parameters
+### Querystrings
+
+#### Dynamic Querystring Parameters
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
 This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to Twitter's hybrid API that insists on non-GET requests with querystring parameters.
@@ -229,7 +233,7 @@ Task<Tweet> PostTweet([Query]TweetParams params);
 
 Where `TweetParams` is a POCO, and properties will also support `[AliasAs]` attributes.
 
-### Collections as Querystring parameters
+#### Collections as Querystring parameters
 
 Use the `Query` attribute to specify format in which collections should be formatted in query string
 
@@ -256,7 +260,7 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     });
 ```
 
-### Unescape Querystring parameters
+#### Unescape Querystring parameters
 
 Use the `QueryUriFormat` attribute to specify if the query parameters should be url escaped
 
@@ -268,6 +272,130 @@ Task Query(string q);
 Query("Select+Id,Name+From+Account")
 >>> "/query?q=Select+Id,Name+From+Account"
 ```
+
+#### Custom Querystring parameter formatting
+
+**Formatting Keys**
+
+To customize the format of query keys, you have two main options:
+
+1. **Using the `AliasAs` Attribute**:
+
+   You can use the `AliasAs` attribute to specify a custom key name for a property. This attribute will always take precedence over any key formatter you specify.
+
+   ```csharp
+   public class MyQueryParams
+   {
+       [AliasAs("order")]
+       public string SortOrder { get; set; }
+
+       public int Limit { get; set; }
+   }
+
+   [Get("/group/{id}/users")]
+   Task<List<User>> GroupList([AliasAs("id")] int groupId, [Query] MyQueryParams params);
+
+   params.SortOrder = "desc";
+   params.Limit = 10;
+
+   GroupList(1, params);
+   ```
+
+   This will generate the following request:
+
+   ```
+   /group/1/users?order=desc&Limit=10
+   ```
+
+2. **Using the `RefitSettings.UrlParameterKeyFormatter` Property**:
+
+   By default, Refit uses the property name as the query key without any additional formatting. If you want to apply a custom format across all your query keys, you can use the `UrlParameterKeyFormatter` property. Remember that if a property has an `AliasAs` attribute, it will be used regardless of the formatter.
+
+   The following example uses the built-in `CamelCaseUrlParameterKeyFormatter`:
+
+   ```csharp
+   public class MyQueryParams
+   {
+       public string SortOrder { get; set; }
+
+       [AliasAs("queryLimit")]
+       public int Limit { get; set; }
+   }
+
+   [Get("/group/users")]
+   Task<List<User>> GroupList([Query] MyQueryParams params);
+
+   params.SortOrder = "desc";
+   params.Limit = 10;
+   ```
+
+   The request will look like:
+
+   ```
+   /group/users?sortOrder=desc&queryLimit=10
+   ```
+
+**Note**: The `AliasAs` attribute always takes the top priority. If both the attribute and a custom key formatter are present, the `AliasAs` attribute's value will be used.
+
+#### Formatting URL Parameter Values with the `UrlParameterFormatter`
+
+In Refit, the `UrlParameterFormatter` property within `RefitSettings` allows you to customize how parameter values are formatted in the URL. This can be particularly useful when you need to format dates, numbers, or other types in a specific manner that aligns with your API's expectations.
+
+**Using `UrlParameterFormatter`**:
+
+Assign a custom formatter that implements the `IUrlParameterFormatter` interface to the `UrlParameterFormatter` property.
+
+```csharp
+public class CustomDateUrlParameterFormatter : IUrlParameterFormatter
+{
+    public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type)
+    {
+        if (value is DateTime dt)
+        {
+            return dt.ToString("yyyyMMdd");
+        }
+
+        return value?.ToString();
+    }
+}
+
+var settings = new RefitSettings
+{
+    UrlParameterFormatter = new CustomDateUrlParameterFormatter()
+};
+```
+
+In this example, a custom formatter is created for date values. Whenever a `DateTime` parameter is encountered, it formats the date as `yyyyMMdd`.
+
+**Formatting Dictionary Keys**:
+
+When dealing with dictionaries, it's important to note that keys are treated as values. If you need custom formatting for dictionary keys, you should use the `UrlParameterFormatter` as well.
+
+For instance, if you have a dictionary parameter and you want to format its keys in a specific way, you can handle that in the custom formatter:
+
+```csharp
+public class CustomDictionaryKeyFormatter : IUrlParameterFormatter
+{
+    public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type)
+    {
+        // Handle dictionary keys
+        if (attributeProvider is PropertyInfo prop && prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            // Custom formatting logic for dictionary keys
+            return value?.ToString().ToUpperInvariant();
+        }
+
+        return value?.ToString();
+    }
+}
+
+var settings = new RefitSettings
+{
+    UrlParameterFormatter = new CustomDictionaryKeyFormatter()
+};
+```
+
+In the above example, the dictionary keys will be converted to uppercase.
 
 ### Body content
 
