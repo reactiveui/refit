@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -2829,6 +2829,43 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal($"/foo?{(int)TestEnum.A}=value1{TestEnumUrlParameterFormatter.StringParameterSuffix}&{(int)TestEnum.B}=value2{TestEnumUrlParameterFormatter.StringParameterSuffix}", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ComplexQueryObjectWithDefaultKeyFormatterProducesCorrectQueryString()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
+
+            var complexQuery = new ComplexQueryObject
+            {
+                TestAlias2 = "value1"
+            };
+
+            var output = factory(new object[] { complexQuery });
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?TestAlias2=value1", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void ComplexQueryObjectWithCustomKeyFormatterProducesCorrectQueryString()
+        {
+            var urlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter();
+
+            var refitSettings = new RefitSettings { UrlParameterKeyFormatter = urlParameterKeyFormatter };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(refitSettings);
+            var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
+
+            var complexQuery = new ComplexQueryObject
+            {
+                TestAlias2 = "value1"
+            };
+
+            var output = factory(new object[] { complexQuery });
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?testAlias2=value1", uri.PathAndQuery);
         }
 
         [Fact]

@@ -22,6 +22,7 @@ namespace Refit
         public RefitSettings()
         {
             ContentSerializer = new SystemTextJsonContentSerializer();
+            UrlParameterKeyFormatter = new DefaultUrlParameterKeyFormatter();
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
@@ -33,14 +34,17 @@ namespace Refit
         /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use</param>
         /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
+        /// <param name="urlParameterKeyFormatter">The <see cref="IUrlParameterKeyFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterKeyFormatter"/>)</param>
         public RefitSettings(
             IHttpContentSerializer contentSerializer,
             IUrlParameterFormatter? urlParameterFormatter = null,
-            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null)
+            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null,
+            IUrlParameterKeyFormatter? urlParameterKeyFormatter = null)
         {
             ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
+            UrlParameterKeyFormatter = urlParameterKeyFormatter ?? new DefaultUrlParameterKeyFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
         }
 
@@ -66,6 +70,12 @@ namespace Refit
         public IHttpContentSerializer ContentSerializer { get; set; }
 
         /// <summary>
+        /// The <see cref="IUrlParameterKeyFormatter"/> instance to use for formatting URL parameter keys (defaults to <see cref="DefaultUrlParameterKeyFormatter" />.
+        /// Allows customization of key naming conventions.
+        /// </summary>
+        public IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
+
+        /// <summary>
         /// The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)
         /// </summary>
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
@@ -86,7 +96,7 @@ namespace Refit
         public bool Buffered { get; set; } = false;
 
         /// <summary>
-        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>. 
+        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>.
         /// </summary>
         public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
     }
@@ -122,6 +132,14 @@ namespace Refit
     }
 
     /// <summary>
+    /// Provides a mechanism for formatting URL parameter keys, allowing customization of key naming conventions.
+    /// </summary>
+    public interface IUrlParameterKeyFormatter
+    {
+        string Format(string key);
+    }
+
+    /// <summary>
     /// Provides Url parameter formatting.
     /// </summary>
     public interface IUrlParameterFormatter
@@ -135,6 +153,14 @@ namespace Refit
     public interface IFormUrlEncodedParameterFormatter
     {
         string? Format(object? value, string? formatString);
+    }
+
+    /// <summary>
+    /// Default Url parameter key formatter. Does not do any formatting.
+    /// </summary>
+    public class DefaultUrlParameterKeyFormatter : IUrlParameterKeyFormatter
+    {
+        public virtual string Format(string key) => key;
     }
 
     /// <summary>
