@@ -545,7 +545,7 @@ namespace Refit.Implementation
                 source.Append(string.Join(", ", list));
             }
 
-           source.Append(@$") {GenerateConstraints(methodSymbol.TypeParameters, isExplicitInterface)}
+           source.Append(@$"){GenerateConstraints(methodSymbol.TypeParameters, isExplicitInterface)}
         {{");
         }
 
