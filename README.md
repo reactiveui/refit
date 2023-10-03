@@ -622,7 +622,9 @@ some interface `ITenantProvider` and has a data store `IAuthTokenStore` that can
     {
          this.tenantProvider = tenantProvider ?? throw new ArgumentNullException(nameof(tenantProvider));
          this.authTokenStore = authTokenStore ?? throw new ArgumentNullException(nameof(authTokenStore));
-         InnerHandler = new HttpClientHandler();
+         // InnerHandler must be left as null when using DI, but must be assigned a value when
+         // using RestService.For<IMyApi>
+         // InnerHandler = new HttpClientHandler();
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
