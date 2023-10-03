@@ -270,7 +270,7 @@ namespace Refit.Tests
 
         [AliasAs("test-alias")]
         [JsonPropertyName("test-json-property")]
-        public string TestAliAsWithJsonProperty { get; set; }
+        public string TestAliasAsWithJsonProperty { get; set; }
 
         public IEnumerable<int> TestCollection { get; set; }
 
@@ -417,7 +417,7 @@ namespace Refit.Tests
             {
                 TestAlias1 = "one",
                 TestAlias2 = "two",
-                TestAliAsWithJsonProperty = "test-alias-value"
+                TestAliasAsWithJsonProperty = "test-alias-value"
             };
 
             var output = factory(new object[] { param });
