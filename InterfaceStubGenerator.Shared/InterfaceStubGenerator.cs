@@ -130,9 +130,8 @@ namespace Refit.Generator
 
                     // The interface has no refit methods, but its base interfaces might
                     var hasDerivedRefit = ifaceSymbol.AllInterfaces
-                                                     .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
-                                                     .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
-                                                     .Any();
+                        .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
+                        .Any(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol));
 
                     if (hasDerivedRefit)
                     {
