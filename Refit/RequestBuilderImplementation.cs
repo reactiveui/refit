@@ -584,7 +584,10 @@ namespace Refit
                                 case BodySerializationMethod.Json:
 #pragma warning restore CS0618 // Type or member is obsolete
                                 case BodySerializationMethod.Serialized:
-                                    var content = serializer.ToHttpContent(param);
+                                    var parameterType = restMethod.ParameterInfoMap[i].ParameterType;
+                                    var toHttpContentMethodGeneric = typeof(IHttpContentSerializer).GetMethod(nameof(serializer.ToHttpContent));
+                                    var toHttpContentMethod = toHttpContentMethodGeneric.MakeGenericMethod(parameterType);
+                                    var content = (HttpContent)toHttpContentMethod.Invoke(serializer, new[] { param })!;
                                     switch (restMethod.BodyParameterInfo.Item2)
                                     {
                                         case false:
