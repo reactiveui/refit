@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Json;
 using System.Reactive.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,6 +18,8 @@ using Refit; // InterfaceStubGenerator looks for this
 using RichardSzalay.MockHttp;
 
 using Xunit;
+
+using static Refit.Tests.Http.Client;
 
 namespace Refit.Tests
 {
@@ -40,7 +44,19 @@ namespace Refit.Tests
         Task<RootObject> GetCongruence();
     }
 
-    public interface IRequestBin
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+    [JsonDerivedType(typeof(Bird), nameof(Bird))]
+    public class Animal // Parent class
+    {
+        public string Name { get; set; }
+    }
+
+    public class Bird : Animal // Child class
+    {
+        public bool CanFly { get; set; }
+    }
+
+public interface IRequestBin
     {
         [Post("/1h3a5jm1")]
         Task Post();
@@ -65,6 +81,9 @@ namespace Refit.Tests
 
         [Post("/big")]
         Task PostBig(BigObject big);
+
+        [Post("/polymorphic")]
+        Task<Animal> PostPolymorphic([Body] Animal person);
 
         [Get("/foo/{arguments}")]
         Task SomeApiThatUsesVariableNameFromCodeGen(string arguments);
@@ -1424,6 +1443,35 @@ namespace Refit.Tests
             mockHttp.VerifyNoOutstandingExpectation();
 
             Assert.Equal(expectedResponse, result);
+        }
+
+        [Fact]
+        public async Task PostWithPolymorphivWritesDiscriminatorToStream()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp
+            };
+
+            var postBody = new Bird
+            {
+                Name = "Penguin",
+                CanFly = false
+            };
+
+            const string expectedResponse = "{\"$type\":\"Bird\",\"Name\":\"Dove\",\"CanFly\":true}";
+
+            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/polymorphic")
+                .WithPartialContent("\"$type\":\"Bird\"")
+                .Respond("application/json", expectedResponse);
+
+            var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+            var result = await fixture.PostPolymorphic(postBody);
+
+            mockHttp.VerifyNoOutstandingExpectation();
         }
 
         [Fact]
