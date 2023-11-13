@@ -43,62 +43,62 @@ namespace Refit
 
             lock (PropertyCache)
             {
-                if (!PropertyCache.ContainsKey(type))
+                if (!PropertyCache.TryGetValue(type, out var properties))
                 {
-                    PropertyCache[type] = GetProperties(type);
+                    properties = GetProperties(type);
+                    PropertyCache[type] = properties;
                 }
 
-                foreach (var property in PropertyCache[type])
+                foreach (var property in properties)
                 {
                     var value = property.GetValue(source, null);
-                    if (value != null)
+                    if (value == null) continue;
+
+                    var fieldName = GetFieldNameForProperty(property);
+
+                    // see if there's a query attribute
+                    var attrib = property.GetCustomAttribute<QueryAttribute>(true);
+
+                    if (value is not IEnumerable enumerable)
                     {
-                        var fieldName = GetFieldNameForProperty(property);
+                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
+                        continue;
+                    }
 
-                        // see if there's a query attribute
-                        var attrib = property.GetCustomAttribute<QueryAttribute>(true);
+                    var collectionFormat = attrib is { IsCollectionFormatSpecified: true }
+                        ? attrib.CollectionFormat
+                        : settings.CollectionFormat;
 
-                        if (value is IEnumerable enumerable)
-                        {
-                            var collectionFormat = attrib != null && attrib.IsCollectionFormatSpecified
-                                ? attrib.CollectionFormat
-                                : settings.CollectionFormat;
-
-                            switch (collectionFormat)
+                    switch (collectionFormat)
+                    {
+                        case CollectionFormat.Multi:
+                            foreach (var item in enumerable)
                             {
-                                case CollectionFormat.Multi:
-                                    foreach (var item in enumerable)
-                                    {
-                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib?.Format));
-                                    }
-                                    break;
-                                case CollectionFormat.Csv:
-                                case CollectionFormat.Ssv:
-                                case CollectionFormat.Tsv:
-                                case CollectionFormat.Pipes:
-                                    var delimiter = collectionFormat switch
-                                    {
-                                        CollectionFormat.Csv => ",",
-                                        CollectionFormat.Ssv => " ",
-                                        CollectionFormat.Tsv => "\t",
-                                        _ => "|"
-                                    };
-
-                                    var formattedValues = enumerable
-                                        .Cast<object>()
-                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib?.Format));
-                                    Add(fieldName, string.Join(delimiter, formattedValues));
-                                    break;
-                                default:
-                                    Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
-                                    break;
+                                Add(fieldName,
+                                    settings.FormUrlEncodedParameterFormatter.Format(item, attrib?.Format));
                             }
-                        }
-                        else
-                        {
-                            Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
-                        }
 
+                            break;
+                        case CollectionFormat.Csv:
+                        case CollectionFormat.Ssv:
+                        case CollectionFormat.Tsv:
+                        case CollectionFormat.Pipes:
+                            var delimiter = collectionFormat switch
+                            {
+                                CollectionFormat.Csv => ",",
+                                CollectionFormat.Ssv => " ",
+                                CollectionFormat.Tsv => "\t",
+                                _ => "|"
+                            };
+
+                            var formattedValues = enumerable
+                                .Cast<object>()
+                                .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib?.Format));
+                            Add(fieldName, string.Join(delimiter, formattedValues));
+                            break;
+                        default:
+                            Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
+                            break;
                     }
                 }
             }

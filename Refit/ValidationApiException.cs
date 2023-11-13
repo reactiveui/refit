@@ -15,7 +15,7 @@ namespace Refit
             SerializerOptions.PropertyNameCaseInsensitive = true;
             SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             SerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-        } 
+        }
 
         ValidationApiException(ApiException apiException) :
             base(apiException.RequestMessage, apiException.HttpMethod, apiException.Content, apiException.StatusCode, apiException.ReasonPhrase, apiException.Headers, apiException.RefitSettings)

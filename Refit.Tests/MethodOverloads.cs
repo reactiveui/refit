@@ -45,7 +45,7 @@ namespace Refit.Tests
     }
 
 
-    public class MethodOverladTests
+    public class MethodOverloadTests
     {
         [Fact]
         public async Task BasicMethodOverloadTest()

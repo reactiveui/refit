@@ -132,15 +132,15 @@ namespace Refit
 
                 if (response.Content.Headers?.ContentType?.MediaType?.Equals("application/problem+json") ?? false)
                 {
-                    exception = ValidationApiException.Create(exception);                    
+                    exception = ValidationApiException.Create(exception);
                 }
 
                 response.Content.Dispose();
             }
             catch
             {
-                // NB: We're already handling an exception at this point, 
-                // so we want to make sure we don't throw another one 
+                // NB: We're already handling an exception at this point,
+                // so we want to make sure we don't throw another one
                 // that hides the real error.
             }
 

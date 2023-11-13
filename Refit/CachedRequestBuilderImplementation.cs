@@ -38,7 +38,7 @@ namespace Refit
 
         static string GetArgumentString(Type[] parameterTypes)
         {
-            if (parameterTypes == null || parameterTypes.Length == 0)
+            if (parameterTypes.Length == 0)
             {
                 return "";
             }
@@ -48,7 +48,7 @@ namespace Refit
 
         static string GetGenericString(Type[] genericArgumentTypes)
         {
-            if (genericArgumentTypes == null || genericArgumentTypes.Length == 0)
+            if (genericArgumentTypes.Length == 0)
             {
                 return "";
             }
