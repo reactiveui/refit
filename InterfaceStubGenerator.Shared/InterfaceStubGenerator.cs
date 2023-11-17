@@ -413,11 +413,19 @@ namespace Refit.Implementation
                 genericList.Add($"typeof({typeParam.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})");
             }
 
-            var genericString = genericList.Count > 0 ? $", new global::System.Type[] {{ {string.Join(", ", genericList)} }}" : string.Empty;            
+            var argumentsArrayString = argList.Count == 0
+                ? "global::System.Array.Empty<object>()"
+                : $"new object[] {{ {string.Join(", ", argList)} }}";
+
+            var parameterTypesArrayString = typeList.Count == 0
+                ? "global::System.Array.Empty<global::System.Type>()"
+                : $"new global::System.Type[] {{ {string.Join(", ", typeList)} }}";
+
+            var genericString = genericList.Count > 0 ? $", new global::System.Type[] {{ {string.Join(", ", genericList)} }}" : string.Empty;
 
             source.Append(@$"
-            var ______arguments = new object[] {{ {string.Join(", ", argList)} }};
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", new global::System.Type[] {{ {string.Join(", ", typeList)} }}{genericString} );
+            var ______arguments = {argumentsArrayString};
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", {parameterTypesArrayString}{genericString} );
             try
             {{
                 {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
