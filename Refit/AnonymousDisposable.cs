@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Refit
+﻿namespace Refit
 {
     sealed class AnonymousDisposable : IDisposable
     {

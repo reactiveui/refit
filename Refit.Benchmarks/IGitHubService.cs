@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
-
-using Refit;
-using System.Threading.Tasks;
-
-namespace Refit.Benchmarks
+﻿namespace Refit.Benchmarks
 {
     public interface IGitHubService
     {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Refit
+﻿namespace Refit
 {
     partial class RequestBuilderImplementation
     {

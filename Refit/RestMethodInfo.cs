@@ -1,13 +1,7 @@
-﻿using System;
-using System.Net.Http;
-using System.Collections.Generic;
+﻿using System.Net.Http;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
-using System.Threading;
 
 // Enable support for C# 9 record types
 #if NETSTANDARD2_1 || !NET6_0_OR_GREATER

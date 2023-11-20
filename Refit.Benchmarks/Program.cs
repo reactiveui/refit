@@ -1,6 +1,4 @@
-﻿using System;
-
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 
 namespace Refit.Benchmarks
 {
