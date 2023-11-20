@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -381,8 +381,7 @@ namespace Refit
                 var key = propertyInfo.Name;
 
                 var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
-                if (aliasAttribute != null)
-                    key = aliasAttribute.Name;
+                key = aliasAttribute?.Name ?? settings.UrlParameterKeyFormatter.Format(key);
 
 
                 // Look to see if the property has a Query attribute, and if so, format it accordingly
