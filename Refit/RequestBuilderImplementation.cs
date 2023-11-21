@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace Refit
@@ -753,7 +746,7 @@ namespace Refit
 #else
                 ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
                 ret.Properties[HttpRequestMessageOptions.RestMethodInfo] = restMethod.ToRestMethodInfo();
-#endif                
+#endif
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
