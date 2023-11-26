@@ -40,8 +40,10 @@ namespace Refit.Tests
         }
     }
 
-    public class SnakeCasePropertyNamesContractResolver : DeliminatorSeparatedPropertyNamesContractResolver
+    public class SnakeCasePropertyNamesContractResolver
+        : DeliminatorSeparatedPropertyNamesContractResolver
     {
-        public SnakeCasePropertyNamesContractResolver() : base('_') { }
+        public SnakeCasePropertyNamesContractResolver()
+            : base('_') { }
     }
 }

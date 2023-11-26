@@ -7,9 +7,7 @@ using static System.Math; // This is here to verify https://github.com/reactiveu
 
 namespace Refit.Tests
 {
-    public class DataEntity
-    {
-    }
+    public class DataEntity { }
 
     public interface IDataApiA : IDataCrudApi<DataEntity>
     {
@@ -23,29 +21,33 @@ namespace Refit.Tests
         Task PingB();
     }
 
-    public interface IDataCrudApi<T> : IDataCrudApi<T, long>  where T : class
+    public interface IDataCrudApi<T> : IDataCrudApi<T, long>
+        where T : class
     {
         [Post("")]
         Task<T> Copy([Body] T payload);
     }
 
-    public interface IDataCrudApi<T, TKey> where T : class
+    public interface IDataCrudApi<T, TKey>
+        where T : class
     {
         [Post("")]
         Task<T> Create([Body] T payload);
 
         [Get("")]
-        Task<List<T>> ReadAll<TFoo>() where TFoo : new();
+        Task<List<T>> ReadAll<TFoo>()
+            where TFoo : new();
 
         [Get("")]
-        Task<List<T>> ReadAll<TFoo, TBar>() where TFoo : new()
-                                            where TBar : struct;
+        Task<List<T>> ReadAll<TFoo, TBar>()
+            where TFoo : new()
+            where TBar : struct;
 
         [Get("/{key}")]
         Task<T> ReadOne(TKey key);
 
         [Put("/{key}")]
-        Task Update(TKey key, [Body]T payload);
+        Task Update(TKey key, [Body] T payload);
 
         [Delete("/{key}")]
         Task Delete(TKey key);
@@ -54,7 +56,6 @@ namespace Refit.Tests
         Task ReadAllClasses<TFoo>()
             where TFoo : class, new();
     }
-
 
     public class DatasetQueryItem<TResultRow>
         where TResultRow : class, new()
@@ -72,6 +73,6 @@ namespace Refit.Tests
     {
         [Get("/datasets/{dataSet}/rows")]
         Task<DatasetQueryItem<TResulRow>[]> GetDataSetItems<TResulRow>()
-            where TResulRow : class, new(); 
+            where TResulRow : class, new();
     }
 }

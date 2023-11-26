@@ -20,9 +20,8 @@ namespace Refit
         readonly XmlContentSerializerSettings settings;
         readonly ConcurrentDictionary<Type, XmlSerializer> serializerCache = new();
 
-        public XmlContentSerializer() : this(new XmlContentSerializerSettings())
-        {
-        }
+        public XmlContentSerializer()
+            : this(new XmlContentSerializerSettings()) { }
 
         public XmlContentSerializer(XmlContentSerializerSettings settings)
         {
@@ -38,13 +37,21 @@ namespace Refit
         /// <exception cref="ArgumentNullException"></exception>
         public HttpContent ToHttpContent<T>(T item)
         {
-            if (item is null) throw new ArgumentNullException(nameof(item));
+            if (item is null)
+                throw new ArgumentNullException(nameof(item));
 
-            var xmlSerializer = serializerCache.GetOrAdd(item.GetType(), t => new XmlSerializer(t, settings.XmlAttributeOverrides));
+            var xmlSerializer = serializerCache.GetOrAdd(
+                item.GetType(),
+                t => new XmlSerializer(t, settings.XmlAttributeOverrides)
+            );
 
             using var stream = new MemoryStream();
-            using var writer = XmlWriter.Create(stream, settings.XmlReaderWriterSettings.WriterSettings);
-            var encoding = settings.XmlReaderWriterSettings.WriterSettings?.Encoding ?? Encoding.Unicode;
+            using var writer = XmlWriter.Create(
+                stream,
+                settings.XmlReaderWriterSettings.WriterSettings
+            );
+            var encoding =
+                settings.XmlReaderWriterSettings.WriterSettings?.Encoding ?? Encoding.Unicode;
             xmlSerializer.Serialize(writer, item, settings.XmlNamespaces);
             var str = encoding.GetString(stream.ToArray());
             var content = new StringContent(str, encoding, "application/xml");
@@ -58,19 +65,31 @@ namespace Refit
         /// <param name="content">HttpContent object with Xml content to deserialize.</param>
         /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
         /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
-        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<T?> FromHttpContentAsync<T>(
+            HttpContent content,
+            CancellationToken cancellationToken = default
+        )
         {
-            var xmlSerializer = serializerCache.GetOrAdd(typeof(T), t => new XmlSerializer(
-                t,
-                settings.XmlAttributeOverrides,
-                Array.Empty<Type>(),
-                null,
-                settings.XmlDefaultNamespace));
+            var xmlSerializer = serializerCache.GetOrAdd(
+                typeof(T),
+                t =>
+                    new XmlSerializer(
+                        t,
+                        settings.XmlAttributeOverrides,
+                        Array.Empty<Type>(),
+                        null,
+                        settings.XmlDefaultNamespace
+                    )
+            );
 
+            using var input = new StringReader(
+                await content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false)
+            );
 
-            using var input = new StringReader(await content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
-
-            using var reader = XmlReader.Create(input, settings.XmlReaderWriterSettings.ReaderSettings);
+            using var reader = XmlReader.Create(
+                input,
+                settings.XmlReaderWriterSettings.ReaderSettings
+            );
             return (T?)xmlSerializer.Deserialize(reader);
         }
 
@@ -80,13 +99,14 @@ namespace Refit
             if (propertyInfo is null)
                 throw new ArgumentNullException(nameof(propertyInfo));
 
-            return propertyInfo.GetCustomAttributes<XmlElementAttribute>(true)
-                       .Select(a => a.ElementName)
-                       .FirstOrDefault()
-                  ??
-                  propertyInfo.GetCustomAttributes<XmlAttributeAttribute>(true)
-                       .Select(a => a.AttributeName)
-                       .FirstOrDefault();
+            return propertyInfo
+                    .GetCustomAttributes<XmlElementAttribute>(true)
+                    .Select(a => a.ElementName)
+                    .FirstOrDefault()
+                ?? propertyInfo
+                    .GetCustomAttributes<XmlAttributeAttribute>(true)
+                    .Select(a => a.AttributeName)
+                    .FirstOrDefault();
         }
     }
 
@@ -95,20 +115,20 @@ namespace Refit
         XmlReaderSettings readerSettings;
         XmlWriterSettings writerSettings;
 
-        public XmlReaderWriterSettings() : this(new XmlReaderSettings(), new XmlWriterSettings())
-        {
-        }
+        public XmlReaderWriterSettings()
+            : this(new XmlReaderSettings(), new XmlWriterSettings()) { }
 
-        public XmlReaderWriterSettings(XmlReaderSettings readerSettings) : this(readerSettings, new XmlWriterSettings())
-        {
-        }
+        public XmlReaderWriterSettings(XmlReaderSettings readerSettings)
+            : this(readerSettings, new XmlWriterSettings()) { }
 
-        public XmlReaderWriterSettings(XmlWriterSettings writerSettings) : this(new XmlReaderSettings(), writerSettings)
-        {
-        }
+        public XmlReaderWriterSettings(XmlWriterSettings writerSettings)
+            : this(new XmlReaderSettings(), writerSettings) { }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public XmlReaderWriterSettings(XmlReaderSettings readerSettings, XmlWriterSettings writerSettings)
+        public XmlReaderWriterSettings(
+            XmlReaderSettings readerSettings,
+            XmlWriterSettings writerSettings
+        )
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             ReaderSettings = readerSettings;
@@ -154,10 +174,8 @@ namespace Refit
             XmlDefaultNamespace = null;
             XmlReaderWriterSettings = new XmlReaderWriterSettings();
             XmlNamespaces = new XmlSerializerNamespaces(
-                new[]
-                {
-                    new XmlQualifiedName(string.Empty, string.Empty),
-                });
+                new[] { new XmlQualifiedName(string.Empty, string.Empty), }
+            );
 
             XmlAttributeOverrides = new XmlAttributeOverrides();
         }

@@ -1,7 +1,7 @@
 ﻿namespace Refit
 {
     /// <summary>
-    /// Collection format defined in https://swagger.io/docs/specification/2-0/describing-parameters/ 
+    /// Collection format defined in https://swagger.io/docs/specification/2-0/describing-parameters/
     /// </summary>
     public enum CollectionFormat
     {

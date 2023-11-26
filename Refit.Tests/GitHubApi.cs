@@ -64,7 +64,10 @@ namespace Refit.Tests
         IObservable<User> GetUserCamelCase(string userName);
 
         [Get("/orgs/{orgname}/members")]
-        Task<List<User>> GetOrgMembers(string orgName, CancellationToken cancellationToken = default);
+        Task<List<User>> GetOrgMembers(
+            string orgName,
+            CancellationToken cancellationToken = default
+        );
 
         [Get("/search/users")]
         Task<UserSearchResult> FindUsers(string q);

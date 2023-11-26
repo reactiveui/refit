@@ -16,7 +16,10 @@ namespace Meow
 
         public CatsService(Uri baseUrl)
         {
-            _httpClient = new HttpClient(new HttpClientDiagnosticsHandler(new HttpClientHandler())) { BaseAddress = baseUrl };
+            _httpClient = new HttpClient(new HttpClientDiagnosticsHandler(new HttpClientHandler()))
+            {
+                BaseAddress = baseUrl
+            };
             _theCatsApi = RestService.For<ITheCatsAPI>(_httpClient);
         }
 

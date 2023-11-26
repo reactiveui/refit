@@ -16,7 +16,8 @@ namespace Refit.Buffers
             /// <inheritdoc/>
             public Task CopyToInternalAsync(Stream destination, CancellationToken cancellationToken)
             {
-                if (pooledBuffer is null) ThrowObjectDisposedException();
+                if (pooledBuffer is null)
+                    ThrowObjectDisposedException();
 
                 var bytesAvailable = length - position;
 
@@ -28,7 +29,10 @@ namespace Refit.Buffers
             }
 
             /// <inheritdoc/>
-            public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+            public override ValueTask<int> ReadAsync(
+                Memory<byte> buffer,
+                CancellationToken cancellationToken = default
+            )
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -54,9 +58,11 @@ namespace Refit.Buffers
             /// <inheritdoc/>
             public override int Read(Span<byte> buffer)
             {
-                if (pooledBuffer is null) ThrowObjectDisposedException();
+                if (pooledBuffer is null)
+                    ThrowObjectDisposedException();
 
-                if (position >= length) return 0;
+                if (position >= length)
+                    return 0;
 
                 var bytesAvailable = length - position;
 

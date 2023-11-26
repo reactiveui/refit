@@ -3,7 +3,5 @@
 namespace Refit.Tests
 {
     public static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
-        where TSourceGenerator : ISourceGenerator, new()
-    {
-    }
+        where TSourceGenerator : ISourceGenerator, new() { }
 }

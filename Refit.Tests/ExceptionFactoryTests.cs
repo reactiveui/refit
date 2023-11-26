@@ -32,8 +32,9 @@ namespace Refit.Tests
                 ExceptionFactory = _ => Task.FromResult<Exception>(null)
             };
 
-            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
-                   .Respond(HttpStatusCode.NotFound, new StringContent("error-result"));
+            handler
+                .Expect(HttpMethod.Get, "http://api/get-with-result")
+                .Respond(HttpStatusCode.NotFound, new StringContent("error-result"));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
 
@@ -54,8 +55,9 @@ namespace Refit.Tests
                 ExceptionFactory = _ => Task.FromResult<Exception>(null)
             };
 
-            handler.Expect(HttpMethod.Put, "http://api/put-without-result")
-                   .Respond(HttpStatusCode.NotFound);
+            handler
+                .Expect(HttpMethod.Put, "http://api/put-without-result")
+                .Respond(HttpStatusCode.NotFound);
 
             var fixture = RestService.For<IMyService>("http://api", settings);
 
@@ -75,12 +77,15 @@ namespace Refit.Tests
                 ExceptionFactory = _ => Task.FromResult<Exception>(exception)
             };
 
-            handler.Expect(HttpMethod.Get, "http://api/get-with-result")
-                   .Respond(HttpStatusCode.OK, new StringContent("success-result"));
+            handler
+                .Expect(HttpMethod.Get, "http://api/get-with-result")
+                .Respond(HttpStatusCode.OK, new StringContent("success-result"));
 
             var fixture = RestService.For<IMyService>("http://api", settings);
 
-            var thrownException = await Assert.ThrowsAsync<Exception>(() => fixture.GetWithResult());
+            var thrownException = await Assert.ThrowsAsync<Exception>(
+                () => fixture.GetWithResult()
+            );
             Assert.Equal(exception, thrownException);
 
             handler.VerifyNoOutstandingExpectation();
@@ -97,12 +102,15 @@ namespace Refit.Tests
                 ExceptionFactory = _ => Task.FromResult<Exception>(exception)
             };
 
-            handler.Expect(HttpMethod.Put, "http://api/put-without-result")
-                   .Respond(HttpStatusCode.OK);
+            handler
+                .Expect(HttpMethod.Put, "http://api/put-without-result")
+                .Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IMyService>("http://api", settings);
 
-            var thrownException = await Assert.ThrowsAsync<Exception>(() => fixture.PutWithoutResult());
+            var thrownException = await Assert.ThrowsAsync<Exception>(
+                () => fixture.PutWithoutResult()
+            );
             Assert.Equal(exception, thrownException);
 
             handler.VerifyNoOutstandingExpectation();
