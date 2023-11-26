@@ -17,14 +17,20 @@ namespace Refit.Tests
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
         {
-            if (Activator.CreateInstance(contentSerializerType) is not IHttpContentSerializer serializer)
+            if (
+                Activator.CreateInstance(contentSerializerType)
+                is not IHttpContentSerializer serializer
+            )
             {
-                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
+                throw new ArgumentException(
+                    $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}"
+                );
             }
 
             var handler = new MockPushStreamContentHttpMessageHandler
             {
-                Asserts = async content => new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
+                Asserts = async content =>
+                    new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
             };
 
             var settings = new RefitSettings(serializer)
@@ -34,7 +40,8 @@ namespace Refit.Tests
 
             var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
 
-            var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(new User())).ConfigureAwait(false);
+            var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(new User()))
+                .ConfigureAwait(false);
             Assert.True(fixtureTask.IsCompleted);
             Assert.Equal(TaskStatus.RanToCompletion, fixtureTask.Status);
         }
@@ -45,9 +52,14 @@ namespace Refit.Tests
         [InlineData(typeof(XmlContentSerializer))]
         public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
         {
-            if (Activator.CreateInstance(contentSerializerType) is not IHttpContentSerializer serializer)
+            if (
+                Activator.CreateInstance(contentSerializerType)
+                is not IHttpContentSerializer serializer
+            )
             {
-                throw new ArgumentException($"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
+                throw new ArgumentException(
+                    $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}"
+                );
             }
 
             var model = new User
@@ -61,8 +73,12 @@ namespace Refit.Tests
             {
                 Asserts = async content =>
                 {
-                    var stringContent = new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false));
-                    var user = await serializer.FromHttpContentAsync<User>(content).ConfigureAwait(false);
+                    var stringContent = new StringContent(
+                        await content.ReadAsStringAsync().ConfigureAwait(false)
+                    );
+                    var user = await serializer
+                        .FromHttpContentAsync<User>(content)
+                        .ConfigureAwait(false);
                     Assert.NotSame(model, user);
                     Assert.Equal(model.Name, user.Name);
                     Assert.Equal(model.CreatedAt, user.CreatedAt);
@@ -80,7 +96,8 @@ namespace Refit.Tests
 
             var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
 
-            var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(model)).ConfigureAwait(false);
+            var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(model))
+                .ConfigureAwait(false);
 
             Assert.True(fixtureTask.IsCompleted);
         }
@@ -113,7 +130,10 @@ namespace Refit.Tests
         {
             public Func<PushStreamContent, Task<HttpContent>> Asserts { get; set; }
 
-            protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            protected override async Task<HttpResponseMessage> SendAsync(
+                HttpRequestMessage request,
+                CancellationToken cancellationToken
+            )
             {
                 var content = request.Content as PushStreamContent;
                 Assert.IsType<PushStreamContent>(content);
@@ -130,14 +150,16 @@ namespace Refit.Tests
         {
             var model = new TestAliasObject
             {
-                ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
+                ShortNameForAlias = nameof(
+                    StreamDeserialization_UsingSystemTextJsonContentSerializer
+                ),
                 ShortNameForJsonProperty = nameof(TestAliasObject)
             };
 
             var serializer = new SystemTextJsonContentSerializer();
 
             var json = serializer.ToHttpContent(model);
-            
+
             var result = await serializer.FromHttpContentAsync<TestAliasObject>(json);
 
             Assert.NotNull(result);
@@ -150,7 +172,9 @@ namespace Refit.Tests
         {
             var model = new TestAliasObject
             {
-                ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
+                ShortNameForAlias = nameof(
+                    StreamDeserialization_UsingSystemTextJsonContentSerializer
+                ),
                 ShortNameForJsonProperty = nameof(TestAliasObject)
             };
 

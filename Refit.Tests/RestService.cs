@@ -100,17 +100,24 @@ namespace Refit.Tests
         Task GetFoos2(List<int> values);
 
         [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
-        Task PostFooBar(PathBoundObject request, [Body]object someObject);
+        Task PostFooBar(PathBoundObject request, [Body] object someObject);
 
         [Get("/foos/{request.someProperty}/bar/{request.someProperty2}")]
         Task GetFooBars(PathBoundObjectWithQuery request);
 
         [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
-        Task<HttpResponseMessage> PostFooBar(PathBoundObject request, [Query] ModelObject someQueryParams);
+        Task<HttpResponseMessage> PostFooBar(
+            PathBoundObject request,
+            [Query] ModelObject someQueryParams
+        );
 
         [Multipart]
         [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
-        Task<HttpResponseMessage> PostFooBarStreamPart(PathBoundObject request, [Query] ModelObject someQueryParams, StreamPart stream);
+        Task<HttpResponseMessage> PostFooBarStreamPart(
+            PathBoundObject request,
+            [Query] ModelObject someQueryParams,
+            StreamPart stream
+        );
 
         [Multipart]
         [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
@@ -118,7 +125,10 @@ namespace Refit.Tests
 
         [Multipart]
         [Post("/foos/{request.someProperty}/bar/{request.someProperty2}")]
-        Task<HttpResponseMessage> PostFooBarStreamPart(PathBoundObjectWithQuery request, StreamPart stream);
+        Task<HttpResponseMessage> PostFooBarStreamPart(
+            PathBoundObjectWithQuery request,
+            StreamPart stream
+        );
     }
 
     public class PathBoundList
@@ -129,7 +139,6 @@ namespace Refit.Tests
     public class PathBoundDerivedObject : PathBoundObject
     {
         public string SomeProperty3 { get; set; }
-
     }
 
     public class PathBoundObject
@@ -137,7 +146,6 @@ namespace Refit.Tests
         public int SomeProperty { get; set; }
 
         public string SomeProperty2 { get; set; }
-
     }
 
     public class PathBoundObjectWithQuery
@@ -148,12 +156,10 @@ namespace Refit.Tests
 
         [Query]
         public string SomeQuery { get; set; }
-
     }
 
     public class PathBoundObjectWithQueryFormat
     {
-
         [Query(Format = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'")]
         public DateTime SomeQueryWithFormat { get; set; }
     }
@@ -199,18 +205,16 @@ namespace Refit.Tests
         Task<TResponse> Get(TParam param, [Header("X-Refit")] THeader header);
 
         [Get("/get?hardcoded=true")]
-        Task<TResponse> GetQuery([Query("_")]TParam param);
+        Task<TResponse> GetQuery([Query("_")] TParam param);
 
         [Post("/post?hardcoded=true")]
-        Task<TResponse> PostQuery([Query("_")]TParam param);
+        Task<TResponse> PostQuery([Query("_")] TParam param);
 
         [Get("")]
-        Task<TResponse> GetQueryWithIncludeParameterName([Query(".", "search")]TParam param);
+        Task<TResponse> GetQueryWithIncludeParameterName([Query(".", "search")] TParam param);
 
         [Get("/get?hardcoded=true")]
-        Task<TValue> GetQuery1<TValue>([Query("_")]TParam param);
-
-
+        Task<TValue> GetQuery1<TValue>([Query("_")] TParam param);
     }
 
     public interface IBrokenWebApi
@@ -288,22 +292,18 @@ namespace Refit.Tests
         {
             var instance = IRefitInterfaceWithStaticMethod.Create();
 
-
             Assert.NotNull(instance);
         }
 #endif
-
 
         [Fact]
         public async Task CanAddContentHeadersToPostWithoutBody()
         {
             var mockHttp = new MockHttpMessageHandler();
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Post, "http://foo/nobody")
+            mockHttp
+                .Expect(HttpMethod.Post, "http://foo/nobody")
                 // The content length header is set automatically by the HttpContent instance,
                 // so checking the header as a string doesn't work
                 .With(r => r.Content?.Headers.ContentLength == 0)
@@ -323,14 +323,12 @@ namespace Refit.Tests
         public async Task GetWithNoParametersTest()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/someendpoint")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo", settings);
 
             await fixture.Get();
@@ -341,15 +339,12 @@ namespace Refit.Tests
         public async Task BaseAddressFromHttpClientMatchesTest()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/someendpoint")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
-
-            var client = new HttpClient(mockHttp)
-            {
-                BaseAddress = new Uri("http://foo")
-            };
+            var client = new HttpClient(mockHttp) { BaseAddress = new Uri("http://foo") };
 
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
@@ -361,15 +356,12 @@ namespace Refit.Tests
         public async Task BaseAddressWithTrailingSlashFromHttpClientMatchesTest()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/someendpoint")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
-
-            var client = new HttpClient(mockHttp)
-            {
-                BaseAddress = new Uri("http://foo/")
-            };
+            var client = new HttpClient(mockHttp) { BaseAddress = new Uri("http://foo/") };
 
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
@@ -381,17 +373,15 @@ namespace Refit.Tests
         public async Task BaseAddressWithTrailingSlashCalledBeforeFromHttpClientMatchesTest()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/someendpoint")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
+            var client = new HttpClient(mockHttp) { BaseAddress = new Uri("http://foo/") };
 
-            var client = new HttpClient(mockHttp)
-            {
-                BaseAddress = new Uri("http://foo/")
-            };
-
-            await client.GetAsync("/firstRequest"); ;
+            await client.GetAsync("/firstRequest");
+            ;
 
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
@@ -403,14 +393,12 @@ namespace Refit.Tests
         public async Task GetWithNoParametersTestTrailingSlashInBase()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/someendpoint")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/someendpoint")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo/", settings);
 
             await fixture.Get();
@@ -421,21 +409,17 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObject()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetFooBars(new PathBoundObject()
-            {
-                SomeProperty = 1,
-                SomeProperty2 = "barNone"
-            });
+            await fixture.GetFooBars(
+                new PathBoundObject() { SomeProperty = 1, SomeProperty2 = "barNone" }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -443,21 +427,17 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObjectDifferentCasing()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetFooBarsWithDifferentCasing(new PathBoundObject()
-            {
-                SomeProperty = 1,
-                SomeProperty2 = "barNone"
-            });
+            await fixture.GetFooBarsWithDifferentCasing(
+                new PathBoundObject() { SomeProperty = 1, SomeProperty2 = "barNone" }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -465,21 +445,18 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObjectAndParameter()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/myId/22/bar/bart")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foos/myId/22/bar/bart")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetBarsByFoo("myId", new PathBoundObject()
-            {
-                SomeProperty = 22,
-                SomeProperty2 = "bart"
-            });
+            await fixture.GetBarsByFoo(
+                "myId",
+                new PathBoundObject() { SomeProperty = 22, SomeProperty2 = "bart" }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -487,21 +464,20 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObjectAndParameterParameterPrecedence()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/chooseMe/bar/barNone")
-                    .WithExactQueryString(new[] { new KeyValuePair<string, string>("SomeProperty", "1") })
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foos/chooseMe/bar/barNone")
+                .WithExactQueryString(
+                    new[] { new KeyValuePair<string, string>("SomeProperty", "1") }
+                )
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetFooBars(new PathBoundObject()
-            {
-                SomeProperty = 1,
-                SomeProperty2 = "barNone"
-            }, "chooseMe");
+            await fixture.GetFooBars(
+                new PathBoundObject() { SomeProperty = 1, SomeProperty2 = "barNone" },
+                "chooseMe"
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -509,22 +485,24 @@ namespace Refit.Tests
         public async Task GetWithPathBoundDerivedObject()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/test")
-                    .WithExactQueryString(new[] { new KeyValuePair<string, string>("SomeProperty2", "barNone") })
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foos/1/bar/test")
+                .WithExactQueryString(
+                    new[] { new KeyValuePair<string, string>("SomeProperty2", "barNone") }
+                )
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetFooBarsDerived(new PathBoundDerivedObject()
-            {
-                SomeProperty = 1,
-                SomeProperty2 = "barNone",
-                SomeProperty3 = "test"
-            });
+            await fixture.GetFooBarsDerived(
+                new PathBoundDerivedObject()
+                {
+                    SomeProperty = 1,
+                    SomeProperty2 = "barNone",
+                    SomeProperty3 = "test"
+                }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -532,21 +510,19 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObjectAndQueryParameter()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/22/bar")
-                    .WithExactQueryString(new[] { new KeyValuePair<string, string>("SomeProperty2", "bart") })
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foos/22/bar")
+                .WithExactQueryString(
+                    new[] { new KeyValuePair<string, string>("SomeProperty2", "bart") }
+                )
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetBarsByFoo(new PathBoundObject()
-            {
-                SomeProperty = 22,
-                SomeProperty2 = "bart"
-            });
+            await fixture.GetBarsByFoo(
+                new PathBoundObject() { SomeProperty = 22, SomeProperty2 = "bart" }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -554,20 +530,17 @@ namespace Refit.Tests
         public async Task PostFooBarPathBoundObject()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/22/bar/bart")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bart")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.PostFooBar(new PathBoundObject()
-            {
-                SomeProperty = 22,
-                SomeProperty2 = "bart"
-            }, new { });
+            await fixture.PostFooBar(
+                new PathBoundObject() { SomeProperty = 22, SomeProperty2 = "bart" },
+                new { }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -575,8 +548,9 @@ namespace Refit.Tests
         public async Task PathBoundObjectsRespectFormatter()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/22%2C23")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foos/22%2C23")
+                .Respond("application/json", "Ok");
 
             var settings = new RefitSettings
             {
@@ -585,10 +559,12 @@ namespace Refit.Tests
             };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetFoos(new PathBoundList()
-            {
-                Values = new List<int>() { 22, 23 }
-            });
+            await fixture.GetFoos(
+                new PathBoundList()
+                {
+                    Values = new List<int>() { 22, 23 }
+                }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -596,22 +572,22 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObjectAndQuery()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
-                    .WithExactQueryString("SomeQuery=test")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
+                .WithExactQueryString("SomeQuery=test")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetFooBars(new PathBoundObjectWithQuery()
-            {
-                SomeProperty = 1,
-                SomeProperty2 = "barNone",
-                SomeQuery = "test"
-            });
+            await fixture.GetFooBars(
+                new PathBoundObjectWithQuery()
+                {
+                    SomeProperty = 1,
+                    SomeProperty2 = "barNone",
+                    SomeQuery = "test"
+                }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -619,20 +595,20 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObjectAndQueryWithFormat()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Get, "http://foo/foo")
-                    .WithExactQueryString("SomeQueryWithFormat=2020-03-05T13:55:00Z")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/foo")
+                .WithExactQueryString("SomeQueryWithFormat=2020-03-05T13:55:00Z")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.GetBarsWithCustomQueryFormat(new PathBoundObjectWithQueryFormat
-            {
-                SomeQueryWithFormat = new DateTime(2020, 03, 05, 13, 55, 00)
-            });
+            await fixture.GetBarsWithCustomQueryFormat(
+                new PathBoundObjectWithQueryFormat
+                {
+                    SomeQueryWithFormat = new DateTime(2020, 03, 05, 13, 55, 00)
+                }
+            );
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
@@ -641,25 +617,18 @@ namespace Refit.Tests
         public async Task GetWithPathBoundObjectAndQueryObject()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/1/bar/barNone")
-                    .WithExactQueryString("Property1=test&Property2=test2")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Post, "http://foo/foos/1/bar/barNone")
+                .WithExactQueryString("Property1=test&Property2=test2")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
-            await fixture.PostFooBar(new PathBoundObject()
-            {
-                SomeProperty = 1,
-                SomeProperty2 = "barNone"
-            }, new ModelObject()
-            {
-                Property1 = "test",
-                Property2 = "test2"
-            });
+            await fixture.PostFooBar(
+                new PathBoundObject() { SomeProperty = 1, SomeProperty2 = "barNone" },
+                new ModelObject() { Property1 = "test", Property2 = "test2" }
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -667,22 +636,19 @@ namespace Refit.Tests
         public async Task PostFooBarPathMultipart()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
-                    .WithExactQueryString("")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
+                .WithExactQueryString("")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
             using var stream = GetTestFileStream("Test Files/Test.pdf");
-            await fixture.PostFooBarStreamPart(new PathBoundObject()
-            {
-                SomeProperty = 22,
-                SomeProperty2 = "bar"
-            }, new StreamPart(stream, "Test.pdf", "application/pdf"));
+            await fixture.PostFooBarStreamPart(
+                new PathBoundObject() { SomeProperty = 22, SomeProperty2 = "bar" },
+                new StreamPart(stream, "Test.pdf", "application/pdf")
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -690,23 +656,24 @@ namespace Refit.Tests
         public async Task PostFooBarPathQueryMultipart()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
-                    .WithExactQueryString("SomeQuery=test")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
+                .WithExactQueryString("SomeQuery=test")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
             using var stream = GetTestFileStream("Test Files/Test.pdf");
-            await fixture.PostFooBarStreamPart(new PathBoundObjectWithQuery()
-            {
-                SomeProperty = 22,
-                SomeProperty2 = "bar",
-                SomeQuery = "test"
-            }, new StreamPart(stream, "Test.pdf", "application/pdf"));
+            await fixture.PostFooBarStreamPart(
+                new PathBoundObjectWithQuery()
+                {
+                    SomeProperty = 22,
+                    SomeProperty2 = "bar",
+                    SomeQuery = "test"
+                },
+                new StreamPart(stream, "Test.pdf", "application/pdf")
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -714,26 +681,20 @@ namespace Refit.Tests
         public async Task PostFooBarPathQueryObjectMultipart()
         {
             var mockHttp = new MockHttpMessageHandler();
-            mockHttp.Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
-                    .WithExactQueryString("Property1=test&Property2=test2")
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
+                .WithExactQueryString("Property1=test&Property2=test2")
+                .Respond("application/json", "Ok");
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
             var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
             using var stream = GetTestFileStream("Test Files/Test.pdf");
-            await fixture.PostFooBarStreamPart(new PathBoundObject
-            {
-                SomeProperty = 22,
-                SomeProperty2 = "bar"
-            }, new ModelObject()
-            {
-                Property1 = "test",
-                Property2 = "test2"
-            }, new StreamPart(stream, "Test.pdf", "application/pdf"));
+            await fixture.PostFooBarStreamPart(
+                new PathBoundObject { SomeProperty = 22, SomeProperty2 = "bar" },
+                new ModelObject() { Property1 = "test", Property2 = "test2" },
+                new StreamPart(stream, "Test.pdf", "application/pdf")
+            );
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
@@ -741,12 +702,10 @@ namespace Refit.Tests
         public async Task DoesntAddAutoAddContentToGetRequest()
         {
             var mockHttp = new MockHttpMessageHandler();
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "http://foo/nobody")
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/nobody")
                 // We can't add HttpContent to a GET request,
                 // because HttpClient doesn't allow it and it will
                 // blow up at runtime
@@ -764,12 +723,10 @@ namespace Refit.Tests
         public async Task DoesntAddAutoAddContentToHeadRequest()
         {
             var mockHttp = new MockHttpMessageHandler();
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Head, "http://foo/nobody")
+            mockHttp
+                .Expect(HttpMethod.Head, "http://foo/nobody")
                 // We can't add HttpContent to a HEAD request,
                 // because HttpClient doesn't allow it and it will
                 // blow up at runtime
@@ -787,25 +744,21 @@ namespace Refit.Tests
         public async Task GetWithDecimal()
         {
             var mockHttp = new MockHttpMessageHandler();
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "http://foo/withDecimal")
-                    .WithExactQueryString(new[] { new KeyValuePair<string, string>("value", "3.456") })
-                    .Respond("application/json", "Ok");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/withDecimal")
+                .WithExactQueryString(new[] { new KeyValuePair<string, string>("value", "3.456") })
+                .Respond("application/json", "Ok");
 
             var fixture = RestService.For<IApiWithDecimal>("http://foo", settings);
 
             const decimal val = 3.456M;
 
-
             var result = await fixture.GetWithDecimal(val);
 
             mockHttp.VerifyNoOutstandingExpectation();
         }
-
 
         [Fact]
         public async Task HitTheGitHubUserApiAsApiResponse()
@@ -815,17 +768,28 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
             var responseMessage = new HttpResponseMessage()
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("{ 'login':'octocat', 'avatar_url':'http://foo/bar' }", System.Text.Encoding.UTF8, "application/json"),
+                Content = new StringContent(
+                    "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }",
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                ),
             };
             responseMessage.Headers.Add("Cookie", "Value");
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat").Respond(req => responseMessage);
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
+                .Respond(req => responseMessage);
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -851,11 +815,17 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
-                    .Respond(HttpStatusCode.NotFound);
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
+                .Respond(HttpStatusCode.NotFound);
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -878,11 +848,17 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
-                    .Respond(HttpStatusCode.NotFound);
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
+                .Respond(HttpStatusCode.NotFound);
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -906,21 +882,33 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
             var responseMessage = new HttpResponseMessage()
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent("{ 'login':'octocat', 'avatar_url':'http://foo/bar' }", System.Text.Encoding.UTF8, "application/json"),
+                Content = new StringContent(
+                    "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }",
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                ),
             };
             responseMessage.Headers.Add("Cookie", "Value");
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat").Respond(req => responseMessage);
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
+                .Respond(req => responseMessage);
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-            var result = await fixture.GetUserObservableWithMetadata("octocat")
+            var result = await fixture
+                .GetUserObservableWithMetadata("octocat")
                 .Timeout(TimeSpan.FromSeconds(10));
 
             Assert.True(result.Headers.Any());
@@ -943,12 +931,20 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
-                    .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
-
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
+                .Respond(
+                    "application/json",
+                    "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -968,11 +964,20 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
-                   .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
+                .Respond(
+                    "application/json",
+                    "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -992,12 +997,20 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
-                  .Respond("application/json", "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]");
-
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
+                .Respond(
+                    "application/json",
+                    "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -1017,14 +1030,26 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
-                  .Respond("application/json", "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]");
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
-                  .Respond("application/json", "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]");
-
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
+                .Respond(
+                    "application/json",
+                    "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]"
+                );
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
+                .Respond(
+                    "application/json",
+                    "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -1050,32 +1075,41 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
             var cts = new CancellationTokenSource();
 
-            mockHttp.When(HttpMethod.Get, "https://api.github.com/orgs/github/members")
-                    .Respond(req =>
+            mockHttp
+                .When(HttpMethod.Get, "https://api.github.com/orgs/github/members")
+                .Respond(req =>
+                {
+                    // Cancel the request
+                    cts.Cancel();
+
+                    return new HttpResponseMessage(HttpStatusCode.OK)
                     {
-                        // Cancel the request
-                        cts.Cancel();
-
-                        return new HttpResponseMessage(HttpStatusCode.OK)
-                        {
-                            Content = new StringContent("[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]", Encoding.UTF8, "application/json")
-                        };
-                    });
-
+                        Content = new StringContent(
+                            "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]",
+                            Encoding.UTF8,
+                            "application/json"
+                        )
+                    };
+                });
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-
-            var result = await Assert.ThrowsAsync<TaskCanceledException>(async () => await fixture.GetOrgMembers("github", cts.Token));
+            var result = await Assert.ThrowsAsync<TaskCanceledException>(
+                async () => await fixture.GetOrgMembers("github", cts.Token)
+            );
 
             AssertFirstLineContains(nameof(IGitHubApi.GetOrgMembers), result.StackTrace);
         }
-
 
         [Fact]
         public async Task HitTheGitHubUserSearchApi()
@@ -1085,12 +1119,21 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/search/users")
-                    .WithQueryString("q", "tom repos:>42 followers:>1000")
-                    .Respond("application/json", "{ 'total_count': 1, 'items': [{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]}");
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/search/users")
+                .WithQueryString("q", "tom repos:>42 followers:>1000")
+                .Respond(
+                    "application/json",
+                    "{ 'total_count': 1, 'items': [{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]}"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -1109,16 +1152,25 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
-                    .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
+            mockHttp
+                .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
+                .Respond(
+                    "application/json",
+                    "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-
-            var result = await fixture.GetUserObservable("octocat")
+            var result = await fixture
+                .GetUserObservable("octocat")
                 .Timeout(TimeSpan.FromSeconds(10));
 
             Assert.Equal("octocat", result.Login);
@@ -1135,16 +1187,24 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.When(HttpMethod.Get, "https://api.github.com/users/octocat")
-                    .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
+            mockHttp
+                .When(HttpMethod.Get, "https://api.github.com/users/octocat")
+                .Respond(
+                    "application/json",
+                    "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-            var obs = fixture.GetUserObservable("octocat")
-                .Timeout(TimeSpan.FromSeconds(10));
+            var obs = fixture.GetUserObservable("octocat").Timeout(TimeSpan.FromSeconds(10));
 
             // NB: We're gonna await twice, so that the 2nd await is definitely
             // after the result has completed.
@@ -1159,7 +1219,6 @@ namespace Refit.Tests
         {
             var input = new TestHttpMessageHandler
             {
-
                 // we need to use a factory here to ensure each request gets its own httpcontent instance
                 ContentFactory = () => new StringContent("test")
             };
@@ -1169,8 +1228,7 @@ namespace Refit.Tests
 
             Assert.Equal(0, input.MessagesSent);
 
-            var obs = fixture.GetIndexObservable()
-                .Timeout(TimeSpan.FromSeconds(10));
+            var obs = fixture.GetIndexObservable().Timeout(TimeSpan.FromSeconds(10));
 
             var result1 = await obs;
             Assert.Equal(1, input.MessagesSent);
@@ -1191,12 +1249,15 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.When(HttpMethod.Get, "https://api.github.com/")
-                    .Respond(HttpStatusCode.OK);
-
+            mockHttp.When(HttpMethod.Get, "https://api.github.com/").Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
             var result = await fixture.GetIndex();
@@ -1213,14 +1274,20 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.When(HttpMethod.Get, "https://api.github.com/")
-                    .Respond(HttpStatusCode.OK);
+            mockHttp.When(HttpMethod.Get, "https://api.github.com/").Respond(HttpStatusCode.OK);
 
-
-            var fixture = RestService.For<TestNested.INestedGitHubApi>("https://api.github.com", settings);
+            var fixture = RestService.For<TestNested.INestedGitHubApi>(
+                "https://api.github.com",
+                settings
+            );
             var result = await fixture.GetIndex();
 
             Assert.NotNull(result);
@@ -1232,15 +1299,14 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "https://registry.npmjs.org/congruence")
-                    .Respond("application/json", "{ \"_id\":\"congruence\", \"_rev\":\"rev\" , \"name\":\"name\"}");
-
-
+            mockHttp
+                .Expect(HttpMethod.Get, "https://registry.npmjs.org/congruence")
+                .Respond(
+                    "application/json",
+                    "{ \"_id\":\"congruence\", \"_rev\":\"rev\" , \"name\":\"name\"}"
+                );
 
             var fixture = RestService.For<INpmJs>("https://registry.npmjs.org", settings);
             var result = await fixture.GetCongruence();
@@ -1255,16 +1321,13 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
-                    .Respond(HttpStatusCode.OK);
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
+                .Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
-
 
             await fixture.Post();
 
@@ -1276,17 +1339,14 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
-                    .WithContent("raw string")
-                    .Respond(HttpStatusCode.OK);
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                .WithContent("raw string")
+                .Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
-
 
             await fixture.PostRawStringDefault("raw string");
 
@@ -1298,18 +1358,15 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
-                    .WithContent("\"json string\"")
-                    .WithHeaders("Content-Type", "application/json; charset=utf-8")
-                    .Respond(HttpStatusCode.OK);
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                .WithContent("\"json string\"")
+                .WithHeaders("Content-Type", "application/json; charset=utf-8")
+                .Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
-
 
             await fixture.PostRawStringJson("json string");
 
@@ -1321,18 +1378,15 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
-                    .WithContent("url%26string")
-                    .WithHeaders("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
-                    .Respond(HttpStatusCode.OK);
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+                .WithContent("url%26string")
+                .WithHeaders("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
+                .Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
-
 
             await fixture.PostRawStringUrlEncoded("url&string");
 
@@ -1344,16 +1398,13 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
-                    .Respond(HttpStatusCode.OK);
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
+                .Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
-
 
             await fixture.PostGeneric(5);
 
@@ -1361,8 +1412,9 @@ namespace Refit.Tests
 
             mockHttp.ResetExpectations();
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
-                    .Respond(HttpStatusCode.OK);
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
+                .Respond(HttpStatusCode.OK);
 
             await fixture.PostGeneric("4");
 
@@ -1374,10 +1426,7 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
             var postBody = new Dictionary<string, string>
             {
@@ -1385,7 +1434,8 @@ namespace Refit.Tests
                 { "once", "told me" }
             };
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/foo")
                 .With(request => request.Content?.Headers.ContentLength > 0)
                 .Respond(HttpStatusCode.OK);
 
@@ -1401,10 +1451,7 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
             var postBody = new Dictionary<string, string>
             {
@@ -1413,7 +1460,8 @@ namespace Refit.Tests
             };
             const string expectedResponse = "some response";
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/foo")
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/foo")
                 .With(request => request.Content?.Headers.ContentLength > 0)
                 .Respond("text/plain", expectedResponse);
 
@@ -1431,15 +1479,13 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
 
-            mockHttp.Expect(HttpMethod.Get, "http://httpbin.org/foo/something")
-                    .Respond(HttpStatusCode.OK);
+            mockHttp
+                .Expect(HttpMethod.Get, "http://httpbin.org/foo/something")
+                .Respond(HttpStatusCode.OK);
 
             await fixture.SomeApiThatUsesVariableNameFromCodeGen("something");
 
@@ -1454,11 +1500,21 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.When(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
-                    .Respond(HttpStatusCode.NotFound, "application/json", "{'message': 'Not Found', 'documentation_url': 'http://foo/bar'}");
+            mockHttp
+                .When(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
+                .Respond(
+                    HttpStatusCode.NotFound,
+                    "application/json",
+                    "{'message': 'Not Found', 'documentation_url': 'http://foo/bar'}"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
             try
@@ -1492,19 +1548,26 @@ namespace Refit.Tests
                 BigData = Enumerable.Range(0, 800000).Select(x => (byte)(x % 256)).ToArray()
             };
 
-            mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/big")
-                    .With(m =>
+            mockHttp
+                .Expect(HttpMethod.Post, "http://httpbin.org/big")
+                .With(m =>
+                {
+                    async Task<bool> T()
                     {
-                        async Task<bool> T()
-                        {
-                            using var s = await m.Content.ReadAsStreamAsync();
-                            var it = await System.Text.Json.JsonSerializer.DeserializeAsync<BigObject>(s, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase });
-                            return it.BigData.SequenceEqual(bigObject.BigData);
-                        }
+                        using var s = await m.Content.ReadAsStreamAsync();
+                        var it = await System.Text.Json.JsonSerializer.DeserializeAsync<BigObject>(
+                            s,
+                            new System.Text.Json.JsonSerializerOptions
+                            {
+                                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+                            }
+                        );
+                        return it.BigData.SequenceEqual(bigObject.BigData);
+                    }
 
-                        return T().Result;
-                    })
-                    .Respond(HttpStatusCode.OK);
+                    return T().Result;
+                })
+                .Respond(HttpStatusCode.OK);
 
             var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
 
@@ -1521,17 +1584,27 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
-                    .Respond(HttpStatusCode.BadRequest, "application/json", "{ 'errors': [ 'error1', 'message' ]}");
-
+            mockHttp
+                .Expect(HttpMethod.Post, "https://api.github.com/users")
+                .Respond(
+                    HttpStatusCode.BadRequest,
+                    "application/json",
+                    "{ 'errors': [ 'error1', 'message' ]}"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-
-            var result = await Assert.ThrowsAsync<ApiException>(async () => await fixture.CreateUser(new User { Name = "foo" }));
+            var result = await Assert.ThrowsAsync<ApiException>(
+                async () => await fixture.CreateUser(new User { Name = "foo" })
+            );
 
             AssertFirstLineContains(nameof(IGitHubApi.CreateUser), result.StackTrace);
 
@@ -1543,7 +1616,6 @@ namespace Refit.Tests
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
-
         [Fact]
         public async Task ErrorsFromApiReturnErrorContentWhenApiResponse()
         {
@@ -1552,15 +1624,23 @@ namespace Refit.Tests
             var settings = new RefitSettings
             {
                 HttpMessageHandlerFactory = () => mockHttp,
-                ContentSerializer = new NewtonsoftJsonContentSerializer(new JsonSerializerSettings() { ContractResolver = new SnakeCasePropertyNamesContractResolver() })
+                ContentSerializer = new NewtonsoftJsonContentSerializer(
+                    new JsonSerializerSettings()
+                    {
+                        ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                    }
+                )
             };
 
-            mockHttp.Expect(HttpMethod.Post, "https://api.github.com/users")
-                    .Respond(HttpStatusCode.BadRequest, "application/json", "{ 'errors': [ 'error1', 'message' ]}");
-
+            mockHttp
+                .Expect(HttpMethod.Post, "https://api.github.com/users")
+                .Respond(
+                    HttpStatusCode.BadRequest,
+                    "application/json",
+                    "{ 'errors': [ 'error1', 'message' ]}"
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
-
 
             using var response = await fixture.CreateUserWithMetadata(new User { Name = "foo" });
             Assert.False(response.IsSuccessStatusCode);
@@ -1606,19 +1686,21 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "http://httpbin.org/get")
-                    .WithHeaders("X-Refit", "99")
-                    .WithQueryString("param", "foo")
-                    .Respond("application/json", "{\"url\": \"http://httpbin.org/get?param=foo\", \"args\": {\"param\": \"foo\"}, \"headers\":{\"X-Refit\":\"99\"}}");
+            mockHttp
+                .Expect(HttpMethod.Get, "http://httpbin.org/get")
+                .WithHeaders("X-Refit", "99")
+                .WithQueryString("param", "foo")
+                .Respond(
+                    "application/json",
+                    "{\"url\": \"http://httpbin.org/get?param=foo\", \"args\": {\"param\": \"foo\"}, \"headers\":{\"X-Refit\":\"99\"}}"
+                );
 
-
-
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, string, int>>("http://httpbin.org/get", settings);
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, string, int>>(
+                "http://httpbin.org/get",
+                settings
+            );
 
             var result = await fixture.Get("foo", 99);
 
@@ -1634,7 +1716,9 @@ namespace Refit.Tests
         {
             var handler = new TestHttpMessageHandler("true");
 
-            var fixture = RestService.For<IBrokenWebApi>(new HttpClient(handler) { BaseAddress = new Uri("http://nowhere.com") });
+            var fixture = RestService.For<IBrokenWebApi>(
+                new HttpClient(handler) { BaseAddress = new Uri("http://nowhere.com") }
+            );
 
             var result = await fixture.PostAValue("Does this work?");
 
@@ -1649,7 +1733,9 @@ namespace Refit.Tests
             var fixture = RestService.For<IGitHubApi>(client);
 
             // We should get an InvalidOperationException if we call a method without a base address set
-            var result = await Assert.ThrowsAsync<InvalidOperationException>(async () => await fixture.GetUser(null));
+            var result = await Assert.ThrowsAsync<InvalidOperationException>(
+                async () => await fixture.GetUser(null)
+            );
 
             AssertFirstLineContains(nameof(IGitHubApi.GetUser), result.StackTrace);
         }
@@ -1659,22 +1745,22 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
                 .WithHeaders("X-Refit", "99")
-                .Respond("application/json", "{\"url\": \"https://httpbin.org/get?FirstName=John&LastName=Rambo\", \"args\": {\"FirstName\": \"John\", \"lName\": \"Rambo\"}}");
+                .Respond(
+                    "application/json",
+                    "{\"url\": \"https://httpbin.org/get?FirstName=John&LastName=Rambo\", \"args\": {\"FirstName\": \"John\", \"lName\": \"Rambo\"}}"
+                );
 
-            var myParams = new MySimpleQueryParams
-            {
-                FirstName = "John",
-                LastName = "Rambo"
-            };
+            var myParams = new MySimpleQueryParams { FirstName = "John", LastName = "Rambo" };
 
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MySimpleQueryParams, int>>("https://httpbin.org/get", settings);
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MySimpleQueryParams, int>>(
+                "https://httpbin.org/get",
+                settings
+            );
 
             var resp = await fixture.Get(myParams, 99);
 
@@ -1687,19 +1773,16 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
-                .Respond("application/json", "{\"url\": \"https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo&Addr_Zip=9999&Addr_Street=HomeStreet 99&MetaData_Age=99&MetaData_Initials=JR&MetaData_Birthday=10%2F31%2F1918 4%3A21%3A16 PM&Other=12345&Other=10%2F31%2F2017 4%3A21%3A17 PM&Other=696e8653-6671-4484-a65f-9485af95fd3a\", \"args\": { \"Addr_Street\": \"HomeStreet 99\", \"Addr_Zip\": \"9999\", \"FirstName\": \"John\", \"LastName\": \"Rambo\", \"MetaData_Age\": \"99\", \"MetaData_Birthday\": \"10/31/1981 4:32:59 PM\", \"MetaData_Initials\": \"JR\", \"Other\": [\"12345\",\"10/31/2017 4:32:59 PM\",\"60282dd2-f79a-4400-be01-bcb0e86e7bc6\"], \"hardcoded\": \"true\"}}");
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond(
+                    "application/json",
+                    "{\"url\": \"https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo&Addr_Zip=9999&Addr_Street=HomeStreet 99&MetaData_Age=99&MetaData_Initials=JR&MetaData_Birthday=10%2F31%2F1918 4%3A21%3A16 PM&Other=12345&Other=10%2F31%2F2017 4%3A21%3A17 PM&Other=696e8653-6671-4484-a65f-9485af95fd3a\", \"args\": { \"Addr_Street\": \"HomeStreet 99\", \"Addr_Zip\": \"9999\", \"FirstName\": \"John\", \"LastName\": \"Rambo\", \"MetaData_Age\": \"99\", \"MetaData_Birthday\": \"10/31/1981 4:32:59 PM\", \"MetaData_Initials\": \"JR\", \"Other\": [\"12345\",\"10/31/2017 4:32:59 PM\",\"60282dd2-f79a-4400-be01-bcb0e86e7bc6\"], \"hardcoded\": \"true\"}}"
+                );
 
-            var myParams = new MyComplexQueryParams
-            {
-                FirstName = "John",
-                LastName = "Rambo"
-            };
+            var myParams = new MyComplexQueryParams { FirstName = "John", LastName = "Rambo" };
             myParams.Address.Postcode = 9999;
             myParams.Address.Street = "HomeStreet 99";
 
@@ -1711,8 +1794,10 @@ namespace Refit.Tests
             myParams.Other.Add(new DateTime(2017, 10, 31, 16, 24, 59));
             myParams.Other.Add(new Guid("60282dd2-f79a-4400-be01-bcb0e86e7bc6"));
 
-
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org", settings);
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>(
+                "https://httpbin.org",
+                settings
+            );
 
             var resp = await fixture.GetQuery(myParams);
 
@@ -1726,19 +1811,16 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Post, "https://httpbin.org/post")
-                .Respond("application/json", "{\"url\": \"https://httpbin.org/post?hardcoded=true&FirstName=John&LastName=Rambo&Addr_Zip=9999&Addr_Street=HomeStreet 99&MetaData_Age=99&MetaData_Initials=JR&MetaData_Birthday=10%2F31%2F1918 4%3A21%3A16 PM&Other=12345&Other=10%2F31%2F2017 4%3A21%3A17 PM&Other=696e8653-6671-4484-a65f-9485af95fd3a\", \"args\": { \"Addr_Street\": \"HomeStreet 99\", \"Addr_Zip\": \"9999\", \"FirstName\": \"John\", \"LastName\": \"Rambo\", \"MetaData_Age\": \"99\", \"MetaData_Birthday\": \"10/31/1981 4:32:59 PM\", \"MetaData_Initials\": \"JR\", \"Other\": [\"12345\",\"10/31/2017 4:32:59 PM\",\"60282dd2-f79a-4400-be01-bcb0e86e7bc6\"], \"hardcoded\": \"true\"}}");
+            mockHttp
+                .Expect(HttpMethod.Post, "https://httpbin.org/post")
+                .Respond(
+                    "application/json",
+                    "{\"url\": \"https://httpbin.org/post?hardcoded=true&FirstName=John&LastName=Rambo&Addr_Zip=9999&Addr_Street=HomeStreet 99&MetaData_Age=99&MetaData_Initials=JR&MetaData_Birthday=10%2F31%2F1918 4%3A21%3A16 PM&Other=12345&Other=10%2F31%2F2017 4%3A21%3A17 PM&Other=696e8653-6671-4484-a65f-9485af95fd3a\", \"args\": { \"Addr_Street\": \"HomeStreet 99\", \"Addr_Zip\": \"9999\", \"FirstName\": \"John\", \"LastName\": \"Rambo\", \"MetaData_Age\": \"99\", \"MetaData_Birthday\": \"10/31/1981 4:32:59 PM\", \"MetaData_Initials\": \"JR\", \"Other\": [\"12345\",\"10/31/2017 4:32:59 PM\",\"60282dd2-f79a-4400-be01-bcb0e86e7bc6\"], \"hardcoded\": \"true\"}}"
+                );
 
-            var myParams = new MyComplexQueryParams
-            {
-                FirstName = "John",
-                LastName = "Rambo"
-            };
+            var myParams = new MyComplexQueryParams { FirstName = "John", LastName = "Rambo" };
             myParams.Address.Postcode = 9999;
             myParams.Address.Street = "HomeStreet 99";
 
@@ -1750,8 +1832,10 @@ namespace Refit.Tests
             myParams.Other.Add(new DateTime(2017, 10, 31, 16, 24, 59));
             myParams.Other.Add(new Guid("60282dd2-f79a-4400-be01-bcb0e86e7bc6"));
 
-
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org", settings);
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>(
+                "https://httpbin.org",
+                settings
+            );
 
             var resp = await fixture.PostQuery(myParams);
 
@@ -1765,27 +1849,24 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
             const string response = "4";
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
-                    .Respond("application/json", response);
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", response);
 
             var myParams = new Dictionary<string, object>
             {
                 ["FirstName"] = "John",
                 ["LastName"] = "Rambo",
-                ["Address"] = new
-                {
-                    Zip = 9999,
-                    Street = "HomeStreet 99"
-                }
+                ["Address"] = new { Zip = 9999, Street = "HomeStreet 99" }
             };
 
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>("https://httpbin.org", settings);
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>(
+                "https://httpbin.org",
+                settings
+            );
 
             // Use the generic to get it as an ApiResponse of string
             var resp = await fixture.GetQuery1<ApiResponse<string>>(myParams);
@@ -1793,8 +1874,9 @@ namespace Refit.Tests
 
             mockHttp.VerifyNoOutstandingExpectation();
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
-                    .Respond("application/json", response);
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", response);
 
             // Get as string
             var resp1 = await fixture.GetQuery1<string>(myParams);
@@ -1803,9 +1885,9 @@ namespace Refit.Tests
 
             mockHttp.VerifyNoOutstandingExpectation();
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
-                    .Respond("application/json", response);
-
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", response);
 
             var resp2 = await fixture.GetQuery1<int>(myParams);
             Assert.Equal(4, resp2);
@@ -1818,92 +1900,97 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
             var fixture = RestService.For<IAmInterfaceC>("https://httpbin.org", settings);
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get").Respond("application/json", nameof(IAmInterfaceA.Ping));
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", nameof(IAmInterfaceA.Ping));
             var resp = await fixture.Ping();
             Assert.Equal(nameof(IAmInterfaceA.Ping), resp);
             mockHttp.VerifyNoOutstandingExpectation();
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
                 .Respond("application/json", nameof(IAmInterfaceB.Pong));
             resp = await fixture.Pong();
             Assert.Equal(nameof(IAmInterfaceB.Pong), resp);
             mockHttp.VerifyNoOutstandingExpectation();
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
                 .Respond("application/json", nameof(IAmInterfaceC.Pang));
             resp = await fixture.Pang();
             Assert.Equal(nameof(IAmInterfaceC.Pang), resp);
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
-
         [Fact]
         public async Task InheritedInterfaceWithOnlyBaseMethodsTest()
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
             var fixture = RestService.For<IContainAandB>("https://httpbin.org", settings);
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get").Respond("application/json", nameof(IAmInterfaceA.Ping));
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond("application/json", nameof(IAmInterfaceA.Ping));
             var resp = await fixture.Ping();
             Assert.Equal(nameof(IAmInterfaceA.Ping), resp);
             mockHttp.VerifyNoOutstandingExpectation();
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
                 .Respond("application/json", nameof(IAmInterfaceB.Pong));
             resp = await fixture.Pong();
             Assert.Equal(nameof(IAmInterfaceB.Pong), resp);
             mockHttp.VerifyNoOutstandingExpectation();
         }
 
-
         [Fact]
         public async Task InheritedInterfaceWithoutRefitInBaseMethodsTest()
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            var fixture = RestService.For<IImplementTheInterfaceAndUseRefit>("https://httpbin.org", settings);
+            var fixture = RestService.For<IImplementTheInterfaceAndUseRefit>(
+                "https://httpbin.org",
+                settings
+            );
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/doSomething")
-                    .WithQueryString("parameter", "4")
-                    .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomething));
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/doSomething")
+                .WithQueryString("parameter", "4")
+                .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomething));
 
             await fixture.DoSomething(4);
             mockHttp.VerifyNoOutstandingExpectation();
 
-
-
-
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
-                .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse));
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
+                .Respond(
+                    "application/json",
+                    nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse)
+                );
             await fixture.DoSomethingElse();
             mockHttp.VerifyNoOutstandingExpectation();
 
-
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
-    .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse));
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
+                .Respond(
+                    "application/json",
+                    nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse)
+                );
             await ((IAmInterfaceEWithNoRefit<int>)fixture).DoSomethingElse();
             mockHttp.VerifyNoOutstandingExpectation();
 
-
-            Assert.Throws<InvalidOperationException>(() => RestService.For<IAmInterfaceEWithNoRefit<int>>("https://httpbin.org"));
+            Assert.Throws<InvalidOperationException>(
+                () => RestService.For<IAmInterfaceEWithNoRefit<int>>("https://httpbin.org")
+            );
         }
 
         [Fact]
@@ -1911,26 +1998,26 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
-                .Respond("application/json", "{\"url\": \"https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo&Address_Zip=9999&Address_Street=HomeStreet 99\", \"args\": {\"Address_Street\": \"HomeStreet 99\",\"Address_Zip\": \"9999\",\"FirstName\": \"John\",\"LastName\": \"Rambo\",\"hardcoded\": \"true\"}}");
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond(
+                    "application/json",
+                    "{\"url\": \"https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo&Address_Zip=9999&Address_Street=HomeStreet 99\", \"args\": {\"Address_Street\": \"HomeStreet 99\",\"Address_Zip\": \"9999\",\"FirstName\": \"John\",\"LastName\": \"Rambo\",\"hardcoded\": \"true\"}}"
+                );
 
             var myParams = new Dictionary<string, object>
             {
                 ["FirstName"] = "John",
                 ["LastName"] = "Rambo",
-                ["Address"] = new
-                {
-                    Zip = 9999,
-                    Street = "HomeStreet 99"
-                }
+                ["Address"] = new { Zip = 9999, Street = "HomeStreet 99" }
             };
 
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>("https://httpbin.org", settings);
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>(
+                "https://httpbin.org",
+                settings
+            );
 
             var resp = await fixture.GetQuery(myParams);
 
@@ -1944,23 +2031,23 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/get")
-                .Respond("application/json", "{\"url\": \"https://httpbin.org/get?search.FirstName=John&search.LastName=Rambo&search.Addr.Zip=9999&search.Addr.Street=HomeStreet 99\", \"args\": {\"search.Addr.Street\": \"HomeStreet 99\",\"search.Addr.Zip\": \"9999\",\"search.FirstName\": \"John\",\"search.LastName\": \"Rambo\"}}");
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/get")
+                .Respond(
+                    "application/json",
+                    "{\"url\": \"https://httpbin.org/get?search.FirstName=John&search.LastName=Rambo&search.Addr.Zip=9999&search.Addr.Street=HomeStreet 99\", \"args\": {\"search.Addr.Street\": \"HomeStreet 99\",\"search.Addr.Zip\": \"9999\",\"search.FirstName\": \"John\",\"search.LastName\": \"Rambo\"}}"
+                );
 
-            var myParams = new MyComplexQueryParams
-            {
-                FirstName = "John",
-                LastName = "Rambo"
-            };
+            var myParams = new MyComplexQueryParams { FirstName = "John", LastName = "Rambo" };
             myParams.Address.Postcode = 9999;
             myParams.Address.Street = "HomeStreet 99";
 
-            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>("https://httpbin.org/get", settings);
+            var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>(
+                "https://httpbin.org/get",
+                settings
+            );
 
             var resp = await fixture.GetQueryWithIncludeParameterName(myParams);
 
@@ -1973,12 +2060,10 @@ namespace Refit.Tests
         public async Task ServiceOutsideNamespaceGetRequest()
         {
             var mockHttp = new MockHttpMessageHandler();
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "http://foo/")
+            mockHttp
+                .Expect(HttpMethod.Get, "http://foo/")
                 // We can't add HttpContent to a GET request,
                 // because HttpClient doesn't allow it and it will
                 // blow up at runtime
@@ -1996,13 +2081,9 @@ namespace Refit.Tests
         public async Task ServiceOutsideNamespacePostRequest()
         {
             var mockHttp = new MockHttpMessageHandler();
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Post, "http://foo/")
-                .Respond("application/json", "Ok");
+            mockHttp.Expect(HttpMethod.Post, "http://foo/").Respond("application/json", "Ok");
 
             var fixture = RestService.For<IServiceWithoutNamespace>("http://foo", settings);
 
@@ -2025,10 +2106,17 @@ namespace Refit.Tests
             mockHttp
                 .Expect(HttpMethod.Post, "/users")
                 .WithHeaders("Content-Type:application/xml; charset=utf-8")
-                .Respond(req => new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent("<User><Name>Created</Name></User>", Encoding.UTF8, "application/xml")
-                });
+                .Respond(
+                    req =>
+                        new HttpResponseMessage(HttpStatusCode.OK)
+                        {
+                            Content = new StringContent(
+                                "<User><Name>Created</Name></User>",
+                                Encoding.UTF8,
+                                "application/xml"
+                            )
+                        }
+                );
 
             var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -2104,7 +2192,9 @@ namespace Refit.Tests
             var expectedBaseAddress = "http://example.com/api";
             var inputBaseAddress = "http://example.com/api/";
 
-            var fixture = RestService.For(typeof(ITrimTrailingForwardSlashApi), inputBaseAddress) as ITrimTrailingForwardSlashApi;
+            var fixture =
+                RestService.For(typeof(ITrimTrailingForwardSlashApi), inputBaseAddress)
+                as ITrimTrailingForwardSlashApi;
 
             Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
         }
@@ -2114,15 +2204,11 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp,
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
             const string Url = "https://httpbin.org/get";
 
-            mockHttp.Expect(HttpMethod.Get, Url)
-                .Respond("application/json", "{ }");
+            mockHttp.Expect(HttpMethod.Get, Url).Respond("application/json", "{ }");
 
             var fixtureA = RestService.For<ITypeCollisionApiA>(Url);
 
@@ -2136,9 +2222,6 @@ namespace Refit.Tests
             Assert.IsType<CollisionB.SomeType>(respB);
         }
 
-
-
-
         internal static Stream GetTestFileStream(string relativeFilePath)
         {
             const char namespaceSeparator = '.';
@@ -2147,24 +2230,32 @@ namespace Refit.Tests
             var assembly = Assembly.GetCallingAssembly();
 
             // compute resource name suffix
-            var relativeName = "." + relativeFilePath
-                .Replace('\\', namespaceSeparator)
-                .Replace('/', namespaceSeparator)
-                .Replace(' ', '_');
+            var relativeName =
+                "."
+                + relativeFilePath
+                    .Replace('\\', namespaceSeparator)
+                    .Replace('/', namespaceSeparator)
+                    .Replace(' ', '_');
 
             // get resource stream
             var fullName = assembly
                 .GetManifestResourceNames()
-                .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture));
+                .FirstOrDefault(
+                    name => name.EndsWith(relativeName, StringComparison.InvariantCulture)
+                );
             if (fullName == null)
             {
-                throw new Exception($"Unable to find resource for path \"{relativeFilePath}\". Resource with name ending on \"{relativeName}\" was not found in assembly.");
+                throw new Exception(
+                    $"Unable to find resource for path \"{relativeFilePath}\". Resource with name ending on \"{relativeName}\" was not found in assembly."
+                );
             }
 
             var stream = assembly.GetManifestResourceStream(fullName);
             if (stream == null)
             {
-                throw new Exception($"Unable to find resource for path \"{relativeFilePath}\". Resource named \"{fullName}\" was not found in assembly.");
+                throw new Exception(
+                    $"Unable to find resource for path \"{relativeFilePath}\". Resource named \"{fullName}\" was not found in assembly."
+                );
             }
 
             return stream;

@@ -45,12 +45,10 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/")
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/")
                 .Respond(HttpStatusCode.OK, "text/html", "OK");
 
             var fixture = RestService.For<IHaveDims>("https://httpbin.org/", settings);
@@ -64,12 +62,10 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/")
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/")
                 .Respond(HttpStatusCode.OK, "text/html", "OK");
 
             var fixture = RestService.For<IHaveDims>("https://httpbin.org/", settings);
@@ -83,12 +79,10 @@ namespace Refit.Tests
         {
             var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp
-            };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-            mockHttp.Expect(HttpMethod.Get, "https://httpbin.org/")
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/")
                 .Respond(HttpStatusCode.OK, "text/html", "OK");
 
             var fixture = RestService.For<IHaveDims>("https://httpbin.org/", settings);

@@ -20,14 +20,10 @@ namespace Refit.Tests
             Assert.Empty(target);
         }
 
-
         [Fact]
         public void LoadsFromDictionary()
         {
-            var source = new Dictionary<string, string> {
-                { "foo", "bar" },
-                { "xyz", "123" }
-            };
+            var source = new Dictionary<string, string> { { "foo", "bar" }, { "xyz", "123" } };
 
             var target = new FormValueMultimap(source, settings);
 
@@ -37,16 +33,8 @@ namespace Refit.Tests
         [Fact]
         public void LoadsFromObject()
         {
-            var source = new ObjectTestClass
-            {
-                A = "1",
-                B = "2"
-            };
-            var expected = new Dictionary<string, string>
-            {
-                { "A", "1" },
-                { "B", "2" },
-            };
+            var source = new ObjectTestClass { A = "1", B = "2" };
+            var expected = new Dictionary<string, string> { { "A", "1" }, { "B", "2" }, };
 
             var actual = new FormValueMultimap(source, settings);
 
@@ -64,13 +52,13 @@ namespace Refit.Tests
                 D = new List<double> { 0.1, 1.0 },
                 E = new List<bool> { true, false }
             };
-            var expected = new List<KeyValuePair<string, string>> {
+            var expected = new List<KeyValuePair<string, string>>
+            {
                 new KeyValuePair<string, string>("A", "01"),
                 new KeyValuePair<string, string>("A", "02"),
                 new KeyValuePair<string, string>("B", "set1,set2"),
                 new KeyValuePair<string, string>("C", "01 02"),
                 new KeyValuePair<string, string>("D", "0.10\t1.00"),
-
                 // The default behavior is to capitalize booleans. This is not a requirement.
                 new KeyValuePair<string, string>("E", "True|False")
             };
@@ -95,11 +83,11 @@ namespace Refit.Tests
                 C = new HashSet<int> { 1, 2 },
                 D = new List<double> { 0.1, 1.0 },
                 E = new List<bool> { true, false },
-
                 // Member has no explicit CollectionFormat
                 F = new[] { 1, 2, 3 }
             };
-            var expected = new List<KeyValuePair<string, string>> {
+            var expected = new List<KeyValuePair<string, string>>
+            {
                 new KeyValuePair<string, string>("A", "01"),
                 new KeyValuePair<string, string>("A", "02"),
                 new KeyValuePair<string, string>("B", "set1,set2"),
@@ -121,12 +109,12 @@ namespace Refit.Tests
         [InlineData(CollectionFormat.Pipes, "1|2|3")]
         [InlineData(CollectionFormat.Ssv, "1 2 3")]
         [InlineData(CollectionFormat.Tsv, "1\t2\t3")]
-        public void DefaultCollectionFormatCanBeSpecifiedInSettings(CollectionFormat format, string expectedFormat)
+        public void DefaultCollectionFormatCanBeSpecifiedInSettings(
+            CollectionFormat format,
+            string expectedFormat
+        )
         {
-            var settingsWithCollectionFormat = new RefitSettings
-            {
-                CollectionFormat = format
-            };
+            var settingsWithCollectionFormat = new RefitSettings { CollectionFormat = format };
             var source = new ObjectWithRepeatedFieldsTestClass
             {
                 // Members have explicit CollectionFormat
@@ -135,11 +123,11 @@ namespace Refit.Tests
                 C = new HashSet<int> { 1, 2 },
                 D = new List<double> { 0.1, 1.0 },
                 E = new List<bool> { true, false },
-
                 // Member has no explicit CollectionFormat
                 F = new[] { 1, 2, 3 }
             };
-            var expected = new List<KeyValuePair<string, string>> {
+            var expected = new List<KeyValuePair<string, string>>
+            {
                 new KeyValuePair<string, string>("A", "01"),
                 new KeyValuePair<string, string>("A", "02"),
                 new KeyValuePair<string, string>("B", "set1,set2"),
@@ -165,14 +153,19 @@ namespace Refit.Tests
         {
             [Query(CollectionFormat.Multi, Format = "00")]
             public IList<int> A { get; set; }
+
             [Query(CollectionFormat.Csv)]
             public ISet<string> B { get; set; }
+
             [Query(CollectionFormat.Ssv, Format = "00")]
             public HashSet<int> C { get; set; }
+
             [Query(CollectionFormat.Tsv, Format = "0.00")]
             public IList<double> D { get; set; }
+
             [Query(CollectionFormat.Pipes)]
             public IList<bool> E { get; set; }
+
             [Query]
             public int[] F { get; set; }
         }
@@ -180,15 +173,8 @@ namespace Refit.Tests
         [Fact]
         public void ExcludesPropertiesWithInaccessibleGetters()
         {
-            var source = new ClassWithInaccessibleGetters
-            {
-                A = "Foo",
-                B = "Bar"
-            };
-            var expected = new Dictionary<string, string>
-            {
-                { "C", "FooBar" }
-            };
+            var source = new ClassWithInaccessibleGetters { A = "Foo", B = "Bar" };
+            var expected = new Dictionary<string, string> { { "C", "FooBar" } };
 
             var actual = new FormValueMultimap(source, settings);
 
@@ -205,20 +191,11 @@ namespace Refit.Tests
         [Fact]
         public void LoadsFromAnonymousType()
         {
-            var source = new
-            {
-                foo = "bar",
-                xyz = 123
-            };
+            var source = new { foo = "bar", xyz = 123 };
 
-            var expected = new Dictionary<string, string>
-            {
-                { "foo", "bar" },
-                { "xyz", "123" }
-            };
+            var expected = new Dictionary<string, string> { { "foo", "bar" }, { "xyz", "123" } };
 
             var actual = new FormValueMultimap(source, settings);
-
 
             Assert.Equal(expected, actual);
         }
@@ -226,10 +203,7 @@ namespace Refit.Tests
         [Fact]
         public void UsesAliasAsAttribute()
         {
-            var source = new AliasingTestClass
-            {
-                Foo = "abc"
-            };
+            var source = new AliasingTestClass { Foo = "abc" };
 
             var target = new FormValueMultimap(source, settings);
 
@@ -241,10 +215,7 @@ namespace Refit.Tests
         [Fact]
         public void UsesJsonPropertyAttribute()
         {
-            var source = new AliasingTestClass
-            {
-                Bar = "xyz"
-            };
+            var source = new AliasingTestClass { Bar = "xyz" };
 
             var target = new FormValueMultimap(source, settings);
 
@@ -256,10 +227,7 @@ namespace Refit.Tests
         [Fact]
         public void UsesQueryPropertyAttribute()
         {
-            var source = new AliasingTestClass
-            {
-                Frob = 4
-            };
+            var source = new AliasingTestClass { Frob = 4 };
 
             var target = new FormValueMultimap(source, settings);
 
@@ -268,14 +236,10 @@ namespace Refit.Tests
             Assert.Equal("4.0", target.FirstOrDefault(entry => entry.Key == "prefix-fr").Value);
         }
 
-
         [Fact]
         public void GivesPrecedenceToAliasAs()
         {
-            var source = new AliasingTestClass
-            {
-                Baz = "123"
-            };
+            var source = new AliasingTestClass { Baz = "123" };
 
             var target = new FormValueMultimap(source, settings);
 
@@ -285,21 +249,16 @@ namespace Refit.Tests
             Assert.Equal("123", target.FirstOrDefault(entry => entry.Key == "a").Value);
         }
 
-
         [Fact]
         public void SkipsNullValuesFromDictionary()
         {
-            var source = new Dictionary<string, string> {
-                { "foo", "bar" },
-                { "xyz", null }
-            };
+            var source = new Dictionary<string, string> { { "foo", "bar" }, { "xyz", null } };
 
             var target = new FormValueMultimap(source, settings);
 
             Assert.Single(target);
             Assert.Contains("foo", target.Keys);
         }
-
 
         [Fact]
         public void SerializesEnumWithEnumMemberAttribute()
@@ -310,18 +269,12 @@ namespace Refit.Tests
                 { "B", EnumWithEnumMember.B }
             };
 
-            var expected = new Dictionary<string, string>
-            {
-                { "A", "A" },
-                { "B", "b" }
-            };
-
+            var expected = new Dictionary<string, string> { { "A", "A" }, { "B", "b" } };
 
             var actual = new FormValueMultimap(source, settings);
 
             Assert.Equal(expected, actual);
         }
-
 
         public class AliasingTestClass
         {
@@ -336,7 +289,6 @@ namespace Refit.Tests
             [JsonProperty(PropertyName = "z")]
             [JsonPropertyName("z")]
             public string Baz { get; set; }
-
 
             [Query("-", "prefix", "0.0")]
             [AliasAs("fr")]

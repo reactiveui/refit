@@ -13,7 +13,8 @@ namespace Refit
     {
         static readonly Dictionary<Type, PropertyInfo[]> PropertyCache = new();
 
-        readonly IList<KeyValuePair<string?, string?>> formEntries = new List<KeyValuePair<string?, string?>>();
+        readonly IList<KeyValuePair<string?, string?>> formEntries =
+            new List<KeyValuePair<string?, string?>>();
 
         readonly IHttpContentSerializer contentSerializer;
 
@@ -23,7 +24,8 @@ namespace Refit
                 throw new ArgumentNullException(nameof(settings));
             contentSerializer = settings.ContentSerializer;
 
-            if (source == null) return;
+            if (source == null)
+                return;
 
             if (source is IDictionary dictionary)
             {
@@ -32,7 +34,10 @@ namespace Refit
                     var value = dictionary[key];
                     if (value != null)
                     {
-                        Add(key.ToString(), settings.FormUrlEncodedParameterFormatter.Format(value, null));
+                        Add(
+                            key.ToString(),
+                            settings.FormUrlEncodedParameterFormatter.Format(value, null)
+                        );
                     }
                 }
 
@@ -60,16 +65,23 @@ namespace Refit
 
                         if (value is IEnumerable enumerable)
                         {
-                            var collectionFormat = attrib != null && attrib.IsCollectionFormatSpecified
-                                ? attrib.CollectionFormat
-                                : settings.CollectionFormat;
+                            var collectionFormat =
+                                attrib != null && attrib.IsCollectionFormatSpecified
+                                    ? attrib.CollectionFormat
+                                    : settings.CollectionFormat;
 
                             switch (collectionFormat)
                             {
                                 case CollectionFormat.Multi:
                                     foreach (var item in enumerable)
                                     {
-                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib?.Format));
+                                        Add(
+                                            fieldName,
+                                            settings.FormUrlEncodedParameterFormatter.Format(
+                                                item,
+                                                attrib?.Format
+                                            )
+                                        );
                                     }
                                     break;
                                 case CollectionFormat.Csv:
@@ -86,19 +98,36 @@ namespace Refit
 
                                     var formattedValues = enumerable
                                         .Cast<object>()
-                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib?.Format));
+                                        .Select(
+                                            v =>
+                                                settings.FormUrlEncodedParameterFormatter.Format(
+                                                    v,
+                                                    attrib?.Format
+                                                )
+                                        );
                                     Add(fieldName, string.Join(delimiter, formattedValues));
                                     break;
                                 default:
-                                    Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
+                                    Add(
+                                        fieldName,
+                                        settings.FormUrlEncodedParameterFormatter.Format(
+                                            value,
+                                            attrib?.Format
+                                        )
+                                    );
                                     break;
                             }
                         }
                         else
                         {
-                            Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
+                            Add(
+                                fieldName,
+                                settings.FormUrlEncodedParameterFormatter.Format(
+                                    value,
+                                    attrib?.Format
+                                )
+                            );
                         }
-
                     }
                 }
             }
@@ -116,15 +145,23 @@ namespace Refit
 
         string GetFieldNameForProperty(PropertyInfo propertyInfo)
         {
-            var name = propertyInfo.GetCustomAttributes<AliasAsAttribute>(true)
-                               .Select(a => a.Name)
-                               .FirstOrDefault()
-                   ?? contentSerializer.GetFieldNameForProperty(propertyInfo)
-                   ?? propertyInfo.Name;
+            var name =
+                propertyInfo
+                    .GetCustomAttributes<AliasAsAttribute>(true)
+                    .Select(a => a.Name)
+                    .FirstOrDefault()
+                ?? contentSerializer.GetFieldNameForProperty(propertyInfo)
+                ?? propertyInfo.Name;
 
-            var qattrib = propertyInfo.GetCustomAttributes<QueryAttribute>(true)
-                           .Select(attr => !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{name}" : name)
-                           .FirstOrDefault();
+            var qattrib = propertyInfo
+                .GetCustomAttributes<QueryAttribute>(true)
+                .Select(
+                    attr =>
+                        !string.IsNullOrWhiteSpace(attr.Prefix)
+                            ? $"{attr.Prefix}{attr.Delimiter}{name}"
+                            : name
+                )
+                .FirstOrDefault();
 
             return qattrib ?? name;
         }
@@ -132,8 +169,8 @@ namespace Refit
         static PropertyInfo[] GetProperties(Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                       .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
-                       .ToArray();
+                .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
+                .ToArray();
         }
 
         public IEnumerator<KeyValuePair<string?, string?>> GetEnumerator()

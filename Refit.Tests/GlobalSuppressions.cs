@@ -5,5 +5,17 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "<Pending>", Scope = "member", Target = "~T:Refit.Tests.RequestBuilderTests")]
-[assembly: SuppressMessage("CodeQuality", "IDE0079:Remove unnecessary suppression", Justification = "<Pending>", Scope = "member", Target = "~T:Refit.Tests.MultipartTests")]
+[assembly: SuppressMessage(
+    "CodeQuality",
+    "IDE0079:Remove unnecessary suppression",
+    Justification = "<Pending>",
+    Scope = "member",
+    Target = "~T:Refit.Tests.RequestBuilderTests"
+)]
+[assembly: SuppressMessage(
+    "CodeQuality",
+    "IDE0079:Remove unnecessary suppression",
+    Justification = "<Pending>",
+    Scope = "member",
+    Target = "~T:Refit.Tests.MultipartTests"
+)]

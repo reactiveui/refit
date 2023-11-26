@@ -60,7 +60,6 @@ namespace Refit.Buffers
             {
                 get => position;
                 set => ThrowNotSupportedException();
-
             }
 
             /// <inheritdoc/>
@@ -78,7 +77,11 @@ namespace Refit.Buffers
             }
 
             /// <inheritdoc/>
-            public override Task CopyToAsync(Stream destination, int bufferSize, CancellationToken cancellationToken)
+            public override Task CopyToAsync(
+                Stream destination,
+                int bufferSize,
+                CancellationToken cancellationToken
+            )
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -107,10 +110,14 @@ namespace Refit.Buffers
             /// <inheritdoc/>
             public override int Read(byte[] buffer, int offset, int count)
             {
-                if (offset < 0) ThrowArgumentOutOfRangeExceptionForNegativeOffset();
-                if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
-                if (offset + count > buffer.Length) ThrowArgumentOutOfRangeExceptionForEndOfStreamReached();
-                if (pooledBuffer is null) ThrowObjectDisposedException();
+                if (offset < 0)
+                    ThrowArgumentOutOfRangeExceptionForNegativeOffset();
+                if (count < 0)
+                    ThrowArgumentOutOfRangeExceptionForNegativeCount();
+                if (offset + count > buffer.Length)
+                    ThrowArgumentOutOfRangeExceptionForEndOfStreamReached();
+                if (pooledBuffer is null)
+                    ThrowObjectDisposedException();
 
                 var destination = buffer.AsSpan(offset, count);
                 var source = pooledBuffer.AsSpan(0, length).Slice(position);
@@ -134,7 +141,12 @@ namespace Refit.Buffers
             }
 
             /// <inheritdoc/>
-            public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+            public override Task<int> ReadAsync(
+                byte[] buffer,
+                int offset,
+                int count,
+                CancellationToken cancellationToken
+            )
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -160,7 +172,8 @@ namespace Refit.Buffers
             /// <inheritdoc/>
             public override int ReadByte()
             {
-                if (pooledBuffer is null) ThrowObjectDisposedException();
+                if (pooledBuffer is null)
+                    ThrowObjectDisposedException();
 
                 if (position >= pooledBuffer!.Length)
                 {
@@ -193,7 +206,8 @@ namespace Refit.Buffers
             /// <inheritdoc/>
             protected override void Dispose(bool disposing)
             {
-                if (pooledBuffer == null) return;
+                if (pooledBuffer == null)
+                    return;
 
                 GC.SuppressFinalize(this);
 

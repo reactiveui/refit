@@ -2,12 +2,13 @@
 {
     public interface ISettingsFor
     {
-        RefitSettings? Settings { get;  }
+        RefitSettings? Settings { get; }
     }
 
     public class SettingsFor<T> : ISettingsFor
     {
         public SettingsFor(RefitSettings? settings) => Settings = settings;
-        public RefitSettings? Settings { get;  }
+
+        public RefitSettings? Settings { get; }
     }
 }

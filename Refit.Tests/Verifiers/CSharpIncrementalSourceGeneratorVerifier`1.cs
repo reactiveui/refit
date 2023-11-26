@@ -3,7 +3,5 @@
 namespace Refit.Tests
 {
     public static partial class CSharpIncrementalSourceGeneratorVerifier<TIncrementalGenerator>
-        where TIncrementalGenerator : IIncrementalGenerator, new()
-    {
-    }
+        where TIncrementalGenerator : IIncrementalGenerator, new() { }
 }

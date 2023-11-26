@@ -10,12 +10,16 @@
     {
         public IRequestBuilder<T> Create<T>(RefitSettings? settings = null)
         {
-            return new CachedRequestBuilderImplementation<T>(new RequestBuilderImplementation<T>(settings));
+            return new CachedRequestBuilderImplementation<T>(
+                new RequestBuilderImplementation<T>(settings)
+            );
         }
 
         public IRequestBuilder Create(Type refitInterfaceType, RefitSettings? settings = null)
         {
-            return new CachedRequestBuilderImplementation(new RequestBuilderImplementation(refitInterfaceType, settings));
+            return new CachedRequestBuilderImplementation(
+                new RequestBuilderImplementation(refitInterfaceType, settings)
+            );
         }
     }
 }
