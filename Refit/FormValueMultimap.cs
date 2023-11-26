@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections;
 using System.Reflection;
-using System.Text.Json.Serialization;
 
 namespace Refit
 {
@@ -17,7 +13,8 @@ namespace Refit
     {
         static readonly Dictionary<Type, PropertyInfo[]> PropertyCache = new();
 
-        readonly IList<KeyValuePair<string?, string?>> formEntries = new List<KeyValuePair<string?, string?>>();
+        readonly IList<KeyValuePair<string?, string?>> formEntries =
+            new List<KeyValuePair<string?, string?>>();
 
         readonly IHttpContentSerializer contentSerializer;
 
@@ -27,7 +24,8 @@ namespace Refit
                 throw new ArgumentNullException(nameof(settings));
             contentSerializer = settings.ContentSerializer;
 
-            if (source == null) return;
+            if (source == null)
+                return;
 
             if (source is IDictionary dictionary)
             {
@@ -36,7 +34,10 @@ namespace Refit
                     var value = dictionary[key];
                     if (value != null)
                     {
-                        Add(key.ToString(), settings.FormUrlEncodedParameterFormatter.Format(value, null));
+                        Add(
+                            key.ToString(),
+                            settings.FormUrlEncodedParameterFormatter.Format(value, null)
+                        );
                     }
                 }
 
@@ -47,62 +48,84 @@ namespace Refit
 
             lock (PropertyCache)
             {
-                if (!PropertyCache.ContainsKey(type))
+                if (!PropertyCache.TryGetValue(type, out var properties))
                 {
-                    PropertyCache[type] = GetProperties(type);
+                    properties = GetProperties(type);
+                    PropertyCache[type] = properties;
                 }
 
-                foreach (var property in PropertyCache[type])
+                foreach (var property in properties)
                 {
                     var value = property.GetValue(source, null);
-                    if (value != null)
+                    if (value == null)
+                        continue;
+
+                    var fieldName = GetFieldNameForProperty(property);
+
+                    // see if there's a query attribute
+                    var attrib = property.GetCustomAttribute<QueryAttribute>(true);
+
+                    if (value is not IEnumerable enumerable)
                     {
-                        var fieldName = GetFieldNameForProperty(property);
+                        Add(
+                            fieldName,
+                            settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format)
+                        );
+                        continue;
+                    }
 
-                        // see if there's a query attribute
-                        var attrib = property.GetCustomAttribute<QueryAttribute>(true);
+                    var collectionFormat =
+                        attrib != null && attrib.IsCollectionFormatSpecified
+                            ? attrib.CollectionFormat
+                            : settings.CollectionFormat;
 
-                        if (value is IEnumerable enumerable)
-                        {
-                            var collectionFormat = attrib != null && attrib.IsCollectionFormatSpecified
-                                ? attrib.CollectionFormat
-                                : settings.CollectionFormat;
-
-                            switch (collectionFormat)
+                    switch (collectionFormat)
+                    {
+                        case CollectionFormat.Multi:
+                            foreach (var item in enumerable)
                             {
-                                case CollectionFormat.Multi:
-                                    foreach (var item in enumerable)
-                                    {
-                                        Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(item, attrib?.Format));
-                                    }
-                                    break;
-                                case CollectionFormat.Csv:
-                                case CollectionFormat.Ssv:
-                                case CollectionFormat.Tsv:
-                                case CollectionFormat.Pipes:
-                                    var delimiter = collectionFormat switch
-                                    {
-                                        CollectionFormat.Csv => ",",
-                                        CollectionFormat.Ssv => " ",
-                                        CollectionFormat.Tsv => "\t",
-                                        _ => "|"
-                                    };
-
-                                    var formattedValues = enumerable
-                                        .Cast<object>()
-                                        .Select(v => settings.FormUrlEncodedParameterFormatter.Format(v, attrib?.Format));
-                                    Add(fieldName, string.Join(delimiter, formattedValues));
-                                    break;
-                                default:
-                                    Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
-                                    break;
+                                Add(
+                                    fieldName,
+                                    settings.FormUrlEncodedParameterFormatter.Format(
+                                        item,
+                                        attrib?.Format
+                                    )
+                                );
                             }
-                        }
-                        else
-                        {
-                            Add(fieldName, settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
-                        }
 
+                            break;
+                        case CollectionFormat.Csv:
+                        case CollectionFormat.Ssv:
+                        case CollectionFormat.Tsv:
+                        case CollectionFormat.Pipes:
+                            var delimiter = collectionFormat switch
+                            {
+                                CollectionFormat.Csv => ",",
+                                CollectionFormat.Ssv => " ",
+                                CollectionFormat.Tsv => "\t",
+                                _ => "|"
+                            };
+
+                            var formattedValues = enumerable
+                                .Cast<object>()
+                                .Select(
+                                    v =>
+                                        settings.FormUrlEncodedParameterFormatter.Format(
+                                            v,
+                                            attrib?.Format
+                                        )
+                                );
+                            Add(fieldName, string.Join(delimiter, formattedValues));
+                            break;
+                        default:
+                            Add(
+                                fieldName,
+                                settings.FormUrlEncodedParameterFormatter.Format(
+                                    value,
+                                    attrib?.Format
+                                )
+                            );
+                            break;
                     }
                 }
             }
@@ -120,15 +143,23 @@ namespace Refit
 
         string GetFieldNameForProperty(PropertyInfo propertyInfo)
         {
-            var name = propertyInfo.GetCustomAttributes<AliasAsAttribute>(true)
-                               .Select(a => a.Name)
-                               .FirstOrDefault()
-                   ?? contentSerializer.GetFieldNameForProperty(propertyInfo)
-                   ?? propertyInfo.Name;
+            var name =
+                propertyInfo
+                    .GetCustomAttributes<AliasAsAttribute>(true)
+                    .Select(a => a.Name)
+                    .FirstOrDefault()
+                ?? contentSerializer.GetFieldNameForProperty(propertyInfo)
+                ?? propertyInfo.Name;
 
-            var qattrib = propertyInfo.GetCustomAttributes<QueryAttribute>(true)
-                           .Select(attr => !string.IsNullOrWhiteSpace(attr.Prefix) ? $"{attr.Prefix}{attr.Delimiter}{name}" : name)
-                           .FirstOrDefault();
+            var qattrib = propertyInfo
+                .GetCustomAttributes<QueryAttribute>(true)
+                .Select(
+                    attr =>
+                        !string.IsNullOrWhiteSpace(attr.Prefix)
+                            ? $"{attr.Prefix}{attr.Delimiter}{name}"
+                            : name
+                )
+                .FirstOrDefault();
 
             return qattrib ?? name;
         }
@@ -136,8 +167,8 @@ namespace Refit
         static PropertyInfo[] GetProperties(Type type)
         {
             return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                       .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
-                       .ToArray();
+                .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
+                .ToArray();
         }
 
         public IEnumerator<KeyValuePair<string?, string?>> GetEnumerator()

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net.Http;
 
 namespace Refit
 {
@@ -12,11 +11,7 @@ namespace Refit
 
         public abstract HttpMethod Method { get; }
 
-        public virtual string Path
-        {
-            get;
-            protected set;
-        }
+        public virtual string Path { get; protected set; }
     }
 
     /// <summary>
@@ -25,7 +20,8 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Method)]
     public class GetAttribute : HttpMethodAttribute
     {
-        public GetAttribute(string path) : base(path) { }
+        public GetAttribute(string path)
+            : base(path) { }
 
         public override HttpMethod Method
         {
@@ -39,7 +35,8 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Method)]
     public class PostAttribute : HttpMethodAttribute
     {
-        public PostAttribute(string path) : base(path) { }
+        public PostAttribute(string path)
+            : base(path) { }
 
         public override HttpMethod Method
         {
@@ -53,7 +50,8 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Method)]
     public class PutAttribute : HttpMethodAttribute
     {
-        public PutAttribute(string path) : base(path) { }
+        public PutAttribute(string path)
+            : base(path) { }
 
         public override HttpMethod Method
         {
@@ -67,7 +65,8 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Method)]
     public class DeleteAttribute : HttpMethodAttribute
     {
-        public DeleteAttribute(string path) : base(path) { }
+        public DeleteAttribute(string path)
+            : base(path) { }
 
         public override HttpMethod Method
         {
@@ -81,7 +80,8 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Method)]
     public class PatchAttribute : HttpMethodAttribute
     {
-        public PatchAttribute(string path) : base(path) { }
+        public PatchAttribute(string path)
+            : base(path) { }
 
         public override HttpMethod Method
         {
@@ -95,7 +95,8 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Method)]
     public class OptionsAttribute : HttpMethodAttribute
     {
-        public OptionsAttribute(string path) : base(path) { }
+        public OptionsAttribute(string path)
+            : base(path) { }
 
         public override HttpMethod Method
         {
@@ -109,7 +110,8 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Method)]
     public class HeadAttribute : HttpMethodAttribute
     {
-        public HeadAttribute(string path) : base(path) { }
+        public HeadAttribute(string path)
+            : base(path) { }
 
         public override HttpMethod Method
         {
@@ -132,7 +134,6 @@ namespace Refit
         {
             BoundaryText = boundaryText;
         }
-
     }
 
     /// <summary>
@@ -176,10 +177,8 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Parameter)]
     public class BodyAttribute : Attribute
     {
-        public BodyAttribute()
-        {
+        public BodyAttribute() { }
 
-        }
         public BodyAttribute(bool buffered)
         {
             Buffered = buffered;
@@ -191,15 +190,16 @@ namespace Refit
             Buffered = buffered;
         }
 
-        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Default)
+        public BodyAttribute(
+            BodySerializationMethod serializationMethod = BodySerializationMethod.Default
+        )
         {
             SerializationMethod = serializationMethod;
         }
 
-
-
         public bool? Buffered { get; set; }
-        public BodySerializationMethod SerializationMethod { get; protected set; } = BodySerializationMethod.Default;
+        public BodySerializationMethod SerializationMethod { get; protected set; } =
+            BodySerializationMethod.Default;
     }
 
     /// <summary>
@@ -217,7 +217,10 @@ namespace Refit
     }
 
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-    [Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem", false)]
+    [Obsolete(
+        "Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem",
+        false
+    )]
     public class AttachmentNameAttribute : Attribute
     {
         public AttachmentNameAttribute(string name)
@@ -232,10 +235,7 @@ namespace Refit
     /// Allows you to provide a Dictionary of headers to be added to the request.
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class HeaderCollectionAttribute : Attribute
-    {
-
-    }
+    public class HeaderCollectionAttribute : Attribute { }
 
     /// <summary>
     /// Add multiple headers to the request.
