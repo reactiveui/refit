@@ -132,9 +132,9 @@ namespace Refit
                     method => !method.MethodInfo.IsGenericMethod
                 );
 
-            var possibleMethods = possibleMethodsList.ToList();
+            var possibleMethods = possibleMethodsList.ToArray();
 
-            if (possibleMethods.Count == 1)
+            if (possibleMethods.Length == 1)
                 return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
 
             foreach (var method in possibleMethods)
