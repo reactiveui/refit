@@ -207,7 +207,7 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }
-    
+
 
 
         /// <inheritdoc />
@@ -634,7 +634,7 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }
-    
+
 
 
         /// <inheritdoc />
@@ -707,7 +707,7 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }
-    
+
 
 
         /// <inheritdoc />
@@ -1067,7 +1067,7 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }
-    
+
 
 
         /// <inheritdoc />

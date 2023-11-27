@@ -357,7 +357,7 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }}
-    
+
 "
             );
             // Get any other methods on the refit interfaces. We'll need to generate something for them and warn
