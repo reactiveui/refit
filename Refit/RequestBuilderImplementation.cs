@@ -1208,34 +1208,33 @@ namespace Refit
 
             var type = value.GetType();
 
-            bool ShouldReturn() =>
+            // Bail out early & match string
+            if (ShouldReturn(type))
+                return true;
+
+            // Get the element type for enumerables
+            if (value is not IEnumerable)
+                return false;
+
+            var ienu = typeof(IEnumerable<>);
+            // We don't want to enumerate to get the type, so we'll just look for IEnumerable<T>
+            var intType = type.GetInterfaces()
+                .FirstOrDefault(
+                    i => i.GetTypeInfo().IsGenericType && i.GetGenericTypeDefinition() == ienu
+                );
+
+            if (intType == null)
+                return false;
+
+            type = intType.GetGenericArguments()[0];
+            return ShouldReturn(type);
+
+            static bool ShouldReturn(Type type) =>
                 type == typeof(string)
                 || type == typeof(bool)
                 || type == typeof(char)
                 || typeof(IFormattable).IsAssignableFrom(type)
                 || type == typeof(Uri);
-
-            // Bail out early & match string
-            if (ShouldReturn())
-                return true;
-
-            // Get the element type for enumerables
-            if (value is IEnumerable enu)
-            {
-                var ienu = typeof(IEnumerable<>);
-                // We don't want to enumerate to get the type, so we'll just look for IEnumerable<T>
-                var intType = type.GetInterfaces()
-                    .FirstOrDefault(
-                        i => i.GetTypeInfo().IsGenericType && i.GetGenericTypeDefinition() == ienu
-                    );
-
-                if (intType != null)
-                {
-                    type = intType.GetGenericArguments()[0];
-                }
-            }
-
-            return ShouldReturn();
         }
 
         static void SetHeader(HttpRequestMessage request, string name, string? value)
