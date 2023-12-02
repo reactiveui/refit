@@ -23,6 +23,8 @@ namespace Refit.Generator
     public class InterfaceStubGenerator : ISourceGenerator
 #endif
     {
+        private const string TypeParameterVariableName = "_typeParameters";
+
 #pragma warning disable RS2008 // Enable analyzer release tracking
         static readonly DiagnosticDescriptor InvalidRefitMember =
             new(
@@ -396,15 +398,17 @@ namespace Refit.Implementation
                 .Cast<IMethodSymbol>()
                 .ToList();
 
+            var memberNames = new HashSet<string>(interfaceSymbol.GetMembers().Select(x => x.Name));
+
             // Handle Refit Methods
             foreach (var method in refitMethods)
             {
-                ProcessRefitMethod(source, method, true);
+                ProcessRefitMethod(source, method, true, memberNames);
             }
 
             foreach (var method in refitMethods.Concat(derivedRefitMethods))
             {
-                ProcessRefitMethod(source, method, false);
+                ProcessRefitMethod(source, method, false, memberNames);
             }
 
             // Handle non-refit Methods that aren't static or properties or have a method body
@@ -445,8 +449,20 @@ namespace Refit.Implementation
         /// <param name="source"></param>
         /// <param name="methodSymbol"></param>
         /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
-        void ProcessRefitMethod(StringBuilder source, IMethodSymbol methodSymbol, bool isTopLevel)
+        /// <param name="memberNames">Contains the unique member names in the interface scope.</param>
+        void ProcessRefitMethod(
+            StringBuilder source,
+            IMethodSymbol methodSymbol,
+            bool isTopLevel,
+            HashSet<string> memberNames
+        )
         {
+            var parameterTypesExpression = GenerateTypeParameterExpression(
+                source,
+                methodSymbol,
+                memberNames
+            );
+
             var returnType = methodSymbol.ReturnType.ToDisplayString(
                 SymbolDisplayFormat.FullyQualifiedFormat
             );
@@ -466,15 +482,6 @@ namespace Refit.Implementation
                 argList.Add($"@{param.MetadataName}");
             }
 
-            // List of types.
-            var typeList = new List<string>();
-            foreach (var param in methodSymbol.Parameters)
-            {
-                typeList.Add(
-                    $"typeof({param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})"
-                );
-            }
-
             // List of generic arguments
             var genericList = new List<string>();
             foreach (var typeParam in methodSymbol.TypeParameters)
@@ -489,11 +496,6 @@ namespace Refit.Implementation
                     ? "global::System.Array.Empty<object>()"
                     : $"new object[] {{ {string.Join(", ", argList)} }}";
 
-            var parameterTypesArrayString =
-                typeList.Count == 0
-                    ? "global::System.Array.Empty<global::System.Type>()"
-                    : $"new global::System.Type[] {{ {string.Join(", ", typeList)} }}";
-
             var genericString =
                 genericList.Count > 0
                     ? $", new global::System.Type[] {{ {string.Join(", ", genericList)} }}"
@@ -502,7 +504,7 @@ namespace Refit.Implementation
             source.Append(
                 @$"
             var ______arguments = {argumentsArrayString};
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", {parameterTypesArrayString}{genericString} );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", {parameterTypesExpression}{genericString} );
             try
             {{
                 {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
@@ -628,6 +630,63 @@ namespace Refit.Implementation
             }
         }
 
+        static string GenerateTypeParameterExpression(
+            StringBuilder source,
+            IMethodSymbol methodSymbol,
+            HashSet<string> memberNames
+        )
+        {
+            // use Array.Empty if method has no parameters.
+            if (methodSymbol.Parameters.Length == 0)
+                return "global::System.Array.Empty<global::System.Type>()";
+
+            // if one of the parameters is/contains a type parameter then it cannot be cached as it will change type between calls.
+            if (methodSymbol.Parameters.Any(x => ContainsTypeParameter(x.Type)))
+            {
+                var typeEnumerable = methodSymbol.Parameters.Select(
+                    param =>
+                        $"typeof({param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})"
+                );
+                return $"new global::System.Type[] {{ {string.Join(", ", typeEnumerable)} }}";
+            }
+
+            // find a name and generate field declaration.
+            var typeParameterFieldName = UniqueName(TypeParameterVariableName, memberNames);
+            var types = string.Join(
+                ", ",
+                methodSymbol.Parameters.Select(
+                    x =>
+                        $"typeof({x.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})"
+                )
+            );
+            source.Append(
+                $$"""
+
+
+                        private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] {{{types}} };
+                """
+            );
+
+            return typeParameterFieldName;
+
+            static bool ContainsTypeParameter(ITypeSymbol symbol)
+            {
+                if (symbol is ITypeParameterSymbol)
+                    return true;
+
+                if (symbol is not INamedTypeSymbol { TypeParameters.Length: > 0 } namedType)
+                    return false;
+
+                foreach (var typeArg in namedType.TypeArguments)
+                {
+                    if (ContainsTypeParameter(typeArg))
+                        return true;
+                }
+
+                return false;
+            }
+        }
+
         void WriteMethodOpening(
             StringBuilder source,
             IMethodSymbol methodSymbol,
@@ -679,6 +738,20 @@ namespace Refit.Implementation
         }
 
         void WriteMethodClosing(StringBuilder source) => source.Append(@"        }");
+
+        static string UniqueName(string name, HashSet<string> methodNames)
+        {
+            var candidateName = name;
+            var counter = 0;
+            while (methodNames.Contains(candidateName))
+            {
+                candidateName = $"{name}{counter}";
+                counter++;
+            }
+
+            methodNames.Add(candidateName);
+            return candidateName;
+        }
 
         bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttibute)
         {
