@@ -1,6 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Refit
 {
@@ -15,7 +13,8 @@ namespace Refit
         public MethodInfo OpenMethodInfo { get; }
         public Type[] Types { get; }
 
-        public bool Equals(CloseGenericMethodKey other) => OpenMethodInfo == other.OpenMethodInfo && Types.SequenceEqual(other.Types);
+        public bool Equals(CloseGenericMethodKey other) =>
+            OpenMethodInfo == other.OpenMethodInfo && Types.SequenceEqual(other.Types);
 
         public override bool Equals(object? obj)
         {

@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Net.Http.Headers;
 
 namespace Refit
@@ -13,7 +11,8 @@ namespace Refit
             ContentType = contentType;
         }
 
-        public MultipartItem(string fileName, string? contentType, string? name) : this(fileName, contentType)
+        public MultipartItem(string fileName, string? contentType, string? name)
+            : this(fileName, contentType)
         {
             Name = name;
         }
@@ -43,8 +42,13 @@ namespace Refit
     /// </summary>
     public class StreamPart : MultipartItem
     {
-        public StreamPart(Stream value, string fileName, string? contentType = null, string? name = null) :
-            base(fileName, contentType, name)
+        public StreamPart(
+            Stream value,
+            string fileName,
+            string? contentType = null,
+            string? name = null
+        )
+            : base(fileName, contentType, name)
         {
             Value = value ?? throw new ArgumentNullException(nameof(value));
         }
@@ -62,8 +66,13 @@ namespace Refit
     /// </summary>
     public class ByteArrayPart : MultipartItem
     {
-        public ByteArrayPart(byte[] value, string fileName, string? contentType = null, string? name = null) :
-            base(fileName, contentType, name)
+        public ByteArrayPart(
+            byte[] value,
+            string fileName,
+            string? contentType = null,
+            string? name = null
+        )
+            : base(fileName, contentType, name)
         {
             Value = value ?? throw new ArgumentNullException(nameof(value));
         }
@@ -81,8 +90,13 @@ namespace Refit
     /// </summary>
     public class FileInfoPart : MultipartItem
     {
-        public FileInfoPart(FileInfo value, string fileName, string? contentType = null, string? name = null) :
-            base(fileName, contentType, name)
+        public FileInfoPart(
+            FileInfo value,
+            string fileName,
+            string? contentType = null,
+            string? name = null
+        )
+            : base(fileName, contentType, name)
         {
             Value = value ?? throw new ArgumentNullException(nameof(value));
         }

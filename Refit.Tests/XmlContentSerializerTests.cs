@@ -42,8 +42,16 @@ namespace Refit.Tests
             var document = new XmlDocument();
             document.LoadXml(await content.ReadAsStringAsync());
 
-            var root = document[nameof(Dto)] ?? throw new NullReferenceException("Root element was not found");
-            Assert.Equal(dto.CreatedOn, XmlConvert.ToDateTime(root[nameof(Dto.CreatedOn)].InnerText, XmlDateTimeSerializationMode.Utc));
+            var root =
+                document[nameof(Dto)]
+                ?? throw new NullReferenceException("Root element was not found");
+            Assert.Equal(
+                dto.CreatedOn,
+                XmlConvert.ToDateTime(
+                    root[nameof(Dto.CreatedOn)].InnerText,
+                    XmlDateTimeSerializationMode.Utc
+                )
+            );
             Assert.Equal(dto.Identifier, root[nameof(Dto.Identifier)].InnerText);
             Assert.Equal(dto.Name, root[nameof(Dto.Name)].InnerText);
         }
@@ -55,7 +63,10 @@ namespace Refit.Tests
 
             var dto = BuildDto();
             var serializerSettings = new XmlContentSerializerSettings();
-            var attributes = new XmlAttributes { XmlRoot = new XmlRootAttribute(overridenRootElementName) };
+            var attributes = new XmlAttributes
+            {
+                XmlRoot = new XmlRootAttribute(overridenRootElementName)
+            };
             serializerSettings.XmlAttributeOverrides.Add(dto.GetType(), attributes);
             var sut = new XmlContentSerializer(serializerSettings);
 
@@ -72,7 +83,10 @@ namespace Refit.Tests
             const string prefix = "google";
 
             var dto = BuildDto();
-            var serializerSettings = new XmlContentSerializerSettings { XmlNamespaces = new XmlSerializerNamespaces() };
+            var serializerSettings = new XmlContentSerializerSettings
+            {
+                XmlNamespaces = new XmlSerializerNamespaces()
+            };
             serializerSettings.XmlNamespaces.Add(prefix, "https://google.com");
             var sut = new XmlContentSerializer(serializerSettings);
 
@@ -86,10 +100,15 @@ namespace Refit.Tests
         [Fact]
         public async Task ShouldDeserializeFromXmlAsync()
         {
-            var serializerSettings = new XmlContentSerializerSettings { XmlNamespaces = new XmlSerializerNamespaces() };
+            var serializerSettings = new XmlContentSerializerSettings
+            {
+                XmlNamespaces = new XmlSerializerNamespaces()
+            };
             var sut = new XmlContentSerializer(serializerSettings);
 
-            var dto = await sut.FromHttpContentAsync<Dto>(new StringContent("<Dto><Identifier>123</Identifier></Dto>"));
+            var dto = await sut.FromHttpContentAsync<Dto>(
+                new StringContent("<Dto><Identifier>123</Identifier></Dto>")
+            );
 
             Assert.Equal("123", dto.Identifier);
         }
@@ -102,10 +121,7 @@ namespace Refit.Tests
             {
                 XmlReaderWriterSettings = new XmlReaderWriterSettings()
                 {
-                    WriterSettings = new XmlWriterSettings()
-                    {
-                        Encoding = encoding
-                    }
+                    WriterSettings = new XmlWriterSettings() { Encoding = encoding }
                 }
             };
             var sut = new XmlContentSerializer(serializerSettings);

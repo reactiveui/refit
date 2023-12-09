@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Net.Http;
 
 namespace Refit
 {
@@ -14,13 +7,18 @@ namespace Refit
     {
 #pragma warning disable IDE0079 // Remove unnecessary suppression
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static Task<Stream> ReadAsStreamAsync(this HttpContent httpContent, CancellationToken cancellationToken)
-
+        public static Task<Stream> ReadAsStreamAsync(
+            this HttpContent httpContent,
+            CancellationToken cancellationToken
+        )
         {
             return httpContent.ReadAsStreamAsync();
         }
 
-        public static Task<string> ReadAsStringAsync(this HttpContent httpContent, CancellationToken cancellationToken)
+        public static Task<string> ReadAsStringAsync(
+            this HttpContent httpContent,
+            CancellationToken cancellationToken
+        )
         {
             return httpContent.ReadAsStringAsync();
         }

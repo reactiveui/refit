@@ -8,13 +8,16 @@ using Xunit.Sdk;
 
 namespace Refit.Tests
 {
-
     /// <summary>
     /// Apply this attribute to your test method to replace the
     /// <see cref="Thread.CurrentThread" /> <see cref="CultureInfo.CurrentCulture" /> and
     /// <see cref="CultureInfo.CurrentUICulture" /> with another culture.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+    [AttributeUsage(
+        AttributeTargets.Class | AttributeTargets.Method,
+        AllowMultiple = false,
+        Inherited = true
+    )]
     public class UseCultureAttribute : BeforeAfterTestAttribute
     {
         readonly Lazy<CultureInfo> culture;
@@ -22,7 +25,6 @@ namespace Refit.Tests
 
         CultureInfo originalCulture;
         CultureInfo originalUICulture;
-
 
         /// <summary>
         /// Replaces the culture and UI culture of the current thread with
@@ -36,8 +38,7 @@ namespace Refit.Tests
         /// </para>
         /// </remarks>
         public UseCultureAttribute(string culture)
-            : this(culture, culture)
-        { }
+            : this(culture, culture) { }
 
         /// <summary>
         /// Replaces the culture and UI culture of the current thread with
@@ -54,12 +55,18 @@ namespace Refit.Tests
         /// <summary>
         /// Gets the culture.
         /// </summary>
-        public CultureInfo Culture { get { return culture.Value; } }
+        public CultureInfo Culture
+        {
+            get { return culture.Value; }
+        }
 
         /// <summary>
         /// Gets the UI culture.
         /// </summary>
-        public CultureInfo UICulture { get { return uiCulture.Value; } }
+        public CultureInfo UICulture
+        {
+            get { return uiCulture.Value; }
+        }
 
         /// <summary>
         /// Stores the current <see cref="CultureInfo.CurrentCulture" />
@@ -71,7 +78,6 @@ namespace Refit.Tests
         {
             originalCulture = CultureInfo.CurrentCulture;
             originalUICulture = CultureInfo.CurrentUICulture;
-
 
             CultureInfo.CurrentCulture = Culture;
             CultureInfo.CurrentUICulture = UICulture;
@@ -88,6 +94,4 @@ namespace Refit.Tests
             CultureInfo.CurrentUICulture = originalUICulture;
         }
     }
-
-
 }

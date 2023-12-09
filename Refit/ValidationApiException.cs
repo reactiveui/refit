@@ -1,6 +1,4 @@
-﻿using System;
-using System.Text.Json;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
 
 namespace Refit
 {
@@ -17,12 +15,18 @@ namespace Refit
             SerializerOptions.PropertyNameCaseInsensitive = true;
             SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             SerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-        } 
-
-        ValidationApiException(ApiException apiException) :
-            base(apiException.RequestMessage, apiException.HttpMethod, apiException.Content, apiException.StatusCode, apiException.ReasonPhrase, apiException.Headers, apiException.RefitSettings)
-        {
         }
+
+        ValidationApiException(ApiException apiException)
+            : base(
+                apiException.RequestMessage,
+                apiException.HttpMethod,
+                apiException.Content,
+                apiException.StatusCode,
+                apiException.ReasonPhrase,
+                apiException.Headers,
+                apiException.RefitSettings
+            ) { }
 
         /// <summary>
         /// Creates a new instance of a ValidationException from an existing ApiException.
@@ -34,13 +38,18 @@ namespace Refit
             if (exception is null)
                 throw new ArgumentNullException(nameof(exception));
             if (string.IsNullOrWhiteSpace(exception.Content))
-                throw new ArgumentException("Content must be an 'application/problem+json' compliant json string.");
+                throw new ArgumentException(
+                    "Content must be an 'application/problem+json' compliant json string."
+                );
 
             var ex = new ValidationApiException(exception);
 
-            if(!string.IsNullOrWhiteSpace(exception.Content))
+            if (!string.IsNullOrWhiteSpace(exception.Content))
             {
-                ex.Content = JsonSerializer.Deserialize<ProblemDetails>(exception.Content!, SerializerOptions);
+                ex.Content = JsonSerializer.Deserialize<ProblemDetails>(
+                    exception.Content!,
+                    SerializerOptions
+                );
             }
 
             return ex;

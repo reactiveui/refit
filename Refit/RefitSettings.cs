@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Globalization;
-using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Refit
 {
@@ -36,18 +31,29 @@ namespace Refit
         public RefitSettings(
             IHttpContentSerializer contentSerializer,
             IUrlParameterFormatter? urlParameterFormatter = null,
-            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null)
+            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null
+        )
         {
-            ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
+            ContentSerializer =
+                contentSerializer
+                ?? throw new ArgumentNullException(
+                    nameof(contentSerializer),
+                    "The content serializer can't be null"
+                );
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
-            FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
+            FormUrlEncodedParameterFormatter =
+                formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
         }
 
         /// <summary>
         /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
         /// </summary>
-        public Func<HttpRequestMessage, CancellationToken, Task<string>>? AuthorizationHeaderValueGetter { get; set; }
+        public Func<
+            HttpRequestMessage,
+            CancellationToken,
+            Task<string>
+        >? AuthorizationHeaderValueGetter { get; set; }
 
         /// <summary>
         /// Supply a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.
@@ -78,7 +84,8 @@ namespace Refit
         /// <summary>
         /// Sets the default collection format to use. (defaults to <see cref="CollectionFormat.RefitParameterFormatter"/>)
         /// </summary>
-        public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
+        public CollectionFormat CollectionFormat { get; set; } =
+            CollectionFormat.RefitParameterFormatter;
 
         /// <summary>
         /// Sets the default behavior when sending a request's body content. (defaults to false, request body is not streamed to the server)
@@ -86,7 +93,7 @@ namespace Refit
         public bool Buffered { get; set; } = false;
 
         /// <summary>
-        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>. 
+        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>.
         /// </summary>
         public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
     }
@@ -111,7 +118,10 @@ namespace Refit
         /// <param name="content">HttpContent object to deserialize.</param>
         /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
         /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
-        Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default);
+        Task<T?> FromHttpContentAsync<T>(
+            HttpContent content,
+            CancellationToken cancellationToken = default
+        );
 
         /// <summary>
         /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands
@@ -142,17 +152,26 @@ namespace Refit
     /// </summary>
     public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     {
-        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache = new();
+        static readonly ConcurrentDictionary<
+            Type,
+            ConcurrentDictionary<string, EnumMemberAttribute?>
+        > EnumMemberCache = new();
 
-        public virtual string? Format(object? parameterValue, ICustomAttributeProvider attributeProvider, Type type)
+        public virtual string? Format(
+            object? parameterValue,
+            ICustomAttributeProvider attributeProvider,
+            Type type
+        )
         {
             if (attributeProvider is null)
                 throw new ArgumentNullException(nameof(attributeProvider));
 
             // See if we have a format
-            var formatString = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true)
+            var formatString = attributeProvider
+                .GetCustomAttributes(typeof(QueryAttribute), true)
                 .OfType<QueryAttribute>()
-                .FirstOrDefault()?.Format;
+                .FirstOrDefault()
+                ?.Format;
 
             EnumMemberAttribute? enummember = null;
             if (parameterValue != null)
@@ -160,18 +179,28 @@ namespace Refit
                 var parameterType = parameterValue.GetType();
                 if (parameterType.IsEnum)
                 {
-                    var cached = EnumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute?>());
-                    enummember = cached.GetOrAdd(parameterValue.ToString()!, val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+                    var cached = EnumMemberCache.GetOrAdd(
+                        parameterType,
+                        t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
+                    );
+                    enummember = cached.GetOrAdd(
+                        parameterValue.ToString()!,
+                        val =>
+                            parameterType
+                                .GetMember(val)
+                                .First()
+                                .GetCustomAttribute<EnumMemberAttribute>()
+                    );
                 }
             }
 
             return parameterValue == null
-                       ? null
-                       : string.Format(CultureInfo.InvariantCulture,
-                                       string.IsNullOrWhiteSpace(formatString)
-                                           ? "{0}"
-                                           : $"{{0:{formatString}}}",
-                                       enummember?.Value ?? parameterValue);
+                ? null
+                : string.Format(
+                    CultureInfo.InvariantCulture,
+                    string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
+                    enummember?.Value ?? parameterValue
+                );
         }
     }
 
@@ -180,8 +209,10 @@ namespace Refit
     /// </summary>
     public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
     {
-        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache
-            = new();
+        static readonly ConcurrentDictionary<
+            Type,
+            ConcurrentDictionary<string, EnumMemberAttribute?>
+        > EnumMemberCache = new();
 
         public virtual string? Format(object? parameterValue, string? formatString)
         {
@@ -193,15 +224,25 @@ namespace Refit
             EnumMemberAttribute? enummember = null;
             if (parameterType.GetTypeInfo().IsEnum)
             {
-                var cached = EnumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute?>());
-                enummember = cached.GetOrAdd(parameterValue.ToString()!, val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
+                var cached = EnumMemberCache.GetOrAdd(
+                    parameterType,
+                    t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
+                );
+                enummember = cached.GetOrAdd(
+                    parameterValue.ToString()!,
+                    val =>
+                        parameterType
+                            .GetMember(val)
+                            .First()
+                            .GetCustomAttribute<EnumMemberAttribute>()
+                );
             }
 
-            return string.Format(CultureInfo.InvariantCulture,
-                                 string.IsNullOrWhiteSpace(formatString)
-                                     ? "{0}"
-                                     : $"{{0:{formatString}}}",
-                                 enummember?.Value ?? parameterValue);
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
+                enummember?.Value ?? parameterValue
+            );
         }
     }
 
@@ -231,12 +272,17 @@ namespace Refit
             }
         }
 
-        static async Task<Exception> CreateExceptionAsync(HttpResponseMessage responseMessage, RefitSettings refitSettings)
+        static async Task<Exception> CreateExceptionAsync(
+            HttpResponseMessage responseMessage,
+            RefitSettings refitSettings
+        )
         {
             var requestMessage = responseMessage.RequestMessage!;
             var method = requestMessage.Method;
 
-            return await ApiException.Create(requestMessage, method, responseMessage, refitSettings).ConfigureAwait(false);
+            return await ApiException
+                .Create(requestMessage, method, responseMessage, refitSettings)
+                .ConfigureAwait(false);
         }
     }
 }

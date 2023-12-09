@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace Refit
 {
@@ -16,10 +15,12 @@ namespace Refit
             IsObjectPropertyParameter = isObjectPropertyParameter;
             ParameterInfo = parameterInfo;
         }
+
         public string? Name { get; set; }
         public ParameterInfo ParameterInfo { get; set; }
         public bool IsObjectPropertyParameter { get; set; }
-        public List<RestMethodParameterProperty> ParameterProperties { get; set; } = new List<RestMethodParameterProperty>();
+        public List<RestMethodParameterProperty> ParameterProperties { get; set; } =
+            new List<RestMethodParameterProperty>();
         public ParameterType Type { get; set; } = ParameterType.Normal;
     }
 
@@ -30,6 +31,7 @@ namespace Refit
             Name = name;
             PropertyInfo = propertyInfo;
         }
+
         public string Name { get; set; }
         public PropertyInfo PropertyInfo { get; set; }
     }

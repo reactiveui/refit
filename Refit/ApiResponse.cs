@@ -1,17 +1,27 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 namespace Refit
 {
     static class ApiResponse
     {
-        internal static T Create<T, TBody>(HttpResponseMessage resp, object? content, RefitSettings settings, ApiException? error = null)
+        internal static T Create<T, TBody>(
+            HttpResponseMessage resp,
+            object? content,
+            RefitSettings settings,
+            ApiException? error = null
+        )
         {
-            return (T)Activator.CreateInstance(typeof(ApiResponse<TBody>), resp, content, settings, error)!;
+            return (T)
+                Activator.CreateInstance(
+                    typeof(ApiResponse<TBody>),
+                    resp,
+                    content,
+                    settings,
+                    error
+                )!;
         }
     }
 
@@ -32,7 +42,12 @@ namespace Refit
         /// <param name="settings">Refit settings used to send the request.</param>
         /// <param name="error">The ApiException, if the request failed.</param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ApiResponse(HttpResponseMessage response, T? content, RefitSettings settings, ApiException? error = null)
+        public ApiResponse(
+            HttpResponseMessage response,
+            T? content,
+            RefitSettings settings,
+            ApiException? error = null
+        )
         {
             this.response = response ?? throw new ArgumentNullException(nameof(response));
             Error = error;
@@ -49,11 +64,11 @@ namespace Refit
         /// Refit settings used to send the request.
         /// </summary>
         public RefitSettings Settings { get; }
-        
+
         public HttpResponseHeaders Headers => response.Headers;
-        
+
         public HttpContentHeaders? ContentHeaders => response.Content?.Headers;
-        
+
 #if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
@@ -62,15 +77,14 @@ namespace Refit
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
 
         public string? ReasonPhrase => response.ReasonPhrase;
-        
-        public HttpRequestMessage? RequestMessage => response.RequestMessage;
-        
-        public HttpStatusCode StatusCode => response.StatusCode;
-        
-        public Version Version => response.Version;
-        
-        public ApiException? Error { get; private set; }
 
+        public HttpRequestMessage? RequestMessage => response.RequestMessage;
+
+        public HttpStatusCode StatusCode => response.StatusCode;
+
+        public Version Version => response.Version;
+
+        public ApiException? Error { get; private set; }
 
         public void Dispose()
         {
@@ -86,7 +100,16 @@ namespace Refit
         {
             if (!IsSuccessStatusCode)
             {
-                var exception = Error ?? await ApiException.Create(response.RequestMessage!, response.RequestMessage!.Method, response, Settings).ConfigureAwait(false);
+                var exception =
+                    Error
+                    ?? await ApiException
+                        .Create(
+                            response.RequestMessage!,
+                            response.RequestMessage!.Method,
+                            response,
+                            Settings
+                        )
+                        .ConfigureAwait(false);
 
                 Dispose();
 

@@ -1,20 +1,22 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net.Http;
 
 namespace Refit
 {
     public interface IRequestBuilder
     {
-        Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(string methodName, Type[]? parameterTypes = null, Type[]? genericArgumentTypes = null);
+        Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
+            string methodName,
+            Type[]? parameterTypes = null,
+            Type[]? genericArgumentTypes = null
+        );
     }
 
-    public interface IRequestBuilder<T> : IRequestBuilder
-    {
-    }
+    public interface IRequestBuilder<T> : IRequestBuilder { }
 
     public static class RequestBuilder
     {
-        static readonly IRequestBuilderFactory PlatformRequestBuilderFactory = new RequestBuilderFactory();
+        static readonly IRequestBuilderFactory PlatformRequestBuilderFactory =
+            new RequestBuilderFactory();
 
         public static IRequestBuilder<T> ForType<T>(RefitSettings? settings)
         {

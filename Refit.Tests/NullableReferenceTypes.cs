@@ -96,5 +96,6 @@ namespace Refit.Tests
     }
 
     class CustomReferenceType { }
+
     class CustomValueType { }
 }

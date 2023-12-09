@@ -9,15 +9,15 @@ namespace HttpClientDiagnostics
     [DebuggerStepThrough]
     public class HttpClientDiagnosticsHandler : DelegatingHandler
     {
-        public HttpClientDiagnosticsHandler(HttpMessageHandler innerHandler) : base(innerHandler)
-        {
-        }
+        public HttpClientDiagnosticsHandler(HttpMessageHandler innerHandler)
+            : base(innerHandler) { }
 
-        public HttpClientDiagnosticsHandler()
-        {
-        }
+        public HttpClientDiagnosticsHandler() { }
 
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
         {
             var totalElapsedTime = Stopwatch.StartNew();
 
@@ -39,10 +39,17 @@ namespace HttpClientDiagnostics
             }
 
             responseElapsedTime.Stop();
-            Log.Debug(string.Format("Response elapsed time: {0} ms", responseElapsedTime.ElapsedMilliseconds));
+            Log.Debug(
+                string.Format(
+                    "Response elapsed time: {0} ms",
+                    responseElapsedTime.ElapsedMilliseconds
+                )
+            );
 
             totalElapsedTime.Stop();
-            Log.Debug(string.Format("Total elapsed time: {0} ms", totalElapsedTime.ElapsedMilliseconds));
+            Log.Debug(
+                string.Format("Total elapsed time: {0} ms", totalElapsedTime.ElapsedMilliseconds)
+            );
 
             return response;
         }

@@ -19,7 +19,9 @@ namespace Refit.Tests
             return (new FileInfo(paths.Aggregate(ret, Path.Combine))).FullName;
         }
 
-        public static string GetIntegrationTestRootDirectory([CallerFilePath] string filePath = default)
+        public static string GetIntegrationTestRootDirectory(
+            [CallerFilePath] string filePath = default
+        )
         {
             // XXX: This is an evil hack, but it's okay for a unit test
             // We can't use Assembly.Location because unit test runners love

@@ -22,24 +22,27 @@ namespace Refit.Generator
         // Determine if "type" inherits from "baseType", ignoring constructed types, optionally including interfaces,
         // dealing only with original types.
         public static bool InheritsFromOrEquals(
-            this ITypeSymbol type, ITypeSymbol baseType, bool includeInterfaces)
+            this ITypeSymbol type,
+            ITypeSymbol baseType,
+            bool includeInterfaces
+        )
         {
             if (!includeInterfaces)
             {
                 return InheritsFromOrEquals(type, baseType);
             }
 
-            return type.GetBaseTypesAndThis().Concat(type.AllInterfaces).Any(t => t.Equals(baseType, SymbolEqualityComparer.Default));
+            return type.GetBaseTypesAndThis()
+                .Concat(type.AllInterfaces)
+                .Any(t => t.Equals(baseType, SymbolEqualityComparer.Default));
         }
-
 
         // Determine if "type" inherits from "baseType", ignoring constructed types and interfaces, dealing
         // only with original types.
-        public static bool InheritsFromOrEquals(
-            this ITypeSymbol type, ITypeSymbol baseType)
+        public static bool InheritsFromOrEquals(this ITypeSymbol type, ITypeSymbol baseType)
         {
-            return type.GetBaseTypesAndThis().Any(t => t.Equals(baseType, SymbolEqualityComparer.Default));
+            return type.GetBaseTypesAndThis()
+                .Any(t => t.Equals(baseType, SymbolEqualityComparer.Default));
         }
-
     }
 }
