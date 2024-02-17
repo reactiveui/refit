@@ -210,13 +210,13 @@ namespace Refit.Implementation
 
 
 
-        private static readonly global::System.Type[] _typeParameters = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", _typeParameters );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -227,13 +227,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters0 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", _typeParameters0 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters0 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -244,13 +244,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters1 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters1 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", _typeParameters1 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters1 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -261,13 +261,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters2 = new global::System.Type[] {typeof(string), typeof(global::System.Threading.CancellationToken) };
+        private static readonly global::System.Type[] ______typeParameters2 = new global::System.Type[] {typeof(string), typeof(global::System.Threading.CancellationToken) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", _typeParameters2 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters2 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -278,13 +278,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters3 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters3 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", _typeParameters3 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters3 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -355,13 +355,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters4 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters4 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", _typeParameters4 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ______typeParameters4 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -372,13 +372,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters5 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters5 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserObservableWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", _typeParameters5 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters5 );
             try
             {
                 return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
@@ -389,13 +389,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters6 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
+        private static readonly global::System.Type[] ______typeParameters6 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> CreateUser(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUser", _typeParameters6 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUser", ______typeParameters6 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -406,13 +406,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters7 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
+        private static readonly global::System.Type[] ______typeParameters7 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> CreateUserWithMetadata(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", _typeParameters7 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ______typeParameters7 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -423,13 +423,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters8 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters8 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", _typeParameters8 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters8 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -440,13 +440,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters9 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters9 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", _typeParameters9 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters9 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -457,13 +457,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters10 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters10 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", _typeParameters10 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters10 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -474,13 +474,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters11 = new global::System.Type[] {typeof(string), typeof(global::System.Threading.CancellationToken) };
+        private static readonly global::System.Type[] ______typeParameters11 = new global::System.Type[] {typeof(string), typeof(global::System.Threading.CancellationToken) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", _typeParameters11 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters11 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -491,13 +491,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters12 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters12 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.IGitHubApi.FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", _typeParameters12 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters12 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -568,13 +568,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters13 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters13 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", _typeParameters13 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ______typeParameters13 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -585,13 +585,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters14 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters14 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserObservableWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", _typeParameters14 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters14 );
             try
             {
                 return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
@@ -602,13 +602,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters15 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
+        private static readonly global::System.Type[] ______typeParameters15 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.CreateUser(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUser", _typeParameters15 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUser", ______typeParameters15 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -619,13 +619,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters16 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
+        private static readonly global::System.Type[] ______typeParameters16 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.CreateUserWithMetadata(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", _typeParameters16 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ______typeParameters16 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -747,13 +747,13 @@ namespace Refit.Implementation
 
 
 
-        private static readonly global::System.Type[] _typeParameters = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", _typeParameters );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -764,13 +764,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters0 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", _typeParameters0 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters0 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -781,13 +781,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters1 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters1 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", _typeParameters1 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters1 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -798,13 +798,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters2 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters2 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName)
         {
             var ______arguments = new object[] { @orgName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", _typeParameters2 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters2 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -815,13 +815,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters3 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters3 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", _typeParameters3 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters3 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -877,13 +877,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters4 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters4 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", _typeParameters4 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters4 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -894,13 +894,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters5 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters5 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", _typeParameters5 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters5 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -911,13 +911,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters6 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters6 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", _typeParameters6 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters6 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -928,13 +928,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters7 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters7 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.TestNested.INestedGitHubApi.GetOrgMembers(string @orgName)
         {
             var ______arguments = new object[] { @orgName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", _typeParameters7 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters7 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -945,13 +945,13 @@ namespace Refit.Implementation
             }
         }
 
-        private static readonly global::System.Type[] _typeParameters8 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters8 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.TestNested.INestedGitHubApi.FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", _typeParameters8 );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters8 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);

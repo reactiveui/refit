@@ -23,7 +23,7 @@ namespace Refit.Generator
     public class InterfaceStubGenerator : ISourceGenerator
 #endif
     {
-        private const string TypeParameterVariableName = "_typeParameters";
+        private const string TypeParameterVariableName = "______typeParameters";
 
 #pragma warning disable RS2008 // Enable analyzer release tracking
         static readonly DiagnosticDescriptor InvalidRefitMember =
