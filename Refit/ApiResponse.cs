@@ -131,18 +131,40 @@ namespace Refit
     }
 
     /// <inheritdoc/>
-    public interface IApiResponse<out T> : IApiResponse
+    public interface IApiResponse<out T> : IApiResponseBase
     {
         /// <summary>
         /// Deserialized request content as <typeparamref name="T"/>.
         /// </summary>
         T? Content { get; }
+
+        /// <summary>
+        /// Indicates whether the request was successful.
+        /// </summary>
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+        [MemberNotNullWhen(true, nameof(Content))]
+#endif
+        bool IsSuccessStatusCode { get; }
+    }
+
+    public interface IApiResponse : IApiResponseBase
+    {
+        /// <summary>
+        /// Indicates whether the request was successful.
+        /// </summary>
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
+        bool IsSuccessStatusCode { get; }
     }
 
     /// <summary>
     /// Base interface used to represent an API response.
     /// </summary>
-    public interface IApiResponse : IDisposable
+    public interface IApiResponseBase : IDisposable
     {
         /// <summary>
         /// HTTP response headers.
@@ -153,15 +175,6 @@ namespace Refit
         /// HTTP response content headers as defined in RFC 2616.
         /// </summary>
         HttpContentHeaders? ContentHeaders { get; }
-
-        /// <summary>
-        /// Indicates whether the request was successful.
-        /// </summary>
-#if NET6_0_OR_GREATER
-        [MemberNotNullWhen(true, nameof(ContentHeaders))]
-        [MemberNotNullWhen(false, nameof(Error))]
-#endif
-        bool IsSuccessStatusCode { get; }
 
         /// <summary>
         /// HTTP response status code.
