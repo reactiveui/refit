@@ -23,9 +23,21 @@ namespace Refit.Tests
 namespace CollisionA
 {
     public class SomeType { }
+
+    public interface INamespaceCollisionApi
+    {
+        [Get("/")]
+        Task<SomeType> SomeRequest();
+    }
 }
 
 namespace CollisionB
 {
     public class SomeType { }
+
+    public interface INamespaceCollisionApi
+    {
+        [Get("/")]
+        Task<SomeType> SomeRequest();
+    }
 }
