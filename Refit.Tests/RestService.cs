@@ -1994,6 +1994,40 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task PathPrefixAttributeTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+            var fixture = RestService.For<IPathPrefix>("https://httpbin.org", settings);
+
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/ping/get")
+                .Respond("application/json", nameof(IPathPrefix.Ping));
+            var resp = await fixture.Ping();
+            Assert.Equal(nameof(IPathPrefix.Ping), resp);
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
+        public async Task PathPrefixAttributeInheritanceTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+            var fixture = RestService.For<IInheritingPathPrefix>("https://httpbin.org", settings);
+
+            mockHttp
+                .Expect(HttpMethod.Get, "https://httpbin.org/ping/get")
+                .Respond("application/json", nameof(IInheritingPathPrefix.Pang));
+            var resp = await fixture.Pang();
+            Assert.Equal(nameof(IInheritingPathPrefix.Pang), resp);
+            mockHttp.VerifyNoOutstandingExpectation();
+        }
+
+        [Fact]
         public async Task DictionaryDynamicQueryparametersTest()
         {
             var mockHttp = new MockHttpMessageHandler();

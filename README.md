@@ -175,6 +175,29 @@ Search("admin/products");
 >>> "/search/admin/products"
 ```
 
+#### Path prefix
+
+When a group of methods share the same relative URL path prefix, you can use the PathPrefix annotation. When given, the
+path prefix will be concatenated after the base URL and before the relative path as specified in the method's annotation.
+
+```csharp
+[PathPrefix("/resources")]
+public interface IResourcesService
+{
+    [Get("")]
+    Task<List<Resource>> ReadAll();
+
+    [Get("/{key}")]
+    Task<Resource> ReadOne(TKey key);
+}
+
+Get("");
+>>> "/resources"
+
+Get("/123");
+>>> "/resources/123"
+```
+
 ### Dynamic Querystring Parameters
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
@@ -1049,6 +1072,32 @@ public interface IDerivedServiceB : IBaseService
 ```
 
 In this example, the `IDerivedServiceA` interface will expose both the `GetResource` and `DeleteResource` APIs, while `IDerivedServiceB` will expose `GetResource` and `AddResource`.
+
+#### Path prefix
+
+The principle of interface inheritance can be used together with the PathPrefix annotation. Like this:
+
+```csharp
+[PathPrefix("/resources")]
+public interface IBaseResourcesService
+{
+    [Get("")]
+    Task<List<Resource>> ReadAll();
+}
+
+public interface ISpecificResourcesService : IBaseResourcesService
+{
+    [Get("/{key}")]
+    Task<Resource> GetSomethingSpecific(TKey key);
+}
+
+Get("");
+>>> "/resources"
+
+Get("/123");
+>>> "/resources/123"
+```
+
 
 #### Headers inheritance
 

@@ -68,7 +68,7 @@ namespace Refit
             var hma = methodInfo.GetCustomAttributes(true).OfType<HttpMethodAttribute>().First();
 
             HttpMethod = hma.Method;
-            RelativePath = hma.Path;
+            RelativePath = ReflectionHelpers.GetPathPrefixFor(targetInterface) + hma.Path;
 
             IsMultipart = methodInfo.GetCustomAttributes(true).OfType<MultipartAttribute>().Any();
 

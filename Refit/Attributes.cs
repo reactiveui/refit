@@ -2,6 +2,23 @@
 
 namespace Refit
 {
+    /// <summary>
+    /// Apply the given path prefix to all requests.
+    /// </summary>
+    /// <remarks>
+    /// When set, this will be used between the base URL and the endpoint's specific path.
+    /// </remarks>
+    [AttributeUsage(AttributeTargets.Interface)]
+    public class PathPrefixAttribute : Attribute
+    {
+        public PathPrefixAttribute(string pathPrefix)
+        {
+            PathPrefix = pathPrefix;
+        }
+
+        public string PathPrefix { get; }
+    }
+
     public abstract class HttpMethodAttribute : Attribute
     {
         public HttpMethodAttribute(string path)
