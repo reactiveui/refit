@@ -65,10 +65,19 @@ namespace Refit
         /// </summary>
         public RefitSettings Settings { get; }
 
+        /// <summary>
+        /// HTTP response headers.
+        /// </summary>
         public HttpResponseHeaders Headers => response.Headers;
 
+        /// <summary>
+        /// HTTP response content headers as defined in RFC 2616.
+        /// </summary>
         public HttpContentHeaders? ContentHeaders => response.Content?.Headers;
 
+        /// <summary>
+        /// Indicates whether the request was successful.
+        /// </summary>
 #if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
@@ -76,16 +85,34 @@ namespace Refit
 #endif
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
 
+        /// <summary>
+        /// The reason phrase which typically is sent by the server together with the status code.
+        /// </summary>
         public string? ReasonPhrase => response.ReasonPhrase;
 
+        /// <summary>
+        /// The HTTP Request message which led to this response.
+        /// </summary>
         public HttpRequestMessage? RequestMessage => response.RequestMessage;
 
+        /// <summary>
+        /// HTTP response status code.
+        /// </summary>
         public HttpStatusCode StatusCode => response.StatusCode;
 
+        /// <summary>
+        /// HTTP Message version.
+        /// </summary>
         public Version Version => response.Version;
 
+        /// <summary>
+        /// The <see cref="ApiException" /> object in case of unsuccessful response.
+        /// </summary>
         public ApiException? Error { get; private set; }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);

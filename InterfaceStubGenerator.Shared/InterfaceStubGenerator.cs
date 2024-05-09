@@ -16,6 +16,9 @@ namespace Refit.Generator
     // * Generate the data we need for the template based on interface method
     //   defn's
 
+    /// <summary>
+    /// InterfaceStubGeneratorV2.
+    /// </summary>
     [Generator]
 #if ROSLYN_4
     public class InterfaceStubGeneratorV2 : IIncrementalGenerator
@@ -49,6 +52,10 @@ namespace Refit.Generator
 
 #if !ROSLYN_4
 
+        /// <summary>
+        /// Executes the specified context.
+        /// </summary>
+        /// <param name="context">The context.</param>
         public void Execute(GeneratorExecutionContext context)
         {
             if (context.SyntaxReceiver is not SyntaxReceiver receiver)
@@ -71,6 +78,18 @@ namespace Refit.Generator
         }
 #endif
 
+        /// <summary>
+        /// Generates the interface stubs.
+        /// </summary>
+        /// <typeparam name="TContext">The type of the context.</typeparam>
+        /// <param name="context">The context.</param>
+        /// <param name="reportDiagnostic">The report diagnostic.</param>
+        /// <param name="addSource">The add source.</param>
+        /// <param name="compilation">The compilation.</param>
+        /// <param name="refitInternalNamespace">The refit internal namespace.</param>
+        /// <param name="candidateMethods">The candidate methods.</param>
+        /// <param name="candidateInterfaces">The candidate interfaces.</param>
+        /// <returns></returns>
         public void GenerateInterfaceStubs<TContext>(
             TContext context,
             Action<TContext, Diagnostic> reportDiagnostic,
@@ -160,7 +179,7 @@ namespace Refit.Generator
                     {
                         // Add the interface to the generation list with an empty set of methods
                         // The logic already looks for base refit methods
-                        interfaces.Add(ifaceSymbol, new List<IMethodSymbol>());
+                        interfaces.Add(ifaceSymbol, []);
                         var isAnnotated =
                             model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
 
@@ -170,7 +189,7 @@ namespace Refit.Generator
             }
 
             // Bail out if there aren't any interfaces to generate code for. This may be the case with transitives
-            if (!interfaces.Any())
+            if (interfaces.Count == 0)
                 return;
 
             var supportsNullable = options.LanguageVersion >= LanguageVersion.CSharp8;
@@ -275,7 +294,7 @@ namespace Refit.Implementation
             }
         }
 
-        string ProcessInterface<TContext>(
+        static string ProcessInterface<TContext>(
             TContext context,
             Action<TContext, Diagnostic> reportDiagnostic,
             INamedTypeSymbol interfaceSymbol,
@@ -450,7 +469,7 @@ namespace Refit.Implementation
         /// <param name="methodSymbol"></param>
         /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
         /// <param name="memberNames">Contains the unique member names in the interface scope.</param>
-        void ProcessRefitMethod(
+        static void ProcessRefitMethod(
             StringBuilder source,
             IMethodSymbol methodSymbol,
             bool isTopLevel,
@@ -519,7 +538,7 @@ namespace Refit.Implementation
             WriteMethodClosing(source);
         }
 
-        void ProcessDisposableMethod(StringBuilder source, IMethodSymbol methodSymbol)
+        static void ProcessDisposableMethod(StringBuilder source, IMethodSymbol methodSymbol)
         {
             WriteMethodOpening(source, methodSymbol, true);
 
@@ -532,7 +551,7 @@ namespace Refit.Implementation
             WriteMethodClosing(source);
         }
 
-        string GenerateConstraints(
+        static string GenerateConstraints(
             ImmutableArray<ITypeParameterSymbol> typeParameters,
             bool isOverrideOrExplicitImplementation
         )
@@ -551,7 +570,7 @@ namespace Refit.Implementation
             return source.ToString();
         }
 
-        void WriteConstraitsForTypeParameter(
+        static void WriteConstraitsForTypeParameter(
             StringBuilder source,
             ITypeParameterSymbol typeParameter,
             bool isOverrideOrExplicitImplementation
@@ -601,7 +620,7 @@ namespace Refit.Implementation
             }
         }
 
-        void ProcessNonRefitMethod<TContext>(
+        static void ProcessNonRefitMethod<TContext>(
             TContext context,
             Action<TContext, Diagnostic> reportDiagnostic,
             StringBuilder source,
@@ -687,7 +706,7 @@ namespace Refit.Implementation
             }
         }
 
-        void WriteMethodOpening(
+        static void WriteMethodOpening(
             StringBuilder source,
             IMethodSymbol methodSymbol,
             bool isExplicitInterface,
@@ -737,7 +756,7 @@ namespace Refit.Implementation
             );
         }
 
-        void WriteMethodClosing(StringBuilder source) => source.Append(@"        }");
+        static void WriteMethodClosing(StringBuilder source) => source.Append(@"        }");
 
         static string UniqueName(string name, HashSet<string> methodNames)
         {
@@ -753,7 +772,7 @@ namespace Refit.Implementation
             return candidateName;
         }
 
-        bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttibute)
+        static bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttibute)
         {
             return methodSymbol
                     ?.GetAttributes()
@@ -763,6 +782,11 @@ namespace Refit.Implementation
 
 #if ROSLYN_4
 
+        /// <summary>
+        /// Initializes the specified context.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <returns></returns>
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             // We're looking for methods with an attribute that are in an interface
@@ -772,7 +796,7 @@ namespace Refit.Implementation
                         is MethodDeclarationSyntax
                         {
                             Parent: InterfaceDeclarationSyntax,
-                            AttributeLists: { Count: > 0 }
+                            AttributeLists.Count: > 0
                         },
                 (context, cancellationToken) => (MethodDeclarationSyntax)context.Node
             );
@@ -834,6 +858,11 @@ namespace Refit.Implementation
 
 #else
 
+        /// <summary>
+        /// Initializes the specified context.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <returns></returns>
         public void Initialize(GeneratorInitializationContext context)
         {
             context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());

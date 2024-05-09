@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\Refit\targets\refit.props" />
   
@@ -6,6 +6,7 @@
     <TargetFrameworks>net462;net6.0;net7.0</TargetFrameworks>
     <Deterministic>false</Deterministic> <!-- Some tests rely on CallerFilePath -->
     <RestoreAdditionalProjectSources>https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json</RestoreAdditionalProjectSources>
+    <NoWarn>$(NoWarn);CS1591;CA1819</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

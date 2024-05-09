@@ -8,6 +8,9 @@ using Microsoft.Extensions.Http;
 
 namespace Refit
 {
+    /// <summary>
+    /// HttpClientFactoryExtensions.
+    /// </summary>
     public static class HttpClientFactoryExtensions
     {
         /// <summary>
