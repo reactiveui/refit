@@ -93,7 +93,7 @@ namespace Refit
         public bool Buffered { get; set; }
 
         /// <summary>
-        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>.
+        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.
         /// </summary>
         public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
     }

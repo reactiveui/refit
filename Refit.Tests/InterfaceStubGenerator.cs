@@ -1292,5 +1292,5 @@ namespace Refit.Implementation
             where U : T;
     }
 
-    public interface IMessage { }
+    public interface IMessage;
 }

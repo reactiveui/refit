@@ -6,7 +6,7 @@
     <TargetFrameworks>net462;net6.0;net7.0</TargetFrameworks>
     <Deterministic>false</Deterministic> <!-- Some tests rely on CallerFilePath -->
     <RestoreAdditionalProjectSources>https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json</RestoreAdditionalProjectSources>
-    <NoWarn>$(NoWarn);CS1591;CA1819</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;CA1819;CA2000;CA2007;CA1056;CA1707;CA1861;xUnit1031</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1064,7 +1064,7 @@ namespace Refit.Tests
             Assert.Equal("1", fixture.Headers["Api-Version"]);
 
             Assert.Equal(4, fixture.Headers.Count);
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
         }
 
@@ -1087,7 +1087,7 @@ namespace Refit.Tests
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Null(fixture.AuthorizeParameterInfo);
 
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(2));
         }
 
@@ -1112,7 +1112,7 @@ namespace Refit.Tests
             Assert.Null(fixture.BodyParameterInfo);
             Assert.Null(fixture.AuthorizeParameterInfo);
 
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
         }
 
@@ -1143,7 +1143,7 @@ namespace Refit.Tests
             Assert.NotNull(fixture.BodyParameterInfo);
             Assert.Null(fixture.AuthorizeParameterInfo);
 
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
             Assert.Equal(2, fixture.BodyParameterInfo.Item3);
         }
@@ -1170,7 +1170,7 @@ namespace Refit.Tests
             Assert.Null(fixture.BodyParameterInfo);
 
             Assert.NotNull(fixture.AuthorizeParameterInfo);
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(2));
         }
 
@@ -1197,7 +1197,7 @@ namespace Refit.Tests
 
             Assert.Single(fixture.HeaderParameterMap);
             Assert.Equal("Authorization", fixture.HeaderParameterMap[1]);
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(2));
 
             input = typeof(IRestMethodInfoTests);
@@ -1222,7 +1222,7 @@ namespace Refit.Tests
 
             Assert.Single(fixture.HeaderParameterMap);
             Assert.Equal("Authorization", fixture.HeaderParameterMap[2]);
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
         }
 
@@ -1255,7 +1255,7 @@ namespace Refit.Tests
 
             Assert.Single(fixture.HeaderParameterMap);
             Assert.Equal("X-PathMember", fixture.HeaderParameterMap[0]);
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
         }
 
@@ -1276,7 +1276,7 @@ namespace Refit.Tests
             Assert.Null(fixture.BodyParameterInfo);
 
             Assert.Equal("baz", fixture.QueryParameterMap[2]);
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(1));
         }
 
@@ -1323,7 +1323,7 @@ namespace Refit.Tests
 
             Assert.Single(fixture.PropertyParameterMap);
 
-            Assert.Equal(1, fixture.HeaderCollectionParameterMap.Count);
+            Assert.Single(fixture.HeaderCollectionParameterMap);
             Assert.True(fixture.HeaderCollectionParameterMap.Contains(0));
         }
 
@@ -2162,6 +2162,11 @@ namespace Refit.Tests
             CancellationToken cancellationToken
         )
         {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
             RequestMessage = request;
             if (request.Content != null)
             {
@@ -2177,19 +2182,9 @@ namespace Refit.Tests
         }
     }
 
-    public class TestUrlParameterFormatter : IUrlParameterFormatter
+    public class TestUrlParameterFormatter(string constantOutput) : IUrlParameterFormatter
     {
-        readonly string constantParameterOutput;
-
-        public TestUrlParameterFormatter(string constantOutput)
-        {
-            constantParameterOutput = constantOutput;
-        }
-
-        public string Format(object value, ICustomAttributeProvider attributeProvider, Type type)
-        {
-            return constantParameterOutput;
-        }
+        public string Format(object value, ICustomAttributeProvider attributeProvider, Type type) => constantOutput;
     }
 
     // Converts enums to ints and adds a suffix to strings to test that both dictionary keys and values are formatted.

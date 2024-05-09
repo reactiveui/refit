@@ -13,6 +13,9 @@ namespace System.Runtime.CompilerServices
 
 namespace Refit
 {
+    /// <summary>
+    /// RestMethodInfo
+    /// </summary>
     public record RestMethodInfo(
         string Name,
         Type HostingType,
@@ -238,7 +241,7 @@ namespace Refit
 
         static void VerifyUrlPathIsSane(string relativePath)
         {
-            if (relativePath == "")
+            if (string.IsNullOrEmpty(relativePath))
                 return;
 
             if (!relativePath.StartsWith("/"))
