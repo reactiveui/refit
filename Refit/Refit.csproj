@@ -4,23 +4,23 @@
     <Product>Refit ($(TargetFramework))</Product>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net462;net6.0;net7.0</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
-  
+
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="System.Text.Json" Version="8.0.3" />
     <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
   </ItemGroup>
-  
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">    
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System.Web" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <ItemGroup Label="Package">        
+  <ItemGroup Label="Package">
     <None Include="targets\refit.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true" />
     <None Include="targets\refit.props" PackagePath="buildTransitive\netstandard2.0" Pack="true" />
 
