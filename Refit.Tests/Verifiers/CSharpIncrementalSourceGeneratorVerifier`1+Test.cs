@@ -4,14 +4,13 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
 
 namespace Refit.Tests
 {
     public static partial class CSharpIncrementalSourceGeneratorVerifier<TIncrementalGenerator>
         where TIncrementalGenerator : IIncrementalGenerator, new()
     {
-        public class Test : CSharpSourceGeneratorTest<EmptySourceGeneratorProvider, XUnitVerifier>
+        public class Test : CSharpSourceGeneratorTest<EmptySourceGeneratorProvider, DefaultVerifier>
         {
             public Test()
             {

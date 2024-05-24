@@ -2,14 +2,14 @@
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
+using Microsoft.CodeAnalysis.Testing;
 
 namespace Refit.Tests
 {
     public static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
         where TSourceGenerator : ISourceGenerator, new()
     {
-        public class Test : CSharpSourceGeneratorTest<TSourceGenerator, XUnitVerifier>
+        public class Test : CSharpSourceGeneratorTest<TSourceGenerator, DefaultVerifier>
         {
             public Test()
             {
