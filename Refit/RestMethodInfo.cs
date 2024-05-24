@@ -13,6 +13,9 @@ namespace System.Runtime.CompilerServices
 
 namespace Refit
 {
+    /// <summary>
+    /// RestMethodInfo
+    /// </summary>
     public record RestMethodInfo(
         string Name,
         Type HostingType,
@@ -95,11 +98,11 @@ namespace Refit
 
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(parameterList);
-            HeaderCollectionParameterMap = BuildHeaderCollectionParameterMap(parameterList);
+            HeaderCollectionParameterMap = RestMethodInfoInternal.BuildHeaderCollectionParameterMap(parameterList);
             PropertyParameterMap = BuildRequestPropertyMap(parameterList);
 
             // get names for multipart attachments
-            AttachmentNameMap = new Dictionary<int, Tuple<string, string>>();
+            AttachmentNameMap = [];
             if (IsMultipart)
             {
                 for (var i = 0; i < parameterList.Count; i++)
@@ -125,7 +128,7 @@ namespace Refit
                 }
             }
 
-            QueryParameterMap = new Dictionary<int, string>();
+            QueryParameterMap = [];
             for (var i = 0; i < parameterList.Count; i++)
             {
                 if (
@@ -165,7 +168,7 @@ namespace Refit
                 || ReturnResultType == typeof(IApiResponse);
         }
 
-        private ISet<int> BuildHeaderCollectionParameterMap(List<ParameterInfo> parameterList)
+        static HashSet<int> BuildHeaderCollectionParameterMap(List<ParameterInfo> parameterList)
         {
             var headerCollectionMap = new HashSet<int>();
 
@@ -202,7 +205,7 @@ namespace Refit
         }
 
         public RestMethodInfo ToRestMethodInfo() =>
-            new RestMethodInfo(Name, Type, MethodInfo, RelativePath, ReturnType);
+            new(Name, Type, MethodInfo, RelativePath, ReturnType);
 
         static Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
         {
@@ -238,7 +241,7 @@ namespace Refit
 
         static void VerifyUrlPathIsSane(string relativePath)
         {
-            if (relativePath == "")
+            if (string.IsNullOrEmpty(relativePath))
                 return;
 
             if (!relativePath.StartsWith("/"))
@@ -288,9 +291,9 @@ namespace Refit
                         name = rawName;
                     }
 
-                    if (paramValidationDict.ContainsKey(name)) //if it's a standard parameter
+                    if (paramValidationDict.TryGetValue(name, out var value)) //if it's a standard parameter
                     {
-                        var paramType = paramValidationDict[name].ParameterType;
+                        var paramType = value.ParameterType;
                         if (isRoundTripping && paramType != typeof(string))
                         {
                             throw new ArgumentException(
@@ -302,8 +305,7 @@ namespace Refit
                             : ParameterType.Normal;
                         var restMethodParameterInfo = new RestMethodParameterInfo(
                             name,
-                            paramValidationDict[name]
-                        )
+value)
                         {
                             Type = parameterType
                         };
@@ -321,21 +323,21 @@ namespace Refit
 #endif
                     }
                     //else if it's a property on a object parameter
-                    else if (objectParamValidationDict.ContainsKey(name) && !isRoundTripping)
+                    else if (objectParamValidationDict.TryGetValue(name, out var value1) && !isRoundTripping)
                     {
-                        var property = objectParamValidationDict[name];
+                        var property = value1;
                         var parameterIndex = parameterInfo.IndexOf(property.Item1);
                         //If we already have this parameter, add additional ParameterProperty
-                        if (ret.ContainsKey(parameterIndex))
+                        if (ret.TryGetValue(parameterIndex, out var value2))
                         {
-                            if (!ret[parameterIndex].IsObjectPropertyParameter)
+                            if (!value2.IsObjectPropertyParameter)
                             {
                                 throw new ArgumentException(
                                     $"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object"
                                 );
                             }
-                            //we already have this parameter. add the additional property
-                            ret[parameterIndex].ParameterProperties.Add(
+
+                            value2.ParameterProperties.Add(
                                 new RestMethodParameterProperty(name, property.Item2)
                             );
                         }
