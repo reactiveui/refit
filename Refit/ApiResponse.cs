@@ -29,7 +29,7 @@ namespace Refit
     /// Implementation of <see cref="IApiResponse{T}"/> that provides additional functionalities.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class ApiResponse<T> : IApiResponse<T>
+    public sealed class ApiResponse<T> : IApiResponse<T>, IApiResponse
     {
         readonly HttpResponseMessage response;
         bool disposed;
