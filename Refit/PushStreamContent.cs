@@ -185,14 +185,9 @@ namespace System.Net.Http
     /// </summary>
     // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/Internal/DelegatingStream.cs
     [ExcludeFromCodeCoverage]
-    abstract class DelegatingStream : Stream
+    abstract class DelegatingStream(Stream innerStream) : Stream
     {
-        protected DelegatingStream(Stream innerStream)
-        {
-            InnerStream = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
-        }
-
-        protected Stream InnerStream { get; private set; }
+        protected Stream InnerStream { get; private set; } = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
 
         public override bool CanRead
         {

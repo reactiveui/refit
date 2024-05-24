@@ -60,6 +60,17 @@ namespace Refit
         /// </summary>
         public RefitSettings RefitSettings { get; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ApiException"/> class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="httpMethod">The HTTP method.</param>
+        /// <param name="content">The content.</param>
+        /// <param name="statusCode">The status code.</param>
+        /// <param name="reasonPhrase">The reason phrase.</param>
+        /// <param name="headers">The headers.</param>
+        /// <param name="refitSettings">The refit settings.</param>
+        /// <param name="innerException">The inner exception.</param>
         protected ApiException(
             HttpRequestMessage message,
             HttpMethod httpMethod,
@@ -82,6 +93,18 @@ namespace Refit
                 innerException
             ) { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ApiException"/> class.
+        /// </summary>
+        /// <param name="exceptionMessage">The exception message.</param>
+        /// <param name="message">The message.</param>
+        /// <param name="httpMethod">The HTTP method.</param>
+        /// <param name="content">The content.</param>
+        /// <param name="statusCode">The status code.</param>
+        /// <param name="reasonPhrase">The reason phrase.</param>
+        /// <param name="headers">The headers.</param>
+        /// <param name="refitSettings">The refit settings.</param>
+        /// <param name="innerException">The inner exception.</param>
         protected ApiException(
             string exceptionMessage,
             HttpRequestMessage message,
