@@ -1726,7 +1726,7 @@ namespace Refit.Tests
         }
 
         [Fact]
-        public async void MissingBaseUrlThrowsArgumentException()
+        public async Task MissingBaseUrlThrowsArgumentException()
         {
             var client = new HttpClient(); // No BaseUrl specified
 
@@ -2151,7 +2151,7 @@ namespace Refit.Tests
                 return;
             }
 
-            Assert.False(true, "Exception not thrown.");
+            Assert.Fail("Exception not thrown.");
         }
 
         [Fact]
@@ -2167,7 +2167,7 @@ namespace Refit.Tests
                 return;
             }
 
-            Assert.False(true, "Exception not thrown.");
+            Assert.Fail("Exception not thrown.");
         }
 
         [Fact]
@@ -2183,7 +2183,7 @@ namespace Refit.Tests
                 return;
             }
 
-            Assert.False(true, "Exception not thrown.");
+            Assert.Fail("Exception not thrown.");
         }
 
         [Fact]

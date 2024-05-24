@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Product>Refit Xml Serializer ($(TargetFramework))</Product>
     <Description>Refit Serializers for Xml</Description>
-    <TargetFrameworks>netstandard2.0;net462;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net462;netstandard2.0;netstandard2.1</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <RootNamespace>Refit</RootNamespace>
     <Nullable>enable</Nullable>

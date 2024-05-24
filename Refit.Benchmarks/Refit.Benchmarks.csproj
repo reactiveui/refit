@@ -6,6 +6,7 @@
       <OutputType>Exe</OutputType>
       <TargetFrameworks>net6.0</TargetFrameworks>
       <IsPackable>false</IsPackable>
+      <NoWarn>$(NoWarn);CS1591</NoWarn>
     </PropertyGroup>
   
     <ItemGroup>
