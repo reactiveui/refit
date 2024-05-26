@@ -29,7 +29,7 @@ namespace Refit
     /// Implementation of <see cref="IApiResponse{T}"/> that provides additional functionalities.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class ApiResponse<T> : IApiResponse<T>
+    public sealed class ApiResponse<T> : IApiResponse<T>, IApiResponse
     {
         readonly HttpResponseMessage response;
         bool disposed;
@@ -59,6 +59,8 @@ namespace Refit
         /// Deserialized request content as <typeparamref name="T"/>.
         /// </summary>
         public T? Content { get; }
+
+        object? IApiResponse.Content => Content;
 
         /// <summary>
         /// Refit settings used to send the request.
@@ -163,7 +165,7 @@ namespace Refit
         /// <summary>
         /// Deserialized request content as <typeparamref name="T"/>.
         /// </summary>
-        T? Content { get; }
+        new T? Content { get; }
     }
 
     /// <summary>
@@ -171,6 +173,21 @@ namespace Refit
     /// </summary>
     public interface IApiResponse : IDisposable
     {
+        /// <summary>
+        /// Indicates whether the request was successful.
+        /// </summary>
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+        [MemberNotNullWhen(true, nameof(Content))]
+#endif
+        bool IsSuccessStatusCode { get; }
+
+        /// <summary>
+        /// Deserialized request content as an object.
+        /// </summary>
+        object? Content { get; }
+
         /// <summary>
         /// HTTP response headers.
         /// </summary>
@@ -180,15 +197,6 @@ namespace Refit
         /// HTTP response content headers as defined in RFC 2616.
         /// </summary>
         HttpContentHeaders? ContentHeaders { get; }
-
-        /// <summary>
-        /// Indicates whether the request was successful.
-        /// </summary>
-#if NET6_0_OR_GREATER
-        [MemberNotNullWhen(true, nameof(ContentHeaders))]
-        [MemberNotNullWhen(false, nameof(Error))]
-#endif
-        bool IsSuccessStatusCode { get; }
 
         /// <summary>
         /// HTTP response status code.
