@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 
 // Enable support for C# 9 record types
-#if NETSTANDARD2_1 || !NET6_0_OR_GREATER
+#if !NET6_0_OR_GREATER
 namespace System.Runtime.CompilerServices
 {
     internal static class IsExternalInit { }
@@ -309,7 +309,7 @@ value)
                         {
                             Type = parameterType
                         };
-#if NETSTANDARD2_1 || NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
                         ret.TryAdd(
                             parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo),
                             restMethodParameterInfo
@@ -350,7 +350,7 @@ value)
                             restMethodParameterInfo.ParameterProperties.Add(
                                 new RestMethodParameterProperty(name, property.Item2)
                             );
-#if NETSTANDARD2_1 || NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
                             ret.TryAdd(
                                 parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo),
                                 restMethodParameterInfo

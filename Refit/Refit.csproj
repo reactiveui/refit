@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
-    <TargetFrameworks>net462;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks>net462;netstandard2.0;net6.0;net8.0</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
 
     <Nullable>enable</Nullable>
@@ -12,7 +12,7 @@
     <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.1'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net462'">
     <PackageReference Include="System.Text.Json" Version="8.0.3" />
   </ItemGroup>
 
@@ -30,15 +30,9 @@
     <!-- We need this one to catch older clients -->
     <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true" />
 
-    <None Include="..\InterfaceStubGenerator.Roslyn38\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV1.dll"
-          PackagePath="analyzers\dotnet\roslyn3.8\cs"
-          Pack="true"
-          Visible="false" />
+    <None Include="..\InterfaceStubGenerator.Roslyn38\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV1.dll" PackagePath="analyzers\dotnet\roslyn3.8\cs" Pack="true" Visible="false" />
 
-    <None Include="..\InterfaceStubGenerator.Roslyn40\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll"
-          PackagePath="analyzers\dotnet\roslyn4.0\cs"
-          Pack="true"
-          Visible="false" />
+    <None Include="..\InterfaceStubGenerator.Roslyn40\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll" PackagePath="analyzers\dotnet\roslyn4.0\cs" Pack="true" Visible="false" />
   </ItemGroup>
 
 </Project>

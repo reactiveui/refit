@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Refit.Tests
+namespace Refit.Tests;
+
+public interface IInterfaceWithoutRefit
 {
-    public interface IInterfaceWithoutRefit
-    {
-        Task DoSomething();
-    }
+    Task DoSomething();
 }

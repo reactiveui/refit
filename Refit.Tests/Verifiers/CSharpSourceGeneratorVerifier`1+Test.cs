@@ -4,33 +4,32 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
-namespace Refit.Tests
-{
-    public static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
-        where TSourceGenerator : ISourceGenerator, new()
-    {
-        public class Test : CSharpSourceGeneratorTest<TSourceGenerator, DefaultVerifier>
-        {
-            public Test()
-            {
-                SolutionTransforms.Add(
-                    (solution, projectId) =>
-                    {
-                        var compilationOptions = solution.GetProject(projectId).CompilationOptions;
-                        compilationOptions = compilationOptions.WithSpecificDiagnosticOptions(
-                            compilationOptions.SpecificDiagnosticOptions.SetItems(
-                                CSharpVerifierHelper.NullableWarnings
-                            )
-                        );
-                        solution = solution.WithProjectCompilationOptions(
-                            projectId,
-                            compilationOptions
-                        );
+namespace Refit.Tests;
 
-                        return solution;
-                    }
-                );
-            }
+public static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
+    where TSourceGenerator : ISourceGenerator, new()
+{
+    public class Test : CSharpSourceGeneratorTest<TSourceGenerator, DefaultVerifier>
+    {
+        public Test()
+        {
+            SolutionTransforms.Add(
+                (solution, projectId) =>
+                {
+                    var compilationOptions = solution.GetProject(projectId).CompilationOptions;
+                    compilationOptions = compilationOptions.WithSpecificDiagnosticOptions(
+                        compilationOptions.SpecificDiagnosticOptions.SetItems(
+                            CSharpVerifierHelper.NullableWarnings
+                        )
+                    );
+                    solution = solution.WithProjectCompilationOptions(
+                        projectId,
+                        compilationOptions
+                    );
+
+                    return solution;
+                }
+            );
         }
     }
 }
