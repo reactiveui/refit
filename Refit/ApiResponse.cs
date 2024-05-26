@@ -60,6 +60,8 @@ namespace Refit
         /// </summary>
         public T? Content { get; }
 
+        object? IApiResponse.Content => Content;
+
         /// <summary>
         /// Refit settings used to send the request.
         /// </summary>
@@ -158,13 +160,19 @@ namespace Refit
     }
 
     /// <inheritdoc/>
-    public interface IApiResponse<out T> : IApiResponseBase
+    public interface IApiResponse<out T> : IApiResponse
     {
         /// <summary>
         /// Deserialized request content as <typeparamref name="T"/>.
         /// </summary>
-        T? Content { get; }
+        new T? Content { get; }
+    }
 
+    /// <summary>
+    /// Base interface used to represent an API response.
+    /// </summary>
+    public interface IApiResponse : IDisposable
+    {
         /// <summary>
         /// Indicates whether the request was successful.
         /// </summary>
@@ -174,25 +182,12 @@ namespace Refit
         [MemberNotNullWhen(true, nameof(Content))]
 #endif
         bool IsSuccessStatusCode { get; }
-    }
 
-    public interface IApiResponse : IApiResponseBase
-    {
         /// <summary>
-        /// Indicates whether the request was successful.
+        /// Deserialized request content as an object.
         /// </summary>
-#if NET6_0_OR_GREATER
-        [MemberNotNullWhen(true, nameof(ContentHeaders))]
-        [MemberNotNullWhen(false, nameof(Error))]
-#endif
-        bool IsSuccessStatusCode { get; }
-    }
+        object? Content { get; }
 
-    /// <summary>
-    /// Base interface used to represent an API response.
-    /// </summary>
-    public interface IApiResponseBase : IDisposable
-    {
         /// <summary>
         /// HTTP response headers.
         /// </summary>
