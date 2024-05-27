@@ -18,128 +18,136 @@ using Task = System.Threading.Tasks.Task;
 using VerifyCS = Refit.Tests.CSharpSourceGeneratorVerifier<Refit.Generator.InterfaceStubGenerator>;
 using VerifyCSV2 = Refit.Tests.CSharpIncrementalSourceGeneratorVerifier<Refit.Generator.InterfaceStubGeneratorV2>;
 
-namespace Refit.Tests
+namespace Refit.Tests;
+
+public class InterfaceStubGeneratorTests
 {
-    public class InterfaceStubGeneratorTests
+    static readonly MetadataReference RefitAssembly = MetadataReference.CreateFromFile(
+        typeof(GetAttribute).Assembly.Location,
+        documentation: XmlDocumentationProvider.CreateFromFile(
+            Path.ChangeExtension(typeof(GetAttribute).Assembly.Location, ".xml")
+        )
+    );
+
+    static readonly ReferenceAssemblies ReferenceAssemblies;
+
+    static InterfaceStubGeneratorTests()
     {
-        static readonly MetadataReference RefitAssembly = MetadataReference.CreateFromFile(
-            typeof(GetAttribute).Assembly.Location,
-            documentation: XmlDocumentationProvider.CreateFromFile(
-                Path.ChangeExtension(typeof(GetAttribute).Assembly.Location, ".xml")
-            )
-        );
-
-        static readonly ReferenceAssemblies ReferenceAssemblies;
-
-        static InterfaceStubGeneratorTests()
-        {
-#if NET5_0
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
-#elif NET6_0
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
-#elif NET7_0
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+#if NET6_0
+        ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+#elif NET8_0
+        ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
 #else
-            ReferenceAssemblies = ReferenceAssemblies.Default.AddPackages(
-                ImmutableArray.Create(new PackageIdentity("System.Text.Json", "7.0.2"))
-            );
+        ReferenceAssemblies = ReferenceAssemblies.Default.AddPackages(
+            ImmutableArray.Create(new PackageIdentity("System.Text.Json", "7.0.2"))
+        );
 #endif
 
 #if NET461
-            ReferenceAssemblies = ReferenceAssemblies
-                .AddAssemblies(ImmutableArray.Create("System.Web"))
-                .AddPackages(
-                    ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4"))
-                );
+        ReferenceAssemblies = ReferenceAssemblies
+            .AddAssemblies(ImmutableArray.Create("System.Web"))
+            .AddPackages(
+                ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4"))
+            );
 #endif
-        }
+    }
 
-        [Fact(Skip = "Generator in test issue")]
-        public void GenerateInterfaceStubsSmokeTest()
+    [Fact(Skip = "Generator in test issue")]
+    public void GenerateInterfaceStubsSmokeTest()
+    {
+        var fixture = new InterfaceStubGenerator();
+
+        var driver = CSharpGeneratorDriver.Create(fixture);
+
+        var inputCompilation = CreateCompilation(
+            IntegrationTestHelper.GetPath("RestService.cs"),
+            IntegrationTestHelper.GetPath("GitHubApi.cs"),
+            IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
+            IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs")
+        );
+
+        var diags = inputCompilation.GetDiagnostics();
+
+        // Make sure we don't have any errors
+        Assert.Empty(diags.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+        var rundriver = driver.RunGeneratorsAndUpdateCompilation(
+            inputCompilation,
+            out var outputCompiliation,
+            out var diagnostics
+        );
+
+        var runResult = rundriver.GetRunResult();
+
+        var generated = runResult.Results[0];
+
+        var text = generated.GeneratedSources.First().SourceText.ToString();
+
+        Assert.Contains("IGitHubApi", text);
+        Assert.Contains("IAmInterfaceC", text);
+    }
+
+    static CSharpCompilation CreateCompilation(params string[] sourceFiles)
+    {
+        var keyReferences = new[]
         {
-            var fixture = new InterfaceStubGenerator();
+            typeof(Binder),
+            typeof(GetAttribute),
+            typeof(RichardSzalay.MockHttp.MockHttpMessageHandler),
+            typeof(System.Reactive.Unit),
+            typeof(System.Linq.Enumerable),
+            typeof(Newtonsoft.Json.JsonConvert),
+            typeof(Xunit.FactAttribute),
+            typeof(System.Net.Http.HttpContent),
+            typeof(ModelObject),
+            typeof(Attribute)
+        };
 
-            var driver = CSharpGeneratorDriver.Create(fixture);
+        return CSharpCompilation.Create(
+            "compilation",
+            sourceFiles.Select(source => CSharpSyntaxTree.ParseText(File.ReadAllText(source))),
+            keyReferences.Select(t => MetadataReference.CreateFromFile(t.Assembly.Location)),
+            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+        );
+    }
 
-            var inputCompilation = CreateCompilation(
-                IntegrationTestHelper.GetPath("RestService.cs"),
-                IntegrationTestHelper.GetPath("GitHubApi.cs"),
-                IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
-                IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs")
-            );
+    [Fact]
+    public async Task NoRefitInterfacesSmokeTest()
+    {
+#if NET462
+        var input = File.ReadAllText(
+            IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs")
+        );
+#else
+        var input = await File.ReadAllTextAsync(
+            IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs")
+        );
+#endif
 
-            var diags = inputCompilation.GetDiagnostics();
-
-            // Make sure we don't have any errors
-            Assert.Empty(diags.Where(d => d.Severity == DiagnosticSeverity.Error));
-
-            var rundriver = driver.RunGeneratorsAndUpdateCompilation(
-                inputCompilation,
-                out var outputCompiliation,
-                out var diagnostics
-            );
-
-            var runResult = rundriver.GetRunResult();
-
-            var generated = runResult.Results[0];
-
-            var text = generated.GeneratedSources.First().SourceText.ToString();
-
-            Assert.Contains("IGitHubApi", text);
-            Assert.Contains("IAmInterfaceC", text);
-        }
-
-        static Compilation CreateCompilation(params string[] sourceFiles)
+        await new VerifyCS.Test
         {
-            var keyReferences = new[]
-            {
-                typeof(Binder),
-                typeof(GetAttribute),
-                typeof(RichardSzalay.MockHttp.MockHttpMessageHandler),
-                typeof(System.Reactive.Unit),
-                typeof(System.Linq.Enumerable),
-                typeof(Newtonsoft.Json.JsonConvert),
-                typeof(Xunit.FactAttribute),
-                typeof(System.Net.Http.HttpContent),
-                typeof(ModelObject),
-                typeof(Attribute)
-            };
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState = { AdditionalReferences = { RefitAssembly }, Sources = { input }, },
+        }.RunAsync();
 
-            return CSharpCompilation.Create(
-                "compilation",
-                sourceFiles.Select(source => CSharpSyntaxTree.ParseText(File.ReadAllText(source))),
-                keyReferences.Select(t => MetadataReference.CreateFromFile(t.Assembly.Location)),
-                new CSharpCompilationOptions(OutputKind.ConsoleApplication)
-            );
-        }
-
-        [Fact]
-        public async Task NoRefitInterfacesSmokeTest()
+        await new VerifyCSV2.Test
         {
-            var input = File.ReadAllText(
-                IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs")
-            );
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState = { AdditionalReferences = { RefitAssembly }, Sources = { input }, },
+        }.RunAsync();
+    }
 
-            await new VerifyCS.Test
-            {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState = { AdditionalReferences = { RefitAssembly }, Sources = { input }, },
-            }.RunAsync();
+    [Fact]
+    public async Task FindInterfacesSmokeTest()
+    {
+#if NET462
+        var input = File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs"));
+#else
+        var input = await File.ReadAllTextAsync(IntegrationTestHelper.GetPath("GitHubApi.cs"));
+#endif
 
-            await new VerifyCSV2.Test
-            {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState = { AdditionalReferences = { RefitAssembly }, Sources = { input }, },
-            }.RunAsync();
-        }
-
-        [Fact]
-        public async Task FindInterfacesSmokeTest()
-        {
-            var input = File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs"));
-
-            var output1 =
-                @"
+        var output1 =
+            @"
 #pragma warning disable
 namespace RefitInternalGenerated
 {
@@ -159,8 +167,8 @@ namespace RefitInternalGenerated
 #pragma warning restore
 ";
 
-            var output1_5 =
-                @"
+        var output1_5 =
+            @"
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -178,7 +186,7 @@ namespace Refit.Implementation
 #pragma warning restore
 ";
 
-            var output2 = """
+        var output2 = """
 #nullable disable
 #pragma warning disable
 namespace Refit.Implementation
@@ -642,8 +650,8 @@ namespace Refit.Implementation
 #pragma warning restore
 
 """;
-            var output3 =
-                @"#nullable disable
+        var output3 =
+            @"#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -715,7 +723,7 @@ namespace Refit.Implementation
 
 #pragma warning restore
 ";
-            var output4 = """
+        var output4 = """
 #nullable disable
 #pragma warning disable
 namespace Refit.Implementation
@@ -1014,51 +1022,57 @@ namespace Refit.Implementation
 
 """;
 
-            await new VerifyCS.Test
-            {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
-                {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                    GeneratedSources =
-                    {
-                        (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
-                        (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
-                        (typeof(InterfaceStubGenerator), "IGitHubApi.g.cs", output2),
-                        (typeof(InterfaceStubGenerator), "IGitHubApiDisposable.g.cs", output3),
-                        (typeof(InterfaceStubGenerator), "INestedGitHubApi.g.cs", output4),
-                    },
-                },
-            }.RunAsync();
-
-            await new VerifyCSV2.Test
-            {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
-                {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                    GeneratedSources =
-                    {
-                        (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
-                        (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
-                        (typeof(InterfaceStubGeneratorV2), "IGitHubApi.g.cs", output2),
-                        (typeof(InterfaceStubGeneratorV2), "IGitHubApiDisposable.g.cs", output3),
-                        (typeof(InterfaceStubGeneratorV2), "INestedGitHubApi.g.cs", output4),
-                    },
-                },
-            }.RunAsync();
-        }
-
-        [Fact]
-        public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
+        await new VerifyCS.Test
         {
-            var input = File.ReadAllText(
-                IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
-            );
-            var output1 =
-                @"
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState =
+            {
+                AdditionalReferences = { RefitAssembly },
+                Sources = { input },
+                GeneratedSources =
+                {
+                    (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
+                    (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
+                    (typeof(InterfaceStubGenerator), "IGitHubApi.g.cs", output2),
+                    (typeof(InterfaceStubGenerator), "IGitHubApiDisposable.g.cs", output3),
+                    (typeof(InterfaceStubGenerator), "INestedGitHubApi.g.cs", output4),
+                },
+            },
+        }.RunAsync();
+
+        await new VerifyCSV2.Test
+        {
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState =
+            {
+                AdditionalReferences = { RefitAssembly },
+                Sources = { input },
+                GeneratedSources =
+                {
+                    (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
+                    (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
+                    (typeof(InterfaceStubGeneratorV2), "IGitHubApi.g.cs", output2),
+                    (typeof(InterfaceStubGeneratorV2), "IGitHubApiDisposable.g.cs", output3),
+                    (typeof(InterfaceStubGeneratorV2), "INestedGitHubApi.g.cs", output4),
+                },
+            },
+        }.RunAsync();
+    }
+
+    [Fact]
+    public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
+    {
+#if NET462
+        var input = File.ReadAllText(
+            IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
+        );
+#else
+        var input = await File.ReadAllTextAsync(
+            IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
+        );
+#endif
+        var output1 =
+            @"
 #pragma warning disable
 namespace RefitInternalGenerated
 {
@@ -1077,8 +1091,8 @@ namespace RefitInternalGenerated
 }
 #pragma warning restore
 ";
-            var output1_5 =
-                @"
+        var output1_5 =
+            @"
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -1096,8 +1110,8 @@ namespace Refit.Implementation
 #pragma warning restore
 ";
 
-            var output2 =
-                @"#nullable disable
+        var output2 =
+            @"#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -1194,103 +1208,102 @@ namespace Refit.Implementation
 #pragma warning restore
 ";
 
-            await new VerifyCS.Test
+        await new VerifyCS.Test
+        {
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState =
             {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
+                AdditionalReferences = { RefitAssembly },
+                Sources = { input },
+                GeneratedSources =
                 {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                    GeneratedSources =
-                    {
-                        (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
-                        (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
-                        (typeof(InterfaceStubGenerator), "IServiceWithoutNamespace.g.cs", output2),
-                    },
+                    (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
+                    (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
+                    (typeof(InterfaceStubGenerator), "IServiceWithoutNamespace.g.cs", output2),
                 },
-            }.RunAsync();
+            },
+        }.RunAsync();
 
-            await new VerifyCSV2.Test
+        await new VerifyCSV2.Test
+        {
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState =
             {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
+                AdditionalReferences = { RefitAssembly },
+                Sources = { input },
+                GeneratedSources =
                 {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                    GeneratedSources =
-                    {
-                        (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
-                        (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
-                        (
-                            typeof(InterfaceStubGeneratorV2),
-                            "IServiceWithoutNamespace.g.cs",
-                            output2
-                        ),
-                    },
+                    (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
+                    (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
+                    (
+                        typeof(InterfaceStubGeneratorV2),
+                        "IServiceWithoutNamespace.g.cs",
+                        output2
+                    ),
                 },
-            }.RunAsync();
-        }
+            },
+        }.RunAsync();
     }
-
-    public static class ThisIsDumbButMightHappen
-    {
-        public const string PeopleDoWeirdStuff = "But we don't let them";
-    }
-
-    public interface IAmARefitInterfaceButNobodyUsesMe
-    {
-        [Get("whatever")]
-        Task RefitMethod();
-
-        [Refit.GetAttribute("something-else")]
-        Task AnotherRefitMethod();
-
-        [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
-        Task NoConstantsAllowed();
-
-        [Get("spaces-shouldnt-break-me")]
-        Task SpacesShouldntBreakMe();
-
-        // We don't need an explicit test for this because if it isn't supported we can't compile
-        [Get("anything")]
-        Task ReservedWordsForParameterNames(int @int, string @string, float @long);
-    }
-
-    public interface IAmNotARefitInterface
-    {
-        Task NotARefitMethod();
-    }
-
-    public interface IBoringCrudApi<T, in TKey>
-        where T : class
-    {
-        [Post("")]
-        Task<T> Create([Body] T paylod);
-
-        [Get("")]
-        Task<List<T>> ReadAll();
-
-        [Get("/{key}")]
-        Task<T> ReadOne(TKey key);
-
-        [Put("/{key}")]
-        Task Update(TKey key, [Body] T payload);
-
-        [Delete("/{key}")]
-        Task Delete(TKey key);
-    }
-
-    public interface INonGenericInterfaceWithGenericMethod
-    {
-        [Post("")]
-        Task PostMessage<T>([Body] T message)
-            where T : IMessage;
-
-        [Post("")]
-        Task PostMessage<T, U, V>([Body] T message, U param1, V param2)
-            where T : IMessage
-            where U : T;
-    }
-
-    public interface IMessage;
 }
+
+public static class ThisIsDumbButMightHappen
+{
+    public const string PeopleDoWeirdStuff = "But we don't let them";
+}
+
+public interface IAmARefitInterfaceButNobodyUsesMe
+{
+    [Get("whatever")]
+    Task RefitMethod();
+
+    [Refit.GetAttribute("something-else")]
+    Task AnotherRefitMethod();
+
+    [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
+    Task NoConstantsAllowed();
+
+    [Get("spaces-shouldnt-break-me")]
+    Task SpacesShouldntBreakMe();
+
+    // We don't need an explicit test for this because if it isn't supported we can't compile
+    [Get("anything")]
+    Task ReservedWordsForParameterNames(int @int, string @string, float @long);
+}
+
+public interface IAmNotARefitInterface
+{
+    Task NotARefitMethod();
+}
+
+public interface IBoringCrudApi<T, in TKey>
+    where T : class
+{
+    [Post("")]
+    Task<T> Create([Body] T paylod);
+
+    [Get("")]
+    Task<List<T>> ReadAll();
+
+    [Get("/{key}")]
+    Task<T> ReadOne(TKey key);
+
+    [Put("/{key}")]
+    Task Update(TKey key, [Body] T payload);
+
+    [Delete("/{key}")]
+    Task Delete(TKey key);
+}
+
+public interface INonGenericInterfaceWithGenericMethod
+{
+    [Post("")]
+    Task PostMessage<T>([Body] T message)
+        where T : IMessage;
+
+    [Post("")]
+    Task PostMessage<T, U, V>([Body] T message, U param1, V param2)
+        where T : IMessage
+        where U : T;
+}
+
+public interface IMessage;

@@ -4,19 +4,18 @@ using CollisionA;
 
 using Refit; // InterfaceStubGenerator looks for this
 
-namespace Refit.Tests
-{
-    public interface ITypeCollisionApiA
-    {
-        [Get("")]
-        Task<SomeType> SomeARequest();
-    }
+namespace Refit.Tests;
 
-    public static class TypeCollisionApiA
+public interface ITypeCollisionApiA
+{
+    [Get("")]
+    Task<SomeType> SomeARequest();
+}
+
+public static class TypeCollisionApiA
+{
+    public static ITypeCollisionApiA Create()
     {
-        public static ITypeCollisionApiA Create()
-        {
-            return RestService.For<ITypeCollisionApiA>("http://somewhere.com");
-        }
+        return RestService.For<ITypeCollisionApiA>("http://somewhere.com");
     }
 }
