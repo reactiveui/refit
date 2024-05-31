@@ -452,6 +452,7 @@ namespace Refit
             }
             else
             {
+                await content.LoadIntoBufferAsync().ConfigureAwait(false);
                 result = await serializer
                     .FromHttpContentAsync<T>(content, cancellationToken)
                     .ConfigureAwait(false);
