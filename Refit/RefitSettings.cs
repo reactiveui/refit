@@ -107,12 +107,12 @@ namespace Refit
         /// <summary>
         /// Sets the default behavior when sending a request's body content. (defaults to false, request body is not streamed to the server)
         /// </summary>
-        public bool Buffered { get; set; } = false;
+        public bool Buffered { get; set; }
 
         /// <summary>
-        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Options"/> or <see cref="HttpRequestMessage.Properties"/>.
+        /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.
         /// </summary>
-        public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
+        public Dictionary<string, object>? HttpRequestMessageOptions { get; set; }
     }
 
     /// <summary>
@@ -150,6 +150,11 @@ namespace Refit
     /// </summary>
     public interface IUrlParameterKeyFormatter
     {
+        /// <summary>
+        /// Formats the specified key.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
         string Format(string key);
     }
 
@@ -158,6 +163,13 @@ namespace Refit
     /// </summary>
     public interface IUrlParameterFormatter
     {
+        /// <summary>
+        /// Formats the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="attributeProvider">The attribute provider.</param>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
         string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type);
     }
 
@@ -166,6 +178,12 @@ namespace Refit
     /// </summary>
     public interface IFormUrlEncodedParameterFormatter
     {
+        /// <summary>
+        /// Formats the specified value.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="formatString">The format string.</param>
+        /// <returns></returns>
         string? Format(object? value, string? formatString);
     }
 
@@ -174,6 +192,11 @@ namespace Refit
     /// </summary>
     public class DefaultUrlParameterKeyFormatter : IUrlParameterKeyFormatter
     {
+        /// <summary>
+        /// Formats the specified key.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
         public virtual string Format(string key) => key;
     }
 
@@ -184,10 +207,20 @@ namespace Refit
     {
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache = new();
 
+        /// <summary>
+        /// Formats the specified parameter value.
+        /// </summary>
+        /// <param name="parameterValue">The parameter value.</param>
+        /// <param name="attributeProvider">The attribute provider.</param>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException">attributeProvider</exception>
         public virtual string? Format(object? parameterValue, ICustomAttributeProvider attributeProvider, Type type)
         {
             if (attributeProvider is null)
+            {
                 throw new ArgumentNullException(nameof(attributeProvider));
+            }
 
             // See if we have a format
             var formatString = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true)
@@ -223,6 +256,12 @@ namespace Refit
         static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache
             = new();
 
+        /// <summary>
+        /// Formats the specified parameter value.
+        /// </summary>
+        /// <param name="parameterValue">The parameter value.</param>
+        /// <param name="formatString">The format string.</param>
+        /// <returns></returns>
         public virtual string? Format(object? parameterValue, string? formatString)
         {
             if (parameterValue == null)
@@ -248,20 +287,18 @@ namespace Refit
     /// <summary>
     /// Default Api exception factory.
     /// </summary>
-    public class DefaultApiExceptionFactory
+    public class DefaultApiExceptionFactory(RefitSettings refitSettings)
     {
         static readonly Task<Exception?> NullTask = Task.FromResult<Exception?>(null);
 
-        readonly RefitSettings refitSettings;
-
-        public DefaultApiExceptionFactory(RefitSettings refitSettings)
-        {
-            this.refitSettings = refitSettings;
-        }
-
+        /// <summary>
+        /// Creates the asynchronous.
+        /// </summary>
+        /// <param name="responseMessage">The response message.</param>
+        /// <returns></returns>
         public Task<Exception?> CreateAsync(HttpResponseMessage responseMessage)
         {
-            if (!responseMessage.IsSuccessStatusCode)
+            if (responseMessage?.IsSuccessStatusCode == false)
             {
                 return CreateExceptionAsync(responseMessage, refitSettings)!;
             }

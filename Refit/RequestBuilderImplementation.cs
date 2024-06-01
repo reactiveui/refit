@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,20 +15,17 @@ using System.Web;
 
 namespace Refit
 {
-    class RequestBuilderImplementation<TApi> : RequestBuilderImplementation, IRequestBuilder<TApi>
+    class RequestBuilderImplementation<TApi>(RefitSettings? refitSettings = null) : RequestBuilderImplementation(typeof(TApi), refitSettings), IRequestBuilder<TApi>
     {
-        public RequestBuilderImplementation(RefitSettings? refitSettings = null) : base(typeof(TApi), refitSettings)
-        {
-        }
     }
 
     partial class RequestBuilderImplementation : IRequestBuilder
     {
-        static readonly ISet<HttpMethod> BodylessMethods = new HashSet<HttpMethod>
-        {
+        static readonly HashSet<HttpMethod> BodylessMethods =
+        [
             HttpMethod.Get,
             HttpMethod.Head
-        };
+        ];
         readonly Dictionary<string, List<RestMethodInfoInternal>> interfaceHttpMethods;
         readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfoInternal> interfaceGenericHttpMethods;
         readonly IHttpContentSerializer serializer;
@@ -74,13 +71,14 @@ namespace Refit
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                 if (hasHttpMethod)
                 {
-                    if (!methods.ContainsKey(methodInfo.Name))
+                    if (!methods.TryGetValue(methodInfo.Name, out var value))
                     {
-                        methods.Add(methodInfo.Name, new List<RestMethodInfoInternal>());
+                        value = [];
+                        methods.Add(methodInfo.Name, value);
                     }
 
                     var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, settings);
-                    methods[methodInfo.Name].Add(restinfo);
+                    value.Add(restinfo);
                 }
             }
         }
@@ -724,9 +722,9 @@ namespace Refit
                 }
 
                 // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
-                if (this.settings.HttpRequestMessageOptions != null)
+                if (settings.HttpRequestMessageOptions != null)
                 {
-                    foreach(var p in this.settings.HttpRequestMessageOptions)
+                    foreach(var p in settings.HttpRequestMessageOptions)
                     {
 #if NET6_0_OR_GREATER
                         ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
@@ -767,7 +765,7 @@ namespace Refit
                     }
                 }
 
-                if (queryParamsToAdd.Any())
+                if (queryParamsToAdd.Count != 0)
                 {
                     var pairs = queryParamsToAdd.Where(x => x.Key != null && x.Value != null)
                                                 .Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value ?? string.Empty));
