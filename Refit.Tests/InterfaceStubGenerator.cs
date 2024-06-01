@@ -18,123 +18,136 @@ using Task = System.Threading.Tasks.Task;
 using VerifyCS = Refit.Tests.CSharpSourceGeneratorVerifier<Refit.Generator.InterfaceStubGenerator>;
 using VerifyCSV2 = Refit.Tests.CSharpIncrementalSourceGeneratorVerifier<Refit.Generator.InterfaceStubGeneratorV2>;
 
-namespace Refit.Tests
+namespace Refit.Tests;
+
+public class InterfaceStubGeneratorTests
 {
-    public class InterfaceStubGeneratorTests
+    static readonly MetadataReference RefitAssembly = MetadataReference.CreateFromFile(
+        typeof(GetAttribute).Assembly.Location,
+        documentation: XmlDocumentationProvider.CreateFromFile(
+            Path.ChangeExtension(typeof(GetAttribute).Assembly.Location, ".xml")
+        )
+    );
+
+    static readonly ReferenceAssemblies ReferenceAssemblies;
+
+    static InterfaceStubGeneratorTests()
     {
-        static readonly MetadataReference RefitAssembly = MetadataReference.CreateFromFile(
-            typeof(GetAttribute).Assembly.Location,
-            documentation: XmlDocumentationProvider.CreateFromFile(Path.ChangeExtension(typeof(GetAttribute).Assembly.Location, ".xml")));
-
-        static readonly ReferenceAssemblies ReferenceAssemblies;
-
-        static InterfaceStubGeneratorTests()
-        {
-#if NET5_0
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
-#elif NET6_0
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
-#elif NET7_0
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+#if NET6_0
+        ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+#elif NET8_0
+        ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
 #else
-            ReferenceAssemblies = ReferenceAssemblies.Default
-                .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Text.Json", "7.0.2")));
+        ReferenceAssemblies = ReferenceAssemblies.Default.AddPackages(
+            ImmutableArray.Create(new PackageIdentity("System.Text.Json", "7.0.2"))
+        );
 #endif
 
 #if NET461
-            ReferenceAssemblies = ReferenceAssemblies
-                .AddAssemblies(ImmutableArray.Create("System.Web"))
-                .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4")));
+        ReferenceAssemblies = ReferenceAssemblies
+            .AddAssemblies(ImmutableArray.Create("System.Web"))
+            .AddPackages(
+                ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4"))
+            );
 #endif
-        }
+    }
 
-        [Fact(Skip = "Generator in test issue")]
-        public void GenerateInterfaceStubsSmokeTest()
+    [Fact(Skip = "Generator in test issue")]
+    public void GenerateInterfaceStubsSmokeTest()
+    {
+        var fixture = new InterfaceStubGenerator();
+
+        var driver = CSharpGeneratorDriver.Create(fixture);
+
+        var inputCompilation = CreateCompilation(
+            IntegrationTestHelper.GetPath("RestService.cs"),
+            IntegrationTestHelper.GetPath("GitHubApi.cs"),
+            IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
+            IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs")
+        );
+
+        var diags = inputCompilation.GetDiagnostics();
+
+        // Make sure we don't have any errors
+        Assert.Empty(diags.Where(d => d.Severity == DiagnosticSeverity.Error));
+
+        var rundriver = driver.RunGeneratorsAndUpdateCompilation(
+            inputCompilation,
+            out var outputCompiliation,
+            out var diagnostics
+        );
+
+        var runResult = rundriver.GetRunResult();
+
+        var generated = runResult.Results[0];
+
+        var text = generated.GeneratedSources.First().SourceText.ToString();
+
+        Assert.Contains("IGitHubApi", text);
+        Assert.Contains("IAmInterfaceC", text);
+    }
+
+    static CSharpCompilation CreateCompilation(params string[] sourceFiles)
+    {
+        var keyReferences = new[]
         {
-            var fixture = new InterfaceStubGenerator();
+            typeof(Binder),
+            typeof(GetAttribute),
+            typeof(RichardSzalay.MockHttp.MockHttpMessageHandler),
+            typeof(System.Reactive.Unit),
+            typeof(System.Linq.Enumerable),
+            typeof(Newtonsoft.Json.JsonConvert),
+            typeof(Xunit.FactAttribute),
+            typeof(System.Net.Http.HttpContent),
+            typeof(ModelObject),
+            typeof(Attribute)
+        };
 
-            var driver = CSharpGeneratorDriver.Create(fixture);
+        return CSharpCompilation.Create(
+            "compilation",
+            sourceFiles.Select(source => CSharpSyntaxTree.ParseText(File.ReadAllText(source))),
+            keyReferences.Select(t => MetadataReference.CreateFromFile(t.Assembly.Location)),
+            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+        );
+    }
 
+    [Fact]
+    public async Task NoRefitInterfacesSmokeTest()
+    {
+#if NET462
+        var input = File.ReadAllText(
+            IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs")
+        );
+#else
+        var input = await File.ReadAllTextAsync(
+            IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs")
+        );
+#endif
 
-            var inputCompilation = CreateCompilation(
-                IntegrationTestHelper.GetPath("RestService.cs"),
-                IntegrationTestHelper.GetPath("GitHubApi.cs"),
-                IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
-                IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs"));
-
-            var diags = inputCompilation.GetDiagnostics();
-
-            // Make sure we don't have any errors
-            Assert.Empty(diags.Where(d => d.Severity == DiagnosticSeverity.Error));
-
-            var rundriver = driver.RunGeneratorsAndUpdateCompilation(inputCompilation, out var outputCompiliation, out var diagnostics);
-
-            var runResult = rundriver.GetRunResult();
-
-            var generated = runResult.Results[0];
-
-            var text = generated.GeneratedSources.First().SourceText.ToString();
-
-            Assert.Contains("IGitHubApi", text);
-            Assert.Contains("IAmInterfaceC", text);
-        }
-
-        static Compilation CreateCompilation(params string[] sourceFiles)
+        await new VerifyCS.Test
         {
-            var keyReferences = new[]
-            {
-                typeof(Binder),
-                typeof(GetAttribute),
-                typeof(RichardSzalay.MockHttp.MockHttpMessageHandler),
-                typeof(System.Reactive.Unit),
-                typeof(System.Linq.Enumerable),
-                typeof(Newtonsoft.Json.JsonConvert),
-                typeof(Xunit.FactAttribute),
-                typeof(System.Net.Http.HttpContent),
-                typeof(ModelObject),
-                typeof(Attribute)
-            };
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState = { AdditionalReferences = { RefitAssembly }, Sources = { input }, },
+        }.RunAsync();
 
-
-            return CSharpCompilation.Create("compilation",
-                sourceFiles.Select(source => CSharpSyntaxTree.ParseText(File.ReadAllText(source))),
-                                   keyReferences.Select(t => MetadataReference.CreateFromFile(t.Assembly.Location)),
-                new CSharpCompilationOptions(OutputKind.ConsoleApplication));
-
-        }
-
-        [Fact]
-        public async Task NoRefitInterfacesSmokeTest()
+        await new VerifyCSV2.Test
         {
-            var input = File.ReadAllText(IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs"));
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState = { AdditionalReferences = { RefitAssembly }, Sources = { input }, },
+        }.RunAsync();
+    }
 
-            await new VerifyCS.Test
-            {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
-                {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                },
-            }.RunAsync();
+    [Fact]
+    public async Task FindInterfacesSmokeTest()
+    {
+#if NET462
+        var input = File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs"));
+#else
+        var input = await File.ReadAllTextAsync(IntegrationTestHelper.GetPath("GitHubApi.cs"));
+#endif
 
-            await new VerifyCSV2.Test
-            {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
-                {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                },
-            }.RunAsync();
-        }
-
-        [Fact]
-        public async Task FindInterfacesSmokeTest()
-        {
-            var input = File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs"));
-
-            var output1 = @"
+        var output1 =
+            @"
 #pragma warning disable
 namespace RefitInternalGenerated
 {
@@ -154,7 +167,8 @@ namespace RefitInternalGenerated
 #pragma warning restore
 ";
 
-            var output1_5 = @"
+        var output1_5 =
+            @"
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -172,7 +186,8 @@ namespace Refit.Implementation
 #pragma warning restore
 ";
 
-            var output2 = @"#nullable disable
+        var output2 = """
+#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -200,14 +215,16 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }
-    
 
+
+
+        private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -218,11 +235,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters0 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -232,12 +251,14 @@ namespace Refit.Implementation
                 throw ex;
             }
         }
+
+        private static readonly global::System.Type[] ______typeParameters1 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters1 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -248,11 +269,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters2 = new global::System.Type[] {typeof(string), typeof(global::System.Threading.CancellationToken) };
+
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters2 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -263,11 +286,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters3 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters3 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -281,8 +306,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -296,8 +321,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public global::System.IObservable<string> GetIndexObservable()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return (global::System.IObservable<string>)______func(this.Client, ______arguments);
@@ -311,8 +336,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> NothingToSeeHere()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -326,8 +351,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> NothingToSeeHereWithMetadata()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHereWithMetadata"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHereWithMetadata", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -337,12 +362,14 @@ namespace Refit.Implementation
                 throw ex;
             }
         }
+
+        private static readonly global::System.Type[] ______typeParameters4 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserWithMetadata"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ______typeParameters4 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -353,11 +380,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters5 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserObservableWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservableWithMetadata"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters5 );
             try
             {
                 return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
@@ -368,11 +397,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters6 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
+
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> CreateUser(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUser"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUser", ______typeParameters6 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -383,11 +414,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters7 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
+
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> CreateUserWithMetadata(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUserWithMetadata"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ______typeParameters7 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -398,11 +431,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters8 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters8 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -413,11 +448,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters9 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters9 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -427,12 +464,14 @@ namespace Refit.Implementation
                 throw ex;
             }
         }
+
+        private static readonly global::System.Type[] ______typeParameters10 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters10 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -443,11 +482,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters11 = new global::System.Type[] {typeof(string), typeof(global::System.Threading.CancellationToken) };
+
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
         {
             var ______arguments = new object[] { @orgName, @cancellationToken };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters11 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -458,11 +499,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters12 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.IGitHubApi.FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters12 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -476,8 +519,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.IGitHubApi.GetIndex()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -491,8 +534,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         global::System.IObservable<string> global::Refit.Tests.IGitHubApi.GetIndexObservable()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return (global::System.IObservable<string>)______func(this.Client, ______arguments);
@@ -506,8 +549,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.NothingToSeeHere()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -521,8 +564,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.NothingToSeeHereWithMetadata()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHereWithMetadata"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHereWithMetadata", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -532,12 +575,14 @@ namespace Refit.Implementation
                 throw ex;
             }
         }
+
+        private static readonly global::System.Type[] ______typeParameters13 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserWithMetadata"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ______typeParameters13 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -548,11 +593,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters14 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.GetUserObservableWithMetadata(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservableWithMetadata"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters14 );
             try
             {
                 return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
@@ -563,11 +610,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters15 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
+
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.IGitHubApi.CreateUser(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUser"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUser", ______typeParameters15 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -578,11 +627,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters16 = new global::System.Type[] {typeof(global::Refit.Tests.User) };
+
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> global::Refit.Tests.IGitHubApi.CreateUserWithMetadata(global::Refit.Tests.User @user)
         {
             var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""CreateUserWithMetadata"", new global::System.Type[] { typeof(global::Refit.Tests.User) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ______typeParameters16 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -597,8 +648,10 @@ namespace Refit.Implementation
 }
 
 #pragma warning restore
-";
-            var output3 = @"#nullable disable
+
+""";
+        var output3 =
+            @"#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -626,14 +679,14 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }
-    
+
 
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task RefitMethod()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -647,8 +700,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task global::Refit.Tests.IGitHubApiDisposable.RefitMethod()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""RefitMethod"", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -670,7 +723,8 @@ namespace Refit.Implementation
 
 #pragma warning restore
 ";
-            var output4 = @"#nullable disable
+        var output4 = """
+#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -698,14 +752,16 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }
-    
 
+
+
+        private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -716,11 +772,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters0 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -730,12 +788,14 @@ namespace Refit.Implementation
                 throw ex;
             }
         }
+
+        private static readonly global::System.Type[] ______typeParameters1 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters1 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -746,11 +806,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters2 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName)
         {
             var ______arguments = new object[] { @orgName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters2 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -761,11 +823,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters3 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters3 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -779,8 +843,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -794,8 +858,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public global::System.IObservable<string> GetIndexObservable()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return (global::System.IObservable<string>)______func(this.Client, ______arguments);
@@ -809,8 +873,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task NothingToSeeHere()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -821,11 +885,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters4 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUser(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUser"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters4 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -836,11 +902,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters5 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUserObservable(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserObservable"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters5 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -850,12 +918,14 @@ namespace Refit.Implementation
                 throw ex;
             }
         }
+
+        private static readonly global::System.Type[] ______typeParameters6 = new global::System.Type[] {typeof(string) };
 
         /// <inheritdoc />
         global::System.IObservable<global::Refit.Tests.User> global::Refit.Tests.TestNested.INestedGitHubApi.GetUserCamelCase(string @userName)
         {
             var ______arguments = new object[] { @userName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetUserCamelCase"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters6 );
             try
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
@@ -866,11 +936,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters7 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> global::Refit.Tests.TestNested.INestedGitHubApi.GetOrgMembers(string @orgName)
         {
             var ______arguments = new object[] { @orgName };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetOrgMembers"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters7 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -881,11 +953,13 @@ namespace Refit.Implementation
             }
         }
 
+        private static readonly global::System.Type[] ______typeParameters8 = new global::System.Type[] {typeof(string) };
+
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> global::Refit.Tests.TestNested.INestedGitHubApi.FindUsers(string @q)
         {
             var ______arguments = new object[] { @q };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""FindUsers"", new global::System.Type[] { typeof(string) } );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters8 );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -899,8 +973,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> global::Refit.Tests.TestNested.INestedGitHubApi.GetIndex()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndex"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -914,8 +988,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         global::System.IObservable<string> global::Refit.Tests.TestNested.INestedGitHubApi.GetIndexObservable()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetIndexObservable"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 return (global::System.IObservable<string>)______func(this.Client, ______arguments);
@@ -929,8 +1003,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task global::Refit.Tests.TestNested.INestedGitHubApi.NothingToSeeHere()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""NothingToSeeHere"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -945,51 +1019,60 @@ namespace Refit.Implementation
 }
 
 #pragma warning restore
-";
 
-            await new VerifyCS.Test
-            {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
-                {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                    GeneratedSources =
-                    {
-                        (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
-                        (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
-                        (typeof(InterfaceStubGenerator), "IGitHubApi.g.cs", output2),
-                        (typeof(InterfaceStubGenerator), "IGitHubApiDisposable.g.cs", output3),
-                        (typeof(InterfaceStubGenerator), "INestedGitHubApi.g.cs", output4),
-                    },
-                },
-            }.RunAsync();
+""";
 
-            await new VerifyCSV2.Test
-            {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
-                {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                    GeneratedSources =
-                    {
-                        (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
-                        (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
-                        (typeof(InterfaceStubGeneratorV2), "IGitHubApi.g.cs", output2),
-                        (typeof(InterfaceStubGeneratorV2), "IGitHubApiDisposable.g.cs", output3),
-                        (typeof(InterfaceStubGeneratorV2), "INestedGitHubApi.g.cs", output4),
-                    },
-                },
-            }.RunAsync();
-        }
-
-
-        [Fact]
-        public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
+        await new VerifyCS.Test
         {
-            var input = File.ReadAllText(IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs"));
-            var output1 = @"
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState =
+            {
+                AdditionalReferences = { RefitAssembly },
+                Sources = { input },
+                GeneratedSources =
+                {
+                    (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
+                    (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
+                    (typeof(InterfaceStubGenerator), "IGitHubApi.g.cs", output2),
+                    (typeof(InterfaceStubGenerator), "IGitHubApiDisposable.g.cs", output3),
+                    (typeof(InterfaceStubGenerator), "INestedGitHubApi.g.cs", output4),
+                },
+            },
+        }.RunAsync();
+
+        await new VerifyCSV2.Test
+        {
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState =
+            {
+                AdditionalReferences = { RefitAssembly },
+                Sources = { input },
+                GeneratedSources =
+                {
+                    (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
+                    (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
+                    (typeof(InterfaceStubGeneratorV2), "IGitHubApi.g.cs", output2),
+                    (typeof(InterfaceStubGeneratorV2), "IGitHubApiDisposable.g.cs", output3),
+                    (typeof(InterfaceStubGeneratorV2), "INestedGitHubApi.g.cs", output4),
+                },
+            },
+        }.RunAsync();
+    }
+
+    [Fact]
+    public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
+    {
+#if NET462
+        var input = File.ReadAllText(
+            IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
+        );
+#else
+        var input = await File.ReadAllTextAsync(
+            IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
+        );
+#endif
+        var output1 =
+            @"
 #pragma warning disable
 namespace RefitInternalGenerated
 {
@@ -1008,7 +1091,8 @@ namespace RefitInternalGenerated
 }
 #pragma warning restore
 ";
-            var output1_5 = @"
+        var output1_5 =
+            @"
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -1026,7 +1110,8 @@ namespace Refit.Implementation
 #pragma warning restore
 ";
 
-            var output2 = @"#nullable disable
+        var output2 =
+            @"#nullable disable
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -1054,14 +1139,14 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }
-    
+
 
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task GetRoot()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -1075,8 +1160,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task PostRoot()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -1090,8 +1175,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.GetRoot()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""GetRoot"", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -1105,8 +1190,8 @@ namespace Refit.Implementation
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.PostRoot()
         {
-            var ______arguments = new object[] {  };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", new global::System.Type[] {  } );
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod(""PostRoot"", global::System.Array.Empty<global::System.Type>() );
             try
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
@@ -1123,96 +1208,102 @@ namespace Refit.Implementation
 #pragma warning restore
 ";
 
-            await new VerifyCS.Test
+        await new VerifyCS.Test
+        {
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState =
             {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
+                AdditionalReferences = { RefitAssembly },
+                Sources = { input },
+                GeneratedSources =
                 {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                    GeneratedSources =
-                    {
-                        (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
-                        (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
-                        (typeof(InterfaceStubGenerator), "IServiceWithoutNamespace.g.cs", output2),
-                    },
+                    (typeof(InterfaceStubGenerator), "PreserveAttribute.g.cs", output1),
+                    (typeof(InterfaceStubGenerator), "Generated.g.cs", output1_5),
+                    (typeof(InterfaceStubGenerator), "IServiceWithoutNamespace.g.cs", output2),
                 },
-            }.RunAsync();
+            },
+        }.RunAsync();
 
-            await new VerifyCSV2.Test
+        await new VerifyCSV2.Test
+        {
+            ReferenceAssemblies = ReferenceAssemblies,
+            TestState =
             {
-                ReferenceAssemblies = ReferenceAssemblies,
-                TestState =
+                AdditionalReferences = { RefitAssembly },
+                Sources = { input },
+                GeneratedSources =
                 {
-                    AdditionalReferences = { RefitAssembly },
-                    Sources = { input },
-                    GeneratedSources =
-                    {
-                        (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
-                        (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
-                        (typeof(InterfaceStubGeneratorV2), "IServiceWithoutNamespace.g.cs", output2),
-                    },
+                    (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
+                    (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
+                    (
+                        typeof(InterfaceStubGeneratorV2),
+                        "IServiceWithoutNamespace.g.cs",
+                        output2
+                    ),
                 },
-            }.RunAsync();
-        }
+            },
+        }.RunAsync();
     }
-
-    public static class ThisIsDumbButMightHappen
-    {
-        public const string PeopleDoWeirdStuff = "But we don't let them";
-    }
-
-    public interface IAmARefitInterfaceButNobodyUsesMe
-    {
-        [Get("whatever")]
-        Task RefitMethod();
-
-        [Refit.GetAttribute("something-else")]
-        Task AnotherRefitMethod();
-
-        [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
-        Task NoConstantsAllowed();
-
-        [Get("spaces-shouldnt-break-me")]
-        Task SpacesShouldntBreakMe();
-
-        // We don't need an explicit test for this because if it isn't supported we can't compile
-        [Get("anything")]
-        Task ReservedWordsForParameterNames(int @int, string @string, float @long);
-    }
-
-    public interface IAmNotARefitInterface
-    {
-        Task NotARefitMethod();
-    }
-
-    public interface IBoringCrudApi<T, in TKey> where T : class
-    {
-        [Post("")]
-        Task<T> Create([Body] T paylod);
-
-        [Get("")]
-        Task<List<T>> ReadAll();
-
-        [Get("/{key}")]
-        Task<T> ReadOne(TKey key);
-
-        [Put("/{key}")]
-        Task Update(TKey key, [Body] T payload);
-
-        [Delete("/{key}")]
-        Task Delete(TKey key);
-    }
-
-    public interface INonGenericInterfaceWithGenericMethod
-    {
-        [Post("")]
-        Task PostMessage<T>([Body] T message) where T : IMessage;
-
-        [Post("")]
-        Task PostMessage<T, U, V>([Body] T message, U param1, V param2) where T : IMessage where U : T;
-    }
-
-    public interface IMessage { }
-
 }
+
+public static class ThisIsDumbButMightHappen
+{
+    public const string PeopleDoWeirdStuff = "But we don't let them";
+}
+
+public interface IAmARefitInterfaceButNobodyUsesMe
+{
+    [Get("whatever")]
+    Task RefitMethod();
+
+    [Refit.GetAttribute("something-else")]
+    Task AnotherRefitMethod();
+
+    [Get(ThisIsDumbButMightHappen.PeopleDoWeirdStuff)]
+    Task NoConstantsAllowed();
+
+    [Get("spaces-shouldnt-break-me")]
+    Task SpacesShouldntBreakMe();
+
+    // We don't need an explicit test for this because if it isn't supported we can't compile
+    [Get("anything")]
+    Task ReservedWordsForParameterNames(int @int, string @string, float @long);
+}
+
+public interface IAmNotARefitInterface
+{
+    Task NotARefitMethod();
+}
+
+public interface IBoringCrudApi<T, in TKey>
+    where T : class
+{
+    [Post("")]
+    Task<T> Create([Body] T paylod);
+
+    [Get("")]
+    Task<List<T>> ReadAll();
+
+    [Get("/{key}")]
+    Task<T> ReadOne(TKey key);
+
+    [Put("/{key}")]
+    Task Update(TKey key, [Body] T payload);
+
+    [Delete("/{key}")]
+    Task Delete(TKey key);
+}
+
+public interface INonGenericInterfaceWithGenericMethod
+{
+    [Post("")]
+    Task PostMessage<T>([Body] T message)
+        where T : IMessage;
+
+    [Post("")]
+    Task PostMessage<T, U, V>([Body] T message, U param1, V param2)
+        where T : IMessage
+        where U : T;
+}
+
+public interface IMessage;

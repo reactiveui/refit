@@ -1,8 +1,5 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Refit
 {
@@ -10,13 +7,19 @@ namespace Refit
     {
         readonly Func<HttpRequestMessage, CancellationToken, Task<string>> getToken;
 
-        public AuthenticatedHttpClientHandler(Func<HttpRequestMessage, CancellationToken, Task<string>> getToken, HttpMessageHandler? innerHandler = null)
+        public AuthenticatedHttpClientHandler(
+            Func<HttpRequestMessage, CancellationToken, Task<string>> getToken,
+            HttpMessageHandler? innerHandler = null
+        )
             : base(innerHandler ?? new HttpClientHandler())
         {
             this.getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
         }
 
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
         {
             // See if the request has an authorize header
             var auth = request.Headers.Authorization;

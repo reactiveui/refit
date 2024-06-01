@@ -1,8 +1,6 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Threading.Tasks;
 
 namespace Refit
 {
@@ -62,13 +60,63 @@ namespace Refit
         /// </summary>
         public RefitSettings RefitSettings { get; }
 
-        protected ApiException(HttpRequestMessage message, HttpMethod httpMethod, string? content, HttpStatusCode statusCode, string? reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings, Exception? innerException = null) :
-            this(CreateMessage(statusCode, reasonPhrase), message, httpMethod, content, statusCode, reasonPhrase, headers, refitSettings, innerException)
-        {
-        }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ApiException"/> class.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="httpMethod">The HTTP method.</param>
+        /// <param name="content">The content.</param>
+        /// <param name="statusCode">The status code.</param>
+        /// <param name="reasonPhrase">The reason phrase.</param>
+        /// <param name="headers">The headers.</param>
+        /// <param name="refitSettings">The refit settings.</param>
+        /// <param name="innerException">The inner exception.</param>
+        protected ApiException(
+            HttpRequestMessage message,
+            HttpMethod httpMethod,
+            string? content,
+            HttpStatusCode statusCode,
+            string? reasonPhrase,
+            HttpResponseHeaders headers,
+            RefitSettings refitSettings,
+            Exception? innerException = null
+        )
+            : this(
+                CreateMessage(statusCode, reasonPhrase),
+                message,
+                httpMethod,
+                content,
+                statusCode,
+                reasonPhrase,
+                headers,
+                refitSettings,
+                innerException
+            ) { }
 
-        protected ApiException(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, string? content, HttpStatusCode statusCode, string? reasonPhrase, HttpResponseHeaders headers, RefitSettings refitSettings, Exception? innerException = null) :
-            base(exceptionMessage, innerException)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ApiException"/> class.
+        /// </summary>
+        /// <param name="exceptionMessage">The exception message.</param>
+        /// <param name="message">The message.</param>
+        /// <param name="httpMethod">The HTTP method.</param>
+        /// <param name="content">The content.</param>
+        /// <param name="statusCode">The status code.</param>
+        /// <param name="reasonPhrase">The reason phrase.</param>
+        /// <param name="headers">The headers.</param>
+        /// <param name="refitSettings">The refit settings.</param>
+        /// <param name="innerException">The inner exception.</param>
+        protected ApiException(
+            string exceptionMessage,
+            HttpRequestMessage message,
+            HttpMethod httpMethod,
+            string? content,
+            HttpStatusCode statusCode,
+            string? reasonPhrase,
+            HttpResponseHeaders headers,
+            RefitSettings refitSettings,
+            Exception? innerException = null
+        )
+            : base(exceptionMessage, innerException)
         {
             RequestMessage = message;
             HttpMethod = httpMethod;
@@ -84,9 +132,12 @@ namespace Refit
         /// </summary>
         /// <typeparam name="T">Type to deserialize the content to</typeparam>
         /// <returns>The response content deserialized as <typeparamref name="T"/></returns>
-        public async Task<T?> GetContentAsAsync<T>() => HasContent ?
-                await RefitSettings.ContentSerializer.FromHttpContentAsync<T>(new StringContent(Content!)).ConfigureAwait(false) :
-                default;
+        public async Task<T?> GetContentAsAsync<T>() =>
+            HasContent
+                ? await RefitSettings.ContentSerializer
+                    .FromHttpContentAsync<T>(new StringContent(Content!))
+                    .ConfigureAwait(false)
+                : default;
 
         /// <summary>
         /// Create an instance of <see cref="ApiException"/>.
@@ -98,11 +149,24 @@ namespace Refit
         /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
         /// <returns>A newly created <see cref="ApiException"/>.</returns>
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
-        public static Task<ApiException> Create(HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings, Exception? innerException = null)
+        public static Task<ApiException> Create(
+            HttpRequestMessage message,
+            HttpMethod httpMethod,
+            HttpResponseMessage response,
+            RefitSettings refitSettings,
+            Exception? innerException = null
+        )
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
             var exceptionMessage = CreateMessage(response.StatusCode, response.ReasonPhrase);
-            return Create(exceptionMessage, message, httpMethod, response, refitSettings, innerException);
+            return Create(
+                exceptionMessage,
+                message,
+                httpMethod,
+                response,
+                refitSettings,
+                innerException
+            );
         }
 
         /// <summary>
@@ -116,10 +180,27 @@ namespace Refit
         /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
         /// <returns>A newly created <see cref="ApiException"/>.</returns>
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods
-        public static async Task<ApiException> Create(string exceptionMessage, HttpRequestMessage message, HttpMethod httpMethod, HttpResponseMessage response, RefitSettings refitSettings, Exception? innerException = null)
+        public static async Task<ApiException> Create(
+            string exceptionMessage,
+            HttpRequestMessage message,
+            HttpMethod httpMethod,
+            HttpResponseMessage response,
+            RefitSettings refitSettings,
+            Exception? innerException = null
+        )
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
-            var exception = new ApiException(exceptionMessage, message, httpMethod, null, response.StatusCode, response.ReasonPhrase, response.Headers, refitSettings, innerException);
+            var exception = new ApiException(
+                exceptionMessage,
+                message,
+                httpMethod,
+                null,
+                response.StatusCode,
+                response.ReasonPhrase,
+                response.Headers,
+                refitSettings,
+                innerException
+            );
 
             if (response.Content == null)
             {
@@ -132,17 +213,21 @@ namespace Refit
                 var content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 exception.Content = content;
 
-                if (response.Content.Headers?.ContentType?.MediaType?.Equals("application/problem+json") ?? false)
+                if (
+                    response.Content.Headers?.ContentType?.MediaType?.Equals(
+                        "application/problem+json"
+                    ) ?? false
+                )
                 {
-                    exception = ValidationApiException.Create(exception);                    
+                    exception = ValidationApiException.Create(exception);
                 }
 
                 response.Content.Dispose();
             }
             catch
             {
-                // NB: We're already handling an exception at this point, 
-                // so we want to make sure we don't throw another one 
+                // NB: We're already handling an exception at this point,
+                // so we want to make sure we don't throw another one
                 // that hides the real error.
             }
 

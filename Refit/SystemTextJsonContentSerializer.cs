@@ -1,18 +1,8 @@
-﻿using System;
-using System.Buffers;
-using System.Diagnostics.Contracts;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
+﻿using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
-using Refit.Buffers;
 
 namespace Refit
 {
@@ -29,9 +19,8 @@ namespace Refit
         /// <summary>
         /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
         /// </summary>
-        public SystemTextJsonContentSerializer() : this(GetDefaultJsonSerializerOptions())
-        {
-        }
+        public SystemTextJsonContentSerializer()
+            : this(GetDefaultJsonSerializerOptions()) { }
 
         /// <summary>
         /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
@@ -51,9 +40,14 @@ namespace Refit
         }
 
         /// <inheritdoc/>
-        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        public async Task<T?> FromHttpContentAsync<T>(
+            HttpContent content,
+            CancellationToken cancellationToken = default
+        )
         {
-            var item = await content.ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken).ConfigureAwait(false);
+            var item = await content
+                .ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken)
+                .ConfigureAwait(false);
             return item;
         }
 
@@ -62,9 +56,10 @@ namespace Refit
             if (propertyInfo is null)
                 throw new ArgumentNullException(nameof(propertyInfo));
 
-            return propertyInfo.GetCustomAttributes<JsonPropertyNameAttribute>(true)
-                       .Select(a => a.Name)
-                       .FirstOrDefault();
+            return propertyInfo
+                .GetCustomAttributes<JsonPropertyNameAttribute>(true)
+                .Select(a => a.Name)
+                .FirstOrDefault();
         }
 
         /// <summary>
@@ -77,36 +72,37 @@ namespace Refit
             jsonSerializerOptions.PropertyNameCaseInsensitive = true;
             jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
             jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-            jsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            jsonSerializerOptions.Converters.Add(
+                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+            );
 
             return jsonSerializerOptions;
         }
     }
 
     // From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
-    public class ObjectToInferredTypesConverter
-       : JsonConverter<object>
+    public class ObjectToInferredTypesConverter : JsonConverter<object>
     {
         public override object? Read(
-          ref Utf8JsonReader reader,
-          Type typeToConvert,
-          JsonSerializerOptions options) => reader.TokenType switch
-          {
-              JsonTokenType.True => true,
-              JsonTokenType.False => false,
-              JsonTokenType.Number when reader.TryGetInt64(out var l) => l,
-              JsonTokenType.Number => reader.GetDouble(),
-              JsonTokenType.String when reader.TryGetDateTime(out var datetime) => datetime,
-              JsonTokenType.String => reader.GetString(),
-              _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
-          };
+            ref Utf8JsonReader reader,
+            Type typeToConvert,
+            JsonSerializerOptions options
+        ) =>
+            reader.TokenType switch
+            {
+                JsonTokenType.True => true,
+                JsonTokenType.False => false,
+                JsonTokenType.Number when reader.TryGetInt64(out var l) => l,
+                JsonTokenType.Number => reader.GetDouble(),
+                JsonTokenType.String when reader.TryGetDateTime(out var datetime) => datetime,
+                JsonTokenType.String => reader.GetString(),
+                _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
+            };
 
         public override void Write(
             Utf8JsonWriter writer,
             object objectToWrite,
-            JsonSerializerOptions options) =>
-            JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
+            JsonSerializerOptions options
+        ) => JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
     }
-
 }
-

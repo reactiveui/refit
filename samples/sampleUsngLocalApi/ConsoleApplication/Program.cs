@@ -12,12 +12,11 @@ namespace ConsoleSampleUsingLocalApi
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
-            HttpClient _client = new HttpClient
-            {
-                BaseAddress = new Uri("http://localhost:61868")
-            };
+            HttpClient _client = new HttpClient { BaseAddress = new Uri("http://localhost:61868") };
             IRestService _restApiService = RestService.For<IRestService>(_client);
-            Console.WriteLine("Enter from the following numbers to access the APIs,\n1 for get ,\n2 for get with argument, \n3 for post,\n4 for put, \n5 for Delete \n");
+            Console.WriteLine(
+                "Enter from the following numbers to access the APIs,\n1 for get ,\n2 for get with argument, \n3 for post,\n4 for put, \n5 for Delete \n"
+            );
             while (true)
             {
                 int choice = Int32.Parse(Console.ReadLine() ?? "6");
@@ -36,7 +35,9 @@ namespace ConsoleSampleUsingLocalApi
                         Console.WriteLine(result3);
                         break;
                     case 4:
-                        var result4 = _restApiService.PutWithParameters(4, new ModelForTest()).Result;
+                        var result4 = _restApiService
+                            .PutWithParameters(4, new ModelForTest())
+                            .Result;
                         Console.WriteLine(result4);
                         break;
                     case 5:

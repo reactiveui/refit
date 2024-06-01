@@ -48,10 +48,7 @@ namespace Refit.Tests
         Task<ResponseModel> Get(List<Guid> guids);
     }
 
-    public interface IContainAandB : IAmInterfaceB, IAmInterfaceA
-    {
-
-    }
+    public interface IContainAandB : IAmInterfaceB, IAmInterfaceA { }
 
     public interface IAmInterfaceEWithNoRefit<T>
     {

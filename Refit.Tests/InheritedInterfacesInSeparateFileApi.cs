@@ -2,11 +2,10 @@
 
 using Refit; // InterfaceStubGenerator looks for this
 
-namespace Refit.Tests.SeparateNamespace
+namespace Refit.Tests.SeparateNamespace;
+
+public interface InheritedInterfacesInSeparateFileApi : IAmInterfaceF_RequireUsing
 {
-    public interface InheritedInterfacesInSeparateFileApi: IAmInterfaceF_RequireUsing
-    {
-        [Get("/get")]
-        Task Get(int i);
-    }
+    [Get("/get")]
+    Task Get(int i);
 }

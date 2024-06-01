@@ -3,15 +3,14 @@
   <PropertyGroup>
     <Product>Refit Serializer for Newtonsoft.Json ($(TargetFramework))</Product>
     <Description>Refit Serializers for Newtonsoft.Json</Description>
-    <TargetFrameworks>netstandard2.0;net462;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net462;netstandard2.0;net6.0;net7.0;net8.0</TargetFrameworks>
     <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
     <RootNamespace>Refit</RootNamespace>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />    
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">

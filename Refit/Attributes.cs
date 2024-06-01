@@ -1,120 +1,165 @@
-﻿using System;
-using System.Net.Http;
+﻿using System.Net.Http;
 
 namespace Refit
 {
-    public abstract class HttpMethodAttribute : Attribute
+    /// <summary>
+    /// HttpMethodAttribute.
+    /// </summary>
+    /// <seealso cref="System.Attribute" />
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="HttpMethodAttribute"/> class.
+    /// </remarks>
+    /// <param name="path">The path.</param>
+    public abstract class HttpMethodAttribute(string path) : Attribute
     {
-        public HttpMethodAttribute(string path)
-        {
-            Path = path;
-        }
-
+        /// <summary>
+        /// Gets the method.
+        /// </summary>
+        /// <value>
+        /// The method.
+        /// </value>
         public abstract HttpMethod Method { get; }
 
-        public virtual string Path
-        {
-            get;
-            protected set;
-        }
+        /// <summary>
+        /// Gets or sets the path.
+        /// </summary>
+        /// <value>
+        /// The path.
+        /// </value>
+        public virtual string Path { get; protected set; } = path;
     }
 
     /// <summary>
     /// Send the request with HTTP method 'GET'.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="GetAttribute"/> class.
+    /// </remarks>
+    /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class GetAttribute : HttpMethodAttribute
+    public sealed class GetAttribute(string path) : HttpMethodAttribute(path)
     {
-        public GetAttribute(string path) : base(path) { }
-
-        public override HttpMethod Method
-        {
-            get { return HttpMethod.Get; }
-        }
+        /// <summary>
+        /// Gets the method.
+        /// </summary>
+        /// <value>
+        /// The method.
+        /// </value>
+        public override HttpMethod Method => HttpMethod.Get;
     }
 
     /// <summary>
     /// Send the request with HTTP method 'POST'.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="PostAttribute"/> class.
+    /// </remarks>
+    /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class PostAttribute : HttpMethodAttribute
+    public sealed class PostAttribute(string path) : HttpMethodAttribute(path)
     {
-        public PostAttribute(string path) : base(path) { }
-
-        public override HttpMethod Method
-        {
-            get { return HttpMethod.Post; }
-        }
+        /// <summary>
+        /// Gets the method.
+        /// </summary>
+        /// <value>
+        /// The method.
+        /// </value>
+        public override HttpMethod Method => HttpMethod.Post;
     }
 
     /// <summary>
     /// Send the request with HTTP method 'PUT'.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="PutAttribute"/> class.
+    /// </remarks>
+    /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class PutAttribute : HttpMethodAttribute
+    public sealed class PutAttribute(string path) : HttpMethodAttribute(path)
     {
-        public PutAttribute(string path) : base(path) { }
-
-        public override HttpMethod Method
-        {
-            get { return HttpMethod.Put; }
-        }
+        /// <summary>
+        /// Gets the method.
+        /// </summary>
+        /// <value>
+        /// The method.
+        /// </value>
+        public override HttpMethod Method => HttpMethod.Put;
     }
 
     /// <summary>
     /// Send the request with HTTP method 'DELETE'.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="DeleteAttribute"/> class.
+    /// </remarks>
+    /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class DeleteAttribute : HttpMethodAttribute
+    public sealed class DeleteAttribute(string path) : HttpMethodAttribute(path)
     {
-        public DeleteAttribute(string path) : base(path) { }
-
-        public override HttpMethod Method
-        {
-            get { return HttpMethod.Delete; }
-        }
+        /// <summary>
+        /// Gets the method.
+        /// </summary>
+        /// <value>
+        /// The method.
+        /// </value>
+        public override HttpMethod Method => HttpMethod.Delete;
     }
 
     /// <summary>
     /// Send the request with HTTP method 'PATCH'.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="PatchAttribute"/> class.
+    /// </remarks>
+    /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class PatchAttribute : HttpMethodAttribute
+    public sealed class PatchAttribute(string path) : HttpMethodAttribute(path)
     {
-        public PatchAttribute(string path) : base(path) { }
-
-        public override HttpMethod Method
-        {
-            get { return new HttpMethod("PATCH"); }
-        }
+        /// <summary>
+        /// Gets the method.
+        /// </summary>
+        /// <value>
+        /// The method.
+        /// </value>
+        public override HttpMethod Method => new HttpMethod("PATCH");
     }
 
     /// <summary>
     /// Send the request with HTTP method 'OPTION'.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="OptionsAttribute"/> class.
+    /// </remarks>
+    /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class OptionsAttribute : HttpMethodAttribute
+    public sealed class OptionsAttribute(string path) : HttpMethodAttribute(path)
     {
-        public OptionsAttribute(string path) : base(path) { }
-
-        public override HttpMethod Method
-        {
-            get { return new HttpMethod("OPTIONS"); }
-        }
+        /// <summary>
+        /// Gets the method.
+        /// </summary>
+        /// <value>
+        /// The method.
+        /// </value>
+        public override HttpMethod Method => new HttpMethod("OPTIONS");
     }
 
     /// <summary>
     /// Send the request with HTTP method 'HEAD'.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="HeadAttribute"/> class.
+    /// </remarks>
+    /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class HeadAttribute : HttpMethodAttribute
+    public sealed class HeadAttribute(string path) : HttpMethodAttribute(path)
     {
-        public HeadAttribute(string path) : base(path) { }
-
-        public override HttpMethod Method
-        {
-            get { return HttpMethod.Head; }
-        }
+        /// <summary>
+        /// Gets the method.
+        /// </summary>
+        /// <value>
+        /// The method.
+        /// </value>
+        public override HttpMethod Method => HttpMethod.Head;
     }
 
     /// <summary>
@@ -123,16 +168,20 @@ namespace Refit
     /// <remarks>
     /// Currently, multipart methods only support the following parameter types: <see cref="string"/>, <see cref="byte"/> array, <see cref="System.IO.Stream"/>, <see cref="System.IO.FileInfo"/>.
     /// </remarks>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="MultipartAttribute"/> class.
+    /// </remarks>
+    /// <param name="boundaryText">The boundary text.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class MultipartAttribute : Attribute
+    public sealed class MultipartAttribute(string boundaryText = "----MyGreatBoundary") : Attribute
     {
-        public string BoundaryText { get; private set; }
-
-        public MultipartAttribute(string boundaryText = "----MyGreatBoundary")
-        {
-            BoundaryText = boundaryText;
-        }
-
+        /// <summary>
+        /// Gets the boundary text.
+        /// </summary>
+        /// <value>
+        /// The boundary text.
+        /// </value>
+        public string BoundaryText { get; private set; } = boundaryText;
     }
 
     /// <summary>
@@ -174,95 +223,141 @@ namespace Refit
     /// - For all other types, the object will be serialized using the content serializer specified in the request's <see cref="RefitSettings"/>.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class BodyAttribute : Attribute
+    public sealed class BodyAttribute : Attribute
     {
-        public BodyAttribute()
-        {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BodyAttribute"/> class.
+        /// </summary>
+        public BodyAttribute() { }
 
-        }
-        public BodyAttribute(bool buffered)
-        {
-            Buffered = buffered;
-        }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BodyAttribute"/> class.
+        /// </summary>
+        /// <param name="buffered">if set to <c>true</c> [buffered].</param>
+        public BodyAttribute(bool buffered) => Buffered = buffered;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BodyAttribute"/> class.
+        /// </summary>
+        /// <param name="serializationMethod">The serialization method.</param>
+        /// <param name="buffered">if set to <c>true</c> [buffered].</param>
         public BodyAttribute(BodySerializationMethod serializationMethod, bool buffered)
         {
             SerializationMethod = serializationMethod;
             Buffered = buffered;
         }
 
-        public BodyAttribute(BodySerializationMethod serializationMethod = BodySerializationMethod.Default)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BodyAttribute"/> class.
+        /// </summary>
+        /// <param name="serializationMethod">The serialization method.</param>
+        public BodyAttribute(
+            BodySerializationMethod serializationMethod = BodySerializationMethod.Default
+        )
         {
             SerializationMethod = serializationMethod;
         }
 
+        /// <summary>
+        /// Gets or sets the buffered.
+        /// </summary>
+        /// <value>
+        /// The buffered.
+        /// </value>
+        public bool? Buffered { get; }
 
-
-        public bool? Buffered { get; set; }
-        public BodySerializationMethod SerializationMethod { get; protected set; } = BodySerializationMethod.Default;
+        /// <summary>
+        /// Gets or sets the serialization method.
+        /// </summary>
+        /// <value>
+        /// The serialization method.
+        /// </value>
+        public BodySerializationMethod SerializationMethod { get; } =
+            BodySerializationMethod.Default;
     }
 
     /// <summary>
     /// Override the key that will be sent in the query string.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="AliasAsAttribute"/> class.
+    /// </remarks>
+    /// <param name="name">The name.</param>
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-    public class AliasAsAttribute : Attribute
+    public sealed class AliasAsAttribute(string name) : Attribute
     {
-        public AliasAsAttribute(string name)
-        {
-            Name = name;
-        }
-
-        public string Name { get; protected set; }
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>
+        /// The name.
+        /// </value>
+        public string Name { get; protected set; } = name;
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AttachmentNameAttribute"/> class.
+    /// </summary>
+    /// <param name="name">The name.</param>
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-    [Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem", false)]
-    public class AttachmentNameAttribute : Attribute
+    [Obsolete(
+        "Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem",
+        false
+    )]
+    public sealed class AttachmentNameAttribute(string name) : Attribute
     {
-        public AttachmentNameAttribute(string name)
-        {
-            Name = name;
-        }
-
-        public string Name { get; protected set; }
+        /// <summary>
+        /// Gets or sets the name.
+        /// </summary>
+        /// <value>
+        /// The name.
+        /// </value>
+        public string Name { get; protected set; } = name;
     }
 
     /// <summary>
     /// Allows you to provide a Dictionary of headers to be added to the request.
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class HeaderCollectionAttribute : Attribute
-    {
-
-    }
+    public sealed class HeaderCollectionAttribute : Attribute { }
 
     /// <summary>
     /// Add multiple headers to the request.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="HeadersAttribute"/> class.
+    /// </remarks>
+    /// <param name="headers">The headers.</param>
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
-    public class HeadersAttribute : Attribute
+    public sealed class HeadersAttribute(params string[] headers) : Attribute
     {
-        public HeadersAttribute(params string[] headers)
-        {
-            Headers = headers ?? Array.Empty<string>();
-        }
-
-        public string[] Headers { get; }
+        /// <summary>
+        /// Gets the headers.
+        /// </summary>
+        /// <value>
+        /// The headers.
+        /// </value>
+        public string[] Headers { get; } = headers ?? Array.Empty<string>();
     }
 
     /// <summary>
     /// Add a header to the request.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="HeaderAttribute"/> class.
+    /// </remarks>
+    /// <param name="header">The header.</param>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class HeaderAttribute : Attribute
+    public sealed class HeaderAttribute(string header) : Attribute
     {
-        public HeaderAttribute(string header)
-        {
-            Header = header;
-        }
 
-        public string Header { get; }
+        /// <summary>
+        /// Gets the header.
+        /// </summary>
+        /// <value>
+        /// The header.
+        /// </value>
+        public string Header { get; } = header;
     }
 
     /// <summary>
@@ -271,10 +366,17 @@ namespace Refit
     /// If no key is specified then the key will be defaulted to the name of the parameter.
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class PropertyAttribute : Attribute
+    public sealed class PropertyAttribute : Attribute
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PropertyAttribute"/> class.
+        /// </summary>
         public PropertyAttribute() { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PropertyAttribute"/> class.
+        /// </summary>
+        /// <param name="key">The key.</param>
         public PropertyAttribute(string key)
         {
             Key = key;
@@ -292,38 +394,61 @@ namespace Refit
     /// <remarks>
     /// Default authorization scheme: Bearer
     /// </remarks>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="AuthorizeAttribute"/> class.
+    /// </remarks>
+    /// <param name="scheme">The scheme.</param>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public class AuthorizeAttribute : Attribute
+    public sealed class AuthorizeAttribute(string scheme = "Bearer") : Attribute
     {
-        public AuthorizeAttribute(string scheme = "Bearer")
-        {
-            Scheme = scheme;
-        }
-
-        public string Scheme { get; }
+        /// <summary>
+        /// Gets the scheme.
+        /// </summary>
+        /// <value>
+        /// The scheme.
+        /// </value>
+        public string Scheme { get; } = scheme;
     }
 
     /// <summary>
     /// Associated value will be added to the request Uri as query-string, using a delimiter to split the values. (default: '.')
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)] // Property is to allow for form url encoded data
-    public class QueryAttribute : Attribute
+    public sealed class QueryAttribute : Attribute
     {
         CollectionFormat? collectionFormat;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryAttribute"/> class.
+        /// </summary>
         public QueryAttribute() { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryAttribute"/> class.
+        /// </summary>
+        /// <param name="delimiter">The delimiter.</param>
         public QueryAttribute(string delimiter)
         {
             Delimiter = delimiter;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryAttribute"/> class.
+        /// </summary>
+        /// <param name="delimiter">The delimiter.</param>
+        /// <param name="prefix">The prefix.</param>
         public QueryAttribute(string delimiter, string prefix)
         {
             Delimiter = delimiter;
             Prefix = prefix;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryAttribute"/> class.
+        /// </summary>
+        /// <param name="delimiter">The delimiter.</param>
+        /// <param name="prefix">The prefix.</param>
+        /// <param name="format">The format.</param>
         public QueryAttribute(string delimiter, string prefix, string format)
         {
             Delimiter = delimiter;
@@ -331,6 +456,10 @@ namespace Refit
             Format = format;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="QueryAttribute"/> class.
+        /// </summary>
+        /// <param name="collectionFormat">The collection format.</param>
         public QueryAttribute(CollectionFormat collectionFormat)
         {
             CollectionFormat = collectionFormat;
@@ -386,20 +515,29 @@ namespace Refit
             set => collectionFormat = value;
         }
 
+        /// <summary>
+        /// Gets a value indicating whether this instance is collection format specified.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if this instance is collection format specified; otherwise, <c>false</c>.
+        /// </value>
         public bool IsCollectionFormatSpecified => collectionFormat.HasValue;
     }
 
+    /// <summary>
+    /// QueryUriFormatAttribute.
+    /// </summary>
+    /// <seealso cref="System.Attribute" />
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="QueryUriFormatAttribute"/> class.
+    /// </remarks>
+    /// <param name="uriFormat">The URI format.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public class QueryUriFormatAttribute : Attribute
+    public sealed class QueryUriFormatAttribute(UriFormat uriFormat) : Attribute
     {
-        public QueryUriFormatAttribute(UriFormat uriFormat)
-        {
-            UriFormat = uriFormat;
-        }
-
         /// <summary>
         /// Specifies how the Query Params should be encoded.
         /// </summary>
-        public UriFormat UriFormat { get; }
+        public UriFormat UriFormat { get; } = uriFormat;
     }
 }

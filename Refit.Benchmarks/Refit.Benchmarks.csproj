@@ -6,6 +6,7 @@
       <OutputType>Exe</OutputType>
       <TargetFrameworks>net6.0</TargetFrameworks>
       <IsPackable>false</IsPackable>
+      <NoWarn>$(NoWarn);CS1591</NoWarn>
     </PropertyGroup>
   
     <ItemGroup>
@@ -17,8 +18,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="AutoFixture" Version="4.18.0" />
-      <PackageReference Include="BenchmarkDotNet" Version="0.13.8" />
+      <PackageReference Include="AutoFixture" Version="4.18.1" />
+      <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
     </ItemGroup>
 
     <ItemGroup>

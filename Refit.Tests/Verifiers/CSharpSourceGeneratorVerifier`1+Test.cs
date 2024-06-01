@@ -2,27 +2,34 @@
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
+using Microsoft.CodeAnalysis.Testing;
 
-namespace Refit.Tests
+namespace Refit.Tests;
+
+public static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
+    where TSourceGenerator : ISourceGenerator, new()
 {
-    public static partial class CSharpSourceGeneratorVerifier<TSourceGenerator>
-        where TSourceGenerator : ISourceGenerator, new()
+    public class Test : CSharpSourceGeneratorTest<TSourceGenerator, DefaultVerifier>
     {
-        public class Test : CSharpSourceGeneratorTest<TSourceGenerator, XUnitVerifier>
+        public Test()
         {
-            public Test()
-            {
-                SolutionTransforms.Add((solution, projectId) =>
+            SolutionTransforms.Add(
+                (solution, projectId) =>
                 {
                     var compilationOptions = solution.GetProject(projectId).CompilationOptions;
                     compilationOptions = compilationOptions.WithSpecificDiagnosticOptions(
-                        compilationOptions.SpecificDiagnosticOptions.SetItems(CSharpVerifierHelper.NullableWarnings));
-                    solution = solution.WithProjectCompilationOptions(projectId, compilationOptions);
+                        compilationOptions.SpecificDiagnosticOptions.SetItems(
+                            CSharpVerifierHelper.NullableWarnings
+                        )
+                    );
+                    solution = solution.WithProjectCompilationOptions(
+                        projectId,
+                        compilationOptions
+                    );
 
                     return solution;
-                });
-            }
+                }
+            );
         }
     }
 }
