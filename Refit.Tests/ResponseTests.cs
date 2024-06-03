@@ -511,6 +511,7 @@ public sealed class ThrowOnGetLengthMemoryStream : MemoryStream
 {
     public bool CanGetLength { get; set; }
 
+    public override bool CanSeek { get => CanGetLength; }
     public override long Length =>
         CanGetLength ? base.Length : throw new NotSupportedException();
 }
