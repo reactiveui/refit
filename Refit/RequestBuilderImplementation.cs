@@ -452,6 +452,13 @@ namespace Refit
             }
             else
             {
+                using var stream = await content
+                    .ReadAsStreamAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                if (stream.CanSeek)
+                {
+                    await content.LoadIntoBufferAsync().ConfigureAwait(false);
+                }
                 result = await serializer
                     .FromHttpContentAsync<T>(content, cancellationToken)
                     .ConfigureAwait(false);
