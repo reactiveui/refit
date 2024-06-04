@@ -1,8 +1,13 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Refit
 {
@@ -17,6 +22,7 @@ namespace Refit
         public RefitSettings()
         {
             ContentSerializer = new SystemTextJsonContentSerializer();
+            UrlParameterKeyFormatter = new DefaultUrlParameterKeyFormatter();
             UrlParameterFormatter = new DefaultUrlParameterFormatter();
             FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
@@ -30,30 +36,36 @@ namespace Refit
         /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
         public RefitSettings(
             IHttpContentSerializer contentSerializer,
-            IUrlParameterFormatter? urlParameterFormatter = null,
-            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null
-        )
+            IUrlParameterFormatter? urlParameterFormatter,
+            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter)
+            : this(contentSerializer, urlParameterFormatter, formUrlEncodedParameterFormatter, null)
         {
-            ContentSerializer =
-                contentSerializer
-                ?? throw new ArgumentNullException(
-                    nameof(contentSerializer),
-                    "The content serializer can't be null"
-                );
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
+        /// </summary>
+        /// <param name="contentSerializer">The <see cref="IHttpContentSerializer"/> instance to use</param>
+        /// <param name="urlParameterFormatter">The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)</param>
+        /// <param name="formUrlEncodedParameterFormatter">The <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>)</param>
+        /// <param name="urlParameterKeyFormatter">The <see cref="IUrlParameterKeyFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterKeyFormatter"/>)</param>
+        public RefitSettings(
+            IHttpContentSerializer contentSerializer,
+            IUrlParameterFormatter? urlParameterFormatter = null,
+            IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null,
+            IUrlParameterKeyFormatter? urlParameterKeyFormatter = null)
+        {
+            ContentSerializer = contentSerializer ?? throw new ArgumentNullException(nameof(contentSerializer), "The content serializer can't be null");
             UrlParameterFormatter = urlParameterFormatter ?? new DefaultUrlParameterFormatter();
-            FormUrlEncodedParameterFormatter =
-                formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
+            FormUrlEncodedParameterFormatter = formUrlEncodedParameterFormatter ?? new DefaultFormUrlEncodedParameterFormatter();
+            UrlParameterKeyFormatter = urlParameterKeyFormatter ?? new DefaultUrlParameterKeyFormatter();
             ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
         }
 
         /// <summary>
         /// Supply a function to provide the Authorization header. Does not work if you supply an HttpClient instance.
         /// </summary>
-        public Func<
-            HttpRequestMessage,
-            CancellationToken,
-            Task<string>
-        >? AuthorizationHeaderValueGetter { get; set; }
+        public Func<HttpRequestMessage, CancellationToken, Task<string>>? AuthorizationHeaderValueGetter { get; set; }
 
         /// <summary>
         /// Supply a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.
@@ -72,6 +84,12 @@ namespace Refit
         public IHttpContentSerializer ContentSerializer { get; set; }
 
         /// <summary>
+        /// The <see cref="IUrlParameterKeyFormatter"/> instance to use for formatting URL parameter keys (defaults to <see cref="DefaultUrlParameterKeyFormatter" />.
+        /// Allows customization of key naming conventions.
+        /// </summary>
+        public IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
+
+        /// <summary>
         /// The <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>)
         /// </summary>
         public IUrlParameterFormatter UrlParameterFormatter { get; set; }
@@ -84,8 +102,7 @@ namespace Refit
         /// <summary>
         /// Sets the default collection format to use. (defaults to <see cref="CollectionFormat.RefitParameterFormatter"/>)
         /// </summary>
-        public CollectionFormat CollectionFormat { get; set; } =
-            CollectionFormat.RefitParameterFormatter;
+        public CollectionFormat CollectionFormat { get; set; } = CollectionFormat.RefitParameterFormatter;
 
         /// <summary>
         /// Sets the default behavior when sending a request's body content. (defaults to false, request body is not streamed to the server)
@@ -95,7 +112,7 @@ namespace Refit
         /// <summary>
         /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.
         /// </summary>
-        public Dictionary<string, object> HttpRequestMessageOptions { get; set; }
+        public Dictionary<string, object>? HttpRequestMessageOptions { get; set; }
     }
 
     /// <summary>
@@ -118,10 +135,7 @@ namespace Refit
         /// <param name="content">HttpContent object to deserialize.</param>
         /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
         /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
-        Task<T?> FromHttpContentAsync<T>(
-            HttpContent content,
-            CancellationToken cancellationToken = default
-        );
+        Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands
@@ -129,6 +143,19 @@ namespace Refit
         /// <param name="propertyInfo">A PropertyInfo object.</param>
         /// <returns>The calculated field name.</returns>
         string? GetFieldNameForProperty(PropertyInfo propertyInfo);
+    }
+
+    /// <summary>
+    /// Provides a mechanism for formatting URL parameter keys, allowing customization of key naming conventions.
+    /// </summary>
+    public interface IUrlParameterKeyFormatter
+    {
+        /// <summary>
+        /// Formats the specified key.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        string Format(string key);
     }
 
     /// <summary>
@@ -161,14 +188,24 @@ namespace Refit
     }
 
     /// <summary>
+    /// Default Url parameter key formatter. Does not do any formatting.
+    /// </summary>
+    public class DefaultUrlParameterKeyFormatter : IUrlParameterKeyFormatter
+    {
+        /// <summary>
+        /// Formats the specified key.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
+        public virtual string Format(string key) => key;
+    }
+
+    /// <summary>
     /// Default Url parameter formater.
     /// </summary>
     public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     {
-        static readonly ConcurrentDictionary<
-            Type,
-            ConcurrentDictionary<string, EnumMemberAttribute?>
-        > EnumMemberCache = new();
+        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache = new();
 
         /// <summary>
         /// Formats the specified parameter value.
@@ -177,22 +214,18 @@ namespace Refit
         /// <param name="attributeProvider">The attribute provider.</param>
         /// <param name="type">The type.</param>
         /// <returns></returns>
-        /// <exception cref="System.ArgumentNullException">attributeProvider</exception>
-        public virtual string? Format(
-            object? parameterValue,
-            ICustomAttributeProvider attributeProvider,
-            Type type
-        )
+        /// <exception cref="ArgumentNullException">attributeProvider</exception>
+        public virtual string? Format(object? parameterValue, ICustomAttributeProvider attributeProvider, Type type)
         {
             if (attributeProvider is null)
+            {
                 throw new ArgumentNullException(nameof(attributeProvider));
+            }
 
             // See if we have a format
-            var formatString = attributeProvider
-                .GetCustomAttributes(typeof(QueryAttribute), true)
+            var formatString = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true)
                 .OfType<QueryAttribute>()
-                .FirstOrDefault()
-                ?.Format;
+                .FirstOrDefault()?.Format;
 
             EnumMemberAttribute? enummember = null;
             if (parameterValue != null)
@@ -200,28 +233,18 @@ namespace Refit
                 var parameterType = parameterValue.GetType();
                 if (parameterType.IsEnum)
                 {
-                    var cached = EnumMemberCache.GetOrAdd(
-                        parameterType,
-                        t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
-                    );
-                    enummember = cached.GetOrAdd(
-                        parameterValue.ToString()!,
-                        val =>
-                            parameterType
-                                .GetMember(val)
-                                .First()
-                                .GetCustomAttribute<EnumMemberAttribute>()
-                    );
+                    var cached = EnumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute?>());
+                    enummember = cached.GetOrAdd(parameterValue.ToString()!, val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
                 }
             }
 
             return parameterValue == null
-                ? null
-                : string.Format(
-                    CultureInfo.InvariantCulture,
-                    string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
-                    enummember?.Value ?? parameterValue
-                );
+                       ? null
+                       : string.Format(CultureInfo.InvariantCulture,
+                                       string.IsNullOrWhiteSpace(formatString)
+                                           ? "{0}"
+                                           : $"{{0:{formatString}}}",
+                                       enummember?.Value ?? parameterValue);
         }
     }
 
@@ -230,10 +253,8 @@ namespace Refit
     /// </summary>
     public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
     {
-        static readonly ConcurrentDictionary<
-            Type,
-            ConcurrentDictionary<string, EnumMemberAttribute?>
-        > EnumMemberCache = new();
+        static readonly ConcurrentDictionary<Type, ConcurrentDictionary<string, EnumMemberAttribute?>> EnumMemberCache
+            = new();
 
         /// <summary>
         /// Formats the specified parameter value.
@@ -251,45 +272,24 @@ namespace Refit
             EnumMemberAttribute? enummember = null;
             if (parameterType.GetTypeInfo().IsEnum)
             {
-                var cached = EnumMemberCache.GetOrAdd(
-                    parameterType,
-                    t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
-                );
-                enummember = cached.GetOrAdd(
-                    parameterValue.ToString()!,
-                    val =>
-                        parameterType
-                            .GetMember(val)
-                            .First()
-                            .GetCustomAttribute<EnumMemberAttribute>()
-                );
+                var cached = EnumMemberCache.GetOrAdd(parameterType, t => new ConcurrentDictionary<string, EnumMemberAttribute?>());
+                enummember = cached.GetOrAdd(parameterValue.ToString()!, val => parameterType.GetMember(val).First().GetCustomAttribute<EnumMemberAttribute>());
             }
 
-            return string.Format(
-                CultureInfo.InvariantCulture,
-                string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
-                enummember?.Value ?? parameterValue
-            );
+            return string.Format(CultureInfo.InvariantCulture,
+                                 string.IsNullOrWhiteSpace(formatString)
+                                     ? "{0}"
+                                     : $"{{0:{formatString}}}",
+                                 enummember?.Value ?? parameterValue);
         }
     }
 
     /// <summary>
     /// Default Api exception factory.
     /// </summary>
-    public class DefaultApiExceptionFactory
+    public class DefaultApiExceptionFactory(RefitSettings refitSettings)
     {
         static readonly Task<Exception?> NullTask = Task.FromResult<Exception?>(null);
-
-        readonly RefitSettings refitSettings;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DefaultApiExceptionFactory"/> class.
-        /// </summary>
-        /// <param name="refitSettings">The refit settings.</param>
-        public DefaultApiExceptionFactory(RefitSettings refitSettings)
-        {
-            this.refitSettings = refitSettings;
-        }
 
         /// <summary>
         /// Creates the asynchronous.
@@ -298,7 +298,7 @@ namespace Refit
         /// <returns></returns>
         public Task<Exception?> CreateAsync(HttpResponseMessage responseMessage)
         {
-            if (!responseMessage.IsSuccessStatusCode)
+            if (responseMessage?.IsSuccessStatusCode == false)
             {
                 return CreateExceptionAsync(responseMessage, refitSettings)!;
             }
@@ -308,17 +308,12 @@ namespace Refit
             }
         }
 
-        static async Task<Exception> CreateExceptionAsync(
-            HttpResponseMessage responseMessage,
-            RefitSettings refitSettings
-        )
+        static async Task<Exception> CreateExceptionAsync(HttpResponseMessage responseMessage, RefitSettings refitSettings)
         {
             var requestMessage = responseMessage.RequestMessage!;
             var method = requestMessage.Method;
 
-            return await ApiException
-                .Create(requestMessage, method, responseMessage, refitSettings)
-                .ConfigureAwait(false);
+            return await ApiException.Create(requestMessage, method, responseMessage, refitSettings).ConfigureAwait(false);
         }
     }
 }
