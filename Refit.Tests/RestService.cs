@@ -2199,28 +2199,31 @@ public class RestServiceIntegrationTests
         Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
     }
 
-    [Fact]
-    public async Task TypeCollisionTest()
-    {
-        var mockHttp = new MockHttpMessageHandler();
+        [Fact]
+        public async Task TypeCollisionTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        const string Url = "https://httpbin.org/get";
+            const string Url = "https://httpbin.org/get";
 
-        mockHttp.Expect(HttpMethod.Get, Url).Respond("application/json", "{ }");
+            mockHttp.Expect(HttpMethod.Get, Url).Respond("application/json", "{ }");
 
-        var fixtureA = RestService.For<ITypeCollisionApiA>(Url);
+            var fixtureA = RestService.For<ITypeCollisionApiA>(Url, settings);
 
-        var respA = await fixtureA.SomeARequest();
+            var respA = await fixtureA.SomeARequest();
 
-        var fixtureB = RestService.For<ITypeCollisionApiB>(Url);
+            mockHttp.Expect(HttpMethod.Get, Url)
+                .Respond("application/json", "{ }");
 
-        var respB = await fixtureB.SomeBRequest();
+            var fixtureB = RestService.For<ITypeCollisionApiB>(Url, settings);
 
-        Assert.IsType<CollisionA.SomeType>(respA);
-        Assert.IsType<CollisionB.SomeType>(respB);
-    }
+            var respB = await fixtureB.SomeBRequest();
+
+            Assert.IsType<CollisionA.SomeType>(respA);
+            Assert.IsType<CollisionB.SomeType>(respB);
+        }
 
     internal static Stream GetTestFileStream(string relativeFilePath)
     {
@@ -2261,10 +2264,48 @@ public class RestServiceIntegrationTests
         return stream;
     }
 
-    public void AssertFirstLineContains(string expectedSubstring, string actualString)
-    {
-        var eolIndex = actualString.IndexOf('\n');
-        var firstLine = eolIndex < 0 ? actualString : actualString.Substring(0, eolIndex);
-        Assert.Contains(expectedSubstring, firstLine);
-    }
+        [Fact]
+        public async Task SameTypeNameInMultipleNamespacesTest()
+        {
+            var mockHttp = new MockHttpMessageHandler();
+
+            var settings = new RefitSettings
+            {
+                HttpMessageHandlerFactory = () => mockHttp,
+            };
+
+            const string Url = "https://httpbin.org/get";
+
+            mockHttp.Expect(HttpMethod.Get, Url + "/")
+                .Respond("application/json", "{ }");
+
+            var fixtureA = RestService.For<INamespaceCollisionApi>(Url, settings);
+
+            var respA = await fixtureA.SomeRequest();
+
+            mockHttp.Expect(HttpMethod.Get, Url + "/")
+                .Respond("application/json", "{ }");
+
+            var fixtureB = RestService.For<CollisionA.INamespaceCollisionApi>(Url, settings);
+
+            var respB = await fixtureB.SomeRequest();
+
+            mockHttp.Expect(HttpMethod.Get, Url + "/")
+                .Respond("application/json", "{ }");
+
+            var fixtureC = RestService.For<CollisionB.INamespaceCollisionApi>(Url, settings);
+
+            var respC = await fixtureC.SomeRequest();
+
+            Assert.IsType<CollisionA.SomeType>(respA);
+            Assert.IsType<CollisionA.SomeType>(respB);
+            Assert.IsType<CollisionB.SomeType>(respC);
+        }
+
+        public void AssertFirstLineContains(string expectedSubstring, string actualString)
+        {
+            var eolIndex = actualString.IndexOf('\n');
+            var firstLine = eolIndex < 0 ? actualString : actualString.Substring(0, eolIndex);
+            Assert.Contains(expectedSubstring, firstLine);
+        }
 }

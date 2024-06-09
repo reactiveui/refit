@@ -291,7 +291,8 @@ namespace Refit.Implementation
                 );
 
                 var keyName = group.Key.Name;
-                if (keyCount.TryGetValue(keyName, out var value))
+                int value;
+                while(keyCount.TryGetValue(keyName, out value))
                 {
                     keyName = $"{keyName}{++value}";
                 }
@@ -583,7 +584,7 @@ namespace Refit.Implementation
             bool isOverrideOrExplicitImplementation
         )
         {
-            // Explicit interface implementations and ovverrides can only have class or struct constraints
+            // Explicit interface implementations and overrides can only have class or struct constraints
 
             var parameters = new List<string>();
             if (typeParameter.HasReferenceTypeConstraint)
