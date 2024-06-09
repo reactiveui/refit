@@ -29,43 +29,33 @@ namespace Refit
     /// Implementation of <see cref="IApiResponse{T}"/> that provides additional functionalities.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class ApiResponse<T> : IApiResponse<T>, IApiResponse
+    /// <remarks>
+    /// Create an instance of <see cref="ApiResponse{T}"/> with type <typeparamref name="T"/>.
+    /// </remarks>
+    /// <param name="response">Original HTTP Response message.</param>
+    /// <param name="content">Response content.</param>
+    /// <param name="settings">Refit settings used to send the request.</param>
+    /// <param name="error">The ApiException, if the request failed.</param>
+    /// <exception cref="ArgumentNullException"></exception>
+    public sealed class ApiResponse<T>(
+        HttpResponseMessage response,
+        T? content,
+        RefitSettings settings,
+        ApiException? error = null
+        ) : IApiResponse<T>, IApiResponse
     {
-        readonly HttpResponseMessage response;
+        readonly HttpResponseMessage response = response ?? throw new ArgumentNullException(nameof(response));
         bool disposed;
-
-        /// <summary>
-        /// Create an instance of <see cref="ApiResponse{T}"/> with type <typeparamref name="T"/>.
-        /// </summary>
-        /// <param name="response">Original HTTP Response message.</param>
-        /// <param name="content">Response content.</param>
-        /// <param name="settings">Refit settings used to send the request.</param>
-        /// <param name="error">The ApiException, if the request failed.</param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public ApiResponse(
-            HttpResponseMessage response,
-            T? content,
-            RefitSettings settings,
-            ApiException? error = null
-        )
-        {
-            this.response = response ?? throw new ArgumentNullException(nameof(response));
-            Error = error;
-            Content = content;
-            Settings = settings;
-        }
 
         /// <summary>
         /// Deserialized request content as <typeparamref name="T"/>.
         /// </summary>
-        public T? Content { get; }
-
-        object? IApiResponse.Content => Content;
+        public T? Content { get; } = content;
 
         /// <summary>
         /// Refit settings used to send the request.
         /// </summary>
-        public RefitSettings Settings { get; }
+        public RefitSettings Settings { get; } = settings;
 
         /// <summary>
         /// HTTP response headers.
@@ -110,7 +100,7 @@ namespace Refit
         /// <summary>
         /// The <see cref="ApiException" /> object in case of unsuccessful response.
         /// </summary>
-        public ApiException? Error { get; private set; }
+        public ApiException? Error { get; private set; } = error;
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
@@ -160,19 +150,13 @@ namespace Refit
     }
 
     /// <inheritdoc/>
-    public interface IApiResponse<out T> : IApiResponse
+    public interface IApiResponse<out T> : IApiResponseBase
     {
         /// <summary>
         /// Deserialized request content as <typeparamref name="T"/>.
         /// </summary>
-        new T? Content { get; }
-    }
+        T? Content { get; }
 
-    /// <summary>
-    /// Base interface used to represent an API response.
-    /// </summary>
-    public interface IApiResponse : IDisposable
-    {
         /// <summary>
         /// Indicates whether the request was successful.
         /// </summary>
@@ -184,19 +168,53 @@ namespace Refit
         bool IsSuccessStatusCode { get; }
 
         /// <summary>
-        /// Deserialized request content as an object.
+        /// HTTP response content headers as defined in RFC 2616.
         /// </summary>
-        object? Content { get; }
+        HttpContentHeaders? ContentHeaders { get; }
 
         /// <summary>
-        /// HTTP response headers.
+        /// The <see cref="ApiException"/> object in case of unsuccessful response.
         /// </summary>
-        HttpResponseHeaders Headers { get; }
+        [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "By Design")]
+        ApiException? Error { get; }
+    }
+
+    /// <summary>
+    /// IApiResponse.
+    /// </summary>
+    /// <seealso cref="Refit.IApiResponseBase" />
+    public interface IApiResponse : IApiResponseBase
+    {
+        /// <summary>
+        /// Indicates whether the request was successful.
+        /// </summary>
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
+        bool IsSuccessStatusCode { get; }
 
         /// <summary>
         /// HTTP response content headers as defined in RFC 2616.
         /// </summary>
         HttpContentHeaders? ContentHeaders { get; }
+
+        /// <summary>
+        /// The <see cref="ApiException"/> object in case of unsuccessful response.
+        /// </summary>
+        [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "By Design")]
+        ApiException? Error { get; }
+    }
+
+    /// <summary>
+    /// Base interface used to represent an API response.
+    /// </summary>
+    public interface IApiResponseBase : IDisposable
+    {
+        /// <summary>
+        /// HTTP response headers.
+        /// </summary>
+        HttpResponseHeaders Headers { get; }
 
         /// <summary>
         /// HTTP response status code.
@@ -217,10 +235,5 @@ namespace Refit
         /// HTTP Message version.
         /// </summary>
         Version Version { get; }
-
-        /// <summary>
-        /// The <see cref="ApiException"/> object in case of unsuccessful response.
-        /// </summary>
-        ApiException? Error { get; }
     }
 }
