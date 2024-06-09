@@ -9,111 +9,110 @@ using RichardSzalay.MockHttp;
 
 using Xunit;
 
-namespace Refit.Tests
+namespace Refit.Tests;
+
+public class ExceptionFactoryTests
 {
-    public class ExceptionFactoryTests
+    public interface IMyService
     {
-        public interface IMyService
+        [Get("/get-with-result")]
+        Task<string> GetWithResult();
+
+        [Put("/put-without-result")]
+        Task PutWithoutResult();
+    }
+
+    [Fact]
+    public async Task ProvideFactoryWhichAlwaysReturnsNull_WithResult()
+    {
+        var handler = new MockHttpMessageHandler();
+        var settings = new RefitSettings()
         {
-            [Get("/get-with-result")]
-            Task<string> GetWithResult();
+            HttpMessageHandlerFactory = () => handler,
+            ExceptionFactory = _ => Task.FromResult<Exception>(null)
+        };
 
-            [Put("/put-without-result")]
-            Task PutWithoutResult();
-        }
+        handler
+            .Expect(HttpMethod.Get, "http://api/get-with-result")
+            .Respond(HttpStatusCode.NotFound, new StringContent("error-result"));
 
-        [Fact]
-        public async Task ProvideFactoryWhichAlwaysReturnsNull_WithResult()
+        var fixture = RestService.For<IMyService>("http://api", settings);
+
+        var result = await fixture.GetWithResult();
+
+        handler.VerifyNoOutstandingExpectation();
+
+        Assert.Equal("error-result", result);
+    }
+
+    [Fact]
+    public async Task ProvideFactoryWhichAlwaysReturnsNull_WithoutResult()
+    {
+        var handler = new MockHttpMessageHandler();
+        var settings = new RefitSettings()
         {
-            var handler = new MockHttpMessageHandler();
-            var settings = new RefitSettings()
-            {
-                HttpMessageHandlerFactory = () => handler,
-                ExceptionFactory = _ => Task.FromResult<Exception>(null)
-            };
+            HttpMessageHandlerFactory = () => handler,
+            ExceptionFactory = _ => Task.FromResult<Exception>(null)
+        };
 
-            handler
-                .Expect(HttpMethod.Get, "http://api/get-with-result")
-                .Respond(HttpStatusCode.NotFound, new StringContent("error-result"));
+        handler
+            .Expect(HttpMethod.Put, "http://api/put-without-result")
+            .Respond(HttpStatusCode.NotFound);
 
-            var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = RestService.For<IMyService>("http://api", settings);
 
-            var result = await fixture.GetWithResult();
+        await fixture.PutWithoutResult();
 
-            handler.VerifyNoOutstandingExpectation();
+        handler.VerifyNoOutstandingExpectation();
+    }
 
-            Assert.Equal("error-result", result);
-        }
-
-        [Fact]
-        public async Task ProvideFactoryWhichAlwaysReturnsNull_WithoutResult()
+    [Fact]
+    public async Task ProvideFactoryWhichAlwaysReturnsException_WithResult()
+    {
+        var handler = new MockHttpMessageHandler();
+        var exception = new Exception("I like to fail");
+        var settings = new RefitSettings()
         {
-            var handler = new MockHttpMessageHandler();
-            var settings = new RefitSettings()
-            {
-                HttpMessageHandlerFactory = () => handler,
-                ExceptionFactory = _ => Task.FromResult<Exception>(null)
-            };
+            HttpMessageHandlerFactory = () => handler,
+            ExceptionFactory = _ => Task.FromResult<Exception>(exception)
+        };
 
-            handler
-                .Expect(HttpMethod.Put, "http://api/put-without-result")
-                .Respond(HttpStatusCode.NotFound);
+        handler
+            .Expect(HttpMethod.Get, "http://api/get-with-result")
+            .Respond(HttpStatusCode.OK, new StringContent("success-result"));
 
-            var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = RestService.For<IMyService>("http://api", settings);
 
-            await fixture.PutWithoutResult();
+        var thrownException = await Assert.ThrowsAsync<Exception>(
+            () => fixture.GetWithResult()
+        );
+        Assert.Equal(exception, thrownException);
 
-            handler.VerifyNoOutstandingExpectation();
-        }
+        handler.VerifyNoOutstandingExpectation();
+    }
 
-        [Fact]
-        public async Task ProvideFactoryWhichAlwaysReturnsException_WithResult()
+    [Fact]
+    public async Task ProvideFactoryWhichAlwaysReturnsException_WithoutResult()
+    {
+        var handler = new MockHttpMessageHandler();
+        var exception = new Exception("I like to fail");
+        var settings = new RefitSettings()
         {
-            var handler = new MockHttpMessageHandler();
-            var exception = new Exception("I like to fail");
-            var settings = new RefitSettings()
-            {
-                HttpMessageHandlerFactory = () => handler,
-                ExceptionFactory = _ => Task.FromResult<Exception>(exception)
-            };
+            HttpMessageHandlerFactory = () => handler,
+            ExceptionFactory = _ => Task.FromResult<Exception>(exception)
+        };
 
-            handler
-                .Expect(HttpMethod.Get, "http://api/get-with-result")
-                .Respond(HttpStatusCode.OK, new StringContent("success-result"));
+        handler
+            .Expect(HttpMethod.Put, "http://api/put-without-result")
+            .Respond(HttpStatusCode.OK);
 
-            var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = RestService.For<IMyService>("http://api", settings);
 
-            var thrownException = await Assert.ThrowsAsync<Exception>(
-                () => fixture.GetWithResult()
-            );
-            Assert.Equal(exception, thrownException);
+        var thrownException = await Assert.ThrowsAsync<Exception>(
+            () => fixture.PutWithoutResult()
+        );
+        Assert.Equal(exception, thrownException);
 
-            handler.VerifyNoOutstandingExpectation();
-        }
-
-        [Fact]
-        public async Task ProvideFactoryWhichAlwaysReturnsException_WithoutResult()
-        {
-            var handler = new MockHttpMessageHandler();
-            var exception = new Exception("I like to fail");
-            var settings = new RefitSettings()
-            {
-                HttpMessageHandlerFactory = () => handler,
-                ExceptionFactory = _ => Task.FromResult<Exception>(exception)
-            };
-
-            handler
-                .Expect(HttpMethod.Put, "http://api/put-without-result")
-                .Respond(HttpStatusCode.OK);
-
-            var fixture = RestService.For<IMyService>("http://api", settings);
-
-            var thrownException = await Assert.ThrowsAsync<Exception>(
-                () => fixture.PutWithoutResult()
-            );
-            Assert.Equal(exception, thrownException);
-
-            handler.VerifyNoOutstandingExpectation();
-        }
+        handler.VerifyNoOutstandingExpectation();
     }
 }

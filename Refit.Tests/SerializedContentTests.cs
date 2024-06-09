@@ -5,186 +5,185 @@ using System.Threading.Tasks;
 using Xunit;
 using System.Threading;
 
-namespace Refit.Tests
+namespace Refit.Tests;
+
+public class SerializedContentTests
 {
-    public class SerializedContentTests
+    const string BaseAddress = "https://api/";
+
+    [Theory]
+    [InlineData(typeof(NewtonsoftJsonContentSerializer))]
+    [InlineData(typeof(SystemTextJsonContentSerializer))]
+    [InlineData(typeof(XmlContentSerializer))]
+    public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
     {
-        const string BaseAddress = "https://api/";
-
-        [Theory]
-        [InlineData(typeof(NewtonsoftJsonContentSerializer))]
-        [InlineData(typeof(SystemTextJsonContentSerializer))]
-        [InlineData(typeof(XmlContentSerializer))]
-        public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
+        if (
+            Activator.CreateInstance(contentSerializerType)
+            is not IHttpContentSerializer serializer
+        )
         {
-            if (
-                Activator.CreateInstance(contentSerializerType)
-                is not IHttpContentSerializer serializer
-            )
+            throw new ArgumentException(
+                $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}"
+            );
+        }
+
+        var handler = new MockPushStreamContentHttpMessageHandler
+        {
+            Asserts = async content =>
+                new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
+        };
+
+        var settings = new RefitSettings(serializer)
+        {
+            HttpMessageHandlerFactory = () => handler
+        };
+
+        var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
+
+        var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(new User()))
+            .ConfigureAwait(false);
+        Assert.True(fixtureTask.IsCompleted);
+        Assert.Equal(TaskStatus.RanToCompletion, fixtureTask.Status);
+    }
+
+    [Theory]
+    [InlineData(typeof(NewtonsoftJsonContentSerializer))]
+    [InlineData(typeof(SystemTextJsonContentSerializer))]
+    [InlineData(typeof(XmlContentSerializer))]
+    public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
+    {
+        if (
+            Activator.CreateInstance(contentSerializerType)
+            is not IHttpContentSerializer serializer
+        )
+        {
+            throw new ArgumentException(
+                $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}"
+            );
+        }
+
+        var model = new User
+        {
+            Name = "Wile E. Coyote",
+            CreatedAt = new DateTime(1949, 9, 16).ToString(),
+            Company = "ACME",
+        };
+
+        var handler = new MockPushStreamContentHttpMessageHandler
+        {
+            Asserts = async content =>
             {
-                throw new ArgumentException(
-                    $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}"
+                var stringContent = new StringContent(
+                    await content.ReadAsStringAsync().ConfigureAwait(false)
                 );
+                var user = await serializer
+                    .FromHttpContentAsync<User>(content)
+                    .ConfigureAwait(false);
+                Assert.NotSame(model, user);
+                Assert.Equal(model.Name, user.Name);
+                Assert.Equal(model.CreatedAt, user.CreatedAt);
+                Assert.Equal(model.Company, user.Company);
+
+                //  return some content so that the serializer doesn't complain
+                return stringContent;
             }
+        };
 
-            var handler = new MockPushStreamContentHttpMessageHandler
-            {
-                Asserts = async content =>
-                    new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
-            };
-
-            var settings = new RefitSettings(serializer)
-            {
-                HttpMessageHandlerFactory = () => handler
-            };
-
-            var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
-
-            var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(new User()))
-                .ConfigureAwait(false);
-            Assert.True(fixtureTask.IsCompleted);
-            Assert.Equal(TaskStatus.RanToCompletion, fixtureTask.Status);
-        }
-
-        [Theory]
-        [InlineData(typeof(NewtonsoftJsonContentSerializer))]
-        [InlineData(typeof(SystemTextJsonContentSerializer))]
-        [InlineData(typeof(XmlContentSerializer))]
-        public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
+        var settings = new RefitSettings(serializer)
         {
-            if (
-                Activator.CreateInstance(contentSerializerType)
-                is not IHttpContentSerializer serializer
-            )
-            {
-                throw new ArgumentException(
-                    $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}"
-                );
-            }
+            HttpMessageHandlerFactory = () => handler
+        };
 
-            var model = new User
-            {
-                Name = "Wile E. Coyote",
-                CreatedAt = new DateTime(1949, 9, 16).ToString(),
-                Company = "ACME",
-            };
+        var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
 
-            var handler = new MockPushStreamContentHttpMessageHandler
-            {
-                Asserts = async content =>
-                {
-                    var stringContent = new StringContent(
-                        await content.ReadAsStringAsync().ConfigureAwait(false)
-                    );
-                    var user = await serializer
-                        .FromHttpContentAsync<User>(content)
-                        .ConfigureAwait(false);
-                    Assert.NotSame(model, user);
-                    Assert.Equal(model.Name, user.Name);
-                    Assert.Equal(model.CreatedAt, user.CreatedAt);
-                    Assert.Equal(model.Company, user.Company);
+        var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(model))
+            .ConfigureAwait(false);
 
-                    //  return some content so that the serializer doesn't complain
-                    return stringContent;
-                }
-            };
+        Assert.True(fixtureTask.IsCompleted);
+    }
 
-            var settings = new RefitSettings(serializer)
-            {
-                HttpMessageHandlerFactory = () => handler
-            };
+    [Fact]
+    public void VerityDefaultSerializer()
+    {
+        var settings = new RefitSettings();
 
-            var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
+        Assert.NotNull(settings.ContentSerializer);
+        Assert.IsType<SystemTextJsonContentSerializer>(settings.ContentSerializer);
 
-            var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(model))
-                .ConfigureAwait(false);
+        settings = new RefitSettings(new NewtonsoftJsonContentSerializer());
 
-            Assert.True(fixtureTask.IsCompleted);
-        }
+        Assert.NotNull(settings.ContentSerializer);
+        Assert.IsType<NewtonsoftJsonContentSerializer>(settings.ContentSerializer);
+    }
 
-        [Fact]
-        public void VerityDefaultSerializer()
+    /// <summary>
+    /// Runs the task to completion or until the timeout occurs
+    /// </summary>
+    static async Task<Task<User>> RunTaskWithATimeLimit(Task<User> fixtureTask)
+    {
+        var circuitBreakerTask = Task.Delay(TimeSpan.FromSeconds(30));
+        await Task.WhenAny(fixtureTask, circuitBreakerTask);
+        return fixtureTask;
+    }
+
+    class MockPushStreamContentHttpMessageHandler : HttpMessageHandler
+    {
+        public Func<PushStreamContent, Task<HttpContent>> Asserts { get; set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        )
         {
-            var settings = new RefitSettings();
+            var content = request.Content as PushStreamContent;
+            Assert.IsType<PushStreamContent>(content);
+            Assert.NotNull(Asserts);
 
-            Assert.NotNull(settings.ContentSerializer);
-            Assert.IsType<SystemTextJsonContentSerializer>(settings.ContentSerializer);
+            var responseContent = await Asserts(content).ConfigureAwait(false);
 
-            settings = new RefitSettings(new NewtonsoftJsonContentSerializer());
-
-            Assert.NotNull(settings.ContentSerializer);
-            Assert.IsType<NewtonsoftJsonContentSerializer>(settings.ContentSerializer);
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = responseContent };
         }
+    }
 
-        /// <summary>
-        /// Runs the task to completion or until the timeout occurs
-        /// </summary>
-        static async Task<Task<User>> RunTaskWithATimeLimit(Task<User> fixtureTask)
+    [Fact]
+    public async Task StreamDeserialization_UsingSystemTextJsonContentSerializer()
+    {
+        var model = new TestAliasObject
         {
-            var circuitBreakerTask = Task.Delay(TimeSpan.FromSeconds(30));
-            await Task.WhenAny(fixtureTask, circuitBreakerTask);
-            return fixtureTask;
-        }
+            ShortNameForAlias = nameof(
+                StreamDeserialization_UsingSystemTextJsonContentSerializer
+            ),
+            ShortNameForJsonProperty = nameof(TestAliasObject)
+        };
 
-        class MockPushStreamContentHttpMessageHandler : HttpMessageHandler
+        var serializer = new SystemTextJsonContentSerializer();
+
+        var json = serializer.ToHttpContent(model);
+
+        var result = await serializer.FromHttpContentAsync<TestAliasObject>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal(model.ShortNameForAlias, result.ShortNameForAlias);
+        Assert.Equal(model.ShortNameForJsonProperty, result.ShortNameForJsonProperty);
+    }
+
+    [Fact]
+    public void StreamDeserialization_UsingSystemTextJsonContentSerializer_SetsCorrectHeaders()
+    {
+        var model = new TestAliasObject
         {
-            public Func<PushStreamContent, Task<HttpContent>> Asserts { get; set; }
+            ShortNameForAlias = nameof(
+                StreamDeserialization_UsingSystemTextJsonContentSerializer
+            ),
+            ShortNameForJsonProperty = nameof(TestAliasObject)
+        };
 
-            protected override async Task<HttpResponseMessage> SendAsync(
-                HttpRequestMessage request,
-                CancellationToken cancellationToken
-            )
-            {
-                var content = request.Content as PushStreamContent;
-                Assert.IsType<PushStreamContent>(content);
-                Assert.NotNull(Asserts);
+        var serializer = new SystemTextJsonContentSerializer();
 
-                var responseContent = await Asserts(content).ConfigureAwait(false);
+        var json = serializer.ToHttpContent(model);
 
-                return new HttpResponseMessage(HttpStatusCode.OK) { Content = responseContent };
-            }
-        }
-
-        [Fact]
-        public async Task StreamDeserialization_UsingSystemTextJsonContentSerializer()
-        {
-            var model = new TestAliasObject
-            {
-                ShortNameForAlias = nameof(
-                    StreamDeserialization_UsingSystemTextJsonContentSerializer
-                ),
-                ShortNameForJsonProperty = nameof(TestAliasObject)
-            };
-
-            var serializer = new SystemTextJsonContentSerializer();
-
-            var json = serializer.ToHttpContent(model);
-
-            var result = await serializer.FromHttpContentAsync<TestAliasObject>(json);
-
-            Assert.NotNull(result);
-            Assert.Equal(model.ShortNameForAlias, result.ShortNameForAlias);
-            Assert.Equal(model.ShortNameForJsonProperty, result.ShortNameForJsonProperty);
-        }
-
-        [Fact]
-        public void StreamDeserialization_UsingSystemTextJsonContentSerializer_SetsCorrectHeaders()
-        {
-            var model = new TestAliasObject
-            {
-                ShortNameForAlias = nameof(
-                    StreamDeserialization_UsingSystemTextJsonContentSerializer
-                ),
-                ShortNameForJsonProperty = nameof(TestAliasObject)
-            };
-
-            var serializer = new SystemTextJsonContentSerializer();
-
-            var json = serializer.ToHttpContent(model);
-
-            Assert.NotNull(json.Headers.ContentType);
-            Assert.Equal("utf-8", json.Headers.ContentType.CharSet);
-            Assert.Equal("application/json", json.Headers.ContentType.MediaType);
-        }
+        Assert.NotNull(json.Headers.ContentType);
+        Assert.Equal("utf-8", json.Headers.ContentType.CharSet);
+        Assert.Equal("application/json", json.Headers.ContentType.MediaType);
     }
 }
