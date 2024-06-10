@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Web;
 
 namespace Refit
@@ -85,51 +78,52 @@ namespace Refit
 
         RestMethodInfoInternal FindMatchingRestMethodInfo(string key, Type[]? parameterTypes, Type[]? genericArgumentTypes)
         {
-            if (interfaceHttpMethods.TryGetValue(key, out var httpMethods))
-            {
-                if (parameterTypes == null)
-                {
-                    if (httpMethods.Count > 1)
-                    {
-                        throw new ArgumentException($"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
-                    }
-                    return CloseGenericMethodIfNeeded(httpMethods[0], genericArgumentTypes);
-                }
-
-                var isGeneric = genericArgumentTypes?.Length > 0;
-
-                var possibleMethodsList = httpMethods.Where(method => method.MethodInfo.GetParameters().Length == parameterTypes.Length);
-
-                // If it's a generic method, add that filter
-                if (isGeneric)
-                    possibleMethodsList = possibleMethodsList.Where(method => method.MethodInfo.IsGenericMethod && method.MethodInfo.GetGenericArguments().Length == genericArgumentTypes!.Length);
-                else // exclude generic methods
-                    possibleMethodsList = possibleMethodsList.Where(method => !method.MethodInfo.IsGenericMethod);
-
-                var possibleMethods = possibleMethodsList.ToList();
-
-                if (possibleMethods.Count == 1)
-                    return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
-
-                var parameterTypesArray = parameterTypes.ToArray();
-                foreach (var method in possibleMethods)
-                {
-                    var match = method.MethodInfo.GetParameters()
-                                      .Select(p => p.ParameterType)
-                                      .SequenceEqual(parameterTypesArray);
-                    if (match)
-                    {
-                        return CloseGenericMethodIfNeeded(method, genericArgumentTypes);
-                    }
-                }
-
-                throw new Exception("No suitable Method found...");
-            }
-            else
+            if (!interfaceHttpMethods.TryGetValue(key, out var httpMethods))
             {
                 throw new ArgumentException("Method must be defined and have an HTTP Method attribute");
             }
 
+            if (parameterTypes == null)
+            {
+                if (httpMethods.Count > 1)
+                {
+                    throw new ArgumentException(
+                        $"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
+                }
+
+                return CloseGenericMethodIfNeeded(httpMethods[0], genericArgumentTypes);
+            }
+
+            var isGeneric = genericArgumentTypes?.Length > 0;
+
+            var possibleMethodsCollection = httpMethods.Where(method =>
+                method.MethodInfo.GetParameters().Length == parameterTypes.Length);
+
+            // If it's a generic method, add that filter
+            if (isGeneric)
+                possibleMethodsCollection = possibleMethodsCollection.Where(method =>
+                    method.MethodInfo.IsGenericMethod && method.MethodInfo.GetGenericArguments().Length ==
+                    genericArgumentTypes!.Length);
+            else // exclude generic methods
+                possibleMethodsCollection = possibleMethodsCollection.Where(method => !method.MethodInfo.IsGenericMethod);
+
+            var possibleMethods = possibleMethodsCollection.ToArray();
+
+            if (possibleMethods.Length == 1)
+                return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
+
+            foreach (var method in possibleMethods)
+            {
+                var match = method.MethodInfo.GetParameters()
+                    .Select(p => p.ParameterType)
+                    .SequenceEqual(parameterTypes);
+                if (match)
+                {
+                    return CloseGenericMethodIfNeeded(method, genericArgumentTypes);
+                }
+            }
+
+            throw new Exception("No suitable Method found...");
         }
 
         RestMethodInfoInternal CloseGenericMethodIfNeeded(RestMethodInfoInternal restMethodInfo, Type[]? genericArgumentTypes)
@@ -176,7 +170,6 @@ namespace Refit
 
         void AddMultipartItem(MultipartFormDataContent multiPartContent, string fileName, string parameterName, object itemValue)
         {
-
             if (itemValue is HttpContent content)
             {
                 multiPartContent.Add(content);
@@ -373,15 +366,12 @@ namespace Refit
                 if (obj == null)
                     continue;
 
-                if (parameterInfo != null)
+                //if we have a parameter info lets check it to make sure it isn't bound to the path
+                if (parameterInfo is { IsObjectPropertyParameter: true })
                 {
-                    //if we have a parameter info lets check it to make sure it isn't bound to the path
-                    if (parameterInfo.IsObjectPropertyParameter)
+                    if (parameterInfo.ParameterProperties.Any(x => x.PropertyInfo == propertyInfo))
                     {
-                        if (parameterInfo.ParameterProperties.Any(x => x.PropertyInfo == propertyInfo))
-                        {
-                            continue;
-                        }
+                        continue;
                     }
                 }
 
@@ -390,10 +380,9 @@ namespace Refit
                 var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
                 key = aliasAttribute?.Name ?? settings.UrlParameterKeyFormatter.Format(key);
 
-
                 // Look to see if the property has a Query attribute, and if so, format it accordingly
                 var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
-                if (queryAttribute != null && queryAttribute.Format != null)
+                if (queryAttribute is { Format: not null })
                 {
                     obj = settings.FormUrlEncodedParameterFormatter.Format(obj, queryAttribute.Format);
                 }
@@ -507,9 +496,9 @@ namespace Refit
                     var isParameterMappedToRequest = false;
                     var param = paramList[i];
                     // if part of REST resource URL, substitute it in
-                    if (restMethod.ParameterMap.ContainsKey(i))
+                    if (restMethod.ParameterMap.TryGetValue(i, out var parameterMapValue))
                     {
-                        parameterInfo = restMethod.ParameterMap[i];
+                        parameterInfo = parameterMapValue;
                         if (parameterInfo.IsObjectPropertyParameter)
                         {
                             foreach (var propertyInfo in parameterInfo.ParameterProperties)
@@ -529,9 +518,9 @@ namespace Refit
                         {
                             string pattern;
                             string replacement;
-                            if (restMethod.ParameterMap[i].Type == ParameterType.RoundTripping)
+                            if (parameterMapValue.Type == ParameterType.RoundTripping)
                             {
-                                pattern = $@"{{\*\*{restMethod.ParameterMap[i].Name}}}";
+                                pattern = $@"{{\*\*{parameterMapValue.Name}}}";
                                 var paramValue = (string)param;
                                 replacement = string.Join(
                                     "/",
@@ -545,7 +534,7 @@ namespace Refit
                             }
                             else
                             {
-                                pattern = "{" + restMethod.ParameterMap[i].Name + "}";
+                                pattern = "{" + parameterMapValue.Name + "}";
                                 replacement = Uri.EscapeDataString(settings.UrlParameterFormatter
                                         .Format(param, restMethod.ParameterInfoMap[i], restMethod.ParameterInfoMap[i].ParameterType) ?? string.Empty);
                             }
@@ -618,9 +607,9 @@ namespace Refit
                     }
 
                     // if header, add to request headers
-                    if (restMethod.HeaderParameterMap.ContainsKey(i))
+                    if (restMethod.HeaderParameterMap.TryGetValue(i, out var headerParameterValue))
                     {
-                        headersToAdd[restMethod.HeaderParameterMap[i]] = param?.ToString();
+                        headersToAdd[headerParameterValue] = param?.ToString();
                         isParameterMappedToRequest = true;
                     }
 
@@ -645,9 +634,9 @@ namespace Refit
                     }
 
                     //if property, add to populate into HttpRequestMessage.Properties
-                    if (restMethod.PropertyParameterMap.ContainsKey(i))
+                    if (restMethod.PropertyParameterMap.TryGetValue(i, out var propertyParameter))
                     {
-                        propertiesToAdd[restMethod.PropertyParameterMap[i]] = param;
+                        propertiesToAdd[propertyParameter] = param;
                         isParameterMappedToRequest = true;
                     }
 
@@ -759,7 +748,7 @@ namespace Refit
 #else
                 ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
                 ret.Properties[HttpRequestMessageOptions.RestMethodInfo] = restMethod.ToRestMethodInfo();
-#endif                
+#endif
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
@@ -920,33 +909,33 @@ namespace Refit
 
             var type = value.GetType();
 
-            bool ShouldReturn() => type == typeof(string) ||
-                                  type == typeof(bool) ||
-                                  type == typeof(char) ||
-                                  typeof(IFormattable).IsAssignableFrom(type) ||
-                                  type == typeof(Uri);
-
             // Bail out early & match string
-            if (ShouldReturn())
+            if (ShouldReturn(type))
                 return true;
 
+            if (value is not IEnumerable)
+                return false;
+
             // Get the element type for enumerables
-            if (value is IEnumerable enu)
-            {
-                var ienu = typeof(IEnumerable<>);
-                // We don't want to enumerate to get the type, so we'll just look for IEnumerable<T>
-                var intType = type.GetInterfaces()
-                                     .FirstOrDefault(i => i.GetTypeInfo().IsGenericType &&
-                                                          i.GetGenericTypeDefinition() == ienu);
+            var ienu = typeof(IEnumerable<>);
+            // We don't want to enumerate to get the type, so we'll just look for IEnumerable<T>
+            var intType = type.GetInterfaces()
+                .FirstOrDefault(
+                    i => i.GetTypeInfo().IsGenericType && i.GetGenericTypeDefinition() == ienu
+                );
 
-                if (intType != null)
-                {
-                    type = intType.GetGenericArguments()[0];
-                }
+            if (intType == null)
+                return false;
 
-            }
+            type = intType.GetGenericArguments()[0];
+            return ShouldReturn(type);
 
-            return ShouldReturn();
+            static bool ShouldReturn(Type type) =>
+                type == typeof(string)
+                || type == typeof(bool)
+                || type == typeof(char)
+                || typeof(IFormattable).IsAssignableFrom(type)
+                || type == typeof(Uri);
         }
 
         static void SetHeader(HttpRequestMessage request, string name, string? value)
