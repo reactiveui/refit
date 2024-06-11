@@ -1,6 +1,6 @@
-﻿using Serilog;
-using System;
+﻿using System;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace Meow
 {
@@ -8,8 +8,8 @@ namespace Meow
     {
         static async Task Main(string[] args)
         {
-            Log.Logger = new LoggerConfiguration().WriteTo
-                .Console()
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
                 .MinimumLevel.Verbose()
                 .CreateLogger();
 

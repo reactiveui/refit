@@ -4,9 +4,8 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using RichardSzalay.MockHttp;
-
 using Refit; // for the code gen
+using RichardSzalay.MockHttp;
 using Xunit;
 
 namespace Refit.Tests;
@@ -44,8 +43,7 @@ public class AuthenticatedClientHandlerTests
         );
     }
 
-    public interface IInheritedAuthenticatedServiceWithHeaders
-        : IAuthenticatedServiceWithHeaders
+    public interface IInheritedAuthenticatedServiceWithHeaders : IAuthenticatedServiceWithHeaders
     {
         [Get("/get-inherited-thing")]
         Task<string> GetInheritedThing();
@@ -61,9 +59,7 @@ public class AuthenticatedClientHandlerTests
     [Fact]
     public void DefaultHandlerIsHttpClientHandler()
     {
-        var handler = new AuthenticatedHttpClientHandler(
-            ((_, _) => Task.FromResult(string.Empty))
-        );
+        var handler = new AuthenticatedHttpClientHandler(((_, _) => Task.FromResult(string.Empty)));
 
         Assert.IsType<HttpClientHandler>(handler.InnerHandler);
     }

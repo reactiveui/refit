@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Refit; // InterfaceStubGenerator looks for this
-
 using static System.Math; // This is here to verify https://github.com/reactiveui/refit/issues/283
 
 namespace Refit.Tests;
@@ -64,10 +63,7 @@ public interface IGitHubApi
     IObservable<User> GetUserCamelCase(string userName);
 
     [Get("/orgs/{orgname}/members")]
-    Task<List<User>> GetOrgMembers(
-        string orgName,
-        CancellationToken cancellationToken = default
-    );
+    Task<List<User>> GetOrgMembers(string orgName, CancellationToken cancellationToken = default);
 
     [Get("/search/users")]
     Task<UserSearchResult> FindUsers(string q);

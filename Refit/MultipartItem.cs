@@ -45,7 +45,8 @@ namespace Refit
         /// <value>
         /// The name of the file.
         /// </value>
-        public string FileName { get; } = fileName ?? throw new ArgumentNullException(nameof(fileName));
+        public string FileName { get; } =
+            fileName ?? throw new ArgumentNullException(nameof(fileName));
 
         /// <summary>
         /// Converts to content.
@@ -85,7 +86,7 @@ namespace Refit
         string fileName,
         string? contentType = null,
         string? name = null
-        ) : MultipartItem(fileName, contentType, name)
+    ) : MultipartItem(fileName, contentType, name)
     {
         /// <summary>
         /// Gets the value.
@@ -121,9 +122,8 @@ namespace Refit
         string fileName,
         string? contentType = null,
         string? name = null
-        ) : MultipartItem(fileName, contentType, name)
+    ) : MultipartItem(fileName, contentType, name)
     {
-
         /// <summary>
         /// Gets the value.
         /// </summary>
@@ -158,7 +158,7 @@ namespace Refit
         string fileName,
         string? contentType = null,
         string? name = null
-        ) : MultipartItem(fileName, contentType, name)
+    ) : MultipartItem(fileName, contentType, name)
     {
         /// <summary>
         /// Gets the value.

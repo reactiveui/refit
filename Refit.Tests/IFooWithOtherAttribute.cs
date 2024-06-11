@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel;
 using System.Threading.Tasks;
-
 using Refit;
 
 interface IFooWithOtherAttribute

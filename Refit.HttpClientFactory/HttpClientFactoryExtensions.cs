@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 
