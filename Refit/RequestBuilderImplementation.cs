@@ -765,9 +765,34 @@ namespace Refit
 
                 if (queryParamsToAdd.Count != 0)
                 {
-                    var pairs = queryParamsToAdd.Where(x => x.Key != null && x.Value != null)
-                                                .Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value ?? string.Empty));
-                    uri.Query = string.Join("&", pairs);
+                    var vsb = new ValueStringBuilder(stackalloc char[512]);
+                    var firstQuery = true;
+
+                    foreach (var queryParam in queryParamsToAdd)
+                    {
+                        if(queryParam is not { Key: not null, Value: not null })
+                            continue;
+
+                        if (firstQuery)
+                        {
+                            // query starts with ?
+                            vsb.Append('?');
+                        }
+                        else
+                        {
+                            // for all items after the first we add a & symbol
+                            vsb.Append('&');
+                        }
+
+                        vsb.Append(Uri.EscapeDataString(queryParam.Key));
+                        vsb.Append('=');
+                        vsb.Append(Uri.EscapeDataString(queryParam.Value ?? string.Empty));
+
+                        if (firstQuery)
+                            firstQuery = false;
+                    }
+
+                    uri.Query = vsb.ToString();
                 }
                 else
                 {
