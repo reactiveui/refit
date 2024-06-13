@@ -994,14 +994,8 @@ namespace Refit
 
                 if (queryParamsToAdd.Count != 0)
                 {
-                    var pairs = queryParamsToAdd
-                        .Where(x => x.Key != null && x.Value != null)
-                        .Select(
-                            x =>
-                                Uri.EscapeDataString(x.Key)
-                                + "="
-                                + Uri.EscapeDataString(x.Value ?? string.Empty)
-                        );
+                    var pairs = queryParamsToAdd.Where(x => x.Key != null && x.Value != null)
+                                                .Select(x => Uri.EscapeDataString(x.Key) + "=" + Uri.EscapeDataString(x.Value ?? string.Empty));
                     uri.Query = string.Join("&", pairs);
                 }
                 else
