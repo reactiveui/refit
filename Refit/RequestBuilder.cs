@@ -22,7 +22,7 @@ namespace Refit
     }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public interface IRequestBuilder<T> : IRequestBuilder { }
@@ -40,14 +40,16 @@ namespace Refit
         /// <typeparam name="T"></typeparam>
         /// <param name="settings">The settings.</param>
         /// <returns></returns>
-        public static IRequestBuilder<T> ForType<T>(RefitSettings? settings) => PlatformRequestBuilderFactory.Create<T>(settings);
+        public static IRequestBuilder<T> ForType<T>(RefitSettings? settings) =>
+            PlatformRequestBuilderFactory.Create<T>(settings);
 
         /// <summary>
         /// Fors the type.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static IRequestBuilder<T> ForType<T>() => PlatformRequestBuilderFactory.Create<T>(null);
+        public static IRequestBuilder<T> ForType<T>() =>
+            PlatformRequestBuilderFactory.Create<T>(null);
 
         /// <summary>
         /// Fors the type.
@@ -55,13 +57,15 @@ namespace Refit
         /// <param name="refitInterfaceType">Type of the refit interface.</param>
         /// <param name="settings">The settings.</param>
         /// <returns></returns>
-        public static IRequestBuilder ForType(Type refitInterfaceType, RefitSettings? settings) => PlatformRequestBuilderFactory.Create(refitInterfaceType, settings);
+        public static IRequestBuilder ForType(Type refitInterfaceType, RefitSettings? settings) =>
+            PlatformRequestBuilderFactory.Create(refitInterfaceType, settings);
 
         /// <summary>
         /// Fors the type.
         /// </summary>
         /// <param name="refitInterfaceType">Type of the refit interface.</param>
         /// <returns></returns>
-        public static IRequestBuilder ForType(Type refitInterfaceType) => PlatformRequestBuilderFactory.Create(refitInterfaceType, null);
+        public static IRequestBuilder ForType(Type refitInterfaceType) =>
+            PlatformRequestBuilderFactory.Create(refitInterfaceType, null);
     }
 }

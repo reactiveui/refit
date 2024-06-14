@@ -42,9 +42,10 @@ namespace Refit
         T? content,
         RefitSettings settings,
         ApiException? error = null
-        ) : IApiResponse<T>, IApiResponse
+    ) : IApiResponse<T>, IApiResponse
     {
-        readonly HttpResponseMessage response = response ?? throw new ArgumentNullException(nameof(response));
+        readonly HttpResponseMessage response =
+            response ?? throw new ArgumentNullException(nameof(response));
         bool disposed;
 
         /// <summary>
@@ -175,7 +176,11 @@ namespace Refit
         /// <summary>
         /// The <see cref="ApiException"/> object in case of unsuccessful response.
         /// </summary>
-        [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "By Design")]
+        [SuppressMessage(
+            "Naming",
+            "CA1716:Identifiers should not match keywords",
+            Justification = "By Design"
+        )]
         ApiException? Error { get; }
     }
 
@@ -202,7 +207,11 @@ namespace Refit
         /// <summary>
         /// The <see cref="ApiException"/> object in case of unsuccessful response.
         /// </summary>
-        [SuppressMessage("Naming", "CA1716:Identifiers should not match keywords", Justification = "By Design")]
+        [SuppressMessage(
+            "Naming",
+            "CA1716:Identifiers should not match keywords",
+            Justification = "By Design"
+        )]
         ApiException? Error { get; }
     }
 

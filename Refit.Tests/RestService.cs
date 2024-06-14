@@ -9,12 +9,9 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Newtonsoft.Json;
 using Refit; // InterfaceStubGenerator looks for this
-
 using RichardSzalay.MockHttp;
-
 using Xunit;
 
 namespace Refit.Tests;
@@ -466,9 +463,7 @@ public class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/chooseMe/bar/barNone")
-            .WithExactQueryString(
-                new[] { new KeyValuePair<string, string>("SomeProperty", "1") }
-            )
+            .WithExactQueryString(new[] { new KeyValuePair<string, string>("SomeProperty", "1") })
             .Respond("application/json", "Ok");
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
@@ -941,10 +936,7 @@ public class RestServiceIntegrationTests
 
         mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
-            .Respond(
-                "application/json",
-                "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }"
-            );
+            .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -974,10 +966,7 @@ public class RestServiceIntegrationTests
 
         mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
-            .Respond(
-                "application/json",
-                "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }"
-            );
+            .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -1162,16 +1151,11 @@ public class RestServiceIntegrationTests
 
         mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
-            .Respond(
-                "application/json",
-                "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }"
-            );
+            .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var result = await fixture
-            .GetUserObservable("octocat")
-            .Timeout(TimeSpan.FromSeconds(10));
+        var result = await fixture.GetUserObservable("octocat").Timeout(TimeSpan.FromSeconds(10));
 
         Assert.Equal("octocat", result.Login);
         Assert.False(string.IsNullOrEmpty(result.AvatarUrl));
@@ -1197,10 +1181,7 @@ public class RestServiceIntegrationTests
 
         mockHttp
             .When(HttpMethod.Get, "https://api.github.com/users/octocat")
-            .Respond(
-                "application/json",
-                "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }"
-            );
+            .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
@@ -1323,9 +1304,7 @@ public class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
-            .Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
-            .Respond(HttpStatusCode.OK);
+        mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
 
         var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
 
@@ -1400,9 +1379,7 @@ public class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
-            .Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
-            .Respond(HttpStatusCode.OK);
+        mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
 
         var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
 
@@ -1412,9 +1389,7 @@ public class RestServiceIntegrationTests
 
         mockHttp.ResetExpectations();
 
-        mockHttp
-            .Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1")
-            .Respond(HttpStatusCode.OK);
+        mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
 
         await fixture.PostGeneric("4");
 
@@ -1428,11 +1403,7 @@ public class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        var postBody = new Dictionary<string, string>
-        {
-            { "some", "body" },
-            { "once", "told me" }
-        };
+        var postBody = new Dictionary<string, string> { { "some", "body" }, { "once", "told me" } };
 
         mockHttp
             .Expect(HttpMethod.Post, "http://httpbin.org/foo")
@@ -1453,11 +1424,7 @@ public class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        var postBody = new Dictionary<string, string>
-        {
-            { "some", "body" },
-            { "once", "told me" }
-        };
+        var postBody = new Dictionary<string, string> { { "some", "body" }, { "once", "told me" } };
         const string expectedResponse = "some response";
 
         mockHttp
@@ -1972,19 +1939,13 @@ public class RestServiceIntegrationTests
 
         mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
-            .Respond(
-                "application/json",
-                nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse)
-            );
+            .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse));
         await fixture.DoSomethingElse();
         mockHttp.VerifyNoOutstandingExpectation();
 
         mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
-            .Respond(
-                "application/json",
-                nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse)
-            );
+            .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse));
         await ((IAmInterfaceEWithNoRefit<int>)fixture).DoSomethingElse();
         mockHttp.VerifyNoOutstandingExpectation();
 
@@ -2199,31 +2160,30 @@ public class RestServiceIntegrationTests
         Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
     }
 
-        [Fact]
-        public async Task TypeCollisionTest()
-        {
-            var mockHttp = new MockHttpMessageHandler();
+    [Fact]
+    public async Task TypeCollisionTest()
+    {
+        var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-            const string Url = "https://httpbin.org/get";
+        const string Url = "https://httpbin.org/get";
 
-            mockHttp.Expect(HttpMethod.Get, Url).Respond("application/json", "{ }");
+        mockHttp.Expect(HttpMethod.Get, Url).Respond("application/json", "{ }");
 
-            var fixtureA = RestService.For<ITypeCollisionApiA>(Url, settings);
+        var fixtureA = RestService.For<ITypeCollisionApiA>(Url, settings);
 
-            var respA = await fixtureA.SomeARequest();
+        var respA = await fixtureA.SomeARequest();
 
-            mockHttp.Expect(HttpMethod.Get, Url)
-                .Respond("application/json", "{ }");
+        mockHttp.Expect(HttpMethod.Get, Url).Respond("application/json", "{ }");
 
-            var fixtureB = RestService.For<ITypeCollisionApiB>(Url, settings);
+        var fixtureB = RestService.For<ITypeCollisionApiB>(Url, settings);
 
-            var respB = await fixtureB.SomeBRequest();
+        var respB = await fixtureB.SomeBRequest();
 
-            Assert.IsType<CollisionA.SomeType>(respA);
-            Assert.IsType<CollisionB.SomeType>(respB);
-        }
+        Assert.IsType<CollisionA.SomeType>(respA);
+        Assert.IsType<CollisionB.SomeType>(respB);
+    }
 
     internal static Stream GetTestFileStream(string relativeFilePath)
     {
@@ -2243,9 +2203,7 @@ public class RestServiceIntegrationTests
         // get resource stream
         var fullName = assembly
             .GetManifestResourceNames()
-            .FirstOrDefault(
-                name => name.EndsWith(relativeName, StringComparison.InvariantCulture)
-            );
+            .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture));
         if (fullName == null)
         {
             throw new Exception(
@@ -2264,48 +2222,42 @@ public class RestServiceIntegrationTests
         return stream;
     }
 
-        [Fact]
-        public async Task SameTypeNameInMultipleNamespacesTest()
-        {
-            var mockHttp = new MockHttpMessageHandler();
+    [Fact]
+    public async Task SameTypeNameInMultipleNamespacesTest()
+    {
+        var mockHttp = new MockHttpMessageHandler();
 
-            var settings = new RefitSettings
-            {
-                HttpMessageHandlerFactory = () => mockHttp,
-            };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-            const string Url = "https://httpbin.org/get";
+        const string Url = "https://httpbin.org/get";
 
-            mockHttp.Expect(HttpMethod.Get, Url + "/")
-                .Respond("application/json", "{ }");
+        mockHttp.Expect(HttpMethod.Get, Url + "/").Respond("application/json", "{ }");
 
-            var fixtureA = RestService.For<INamespaceCollisionApi>(Url, settings);
+        var fixtureA = RestService.For<INamespaceCollisionApi>(Url, settings);
 
-            var respA = await fixtureA.SomeRequest();
+        var respA = await fixtureA.SomeRequest();
 
-            mockHttp.Expect(HttpMethod.Get, Url + "/")
-                .Respond("application/json", "{ }");
+        mockHttp.Expect(HttpMethod.Get, Url + "/").Respond("application/json", "{ }");
 
-            var fixtureB = RestService.For<CollisionA.INamespaceCollisionApi>(Url, settings);
+        var fixtureB = RestService.For<CollisionA.INamespaceCollisionApi>(Url, settings);
 
-            var respB = await fixtureB.SomeRequest();
+        var respB = await fixtureB.SomeRequest();
 
-            mockHttp.Expect(HttpMethod.Get, Url + "/")
-                .Respond("application/json", "{ }");
+        mockHttp.Expect(HttpMethod.Get, Url + "/").Respond("application/json", "{ }");
 
-            var fixtureC = RestService.For<CollisionB.INamespaceCollisionApi>(Url, settings);
+        var fixtureC = RestService.For<CollisionB.INamespaceCollisionApi>(Url, settings);
 
-            var respC = await fixtureC.SomeRequest();
+        var respC = await fixtureC.SomeRequest();
 
-            Assert.IsType<CollisionA.SomeType>(respA);
-            Assert.IsType<CollisionA.SomeType>(respB);
-            Assert.IsType<CollisionB.SomeType>(respC);
-        }
+        Assert.IsType<CollisionA.SomeType>(respA);
+        Assert.IsType<CollisionA.SomeType>(respB);
+        Assert.IsType<CollisionB.SomeType>(respC);
+    }
 
-        public void AssertFirstLineContains(string expectedSubstring, string actualString)
-        {
-            var eolIndex = actualString.IndexOf('\n');
-            var firstLine = eolIndex < 0 ? actualString : actualString.Substring(0, eolIndex);
-            Assert.Contains(expectedSubstring, firstLine);
-        }
+    public void AssertFirstLineContains(string expectedSubstring, string actualString)
+    {
+        var eolIndex = actualString.IndexOf('\n');
+        var firstLine = eolIndex < 0 ? actualString : actualString.Substring(0, eolIndex);
+        Assert.Contains(expectedSubstring, firstLine);
+    }
 }

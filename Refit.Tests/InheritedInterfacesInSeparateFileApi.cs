@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-
 using Refit; // InterfaceStubGenerator looks for this
 
 namespace Refit.Tests.SeparateNamespace;

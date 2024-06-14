@@ -1,7 +1,6 @@
 ﻿using System.Net.Http;
 using System.Reflection;
 using System.Text;
-
 using Newtonsoft.Json;
 
 namespace Refit
@@ -13,12 +12,15 @@ namespace Refit
     /// Creates a new <see cref="NewtonsoftJsonContentSerializer"/> instance with the specified parameters
     /// </remarks>
     /// <param name="jsonSerializerSettings">The serialization settings to use for the current instance</param>
-    public sealed class NewtonsoftJsonContentSerializer(JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer
+    public sealed class NewtonsoftJsonContentSerializer(
+        JsonSerializerSettings? jsonSerializerSettings
+    ) : IHttpContentSerializer
     {
         /// <summary>
         /// The <see cref="Lazy{T}"/> instance providing the JSON serialization settings to use
         /// </summary>
-        readonly Lazy<JsonSerializerSettings> jsonSerializerSettings = new(
+        readonly Lazy<JsonSerializerSettings> jsonSerializerSettings =
+            new(
                 () =>
                     jsonSerializerSettings
                     ?? JsonConvert.DefaultSettings?.Invoke()
@@ -78,10 +80,11 @@ namespace Refit
             return propertyInfo switch
             {
                 null => throw new ArgumentNullException(nameof(propertyInfo)),
-                _ => propertyInfo
-                .GetCustomAttributes<JsonPropertyAttribute>(true)
-                .Select(a => a.PropertyName)
-                .FirstOrDefault()
+                _
+                    => propertyInfo
+                        .GetCustomAttributes<JsonPropertyAttribute>(true)
+                        .Select(a => a.PropertyName)
+                        .FirstOrDefault()
             };
         }
     }

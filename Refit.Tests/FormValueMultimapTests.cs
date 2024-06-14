@@ -2,9 +2,7 @@
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
-
 using Newtonsoft.Json;
-
 using Xunit;
 
 namespace Refit.Tests;

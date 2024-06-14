@@ -187,7 +187,8 @@ namespace System.Net.Http
     [ExcludeFromCodeCoverage]
     abstract class DelegatingStream(Stream innerStream) : Stream
     {
-        protected Stream InnerStream { get; private set; } = innerStream ?? throw new ArgumentNullException(nameof(innerStream));
+        protected Stream InnerStream { get; private set; } =
+            innerStream ?? throw new ArgumentNullException(nameof(innerStream));
 
         public override bool CanRead
         {

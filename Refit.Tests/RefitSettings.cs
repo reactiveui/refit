@@ -18,13 +18,30 @@ public class RefitSettingsTests
         exception = Record.Exception(() => new RefitSettings(contentSerializer));
         Assert.Null(exception);
 
-        exception = Record.Exception(() => new RefitSettings(contentSerializer, urlParameterFormatter));
+        exception = Record.Exception(
+            () => new RefitSettings(contentSerializer, urlParameterFormatter)
+        );
         Assert.Null(exception);
 
-        exception = Record.Exception(() => new RefitSettings(contentSerializer, urlParameterFormatter, formUrlEncodedParameterFormatter));
+        exception = Record.Exception(
+            () =>
+                new RefitSettings(
+                    contentSerializer,
+                    urlParameterFormatter,
+                    formUrlEncodedParameterFormatter
+                )
+        );
         Assert.Null(exception);
 
-        exception = Record.Exception(() => new RefitSettings(contentSerializer, urlParameterFormatter, formUrlEncodedParameterFormatter, urlParameterKeyFormatter));
+        exception = Record.Exception(
+            () =>
+                new RefitSettings(
+                    contentSerializer,
+                    urlParameterFormatter,
+                    formUrlEncodedParameterFormatter,
+                    urlParameterKeyFormatter
+                )
+        );
         Assert.Null(exception);
     }
 }

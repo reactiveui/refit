@@ -13,12 +13,15 @@
             }
 
 #if NETCOREAPP
-            return string.Create(key.Length, key, (chars, name) =>
-            {
-                name
-                .CopyTo(chars);
-                FixCasing(chars);
-            });
+            return string.Create(
+                key.Length,
+                key,
+                (chars, name) =>
+                {
+                    name.CopyTo(chars);
+                    FixCasing(chars);
+                }
+            );
 #else
             char[] chars = key.ToCharArray();
             FixCasing(chars);

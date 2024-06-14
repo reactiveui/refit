@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using System.Threading;
 
 namespace Refit.Tests;
 
@@ -18,8 +18,7 @@ public class SerializedContentTests
     public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
     {
         if (
-            Activator.CreateInstance(contentSerializerType)
-            is not IHttpContentSerializer serializer
+            Activator.CreateInstance(contentSerializerType) is not IHttpContentSerializer serializer
         )
         {
             throw new ArgumentException(
@@ -33,10 +32,7 @@ public class SerializedContentTests
                 new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
         };
 
-        var settings = new RefitSettings(serializer)
-        {
-            HttpMessageHandlerFactory = () => handler
-        };
+        var settings = new RefitSettings(serializer) { HttpMessageHandlerFactory = () => handler };
 
         var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
 
@@ -53,8 +49,7 @@ public class SerializedContentTests
     public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
     {
         if (
-            Activator.CreateInstance(contentSerializerType)
-            is not IHttpContentSerializer serializer
+            Activator.CreateInstance(contentSerializerType) is not IHttpContentSerializer serializer
         )
         {
             throw new ArgumentException(
@@ -89,10 +84,7 @@ public class SerializedContentTests
             }
         };
 
-        var settings = new RefitSettings(serializer)
-        {
-            HttpMessageHandlerFactory = () => handler
-        };
+        var settings = new RefitSettings(serializer) { HttpMessageHandlerFactory = () => handler };
 
         var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
 
@@ -150,9 +142,7 @@ public class SerializedContentTests
     {
         var model = new TestAliasObject
         {
-            ShortNameForAlias = nameof(
-                StreamDeserialization_UsingSystemTextJsonContentSerializer
-            ),
+            ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
             ShortNameForJsonProperty = nameof(TestAliasObject)
         };
 
@@ -172,9 +162,7 @@ public class SerializedContentTests
     {
         var model = new TestAliasObject
         {
-            ShortNameForAlias = nameof(
-                StreamDeserialization_UsingSystemTextJsonContentSerializer
-            ),
+            ShortNameForAlias = nameof(StreamDeserialization_UsingSystemTextJsonContentSerializer),
             ShortNameForJsonProperty = nameof(TestAliasObject)
         };
 

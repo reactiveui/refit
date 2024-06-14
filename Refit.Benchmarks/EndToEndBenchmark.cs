@@ -1,5 +1,4 @@
 ﻿using System.Net;
-
 using AutoFixture;
 using BenchmarkDotNet.Attributes;
 
@@ -142,9 +141,9 @@ namespace Refit.Benchmarks
                         await refitClient[Serializer][HttpStatusCode].GetUsersTaskAsync();
                         break;
                     case HttpVerb.Post:
-                        await refitClient[Serializer][HttpStatusCode].PostUsersTaskAsync(
-                            users[ModelCount]
-                        );
+                        await refitClient[Serializer]
+                            [HttpStatusCode]
+                            .PostUsersTaskAsync(users[ModelCount]);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
@@ -164,13 +163,13 @@ namespace Refit.Benchmarks
                 switch (Verb)
                 {
                     case HttpVerb.Get:
-                        return await refitClient[Serializer][
-                            HttpStatusCode
-                        ].GetUsersTaskStringAsync();
+                        return await refitClient[Serializer]
+                            [HttpStatusCode]
+                            .GetUsersTaskStringAsync();
                     case HttpVerb.Post:
-                        return await refitClient[Serializer][
-                            HttpStatusCode
-                        ].PostUsersTaskStringAsync(users[ModelCount]);
+                        return await refitClient[Serializer]
+                            [HttpStatusCode]
+                            .PostUsersTaskStringAsync(users[ModelCount]);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
                 }
@@ -191,13 +190,13 @@ namespace Refit.Benchmarks
                 switch (Verb)
                 {
                     case HttpVerb.Get:
-                        return await refitClient[Serializer][
-                            HttpStatusCode
-                        ].GetUsersTaskStreamAsync();
+                        return await refitClient[Serializer]
+                            [HttpStatusCode]
+                            .GetUsersTaskStreamAsync();
                     case HttpVerb.Post:
-                        return await refitClient[Serializer][
-                            HttpStatusCode
-                        ].PostUsersTaskStreamAsync(users[ModelCount]);
+                        return await refitClient[Serializer]
+                            [HttpStatusCode]
+                            .PostUsersTaskStreamAsync(users[ModelCount]);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
                 }
@@ -218,13 +217,13 @@ namespace Refit.Benchmarks
                 switch (Verb)
                 {
                     case HttpVerb.Get:
-                        return await refitClient[Serializer][
-                            HttpStatusCode
-                        ].GetUsersTaskHttpContentAsync();
+                        return await refitClient[Serializer]
+                            [HttpStatusCode]
+                            .GetUsersTaskHttpContentAsync();
                     case HttpVerb.Post:
-                        return await refitClient[Serializer][
-                            HttpStatusCode
-                        ].PostUsersTaskHttpContentAsync(users[ModelCount]);
+                        return await refitClient[Serializer]
+                            [HttpStatusCode]
+                            .PostUsersTaskHttpContentAsync(users[ModelCount]);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
                 }
@@ -243,13 +242,13 @@ namespace Refit.Benchmarks
             switch (Verb)
             {
                 case HttpVerb.Get:
-                    return await refitClient[Serializer][
-                        HttpStatusCode
-                    ].GetUsersTaskHttpResponseMessageAsync();
+                    return await refitClient[Serializer]
+                        [HttpStatusCode]
+                        .GetUsersTaskHttpResponseMessageAsync();
                 case HttpVerb.Post:
-                    return await refitClient[Serializer][
-                        HttpStatusCode
-                    ].PostUsersTaskHttpResponseMessageAsync(users[ModelCount]);
+                    return await refitClient[Serializer]
+                        [HttpStatusCode]
+                        .PostUsersTaskHttpResponseMessageAsync(users[ModelCount]);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Verb));
             }
@@ -261,13 +260,13 @@ namespace Refit.Benchmarks
             switch (Verb)
             {
                 case HttpVerb.Get:
-                    return refitClient[Serializer][
-                        HttpStatusCode
-                    ].GetUsersObservableHttpResponseMessage();
+                    return refitClient[Serializer]
+                        [HttpStatusCode]
+                        .GetUsersObservableHttpResponseMessage();
                 case HttpVerb.Post:
-                    return refitClient[Serializer][
-                        HttpStatusCode
-                    ].PostUsersObservableHttpResponseMessage(users[ModelCount]);
+                    return refitClient[Serializer]
+                        [HttpStatusCode]
+                        .PostUsersObservableHttpResponseMessage(users[ModelCount]);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Verb));
             }
@@ -283,9 +282,9 @@ namespace Refit.Benchmarks
                     case HttpVerb.Get:
                         return await refitClient[Serializer][HttpStatusCode].GetUsersTaskTAsync();
                     case HttpVerb.Post:
-                        return await refitClient[Serializer][HttpStatusCode].PostUsersTaskTAsync(
-                            users[ModelCount]
-                        );
+                        return await refitClient[Serializer]
+                            [HttpStatusCode]
+                            .PostUsersTaskTAsync(users[ModelCount]);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(Verb));
                 }
@@ -304,13 +303,13 @@ namespace Refit.Benchmarks
             switch (Verb)
             {
                 case HttpVerb.Get:
-                    return await refitClient[Serializer][
-                        HttpStatusCode
-                    ].GetUsersTaskApiResponseTAsync();
+                    return await refitClient[Serializer]
+                        [HttpStatusCode]
+                        .GetUsersTaskApiResponseTAsync();
                 case HttpVerb.Post:
-                    return await refitClient[Serializer][
-                        HttpStatusCode
-                    ].PostUsersTaskApiResponseTAsync(users[ModelCount]);
+                    return await refitClient[Serializer]
+                        [HttpStatusCode]
+                        .PostUsersTaskApiResponseTAsync(users[ModelCount]);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(Verb));
             }
