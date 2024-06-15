@@ -1,5 +1,5 @@
-﻿using System.Net.Http;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.Net.Http;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -98,7 +98,9 @@ namespace Refit
 
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(parameterList);
-            HeaderCollectionParameterMap = RestMethodInfoInternal.BuildHeaderCollectionParameterMap(parameterList);
+            HeaderCollectionParameterMap = RestMethodInfoInternal.BuildHeaderCollectionParameterMap(
+                parameterList
+            );
             PropertyParameterMap = BuildRequestPropertyMap(parameterList);
 
             // get names for multipart attachments
@@ -233,8 +235,8 @@ namespace Refit
 
         static PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
         {
-            return parameter.ParameterType
-                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            return parameter
+                .ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
                 .ToArray();
         }
@@ -303,9 +305,7 @@ namespace Refit
                         var parameterType = isRoundTripping
                             ? ParameterType.RoundTripping
                             : ParameterType.Normal;
-                        var restMethodParameterInfo = new RestMethodParameterInfo(
-                            name,
-value)
+                        var restMethodParameterInfo = new RestMethodParameterInfo(name, value)
                         {
                             Type = parameterType
                         };
@@ -323,7 +323,10 @@ value)
 #endif
                     }
                     //else if it's a property on a object parameter
-                    else if (objectParamValidationDict.TryGetValue(name, out var value1) && !isRoundTripping)
+                    else if (
+                        objectParamValidationDict.TryGetValue(name, out var value1)
+                        && !isRoundTripping
+                    )
                     {
                         var property = value1;
                         var parameterIndex = parameterInfo.IndexOf(property.Item1);
@@ -542,8 +545,8 @@ value)
 
             var inheritedAttributes =
                 methodInfo.DeclaringType != null
-                    ? methodInfo.DeclaringType
-                        .GetInterfaces()
+                    ? methodInfo
+                        .DeclaringType.GetInterfaces()
                         .SelectMany(i => i.GetTypeInfo().GetCustomAttributes(true))
                         .Reverse()
                     : Array.Empty<Attribute>();

@@ -24,9 +24,14 @@ public class CamelCaseUrlParameterKeyFormatterTests
     {
         var urlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter();
 
-        var refitSettings = new RefitSettings { UrlParameterKeyFormatter = urlParameterKeyFormatter };
+        var refitSettings = new RefitSettings
+        {
+            UrlParameterKeyFormatter = urlParameterKeyFormatter
+        };
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(refitSettings);
-        var factory = fixture.BuildRequestFactoryForMethod(nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary));
+        var factory = fixture.BuildRequestFactoryForMethod(
+            nameof(IDummyHttpApi.ComplexQueryObjectWithDictionary)
+        );
 
         var complexQuery = new CamelCaselTestsRequest
         {

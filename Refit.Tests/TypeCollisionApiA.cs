@@ -1,7 +1,5 @@
 ﻿using System.Threading.Tasks;
-
 using CollisionA;
-
 using Refit; // InterfaceStubGenerator looks for this
 
 namespace Refit.Tests;

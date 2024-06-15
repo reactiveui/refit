@@ -2,9 +2,8 @@
 
 namespace Refit.Tests;
 
-using Microsoft.Extensions.DependencyInjection;
-
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 public class HttpClientFactoryExtensionsTests
@@ -124,9 +123,7 @@ public class HttpClientFactoryExtensionsTests
     [Fact]
     public void HttpClientSettingsCanBeProvidedStaticallyGivenGenericArgument()
     {
-        var contentSerializer = new SystemTextJsonContentSerializer(
-            new JsonSerializerOptions()
-        );
+        var contentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions());
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
             new RefitSettings() { ContentSerializer = contentSerializer }
@@ -143,9 +140,7 @@ public class HttpClientFactoryExtensionsTests
     [Fact]
     public void HttpClientSettingsCanBeProvidedStaticallyGivenTypeArgument()
     {
-        var contentSerializer = new SystemTextJsonContentSerializer(
-            new JsonSerializerOptions()
-        );
+        var contentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions());
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
             new RefitSettings() { ContentSerializer = contentSerializer }

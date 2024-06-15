@@ -350,7 +350,6 @@ namespace Refit
     [AttributeUsage(AttributeTargets.Parameter)]
     public sealed class HeaderAttribute(string header) : Attribute
     {
-
         /// <summary>
         /// Gets the header.
         /// </summary>

@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using SomeType = CollisionA.SomeType;
 using CollisionB;
 using Refit; // InterfaceStubGenerator looks for this
+using SomeType = CollisionA.SomeType;
 
 namespace Refit.Tests
 {
