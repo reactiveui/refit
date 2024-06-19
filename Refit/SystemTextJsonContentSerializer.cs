@@ -4,105 +4,104 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Refit
+namespace Refit;
+
+/// <summary>
+/// A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the System.Text.Json APIs
+/// </summary>
+public sealed class SystemTextJsonContentSerializer : IHttpContentSerializer
 {
     /// <summary>
-    /// A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the System.Text.Json APIs
+    /// The JSON serialization options to use
     /// </summary>
-    public sealed class SystemTextJsonContentSerializer : IHttpContentSerializer
+    readonly JsonSerializerOptions jsonSerializerOptions;
+
+    /// <summary>
+    /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
+    /// </summary>
+    public SystemTextJsonContentSerializer()
+        : this(GetDefaultJsonSerializerOptions()) { }
+
+    /// <summary>
+    /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
+    /// </summary>
+    /// <param name="jsonSerializerOptions">The serialization options to use for the current instance</param>
+    public SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
     {
-        /// <summary>
-        /// The JSON serialization options to use
-        /// </summary>
-        readonly JsonSerializerOptions jsonSerializerOptions;
-
-        /// <summary>
-        /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
-        /// </summary>
-        public SystemTextJsonContentSerializer()
-            : this(GetDefaultJsonSerializerOptions()) { }
-
-        /// <summary>
-        /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
-        /// </summary>
-        /// <param name="jsonSerializerOptions">The serialization options to use for the current instance</param>
-        public SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
-        {
-            this.jsonSerializerOptions = jsonSerializerOptions;
-        }
-
-        /// <inheritdoc/>
-        public HttpContent ToHttpContent<T>(T item)
-        {
-            var content = JsonContent.Create(item, options: jsonSerializerOptions);
-
-            return content;
-        }
-
-        /// <inheritdoc/>
-        public async Task<T?> FromHttpContentAsync<T>(
-            HttpContent content,
-            CancellationToken cancellationToken = default
-        )
-        {
-            var item = await content
-                .ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken)
-                .ConfigureAwait(false);
-            return item;
-        }
-
-        public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
-        {
-            if (propertyInfo is null)
-                throw new ArgumentNullException(nameof(propertyInfo));
-
-            return propertyInfo
-                .GetCustomAttributes<JsonPropertyNameAttribute>(true)
-                .Select(a => a.Name)
-                .FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters
-        /// </summary>
-        public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
-        {
-            var jsonSerializerOptions = new JsonSerializerOptions();
-            // Default to case insensitive property name matching as that's likely the behavior most users expect
-            jsonSerializerOptions.PropertyNameCaseInsensitive = true;
-            jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-            jsonSerializerOptions.Converters.Add(
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-            );
-
-            return jsonSerializerOptions;
-        }
+        this.jsonSerializerOptions = jsonSerializerOptions;
     }
 
-    // From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
-    public class ObjectToInferredTypesConverter : JsonConverter<object>
+    /// <inheritdoc/>
+    public HttpContent ToHttpContent<T>(T item)
     {
-        public override object? Read(
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options
-        ) =>
-            reader.TokenType switch
-            {
-                JsonTokenType.True => true,
-                JsonTokenType.False => false,
-                JsonTokenType.Number when reader.TryGetInt64(out var l) => l,
-                JsonTokenType.Number => reader.GetDouble(),
-                JsonTokenType.String when reader.TryGetDateTime(out var datetime) => datetime,
-                JsonTokenType.String => reader.GetString(),
-                _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
-            };
+        var content = JsonContent.Create(item, options: jsonSerializerOptions);
 
-        public override void Write(
-            Utf8JsonWriter writer,
-            object objectToWrite,
-            JsonSerializerOptions options
-        ) => JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
+        return content;
     }
+
+    /// <inheritdoc/>
+    public async Task<T?> FromHttpContentAsync<T>(
+        HttpContent content,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var item = await content
+            .ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken)
+            .ConfigureAwait(false);
+        return item;
+    }
+
+    public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
+    {
+        if (propertyInfo is null)
+            throw new ArgumentNullException(nameof(propertyInfo));
+
+        return propertyInfo
+            .GetCustomAttributes<JsonPropertyNameAttribute>(true)
+            .Select(a => a.Name)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters
+    /// </summary>
+    public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
+    {
+        var jsonSerializerOptions = new JsonSerializerOptions();
+        // Default to case insensitive property name matching as that's likely the behavior most users expect
+        jsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
+        jsonSerializerOptions.Converters.Add(
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+        );
+
+        return jsonSerializerOptions;
+    }
+}
+
+// From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
+public class ObjectToInferredTypesConverter : JsonConverter<object>
+{
+    public override object? Read(
+        ref Utf8JsonReader reader,
+        Type typeToConvert,
+        JsonSerializerOptions options
+    ) =>
+        reader.TokenType switch
+        {
+            JsonTokenType.True => true,
+            JsonTokenType.False => false,
+            JsonTokenType.Number when reader.TryGetInt64(out var l) => l,
+            JsonTokenType.Number => reader.GetDouble(),
+            JsonTokenType.String when reader.TryGetDateTime(out var datetime) => datetime,
+            JsonTokenType.String => reader.GetString(),
+            _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
+        };
+
+    public override void Write(
+        Utf8JsonWriter writer,
+        object objectToWrite,
+        JsonSerializerOptions options
+    ) => JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
 }

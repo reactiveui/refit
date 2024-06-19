@@ -1,84 +1,83 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Http;
 
-namespace Refit
+namespace Refit;
+
+class CachedRequestBuilderImplementation<T>
+    : CachedRequestBuilderImplementation,
+        IRequestBuilder<T>
 {
-    class CachedRequestBuilderImplementation<T>
-        : CachedRequestBuilderImplementation,
-            IRequestBuilder<T>
+    public CachedRequestBuilderImplementation(IRequestBuilder<T> innerBuilder)
+        : base(innerBuilder) { }
+}
+
+class CachedRequestBuilderImplementation : IRequestBuilder
+{
+    public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
     {
-        public CachedRequestBuilderImplementation(IRequestBuilder<T> innerBuilder)
-            : base(innerBuilder) { }
+        this.innerBuilder =
+            innerBuilder ?? throw new ArgumentNullException(nameof(innerBuilder));
     }
 
-    class CachedRequestBuilderImplementation : IRequestBuilder
+    readonly IRequestBuilder innerBuilder;
+    readonly ConcurrentDictionary<
+        string,
+        Func<HttpClient, object[], object?>
+    > methodDictionary = new();
+
+    public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
+        string methodName,
+        Type[]? parameterTypes = null,
+        Type[]? genericArgumentTypes = null
+    )
     {
-        public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
+        var cacheKey = GetCacheKey(
+            methodName,
+            parameterTypes ?? Array.Empty<Type>(),
+            genericArgumentTypes ?? Array.Empty<Type>()
+        );
+        var func = methodDictionary.GetOrAdd(
+            cacheKey,
+            _ =>
+                innerBuilder.BuildRestResultFuncForMethod(
+                    methodName,
+                    parameterTypes,
+                    genericArgumentTypes
+                )
+        );
+
+        return func;
+    }
+
+    static string GetCacheKey(
+        string methodName,
+        Type[] parameterTypes,
+        Type[] genericArgumentTypes
+    )
+    {
+        var genericDefinition = GetGenericString(genericArgumentTypes);
+        var argumentString = GetArgumentString(parameterTypes);
+
+        return $"{methodName}{genericDefinition}({argumentString})";
+    }
+
+    static string GetArgumentString(Type[] parameterTypes)
+    {
+        if (parameterTypes == null || parameterTypes.Length == 0)
         {
-            this.innerBuilder =
-                innerBuilder ?? throw new ArgumentNullException(nameof(innerBuilder));
+            return "";
         }
 
-        readonly IRequestBuilder innerBuilder;
-        readonly ConcurrentDictionary<
-            string,
-            Func<HttpClient, object[], object?>
-        > methodDictionary = new();
+        return string.Join(", ", parameterTypes.Select(t => t.FullName));
+    }
 
-        public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
-            string methodName,
-            Type[]? parameterTypes = null,
-            Type[]? genericArgumentTypes = null
-        )
+    static string GetGenericString(Type[] genericArgumentTypes)
+    {
+        if (genericArgumentTypes == null || genericArgumentTypes.Length == 0)
         {
-            var cacheKey = GetCacheKey(
-                methodName,
-                parameterTypes ?? Array.Empty<Type>(),
-                genericArgumentTypes ?? Array.Empty<Type>()
-            );
-            var func = methodDictionary.GetOrAdd(
-                cacheKey,
-                _ =>
-                    innerBuilder.BuildRestResultFuncForMethod(
-                        methodName,
-                        parameterTypes,
-                        genericArgumentTypes
-                    )
-            );
-
-            return func;
+            return "";
         }
 
-        static string GetCacheKey(
-            string methodName,
-            Type[] parameterTypes,
-            Type[] genericArgumentTypes
-        )
-        {
-            var genericDefinition = GetGenericString(genericArgumentTypes);
-            var argumentString = GetArgumentString(parameterTypes);
-
-            return $"{methodName}{genericDefinition}({argumentString})";
-        }
-
-        static string GetArgumentString(Type[] parameterTypes)
-        {
-            if (parameterTypes == null || parameterTypes.Length == 0)
-            {
-                return "";
-            }
-
-            return string.Join(", ", parameterTypes.Select(t => t.FullName));
-        }
-
-        static string GetGenericString(Type[] genericArgumentTypes)
-        {
-            if (genericArgumentTypes == null || genericArgumentTypes.Length == 0)
-            {
-                return "";
-            }
-
-            return "<" + string.Join(", ", genericArgumentTypes.Select(t => t.FullName)) + ">";
-        }
+        return "<" + string.Join(", ", genericArgumentTypes.Select(t => t.FullName)) + ">";
     }
 }

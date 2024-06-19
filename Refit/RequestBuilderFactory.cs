@@ -1,25 +1,24 @@
-﻿namespace Refit
+﻿namespace Refit;
+
+interface IRequestBuilderFactory
 {
-    interface IRequestBuilderFactory
+    IRequestBuilder<T> Create<T>(RefitSettings? settings);
+    IRequestBuilder Create(Type refitInterfaceType, RefitSettings? settings);
+}
+
+class RequestBuilderFactory : IRequestBuilderFactory
+{
+    public IRequestBuilder<T> Create<T>(RefitSettings? settings = null)
     {
-        IRequestBuilder<T> Create<T>(RefitSettings? settings);
-        IRequestBuilder Create(Type refitInterfaceType, RefitSettings? settings);
+        return new CachedRequestBuilderImplementation<T>(
+            new RequestBuilderImplementation<T>(settings)
+        );
     }
 
-    class RequestBuilderFactory : IRequestBuilderFactory
+    public IRequestBuilder Create(Type refitInterfaceType, RefitSettings? settings = null)
     {
-        public IRequestBuilder<T> Create<T>(RefitSettings? settings = null)
-        {
-            return new CachedRequestBuilderImplementation<T>(
-                new RequestBuilderImplementation<T>(settings)
-            );
-        }
-
-        public IRequestBuilder Create(Type refitInterfaceType, RefitSettings? settings = null)
-        {
-            return new CachedRequestBuilderImplementation(
-                new RequestBuilderImplementation(refitInterfaceType, settings)
-            );
-        }
+        return new CachedRequestBuilderImplementation(
+            new RequestBuilderImplementation(refitInterfaceType, settings)
+        );
     }
 }

@@ -1,17 +1,16 @@
-﻿namespace Refit
+﻿namespace Refit;
+
+sealed class AnonymousDisposable : IDisposable
 {
-    sealed class AnonymousDisposable : IDisposable
+    readonly Action block;
+
+    public AnonymousDisposable(Action block)
     {
-        readonly Action block;
+        this.block = block;
+    }
 
-        public AnonymousDisposable(Action block)
-        {
-            this.block = block;
-        }
-
-        public void Dispose()
-        {
-            block();
-        }
+    public void Dispose()
+    {
+        block();
     }
 }

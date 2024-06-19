@@ -1,36 +1,35 @@
-﻿namespace Refit
+﻿namespace Refit;
+
+/// <summary>
+/// ISettingsFor
+/// </summary>
+public interface ISettingsFor
 {
     /// <summary>
-    /// ISettingsFor
+    /// Gets the settings.
     /// </summary>
-    public interface ISettingsFor
-    {
-        /// <summary>
-        /// Gets the settings.
-        /// </summary>
-        /// <value>
-        /// The settings.
-        /// </value>
-        RefitSettings? Settings { get; }
-    }
+    /// <value>
+    /// The settings.
+    /// </value>
+    RefitSettings? Settings { get; }
+}
 
+/// <summary>
+/// SettingsFor.
+/// </summary>
+/// <typeparam name="T"></typeparam>
+/// <seealso cref="Refit.ISettingsFor" />
+/// <remarks>
+/// Initializes a new instance of the <see cref="SettingsFor{T}"/> class.
+/// </remarks>
+/// <param name="settings">The settings.</param>
+public class SettingsFor<T>(RefitSettings? settings) : ISettingsFor
+{
     /// <summary>
-    /// SettingsFor.
+    /// Gets the settings.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <seealso cref="Refit.ISettingsFor" />
-    /// <remarks>
-    /// Initializes a new instance of the <see cref="SettingsFor{T}"/> class.
-    /// </remarks>
-    /// <param name="settings">The settings.</param>
-    public class SettingsFor<T>(RefitSettings? settings) : ISettingsFor
-    {
-        /// <summary>
-        /// Gets the settings.
-        /// </summary>
-        /// <value>
-        /// The settings.
-        /// </value>
-        public RefitSettings? Settings { get; } = settings;
-    }
+    /// <value>
+    /// The settings.
+    /// </value>
+    public RefitSettings? Settings { get; } = settings;
 }

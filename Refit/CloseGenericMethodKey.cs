@@ -1,42 +1,41 @@
 ﻿using System.Reflection;
 
-namespace Refit
+namespace Refit;
+
+struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKey>
 {
-    struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKey>
+    internal CloseGenericMethodKey(MethodInfo openMethodInfo, Type[] types)
     {
-        internal CloseGenericMethodKey(MethodInfo openMethodInfo, Type[] types)
+        OpenMethodInfo = openMethodInfo;
+        Types = types;
+    }
+
+    public MethodInfo OpenMethodInfo { get; }
+    public Type[] Types { get; }
+
+    public bool Equals(CloseGenericMethodKey other) =>
+        OpenMethodInfo == other.OpenMethodInfo && Types.SequenceEqual(other.Types);
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is CloseGenericMethodKey closeGenericMethodKey)
         {
-            OpenMethodInfo = openMethodInfo;
-            Types = types;
+            return Equals(closeGenericMethodKey);
         }
+        return false;
+    }
 
-        public MethodInfo OpenMethodInfo { get; }
-        public Type[] Types { get; }
-
-        public bool Equals(CloseGenericMethodKey other) =>
-            OpenMethodInfo == other.OpenMethodInfo && Types.SequenceEqual(other.Types);
-
-        public override bool Equals(object? obj)
+    public override int GetHashCode()
+    {
+        unchecked
         {
-            if (obj is CloseGenericMethodKey closeGenericMethodKey)
+            var hash = 17;
+            hash = hash * 23 + OpenMethodInfo.GetHashCode();
+            foreach (var type in Types)
             {
-                return Equals(closeGenericMethodKey);
+                hash = hash * 23 + type.GetHashCode();
             }
-            return false;
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hash = 17;
-                hash = hash * 23 + OpenMethodInfo.GetHashCode();
-                foreach (var type in Types)
-                {
-                    hash = hash * 23 + type.GetHashCode();
-                }
-                return hash;
-            }
+            return hash;
         }
     }
 }

@@ -1,115 +1,114 @@
 ﻿using System.Buffers;
 using System.Runtime.CompilerServices;
 
-namespace Refit.Buffers
+namespace Refit.Buffers;
+
+/// <summary>
+/// A <see langword="struct"/> that provides a fast implementation of a binary writer, leveraging <see cref="ArrayPool{T}"/> for memory pooling
+/// </summary>
+sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposable
 {
     /// <summary>
-    /// A <see langword="struct"/> that provides a fast implementation of a binary writer, leveraging <see cref="ArrayPool{T}"/> for memory pooling
+    /// The default size to use to create new <see cref="PooledBufferWriter"/> instances
     /// </summary>
-    sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposable
+    public const int DefaultSize = 1024;
+
+    /// <summary>
+    /// The <see cref="byte"/> array current in use
+    /// </summary>
+    byte[] buffer = Array.Empty<byte>();
+
+    /// <summary>
+    /// The current position into <see cref="buffer"/>
+    /// </summary>
+    int position;
+
+    /// <summary>
+    /// Creates a new <see cref="PooledBufferWriter"/> instance
+    /// </summary>
+    public PooledBufferWriter()
     {
-        /// <summary>
-        /// The default size to use to create new <see cref="PooledBufferWriter"/> instances
-        /// </summary>
-        public const int DefaultSize = 1024;
+        buffer = ArrayPool<byte>.Shared.Rent(DefaultSize);
+        position = 0;
+    }
 
-        /// <summary>
-        /// The <see cref="byte"/> array current in use
-        /// </summary>
-        byte[] buffer = Array.Empty<byte>();
+    /// <inheritdoc/>
+    public void Advance(int count)
+    {
+        if (count < 0)
+            ThrowArgumentOutOfRangeExceptionForNegativeCount();
+        if (position > buffer.Length - count)
+            ThrowArgumentOutOfRangeExceptionForAdvancedTooFar();
 
-        /// <summary>
-        /// The current position into <see cref="buffer"/>
-        /// </summary>
-        int position;
+        position += count;
+    }
 
-        /// <summary>
-        /// Creates a new <see cref="PooledBufferWriter"/> instance
-        /// </summary>
-        public PooledBufferWriter()
-        {
-            buffer = ArrayPool<byte>.Shared.Rent(DefaultSize);
-            position = 0;
-        }
+    /// <inheritdoc/>
+    public Memory<byte> GetMemory(int sizeHint = 0)
+    {
+        EnsureFreeCapacity(sizeHint);
 
-        /// <inheritdoc/>
-        public void Advance(int count)
-        {
-            if (count < 0)
-                ThrowArgumentOutOfRangeExceptionForNegativeCount();
-            if (position > buffer.Length - count)
-                ThrowArgumentOutOfRangeExceptionForAdvancedTooFar();
+        return buffer.AsMemory(position);
+    }
 
-            position += count;
-        }
+    /// <inheritdoc/>
+    public Span<byte> GetSpan(int sizeHint = 0)
+    {
+        EnsureFreeCapacity(sizeHint);
 
-        /// <inheritdoc/>
-        public Memory<byte> GetMemory(int sizeHint = 0)
-        {
-            EnsureFreeCapacity(sizeHint);
+        return buffer.AsSpan(position);
+    }
 
-            return buffer.AsMemory(position);
-        }
+    /// <summary>
+    /// Ensures the buffer in use has the free capacity to contain the specified amount of new data
+    /// </summary>
+    /// <param name="count">The size in bytes of the new data to insert into the buffer</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    void EnsureFreeCapacity(int count)
+    {
+        if (count < 0)
+            ThrowArgumentOutOfRangeExceptionForNegativeCount();
 
-        /// <inheritdoc/>
-        public Span<byte> GetSpan(int sizeHint = 0)
-        {
-            EnsureFreeCapacity(sizeHint);
+        if (count == 0)
+            count = 1;
 
-            return buffer.AsSpan(position);
-        }
+        int currentLength = buffer.Length,
+            freeCapacity = currentLength - position;
 
-        /// <summary>
-        /// Ensures the buffer in use has the free capacity to contain the specified amount of new data
-        /// </summary>
-        /// <param name="count">The size in bytes of the new data to insert into the buffer</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        void EnsureFreeCapacity(int count)
-        {
-            if (count < 0)
-                ThrowArgumentOutOfRangeExceptionForNegativeCount();
+        if (count <= freeCapacity)
+            return;
 
-            if (count == 0)
-                count = 1;
+        int growBy = Math.Max(count, currentLength),
+            newSize = checked(currentLength + growBy);
 
-            int currentLength = buffer.Length,
-                freeCapacity = currentLength - position;
+        var rent = ArrayPool<byte>.Shared.Rent(newSize);
 
-            if (count <= freeCapacity)
-                return;
+        Array.Copy(buffer, rent, position);
 
-            int growBy = Math.Max(count, currentLength),
-                newSize = checked(currentLength + growBy);
+        ArrayPool<byte>.Shared.Return(buffer);
 
-            var rent = ArrayPool<byte>.Shared.Rent(newSize);
+        buffer = rent;
+    }
 
-            Array.Copy(buffer, rent, position);
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        if (buffer.Length == 0)
+            return;
 
-            ArrayPool<byte>.Shared.Return(buffer);
+        ArrayPool<byte>.Shared.Return(buffer);
+    }
 
-            buffer = rent;
-        }
+    /// <summary>
+    /// Gets a readable <see cref="Stream"/> for the current instance, by detaching the used buffer
+    /// </summary>
+    /// <returns>A readable <see cref="Stream"/> with the contents of the current instance</returns>
+    public Stream DetachStream()
+    {
+        var stream = new PooledMemoryStream(this);
 
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            if (buffer.Length == 0)
-                return;
+        buffer = Array.Empty<byte>();
 
-            ArrayPool<byte>.Shared.Return(buffer);
-        }
-
-        /// <summary>
-        /// Gets a readable <see cref="Stream"/> for the current instance, by detaching the used buffer
-        /// </summary>
-        /// <returns>A readable <see cref="Stream"/> with the contents of the current instance</returns>
-        public Stream DetachStream()
-        {
-            var stream = new PooledMemoryStream(this);
-
-            buffer = Array.Empty<byte>();
-
-            return stream;
-        }
+        return stream;
     }
 }

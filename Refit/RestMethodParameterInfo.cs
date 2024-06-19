@@ -1,44 +1,43 @@
 ﻿using System.Reflection;
 
-namespace Refit
+namespace Refit;
+
+public class RestMethodParameterInfo
 {
-    public class RestMethodParameterInfo
+    public RestMethodParameterInfo(string name, ParameterInfo parameterInfo)
     {
-        public RestMethodParameterInfo(string name, ParameterInfo parameterInfo)
-        {
-            Name = name;
-            ParameterInfo = parameterInfo;
-        }
-
-        public RestMethodParameterInfo(bool isObjectPropertyParameter, ParameterInfo parameterInfo)
-        {
-            IsObjectPropertyParameter = isObjectPropertyParameter;
-            ParameterInfo = parameterInfo;
-        }
-
-        public string? Name { get; set; }
-        public ParameterInfo ParameterInfo { get; set; }
-        public bool IsObjectPropertyParameter { get; set; }
-        public List<RestMethodParameterProperty> ParameterProperties { get; set; } =
-            new List<RestMethodParameterProperty>();
-        public ParameterType Type { get; set; } = ParameterType.Normal;
+        Name = name;
+        ParameterInfo = parameterInfo;
     }
 
-    public class RestMethodParameterProperty
+    public RestMethodParameterInfo(bool isObjectPropertyParameter, ParameterInfo parameterInfo)
     {
-        public RestMethodParameterProperty(string name, PropertyInfo propertyInfo)
-        {
-            Name = name;
-            PropertyInfo = propertyInfo;
-        }
-
-        public string Name { get; set; }
-        public PropertyInfo PropertyInfo { get; set; }
+        IsObjectPropertyParameter = isObjectPropertyParameter;
+        ParameterInfo = parameterInfo;
     }
 
-    public enum ParameterType
+    public string? Name { get; set; }
+    public ParameterInfo ParameterInfo { get; set; }
+    public bool IsObjectPropertyParameter { get; set; }
+    public List<RestMethodParameterProperty> ParameterProperties { get; set; } =
+        new List<RestMethodParameterProperty>();
+    public ParameterType Type { get; set; } = ParameterType.Normal;
+}
+
+public class RestMethodParameterProperty
+{
+    public RestMethodParameterProperty(string name, PropertyInfo propertyInfo)
     {
-        Normal,
-        RoundTripping
+        Name = name;
+        PropertyInfo = propertyInfo;
     }
+
+    public string Name { get; set; }
+    public PropertyInfo PropertyInfo { get; set; }
+}
+
+public enum ParameterType
+{
+    Normal,
+    RoundTripping
 }

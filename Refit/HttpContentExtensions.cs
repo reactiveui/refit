@@ -1,7 +1,6 @@
 ﻿using System.Net.Http;
 
-namespace Refit
-{
+namespace Refit;
 #if !NET6_0_OR_GREATER
     static class HttpContentExtensions
     {
@@ -26,4 +25,3 @@ namespace Refit
 #pragma warning restore IDE0079 // Remove unnecessary suppression
     }
 #endif
-}
