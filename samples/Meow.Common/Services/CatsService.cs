@@ -1,11 +1,11 @@
-﻿using HttpClientDiagnostics;
-using Meow.Responses;
-using Refit;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using HttpClientDiagnostics;
+using Meow.Responses;
+using Refit;
 
 namespace Meow
 {

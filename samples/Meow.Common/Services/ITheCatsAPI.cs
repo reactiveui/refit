@@ -1,9 +1,9 @@
-﻿using Meow.Responses;
-using Refit;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Meow.Responses;
+using Refit;
 
 namespace Meow
 {

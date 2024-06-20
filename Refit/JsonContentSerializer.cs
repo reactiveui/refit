@@ -47,6 +47,7 @@ namespace Refit
         /// The calculated field name.
         /// </returns>
         /// <exception cref="System.NotImplementedException"></exception>
-        public string GetFieldNameForProperty(PropertyInfo propertyInfo) => throw new NotImplementedException();
+        public string GetFieldNameForProperty(PropertyInfo propertyInfo) =>
+            throw new NotImplementedException();
     }
 }

@@ -5,15 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
-
 using Refit.Generator;
-
 using Xunit;
-
 using Task = System.Threading.Tasks.Task;
 using VerifyCS = Refit.Tests.CSharpSourceGeneratorVerifier<Refit.Generator.InterfaceStubGenerator>;
 using VerifyCSV2 = Refit.Tests.CSharpIncrementalSourceGeneratorVerifier<Refit.Generator.InterfaceStubGeneratorV2>;
@@ -46,9 +42,7 @@ public class InterfaceStubGeneratorTests
 #if NET461
         ReferenceAssemblies = ReferenceAssemblies
             .AddAssemblies(ImmutableArray.Create("System.Web"))
-            .AddPackages(
-                ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4"))
-            );
+            .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4")));
 #endif
     }
 
@@ -115,9 +109,7 @@ public class InterfaceStubGeneratorTests
     public async Task NoRefitInterfacesSmokeTest()
     {
 #if NET462
-        var input = File.ReadAllText(
-            IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs")
-        );
+        var input = File.ReadAllText(IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs"));
 #else
         var input = await File.ReadAllTextAsync(
             IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs")
@@ -1070,9 +1062,7 @@ namespace Refit.Implementation
     public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
     {
 #if NET462
-        var input = File.ReadAllText(
-            IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
-        );
+        var input = File.ReadAllText(IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs"));
 #else
         var input = await File.ReadAllTextAsync(
             IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs")
@@ -1249,11 +1239,7 @@ namespace Refit.Implementation
                 {
                     (typeof(InterfaceStubGeneratorV2), "PreserveAttribute.g.cs", output1),
                     (typeof(InterfaceStubGeneratorV2), "Generated.g.cs", output1_5),
-                    (
-                        typeof(InterfaceStubGeneratorV2),
-                        "IServiceWithoutNamespace.g.cs",
-                        output2
-                    ),
+                    (typeof(InterfaceStubGeneratorV2), "IServiceWithoutNamespace.g.cs", output2),
                 },
             },
         }.RunAsync();

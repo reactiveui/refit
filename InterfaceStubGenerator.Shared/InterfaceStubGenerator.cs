@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -171,8 +170,8 @@ namespace Refit.Generator
                         continue;
 
                     // The interface has no refit methods, but its base interfaces might
-                    var hasDerivedRefit = ifaceSymbol.AllInterfaces
-                        .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
+                    var hasDerivedRefit = ifaceSymbol
+                        .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
                         .Any(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol));
 
                     if (hasDerivedRefit)
@@ -292,7 +291,7 @@ namespace Refit.Implementation
 
                 var keyName = group.Key.Name;
                 int value;
-                while(keyCount.TryGetValue(keyName, out value))
+                while (keyCount.TryGetValue(keyName, out value))
                 {
                     keyName = $"{keyName}{++value}";
                 }
@@ -398,8 +397,8 @@ namespace Refit.Implementation
                 .ToList();
 
             // get methods for all inherited
-            var derivedMethods = interfaceSymbol.AllInterfaces
-                .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
+            var derivedMethods = interfaceSymbol
+                .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
                 .ToList();
 
             // Look for disposable

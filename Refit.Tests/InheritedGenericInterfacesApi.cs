@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-
 using Refit; // InterfaceStubGenerator looks for this
 using static System.Math; // This is here to verify https://github.com/reactiveui/refit/issues/283
 

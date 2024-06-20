@@ -134,8 +134,8 @@ namespace Refit
         /// <returns>The response content deserialized as <typeparamref name="T"/></returns>
         public async Task<T?> GetContentAsAsync<T>() =>
             HasContent
-                ? await RefitSettings.ContentSerializer
-                    .FromHttpContentAsync<T>(new StringContent(Content!))
+                ? await RefitSettings
+                    .ContentSerializer.FromHttpContentAsync<T>(new StringContent(Content!))
                     .ConfigureAwait(false)
                 : default;
 
@@ -214,9 +214,10 @@ namespace Refit
                 exception.Content = content;
 
                 if (
-                    response.Content.Headers?.ContentType?.MediaType?.Equals(
-                        "application/problem+json"
-                    ) ?? false
+                    response
+                        .Content.Headers?.ContentType
+                        ?.MediaType
+                        ?.Equals("application/problem+json") ?? false
                 )
                 {
                     exception = ValidationApiException.Create(exception);

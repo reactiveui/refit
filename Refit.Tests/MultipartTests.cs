@@ -4,14 +4,14 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reflection;
-using System.Threading.Tasks;
-using Xunit;
-using Refit;
-using System.Threading;
-using Newtonsoft.Json;
-using System.Text;
 using System.Net.Http.Headers;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Refit;
+using Xunit;
 
 namespace Refit.Tests;
 
@@ -60,10 +60,7 @@ public interface IRunscopeApi
 
     [Multipart]
     [Post("/")]
-    Task<HttpResponseMessage> UploadFileInfo(
-        IEnumerable<FileInfo> fileInfos,
-        FileInfo anotherFile
-    );
+    Task<HttpResponseMessage> UploadFileInfo(IEnumerable<FileInfo> fileInfos, FileInfo anotherFile);
 
     [Multipart]
     [Post("/")]
@@ -366,10 +363,7 @@ public class MultipartTests
                 Assert.Single(parts);
 
                 Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
-                Assert.Equal(
-                    "test-streampart.pdf",
-                    parts[0].Headers.ContentDisposition.FileName
-                );
+                Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.FileName);
                 Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
 
                 using var str = await parts[0].ReadAsStreamAsync();
@@ -399,10 +393,7 @@ public class MultipartTests
                 Assert.Single(parts);
 
                 Assert.Equal("test-stream", parts[0].Headers.ContentDisposition.Name);
-                Assert.Equal(
-                    "test-streampart.pdf",
-                    parts[0].Headers.ContentDisposition.FileName
-                );
+                Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.FileName);
                 Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
 
                 using var str = await parts[0].ReadAsStreamAsync();
@@ -436,10 +427,7 @@ public class MultipartTests
                 Assert.Single(parts);
 
                 Assert.Equal("stream", parts[0].Headers.ContentDisposition.Name);
-                Assert.Equal(
-                    "test-streampart.pdf",
-                    parts[0].Headers.ContentDisposition.FileName
-                );
+                Assert.Equal("test-streampart.pdf", parts[0].Headers.ContentDisposition.FileName);
                 Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
 
                 using var str = await parts[0].ReadAsStreamAsync();
@@ -469,10 +457,7 @@ public class MultipartTests
 
                 Assert.Single(parts);
 
-                Assert.Equal(
-                    "ByteArrayPartParamAlias",
-                    parts[0].Headers.ContentDisposition.Name
-                );
+                Assert.Equal("ByteArrayPartParamAlias", parts[0].Headers.ContentDisposition.Name);
                 Assert.Equal(
                     "test-bytearraypart.pdf",
                     parts[0].Headers.ContentDisposition.FileName
@@ -511,10 +496,7 @@ public class MultipartTests
                 Assert.Equal(3, parts.Count);
 
                 Assert.Equal("fileInfos", parts[0].Headers.ContentDisposition.Name);
-                Assert.Equal(
-                    "test-fileinfopart.pdf",
-                    parts[0].Headers.ContentDisposition.FileName
-                );
+                Assert.Equal("test-fileinfopart.pdf", parts[0].Headers.ContentDisposition.FileName);
                 Assert.Equal("application/pdf", parts[0].Headers.ContentType.MediaType);
                 using (var str = await parts[0].ReadAsStreamAsync())
                 using (var src = GetTestFileStream("Test Files/Test.pdf"))
@@ -535,10 +517,7 @@ public class MultipartTests
                 }
 
                 Assert.Equal("anotherFile", parts[2].Headers.ContentDisposition.Name);
-                Assert.Equal(
-                    "additionalfile.pdf",
-                    parts[2].Headers.ContentDisposition.FileName
-                );
+                Assert.Equal("additionalfile.pdf", parts[2].Headers.ContentDisposition.FileName);
                 Assert.Equal("application/pdf", parts[2].Headers.ContentType.MediaType);
                 using (var str = await parts[2].ReadAsStreamAsync())
                 using (var src = GetTestFileStream("Test Files/Test.pdf"))
@@ -596,8 +575,7 @@ public class MultipartTests
     )
     {
         if (
-            Activator.CreateInstance(contentSerializerType)
-            is not IHttpContentSerializer serializer
+            Activator.CreateInstance(contentSerializerType) is not IHttpContentSerializer serializer
         )
         {
             throw new ArgumentException(
@@ -646,8 +624,7 @@ public class MultipartTests
     )
     {
         if (
-            Activator.CreateInstance(contentSerializerType)
-            is not IHttpContentSerializer serializer
+            Activator.CreateInstance(contentSerializerType) is not IHttpContentSerializer serializer
         )
         {
             throw new ArgumentException(
@@ -872,9 +849,7 @@ public class MultipartTests
         // get resource stream
         var fullName = assembly
             .GetManifestResourceNames()
-            .FirstOrDefault(
-                name => name.EndsWith(relativeName, StringComparison.InvariantCulture)
-            );
+            .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture));
         if (fullName == null)
         {
             throw new Exception(

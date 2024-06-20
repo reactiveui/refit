@@ -43,8 +43,7 @@ public class XmlContentSerializerTests
         document.LoadXml(await content.ReadAsStringAsync());
 
         var root =
-            document[nameof(Dto)]
-            ?? throw new NullReferenceException("Root element was not found");
+            document[nameof(Dto)] ?? throw new NullReferenceException("Root element was not found");
         Assert.Equal(
             dto.CreatedOn,
             XmlConvert.ToDateTime(
