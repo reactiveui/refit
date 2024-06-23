@@ -1,6 +1,6 @@
 ﻿namespace Refit.Benchmarks;
 
-public interface IPerformanceApi
+public interface IPerformanceService
 {
     [Get("/users")]
     public Task<string> ConstantRoute();

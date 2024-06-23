@@ -6,7 +6,7 @@ namespace Refit.Benchmarks;
 [MemoryDiagnoser]
 public class PerformanceBenchmark
 {
-    private IPerformanceApi? service;
+    private IPerformanceService? service;
 
     private const string Host = "https://github.com";
     private SystemTextJsonContentSerializer systemTextJsonContentSerializer;
@@ -16,7 +16,7 @@ public class PerformanceBenchmark
     {
         systemTextJsonContentSerializer = new SystemTextJsonContentSerializer();
         service =
-            RestService.For<IPerformanceApi>(
+            RestService.For<IPerformanceService>(
                 Host,
                 new RefitSettings(systemTextJsonContentSerializer)
                 {
