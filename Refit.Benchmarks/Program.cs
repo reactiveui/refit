@@ -1,19 +1,13 @@
 ﻿using BenchmarkDotNet.Running;
+using Refit.Benchmarks;
 
-namespace Refit.Benchmarks
+if (args is { Length: > 0 })
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            if (args != null && args.Length > 0)
-            {
-                BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
-            }
-            else
-            {
-                BenchmarkRunner.Run<EndToEndBenchmark>();
-            }
-        }
-    }
+    BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+}
+else
+{
+    BenchmarkRunner.Run<EndToEndBenchmark>();
+    // BenchmarkRunner.Run<StartupBenchmark>();
+    // BenchmarkRunner.Run<PerformanceBenchmarks>();
 }
