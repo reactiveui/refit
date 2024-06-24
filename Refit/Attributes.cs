@@ -37,7 +37,8 @@ namespace Refit
     /// </remarks>
     /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class GetAttribute(string path) : HttpMethodAttribute(path)
+#pragma warning disable CA1813 // Avoid unsealed attributes
+    public class GetAttribute(string path) : HttpMethodAttribute(path)
     {
         /// <summary>
         /// Gets the method.
@@ -56,7 +57,7 @@ namespace Refit
     /// </remarks>
     /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class PostAttribute(string path) : HttpMethodAttribute(path)
+    public class PostAttribute(string path) : HttpMethodAttribute(path)
     {
         /// <summary>
         /// Gets the method.
@@ -75,7 +76,7 @@ namespace Refit
     /// </remarks>
     /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class PutAttribute(string path) : HttpMethodAttribute(path)
+    public class PutAttribute(string path) : HttpMethodAttribute(path)
     {
         /// <summary>
         /// Gets the method.
@@ -94,7 +95,7 @@ namespace Refit
     /// </remarks>
     /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class DeleteAttribute(string path) : HttpMethodAttribute(path)
+    public class DeleteAttribute(string path) : HttpMethodAttribute(path)
     {
         /// <summary>
         /// Gets the method.
@@ -113,7 +114,7 @@ namespace Refit
     /// </remarks>
     /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class PatchAttribute(string path) : HttpMethodAttribute(path)
+    public class PatchAttribute(string path) : HttpMethodAttribute(path)
     {
         /// <summary>
         /// Gets the method.
@@ -121,7 +122,7 @@ namespace Refit
         /// <value>
         /// The method.
         /// </value>
-        public override HttpMethod Method => new HttpMethod("PATCH");
+        public override HttpMethod Method => new("PATCH");
     }
 
     /// <summary>
@@ -132,7 +133,7 @@ namespace Refit
     /// </remarks>
     /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class OptionsAttribute(string path) : HttpMethodAttribute(path)
+    public class OptionsAttribute(string path) : HttpMethodAttribute(path)
     {
         /// <summary>
         /// Gets the method.
@@ -140,7 +141,7 @@ namespace Refit
         /// <value>
         /// The method.
         /// </value>
-        public override HttpMethod Method => new HttpMethod("OPTIONS");
+        public override HttpMethod Method => new("OPTIONS");
     }
 
     /// <summary>
@@ -151,7 +152,7 @@ namespace Refit
     /// </remarks>
     /// <param name="path">The path.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class HeadAttribute(string path) : HttpMethodAttribute(path)
+    public class HeadAttribute(string path) : HttpMethodAttribute(path)
     {
         /// <summary>
         /// Gets the method.
@@ -173,7 +174,7 @@ namespace Refit
     /// </remarks>
     /// <param name="boundaryText">The boundary text.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class MultipartAttribute(string boundaryText = "----MyGreatBoundary") : Attribute
+    public class MultipartAttribute(string boundaryText = "----MyGreatBoundary") : Attribute
     {
         /// <summary>
         /// Gets the boundary text.
@@ -223,7 +224,7 @@ namespace Refit
     /// - For all other types, the object will be serialized using the content serializer specified in the request's <see cref="RefitSettings"/>.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public sealed class BodyAttribute : Attribute
+    public class BodyAttribute : Attribute
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="BodyAttribute"/> class.
@@ -284,7 +285,7 @@ namespace Refit
     /// </remarks>
     /// <param name="name">The name.</param>
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
-    public sealed class AliasAsAttribute(string name) : Attribute
+    public class AliasAsAttribute(string name) : Attribute
     {
         /// <summary>
         /// Gets or sets the name.
@@ -304,7 +305,7 @@ namespace Refit
         "Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, inherit from Refit.MultipartItem",
         false
     )]
-    public sealed class AttachmentNameAttribute(string name) : Attribute
+    public class AttachmentNameAttribute(string name) : Attribute
     {
         /// <summary>
         /// Gets or sets the name.
@@ -319,7 +320,7 @@ namespace Refit
     /// Allows you to provide a Dictionary of headers to be added to the request.
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public sealed class HeaderCollectionAttribute : Attribute { }
+    public class HeaderCollectionAttribute : Attribute { }
 
     /// <summary>
     /// Add multiple headers to the request.
@@ -329,7 +330,7 @@ namespace Refit
     /// </remarks>
     /// <param name="headers">The headers.</param>
     [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Method)]
-    public sealed class HeadersAttribute(params string[] headers) : Attribute
+    public class HeadersAttribute(params string[] headers) : Attribute
     {
         /// <summary>
         /// Gets the headers.
@@ -337,7 +338,7 @@ namespace Refit
         /// <value>
         /// The headers.
         /// </value>
-        public string[] Headers { get; } = headers ?? Array.Empty<string>();
+        public string[] Headers { get; } = headers ?? [];
     }
 
     /// <summary>
@@ -348,7 +349,7 @@ namespace Refit
     /// </remarks>
     /// <param name="header">The header.</param>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public sealed class HeaderAttribute(string header) : Attribute
+    public class HeaderAttribute(string header) : Attribute
     {
         /// <summary>
         /// Gets the header.
@@ -365,7 +366,7 @@ namespace Refit
     /// If no key is specified then the key will be defaulted to the name of the parameter.
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public sealed class PropertyAttribute : Attribute
+    public class PropertyAttribute : Attribute
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="PropertyAttribute"/> class.
@@ -398,7 +399,7 @@ namespace Refit
     /// </remarks>
     /// <param name="scheme">The scheme.</param>
     [AttributeUsage(AttributeTargets.Parameter)]
-    public sealed class AuthorizeAttribute(string scheme = "Bearer") : Attribute
+    public class AuthorizeAttribute(string scheme = "Bearer") : Attribute
     {
         /// <summary>
         /// Gets the scheme.
@@ -413,7 +414,7 @@ namespace Refit
     /// Associated value will be added to the request Uri as query-string, using a delimiter to split the values. (default: '.')
     /// </summary>
     [AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)] // Property is to allow for form url encoded data
-    public sealed class QueryAttribute : Attribute
+    public class QueryAttribute : Attribute
     {
         CollectionFormat? collectionFormat;
 
@@ -489,6 +490,8 @@ namespace Refit
         /// </example>
         public string? Prefix { get; protected set; }
 
+#pragma warning disable CA1019 // Define accessors for attribute arguments
+
         /// <summary>
         /// Used to customize the formatting of the encoded value.
         /// </summary>
@@ -514,6 +517,8 @@ namespace Refit
             set => collectionFormat = value;
         }
 
+#pragma warning restore CA1019 // Define accessors for attribute arguments
+
         /// <summary>
         /// Gets a value indicating whether this instance is collection format specified.
         /// </summary>
@@ -532,11 +537,12 @@ namespace Refit
     /// </remarks>
     /// <param name="uriFormat">The URI format.</param>
     [AttributeUsage(AttributeTargets.Method)]
-    public sealed class QueryUriFormatAttribute(UriFormat uriFormat) : Attribute
+    public class QueryUriFormatAttribute(UriFormat uriFormat) : Attribute
     {
         /// <summary>
         /// Specifies how the Query Params should be encoded.
         /// </summary>
         public UriFormat UriFormat { get; } = uriFormat;
     }
+#pragma warning restore CA1813 // Avoid unsealed attributes
 }
