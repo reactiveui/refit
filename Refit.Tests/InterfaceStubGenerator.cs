@@ -228,9 +228,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -245,9 +245,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -262,9 +262,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -279,9 +279,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -296,9 +296,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -311,9 +311,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -326,9 +326,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<string>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -341,9 +341,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -356,9 +356,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -373,9 +373,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -390,9 +390,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -407,9 +407,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -424,9 +424,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -441,9 +441,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -458,9 +458,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -475,9 +475,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -492,9 +492,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -509,9 +509,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -524,9 +524,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -539,9 +539,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<string>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -554,9 +554,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -569,9 +569,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -586,9 +586,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -603,9 +603,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -620,9 +620,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -637,9 +637,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
     }
@@ -690,9 +690,9 @@ namespace Refit.Implementation
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -705,9 +705,9 @@ namespace Refit.Implementation
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -765,9 +765,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -782,9 +782,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -799,9 +799,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -816,9 +816,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -833,9 +833,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -848,9 +848,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -863,9 +863,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<string>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -878,9 +878,9 @@ namespace Refit.Implementation
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -895,9 +895,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -912,9 +912,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -929,9 +929,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<global::Refit.Tests.User>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -946,9 +946,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -963,9 +963,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -978,9 +978,9 @@ namespace Refit.Implementation
             {
                 return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -993,9 +993,9 @@ namespace Refit.Implementation
             {
                 return (global::System.IObservable<string>)______func(this.Client, ______arguments);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -1008,9 +1008,9 @@ namespace Refit.Implementation
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
     }
@@ -1155,9 +1155,9 @@ namespace Refit.Implementation
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -1170,9 +1170,9 @@ namespace Refit.Implementation
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -1185,9 +1185,9 @@ namespace Refit.Implementation
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
 
@@ -1200,9 +1200,9 @@ namespace Refit.Implementation
             {
                 await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
             }
-            catch (global::System.Exception ex)
+            catch (global::System.Exception refit_ex)
             {
-                throw ex;
+                throw refit_ex;
             }
         }
     }
