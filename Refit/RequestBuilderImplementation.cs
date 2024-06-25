@@ -1,9 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Web;
 
 namespace Refit
@@ -635,9 +635,6 @@ namespace Refit
                     multiPartContent = new MultipartFormDataContent(restMethod.MultipartBoundary);
                     ret.Content = multiPartContent;
                 }
-
-                var urlTarget =
-                    (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string?>>();
                 var headersToAdd = new Dictionary<string, string?>(restMethod.Headers);
                 var propertiesToAdd = new Dictionary<string, object?>();
@@ -652,69 +649,8 @@ namespace Refit
                     if (restMethod.ParameterMap.TryGetValue(i, out var parameterMapValue))
                     {
                         parameterInfo = parameterMapValue;
-                        if (parameterInfo.IsObjectPropertyParameter)
+                        if (!parameterMapValue.IsObjectPropertyParameter)
                         {
-                            foreach (var propertyInfo in parameterInfo.ParameterProperties)
-                            {
-                                var propertyObject = propertyInfo.PropertyInfo.GetValue(param);
-                                urlTarget = Regex.Replace(
-                                    urlTarget,
-                                    "{" + propertyInfo.Name + "}",
-                                    Uri.EscapeDataString(
-                                        settings.UrlParameterFormatter.Format(
-                                            propertyObject,
-                                            propertyInfo.PropertyInfo,
-                                            propertyInfo.PropertyInfo.PropertyType
-                                        ) ?? string.Empty
-                                    ),
-                                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
-                                );
-                            }
-                            //don't continue here as we want it to fall through so any parameters on this object not bound here get passed as query parameters
-                        }
-                        else
-                        {
-                            string pattern;
-                            string replacement;
-                            if (parameterMapValue.Type == ParameterType.RoundTripping)
-                            {
-                                pattern = $@"{{\*\*{parameterMapValue.Name}}}";
-                                var paramValue = (string)param;
-                                replacement = string.Join(
-                                    "/",
-                                    paramValue
-                                        .Split('/')
-                                        .Select(
-                                            s =>
-                                                Uri.EscapeDataString(
-                                                    settings.UrlParameterFormatter.Format(
-                                                        s,
-                                                        restMethod.ParameterInfoMap[i],
-                                                        restMethod.ParameterInfoMap[i].ParameterType
-                                                    ) ?? string.Empty
-                                                )
-                                        )
-                                );
-                            }
-                            else
-                            {
-                                pattern = "{" + parameterMapValue.Name + "}";
-                                replacement = Uri.EscapeDataString(
-                                    settings.UrlParameterFormatter.Format(
-                                        param,
-                                        restMethod.ParameterInfoMap[i],
-                                        restMethod.ParameterInfoMap[i].ParameterType
-                                    ) ?? string.Empty
-                                );
-                            }
-
-                            urlTarget = Regex.Replace(
-                                urlTarget,
-                                pattern,
-                                replacement,
-                                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
-                            );
-
                             isParameterMappedToRequest = true;
                         }
                     }
@@ -976,6 +912,7 @@ namespace Refit
                     restMethod.ToRestMethodInfo();
 #endif
 
+                var urlTarget = BuildRelativePath(basePath, restMethod, paramList);
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
@@ -1218,6 +1155,93 @@ namespace Refit
                     throw exception;
                 }
             };
+        }
+
+        string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
+        {
+            basePath = basePath == "/" ? string.Empty : basePath;
+            var pathFragments = restMethod.FragmentPath;
+            if (pathFragments.Count == 0)
+            {
+                return basePath;
+            }
+            if (string.IsNullOrEmpty(basePath) && pathFragments.Count == 1)
+            {
+                return GetPathFragmentValue(restMethod, paramList, pathFragments[0]);
+            }
+
+#pragma warning disable CA2000
+            var vsb = new ValueStringBuilder(stackalloc char[512]);
+#pragma warning restore CA2000
+            vsb.Append(basePath);
+
+            foreach (var fragment in pathFragments)
+            {
+                vsb.Append(GetPathFragmentValue(restMethod, paramList, fragment));
+            }
+
+            return vsb.ToString();
+        }
+
+        private string GetPathFragmentValue(RestMethodInfoInternal restMethod, object[] paramList, ParameterFragment fragment)
+        {
+            if (fragment.IsConstant)
+            {
+                return fragment.Value!;
+            }
+
+            restMethod.ParameterMap.TryGetValue(fragment.ArgumentIndex, out var parameterMapValue);
+            Debug.Assert(parameterMapValue is not null);
+
+            if (fragment.IsObjectProperty)
+            {
+                var param = paramList[fragment.ArgumentIndex];
+                var property = parameterMapValue.ParameterProperties[fragment.PropertyIndex];
+                var propertyObject = property.PropertyInfo.GetValue(param);
+
+                return Uri.EscapeDataString(settings.UrlParameterFormatter.Format(
+                        propertyObject,
+                        property.PropertyInfo,
+                        property.PropertyInfo.PropertyType
+                    ) ?? string.Empty);
+            }
+
+            if (fragment.IsDynamicRoute)
+            {
+                var param = paramList[fragment.ArgumentIndex];
+
+                if (parameterMapValue.Type == ParameterType.RoundTripping)
+                {
+                    var paramValue = (string)param;
+                    return string.Join(
+                        "/",
+                        paramValue
+                            .Split('/')
+                            .Select(
+                                s =>
+                                    Uri.EscapeDataString(
+                                        settings.UrlParameterFormatter.Format(
+                                            s,
+                                            restMethod.ParameterInfoMap[fragment.ArgumentIndex],
+                                            restMethod.ParameterInfoMap[fragment.ArgumentIndex].ParameterType
+                                        ) ?? string.Empty
+                                    )
+                            )
+                    );
+                }
+                else
+                {
+                    return Uri.EscapeDataString(
+                        settings.UrlParameterFormatter.Format(
+                            param,
+                            restMethod.ParameterInfoMap[fragment.ArgumentIndex],
+                            restMethod.ParameterInfoMap[fragment.ArgumentIndex].ParameterType
+                        ) ?? string.Empty
+                    );
+                }
+            }
+
+            return string.Empty;
         }
 
         private static bool IsBodyBuffered(
