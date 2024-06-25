@@ -1,14 +1,14 @@
 ﻿using System.Net;
 
-namespace Refit.Benchmarks
-{
-    public class StaticFileHttpResponseHandler : HttpMessageHandler
-    {
-        private readonly HttpStatusCode responseCode;
-        private readonly string responsePayload;
+namespace Refit.Benchmarks;
 
-        public StaticFileHttpResponseHandler(string fileName, HttpStatusCode responseCode)
-        {
+public class StaticFileHttpResponseHandler : HttpMessageHandler
+{
+    private readonly HttpStatusCode responseCode;
+    private readonly string responsePayload;
+
+    public StaticFileHttpResponseHandler(string fileName, HttpStatusCode responseCode)
+    {
             if (string.IsNullOrEmpty(fileName))
                 throw new ArgumentNullException(nameof(fileName));
 
@@ -17,11 +17,11 @@ namespace Refit.Benchmarks
             this.responseCode = responseCode;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken
-        )
-        {
+    protected override Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken
+    )
+    {
             return Task.FromResult(
                 new HttpResponseMessage(responseCode)
                 {
@@ -30,5 +30,4 @@ namespace Refit.Benchmarks
                 }
             );
         }
-    }
 }

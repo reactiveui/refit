@@ -994,15 +994,7 @@ namespace Refit
 
                 if (queryParamsToAdd.Count != 0)
                 {
-                    var pairs = queryParamsToAdd
-                        .Where(x => x.Key != null && x.Value != null)
-                        .Select(
-                            x =>
-                                Uri.EscapeDataString(x.Key)
-                                + "="
-                                + Uri.EscapeDataString(x.Value ?? string.Empty)
-                        );
-                    uri.Query = string.Join("&", pairs);
+                    uri.Query = CreateQueryString(queryParamsToAdd);;
                 }
                 else
                 {
@@ -1106,6 +1098,41 @@ namespace Refit
 
                     break;
             }
+        }
+
+        static string CreateQueryString(List<KeyValuePair<string, string?>> queryParamsToAdd)
+        {
+            // Suppress warning as ValueStringBuilder.ToString calls Dispose()
+#pragma warning disable CA2000
+            var vsb = new ValueStringBuilder(stackalloc char[512]);
+#pragma warning restore CA2000
+            var firstQuery = true;
+            foreach (var queryParam in queryParamsToAdd)
+            {
+                if(queryParam is not { Key: not null, Value: not null })
+                    continue;
+                if(!firstQuery)
+                {
+                    // for all items after the first we add a & symbol
+                    vsb.Append('&');
+                }
+                var key = Uri.EscapeDataString(queryParam.Key);
+#if NET6_0_OR_GREATER
+                // if first query does not start with ? then prepend it
+                if (vsb.Length == 0 && key.Length > 0 && key[0] != '?')
+                {
+                    // query starts with ?
+                    vsb.Append('?');
+                }
+#endif
+                vsb.Append(key);
+                vsb.Append('=');
+                vsb.Append(Uri.EscapeDataString(queryParam.Value ?? string.Empty));
+                if (firstQuery)
+                    firstQuery = false;
+            }
+
+            return vsb.ToString();
         }
 
         Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
