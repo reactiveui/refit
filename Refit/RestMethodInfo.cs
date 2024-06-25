@@ -85,29 +85,29 @@ namespace Refit
             DetermineIfResponseMustBeDisposed();
 
             // Exclude cancellation token parameters from this list
-            var parameterList = methodInfo
+            var parameterArray = methodInfo
                 .GetParameters()
-                .Where(p => p.ParameterType != typeof(CancellationToken))
-                .ToList();
-            ParameterInfoMap = parameterList
+                .Where(static p => p.ParameterType != typeof(CancellationToken))
+                .ToArray();
+            ParameterInfoMap = parameterArray
                 .Select((parameter, index) => new { index, parameter })
                 .ToDictionary(x => x.index, x => x.parameter);
-            ParameterMap = BuildParameterMap(RelativePath, parameterList);
-            BodyParameterInfo = FindBodyParameter(parameterList, IsMultipart, hma.Method);
-            AuthorizeParameterInfo = FindAuthorizationParameter(parameterList);
+            ParameterMap = BuildParameterMap(RelativePath, parameterArray);
+            BodyParameterInfo = FindBodyParameter(parameterArray, IsMultipart, hma.Method);
+            AuthorizeParameterInfo = FindAuthorizationParameter(parameterArray);
 
             Headers = ParseHeaders(methodInfo);
-            HeaderParameterMap = BuildHeaderParameterMap(parameterList);
+            HeaderParameterMap = BuildHeaderParameterMap(parameterArray);
             HeaderCollectionParameterMap = RestMethodInfoInternal.BuildHeaderCollectionParameterMap(
-                parameterList
+                parameterArray
             );
-            PropertyParameterMap = BuildRequestPropertyMap(parameterList);
+            PropertyParameterMap = BuildRequestPropertyMap(parameterArray);
 
             // get names for multipart attachments
             AttachmentNameMap = [];
             if (IsMultipart)
             {
-                for (var i = 0; i < parameterList.Count; i++)
+                for (var i = 0; i < parameterArray.Length; i++)
                 {
                     if (
                         ParameterMap.ContainsKey(i)
@@ -119,19 +119,19 @@ namespace Refit
                         continue;
                     }
 
-                    var attachmentName = GetAttachmentNameForParameter(parameterList[i]);
+                    var attachmentName = GetAttachmentNameForParameter(parameterArray[i]);
                     if (attachmentName == null)
                         continue;
 
                     AttachmentNameMap[i] = Tuple.Create(
                         attachmentName,
-                        GetUrlNameForParameter(parameterList[i])
+                        GetUrlNameForParameter(parameterArray[i])
                     );
                 }
             }
 
             QueryParameterMap = [];
-            for (var i = 0; i < parameterList.Count; i++)
+            for (var i = 0; i < parameterArray.Length; i++)
             {
                 if (
                     ParameterMap.ContainsKey(i)
@@ -145,21 +145,21 @@ namespace Refit
                     continue;
                 }
 
-                QueryParameterMap.Add(i, GetUrlNameForParameter(parameterList[i]));
+                QueryParameterMap.Add(i, GetUrlNameForParameter(parameterArray[i]));
             }
 
-            var ctParams = methodInfo
+            var ctParamEnumerable = methodInfo
                 .GetParameters()
                 .Where(p => p.ParameterType == typeof(CancellationToken))
-                .ToList();
-            if (ctParams.Count > 1)
+                .TryGetSingle(out var ctParam);
+            if (ctParamEnumerable == EnumerablePeek.Many)
             {
                 throw new ArgumentException(
                     $"Argument list to method \"{methodInfo.Name}\" can only contain a single CancellationToken"
                 );
             }
 
-            CancellationToken = ctParams.FirstOrDefault();
+            CancellationToken = ctParam;
 
             IsApiResponse =
                 ReturnResultType!.GetTypeInfo().IsGenericType
@@ -170,31 +170,30 @@ namespace Refit
                 || ReturnResultType == typeof(IApiResponse);
         }
 
-        static HashSet<int> BuildHeaderCollectionParameterMap(List<ParameterInfo> parameterList)
+        static HashSet<int> BuildHeaderCollectionParameterMap(ParameterInfo[] parameterArray)
         {
             var headerCollectionMap = new HashSet<int>();
 
-            for (var i = 0; i < parameterList.Count; i++)
+            for (var i = 0; i < parameterArray.Length; i++)
             {
-                var param = parameterList[i];
+                var param = parameterArray[i];
                 var headerCollection = param
                     .GetCustomAttributes(true)
                     .OfType<HeaderCollectionAttribute>()
                     .FirstOrDefault();
 
-                if (headerCollection != null)
+                if (headerCollection == null) continue;
+
+                //opted for IDictionary<string, string> semantics here as opposed to the looser IEnumerable<KeyValuePair<string, string>> because IDictionary will enforce uniqueness of keys
+                if (param.ParameterType.IsAssignableFrom(typeof(IDictionary<string, string>)))
                 {
-                    //opted for IDictionary<string, string> semantics here as opposed to the looser IEnumerable<KeyValuePair<string, string>> because IDictionary will enforce uniqueness of keys
-                    if (param.ParameterType.IsAssignableFrom(typeof(IDictionary<string, string>)))
-                    {
-                        headerCollectionMap.Add(i);
-                    }
-                    else
-                    {
-                        throw new ArgumentException(
-                            $"HeaderCollection parameter of type {param.ParameterType.Name} is not assignable from IDictionary<string, string>"
-                        );
-                    }
+                    headerCollectionMap.Add(i);
+                }
+                else
+                {
+                    throw new ArgumentException(
+                        $"HeaderCollection parameter of type {param.ParameterType.Name} is not assignable from IDictionary<string, string>"
+                    );
                 }
             }
 
@@ -209,13 +208,13 @@ namespace Refit
         public RestMethodInfo ToRestMethodInfo() =>
             new(Name, Type, MethodInfo, RelativePath, ReturnType);
 
-        static Dictionary<int, string> BuildRequestPropertyMap(List<ParameterInfo> parameterList)
+        static Dictionary<int, string> BuildRequestPropertyMap(ParameterInfo[] parameterArray)
         {
             var propertyMap = new Dictionary<int, string>();
 
-            for (var i = 0; i < parameterList.Count; i++)
+            for (var i = 0; i < parameterArray.Length; i++)
             {
-                var param = parameterList[i];
+                var param = parameterArray[i];
                 var propertyAttribute = param
                     .GetCustomAttributes(true)
                     .OfType<PropertyAttribute>()
@@ -233,12 +232,11 @@ namespace Refit
             return propertyMap;
         }
 
-        static PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
+        static IEnumerable<PropertyInfo> GetParameterProperties(ParameterInfo parameter)
         {
             return parameter
                 .ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
-                .ToArray();
+                .Where(static p => p.CanRead && p.GetMethod?.IsPublic == true);
         }
 
         static void VerifyUrlPathIsSane(string relativePath)
@@ -254,7 +252,7 @@ namespace Refit
 
         static Dictionary<int, RestMethodParameterInfo> BuildParameterMap(
             string relativePath,
-            List<ParameterInfo> parameterInfo
+            ParameterInfo[] parameterInfo
         )
         {
             var ret = new Dictionary<int, RestMethodParameterInfo>();
@@ -311,11 +309,11 @@ namespace Refit
                         };
 #if NET6_0_OR_GREATER
                         ret.TryAdd(
-                            parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo),
+                            Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo),
                             restMethodParameterInfo
                         );
 #else
-                        var idx = parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo);
+                        var idx = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
                         if (!ret.ContainsKey(idx))
                         {
                             ret.Add(idx, restMethodParameterInfo);
@@ -329,7 +327,7 @@ namespace Refit
                     )
                     {
                         var property = value1;
-                        var parameterIndex = parameterInfo.IndexOf(property.Item1);
+                        var parameterIndex = Array.IndexOf(parameterInfo, property.Item1);
                         //If we already have this parameter, add additional ParameterProperty
                         if (ret.TryGetValue(parameterIndex, out var value2))
                         {
@@ -355,12 +353,12 @@ namespace Refit
                             );
 #if NET6_0_OR_GREATER
                             ret.TryAdd(
-                                parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo),
+                                Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo),
                                 restMethodParameterInfo
                             );
 #else
                             // Do the contains check
-                            var idx = parameterInfo.IndexOf(restMethodParameterInfo.ParameterInfo);
+                            var idx = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
                             if (!ret.ContainsKey(idx))
                             {
                                 ret.Add(idx, restMethodParameterInfo);
@@ -421,7 +419,7 @@ namespace Refit
             // 2) POST/PUT/PATCH: Reference type other than string
             // 3) If there are two reference types other than string, without the body attribute, throw
 
-            var bodyParams = parameterList
+            var bodyParamEnumerable = parameterList
                 .Select(
                     x =>
                         new
@@ -433,12 +431,12 @@ namespace Refit
                         }
                 )
                 .Where(x => x.BodyAttribute != null)
-                .ToList();
+                .TryGetSingle(out var bodyParam);
 
             // multipart requests may not contain a body, implicit or explicit
             if (isMultipart)
             {
-                if (bodyParams.Count > 0)
+                if (bodyParamEnumerable != EnumerablePeek.Empty)
                 {
                     throw new ArgumentException(
                         "Multipart requests may not contain a Body parameter"
@@ -447,19 +445,18 @@ namespace Refit
                 return null;
             }
 
-            if (bodyParams.Count > 1)
+            if (bodyParamEnumerable == EnumerablePeek.Many)
             {
                 throw new ArgumentException("Only one parameter can be a Body parameter");
             }
 
             // #1, body attribute wins
-            if (bodyParams.Count == 1)
+            if (bodyParamEnumerable == EnumerablePeek.Single)
             {
-                var ret = bodyParams[0];
                 return Tuple.Create(
-                    ret.BodyAttribute!.SerializationMethod,
-                    ret.BodyAttribute.Buffered ?? RefitSettings.Buffered,
-                    parameterList.IndexOf(ret.Parameter)
+                    bodyParam!.BodyAttribute!.SerializationMethod,
+                    bodyParam.BodyAttribute.Buffered ?? RefitSettings.Buffered,
+                    parameterList.IndexOf(bodyParam.Parameter)
                 );
             }
 
@@ -475,7 +472,7 @@ namespace Refit
 
             // see if we're a post/put/patch
             // explicitly skip [Query], [HeaderCollection], and [Property]-denoted params
-            var refParams = parameterList
+            var refParamEnumerable = parameterList
                 .Where(
                     pi =>
                         !pi.ParameterType.GetTypeInfo().IsValueType
@@ -484,22 +481,22 @@ namespace Refit
                         && pi.GetCustomAttribute<HeaderCollectionAttribute>() == null
                         && pi.GetCustomAttribute<PropertyAttribute>() == null
                 )
-                .ToList();
+                .TryGetSingle(out var refParam);
 
             // Check for rule #3
-            if (refParams.Count > 1)
+            if (refParamEnumerable == EnumerablePeek.Many)
             {
                 throw new ArgumentException(
                     "Multiple complex types found. Specify one parameter as the body using BodyAttribute"
                 );
             }
 
-            if (refParams.Count == 1)
+            if (refParamEnumerable == EnumerablePeek.Single)
             {
                 return Tuple.Create(
                     BodySerializationMethod.Serialized,
                     RefitSettings.Buffered,
-                    parameterList.IndexOf(refParams[0])
+                    parameterList.IndexOf(refParam!)
                 );
             }
 
@@ -508,7 +505,7 @@ namespace Refit
 
         static Tuple<string, int>? FindAuthorizationParameter(IList<ParameterInfo> parameterList)
         {
-            var authorizeParams = parameterList
+            var authorizeParamsEnumerable = parameterList
                 .Select(
                     x =>
                         new
@@ -520,19 +517,18 @@ namespace Refit
                         }
                 )
                 .Where(x => x.AuthorizeAttribute != null)
-                .ToList();
+                .TryGetSingle(out var authorizeParam);
 
-            if (authorizeParams.Count > 1)
+            if (authorizeParamsEnumerable == EnumerablePeek.Many)
             {
                 throw new ArgumentException("Only one parameter can be an Authorize parameter");
             }
 
-            if (authorizeParams.Count == 1)
+            if (authorizeParamsEnumerable == EnumerablePeek.Single)
             {
-                var ret = authorizeParams[0];
                 return Tuple.Create(
-                    ret.AuthorizeAttribute!.Scheme,
-                    parameterList.IndexOf(ret.Parameter)
+                    authorizeParam!.AuthorizeAttribute!.Scheme,
+                    parameterList.IndexOf(authorizeParam.Parameter)
                 );
             }
 
@@ -582,13 +578,13 @@ namespace Refit
             return ret;
         }
 
-        static Dictionary<int, string> BuildHeaderParameterMap(List<ParameterInfo> parameterList)
+        static Dictionary<int, string> BuildHeaderParameterMap(ParameterInfo[] parameterArray)
         {
             var ret = new Dictionary<int, string>();
 
-            for (var i = 0; i < parameterList.Count; i++)
+            for (var i = 0; i < parameterArray.Length; i++)
             {
-                var header = parameterList[i]
+                var header = parameterArray[i]
                     .GetCustomAttributes(true)
                     .OfType<HeaderAttribute>()
                     .Select(ha => ha.Header)

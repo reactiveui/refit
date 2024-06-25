@@ -9,5 +9,5 @@ else
 {
     BenchmarkRunner.Run<EndToEndBenchmark>();
     // BenchmarkRunner.Run<StartupBenchmark>();
-    // BenchmarkRunner.Run<PerformanceBenchmarks>();
+    // BenchmarkRunner.Run<PerformanceBenchmark>();
 }
