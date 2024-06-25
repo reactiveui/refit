@@ -980,17 +980,7 @@ namespace Refit
                 // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
                 var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
-                var query = HttpUtility.ParseQueryString(uri.Query ?? "");
-                foreach (var key in query.AllKeys)
-                {
-                    if (!string.IsNullOrWhiteSpace(key))
-                    {
-                        queryParamsToAdd.Insert(
-                            0,
-                            new KeyValuePair<string, string?>(key, query[key])
-                        );
-                    }
-                }
+                ParseExistingQueryString(uri, queryParamsToAdd);
 
                 if (queryParamsToAdd.Count != 0)
                 {
@@ -1097,6 +1087,25 @@ namespace Refit
                     yield return string.Join(delimiter, formattedValues);
 
                     break;
+            }
+        }
+
+        static void ParseExistingQueryString(UriBuilder uri, List<KeyValuePair<string, string?>> queryParamsToAdd)
+        {
+            if (string.IsNullOrEmpty(uri.Query))
+                return;
+
+            var query = HttpUtility.ParseQueryString(uri.Query);
+            var index = 0;
+            foreach (var key in query.AllKeys)
+            {
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    queryParamsToAdd.Insert(
+                        index++,
+                        new KeyValuePair<string, string?>(key, query[key])
+                    );
+                }
             }
         }
 
