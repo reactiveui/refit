@@ -14,7 +14,8 @@ namespace Refit
 
     partial class RequestBuilderImplementation : IRequestBuilder
     {
-        static readonly HashSet<HttpMethod> BodylessMethods = [HttpMethod.Get, HttpMethod.Head];
+        static readonly QueryAttribute DefaultQueryAttribute = new ();
+        static readonly Uri BaseUri = new Uri("http://api");
         readonly Dictionary<string, List<RestMethodInfoInternal>> interfaceHttpMethods;
         readonly ConcurrentDictionary<
             CloseGenericMethodKey,
@@ -803,13 +804,12 @@ namespace Refit
                     //if header collection, add to request headers
                     if (restMethod.HeaderCollectionParameterMap.Contains(i))
                     {
-                        var headerCollection =
-                            param as IDictionary<string, string>
-                            ?? new Dictionary<string, string>();
-
-                        foreach (var header in headerCollection)
+                        if (param is IDictionary<string, string> headerCollection)
                         {
-                            headersToAdd[header.Key] = header.Value;
+                            foreach (var header in headerCollection)
+                            {
+                                headersToAdd[header.Key] = header.Value;
+                            }
                         }
 
                         isParameterMappedToRequest = true;
@@ -850,7 +850,7 @@ namespace Refit
                         || queryAttribute != null
                     )
                     {
-                        var attr = queryAttribute ?? new QueryAttribute();
+                        var attr = queryAttribute ?? DefaultQueryAttribute;
                         if (DoNotConvertToQueryMap(param))
                         {
                             queryParamsToAdd.AddRange(
@@ -924,7 +924,7 @@ namespace Refit
                     // We could have content headers, so we need to make
                     // sure we have an HttpContent object to add them to,
                     // provided the HttpClient will allow it for the method
-                    if (ret.Content == null && !BodylessMethods.Contains(ret.Method))
+                    if (ret.Content == null && !IsBodyless(ret.Method))
                         ret.Content = new ByteArrayContent(Array.Empty<byte>());
 
                     foreach (var header in headersToAdd)
@@ -979,7 +979,7 @@ namespace Refit
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
-                var uri = new UriBuilder(new Uri(new Uri("http://api"), urlTarget));
+                var uri = new UriBuilder(new Uri(BaseUri, urlTarget));
                 ParseExistingQueryString(uri, queryParamsToAdd);
 
                 if (queryParamsToAdd.Count != 0)
@@ -991,11 +991,8 @@ namespace Refit
                     uri.Query = null;
                 }
 
-                var uriFormat =
-                    restMethod.MethodInfo.GetCustomAttribute<QueryUriFormatAttribute>()?.UriFormat
-                    ?? UriFormat.UriEscaped;
                 ret.RequestUri = new Uri(
-                    uri.Uri.GetComponents(UriComponents.PathAndQuery, uriFormat),
+                    uri.Uri.GetComponents(UriComponents.PathAndQuery, restMethod.QueryUriFormat),
                     UriKind.Relative
                 );
                 return ret;
@@ -1064,13 +1061,13 @@ namespace Refit
 
                 default:
                     var delimiter =
-                        collectionFormat == CollectionFormat.Ssv
-                            ? " "
-                            : collectionFormat == CollectionFormat.Tsv
-                                ? "\t"
-                                : collectionFormat == CollectionFormat.Pipes
-                                    ? "|"
-                                    : ",";
+                        collectionFormat switch
+                        {
+                            CollectionFormat.Ssv => " ",
+                            CollectionFormat.Tsv => "\t",
+                            CollectionFormat.Pipes => "|",
+                            _ => ","
+                        };
 
                     // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
                     var formattedValues = paramValues
@@ -1304,5 +1301,7 @@ namespace Refit
                 request.Content.Headers.TryAddWithoutValidation(name, value);
             }
         }
+
+        static bool IsBodyless(HttpMethod method) => method == HttpMethod.Get || method == HttpMethod.Head;
     }
 }

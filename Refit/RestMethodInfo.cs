@@ -35,6 +35,7 @@ namespace Refit
         public bool IsMultipart { get; private set; }
         public string MultipartBoundary { get; private set; }
         public ParameterInfo? CancellationToken { get; set; }
+        public UriFormat QueryUriFormat { get; set; }
         public Dictionary<string, string?> Headers { get; set; }
         public Dictionary<int, string> HeaderParameterMap { get; set; }
         public ISet<int> HeaderCollectionParameterMap { get; set; }
@@ -160,6 +161,9 @@ namespace Refit
             }
 
             CancellationToken = ctParam;
+
+            QueryUriFormat =  methodInfo.GetCustomAttribute<QueryUriFormatAttribute>()?.UriFormat
+                              ?? UriFormat.UriEscaped;
 
             IsApiResponse =
                 ReturnResultType!.GetTypeInfo().IsGenericType
