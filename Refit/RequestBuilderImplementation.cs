@@ -726,70 +726,7 @@ namespace Refit
                         && restMethod.BodyParameterInfo.Item3 == i
                     )
                     {
-                        if (param is HttpContent httpContentParam)
-                        {
-                            ret.Content = httpContentParam;
-                        }
-                        else if (param is Stream streamParam)
-                        {
-                            ret.Content = new StreamContent(streamParam);
-                        }
-                        // Default sends raw strings
-                        else if (
-                            restMethod.BodyParameterInfo.Item1 == BodySerializationMethod.Default
-                            && param is string stringParam
-                        )
-                        {
-                            ret.Content = new StringContent(stringParam);
-                        }
-                        else
-                        {
-                            switch (restMethod.BodyParameterInfo.Item1)
-                            {
-                                case BodySerializationMethod.UrlEncoded:
-                                    ret.Content = param is string str
-                                        ? (HttpContent)
-                                            new StringContent(
-                                                Uri.EscapeDataString(str),
-                                                Encoding.UTF8,
-                                                "application/x-www-form-urlencoded"
-                                            )
-                                        : new FormUrlEncodedContent(
-                                            new FormValueMultimap(param, settings)
-                                        );
-                                    break;
-                                case BodySerializationMethod.Default:
-#pragma warning disable CS0618 // Type or member is obsolete
-                                case BodySerializationMethod.Json:
-#pragma warning restore CS0618 // Type or member is obsolete
-                                case BodySerializationMethod.Serialized:
-                                    var content = serializer.ToHttpContent(param);
-                                    switch (restMethod.BodyParameterInfo.Item2)
-                                    {
-                                        case false:
-                                            ret.Content = new PushStreamContent(
-#pragma warning disable IDE1006 // Naming Styles
-                                                async (stream, _, __) =>
-#pragma warning restore IDE1006 // Naming Styles
-                                                {
-                                                    using (stream)
-                                                    {
-                                                        await content
-                                                            .CopyToAsync(stream)
-                                                            .ConfigureAwait(false);
-                                                    }
-                                                },
-                                                content.Headers.ContentType
-                                            );
-                                            break;
-                                        case true:
-                                            ret.Content = content;
-                                            break;
-                                    }
-
-                                    break;
-                            }
-                        }
+                        AddBodyToRequest(restMethod, param, ret);
 
                         isParameterMappedToRequest = true;
                     }
@@ -850,131 +787,17 @@ namespace Refit
                         || queryAttribute != null
                     )
                     {
-                        var attr = queryAttribute ?? DefaultQueryAttribute;
-                        if (DoNotConvertToQueryMap(param))
-                        {
-                            queryParamsToAdd.AddRange(
-                                ParseQueryParameter(
-                                    param,
-                                    restMethod.ParameterInfoMap[i],
-                                    restMethod.QueryParameterMap[i],
-                                    attr
-                                )
-                            );
-                        }
-                        else
-                        {
-                            foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo))
-                            {
-                                var path = !string.IsNullOrWhiteSpace(attr.Prefix)
-                                    ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}"
-                                    : kvp.Key;
-                                queryParamsToAdd.AddRange(
-                                    ParseQueryParameter(
-                                        kvp.Value,
-                                        restMethod.ParameterInfoMap[i],
-                                        path,
-                                        attr
-                                    )
-                                );
-                            }
-                        }
+                        AddQueryParameters(restMethod, queryAttribute, param, queryParamsToAdd, i, parameterInfo);
 
                         continue;
                     }
 
-                    // we are in a multipart method, add the part to the content
-                    // the parameter name should be either the attachment name or the parameter name (as fallback)
-                    string itemName;
-                    string parameterName;
-
-                    if (!restMethod.AttachmentNameMap.TryGetValue(i, out var attachment))
-                    {
-                        itemName = restMethod.QueryParameterMap[i];
-                        parameterName = itemName;
-                    }
-                    else
-                    {
-                        itemName = attachment.Item1;
-                        parameterName = attachment.Item2;
-                    }
-
-                    // Check to see if it's an IEnumerable
-                    var itemValue = param;
-                    var enumerable = itemValue as IEnumerable<object>;
-                    var typeIsCollection = enumerable != null;
-
-                    if (typeIsCollection)
-                    {
-                        foreach (var item in enumerable!)
-                        {
-                            AddMultipartItem(multiPartContent!, itemName, parameterName, item);
-                        }
-                    }
-                    else
-                    {
-                        AddMultipartItem(multiPartContent!, itemName, parameterName, itemValue);
-                    }
+                    AddMultiPart(restMethod, i, param, multiPartContent);
                 }
 
-                // NB: We defer setting headers until the body has been
-                // added so any custom content headers don't get left out.
-                if (headersToAdd.Count > 0)
-                {
-                    // We could have content headers, so we need to make
-                    // sure we have an HttpContent object to add them to,
-                    // provided the HttpClient will allow it for the method
-                    if (ret.Content == null && !IsBodyless(ret.Method))
-                        ret.Content = new ByteArrayContent(Array.Empty<byte>());
+                AddHeadersToRequest(headersToAdd, ret);
 
-                    foreach (var header in headersToAdd)
-                    {
-                        SetHeader(ret, header.Key, header.Value);
-                    }
-                }
-
-                // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
-                if (settings.HttpRequestMessageOptions != null)
-                {
-                    foreach (var p in settings.HttpRequestMessageOptions)
-                    {
-#if NET6_0_OR_GREATER
-                        ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
-#else
-                        ret.Properties.Add(p);
-#endif
-                    }
-                }
-
-                foreach (var property in propertiesToAdd)
-                {
-#if NET6_0_OR_GREATER
-                    ret.Options.Set(
-                        new HttpRequestOptionsKey<object?>(property.Key),
-                        property.Value
-                    );
-#else
-                    ret.Properties[property.Key] = property.Value;
-#endif
-                }
-
-                // Always add the top-level type of the interface to the properties
-#if NET6_0_OR_GREATER
-                ret.Options.Set(
-                    new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType),
-                    TargetType
-                );
-                ret.Options.Set(
-                    new HttpRequestOptionsKey<RestMethodInfo>(
-                        HttpRequestMessageOptions.RestMethodInfo
-                    ),
-                    restMethod.ToRestMethodInfo()
-                );
-#else
-                ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
-                ret.Properties[HttpRequestMessageOptions.RestMethodInfo] =
-                    restMethod.ToRestMethodInfo();
-#endif
+                AddPropertiesToRequest(restMethod, ret, propertiesToAdd);
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
@@ -997,6 +820,211 @@ namespace Refit
                 );
                 return ret;
             };
+        }
+
+        void AddBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
+        {
+            if (param is HttpContent httpContentParam)
+            {
+                ret.Content = httpContentParam;
+            }
+            else if (param is Stream streamParam)
+            {
+                ret.Content = new StreamContent(streamParam);
+            }
+            // Default sends raw strings
+            else if (
+                restMethod.BodyParameterInfo!.Item1 == BodySerializationMethod.Default
+                && param is string stringParam
+            )
+            {
+                ret.Content = new StringContent(stringParam);
+            }
+            else
+            {
+                switch (restMethod.BodyParameterInfo.Item1)
+                {
+                    case BodySerializationMethod.UrlEncoded:
+                        ret.Content = param is string str
+                            ? (HttpContent)
+                            new StringContent(
+                                Uri.EscapeDataString(str),
+                                Encoding.UTF8,
+                                "application/x-www-form-urlencoded"
+                            )
+                            : new FormUrlEncodedContent(
+                                new FormValueMultimap(param, settings)
+                            );
+                        break;
+                    case BodySerializationMethod.Default:
+#pragma warning disable CS0618 // Type or member is obsolete
+                    case BodySerializationMethod.Json:
+#pragma warning restore CS0618 // Type or member is obsolete
+                    case BodySerializationMethod.Serialized:
+                        var content = serializer.ToHttpContent(param);
+                        switch (restMethod.BodyParameterInfo.Item2)
+                        {
+                            case false:
+                                ret.Content = new PushStreamContent(
+#pragma warning disable IDE1006 // Naming Styles
+                                    async (stream, _, __) =>
+#pragma warning restore IDE1006 // Naming Styles
+                                    {
+                                        using (stream)
+                                        {
+                                            await content
+                                                .CopyToAsync(stream)
+                                                .ConfigureAwait(false);
+                                        }
+                                    },
+                                    content.Headers.ContentType
+                                );
+                                break;
+                            case true:
+                                ret.Content = content;
+                                break;
+                        }
+
+                        break;
+                }
+            }
+        }
+
+        void AddQueryParameters(RestMethodInfoInternal restMethod, QueryAttribute? queryAttribute, object param,
+            List<KeyValuePair<string, string?>> queryParamsToAdd, int i, RestMethodParameterInfo? parameterInfo)
+        {
+            var attr = queryAttribute ?? DefaultQueryAttribute;
+            if (DoNotConvertToQueryMap(param))
+            {
+                queryParamsToAdd.AddRange(
+                    ParseQueryParameter(
+                        param,
+                        restMethod.ParameterInfoMap[i],
+                        restMethod.QueryParameterMap[i],
+                        attr
+                    )
+                );
+            }
+            else
+            {
+                foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo))
+                {
+                    var path = !string.IsNullOrWhiteSpace(attr.Prefix)
+                        ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}"
+                        : kvp.Key;
+                    queryParamsToAdd.AddRange(
+                        ParseQueryParameter(
+                            kvp.Value,
+                            restMethod.ParameterInfoMap[i],
+                            path,
+                            attr
+                        )
+                    );
+                }
+            }
+        }
+
+        void AddMultiPart(RestMethodInfoInternal restMethod, int i, object param,
+            MultipartFormDataContent? multiPartContent)
+        {
+            // we are in a multipart method, add the part to the content
+            // the parameter name should be either the attachment name or the parameter name (as fallback)
+            string itemName;
+            string parameterName;
+
+            if (!restMethod.AttachmentNameMap.TryGetValue(i, out var attachment))
+            {
+                itemName = restMethod.QueryParameterMap[i];
+                parameterName = itemName;
+            }
+            else
+            {
+                itemName = attachment.Item1;
+                parameterName = attachment.Item2;
+            }
+
+            // Check to see if it's an IEnumerable
+            var itemValue = param;
+            var enumerable = itemValue as IEnumerable<object>;
+            var typeIsCollection = enumerable != null;
+
+            if (typeIsCollection)
+            {
+                foreach (var item in enumerable!)
+                {
+                    AddMultipartItem(multiPartContent!, itemName, parameterName, item);
+                }
+            }
+            else
+            {
+                AddMultipartItem(multiPartContent!, itemName, parameterName, itemValue);
+            }
+        }
+
+        static void AddHeadersToRequest(Dictionary<string, string?> headersToAdd, HttpRequestMessage ret)
+        {
+            // NB: We defer setting headers until the body has been
+            // added so any custom content headers don't get left out.
+            if (headersToAdd.Count > 0)
+            {
+                // We could have content headers, so we need to make
+                // sure we have an HttpContent object to add them to,
+                // provided the HttpClient will allow it for the method
+                if (ret.Content == null && !IsBodyless(ret.Method))
+                    ret.Content = new ByteArrayContent(Array.Empty<byte>());
+
+                foreach (var header in headersToAdd)
+                {
+                    SetHeader(ret, header.Key, header.Value);
+                }
+            }
+        }
+
+        void AddPropertiesToRequest(RestMethodInfoInternal restMethod, HttpRequestMessage ret,
+            Dictionary<string, object?> propertiesToAdd)
+        {
+            // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
+            if (settings.HttpRequestMessageOptions != null)
+            {
+                foreach (var p in settings.HttpRequestMessageOptions)
+                {
+#if NET6_0_OR_GREATER
+                        ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+#else
+                    ret.Properties.Add(p);
+#endif
+                }
+            }
+
+            foreach (var property in propertiesToAdd)
+            {
+#if NET6_0_OR_GREATER
+                    ret.Options.Set(
+                        new HttpRequestOptionsKey<object?>(property.Key),
+                        property.Value
+                    );
+#else
+                ret.Properties[property.Key] = property.Value;
+#endif
+            }
+
+            // Always add the top-level type of the interface to the properties
+#if NET6_0_OR_GREATER
+                ret.Options.Set(
+                    new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType),
+                    TargetType
+                );
+                ret.Options.Set(
+                    new HttpRequestOptionsKey<RestMethodInfo>(
+                        HttpRequestMessageOptions.RestMethodInfo
+                    ),
+                    restMethod.ToRestMethodInfo()
+                );
+#else
+            ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
+            ret.Properties[HttpRequestMessageOptions.RestMethodInfo] =
+                restMethod.ToRestMethodInfo();
+#endif
         }
 
         IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(
