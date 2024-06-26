@@ -66,6 +66,11 @@ namespace Refit.Tests
         [Get("/DoSomethingElse")]
         public new Task DoSomethingElse();
     }
+    public interface IMyClient
+    {
+        [Get("/")]
+        Task MyMethodAsync(string ex);
+    }
 }
 
 namespace Refit.Tests.SeparateNamespaceWithModel

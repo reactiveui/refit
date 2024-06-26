@@ -535,9 +535,9 @@ namespace Refit.Implementation
             {{
                 {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
             }}
-            catch (global::System.Exception ex)
+            catch (global::System.Exception ______ex)
             {{
-                throw ex;
+                throw ______ex;
             }}
 "
             );
