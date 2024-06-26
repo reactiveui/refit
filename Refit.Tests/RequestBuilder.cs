@@ -2531,7 +2531,7 @@ namespace Refit.Tests
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
-            Assert.Equal("/query?q2=value2&q1=value1", uri.PathAndQuery);
+            Assert.Equal("/query?q1=value1&q2=value2", uri.PathAndQuery);
         }
 
         [Fact]
