@@ -15,7 +15,7 @@ namespace Refit
     partial class RequestBuilderImplementation : IRequestBuilder
     {
         static readonly QueryAttribute DefaultQueryAttribute = new ();
-        static readonly Uri BaseUri = new Uri("http://api");
+        static readonly Uri BaseUri = new ("http://api");
         readonly Dictionary<string, List<RestMethodInfoInternal>> interfaceHttpMethods;
         readonly ConcurrentDictionary<
             CloseGenericMethodKey,
@@ -641,7 +641,6 @@ namespace Refit
                     (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string?>>();
                 var headersToAdd = new Dictionary<string, string?>(restMethod.Headers);
-                var propertiesToAdd = new Dictionary<string, object?>();
 
                 RestMethodParameterInfo? parameterInfo = null;
 
@@ -764,9 +763,8 @@ namespace Refit
                     }
 
                     //if property, add to populate into HttpRequestMessage.Properties
-                    if (restMethod.PropertyParameterMap.TryGetValue(i, out var propertyParameter))
+                    if (restMethod.PropertyParameterMap.ContainsKey(i))
                     {
-                        propertiesToAdd[propertyParameter] = param;
                         isParameterMappedToRequest = true;
                     }
 
@@ -797,7 +795,7 @@ namespace Refit
 
                 AddHeadersToRequest(headersToAdd, ret);
 
-                AddPropertiesToRequest(restMethod, ret, propertiesToAdd);
+                AddPropertiesToRequest(restMethod, ret, paramList);
 
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
@@ -980,8 +978,7 @@ namespace Refit
             }
         }
 
-        void AddPropertiesToRequest(RestMethodInfoInternal restMethod, HttpRequestMessage ret,
-            Dictionary<string, object?> propertiesToAdd)
+        void AddPropertiesToRequest(RestMethodInfoInternal restMethod, HttpRequestMessage ret, object[] paramList)
         {
             // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
             if (settings.HttpRequestMessageOptions != null)
@@ -996,16 +993,19 @@ namespace Refit
                 }
             }
 
-            foreach (var property in propertiesToAdd)
+            for (var i = 0; i < paramList.Length; i++)
             {
+                if (restMethod.PropertyParameterMap.TryGetValue(i, out var propertyKey))
+                {
 #if NET6_0_OR_GREATER
                     ret.Options.Set(
-                        new HttpRequestOptionsKey<object?>(property.Key),
-                        property.Value
+                        new HttpRequestOptionsKey<object?>(propertyKey),
+                        paramList[i]
                     );
 #else
-                ret.Properties[property.Key] = property.Value;
+                    ret.Properties[propertyKey] = paramList[i];
 #endif
+                }
             }
 
             // Always add the top-level type of the interface to the properties
