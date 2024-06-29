@@ -691,8 +691,8 @@ namespace Refit
                                                 Uri.EscapeDataString(
                                                     settings.UrlParameterFormatter.Format(
                                                         s,
-                                                        restMethod.ParameterInfoMap[i],
-                                                        restMethod.ParameterInfoMap[i].ParameterType
+                                                        restMethod.ParameterInfoArray[i],
+                                                        restMethod.ParameterInfoArray[i].ParameterType
                                                     ) ?? string.Empty
                                                 )
                                         )
@@ -704,8 +704,8 @@ namespace Refit
                                 replacement = Uri.EscapeDataString(
                                     settings.UrlParameterFormatter.Format(
                                         param,
-                                        restMethod.ParameterInfoMap[i],
-                                        restMethod.ParameterInfoMap[i].ParameterType
+                                        restMethod.ParameterInfoArray[i],
+                                        restMethod.ParameterInfoArray[i].ParameterType
                                     ) ?? string.Empty
                                 );
                             }
@@ -741,7 +741,7 @@ namespace Refit
                     }
 
                     //if header collection, add to request headers
-                    if (restMethod.HeaderCollectionParameterMap.Contains(i))
+                    if (restMethod.HeaderCollectionAt(i))
                     {
                         if (param is IDictionary<string, string> headerCollection)
                         {
@@ -781,7 +781,7 @@ namespace Refit
                     // or if is an object bound to the path add any non-path bound properties to query string
                     // or if it's an object with a query attribute
                     var queryAttribute = restMethod
-                        .ParameterInfoMap[i]
+                        .ParameterInfoArray[i]
                         .GetCustomAttribute<QueryAttribute>();
                     if (
                         !restMethod.IsMultipart
@@ -902,7 +902,7 @@ namespace Refit
                 queryParamsToAdd.AddRange(
                     ParseQueryParameter(
                         param,
-                        restMethod.ParameterInfoMap[i],
+                        restMethod.ParameterInfoArray[i],
                         restMethod.QueryParameterMap[i],
                         attr
                     )
@@ -918,7 +918,7 @@ namespace Refit
                     queryParamsToAdd.AddRange(
                         ParseQueryParameter(
                             kvp.Value,
-                            restMethod.ParameterInfoMap[i],
+                            restMethod.ParameterInfoArray[i],
                             path,
                             attr
                         )
