@@ -42,10 +42,9 @@ namespace Refit
         T? content,
         RefitSettings settings,
         ApiException? error = null
-    ) : IApiResponse<T>, IApiResponse
+        ) : IApiResponse<T>
     {
-        readonly HttpResponseMessage response =
-            response ?? throw new ArgumentNullException(nameof(response));
+        readonly HttpResponseMessage response = response ?? throw new ArgumentNullException(nameof(response));
         bool disposed;
 
         /// <summary>
@@ -151,79 +150,37 @@ namespace Refit
     }
 
     /// <inheritdoc/>
-    public interface IApiResponse<out T> : IApiResponseBase
+    public interface IApiResponse<out T> : IApiResponse
     {
         /// <summary>
         /// Deserialized request content as <typeparamref name="T"/>.
         /// </summary>
         T? Content { get; }
-
-        /// <summary>
-        /// Indicates whether the request was successful.
-        /// </summary>
-#if NET6_0_OR_GREATER
-        [MemberNotNullWhen(true, nameof(ContentHeaders))]
-        [MemberNotNullWhen(false, nameof(Error))]
-        [MemberNotNullWhen(true, nameof(Content))]
-#endif
-        bool IsSuccessStatusCode { get; }
-
-        /// <summary>
-        /// HTTP response content headers as defined in RFC 2616.
-        /// </summary>
-        HttpContentHeaders? ContentHeaders { get; }
-
-        /// <summary>
-        /// The <see cref="ApiException"/> object in case of unsuccessful response.
-        /// </summary>
-        [SuppressMessage(
-            "Naming",
-            "CA1716:Identifiers should not match keywords",
-            Justification = "By Design"
-        )]
-        ApiException? Error { get; }
-    }
-
-    /// <summary>
-    /// IApiResponse.
-    /// </summary>
-    /// <seealso cref="Refit.IApiResponseBase" />
-    public interface IApiResponse : IApiResponseBase
-    {
-        /// <summary>
-        /// Indicates whether the request was successful.
-        /// </summary>
-#if NET6_0_OR_GREATER
-        [MemberNotNullWhen(true, nameof(ContentHeaders))]
-        [MemberNotNullWhen(false, nameof(Error))]
-#endif
-        bool IsSuccessStatusCode { get; }
-
-        /// <summary>
-        /// HTTP response content headers as defined in RFC 2616.
-        /// </summary>
-        HttpContentHeaders? ContentHeaders { get; }
-
-        /// <summary>
-        /// The <see cref="ApiException"/> object in case of unsuccessful response.
-        /// </summary>
-        [SuppressMessage(
-            "Naming",
-            "CA1716:Identifiers should not match keywords",
-            Justification = "By Design"
-        )]
-        ApiException? Error { get; }
     }
 
     /// <summary>
     /// Base interface used to represent an API response.
     /// </summary>
-    public interface IApiResponseBase : IDisposable
+    public interface IApiResponse : IDisposable
     {
         /// <summary>
         /// HTTP response headers.
         /// </summary>
         HttpResponseHeaders Headers { get; }
+
+        /// <summary>
+        /// HTTP response content headers as defined in RFC 2616.
+        /// </summary>
+        HttpContentHeaders? ContentHeaders { get; }
+
+        /// <summary>
+        /// Indicates whether the request was successful.
+        /// </summary>
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
+        bool IsSuccessStatusCode { get; }
 
         /// <summary>
         /// HTTP response status code.
@@ -244,5 +201,15 @@ namespace Refit
         /// HTTP Message version.
         /// </summary>
         Version Version { get; }
+
+        /// <summary>
+        /// The <see cref="ApiException"/> object in case of unsuccessful response.
+        /// </summary>
+        [SuppressMessage(
+           "Naming",
+           "CA1716:Identifiers should not match keywords",
+           Justification = "By Design"
+       )]
+        ApiException? Error { get; }
     }
 }
