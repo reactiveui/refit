@@ -633,7 +633,9 @@ namespace Refit
                 var urlTarget =
                     (basePath == "/" ? string.Empty : basePath) + restMethod.RelativePath;
                 var queryParamsToAdd = new List<KeyValuePair<string, string?>>();
-                var headersToAdd = new Dictionary<string, string?>(restMethod.Headers);
+                var headersToAdd = restMethod.Headers.Count > 0 ?
+                    new Dictionary<string, string?>(restMethod.Headers)
+                    : null;
 
                 RestMethodParameterInfo? parameterInfo = null;
 
@@ -726,6 +728,7 @@ namespace Refit
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.TryGetValue(i, out var headerParameterValue))
                     {
+                        headersToAdd ??= new Dictionary<string, string?>();
                         headersToAdd[headerParameterValue] = param?.ToString();
                         isParameterMappedToRequest = true;
                     }
@@ -737,6 +740,7 @@ namespace Refit
                         {
                             foreach (var header in headerCollection)
                             {
+                                headersToAdd ??= new Dictionary<string, string?>();
                                 headersToAdd[header.Key] = header.Value;
                             }
                         }
@@ -750,6 +754,7 @@ namespace Refit
                         && restMethod.AuthorizeParameterInfo.Item2 == i
                     )
                     {
+                        headersToAdd ??= new Dictionary<string, string?>();
                         headersToAdd["Authorization"] =
                             $"{restMethod.AuthorizeParameterInfo.Item1} {param}";
                         isParameterMappedToRequest = true;
@@ -952,22 +957,22 @@ namespace Refit
             }
         }
 
-        static void AddHeadersToRequest(Dictionary<string, string?> headersToAdd, HttpRequestMessage ret)
+        static void AddHeadersToRequest(Dictionary<string, string?>? headersToAdd, HttpRequestMessage ret)
         {
             // NB: We defer setting headers until the body has been
             // added so any custom content headers don't get left out.
-            if (headersToAdd.Count > 0)
-            {
-                // We could have content headers, so we need to make
-                // sure we have an HttpContent object to add them to,
-                // provided the HttpClient will allow it for the method
-                if (ret.Content == null && !IsBodyless(ret.Method))
-                    ret.Content = new ByteArrayContent(Array.Empty<byte>());
+            if (headersToAdd is null || headersToAdd.Count <= 0)
+                return;
 
-                foreach (var header in headersToAdd)
-                {
-                    SetHeader(ret, header.Key, header.Value);
-                }
+            // We could have content headers, so we need to make
+            // sure we have an HttpContent object to add them to,
+            // provided the HttpClient will allow it for the method
+            if (ret.Content == null && !IsBodyless(ret.Method))
+                ret.Content = new ByteArrayContent(Array.Empty<byte>());
+
+            foreach (var header in headersToAdd)
+            {
+                SetHeader(ret, header.Key, header.Value);
             }
         }
 
