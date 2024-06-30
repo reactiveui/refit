@@ -1,0 +1,402 @@
+﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"Refit.HttpClientFactory, PublicKey=00240000048000009400000006020000002400005253413100040000010001009dc017250415a0d51fddb74de84257c388028f04893673ca5c8f9e7145aea2b11443cb49dd79386d2255179a79ec516466b621f77e43386e711b775f77bb0e4b217f8c208c054e5f515ae33ee76bac1b56cdc20e1c151cf026a9b7f8362f1963825e546e16b360dfc63fe670403c9d6152c24491dd5dfb9ff68fe102ef3e1aed")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"Refit.Newtonsoft.Json, PublicKey=00240000048000009400000006020000002400005253413100040000010001009dc017250415a0d51fddb74de84257c388028f04893673ca5c8f9e7145aea2b11443cb49dd79386d2255179a79ec516466b621f77e43386e711b775f77bb0e4b217f8c208c054e5f515ae33ee76bac1b56cdc20e1c151cf026a9b7f8362f1963825e546e16b360dfc63fe670403c9d6152c24491dd5dfb9ff68fe102ef3e1aed")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"Refit.Tests, PublicKey=00240000048000009400000006020000002400005253413100040000010001009dc017250415a0d51fddb74de84257c388028f04893673ca5c8f9e7145aea2b11443cb49dd79386d2255179a79ec516466b621f77e43386e711b775f77bb0e4b217f8c208c054e5f515ae33ee76bac1b56cdc20e1c151cf026a9b7f8362f1963825e546e16b360dfc63fe670403c9d6152c24491dd5dfb9ff68fe102ef3e1aed")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo(@"Refit.Xml, PublicKey=00240000048000009400000006020000002400005253413100040000010001009dc017250415a0d51fddb74de84257c388028f04893673ca5c8f9e7145aea2b11443cb49dd79386d2255179a79ec516466b621f77e43386e711b775f77bb0e4b217f8c208c054e5f515ae33ee76bac1b56cdc20e1c151cf026a9b7f8362f1963825e546e16b360dfc63fe670403c9d6152c24491dd5dfb9ff68fe102ef3e1aed")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v8.0", FrameworkDisplayName=".NET 8.0")]
+namespace Refit
+{
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+    public class AliasAsAttribute : System.Attribute
+    {
+        public AliasAsAttribute(string name) { }
+        public string Name { get; set; }
+    }
+    [System.Serializable]
+    public class ApiException : System.Exception
+    {
+        protected ApiException(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders headers, Refit.RefitSettings refitSettings, System.Exception? innerException = null) { }
+        protected ApiException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders headers, Refit.RefitSettings refitSettings, System.Exception? innerException = null) { }
+        public string? Content { get; }
+        public System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
+        public bool HasContent { get; }
+        public System.Net.Http.Headers.HttpResponseHeaders Headers { get; }
+        public System.Net.Http.HttpMethod HttpMethod { get; }
+        public string? ReasonPhrase { get; }
+        public Refit.RefitSettings RefitSettings { get; }
+        public System.Net.Http.HttpRequestMessage RequestMessage { get; }
+        public System.Net.HttpStatusCode StatusCode { get; }
+        public System.Uri? Uri { get; }
+        public System.Threading.Tasks.Task<T?> GetContentAsAsync<T>() { }
+        public static System.Threading.Tasks.Task<Refit.ApiException> Create(System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings, System.Exception? innerException = null) { }
+        public static System.Threading.Tasks.Task<Refit.ApiException> Create(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, System.Net.Http.HttpResponseMessage response, Refit.RefitSettings refitSettings, System.Exception? innerException = null) { }
+    }
+    public sealed class ApiResponse<T> : Refit.IApiResponse, Refit.IApiResponse<T>, System.IDisposable
+    {
+        public ApiResponse(System.Net.Http.HttpResponseMessage response, T? content, Refit.RefitSettings settings, Refit.ApiException? error = null) { }
+        public T Content { get; }
+        public System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
+        public Refit.ApiException? Error { get; }
+        public System.Net.Http.Headers.HttpResponseHeaders Headers { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        public bool IsSuccessStatusCode { get; }
+        public string? ReasonPhrase { get; }
+        public System.Net.Http.HttpRequestMessage? RequestMessage { get; }
+        public Refit.RefitSettings Settings { get; }
+        public System.Net.HttpStatusCode StatusCode { get; }
+        public System.Version Version { get; }
+        public void Dispose() { }
+        public System.Threading.Tasks.Task<Refit.ApiResponse<T>> EnsureSuccessStatusCodeAsync() { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+    [System.Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, in" +
+        "herit from Refit.MultipartItem", false)]
+    public class AttachmentNameAttribute : System.Attribute
+    {
+        public AttachmentNameAttribute(string name) { }
+        public string Name { get; set; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    public class AuthorizeAttribute : System.Attribute
+    {
+        public AuthorizeAttribute(string scheme = "Bearer") { }
+        public string Scheme { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    public class BodyAttribute : System.Attribute
+    {
+        public BodyAttribute() { }
+        public BodyAttribute(Refit.BodySerializationMethod serializationMethod = 0) { }
+        public BodyAttribute(bool buffered) { }
+        public BodyAttribute(Refit.BodySerializationMethod serializationMethod, bool buffered) { }
+        public bool? Buffered { get; }
+        public Refit.BodySerializationMethod SerializationMethod { get; }
+    }
+    public enum BodySerializationMethod
+    {
+        Default = 0,
+        [System.Obsolete("Use BodySerializationMethod.Serialized instead", false)]
+        Json = 1,
+        UrlEncoded = 2,
+        Serialized = 3,
+    }
+    public class ByteArrayPart : Refit.MultipartItem
+    {
+        public ByteArrayPart(byte[] value, string fileName, string? contentType = null, string? name = null) { }
+        public byte[] Value { get; }
+        protected override System.Net.Http.HttpContent CreateContent() { }
+    }
+    public class CamelCaseUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
+    {
+        public CamelCaseUrlParameterKeyFormatter() { }
+        public string Format(string key) { }
+    }
+    public enum CollectionFormat
+    {
+        RefitParameterFormatter = 0,
+        Csv = 1,
+        Ssv = 2,
+        Tsv = 3,
+        Pipes = 4,
+        Multi = 5,
+    }
+    public class DefaultApiExceptionFactory
+    {
+        public DefaultApiExceptionFactory(Refit.RefitSettings refitSettings) { }
+        public System.Threading.Tasks.Task<System.Exception?> CreateAsync(System.Net.Http.HttpResponseMessage responseMessage) { }
+    }
+    public class DefaultFormUrlEncodedParameterFormatter : Refit.IFormUrlEncodedParameterFormatter
+    {
+        public DefaultFormUrlEncodedParameterFormatter() { }
+        public virtual string? Format(object? parameterValue, string? formatString) { }
+    }
+    public class DefaultUrlParameterFormatter : Refit.IUrlParameterFormatter
+    {
+        public DefaultUrlParameterFormatter() { }
+        public virtual string? Format(object? parameterValue, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
+    }
+    public class DefaultUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
+    {
+        public DefaultUrlParameterKeyFormatter() { }
+        public virtual string Format(string key) { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class DeleteAttribute : Refit.HttpMethodAttribute
+    {
+        public DeleteAttribute(string path) { }
+        public override System.Net.Http.HttpMethod Method { get; }
+    }
+    public class FileInfoPart : Refit.MultipartItem
+    {
+        public FileInfoPart(System.IO.FileInfo value, string fileName, string? contentType = null, string? name = null) { }
+        public System.IO.FileInfo Value { get; }
+        protected override System.Net.Http.HttpContent CreateContent() { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class GetAttribute : Refit.HttpMethodAttribute
+    {
+        public GetAttribute(string path) { }
+        public override System.Net.Http.HttpMethod Method { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class HeadAttribute : Refit.HttpMethodAttribute
+    {
+        public HeadAttribute(string path) { }
+        public override System.Net.Http.HttpMethod Method { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    public class HeaderAttribute : System.Attribute
+    {
+        public HeaderAttribute(string header) { }
+        public string Header { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    public class HeaderCollectionAttribute : System.Attribute
+    {
+        public HeaderCollectionAttribute() { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method | System.AttributeTargets.Interface)]
+    public class HeadersAttribute : System.Attribute
+    {
+        public HeadersAttribute(params string[] headers) { }
+        public string[] Headers { get; }
+    }
+    public abstract class HttpMethodAttribute : System.Attribute
+    {
+        protected HttpMethodAttribute(string path) { }
+        public abstract System.Net.Http.HttpMethod Method { get; }
+        public virtual string Path { get; set; }
+    }
+    public static class HttpRequestMessageOptions
+    {
+        public static string InterfaceType { get; }
+        public static string RestMethodInfo { get; }
+    }
+    public interface IApiResponse : System.IDisposable
+    {
+        System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
+        Refit.ApiException? Error { get; }
+        System.Net.Http.Headers.HttpResponseHeaders Headers { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        bool IsSuccessStatusCode { get; }
+        string? ReasonPhrase { get; }
+        System.Net.Http.HttpRequestMessage? RequestMessage { get; }
+        System.Net.HttpStatusCode StatusCode { get; }
+        System.Version Version { get; }
+    }
+    public interface IApiResponse<out T> : Refit.IApiResponse, System.IDisposable
+    {
+        T Content { get; }
+    }
+    public interface IFormUrlEncodedParameterFormatter
+    {
+        string? Format(object? value, string? formatString);
+    }
+    public interface IHttpContentSerializer
+    {
+        System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default);
+        string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo);
+        System.Net.Http.HttpContent ToHttpContent<T>(T item);
+    }
+    public interface IRequestBuilder
+    {
+        System.Func<System.Net.Http.HttpClient, object[], object?> BuildRestResultFuncForMethod(string methodName, System.Type[]? parameterTypes = null, System.Type[]? genericArgumentTypes = null);
+    }
+    public interface IRequestBuilder<T> : Refit.IRequestBuilder { }
+    public interface IUrlParameterFormatter
+    {
+        string? Format(object? value, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type);
+    }
+    public interface IUrlParameterKeyFormatter
+    {
+        string Format(string key);
+    }
+    [System.Obsolete("Use NewtonsoftJsonContentSerializer in the Refit.Newtonsoft.Json package instead", true)]
+    public class JsonContentSerializer : Refit.IHttpContentSerializer
+    {
+        public JsonContentSerializer() { }
+        public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
+        public string GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
+        public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class MultipartAttribute : System.Attribute
+    {
+        public MultipartAttribute(string boundaryText = "----MyGreatBoundary") { }
+        public string BoundaryText { get; }
+    }
+    public abstract class MultipartItem
+    {
+        protected MultipartItem(string fileName, string? contentType) { }
+        public MultipartItem(string fileName, string? contentType, string? name) { }
+        public string? ContentType { get; }
+        public string FileName { get; }
+        public string? Name { get; }
+        protected abstract System.Net.Http.HttpContent CreateContent();
+        public System.Net.Http.HttpContent ToContent() { }
+    }
+    public class ObjectToInferredTypesConverter : System.Text.Json.Serialization.JsonConverter<object>
+    {
+        public ObjectToInferredTypesConverter() { }
+        public override object? Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options) { }
+        public override void Write(System.Text.Json.Utf8JsonWriter writer, object objectToWrite, System.Text.Json.JsonSerializerOptions options) { }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class OptionsAttribute : Refit.HttpMethodAttribute
+    {
+        public OptionsAttribute(string path) { }
+        public override System.Net.Http.HttpMethod Method { get; }
+    }
+    public enum ParameterType
+    {
+        Normal = 0,
+        RoundTripping = 1,
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class PatchAttribute : Refit.HttpMethodAttribute
+    {
+        public PatchAttribute(string path) { }
+        public override System.Net.Http.HttpMethod Method { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class PostAttribute : Refit.HttpMethodAttribute
+    {
+        public PostAttribute(string path) { }
+        public override System.Net.Http.HttpMethod Method { get; }
+    }
+    public class ProblemDetails
+    {
+        public ProblemDetails() { }
+        public string? Detail { get; set; }
+        public System.Collections.Generic.Dictionary<string, string[]> Errors { get; set; }
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> Extensions { get; set; }
+        public string? Instance { get; set; }
+        public int Status { get; set; }
+        public string? Title { get; set; }
+        public string? Type { get; set; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Parameter)]
+    public class PropertyAttribute : System.Attribute
+    {
+        public PropertyAttribute() { }
+        public PropertyAttribute(string key) { }
+        public string? Key { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class PutAttribute : Refit.HttpMethodAttribute
+    {
+        public PutAttribute(string path) { }
+        public override System.Net.Http.HttpMethod Method { get; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
+    public class QueryAttribute : System.Attribute
+    {
+        public QueryAttribute() { }
+        public QueryAttribute(Refit.CollectionFormat collectionFormat) { }
+        public QueryAttribute(string delimiter) { }
+        public QueryAttribute(string delimiter, string prefix) { }
+        public QueryAttribute(string delimiter, string prefix, string format) { }
+        public Refit.CollectionFormat CollectionFormat { get; set; }
+        public string Delimiter { get; set; }
+        public string? Format { get; set; }
+        public bool IsCollectionFormatSpecified { get; }
+        public string? Prefix { get; set; }
+    }
+    [System.AttributeUsage(System.AttributeTargets.Method)]
+    public class QueryUriFormatAttribute : System.Attribute
+    {
+        public QueryUriFormatAttribute(System.UriFormat uriFormat) { }
+        public System.UriFormat UriFormat { get; }
+    }
+    public class RefitSettings
+    {
+        public RefitSettings() { }
+        public RefitSettings(Refit.IHttpContentSerializer contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter, Refit.IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter) { }
+        public RefitSettings(Refit.IHttpContentSerializer contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter = null, Refit.IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter = null, Refit.IUrlParameterKeyFormatter? urlParameterKeyFormatter = null) { }
+        public System.Func<System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken, System.Threading.Tasks.Task<string>>? AuthorizationHeaderValueGetter { get; set; }
+        public bool Buffered { get; set; }
+        public Refit.CollectionFormat CollectionFormat { get; set; }
+        public Refit.IHttpContentSerializer ContentSerializer { get; set; }
+        public System.Func<System.Net.Http.HttpResponseMessage, System.Threading.Tasks.Task<System.Exception?>> ExceptionFactory { get; set; }
+        public Refit.IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
+        public System.Func<System.Net.Http.HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }
+        public System.Collections.Generic.Dictionary<string, object>? HttpRequestMessageOptions { get; set; }
+        public Refit.IUrlParameterFormatter UrlParameterFormatter { get; set; }
+        public Refit.IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
+    }
+    public static class RequestBuilder
+    {
+        public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType) { }
+        public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
+        public static Refit.IRequestBuilder<T> ForType<T>() { }
+        public static Refit.IRequestBuilder<T> ForType<T>(Refit.RefitSettings? settings) { }
+    }
+    public class RestMethodInfo : System.IEquatable<Refit.RestMethodInfo>
+    {
+        public RestMethodInfo(string Name, System.Type HostingType, System.Reflection.MethodInfo MethodInfo, string RelativePath, System.Type ReturnType) { }
+        public System.Type HostingType { get; init; }
+        public System.Reflection.MethodInfo MethodInfo { get; init; }
+        public string Name { get; init; }
+        public string RelativePath { get; init; }
+        public System.Type ReturnType { get; init; }
+    }
+    public class RestMethodParameterInfo
+    {
+        public RestMethodParameterInfo(bool isObjectPropertyParameter, System.Reflection.ParameterInfo parameterInfo) { }
+        public RestMethodParameterInfo(string name, System.Reflection.ParameterInfo parameterInfo) { }
+        public bool IsObjectPropertyParameter { get; set; }
+        public string? Name { get; set; }
+        public System.Reflection.ParameterInfo ParameterInfo { get; set; }
+        public System.Collections.Generic.List<Refit.RestMethodParameterProperty> ParameterProperties { get; set; }
+        public Refit.ParameterType Type { get; set; }
+    }
+    public class RestMethodParameterProperty
+    {
+        public RestMethodParameterProperty(string name, System.Reflection.PropertyInfo propertyInfo) { }
+        public string Name { get; set; }
+        public System.Reflection.PropertyInfo PropertyInfo { get; set; }
+    }
+    public static class RestService
+    {
+        public static System.Net.Http.HttpClient CreateHttpClient(string hostUrl, Refit.RefitSettings? settings) { }
+        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client) { }
+        public static object For(System.Type refitInterfaceType, string hostUrl) { }
+        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.IRequestBuilder builder) { }
+        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
+        public static object For(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings? settings) { }
+        public static T For<T>(System.Net.Http.HttpClient client) { }
+        public static T For<T>(string hostUrl) { }
+        public static T For<T>(System.Net.Http.HttpClient client, Refit.IRequestBuilder<T> builder) { }
+        public static T For<T>(System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
+        public static T For<T>(string hostUrl, Refit.RefitSettings? settings) { }
+    }
+    public class StreamPart : Refit.MultipartItem
+    {
+        public StreamPart(System.IO.Stream value, string fileName, string? contentType = null, string? name = null) { }
+        public System.IO.Stream Value { get; }
+        protected override System.Net.Http.HttpContent CreateContent() { }
+    }
+    public sealed class SystemTextJsonContentSerializer : Refit.IHttpContentSerializer
+    {
+        public SystemTextJsonContentSerializer() { }
+        public SystemTextJsonContentSerializer(System.Text.Json.JsonSerializerOptions jsonSerializerOptions) { }
+        public System.Threading.Tasks.Task<T?> FromHttpContentAsync<T>(System.Net.Http.HttpContent content, System.Threading.CancellationToken cancellationToken = default) { }
+        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) { }
+        public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
+        public static System.Text.Json.JsonSerializerOptions GetDefaultJsonSerializerOptions() { }
+    }
+    [System.Serializable]
+    public class ValidationApiException : Refit.ApiException
+    {
+        public Refit.ProblemDetails? Content { get; }
+        public static Refit.ValidationApiException Create(Refit.ApiException exception) { }
+    }
+}
