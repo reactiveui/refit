@@ -3242,6 +3242,29 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void BodyContentGetsUrlEncodedWithCollectionFormat()
+        {
+            var settings = new RefitSettings() { CollectionFormat = CollectionFormat.Csv };
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
+            var factory = fixture.RunRequest("PostSomeUrlEncodedStuff");
+            var output = factory(
+                new object[]
+                {
+                    6,
+                    new
+                    {
+                        Foo = "Something",
+                        Bar = 100,
+                        FooBar = new [] {5,7},
+                        Baz = "" // explicitly use blank to preserve value that would be stripped if null
+                    }
+                }
+            );
+
+            Assert.Equal("Foo=Something&Bar=100&FooBar=5%2C7&Baz=", output.SendContent);
+        }
+
+        [Fact]
         public void FormFieldGetsAliased()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
