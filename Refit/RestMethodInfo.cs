@@ -46,6 +46,7 @@ namespace Refit
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
         public ParameterInfo[] ParameterInfoArray { get; set; }
         public Dictionary<int, RestMethodParameterInfo> ParameterMap { get; set; }
+        public List<ParameterFragment> FragmentPath { get ; set ; }
         public Type ReturnType { get; set; }
         public Type ReturnResultType { get; set; }
         public Type DeserializedResultType { get; set; }
@@ -53,7 +54,7 @@ namespace Refit
         public bool IsApiResponse { get; }
         public bool ShouldDisposeResponse { get; private set; }
 
-        static readonly Regex ParameterRegex = new(@"{(.*?)}");
+        static readonly Regex ParameterRegex = new(@"{(([^/?\r\n])*?)}");
         static readonly HttpMethod PatchMethod = new("PATCH");
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
@@ -90,7 +91,7 @@ namespace Refit
                 .GetParameters()
                 .Where(static p => p.ParameterType != typeof(CancellationToken))
                 .ToArray();
-            ParameterMap = BuildParameterMap(RelativePath, ParameterInfoArray);
+            (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray);
             BodyParameterInfo = FindBodyParameter(ParameterInfoArray, IsMultipart, hma.Method);
             AuthorizeParameterInfo = FindAuthorizationParameter(ParameterInfoArray);
 
@@ -261,7 +262,7 @@ namespace Refit
                 );
         }
 
-        static Dictionary<int, RestMethodParameterInfo> BuildParameterMap(
+         static (Dictionary<int, RestMethodParameterInfo> ret, List<ParameterFragment> fragmentList) BuildParameterMap(
             string relativePath,
             ParameterInfo[] parameterInfo
         )
@@ -269,123 +270,139 @@ namespace Refit
             var ret = new Dictionary<int, RestMethodParameterInfo>();
 
             // This section handles pattern matching in the URL. We also need it to add parameter key/values for any attribute with a [Query]
-            var parameterizedParts = relativePath
-                .Split('/', '?')
-                .SelectMany(x => ParameterRegex.Matches(x).Cast<Match>())
-                .ToList();
+            var parameterizedParts = ParameterRegex.Matches(relativePath).Cast<Match>().ToArray();
 
-            if (parameterizedParts.Count > 0)
+            if (parameterizedParts.Length == 0)
             {
-                var paramValidationDict = parameterInfo.ToDictionary(
-                    k => GetUrlNameForParameter(k).ToLowerInvariant(),
-                    v => v
-                );
-                //if the param is an lets make a dictionary for all it's potential parameters
-                var objectParamValidationDict = parameterInfo
-                    .Where(x => x.ParameterType.GetTypeInfo().IsClass)
-                    .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
-                    .GroupBy(
-                        i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2)}".ToLowerInvariant()
-                    )
-                    .ToDictionary(k => k.Key, v => v.First());
-                foreach (var match in parameterizedParts)
+                if(string.IsNullOrEmpty(relativePath))
+                    return (ret, new List<ParameterFragment>());
+
+                return (ret, new List<ParameterFragment>(){ParameterFragment.Constant(relativePath)});
+            }
+
+            var paramValidationDict = parameterInfo.ToDictionary(
+                k => GetUrlNameForParameter(k).ToLowerInvariant(),
+                v => v
+            );
+            //if the param is an lets make a dictionary for all it's potential parameters
+            var objectParamValidationDict = parameterInfo
+                .Where(x => x.ParameterType.GetTypeInfo().IsClass)
+                .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
+                .GroupBy(
+                    i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2)}".ToLowerInvariant()
+                )
+                .ToDictionary(k => k.Key, v => v.First());
+
+            var fragmentList = new List<ParameterFragment>();
+            var index = 0;
+            foreach (var match in parameterizedParts)
+            {
+                // Add constant value from given http path
+                if (match.Index != index)
                 {
-                    var rawName = match.Groups[1].Value.ToLowerInvariant();
-                    var isRoundTripping = rawName.StartsWith("**");
-                    string name;
-                    if (isRoundTripping)
+                    fragmentList.Add(ParameterFragment.Constant(relativePath.Substring(index, match.Index - index)));
+                }
+                index = match.Index + match.Length;
+
+                var rawName = match.Groups[1].Value.ToLowerInvariant();
+                var isRoundTripping = rawName.StartsWith("**");
+                var name = isRoundTripping ? rawName.Substring(2) : rawName;
+
+                if (paramValidationDict.TryGetValue(name, out var value)) //if it's a standard parameter
+                {
+                    var paramType = value.ParameterType;
+                    if (isRoundTripping && paramType != typeof(string))
                     {
-                        name = rawName.Substring(2);
+                        throw new ArgumentException(
+                            $"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.FullName}. It must be a string."
+                        );
+                    }
+                    var parameterType = isRoundTripping
+                        ? ParameterType.RoundTripping
+                        : ParameterType.Normal;
+                    var restMethodParameterInfo = new RestMethodParameterInfo(name, value)
+                    {
+                        Type = parameterType
+                    };
+
+                    var parameterIndex = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
+                    fragmentList.Add(ParameterFragment.Dynamic(parameterIndex));
+#if NET6_0_OR_GREATER
+                    ret.TryAdd(
+                        parameterIndex,
+                        restMethodParameterInfo
+                    );
+#else
+                    if (!ret.ContainsKey(parameterIndex))
+                    {
+                        ret.Add(parameterIndex, restMethodParameterInfo);
+                    }
+#endif
+                }
+                //else if it's a property on a object parameter
+                else if (
+                    objectParamValidationDict.TryGetValue(name, out var value1)
+                    && !isRoundTripping
+                )
+                {
+                    var property = value1;
+                    var parameterIndex = Array.IndexOf(parameterInfo, property.Item1);
+                    //If we already have this parameter, add additional ParameterProperty
+                    if (ret.TryGetValue(parameterIndex, out var value2))
+                    {
+                        if (!value2.IsObjectPropertyParameter)
+                        {
+                            throw new ArgumentException(
+                                $"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object"
+                            );
+                        }
+
+                        value2.ParameterProperties.Add(
+                            new RestMethodParameterProperty(name, property.Item2)
+                        );
+                        fragmentList.Add(ParameterFragment.DynamicObject(parameterIndex, value2.ParameterProperties.Count - 1));
                     }
                     else
                     {
-                        name = rawName;
-                    }
+                        var restMethodParameterInfo = new RestMethodParameterInfo(
+                            true,
+                            property.Item1
+                        );
+                        restMethodParameterInfo.ParameterProperties.Add(
+                            new RestMethodParameterProperty(name, property.Item2)
+                        );
 
-                    if (paramValidationDict.TryGetValue(name, out var value)) //if it's a standard parameter
-                    {
-                        var paramType = value.ParameterType;
-                        if (isRoundTripping && paramType != typeof(string))
-                        {
-                            throw new ArgumentException(
-                                $"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.FullName}. It must be a string."
-                            );
-                        }
-                        var parameterType = isRoundTripping
-                            ? ParameterType.RoundTripping
-                            : ParameterType.Normal;
-                        var restMethodParameterInfo = new RestMethodParameterInfo(name, value)
-                        {
-                            Type = parameterType
-                        };
+                        var idx = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
+                        fragmentList.Add(ParameterFragment.DynamicObject(idx, 0));
 #if NET6_0_OR_GREATER
                         ret.TryAdd(
-                            Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo),
+                            idx,
                             restMethodParameterInfo
                         );
 #else
-                        var idx = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
+                        // Do the contains check
                         if (!ret.ContainsKey(idx))
                         {
                             ret.Add(idx, restMethodParameterInfo);
                         }
 #endif
                     }
-                    //else if it's a property on a object parameter
-                    else if (
-                        objectParamValidationDict.TryGetValue(name, out var value1)
-                        && !isRoundTripping
-                    )
-                    {
-                        var property = value1;
-                        var parameterIndex = Array.IndexOf(parameterInfo, property.Item1);
-                        //If we already have this parameter, add additional ParameterProperty
-                        if (ret.TryGetValue(parameterIndex, out var value2))
-                        {
-                            if (!value2.IsObjectPropertyParameter)
-                            {
-                                throw new ArgumentException(
-                                    $"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object"
-                                );
-                            }
-
-                            value2.ParameterProperties.Add(
-                                new RestMethodParameterProperty(name, property.Item2)
-                            );
-                        }
-                        else
-                        {
-                            var restMethodParameterInfo = new RestMethodParameterInfo(
-                                true,
-                                property.Item1
-                            );
-                            restMethodParameterInfo.ParameterProperties.Add(
-                                new RestMethodParameterProperty(name, property.Item2)
-                            );
-#if NET6_0_OR_GREATER
-                            ret.TryAdd(
-                                Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo),
-                                restMethodParameterInfo
-                            );
-#else
-                            // Do the contains check
-                            var idx = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
-                            if (!ret.ContainsKey(idx))
-                            {
-                                ret.Add(idx, restMethodParameterInfo);
-                            }
-#endif
-                        }
-                    }
-                    else
-                    {
-                        throw new ArgumentException(
-                            $"URL {relativePath} has parameter {rawName}, but no method parameter matches"
-                        );
-                    }
+                }
+                else
+                {
+                    throw new ArgumentException(
+                        $"URL {relativePath} has parameter {rawName}, but no method parameter matches"
+                    );
                 }
             }
-            return ret;
+
+            // add trailing string
+            if (index < relativePath.Length - 1)
+            {
+                var s = relativePath.Substring(index, relativePath.Length - index);
+                fragmentList.Add(ParameterFragment.Constant(s));
+            }
+            return (ret, fragmentList);
         }
 
         static string GetUrlNameForParameter(ParameterInfo paramInfo)
@@ -663,5 +680,16 @@ namespace Refit
                 && DeserializedResultType != typeof(HttpContent)
                 && DeserializedResultType != typeof(Stream);
         }
+    }
+
+    internal record struct ParameterFragment(string? Value, int ArgumentIndex, int PropertyIndex)
+    {
+        public bool IsConstant => Value != null;
+        public bool IsDynamicRoute => ArgumentIndex >= 0 && PropertyIndex < 0;
+        public bool IsObjectProperty => ArgumentIndex >= 0 && PropertyIndex >= 0;
+
+        public static ParameterFragment Constant(string value) => new (value, -1, -1);
+        public static ParameterFragment Dynamic(int index) => new (null, index, -1);
+        public static ParameterFragment DynamicObject(int index, int propertyIndex) => new (null, index, propertyIndex);
     }
 }

@@ -393,6 +393,11 @@ namespace Refit
         public System.Net.Http.HttpContent ToHttpContent<T>(T item) { }
         public static System.Text.Json.JsonSerializerOptions GetDefaultJsonSerializerOptions() { }
     }
+    public class UnreachableException : System.Exception
+    {
+        public UnreachableException() { }
+        public UnreachableException(string message) { }
+    }
     [System.Serializable]
     public class ValidationApiException : Refit.ApiException
     {
