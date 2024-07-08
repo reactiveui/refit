@@ -65,7 +65,8 @@ namespace Refit
                     // see if there's a query attribute
                     var attrib = property.GetCustomAttribute<QueryAttribute>(true);
 
-                    if (value is not IEnumerable enumerable)
+                    // add strings/non enumerable properties
+                    if (value is not IEnumerable enumerable || value is string)
                     {
                         Add(
                             fieldName,

@@ -12,16 +12,21 @@
   <ItemGroup>
     <EmbeddedResource Include="Test Files\Test.pdf" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="PublicApiGenerator" Version="*" />
+    <PackageReference Include="Verify.Xunit" Version="*" />
+  </ItemGroup>
   
   <ItemGroup>
     <PackageReference Include="coverlet.msbuild" Version="6.0.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
     <PackageReference Include="xunit" Version="2.8.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1" />
-    <PackageReference Include="System.Reactive" Version="6.0.1" />    
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2-beta1.24314.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
     <PackageReference Include="RichardSzalay.MockHttp" Version="6.0.0" />
     <ProjectReference Include="..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
     <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
