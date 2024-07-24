@@ -649,67 +649,12 @@ namespace Refit
                         parameterInfo = parameterMapValue;
                         if (parameterInfo.IsObjectPropertyParameter)
                         {
-                            foreach (var propertyInfo in parameterInfo.ParameterProperties)
-                            {
-                                var propertyObject = propertyInfo.PropertyInfo.GetValue(param);
-                                urlTarget = Regex.Replace(
-                                    urlTarget,
-                                    "{" + propertyInfo.Name + "}",
-                                    Uri.EscapeDataString(
-                                        settings.UrlParameterFormatter.Format(
-                                            propertyObject,
-                                            propertyInfo.PropertyInfo,
-                                            propertyInfo.PropertyInfo.PropertyType
-                                        ) ?? string.Empty
-                                    ),
-                                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
-                                );
-                            }
+                            urlTarget = AddObjectParametersToUrl(parameterInfo, param, urlTarget);
                             //don't continue here as we want it to fall through so any parameters on this object not bound here get passed as query parameters
                         }
                         else
                         {
-                            string pattern;
-                            string replacement;
-                            if (parameterMapValue.Type == ParameterType.RoundTripping)
-                            {
-                                pattern = $@"{{\*\*{parameterMapValue.Name}}}";
-                                var paramValue = (string)param;
-                                replacement = string.Join(
-                                    "/",
-                                    paramValue
-                                        .Split('/')
-                                        .Select(
-                                            s =>
-                                                Uri.EscapeDataString(
-                                                    settings.UrlParameterFormatter.Format(
-                                                        s,
-                                                        restMethod.ParameterInfoArray[i],
-                                                        restMethod.ParameterInfoArray[i].ParameterType
-                                                    ) ?? string.Empty
-                                                )
-                                        )
-                                );
-                            }
-                            else
-                            {
-                                pattern = "{" + parameterMapValue.Name + "}";
-                                replacement = Uri.EscapeDataString(
-                                    settings.UrlParameterFormatter.Format(
-                                        param,
-                                        restMethod.ParameterInfoArray[i],
-                                        restMethod.ParameterInfoArray[i].ParameterType
-                                    ) ?? string.Empty
-                                );
-                            }
-
-                            urlTarget = Regex.Replace(
-                                urlTarget,
-                                pattern,
-                                replacement,
-                                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
-                            );
-
+                            urlTarget = AddValueParameterToUrl(restMethod, parameterMapValue, param, i, urlTarget);
                             isParameterMappedToRequest = true;
                         }
                     }
@@ -721,7 +666,6 @@ namespace Refit
                     )
                     {
                         AddBodyToRequest(restMethod, param, ret);
-
                         isParameterMappedToRequest = true;
                     }
 
@@ -784,7 +728,6 @@ namespace Refit
                     )
                     {
                         AddQueryParameters(restMethod, queryAttribute, param, queryParamsToAdd, i, parameterInfo);
-
                         continue;
                     }
 
@@ -816,6 +759,74 @@ namespace Refit
                 );
                 return ret;
             };
+        }
+
+        string AddObjectParametersToUrl(RestMethodParameterInfo parameterInfo, object param, string urlTarget)
+        {
+            foreach (var propertyInfo in parameterInfo.ParameterProperties)
+            {
+                var propertyObject = propertyInfo.PropertyInfo.GetValue(param);
+                urlTarget = Regex.Replace(
+                    urlTarget,
+                    "{" + propertyInfo.Name + "}",
+                    Uri.EscapeDataString(
+                        settings.UrlParameterFormatter.Format(
+                            propertyObject,
+                            propertyInfo.PropertyInfo,
+                            propertyInfo.PropertyInfo.PropertyType
+                        ) ?? string.Empty
+                    ),
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
+                );
+            }
+
+            return urlTarget;
+        }
+
+        string AddValueParameterToUrl(RestMethodInfoInternal restMethod, RestMethodParameterInfo parameterMapValue,
+            object param, int i, string urlTarget)
+        {
+            string pattern;
+            string replacement;
+            if (parameterMapValue.Type == ParameterType.RoundTripping)
+            {
+                pattern = $@"{{\*\*{parameterMapValue.Name}}}";
+                var paramValue = (string)param;
+                replacement = string.Join(
+                    "/",
+                    paramValue
+                        .Split('/')
+                        .Select(
+                            s =>
+                                Uri.EscapeDataString(
+                                    settings.UrlParameterFormatter.Format(
+                                        s,
+                                        restMethod.ParameterInfoArray[i],
+                                        restMethod.ParameterInfoArray[i].ParameterType
+                                    ) ?? string.Empty
+                                )
+                        )
+                );
+            }
+            else
+            {
+                pattern = "{" + parameterMapValue.Name + "}";
+                replacement = Uri.EscapeDataString(
+                    settings.UrlParameterFormatter.Format(
+                        param,
+                        restMethod.ParameterInfoArray[i],
+                        restMethod.ParameterInfoArray[i].ParameterType
+                    ) ?? string.Empty
+                );
+            }
+
+            urlTarget = Regex.Replace(
+                urlTarget,
+                pattern,
+                replacement,
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant
+            );
+            return urlTarget;
         }
 
         void AddBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
@@ -940,11 +951,7 @@ namespace Refit
             }
 
             // Check to see if it's an IEnumerable
-            var itemValue = param;
-            var enumerable = itemValue as IEnumerable<object>;
-            var typeIsCollection = enumerable != null;
-
-            if (typeIsCollection)
+            if (param is IEnumerable<object> enumerable)
             {
                 foreach (var item in enumerable!)
                 {
@@ -953,7 +960,7 @@ namespace Refit
             }
             else
             {
-                AddMultipartItem(multiPartContent!, itemName, parameterName, itemValue);
+                AddMultipartItem(multiPartContent!, itemName, parameterName, param);
             }
         }
 
