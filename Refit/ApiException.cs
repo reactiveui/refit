@@ -53,6 +53,9 @@ namespace Refit
         /// <summary>
         /// Does the response have content?
         /// </summary>
+        #if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Content))]
+        #endif
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
 
         /// <summary>
