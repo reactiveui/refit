@@ -53,7 +53,7 @@ public class DefaultUrlParameterFormatterTests
     }
 
     [Fact]
-    public void QueryAttributeFormatOnly_FormattedByQueryAttribute()
+    public void QueryAttributeFormatOnly_UseQueryAttributeFormat()
     {
         var parameters = new DateTimeRequestWithQueryAttribute
         {
@@ -71,7 +71,7 @@ public class DefaultUrlParameterFormatterTests
     }
 
     [Fact]
-    public void QueryAttributeAndGeneralFormats_FormattedByQueryAttribute()
+    public void QueryAttributeAndGeneralFormat_UseQueryAttributeFormat()
     {
         var parameters = new DateTimeRequestWithQueryAttribute
         {
@@ -90,7 +90,7 @@ public class DefaultUrlParameterFormatterTests
     }
 
     [Fact]
-    public void QueryAttributeAndSpecificFormats_FormattedByQueryAttribute()
+    public void QueryAttributeAndSpecificFormat_UseQueryAttributeFormat()
     {
         var parameters = new DateTimeRequestWithQueryAttribute
         {
@@ -109,7 +109,7 @@ public class DefaultUrlParameterFormatterTests
     }
 
     [Fact]
-    public void AllFormats_FormattedByQueryAttribute()
+    public void AllFormats_UseQueryAttributeFormat()
     {
         var parameters = new DateTimeRequestWithQueryAttribute
         {
@@ -129,7 +129,7 @@ public class DefaultUrlParameterFormatterTests
     }
 
     [Fact]
-    public void GeneralFormatOnly_FormattedByGeneralFormat()
+    public void GeneralFormatOnly_UseGeneralFormat()
     {
         var parameters = new DateTimeRequestWithoutQueryAttribute
         {
@@ -148,7 +148,7 @@ public class DefaultUrlParameterFormatterTests
     }
 
     [Fact]
-    public void SpecificFormatOnly_FormattedBySpecificFormat()
+    public void SpecificFormatOnly_UseSpecificFormat()
     {
         var parameters = new DateTimeRequestWithoutQueryAttribute
         {
@@ -167,7 +167,7 @@ public class DefaultUrlParameterFormatterTests
     }
 
     [Fact]
-    public void GeneralAndSpecificFormats_FormattedBySpecificFormat()
+    public void GeneralAndSpecificFormats_UseSpecificFormat()
     {
         var parameters = new DateTimeRequestWithoutQueryAttribute
         {
