@@ -20,7 +20,7 @@
         <PackageReference Include="System.Collections.Immutable" Version="9.0.0-preview.5.24306.7" />
         <PackageReference Include="Verify.DiffPlex" Version="3.1.0" />
         <PackageReference Include="Verify.SourceGenerators" Version="2.3.0" />
-        <PackageReference Include="Verify.Xunit" Version="22.11.5" />
+        <PackageReference Include="Verify.Xunit" Version="26.1.6" />
         <PackageReference Include="System.Reactive" Version="6.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
