@@ -40,7 +40,8 @@ namespace Refit
             IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter
         )
             : this(contentSerializer, urlParameterFormatter, formUrlEncodedParameterFormatter, null)
-        { }
+        {
+        }
 
         /// <summary>
         /// Creates a new <see cref="RefitSettings"/> instance with the specified parameters
@@ -245,6 +246,11 @@ namespace Refit
                 throw new ArgumentNullException(nameof(attributeProvider));
             }
 
+            if (parameterValue == null)
+            {
+                return null;
+            }
+
             // See if we have a format
             var formatString = attributeProvider
                 .GetCustomAttributes(typeof(QueryAttribute), true)
@@ -252,34 +258,29 @@ namespace Refit
                 .FirstOrDefault()
                 ?.Format;
 
-            EnumMemberAttribute? enummember = null;
-            if (parameterValue != null)
+            EnumMemberAttribute? enumMember = null;
+            var parameterType = parameterValue.GetType();
+            if (parameterType.IsEnum)
             {
-                var parameterType = parameterValue.GetType();
-                if (parameterType.IsEnum)
-                {
-                    var cached = EnumMemberCache.GetOrAdd(
-                        parameterType,
-                        t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
-                    );
-                    enummember = cached.GetOrAdd(
-                        parameterValue.ToString()!,
-                        val =>
-                            parameterType
-                                .GetMember(val)
-                                .First()
-                                .GetCustomAttribute<EnumMemberAttribute>()
-                    );
-                }
+                var cached = EnumMemberCache.GetOrAdd(
+                    parameterType,
+                    t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
+                );
+                enumMember = cached.GetOrAdd(
+                    parameterValue.ToString()!,
+                    val =>
+                        parameterType
+                            .GetMember(val)
+                            .First()
+                            .GetCustomAttribute<EnumMemberAttribute>()
+                );
             }
 
-            return parameterValue == null
-                ? null
-                : string.Format(
-                    CultureInfo.InvariantCulture,
-                    string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
-                    enummember?.Value ?? parameterValue
-                );
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
+                enumMember?.Value ?? parameterValue
+            );
         }
     }
 
@@ -302,18 +303,20 @@ namespace Refit
         public virtual string? Format(object? parameterValue, string? formatString)
         {
             if (parameterValue == null)
+            {
                 return null;
+            }
 
             var parameterType = parameterValue.GetType();
 
-            EnumMemberAttribute? enummember = null;
+            EnumMemberAttribute? enumMember = null;
             if (parameterType.GetTypeInfo().IsEnum)
             {
                 var cached = EnumMemberCache.GetOrAdd(
                     parameterType,
                     t => new ConcurrentDictionary<string, EnumMemberAttribute?>()
                 );
-                enummember = cached.GetOrAdd(
+                enumMember = cached.GetOrAdd(
                     parameterValue.ToString()!,
                     val =>
                         parameterType
@@ -326,7 +329,7 @@ namespace Refit
             return string.Format(
                 CultureInfo.InvariantCulture,
                 string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
-                enummember?.Value ?? parameterValue
+                enumMember?.Value ?? parameterValue
             );
         }
     }
