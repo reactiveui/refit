@@ -6,29 +6,26 @@ namespace Refit.Tests;
 
 public class DefaultUrlParameterFormatterTests
 {
-    class DateTimeRequestWithQueryAttribute
+    class DefaultUrlParameterFormatterTestRequest
     {
-        [Query(Format = "yyyy")] public DateTime? DateTimeYear { get; set; }
-    }
+        [Query(Format = "yyyy")] public DateTime? DateTimeWithAttributeFormatYear { get; set; }
 
-    class DateTimeRequestWithoutQueryAttribute
-    {
-        public DateTime DateTime { get; set; }
+        public DateTime? DateTime { get; set; }
     }
 
     [Fact]
     public void NullParameterValue_ReturnsNull()
     {
-        var parameters = new DateTimeRequestWithQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
-            DateTimeYear = null
+            DateTime = null
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
 
         var output = urlParameterFormatter.Format(
-            parameters.DateTimeYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeYear))!,
+            parameters.DateTime,
+            parameters.GetType().GetProperty(nameof(parameters.DateTime))!,
             parameters.GetType());
 
         Assert.Null(output);
@@ -37,7 +34,7 @@ public class DefaultUrlParameterFormatterTests
     [Fact]
     public void NoFormatters_UseDefaultFormat()
     {
-        var parameters = new DateTimeRequestWithoutQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
             DateTime = new DateTime(2023, 8, 21)
         };
@@ -55,16 +52,16 @@ public class DefaultUrlParameterFormatterTests
     [Fact]
     public void QueryAttributeFormatOnly_UseQueryAttributeFormat()
     {
-        var parameters = new DateTimeRequestWithQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
-            DateTimeYear = new DateTime(2023, 8, 21)
+            DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21)
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
 
         var output = urlParameterFormatter.Format(
-            parameters.DateTimeYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeYear))!,
+            parameters.DateTimeWithAttributeFormatYear,
+            parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!,
             parameters.GetType());
 
         Assert.Equal("2023", output);
@@ -73,17 +70,17 @@ public class DefaultUrlParameterFormatterTests
     [Fact]
     public void QueryAttributeAndGeneralFormat_UseQueryAttributeFormat()
     {
-        var parameters = new DateTimeRequestWithQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
-            DateTimeYear = new DateTime(2023, 8, 21)
+            DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21)
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DateTime>("yyyy-MM-dd");
 
         var output = urlParameterFormatter.Format(
-            parameters.DateTimeYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeYear))!,
+            parameters.DateTimeWithAttributeFormatYear,
+            parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!,
             parameters.GetType());
 
         Assert.Equal("2023", output);
@@ -92,17 +89,17 @@ public class DefaultUrlParameterFormatterTests
     [Fact]
     public void QueryAttributeAndSpecificFormat_UseQueryAttributeFormat()
     {
-        var parameters = new DateTimeRequestWithQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
-            DateTimeYear = new DateTime(2023, 8, 21)
+            DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21)
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
-        urlParameterFormatter.AddFormat<DateTimeRequestWithQueryAttribute, DateTime>("yyyy-MM-dd");
+        urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>("yyyy-MM-dd");
 
         var output = urlParameterFormatter.Format(
-            parameters.DateTimeYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeYear))!,
+            parameters.DateTimeWithAttributeFormatYear,
+            parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!,
             parameters.GetType());
 
         Assert.Equal("2023", output);
@@ -111,18 +108,18 @@ public class DefaultUrlParameterFormatterTests
     [Fact]
     public void AllFormats_UseQueryAttributeFormat()
     {
-        var parameters = new DateTimeRequestWithQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
-            DateTimeYear = new DateTime(2023, 8, 21)
+            DateTimeWithAttributeFormatYear = new DateTime(2023, 8, 21)
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DateTime>("yyyy-MM-dd");
-        urlParameterFormatter.AddFormat<DateTimeRequestWithoutQueryAttribute, DateTime>("yyyy-MM-dd");
+        urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>("yyyy-MM-dd");
 
         var output = urlParameterFormatter.Format(
-            parameters.DateTimeYear,
-            parameters.GetType().GetProperty(nameof(parameters.DateTimeYear))!,
+            parameters.DateTimeWithAttributeFormatYear,
+            parameters.GetType().GetProperty(nameof(parameters.DateTimeWithAttributeFormatYear))!,
             parameters.GetType());
 
         Assert.Equal("2023", output);
@@ -131,7 +128,7 @@ public class DefaultUrlParameterFormatterTests
     [Fact]
     public void GeneralFormatOnly_UseGeneralFormat()
     {
-        var parameters = new DateTimeRequestWithoutQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
             DateTime = new DateTime(2023, 8, 21)
         };
@@ -150,13 +147,13 @@ public class DefaultUrlParameterFormatterTests
     [Fact]
     public void SpecificFormatOnly_UseSpecificFormat()
     {
-        var parameters = new DateTimeRequestWithoutQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
             DateTime = new DateTime(2023, 8, 21)
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
-        urlParameterFormatter.AddFormat<DateTimeRequestWithoutQueryAttribute, DateTime>("yyyy");
+        urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>("yyyy");
 
         var output = urlParameterFormatter.Format(
             parameters.DateTime,
@@ -169,14 +166,14 @@ public class DefaultUrlParameterFormatterTests
     [Fact]
     public void GeneralAndSpecificFormats_UseSpecificFormat()
     {
-        var parameters = new DateTimeRequestWithoutQueryAttribute
+        var parameters = new DefaultUrlParameterFormatterTestRequest
         {
             DateTime = new DateTime(2023, 8, 21)
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         urlParameterFormatter.AddFormat<DateTime>("yyyy-MM-dd");
-        urlParameterFormatter.AddFormat<DateTimeRequestWithoutQueryAttribute, DateTime>("yyyy");
+        urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>("yyyy");
 
         var output = urlParameterFormatter.Format(
             parameters.DateTime,
