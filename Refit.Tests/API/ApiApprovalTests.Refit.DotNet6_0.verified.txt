@@ -119,6 +119,8 @@ namespace Refit
     public class DefaultUrlParameterFormatter : Refit.IUrlParameterFormatter
     {
         public DefaultUrlParameterFormatter() { }
+        public void AddFormat<TParameter>(string format) { }
+        public void AddFormat<TContainer, TParameter>(string format) { }
         public virtual string? Format(object? parameterValue, System.Reflection.ICustomAttributeProvider attributeProvider, System.Type type) { }
     }
     public class DefaultUrlParameterKeyFormatter : Refit.IUrlParameterKeyFormatter
