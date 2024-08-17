@@ -1,6 +1,5 @@
-namespace Refit.GeneratorTests;
+﻿namespace Refit.GeneratorTests;
 
-[UsesVerify]
 public class ReturnTypeTests
 {
     [Fact]
