@@ -19,7 +19,7 @@
 
     <ItemGroup>
       <PackageReference Include="AutoFixture" Version="4.18.1" />
-      <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
+      <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
     </ItemGroup>
 
     <ItemGroup>

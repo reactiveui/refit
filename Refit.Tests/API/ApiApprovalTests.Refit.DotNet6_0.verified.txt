@@ -18,6 +18,8 @@ namespace Refit
         protected ApiException(string exceptionMessage, System.Net.Http.HttpRequestMessage message, System.Net.Http.HttpMethod httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders headers, Refit.RefitSettings refitSettings, System.Exception? innerException = null) { }
         public string? Content { get; }
         public System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
         public bool HasContent { get; }
         public System.Net.Http.Headers.HttpResponseHeaders Headers { get; }
         public System.Net.Http.HttpMethod HttpMethod { get; }
