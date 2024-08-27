@@ -23,7 +23,7 @@
         <PackageReference Include="Verify.Xunit" Version="26.2.0" />
         <PackageReference Include="System.Reactive" Version="6.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
         <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
         <ProjectReference Include="..\Refit.Xml\Refit.Xml.csproj" />
