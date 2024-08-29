@@ -6,6 +6,7 @@ public class IncrementalTest
 {
     private const string DefaultInterface =
         """
+        #nullable enabled
         using System;
         using System.Collections.Generic;
         using System.Linq;
@@ -24,7 +25,7 @@ public class IncrementalTest
         }
         """;
 
-    // [Fact]
+    [Fact]
     public void AddUnrelatedTypeDoesntRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
@@ -38,7 +39,7 @@ public class IncrementalTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.Cached);
     }
 
-    // [Fact]
+    [Fact]
     public void SmallChangeDoesntRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
@@ -63,7 +64,7 @@ public class IncrementalTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.Cached);
     }
 
-    // [Fact]
+    [Fact]
     public void AddNewMemberDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);

@@ -6,6 +6,7 @@ public class FunctionTest
 {
     private const string DefaultInterface =
         """
+        #nullable enabled
         using System;
         using System.Collections.Generic;
         using System.Linq;
@@ -24,7 +25,28 @@ public class FunctionTest
         }
         """;
 
-    // [Fact]
+    private const string ReturnValueInterface =
+        """
+        #nullable enabled
+        using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Net.Http;
+        using System.Text;
+        using System.Threading;
+        using System.Threading.Tasks;
+        using Refit;
+
+        namespace RefitGeneratorTest;
+
+        public interface IGitHubApi
+        {
+            [Get("/users/{user}")]
+            Task<int> GetUser(string user);
+        }
+        """;
+
+    [Fact]
     public void ModifyParameterNameDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
@@ -48,7 +70,7 @@ public class FunctionTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
+    [Fact]
     public void ModifyParameterTypeDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
@@ -72,7 +94,7 @@ public class FunctionTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
+    [Fact]
     public void ModifyParameterNullabilityDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
@@ -96,7 +118,7 @@ public class FunctionTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
+    [Fact]
     public void AddParameterDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
@@ -120,7 +142,7 @@ public class FunctionTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
+    [Fact]
     public void ModifyReturnTypeDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
@@ -144,8 +166,8 @@ public class FunctionTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
-    public void ModifyReturnNullabilityDoesRegenerate()
+    [Fact]
+    public void ModifyReturnObjectNullabilityDoesNotRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
         var compilation1 = Fixture.CreateLibrary(syntaxTree);
@@ -165,10 +187,34 @@ public class FunctionTest
         var compilation2 = TestHelper.ReplaceMemberDeclaration(compilation1, "IGitHubApi", newInterface);
 
         var driver2 = driver1.RunGenerators(compilation2);
+        TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.Cached);
+    }
+
+    [Fact]
+    public void ModifyReturnValueNullabilityDoesRegenerate()
+    {
+        var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
+        var compilation1 = Fixture.CreateLibrary(syntaxTree);
+
+        var driver1 = TestHelper.GenerateTracked(compilation1);
+        TestHelper.AssertRunReasons(driver1, IncrementalGeneratorRunReasons.New);
+
+        // change return nullability
+        var newInterface =
+            """
+            public interface IGitHubApi
+            {
+                [Get("/users/{user}")]
+                Task<int?> GetUser(string user);
+            }
+            """;
+        var compilation2 = TestHelper.ReplaceMemberDeclaration(compilation1, "IGitHubApi", newInterface);
+
+        var driver2 = driver1.RunGenerators(compilation2);
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
+    [Fact]
     public void AddNonRefitMethodDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(DefaultInterface, CSharpParseOptions.Default);
