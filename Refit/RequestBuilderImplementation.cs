@@ -737,9 +737,9 @@ namespace Refit
                 AddHeadersToRequest(headersToAdd, ret);
 
                 AddPropertiesToRequest(restMethod, ret, paramList);
-
+#if NET6_0_OR_GREATER
                 AddVersionToRequest(ret);
-
+#endif
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
