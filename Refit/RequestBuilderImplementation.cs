@@ -738,6 +738,8 @@ namespace Refit
 
                 AddPropertiesToRequest(restMethod, ret, paramList);
 
+                AddVersionToRequest(ret);
+
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
@@ -1029,6 +1031,14 @@ namespace Refit
             ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
             ret.Properties[HttpRequestMessageOptions.RestMethodInfo] =
                 restMethod.ToRestMethodInfo();
+#endif
+        }
+
+        static void AddVersionToRequest(HttpRequestMessage ret)
+        {
+#if NET6_0_OR_GREATER
+            ret.Version = settings.Version;
+            ret.VersionPolicy = settings.VersionPolicy;
 #endif
         }
 
