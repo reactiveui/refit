@@ -10,4 +10,5 @@ else
     BenchmarkRunner.Run<EndToEndBenchmark>();
     // BenchmarkRunner.Run<StartupBenchmark>();
     // BenchmarkRunner.Run<PerformanceBenchmark>();
+    // BenchmarkRunner.Run<SourceGeneratorBenchmark>();
 }
