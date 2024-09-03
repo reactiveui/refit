@@ -54,7 +54,7 @@ public static class Fixture
               }
               """;
 
-        return VerifyGenerator(source);
+        return VerifyGenerator(source, ignoreNonInterfaces);
     }
 
     public static Task VerifyForType(string declarations)
