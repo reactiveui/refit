@@ -57,6 +57,46 @@ public static class Fixture
         return VerifyGenerator(source);
     }
 
+    public static Task VerifyForType(string declarations)
+    {
+        var source =
+            $$"""
+              using System;
+              using System.Collections.Generic;
+              using System.Linq;
+              using System.Net.Http;
+              using System.Text;
+              using System.Threading;
+              using System.Threading.Tasks;
+              using Refit;
+
+              namespace RefitGeneratorTest;
+
+              {{declarations}}
+              """;
+
+        return VerifyGenerator(source);
+    }
+
+    public static Task VerifyForDeclaration(string declarations)
+    {
+        var source =
+            $$"""
+              using System;
+              using System.Collections.Generic;
+              using System.Linq;
+              using System.Net.Http;
+              using System.Text;
+              using System.Threading;
+              using System.Threading.Tasks;
+              using Refit;
+
+              {{declarations}}
+              """;
+
+        return VerifyGenerator(source);
+    }
+
     private static CSharpCompilation CreateLibrary(params string[] source)
     {
         var references = new List<MetadataReference>();
