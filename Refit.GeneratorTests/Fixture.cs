@@ -33,7 +33,7 @@ public static class Fixture
             .Where(a => !a.IsDynamic)
             .ToArray();
 
-    public static Task VerifyForBody(string body)
+    public static Task VerifyForBody(string body, bool ignoreNonInterfaces = true)
     {
         var source =
             $$"""
@@ -54,7 +54,7 @@ public static class Fixture
               }
               """;
 
-        return VerifyGenerator(source);
+        return VerifyGenerator(source, ignoreNonInterfaces);
     }
 
     public static Task VerifyForType(string declarations)
@@ -120,7 +120,7 @@ public static class Fixture
         return compilation;
     }
 
-    private static Task<VerifyResult> VerifyGenerator(string source)
+    private static Task<VerifyResult> VerifyGenerator(string source, bool ignoreNonInterfaces = true)
     {
         var compilation = CreateLibrary(source);
 
@@ -129,7 +129,13 @@ public static class Fixture
 
         var ranDriver = driver.RunGenerators(compilation);
         var settings = new VerifySettings();
-        var verify = VerifyXunit.Verifier.Verify(ranDriver, settings);
+        if (ignoreNonInterfaces)
+        {
+            settings.IgnoreGeneratedResult(x => x.HintName.Contains("PreserveAttribute.g.cs", StringComparison.Ordinal));
+            settings.IgnoreGeneratedResult(x => x.HintName.Contains("Generated.g.cs", StringComparison.Ordinal));
+        }
+
+        var verify = Verify(ranDriver, settings);
         return verify.ToTask();
     }
 }
