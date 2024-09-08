@@ -1034,7 +1034,7 @@ namespace Refit
 #endif
         }
 
-        static void AddVersionToRequest(HttpRequestMessage ret)
+        void AddVersionToRequest(HttpRequestMessage ret)
         {
 #if NET6_0_OR_GREATER
             ret.Version = settings.Version;
