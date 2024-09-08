@@ -335,6 +335,8 @@ namespace Refit
         public System.Collections.Generic.Dictionary<string, object>? HttpRequestMessageOptions { get; set; }
         public Refit.IUrlParameterFormatter UrlParameterFormatter { get; set; }
         public Refit.IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
+        public Version Version { get; set; }
+        public System.Net.Http.HttpVersionPolicy VersionPolicy { get; set; }
     }
     public static class RequestBuilder
     {
