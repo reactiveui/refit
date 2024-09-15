@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Serialization;
@@ -127,6 +128,12 @@ namespace Refit
         /// Optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.
         /// </summary>
         public Dictionary<string, object>? HttpRequestMessageOptions { get; set; }
+
+#if NET6_0_OR_GREATER
+        public Version Version { get; set; } = HttpVersion.Version11;
+
+        public System.Net.Http.HttpVersionPolicy VersionPolicy { get; set; } = HttpVersionPolicy.RequestVersionOrLower;
+#endif
     }
 
     /// <summary>
