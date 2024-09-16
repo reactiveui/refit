@@ -40,6 +40,7 @@ public class InterfaceTests
     [Fact]
     public Task RefitInterfaceDerivedFromBaseTest()
     {
+        // this currently generates invalid code see issue #1801 for more information
         return Fixture.VerifyForType(
             """
             public interface IGeneratedInterface : IBaseInterface
