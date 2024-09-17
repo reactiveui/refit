@@ -19,7 +19,7 @@ public class InterfaceTests
     }
 
     [Fact]
-    public Task DerivedRefitInterfaceTest()
+    public Task RefitInterfaceDerivedFromRefitBaseTest()
     {
         return Fixture.VerifyForType(
             """
@@ -38,8 +38,9 @@ public class InterfaceTests
     }
 
     [Fact]
-    public Task DerivedNonRefitInterfaceTest()
+    public Task RefitInterfaceDerivedFromBaseTest()
     {
+        // this currently generates invalid code see issue #1801 for more information
         return Fixture.VerifyForType(
             """
             public interface IGeneratedInterface : IBaseInterface
@@ -52,6 +53,21 @@ public class InterfaceTests
             {
                 void NonRefitMethod();
             }
+            """);
+    }
+
+    [Fact]
+    public Task InterfaceDerivedFromRefitBaseTest()
+    {
+        return Fixture.VerifyForType(
+            """
+            public interface IBaseInterface
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+
+            public interface IDerivedInterface : IBaseInterface { }
             """);
     }
 
