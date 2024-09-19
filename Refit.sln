@@ -28,7 +28,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Rosl
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "InterfaceStubGenerator.Shared", "InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.shproj", "{B591423D-F92D-4E00-B0EB-615C9853506C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Roslyn40", "InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj", "{A4B61169-3314-41DB-8156-BE9677C90C9F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Roslyn41", "InterfaceStubGenerator.Roslyn41\InterfaceStubGenerator.Roslyn41.csproj", "{A4B61169-3314-41DB-8156-BE9677C90C9F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.Xml", "Refit.Xml\Refit.Xml.csproj", "{C4E38B33-3D17-47A7-A47F-8F3900F07499}"
 EndProject
