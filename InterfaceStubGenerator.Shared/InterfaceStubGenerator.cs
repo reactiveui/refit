@@ -897,4 +897,10 @@ namespace Refit.Implementation
 
 #endif
     }
+
+    internal static class RefitGeneratorStepName
+    {
+        public const string ReportDiagnostics = "ReportDiagnostics";
+        public const string BuildRefit = "BuildRefit";
+    }
 }

@@ -97,7 +97,7 @@ public static class Fixture
         return VerifyGenerator(source);
     }
 
-    private static CSharpCompilation CreateLibrary(params string[] source)
+    public static CSharpCompilation CreateLibrary(params SyntaxTree[] source)
     {
         var references = new List<MetadataReference>();
         var assemblies = AssemblyReferencesForCodegen;
@@ -112,12 +112,17 @@ public static class Fixture
         references.Add(RefitAssembly);
         var compilation = CSharpCompilation.Create(
             "compilation",
-            source.Select(s => CSharpSyntaxTree.ParseText(s)),
+            source,
             references,
             new CSharpCompilationOptions(OutputKind.ConsoleApplication)
         );
 
         return compilation;
+    }
+
+    private static CSharpCompilation CreateLibrary(params string[] source)
+    {
+        return CreateLibrary(source.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray());
     }
 
     private static Task<VerifyResult> VerifyGenerator(string source, bool ignoreNonInterfaces = true)
