@@ -17,7 +17,7 @@
     <Reference Include="System.Web" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn40\InterfaceStubGenerator.Roslyn40.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn41\InterfaceStubGenerator.Roslyn41.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup Label="Package">
