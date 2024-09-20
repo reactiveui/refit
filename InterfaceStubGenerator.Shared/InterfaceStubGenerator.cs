@@ -119,6 +119,8 @@ namespace Refit.Generator
                 return;
             }
 
+            var refitMetadata = new RefitMetadata(disposableInterfaceSymbol, httpMethodBaseAttributeSymbol);
+
             // Check the candidates and keep the ones we're actually interested in
 
 #pragma warning disable RS1024 // Compare symbols correctly
@@ -134,7 +136,7 @@ namespace Refit.Generator
                 {
                     // Get the symbol being declared by the method
                     var methodSymbol = model.GetDeclaredSymbol(method);
-                    if (IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
+                    if (refitMetadata.IsRefitMethod(methodSymbol))
                     {
                         var isAnnotated =
                             compilation.Options.NullableContextOptions
@@ -170,9 +172,9 @@ namespace Refit.Generator
                         continue;
 
                     // The interface has no refit methods, but its base interfaces might
-                    var hasDerivedRefit = ifaceSymbol
-                        .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
-                        .Any(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol));
+                    var hasDerivedRefit = ifaceSymbol.AllInterfaces
+                                                     .SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
+                                                     .Any(refitMetadata.IsRefitMethod);
 
                     if (hasDerivedRefit)
                     {
@@ -276,20 +278,15 @@ namespace Refit.Implementation
                 // each group is keyed by the Interface INamedTypeSymbol and contains the members
                 // with a refit attribute on them. Types may contain other members, without the attribute, which we'll
                 // need to check for and error out on
-
-                var classSource = ProcessInterface(
-                    context,
-                    reportDiagnostic,
-                    group.Key,
-                    group.Value,
-                    preserveAttributeSymbol,
-                    disposableInterfaceSymbol,
-                    httpMethodBaseAttributeSymbol,
-                    supportsNullable,
-                    interfaceToNullableEnabledMap[group.Key]
-                );
-
-                var keyName = group.Key.Name;
+                var model = new RefitClientModel(group.Key, group.Value, refitMetadata);
+                var classSource = ProcessInterface(context,
+                                                   reportDiagnostic,
+                                                   model,
+                                                   preserveAttributeSymbol,
+                                                   supportsNullable,
+                                                   interfaceToNullableEnabledMap[model.RefitInterface]);
+             
+                var keyName = model.FileName;
                 int value;
                 while (keyCount.TryGetValue(keyName, out value))
                 {
@@ -304,39 +301,14 @@ namespace Refit.Implementation
         static string ProcessInterface<TContext>(
             TContext context,
             Action<TContext, Diagnostic> reportDiagnostic,
-            INamedTypeSymbol interfaceSymbol,
-            List<IMethodSymbol> refitMethods,
+            RefitClientModel interfaceModel,
             ISymbol preserveAttributeSymbol,
-            ISymbol disposableInterfaceSymbol,
-            INamedTypeSymbol httpMethodBaseAttributeSymbol,
             bool supportsNullable,
             bool nullableEnabled
         )
         {
-            // Get the class name with the type parameters, then remove the namespace
-            var className = interfaceSymbol.ToDisplayString();
-            var lastDot = className.LastIndexOf('.');
-            if (lastDot > 0)
-            {
-                className = className.Substring(lastDot + 1);
-            }
-            var classDeclaration = $"{interfaceSymbol.ContainingType?.Name}{className}";
-
-            // Get the class name itself
-            var classSuffix = $"{interfaceSymbol.ContainingType?.Name}{interfaceSymbol.Name}";
-            var ns = interfaceSymbol.ContainingNamespace?.ToDisplayString();
-
-            // if it's the global namespace, our lookup rules say it should be the same as the class name
-            if (
-                interfaceSymbol.ContainingNamespace != null
-                && interfaceSymbol.ContainingNamespace.IsGlobalNamespace
-            )
-            {
-                ns = string.Empty;
-            }
-
-            // Remove dots
-            ns = ns!.Replace(".", "");
+            INamedTypeSymbol interfaceSymbol = interfaceModel.RefitInterface;
+            List<IMethodSymbol> refitMethods = interfaceModel.RefitMethods;
 
             // See what the nullable context is
 
@@ -371,8 +343,8 @@ namespace Refit.Implementation
     [{preserveAttributeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}]
     [global::System.Reflection.Obfuscation(Exclude=true)]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    partial class {ns}{classDeclaration}
-        : {interfaceSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}{GenerateConstraints(interfaceSymbol.TypeParameters, false)}
+    partial class {interfaceModel.NamespacePrefix}{interfaceModel.ClassDeclaration}
+        : {interfaceModel.BaseInterfaceDeclaration}{GenerateConstraints(interfaceSymbol.TypeParameters, false)}
 
     {{
         /// <inheritdoc />
@@ -380,49 +352,13 @@ namespace Refit.Implementation
         readonly global::Refit.IRequestBuilder requestBuilder;
 
         /// <inheritdoc />
-        public {ns}{classSuffix}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
+        public {interfaceModel.NamespacePrefix}{interfaceModel.ClassSuffix}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
         {{
             Client = client;
             this.requestBuilder = requestBuilder;
         }}
 
-"
-            );
-            // Get any other methods on the refit interfaces. We'll need to generate something for them and warn
-            var nonRefitMethods = interfaceSymbol
-                .GetMembers()
-                .OfType<IMethodSymbol>()
-                .Except(refitMethods, SymbolEqualityComparer.Default)
-                .Cast<IMethodSymbol>()
-                .ToList();
-
-            // get methods for all inherited
-            var derivedMethods = interfaceSymbol
-                .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
-                .ToList();
-
-            // Look for disposable
-            var disposeMethod = derivedMethods.Find(
-                m =>
-                    m.ContainingType?.Equals(
-                        disposableInterfaceSymbol,
-                        SymbolEqualityComparer.Default
-                    ) == true
-            );
-            if (disposeMethod != null)
-            {
-                //remove it from the derived methods list so we don't process it with the rest
-                derivedMethods.Remove(disposeMethod);
-            }
-
-            // Pull out the refit methods from the derived types
-            var derivedRefitMethods = derivedMethods
-                .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
-                .ToList();
-            var derivedNonRefitMethods = derivedMethods
-                .Except(derivedMethods, SymbolEqualityComparer.Default)
-                .Cast<IMethodSymbol>()
-                .ToList();
+");
 
             var memberNames = new HashSet<string>(interfaceSymbol.GetMembers().Select(x => x.Name));
 
@@ -432,30 +368,22 @@ namespace Refit.Implementation
                 ProcessRefitMethod(source, method, true, memberNames);
             }
 
-            foreach (var method in refitMethods.Concat(derivedRefitMethods))
+            foreach (var method in interfaceModel.AllRefitMethods)
             {
                 ProcessRefitMethod(source, method, false, memberNames);
             }
 
             // Handle non-refit Methods that aren't static or properties or have a method body
-            foreach (var method in nonRefitMethods.Concat(derivedNonRefitMethods))
+            foreach (var method in interfaceModel.NonRefitMethods)
             {
-                if (
-                    method.IsStatic
-                    || method.MethodKind == MethodKind.PropertyGet
-                    || method.MethodKind == MethodKind.PropertySet
-                    || !method.IsAbstract
-                ) // If an interface method has a body, it won't be abstract
-                    continue;
-
                 ProcessNonRefitMethod(context, reportDiagnostic, source, method);
             }
 
             // Handle Dispose
-            if (disposeMethod != null)
+            if (interfaceModel.DisposeMethod != null)
             {
-                ProcessDisposableMethod(source, disposeMethod);
-            }
+                ProcessDisposableMethod(source, interfaceModel.DisposeMethod);
+            }          
 
             source.Append(
                 @"
@@ -777,14 +705,6 @@ namespace Refit.Implementation
 
             methodNames.Add(candidateName);
             return candidateName;
-        }
-
-        static bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttibute)
-        {
-            return methodSymbol
-                    ?.GetAttributes()
-                    .Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttibute) == true)
-                == true;
         }
 
 #if ROSLYN_4
