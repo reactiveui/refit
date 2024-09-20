@@ -15,7 +15,6 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System.Web" />
-    <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn41\InterfaceStubGenerator.Roslyn41.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
