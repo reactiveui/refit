@@ -259,6 +259,12 @@ namespace Refit
                 throw new ArgumentException(
                     $"URL path {relativePath} must start with '/' and be of the form '/foo/bar/baz'"
                 );
+
+            // CRLF injection protection
+            if (relativePath.Contains("\r") || relativePath.Contains("\n"))
+                throw new ArgumentException(
+                    $"URL path {relativePath} must not contain CR or LF characters"
+                );
         }
 
         static Dictionary<int, RestMethodParameterInfo> BuildParameterMap(
