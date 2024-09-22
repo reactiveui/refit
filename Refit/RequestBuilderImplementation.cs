@@ -977,7 +977,7 @@ namespace Refit
             // sure we have an HttpContent object to add them to,
             // provided the HttpClient will allow it for the method
             if (ret.Content == null && !IsBodyless(ret.Method))
-                ret.Content = new ByteArrayContent(Array.Empty<byte>());
+                ret.Content = new ByteArrayContent([]);
 
             foreach (var header in headersToAdd)
             {
@@ -1335,6 +1335,10 @@ namespace Refit
             if (value == null)
                 return;
 
+            // CRLF injection protection
+            name = EnsureSafe(name);
+            value = EnsureSafe(value);
+
             var added = request.Headers.TryAddWithoutValidation(name, value);
 
             // Don't even bother trying to add the header as a content header
@@ -1343,6 +1347,14 @@ namespace Refit
             {
                 request.Content.Headers.TryAddWithoutValidation(name, value);
             }
+        }
+
+        static string EnsureSafe(string value)
+        {
+            // Remove CR and LF characters
+#pragma warning disable CA1307 // Specify StringComparison for clarity
+            return value.Replace("\r", string.Empty).Replace("\n", string.Empty);
+#pragma warning restore CA1307 // Specify StringComparison for clarity
         }
 
         static bool IsBodyless(HttpMethod method) => method == HttpMethod.Get || method == HttpMethod.Head;
