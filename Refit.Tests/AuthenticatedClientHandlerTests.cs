@@ -358,7 +358,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async Task AuthentictedMethodFromInheritedClassWithHeadersAttributeUsesAuth_WithCRLFCheck()
+    public async void AuthentictedMethodFromInheritedClassWithHeadersAttributeUsesAuth_WithCRLFCheck()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings()
