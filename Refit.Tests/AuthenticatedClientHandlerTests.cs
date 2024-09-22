@@ -4,8 +4,11 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+
 using Refit; // for the code gen
+
 using RichardSzalay.MockHttp;
+
 using Xunit;
 
 namespace Refit.Tests;
@@ -46,6 +49,12 @@ public class AuthenticatedClientHandlerTests
     public interface IInheritedAuthenticatedServiceWithHeaders : IAuthenticatedServiceWithHeaders
     {
         [Get("/get-inherited-thing")]
+        Task<string> GetInheritedThing();
+    }
+
+    public interface IInheritedAuthenticatedServiceWithHeadersCRLF : IAuthenticatedServiceWithHeaders
+    {
+        [Get("/get-inherited-thing\r\n\r\nGET /smuggled")]
         Task<string> GetInheritedThing();
     }
 
@@ -346,5 +355,31 @@ public class AuthenticatedClientHandlerTests
         handler.VerifyNoOutstandingExpectation();
 
         Assert.Equal("Ok", result);
+    }
+
+    [Fact]
+    public async void AuthentictedMethodFromInheritedClassWithHeadersAttributeUsesAuth_WithCRLFCheck()
+    {
+        var handler = new MockHttpMessageHandler();
+        var settings = new RefitSettings()
+        {
+            AuthorizationHeaderValueGetter = (_, __) => Task.FromResult("tokenValue"),
+            HttpMessageHandlerFactory = () => handler,
+        };
+
+        handler
+            .Expect(HttpMethod.Get, "http://api/get-inherited-thing")
+            .WithHeaders("Authorization", "Bearer tokenValue")
+            .Respond("text/plain", "Ok");
+
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        {
+            var fixture = RestService.For<IInheritedAuthenticatedServiceWithHeadersCRLF>(
+                    "http://api",
+                    settings
+                );
+
+            var result = await fixture.GetInheritedThing();
+        });
     }
 }
