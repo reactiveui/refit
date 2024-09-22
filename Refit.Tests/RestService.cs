@@ -1097,7 +1097,7 @@ public class RestServiceIntegrationTests
             async () => await fixture.GetOrgMembers("github", cts.Token)
         );
 
-        AssertFirstLineContains(nameof(IGitHubApi.GetOrgMembers), result.StackTrace);
+        AssertStackTraceContains(nameof(IGitHubApi.GetOrgMembers), result.StackTrace);
     }
 
     [Fact]
@@ -1573,7 +1573,7 @@ public class RestServiceIntegrationTests
             async () => await fixture.CreateUser(new User { Name = "foo" })
         );
 
-        AssertFirstLineContains(nameof(IGitHubApi.CreateUser), result.StackTrace);
+        AssertStackTraceContains(nameof(IGitHubApi.CreateUser), result.StackTrace);
 
         var errors = await result.GetContentAsAsync<ErrorResponse>();
 
@@ -1704,7 +1704,7 @@ public class RestServiceIntegrationTests
             async () => await fixture.GetUser(null)
         );
 
-        AssertFirstLineContains(nameof(IGitHubApi.GetUser), result.StackTrace);
+        AssertStackTraceContains(nameof(IGitHubApi.GetUser), result.StackTrace);
     }
 
     [Fact]
@@ -2254,10 +2254,8 @@ public class RestServiceIntegrationTests
         Assert.IsType<CollisionB.SomeType>(respC);
     }
 
-    public void AssertFirstLineContains(string expectedSubstring, string actualString)
+    private static void AssertStackTraceContains(string expectedSubstring, string actualString)
     {
-        var eolIndex = actualString.IndexOf('\n');
-        var firstLine = eolIndex < 0 ? actualString : actualString.Substring(0, eolIndex);
-        Assert.Contains(expectedSubstring, firstLine);
+        Assert.Contains(expectedSubstring, actualString);
     }
 }

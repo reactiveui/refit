@@ -29,20 +29,13 @@ namespace Refit.Implementation
         }
 
 
-
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task Post()
         {
             var ______arguments = global::System.Array.Empty<object>();
             var ______func = requestBuilder.BuildRestResultFuncForMethod("Post", global::System.Array.Empty<global::System.Type>() );
-            try
-            {
-                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
-            }
-            catch (global::System.Exception ______ex)
-            {
-                throw ______ex;
-            }
+
+            await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
@@ -50,14 +43,8 @@ namespace Refit.Implementation
         {
             var ______arguments = global::System.Array.Empty<object>();
             var ______func = requestBuilder.BuildRestResultFuncForMethod("Post", global::System.Array.Empty<global::System.Type>() );
-            try
-            {
-                await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
-            }
-            catch (global::System.Exception ______ex)
-            {
-                throw ______ex;
-            }
+
+            await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
     }
     }
