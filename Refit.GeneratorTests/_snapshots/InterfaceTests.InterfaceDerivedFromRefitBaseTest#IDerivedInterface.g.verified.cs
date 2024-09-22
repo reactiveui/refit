@@ -29,20 +29,13 @@ namespace Refit.Implementation
         }
 
 
-
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<string> global::RefitGeneratorTest.IBaseInterface.Get()
         {
             var ______arguments = global::System.Array.Empty<object>();
             var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>() );
-            try
-            {
-                return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
-            }
-            catch (global::System.Exception ______ex)
-            {
-                throw ______ex;
-            }
+
+            return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
     }
     }

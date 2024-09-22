@@ -385,7 +385,6 @@ namespace Refit.Implementation
             Client = client;
             this.requestBuilder = requestBuilder;
         }}
-
 "
             );
             // Get any other methods on the refit interfaces. We'll need to generate something for them and warn
@@ -531,14 +530,8 @@ namespace Refit.Implementation
                 @$"
             var ______arguments = {argumentsArrayString};
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodSymbol.Name}"", {parameterTypesExpression}{genericString} );
-            try
-            {{
-                {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
-            }}
-            catch (global::System.Exception ______ex)
-            {{
-                throw ______ex;
-            }}
+
+            {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
 "
             );
 
