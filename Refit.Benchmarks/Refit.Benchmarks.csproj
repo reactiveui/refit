@@ -20,7 +20,7 @@
     <ItemGroup>
       <PackageReference Include="AutoFixture" Version="4.18.1" />
       <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
-      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0-3.24461.10" />
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0-3.24463.9" />
     </ItemGroup>
 
     <ItemGroup>
