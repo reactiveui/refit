@@ -27,28 +27,6 @@ namespace Refit.Generator
     {
         private const string TypeParameterVariableName = "______typeParameters";
 
-#pragma warning disable RS2008 // Enable analyzer release tracking
-        static readonly DiagnosticDescriptor InvalidRefitMember =
-            new(
-                "RF001",
-                "Refit types must have Refit HTTP method attributes",
-                "Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument",
-                "Refit",
-                DiagnosticSeverity.Warning,
-                true
-            );
-
-        static readonly DiagnosticDescriptor RefitNotReferenced =
-            new(
-                "RF002",
-                "Refit must be referenced",
-                "Refit is not referenced. Add a reference to Refit.",
-                "Refit",
-                DiagnosticSeverity.Error,
-                true
-            );
-#pragma warning restore RS2008 // Enable analyzer release tracking
-
 #if !ROSLYN_4
 
         /// <summary>
@@ -115,7 +93,7 @@ namespace Refit.Generator
 
             if (httpMethodBaseAttributeSymbol == null)
             {
-                reportDiagnostic(context, Diagnostic.Create(RefitNotReferenced, null));
+                reportDiagnostic(context, Diagnostic.Create(DiagnosticDescriptors.RefitNotReferenced, null));
                 return;
             }
 
@@ -640,7 +618,7 @@ namespace Refit.Implementation
             foreach (var location in methodSymbol.Locations)
             {
                 var diagnostic = Diagnostic.Create(
-                    InvalidRefitMember,
+                    DiagnosticDescriptors.InvalidRefitMember,
                     location,
                     methodSymbol.ContainingType.Name,
                     methodSymbol.Name
