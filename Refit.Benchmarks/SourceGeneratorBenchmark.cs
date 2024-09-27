@@ -12,40 +12,6 @@ namespace Refit.Benchmarks;
 [MemoryDiagnoser]
 public class SourceGeneratorBenchmark
 {
-    #region SourceText
-    private const string SmallInterface =
-        """
-        using System;
-        using System.Collections.Generic;
-        using System.Linq;
-        using System.Net.Http;
-        using System.Text;
-        using System.Threading;
-        using System.Threading.Tasks;
-        using Refit;
-
-        namespace RefitGeneratorTest;
-
-        public interface IReallyExcitingCrudApi<T, in TKey> where T : class
-        {
-            [Post("")]
-            Task<T> Create([Body] T payload);
-
-            [Get("")]
-            Task<List<T>> ReadAll();
-
-            [Get("/{key}")]
-            Task<T> ReadOne(TKey key);
-
-            [Put("/{key}")]
-            Task Update(TKey key, [Body]T payload);
-
-            [Delete("/{key}")]
-            Task Delete(TKey key);
-        }
-        """;
-    #endregion
-
     static readonly MetadataReference RefitAssembly = MetadataReference.CreateFromFile(
         typeof(GetAttribute).Assembly.Location,
         documentation: XmlDocumentationProvider.CreateFromFile(
@@ -97,7 +63,7 @@ public class SourceGeneratorBenchmark
     }
 
     [GlobalSetup(Target = nameof(Compile))]
-    public void SetupSmall() => Setup(SmallInterface);
+    public void SetupSmall() => Setup(SourceGeneratorBenchmarksProjects.SmallInterface);
 
     [Benchmark]
     public GeneratorDriver Compile()
@@ -108,13 +74,36 @@ public class SourceGeneratorBenchmark
     [GlobalSetup(Target = nameof(Cached))]
     public void SetupCached()
     {
-        Setup(SmallInterface);
+        Setup(SourceGeneratorBenchmarksProjects.SmallInterface);
         driver = (CSharpGeneratorDriver)driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
         compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText("struct MyValue {}"));
     }
 
     [Benchmark]
     public GeneratorDriver Cached()
+    {
+        return driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
+    }
+
+    [GlobalSetup(Target = nameof(CompileMany))]
+    public void SetupMany() => Setup(SourceGeneratorBenchmarksProjects.ManyInterfaces);
+
+    [Benchmark]
+    public GeneratorDriver CompileMany()
+    {
+        return driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
+    }
+
+    [GlobalSetup(Target = nameof(CachedMany))]
+    public void SetupCachedMany()
+    {
+        Setup(SourceGeneratorBenchmarksProjects.ManyInterfaces);
+        driver = (CSharpGeneratorDriver)driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
+        compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText("struct MyValue {}"));
+    }
+
+    [Benchmark]
+    public GeneratorDriver CachedMany()
     {
         return driver.RunGeneratorsAndUpdateCompilation(compilation, out _, out _);
     }
