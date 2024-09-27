@@ -129,7 +129,7 @@ public static class Fixture
     {
         var compilation = CreateLibrary(source);
 
-        var generator = new InterfaceStubGenerator();
+        var generator = new InterfaceStubGeneratorV2();
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var ranDriver = driver.RunGenerators(compilation);
