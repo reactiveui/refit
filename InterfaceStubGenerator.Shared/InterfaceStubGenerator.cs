@@ -538,7 +538,7 @@ namespace Refit.Implementation
             // Need to loop over the constraints and create them
             foreach (var typeParameter in typeParameters)
             {
-                WriteConstraitsForTypeParameter(
+                WriteConstraintsForTypeParameter(
                     source,
                     typeParameter,
                     isOverrideOrExplicitImplementation
@@ -548,7 +548,7 @@ namespace Refit.Implementation
             return source.ToString();
         }
 
-        static void WriteConstraitsForTypeParameter(
+        static void WriteConstraintsForTypeParameter(
             StringBuilder source,
             ITypeParameterSymbol typeParameter,
             bool isOverrideOrExplicitImplementation
@@ -750,11 +750,11 @@ namespace Refit.Implementation
             return candidateName;
         }
 
-        static bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttibute)
+        static bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttribute)
         {
             return methodSymbol
                     ?.GetAttributes()
-                    .Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttibute) == true)
+                    .Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true)
                 == true;
         }
 
