@@ -43,7 +43,7 @@
 
             // Refit types will be generated as private classes within a Generated type in namespace
             // Refit.Implementation
-            // E.g., Refit.Implementation.Generated.NamespaceContaingTpeInterfaceType
+            // E.g., Refit.Implementation.Generated.NamespaceContainingTpeInterfaceType
 
             var refitTypeName =
                 $"Refit.Implementation.Generated+{ns}{interfaceTypeName}{genericArgs}";
