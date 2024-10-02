@@ -15,7 +15,7 @@
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.2"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1"/>
-        <PackageReference Include="xunit" Version="2.9.0"/>
+        <PackageReference Include="xunit" Version="2.9.1"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2"/>
         <PackageReference Include="System.Collections.Immutable" Version="9.0.0-rc.1.24431.7" />
         <PackageReference Include="Verify.DiffPlex" Version="3.1.0" />
