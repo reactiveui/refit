@@ -98,4 +98,17 @@ public class InterfaceTests
             }
             """);
     }
+
+    [Fact]
+    public Task DisposableTest()
+    {
+        return Fixture.VerifyForDeclaration(
+            """
+            public interface IGeneratedInterface : IDisposable
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+            """);
+    }
 }
