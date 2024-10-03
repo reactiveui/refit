@@ -565,7 +565,9 @@ namespace Refit.Implementation
             {
                 parameters.Add("unmanaged");
             }
-            if (typeParameter.HasValueTypeConstraint)
+
+            // unmanaged constraints are both structs and unmanaged so the struct constraint is redundant
+            if (typeParameter.HasValueTypeConstraint && !typeParameter.HasUnmanagedTypeConstraint)
             {
                 parameters.Add("struct");
             }
