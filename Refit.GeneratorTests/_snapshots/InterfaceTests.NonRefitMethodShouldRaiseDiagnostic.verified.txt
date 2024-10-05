@@ -1,0 +1,14 @@
+﻿{
+  Diagnostics: [
+    {
+      Id: RF001,
+      Title: Refit types must have Refit HTTP method attributes,
+      Severity: Warning,
+      WarningLevel: 1,
+      Location: : (16,5)-(16,19),
+      MessageFormat: Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument,
+      Message: Method IGeneratedClient.NonRefitMethod either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument,
+      Category: Refit
+    }
+  ]
+}
