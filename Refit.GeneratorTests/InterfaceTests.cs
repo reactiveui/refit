@@ -111,4 +111,16 @@ public class InterfaceTests
             }
             """);
     }
+
+    [Fact]
+    public Task NonRefitMethodShouldRaiseDiagnostic()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            Task<string> Get();
+
+            void NonRefitMethod();
+            """);
+    }
 }
