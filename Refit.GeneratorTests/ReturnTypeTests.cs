@@ -21,4 +21,34 @@ public class ReturnTypeTests
             Task Post();
             """);
     }
+
+    [Fact]
+    public Task GenericConstraintReturnTask()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            Task<string> Get<T>() where T : class, IDisposable, new();
+            """);
+    }
+
+    [Fact]
+    public Task GenericUnmanagedConstraintReturnTask()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            Task<string> Get<T>() where T : unmanaged;
+            """);
+    }
+
+    [Fact]
+    public Task GenericStructConstraintReturnTask()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            Task<string> Get<T>() where T : struct
+            """);
+    }
 }
