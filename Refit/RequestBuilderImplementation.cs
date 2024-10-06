@@ -356,14 +356,19 @@ namespace Refit
                         catch (Exception ex)
                         {
                             //if an error occured while attempting to deserialize return the wrapped ApiException
-                            e = await ApiException.Create(
-                                "An error occured deserializing the response.",
-                                resp.RequestMessage!,
-                                resp.RequestMessage!.Method,
-                                resp,
-                                settings,
-                                ex
-                            );
+                            if (settings.DeserializationExceptionFactory != null)
+                                e = await settings.DeserializationExceptionFactory(resp, ex).ConfigureAwait(false);
+                            else
+                            {
+                                e = await ApiException.Create(
+                                    "An error occured deserializing the response.",
+                                    resp.RequestMessage!,
+                                    resp.RequestMessage!.Method,
+                                    resp,
+                                    settings,
+                                    ex
+                                );
+                            }
                         }
 
                         return ApiResponse.Create<T, TBody>(
@@ -387,14 +392,24 @@ namespace Refit
                         }
                         catch (Exception ex)
                         {
-                            throw await ApiException.Create(
-                                "An error occured deserializing the response.",
-                                resp.RequestMessage!,
-                                resp.RequestMessage!.Method,
-                                resp,
-                                settings,
-                                ex
-                            );
+                            if (settings.DeserializationExceptionFactory != null)
+                            {
+                                var customEx = await settings.DeserializationExceptionFactory(resp, ex).ConfigureAwait(false);
+                                if (customEx != null)
+                                    throw customEx;
+                                return default;
+                            }
+                            else
+                            {
+                                throw await ApiException.Create(
+                                    "An error occured deserializing the response.",
+                                    resp.RequestMessage!,
+                                    resp.RequestMessage!.Method,
+                                    resp,
+                                    settings,
+                                    ex
+                                );
+                            }
                         }
                     }
                 }
