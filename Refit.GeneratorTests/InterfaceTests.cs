@@ -111,4 +111,34 @@ public class InterfaceTests
             }
             """);
     }
+
+    [Fact]
+    public Task NonRefitMethodShouldRaiseDiagnostic()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            Task<string> Get();
+
+            void NonRefitMethod();
+            """);
+    }
+
+    [Fact]
+    public Task InterfaceWithGenericConstraint()
+    {
+        return Fixture.VerifyForDeclaration(
+            """
+            public interface IGeneratedInterface<T1, T2, T3, T4, T5>
+                where T1 : class
+                where T2 : unmanaged
+                where T3 : struct
+                where T4 : notnull
+                where T5 : class, IDisposable, new()
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+            """);
+    }
 }
