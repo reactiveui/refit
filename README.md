@@ -1426,7 +1426,20 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     });
 ```
 
-Note that exceptions raised when attempting to deserialize the response are not affected by this.
+For exceptions raised when attempting to deserialize the response use DeserializationExceptionFactory described bellow.
+
+#### Providing a custom `DeserializationExceptionFactory`
+
+You can override default deserialization exceptions behavior that are raised by the `DeserializationExceptionFactory` when processing the result by providing a custom exception factory in `RefitSettings`. For example, you can suppress all deserialization exceptions with the following:
+
+```csharp
+var nullTask = Task.FromResult<Exception>(null);
+
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings {
+        DeserializationExceptionFactory = (httpResponse, exception) => nullTask;
+    });
+```
 
 #### `ApiException` deconstruction with Serilog
 
