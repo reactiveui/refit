@@ -3,6 +3,9 @@ using System.Net.Http;
 
 namespace Refit
 {
+    /// <summary>
+    /// RestService.
+    /// </summary>
     public static class RestService
     {
         static readonly ConcurrentDictionary<Type, Type> TypeMapping = new();

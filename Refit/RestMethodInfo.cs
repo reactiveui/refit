@@ -261,7 +261,7 @@ namespace Refit
                 );
 
             // CRLF injection protection
-            if (relativePath.Contains("\r") || relativePath.Contains("\n"))
+            if (relativePath.Contains('\r') || relativePath.Contains('\n'))
                 throw new ArgumentException(
                     $"URL path {relativePath} must not contain CR or LF characters"
                 );
