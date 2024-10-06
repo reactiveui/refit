@@ -329,6 +329,7 @@ namespace Refit
         public bool Buffered { get; set; }
         public Refit.CollectionFormat CollectionFormat { get; set; }
         public Refit.IHttpContentSerializer ContentSerializer { get; set; }
+        public System.Func<System.Net.Http.HttpResponseMessage, System.Exception, System.Threading.Tasks.Task<System.Exception?>>? DeserializationExceptionFactory { get; set; }
         public System.Func<System.Net.Http.HttpResponseMessage, System.Threading.Tasks.Task<System.Exception?>> ExceptionFactory { get; set; }
         public Refit.IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
         public System.Func<System.Net.Http.HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }
