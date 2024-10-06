@@ -13,6 +13,26 @@ public class ReturnTypeTests
     }
 
     [Fact]
+    public Task ReturnNullableObject()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            Task<string?> Get();
+            """);
+    }
+
+    [Fact]
+    public Task ReturnNullableValueType()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            Task<int?> Get();
+            """);
+    }
+
+    [Fact]
     public Task VoidTaskShouldWork()
     {
         return Fixture.VerifyForBody(
