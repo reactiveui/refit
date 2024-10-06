@@ -121,7 +121,7 @@ namespace Refit
                     if (attachmentName == null)
                         continue;
 
-                    attachmentDict ??= new Dictionary<int, Tuple<string, string>>();
+                    attachmentDict ??= [];
                     attachmentDict[i] = Tuple.Create(
                         attachmentName,
                         GetUrlNameForParameter(ParameterInfoArray[i])
@@ -146,7 +146,7 @@ namespace Refit
                     continue;
                 }
 
-                queryDict ??= new Dictionary<int, string>();
+                queryDict ??= [];
                 queryDict.Add(i, GetUrlNameForParameter(ParameterInfoArray[i]));
             }
 
@@ -558,12 +558,12 @@ namespace Refit
                         .DeclaringType.GetInterfaces()
                         .SelectMany(i => i.GetTypeInfo().GetCustomAttributes(true))
                         .Reverse()
-                    : Array.Empty<Attribute>();
+                    : [];
 
             var declaringTypeAttributes =
                 methodInfo.DeclaringType != null
                     ? methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true)
-                    : Array.Empty<Attribute>();
+                    : [];
 
             // Headers set on the declaring type have to come first,
             // so headers set on the method can replace them. Switching
@@ -581,7 +581,7 @@ namespace Refit
                 if (string.IsNullOrWhiteSpace(header))
                     continue;
 
-                ret ??= new Dictionary<string, string?>();
+                ret ??= [];
 
                 // NB: Silverlight doesn't have an overload for String.Split()
                 // with a count parameter, but header values can contain
@@ -609,7 +609,7 @@ namespace Refit
 
                 if (!string.IsNullOrWhiteSpace(header))
                 {
-                    ret ??= new Dictionary<int, string>();
+                    ret ??= [];
                     ret[i] = header.Trim();
                 }
             }

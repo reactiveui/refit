@@ -77,6 +77,15 @@ namespace Refit.Generator
             ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces
         )
         {
+            if (compilation == null)
+                throw new ArgumentNullException(nameof(compilation));
+
+            if (reportDiagnostic == null)
+                throw new ArgumentNullException(nameof(reportDiagnostic));
+
+            if (addSource == null)
+                throw new ArgumentNullException(nameof(addSource));
+
             refitInternalNamespace =
                 $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
 
@@ -131,7 +140,11 @@ namespace Refit.Generator
                     m => m.ContainingType,
                     SymbolEqualityComparer.Default
                 )
-                .ToDictionary(g => g.Key, v => v.ToList());
+                .ToDictionary<IGrouping<INamedTypeSymbol, IMethodSymbol>, INamedTypeSymbol, List<IMethodSymbol>>(
+                    g => g.Key,
+                    v => [.. v],
+                    SymbolEqualityComparer.Default
+                );
 
             // Look through the candidate interfaces
             var interfaceSymbols = new List<INamedTypeSymbol>();
@@ -850,9 +863,9 @@ namespace Refit.Implementation
 
         class SyntaxReceiver : ISyntaxReceiver
         {
-            public List<MethodDeclarationSyntax> CandidateMethods { get; } = new();
+            public List<MethodDeclarationSyntax> CandidateMethods { get; } = [];
 
-            public List<InterfaceDeclarationSyntax> CandidateInterfaces { get; } = new();
+            public List<InterfaceDeclarationSyntax> CandidateInterfaces { get; } = [];
 
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {

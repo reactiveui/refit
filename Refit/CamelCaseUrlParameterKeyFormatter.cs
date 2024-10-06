@@ -5,6 +5,11 @@
     /// </summary>
     public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
     {
+        /// <summary>
+        /// Formats the specified key.
+        /// </summary>
+        /// <param name="key">The key.</param>
+        /// <returns></returns>
         public string Format(string key)
         {
             if (string.IsNullOrEmpty(key) || !char.IsUpper(key[0]))
