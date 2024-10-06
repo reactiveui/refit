@@ -135,11 +135,11 @@ namespace System.Net.Http
         {
             var serializeToStreamTask = new TaskCompletionSource<bool>();
 
-            Stream wrappedStream = new CompleteTaskOnCloseStream(stream, serializeToStreamTask);
-            await onStreamAvailable(wrappedStream, this, context);
+            using Stream wrappedStream = new CompleteTaskOnCloseStream(stream, serializeToStreamTask);
+            await onStreamAvailable(wrappedStream, this, context).ConfigureAwait(false);
 
             // wait for wrappedStream.Close/Dispose to get called.
-            await serializeToStreamTask.Task;
+            await serializeToStreamTask.Task.ConfigureAwait(false);
         }
 
         /// <summary>
@@ -170,6 +170,7 @@ namespace System.Net.Http
                     ?? throw new ArgumentNullException(nameof(serializeToStreamTask));
             }
 
+            [SuppressMessage("Usage", "CA2215:Dispose methods should call base class dispose", Justification = "We don't dispose the underlying stream because we don't own it. Dispose in this case just signifies that the user's action is finished.")]
             protected override void Dispose(bool disposing)
             {
                 // We don't dispose the underlying stream because we don't own it. Dispose in this case just signifies

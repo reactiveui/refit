@@ -9,7 +9,9 @@ namespace Refit
     /// Represents an error that occured while sending an API request.
     /// </summary>
     [Serializable]
+#pragma warning disable CA1032 // Implement standard exception constructors
     public class ApiException : Exception
+#pragma warning restore CA1032 // Implement standard exception constructors
     {
         /// <summary>
         /// HTTP response status code.
@@ -162,7 +164,12 @@ namespace Refit
         )
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
-            var exceptionMessage = CreateMessage(response.StatusCode, response.ReasonPhrase);
+            if (response?.IsSuccessStatusCode == true)
+            {
+                throw new ArgumentException("Response is successful, cannot create an ApiException.", nameof(response));
+            }
+
+            var exceptionMessage = CreateMessage(response!.StatusCode, response.ReasonPhrase);
             return Create(
                 exceptionMessage,
                 message,
@@ -211,6 +218,7 @@ namespace Refit
                 return exception;
             }
 
+#pragma warning disable CA1031 // Do not catch general exception types
             try
             {
                 exception.ContentHeaders = response.Content.Headers;
@@ -235,6 +243,7 @@ namespace Refit
                 // so we want to make sure we don't throw another one
                 // that hides the real error.
             }
+#pragma warning restore CA1031 // Do not catch general exception types
 
             return exception;
         }
