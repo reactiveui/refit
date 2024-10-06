@@ -80,7 +80,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthenticatedHandlerIgnoresUnAuth()
+    public async Task AuthenticatedHandlerIgnoresUnAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings()
@@ -104,7 +104,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthenticatedHandlerUsesAuth()
+    public async Task AuthenticatedHandlerUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings()
@@ -128,7 +128,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthenticatedHandlerWithParamUsesAuth()
+    public async Task AuthenticatedHandlerWithParamUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings()
@@ -152,7 +152,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthenticatedHandlerWithTokenInParameterUsesAuth()
+    public async Task AuthenticatedHandlerWithTokenInParameterUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings() { HttpMessageHandlerFactory = () => handler };
@@ -172,7 +172,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthenticatedHandlerWithTokenInHeaderCollectionUsesAuth()
+    public async Task AuthenticatedHandlerWithTokenInHeaderCollectionUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings() { HttpMessageHandlerFactory = () => handler };
@@ -198,7 +198,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthenticatedHandlerWithAuthorizeAttributeAndHeaderCollectionUsesAuth()
+    public async Task AuthenticatedHandlerWithAuthorizeAttributeAndHeaderCollectionUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings() { HttpMessageHandlerFactory = () => handler };
@@ -234,7 +234,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthenticatedHandlerWithDuplicatedAuthorizationHeaderUsesAuth()
+    public async Task AuthenticatedHandlerWithDuplicatedAuthorizationHeaderUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings() { HttpMessageHandlerFactory = () => handler };
@@ -271,7 +271,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthenticatedHandlerPostTokenInHeaderCollectionUsesAuth()
+    public async Task AuthenticatedHandlerPostTokenInHeaderCollectionUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings() { HttpMessageHandlerFactory = () => handler };
@@ -304,7 +304,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthentictedMethodFromBaseClassWithHeadersAttributeUsesAuth()
+    public async Task AuthentictedMethodFromBaseClassWithHeadersAttributeUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings()
@@ -331,7 +331,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthentictedMethodFromInheritedClassWithHeadersAttributeUsesAuth()
+    public async Task AuthentictedMethodFromInheritedClassWithHeadersAttributeUsesAuth()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings()
@@ -358,7 +358,7 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
-    public async void AuthentictedMethodFromInheritedClassWithHeadersAttributeUsesAuth_WithCRLFCheck()
+    public async Task AuthentictedMethodFromInheritedClassWithHeadersAttributeUsesAuth_WithCRLFCheck()
     {
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings()

@@ -136,8 +136,21 @@ namespace Refit
         public Dictionary<string, object>? HttpRequestMessageOptions { get; set; }
 
 #if NET6_0_OR_GREATER
+
+        /// <summary>
+        /// Gets or sets the version.
+        /// </summary>
+        /// <value>
+        /// The version.
+        /// </value>
         public Version Version { get; set; } = HttpVersion.Version11;
 
+        /// <summary>
+        /// Gets or sets the version policy.
+        /// </summary>
+        /// <value>
+        /// The version policy.
+        /// </value>
         public System.Net.Http.HttpVersionPolicy VersionPolicy { get; set; } = HttpVersionPolicy.RequestVersionOrLower;
 #endif
     }

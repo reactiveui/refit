@@ -24,6 +24,7 @@
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)buildtask.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
     <RefitTargets>net462;netstandard2.0;net6.0;net8.0</RefitTargets>
+    <NoWarn>IDE0040;CA1054;CA1510</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">

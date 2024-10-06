@@ -51,26 +51,34 @@ namespace Refit
             return item;
         }
 
-        public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
+        /// <summary>
+        /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands
+        /// </summary>
+        /// <param name="propertyInfo">A PropertyInfo object.</param>
+        /// <returns>
+        /// The calculated field name.
+        /// </returns>
+        /// <exception cref="System.ArgumentNullException">propertyInfo</exception>
+        public string? GetFieldNameForProperty(PropertyInfo propertyInfo) => propertyInfo switch
         {
-            if (propertyInfo is null)
-                throw new ArgumentNullException(nameof(propertyInfo));
-
-            return propertyInfo
-                .GetCustomAttributes<JsonPropertyNameAttribute>(true)
-                .Select(a => a.Name)
-                .FirstOrDefault();
-        }
+            null => throw new ArgumentNullException(nameof(propertyInfo)),
+            _ => propertyInfo
+            .GetCustomAttributes<JsonPropertyNameAttribute>(true)
+            .Select(a => a.Name)
+            .FirstOrDefault()
+        };
 
         /// <summary>
         /// Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters
         /// </summary>
         public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
         {
-            var jsonSerializerOptions = new JsonSerializerOptions();
             // Default to case insensitive property name matching as that's likely the behavior most users expect
-            jsonSerializerOptions.PropertyNameCaseInsensitive = true;
-            jsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+            var jsonSerializerOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
             jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
             jsonSerializerOptions.Converters.Add(
                 new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
@@ -80,9 +88,21 @@ namespace Refit
         }
     }
 
-    // From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
+    /// <summary>
+    /// ObjectToInferredTypesConverter.
+    /// From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
+    /// </summary>
     public class ObjectToInferredTypesConverter : JsonConverter<object>
     {
+        /// <summary>
+        /// Reads and converts the JSON to type <typeparamref name="T" />.
+        /// </summary>
+        /// <param name="reader">The reader.</param>
+        /// <param name="typeToConvert">The type to convert.</param>
+        /// <param name="options">An object that specifies serialization options to use.</param>
+        /// <returns>
+        /// The converted value.
+        /// </returns>
         public override object? Read(
             ref Utf8JsonReader reader,
             Type typeToConvert,
@@ -99,6 +119,12 @@ namespace Refit
                 _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
             };
 
+        /// <summary>
+        /// Writes the specified writer.
+        /// </summary>
+        /// <param name="writer">The writer.</param>
+        /// <param name="objectToWrite">The object to write.</param>
+        /// <param name="options">The options.</param>
         public override void Write(
             Utf8JsonWriter writer,
             object objectToWrite,
