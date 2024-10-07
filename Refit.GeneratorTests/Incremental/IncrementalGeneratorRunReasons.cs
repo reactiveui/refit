@@ -3,7 +3,7 @@
 namespace Refit.GeneratorTests.Incremental;
 
 internal record IncrementalGeneratorRunReasons(
-    IncrementalStepRunReason BuildMediatorStep,
+    IncrementalStepRunReason BuildRefitStep,
     IncrementalStepRunReason ReportDiagnosticsStep
 )
 {
@@ -20,12 +20,12 @@ internal record IncrementalGeneratorRunReasons(
     public static readonly IncrementalGeneratorRunReasons Modified = Cached with
     {
         ReportDiagnosticsStep = IncrementalStepRunReason.Modified,
-        BuildMediatorStep = IncrementalStepRunReason.Modified,
+        BuildRefitStep = IncrementalStepRunReason.Modified,
     };
 
     public static readonly IncrementalGeneratorRunReasons ModifiedSource = Cached with
     {
         ReportDiagnosticsStep = IncrementalStepRunReason.Unchanged,
-        BuildMediatorStep = IncrementalStepRunReason.Modified,
+        BuildRefitStep = IncrementalStepRunReason.Modified,
     };
 }

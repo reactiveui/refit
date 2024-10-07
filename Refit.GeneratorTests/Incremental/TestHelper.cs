@@ -77,7 +77,7 @@ internal static class TestHelper
             reasons.ReportDiagnosticsStep,
             outputIndex
         );
-        AssertRunReason(runResult, RefitGeneratorStepName.BuildRefit, reasons.BuildMediatorStep, outputIndex);
+        AssertRunReason(runResult, RefitGeneratorStepName.BuildRefit, reasons.BuildRefitStep, outputIndex);
     }
 
     private static void AssertRunReason(
@@ -92,7 +92,7 @@ internal static class TestHelper
             .SelectMany(x => x.Outputs)
             .ElementAt(outputIndex)
             .Reason;
-        Assert.Equal(actualStepReason, expectedStepReason);
+        Assert.Equal(expectedStepReason, actualStepReason);
     }
 }
 
