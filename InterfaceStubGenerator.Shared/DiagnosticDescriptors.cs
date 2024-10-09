@@ -26,4 +26,3 @@ internal static class DiagnosticDescriptors
         );
 #pragma warning restore RS2008 // Enable analyzer release tracking
 }
-
