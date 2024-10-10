@@ -14,7 +14,7 @@ internal record IncrementalGeneratorRunReasons(
         new(
             // compilation step should always be modified as each time a new compilation is passed
             IncrementalStepRunReason.Cached,
-            IncrementalStepRunReason.Cached
+            IncrementalStepRunReason.Unchanged
         );
 
     public static readonly IncrementalGeneratorRunReasons Modified = Cached with

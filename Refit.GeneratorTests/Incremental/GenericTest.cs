@@ -24,7 +24,7 @@ public class GenericTest
         }
         """;
 
-    // [Fact]
+    [Fact]
     public void RenameGenericTypeDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(GenericInterface, CSharpParseOptions.Default);
@@ -49,7 +49,7 @@ public class GenericTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
+    [Fact]
     public void AddGenericConstraintDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(GenericInterface, CSharpParseOptions.Default);
@@ -91,7 +91,7 @@ public class GenericTest
         TestHelper.AssertRunReasons(driver3, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
+    [Fact]
     public void AddObjectGenericConstraintDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(GenericInterface, CSharpParseOptions.Default);
@@ -117,7 +117,7 @@ public class GenericTest
         TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 
-    // [Fact]
+    [Fact]
     public void AddGenericTypeDoesRegenerate()
     {
         var syntaxTree = CSharpSyntaxTree.ParseText(GenericInterface, CSharpParseOptions.Default);
