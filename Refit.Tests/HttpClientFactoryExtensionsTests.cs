@@ -154,8 +154,24 @@ public class HttpClientFactoryExtensionsTests
         );
     }
 
+    [Fact]
+    public void InterfaceNameEndingWithClientShouldNotThrow()
+    {
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddRefitClient<IGitHubClient>()
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        Assert.NotNull(serviceProvider.GetService<IGitHubClient>());
+    }
+
     class ClientOptions
     {
         public SystemTextJsonContentSerializer Serializer { get; set; }
+    }
+
+    public interface IGitHubClient
+    {
+        [Get("/users/{user}")]
+        Task<string> GetUser(string user);
     }
 }
