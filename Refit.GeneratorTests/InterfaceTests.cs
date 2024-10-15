@@ -72,6 +72,42 @@ public class InterfaceTests
     }
 
     [Fact]
+    public Task DefaultInterfaceMethod()
+    {
+        return Fixture.VerifyForType(
+            """
+            public interface IGeneratedInterface
+            {
+                [Get("/users")]
+                Task<string> Get();
+
+                void Default() {{ Console.WriteLine("Default"); }}
+            }
+            """);
+    }
+
+    [Fact]
+    public Task DerivedDefaultInterfaceMethod()
+    {
+        return Fixture.VerifyForType(
+            """
+            public interface IGeneratedInterface : IBaseInterface
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+
+            public interface IBaseInterface
+            {
+                [Get("/posts")]
+                Task<string> GetPosts();
+
+                void Default() {{ Console.WriteLine("Default"); }}
+            }
+            """);
+    }
+
+    [Fact]
     public Task NestedNamespaceTest()
     {
         return Fixture.VerifyForDeclaration(
