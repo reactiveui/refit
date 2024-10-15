@@ -9,7 +9,23 @@
     <Import_RootNamespace>InterfaceStubGenerator.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AttributeDataAccessor.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\AliasAsConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\AttachmentNameConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\AuthorizeConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\BodyConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\BodySerializationMethod.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\CollectionFormat.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\HeaderCollectionConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\HeaderConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\HeadersConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\HttpMethodConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\MulitpartConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\PropertyConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\QueryConfiguration.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Configuration\QueryUriFormatConfiguration.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DiagnosticDescriptors.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EmitRefitBody.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Emitter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ImmutableEquatableArray.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IncrementalValuesProviderExtensions.cs" />
@@ -23,5 +39,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\TypeConstraint.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UniqueNameBuilder.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RestMethodSymbolInternal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)WellKnownTypes.cs" />
   </ItemGroup>
 </Project>

@@ -2,16 +2,16 @@
 
 public class UniqueNameBuilder()
 {
-    private readonly HashSet<string> _usedNames = new(StringComparer.Ordinal);
-    private readonly UniqueNameBuilder? _parentScope;
+    readonly HashSet<string> usedNames = new(StringComparer.Ordinal);
+    readonly UniqueNameBuilder? parentScope;
 
     private UniqueNameBuilder(UniqueNameBuilder parentScope)
         : this()
     {
-        _parentScope = parentScope;
+        this.parentScope = parentScope;
     }
 
-    public void Reserve(string name) => _usedNames.Add(name);
+    public void Reserve(string name) => usedNames.Add(name);
 
     public UniqueNameBuilder NewScope() => new(this);
 
@@ -25,7 +25,7 @@ public class UniqueNameBuilder()
             i++;
         }
 
-        _usedNames.Add(uniqueName);
+        usedNames.Add(uniqueName);
 
         return uniqueName;
     }
@@ -34,17 +34,17 @@ public class UniqueNameBuilder()
     {
         foreach (var name in names)
         {
-            _usedNames.Add(name);
+            usedNames.Add(name);
         }
     }
 
-    private bool Contains(string name)
+    bool Contains(string name)
     {
-        if (_usedNames.Contains(name))
+        if (usedNames.Contains(name))
             return true;
 
-        if (_parentScope != null)
-            return _parentScope.Contains(name);
+        if (parentScope != null)
+            return parentScope.Contains(name);
 
         return false;
     }

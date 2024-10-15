@@ -3716,6 +3716,8 @@ namespace Refit.Tests
                 CallCount++;
                 return null;
             }
+
+            public RefitSettings Settings { get; }
         }
 
         [Fact]

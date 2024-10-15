@@ -18,55 +18,106 @@ internal static class Emitter
 
         var attributeText = $$"""
 
-              #pragma warning disable
-              namespace {{model.RefitInternalNamespace}}
-              {
-                  [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                  [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                  [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
-                  sealed class PreserveAttribute : global::System.Attribute
-                  {
-                      //
-                      // Fields
-                      //
-                      public bool AllMembers;
+            #pragma warning disable
+            namespace {{model.RefitInternalNamespace}}
+            {
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
+                sealed class PreserveAttribute : global::System.Attribute
+                {
+                    //
+                    // Fields
+                    //
+                    public bool AllMembers;
 
-                      public bool Conditional;
-                  }
-              }
-              #pragma warning restore
+                    public bool Conditional;
+                }
+            }
+            #pragma warning restore
 
-              """;
+            """;
         // add the attribute text
         addSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
 
         var generatedClassText = $$"""
 
-              #pragma warning disable
-              namespace Refit.Implementation
-              {
+            #pragma warning disable
+            namespace Refit.Implementation
+            {
 
-                  /// <inheritdoc />
-                  [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                  [global::System.Diagnostics.DebuggerNonUserCode]
-                  [{{model.PreserveAttributeDisplayName}}]
-                  [global::System.Reflection.Obfuscation(Exclude=true)]
-                  [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                  internal static partial class Generated
-                  {
-              #if NET5_0_OR_GREATER
-                      [System.Runtime.CompilerServices.ModuleInitializer]
-                      [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
-                      public static void Initialize()
-                      {
-                      }
-              #endif
-                  }
-              }
-              #pragma warning restore
+                /// <inheritdoc />
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.Diagnostics.DebuggerNonUserCode]
+                [{{model.PreserveAttributeDisplayName}}]
+                [global::System.Reflection.Obfuscation(Exclude=true)]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                internal static partial class Generated
+                {
+            #if NET5_0_OR_GREATER
+                    [System.Runtime.CompilerServices.ModuleInitializer]
+                    [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
+                    public static void Initialize()
+                    {
+                    }
+            #endif
+                }
+            }
+            #pragma warning restore
 
-              """;
+            """;
         addSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
+
+        // TODO: are the attributes correct, should this be an actual file or class we copy?
+        // TODO: this should eventually emit the helper logic,
+        // until then I'm going to cheat and write the code in the main library,
+        // this is a bad idea but makes my life easier
+        // TODO: emit ValueStringBuilder
+        var generatedHelpers = $$"""
+
+                                   #pragma warning disable
+                                   namespace Refit.Implementation
+                                   {
+
+                                       /// <inheritdoc />
+                                       [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                                       [global::System.Diagnostics.DebuggerNonUserCode]
+                                       [{{model.PreserveAttributeDisplayName}}]
+                                       [global::System.Reflection.Obfuscation(Exclude=true)]
+                                       [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                                       internal static partial class Generated
+                                       {
+                                   #if NET5_0_OR_GREATER
+                                           [System.Runtime.CompilerServices.ModuleInitializer]
+                                           [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
+                                           public static void Initialize()
+                                           {
+                                           }
+                                   #endif
+                                            internal static class ____GeneratedHelpers
+                                            {
+                                                public static void WriteRefitSettingsProperties(global::System.Net.Http.HttpRequestMessage request, global::Refit.RefitSettings settings)
+                                                {
+                                                    // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
+                                                   if (settings.HttpRequestMessageOptions != null)
+                                                   {
+                                                       foreach (var p in settings.HttpRequestMessageOptions)
+                                                       {
+                                           #if NET6_0_OR_GREATER
+                                                               ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+                                           #else
+                                                           ret.Properties.Add(p);
+                                           #endif
+                                                       }
+                                                   }
+                                                   }
+                                                    }
+                                       }
+                                   }
+                                   #pragma warning restore
+
+                                   """;
+        // addSource("GeneratedHelper.g.cs", SourceText.From(generatedHelpers, Encoding.UTF8));
     }
 
     public static string EmitInterface(InterfaceModel model)
@@ -102,12 +153,14 @@ namespace Refit.Implementation
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client {{ get; }}
         readonly global::Refit.IRequestBuilder requestBuilder;
+        readonly global::Refit.RefitSettings settings;
 
         /// <inheritdoc />
         public {model.Ns}{model.ClassSuffix}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
         {{
             Client = client;
             this.requestBuilder = requestBuilder;
+            this.settings = requestBuilder.Settings;
         }}
 "
         );
@@ -176,46 +229,73 @@ namespace Refit.Implementation
             ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.Return => (false, "return ", ""),
-            _
-                => throw new ArgumentOutOfRangeException(
-                    nameof(methodModel.ReturnTypeMetadata),
-                    methodModel.ReturnTypeMetadata,
-                    "Unsupported value."
-                )
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(methodModel.ReturnTypeMetadata),
+                methodModel.ReturnTypeMetadata,
+                "Unsupported value."
+            ),
         };
 
         WriteMethodOpening(source, methodModel, !isTopLevel, isAsync);
 
-        // Build the list of args for the array
-        var argArray = methodModel
-            .Parameters.AsArray()
-            .Select(static param => $"@{param.MetadataName}")
-            .ToArray();
+        // TODO: unique name builder
+        foreach (var param in methodModel.Parameters)
+        {
+            uniqueNames.Reserve(param.MetadataName);
+        }
 
-        // List of generic arguments
-        var genericArray = methodModel
-            .Constraints.AsArray()
-            .Select(static typeParam => $"typeof({typeParam.DeclaredName})")
-            .ToArray();
+        if (methodModel.RefitBody is null)
+        {
+            // Build the list of args for the array
+            var argArray = methodModel
+                .Parameters.AsArray()
+                .Select(static param => $"@{param.MetadataName}")
+                .ToArray();
 
-        var argumentsArrayString =
-            argArray.Length == 0
-                ? "global::System.Array.Empty<object>()"
-                : $"new object[] {{ {string.Join(", ", argArray)} }}";
+            // List of generic arguments
+            var genericArray = methodModel
+                .Constraints.AsArray()
+                .Select(static typeParam => $"typeof({typeParam.DeclaredName})")
+                .ToArray();
 
-        var genericString =
-            genericArray.Length > 0
-                ? $", new global::System.Type[] {{ {string.Join(", ", genericArray)} }}"
-                : string.Empty;
+            var argumentsArrayString =
+                argArray.Length == 0
+                    ? "global::System.Array.Empty<object>()"
+                    : $"new object[] {{ {string.Join(", ", argArray)} }}";
 
-        source.Append(
-            @$"
+            var genericString =
+                genericArray.Length > 0
+                    ? $", new global::System.Type[] {{ {string.Join(", ", genericArray)} }}"
+                    : string.Empty;
+
+            if (methodModel.Error is not null)
+            {
+                source.AppendLine(@$"
+            // {methodModel.Error.Replace("\r","").Replace("\n","")}
+        ");
+            }
+
+            source.Append(
+                @$"
             var ______arguments = {argumentsArrayString};
             var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodModel.Name}"", {parameterTypesExpression}{genericString} );
 
             {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
     "
-        );
+            );
+        }
+        else
+        {
+            try
+            {
+                EmitRefitBody.WriteRefitBody(source, methodModel, uniqueNames);
+
+            }
+            catch (Exception e)
+            {
+                source.AppendLine($"// {e.ToString().Replace("\r","").Replace("\n","")}");
+            }
+        }
 
         WriteMethodClosing(source);
     }
@@ -242,12 +322,12 @@ namespace Refit.Implementation
             """
 
 
-                              /// <inheritdoc />
-                              void global::System.IDisposable.Dispose()
-                              {
-                                      Client?.Dispose();
-                              }
-                      """
+                    /// <inheritdoc />
+                    void global::System.IDisposable.Dispose()
+                    {
+                            Client?.Dispose();
+                    }
+            """
         );
     }
 
@@ -275,8 +355,8 @@ namespace Refit.Implementation
             $$"""
 
 
-                        private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] {{{types}} };
-                """
+                    private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] {{{types}} };
+            """
         );
 
         return typeParameterFieldName;

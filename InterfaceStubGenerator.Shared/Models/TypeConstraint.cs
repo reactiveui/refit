@@ -15,5 +15,5 @@ internal enum KnownTypeConstraint : byte
     Unmanaged = 1 << 1,
     Struct = 1 << 2,
     NotNull = 1 << 3,
-    New = 1 << 4
+    New = 1 << 4,
 }

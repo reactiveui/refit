@@ -186,6 +186,8 @@ namespace {refitInternalNamespace}
             )
         );
 
+        var wellKnownTypes = new WellKnownTypes(compilation);
+
         // get the newly bound attribute
         var preserveAttributeSymbol = compilation.GetTypeByMetadataName(
             $"{refitInternalNamespace}.PreserveAttribute"
@@ -222,7 +224,8 @@ namespace {refitInternalNamespace}
                 disposableInterfaceSymbol,
                 httpMethodBaseAttributeSymbol,
                 supportsNullable,
-                interfaceToNullableEnabledMap[group.Key]
+                interfaceToNullableEnabledMap[group.Key],
+                wellKnownTypes
             );
 
             interfaceModels.Add(interfaceModel);
@@ -245,7 +248,8 @@ namespace {refitInternalNamespace}
         ISymbol disposableInterfaceSymbol,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         bool supportsNullable,
-        bool nullableEnabled
+        bool nullableEnabled,
+        WellKnownTypes knownTypes
     )
     {
         // Get the class name with the type parameters, then remove the namespace
@@ -287,10 +291,9 @@ namespace {refitInternalNamespace}
             .ToList();
 
         // Look for disposable
-        var disposeMethod = derivedMethods.Find(
-            m =>
-                m.ContainingType?.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default)
-                == true
+        var disposeMethod = derivedMethods.Find(m =>
+            m.ContainingType?.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default)
+            == true
         );
         if (disposeMethod != null)
         {
@@ -315,11 +318,11 @@ namespace {refitInternalNamespace}
 
         // Handle Refit Methods
         var refitMethodsArray = refitMethods
-            .Select(m => ParseMethod(m, true))
+            .Select(m => ParseMethod(m, true, true, knownTypes))
             .ToImmutableEquatableArray();
         var derivedRefitMethodsArray = refitMethods
             .Concat(derivedRefitMethods)
-            .Select(m => ParseMethod(m, false))
+            .Select(m => ParseMethod(m, false, true, knownTypes))
             .ToImmutableEquatableArray();
 
         // Handle non-refit Methods that aren't static or properties or have a method body
@@ -334,7 +337,7 @@ namespace {refitInternalNamespace}
             ) // If an interface method has a body, it won't be abstract
                 continue;
 
-            nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics));
+            nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics, knownTypes));
         }
 
         var nonRefitMethodModels = nonRefitMethodModelList.ToImmutableEquatableArray();
@@ -367,7 +370,8 @@ namespace {refitInternalNamespace}
 
     private static MethodModel ParseNonRefitMethod(
         IMethodSymbol methodSymbol,
-        List<Diagnostic> diagnostics
+        List<Diagnostic> diagnostics,
+        WellKnownTypes knownTypes
     )
     {
         // report invalid error diagnostic
@@ -382,7 +386,7 @@ namespace {refitInternalNamespace}
             diagnostics.Add(diagnostic);
         }
 
-        return ParseMethod(methodSymbol, false);
+        return ParseMethod(methodSymbol, false, false, knownTypes);
     }
 
     private static bool IsRefitMethod(
@@ -403,12 +407,8 @@ namespace {refitInternalNamespace}
     {
         // Need to loop over the constraints and create them
         return typeParameters
-            .Select(
-                typeParameter =>
-                    ParseConstraintsForTypeParameter(
-                        typeParameter,
-                        isOverrideOrExplicitImplementation
-                    )
+            .Select(typeParameter =>
+                ParseConstraintsForTypeParameter(typeParameter, isOverrideOrExplicitImplementation)
             )
             .ToImmutableEquatableArray();
     }
@@ -444,9 +444,8 @@ namespace {refitInternalNamespace}
         if (!isOverrideOrExplicitImplementation)
         {
             constraints = typeParameter
-                .ConstraintTypes.Select(
-                    typeConstraint =>
-                        typeConstraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                .ConstraintTypes.Select(typeConstraint =>
+                    typeConstraint.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                 )
                 .ToImmutableEquatableArray();
         }
@@ -489,7 +488,7 @@ namespace {refitInternalNamespace}
         return false;
     }
 
-    private static MethodModel ParseMethod(IMethodSymbol methodSymbol, bool isImplicitInterface)
+    private static MethodModel ParseMethod(IMethodSymbol methodSymbol, bool isImplicitInterface, bool isRefit, WellKnownTypes knownTypes)
     {
         var returnType = methodSymbol.ReturnType.ToDisplayString(
             SymbolDisplayFormat.FullyQualifiedFormat
@@ -510,6 +509,23 @@ namespace {refitInternalNamespace}
 
         var constraints = GenerateConstraints(methodSymbol.TypeParameters, !isImplicitInterface);
 
+        RefitBodyModel refitMethodModel = null;
+        string? error = null;
+        if (isRefit)
+        {
+            try
+            {
+                var restMethodSymbolInternal = new RestMethodSymbolInternal(methodSymbol, knownTypes);
+                refitMethodModel = restMethodSymbolInternal.ToRefitBodyModel();
+            }
+            catch (Exception e)
+            {
+                // TODO: remove debug stuff
+                error = e.ToString();
+                Console.WriteLine(error);
+            }
+        }
+
         return new MethodModel(
             methodSymbol.Name,
             returnType,
@@ -517,7 +533,9 @@ namespace {refitInternalNamespace}
             declaredMethod,
             returnTypeInfo,
             parameters,
-            constraints
+            constraints,
+            refitMethodModel,
+            error
         );
     }
 }

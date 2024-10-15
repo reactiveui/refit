@@ -19,6 +19,8 @@ namespace Refit
             Type[]? parameterTypes = null,
             Type[]? genericArgumentTypes = null
         );
+
+        RefitSettings Settings { get; }
     }
 
     /// <summary>

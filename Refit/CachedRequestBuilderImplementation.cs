@@ -17,6 +17,7 @@ namespace Refit
         {
             this.innerBuilder =
                 innerBuilder ?? throw new ArgumentNullException(nameof(innerBuilder));
+            this.Settings = innerBuilder.Settings;
         }
 
         readonly IRequestBuilder innerBuilder;
@@ -24,6 +25,8 @@ namespace Refit
             MethodTableKey,
             Func<HttpClient, object[], object?>
         > MethodDictionary = new();
+
+        public RefitSettings Settings { get; }
 
         public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
             string methodName,

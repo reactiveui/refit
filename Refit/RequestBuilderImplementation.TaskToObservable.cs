@@ -1,8 +1,8 @@
 ﻿namespace Refit
 {
-    partial class RequestBuilderImplementation
+    public partial class RequestBuilderImplementation
     {
-        sealed class TaskToObservable<T> : IObservable<T?>
+        public sealed class TaskToObservable<T> : IObservable<T?>
         {
             readonly Func<CancellationToken, Task<T?>> taskFactory;
 

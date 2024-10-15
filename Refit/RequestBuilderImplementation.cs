@@ -26,6 +26,8 @@ namespace Refit
         readonly RefitSettings settings;
         public Type TargetType { get; }
 
+        public RefitSettings Settings { get; }
+
         public RequestBuilderImplementation(
             Type refitInterfaceType,
             RefitSettings? refitSettings = null
@@ -34,6 +36,7 @@ namespace Refit
             var targetInterfaceInheritedInterfaces = refitInterfaceType.GetInterfaces();
 
             settings = refitSettings ?? new RefitSettings();
+            this.Settings = settings;
             serializer = settings.ContentSerializer;
             interfaceGenericHttpMethods =
                 new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfoInternal>();

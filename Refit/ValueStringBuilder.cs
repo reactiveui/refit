@@ -5,8 +5,9 @@ using System.Runtime.InteropServices;
 
 namespace Refit;
 
+// TODO: make internal and get generator to create this.
 // From https://github/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/ValueStringBuilder.cs
-internal ref struct ValueStringBuilder
+public ref struct ValueStringBuilder
 {
     private char[]? _arrayToReturnToPool;
     private Span<char> _chars;
