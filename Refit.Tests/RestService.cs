@@ -502,6 +502,37 @@ public class RestServiceIntegrationTests
     }
 
     [Fact]
+    public async Task GetWithDerivedObjectAsBaseType()
+    {
+        // possibly a bug see https://github.com/reactiveui/refit/issues/1882
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp
+            .Expect(HttpMethod.Get, "http://foo/foos/1/bar")
+            .WithExactQueryString(
+                new[]
+                {
+                    new KeyValuePair<string, string>("SomeProperty3", "test"),
+                    new KeyValuePair<string, string>("SomeProperty2", "barNone"),
+                    new KeyValuePair<string, string>("SomeProperty", "1")
+                }
+            )
+            .Respond("application/json", "Ok");
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+        await fixture.GetBarsByFoo(
+            new PathBoundDerivedObject()
+            {
+                SomeProperty = 1,
+                SomeProperty2 = "barNone",
+                SomeProperty3 = "test"
+            }
+        );
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
     public async Task GetWithPathBoundObjectAndQueryParameter()
     {
         var mockHttp = new MockHttpMessageHandler();
