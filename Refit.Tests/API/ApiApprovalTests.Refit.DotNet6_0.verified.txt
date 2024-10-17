@@ -198,6 +198,15 @@ namespace Refit
     public interface IApiResponse<out T> : Refit.IApiResponse, System.IDisposable
     {
         T Content { get; }
+        new System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
+        new Refit.ApiException? Error { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        new bool IsSuccessStatusCode { get; }
     }
     public interface IFormUrlEncodedParameterFormatter
     {

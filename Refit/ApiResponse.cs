@@ -152,6 +152,31 @@ namespace Refit
     /// <inheritdoc/>
     public interface IApiResponse<out T> : IApiResponse
     {
+#if NET6_0_OR_GREATER
+        /// <summary>
+        /// The <see cref="ApiException"/> object in case of unsuccessful response.
+        /// </summary>
+        [SuppressMessage(
+            "Naming",
+            "CA1716:Identifiers should not match keywords",
+            Justification = "By Design"
+        )]
+        new ApiException? Error { get; }
+
+        /// <summary>
+        /// HTTP response content headers as defined in RFC 2616.
+        /// </summary>
+        new HttpContentHeaders? ContentHeaders { get; }
+
+        /// <summary>
+        /// Indicates whether the request was successful.
+        /// </summary>
+        [MemberNotNullWhen(true, nameof(Content))]
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+        new bool IsSuccessStatusCode { get; }
+#endif
+
         /// <summary>
         /// Deserialized request content as <typeparamref name="T"/>.
         /// </summary>
