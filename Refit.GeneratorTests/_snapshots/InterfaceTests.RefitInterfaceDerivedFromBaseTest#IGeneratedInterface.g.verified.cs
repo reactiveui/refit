@@ -46,6 +46,12 @@ namespace Refit.Implementation
 
             return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
+
+        /// <inheritdoc />
+        void global::RefitGeneratorTest.IBaseInterface.NonRefitMethod()
+        {
+                throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
+        }
     }
     }
 }
