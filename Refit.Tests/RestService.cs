@@ -1974,19 +1974,43 @@ public class RestServiceIntegrationTests
         await fixture.DoSomethingElse();
         mockHttp.VerifyNoOutstandingExpectation();
 
-        mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
-            .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse));
-        await ((IAmInterfaceEWithNoRefit<int>)fixture).DoSomethingElse();
-        mockHttp.VerifyNoOutstandingExpectation();
-
-        Assert.Throws<InvalidOperationException>(
-            () => RestService.For<IAmInterfaceEWithNoRefit<int>>("https://httpbin.org")
+        // base non refit method should throw NotImplementedException
+        await Assert.ThrowsAsync<NotImplementedException>(
+            () => ((IAmInterfaceEWithNoRefit<int>)fixture).DoSomethingElse()
         );
+        mockHttp.VerifyNoOutstandingExpectation();
     }
 
     [Fact]
-    public async Task DictionaryDynamicQueryparametersTest()
+    public async Task InheritedInterfaceWithoutRefitMethodsOverrideBaseTest()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        var fixture = RestService.For<IImplementTheInterfaceAndDontUseRefit>(
+            "https://httpbin.org",
+            settings
+        );
+
+        // inherited non refit method should throw NotImplementedException
+        await Assert.ThrowsAsync<NotImplementedException>(
+            () => fixture.Test()
+        );
+        mockHttp.VerifyNoOutstandingExpectation();
+
+        // base Refit method should respond
+        mockHttp
+            .Expect(HttpMethod.Get, "https://httpbin.org/get")
+            .WithQueryString("result", "Test")
+            .Respond("application/json", nameof(IAmInterfaceD.Test));
+
+        await ((IAmInterfaceD)fixture).Test();
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task DictionaryDynamicQueryParametersTest()
     {
         var mockHttp = new MockHttpMessageHandler();
 
