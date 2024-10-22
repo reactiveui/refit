@@ -66,6 +66,14 @@ namespace Refit.Tests
         [Get("/DoSomethingElse")]
         public new Task DoSomethingElse();
     }
+
+    public interface IImplementTheInterfaceAndDontUseRefit : IAmInterfaceD
+    {
+#pragma warning disable CS0108 // Member hides inherited member; missing new keyword
+        Task<string> Test();
+#pragma warning restore CS0108 // Member hides inherited member; missing new keyword
+    }
+
     public interface IMyClient
     {
         [Get("/")]

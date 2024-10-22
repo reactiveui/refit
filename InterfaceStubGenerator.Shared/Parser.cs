@@ -300,7 +300,7 @@ namespace {refitInternalNamespace}
             .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
             .ToArray();
         var derivedNonRefitMethods = derivedMethods
-            .Except(derivedMethods, SymbolEqualityComparer.Default)
+            .Except(derivedRefitMethods, SymbolEqualityComparer.Default)
             .Cast<IMethodSymbol>()
             .ToArray();
 
