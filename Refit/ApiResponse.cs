@@ -77,7 +77,7 @@ namespace Refit
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
 
         /// <summary>
-        /// Indicates whether the request was successful and there wasn't any other error (for example, during deserialization).
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization).
         /// </summary>
 #if NET6_0_OR_GREATER
         [MemberNotNullWhen(true, nameof(Content))]
@@ -205,7 +205,7 @@ namespace Refit
         new bool IsSuccessStatusCode { get; }
 
         /// <summary>
-        /// Indicates whether the request was successful and there wasn't any other error (for example, during deserialization).
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization).
         /// </summary>
         [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
@@ -244,7 +244,7 @@ namespace Refit
         bool IsSuccessStatusCode { get; }
 
         /// <summary>
-        /// Indicates whether the request was successful and there wasn't any other error (for example, during deserialization).
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization).
         /// </summary>
 #if NET6_0_OR_GREATER        
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
