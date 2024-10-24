@@ -178,7 +178,7 @@ public class ResponseTests
     /// Test to verify if IsSuccess returns false if we have a success status code, but there is a deserialization exception
     /// </summary>
     [Fact]
-    public async Task When_SerializationErrorOnSuccessStatusCode_IsSuccess_ShouldReturnFalse()
+    public async Task When_SerializationErrorOnSuccessStatusCode_IsSuccessful_ShouldReturnFalse()
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -192,14 +192,14 @@ public class ResponseTests
         using var response = await fixture.GetApiResponseTestObject();
 
         Assert.True(response.IsSuccessStatusCode);
-        Assert.False(response.IsSuccess);
+        Assert.False(response.IsSuccessful);
     }
 
     /// <summary>
     /// Test to verify if EnsureSuccessAsync throws an ApiException if we have a success status code, but there is a deserialization exception
     /// </summary>
     [Fact]
-    public async Task When_SerializationErrorOnSuccessStatusCode_EnsureSuccessAsync_ThrowsApiException()
+    public async Task When_SerializationErrorOnSuccessStatusCode_EnsureSuccessfulAsync_ThrowsApiException()
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
         {           
@@ -212,7 +212,7 @@ public class ResponseTests
 
         using var response = await fixture.GetApiResponseTestObject();
         var actualException = await Assert.ThrowsAsync<ApiException>(
-            () => response.EnsureSuccessAsync()
+            () => response.EnsureSuccessfulAsync()
         );
 
         Assert.NotNull(actualException);

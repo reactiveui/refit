@@ -84,7 +84,7 @@ namespace Refit
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
-        public bool IsSuccess => IsSuccessStatusCode && Error is null;
+        public bool IsSuccessful => IsSuccessStatusCode && Error is null;
 
         /// <summary>
         /// The reason phrase which typically is sent by the server together with the status code.
@@ -139,9 +139,9 @@ namespace Refit
         /// </summary>
         /// <returns>The current <see cref="ApiResponse{T}"/></returns>
         /// <exception cref="ApiException"></exception>
-        public async Task<ApiResponse<T>> EnsureSuccessAsync()
+        public async Task<ApiResponse<T>> EnsureSuccessfulAsync()
         {
-            if (!IsSuccess)
+            if (!IsSuccessful)
             {
                 await ThrowsApiExceptionAsync().ConfigureAwait(false);
             }
@@ -210,7 +210,7 @@ namespace Refit
         [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
-        new bool IsSuccess { get; }
+        new bool IsSuccessful { get; }
 #endif
 
         /// <summary>
@@ -250,7 +250,7 @@ namespace Refit
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
-        bool IsSuccess { get; }
+        bool IsSuccessful { get; }
 
         /// <summary>
         /// HTTP response status code.

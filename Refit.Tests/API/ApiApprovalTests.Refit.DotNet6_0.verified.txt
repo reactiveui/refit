@@ -40,25 +40,25 @@ namespace Refit
         public Refit.ApiException? Error { get; }
         public System.Net.Http.Headers.HttpResponseHeaders Headers { get; }
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        public bool IsSuccessStatusCode { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
-        public bool IsSuccess { get; }
-        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
-        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
-        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
-        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
-        public bool IsSuccessStatusCode { get; }
+        public bool IsSuccessful { get; }
         public string? ReasonPhrase { get; }
         public System.Net.Http.HttpRequestMessage? RequestMessage { get; }
         public Refit.RefitSettings Settings { get; }
         public System.Net.HttpStatusCode StatusCode { get; }
         public System.Version Version { get; }
         public void Dispose() { }
-        public System.Threading.Tasks.Task<Refit.ApiResponse<T>> EnsureSuccessAsync() { }
         public System.Threading.Tasks.Task<Refit.ApiResponse<T>> EnsureSuccessStatusCodeAsync() { }
+        public System.Threading.Tasks.Task<Refit.ApiResponse<T>> EnsureSuccessfulAsync() { }
     }
     [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
     [System.Obsolete("Use Refit.StreamPart, Refit.ByteArrayPart, Refit.FileInfoPart or if necessary, in" +
@@ -195,12 +195,12 @@ namespace Refit
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
-        bool IsSuccess { get; }
+        bool IsSuccessStatusCode { get; }
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
-        bool IsSuccessStatusCode { get; }
+        bool IsSuccessful { get; }
         string? ReasonPhrase { get; }
         System.Net.Http.HttpRequestMessage? RequestMessage { get; }
         System.Net.HttpStatusCode StatusCode { get; }
@@ -212,17 +212,17 @@ namespace Refit
         new System.Net.Http.Headers.HttpContentHeaders? ContentHeaders { get; }
         new Refit.ApiException? Error { get; }
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        new bool IsSuccessStatusCode { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
-        new bool IsSuccess { get; }
-        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
-        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
-        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
-        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
-        new bool IsSuccessStatusCode { get; }
+        new bool IsSuccessful { get; }
     }
     public interface IFormUrlEncodedParameterFormatter
     {
