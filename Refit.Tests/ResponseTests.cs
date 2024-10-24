@@ -174,6 +174,51 @@ public class ResponseTests
         Assert.Equal("type", actualException.Content.Type);
     }
 
+    /// <summary>
+    /// Test to verify if IsSuccess returns false if we have a success status code, but there is a deserialization exception
+    /// </summary>
+    [Fact]
+    public async Task When_SerializationErrorOnSuccessStatusCode_IsSuccess_ShouldReturnFalse()
+    {
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("Invalid JSON")
+        };
+
+        mockHandler
+            .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
+            .Respond(req => expectedResponse);
+
+        using var response = await fixture.GetApiResponseTestObject();
+
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.False(response.IsSuccess);
+    }
+
+    /// <summary>
+    /// Test to verify if EnsureSuccessAsync throws an ApiException if we have a success status code, but there is a deserialization exception
+    /// </summary>
+    [Fact]
+    public async Task When_SerializationErrorOnSuccessStatusCode_EnsureSuccessAsync_ThrowsApiException()
+    {
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {           
+            Content = new StringContent("Invalid JSON")
+        };
+
+        mockHandler
+            .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
+            .Respond(req => expectedResponse);
+
+        using var response = await fixture.GetApiResponseTestObject();
+        var actualException = await Assert.ThrowsAsync<ApiException>(
+            () => response.EnsureSuccessAsync()
+        );
+
+        Assert.NotNull(actualException);
+        Assert.IsType<System.Text.Json.JsonException>(actualException.InnerException);
+    }
+
     [Fact]
     public async Task WhenProblemDetailsResponseContainsExtensions_ShouldHydrateExtensions()
     {

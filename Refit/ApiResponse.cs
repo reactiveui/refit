@@ -71,11 +71,20 @@ namespace Refit
         /// Indicates whether the request was successful.
         /// </summary>
 #if NET6_0_OR_GREATER
-        [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
         public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
+
+        /// <summary>
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during deserialization).
+        /// </summary>
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Content))]
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
+        public bool IsSuccess => IsSuccessStatusCode && Error is null;
 
         /// <summary>
         /// The reason phrase which typically is sent by the server together with the status code.
@@ -119,20 +128,22 @@ namespace Refit
         {
             if (!IsSuccessStatusCode)
             {
-                var exception =
-                    Error
-                    ?? await ApiException
-                        .Create(
-                            response.RequestMessage!,
-                            response.RequestMessage!.Method,
-                            response,
-                            Settings
-                        )
-                        .ConfigureAwait(false);
+                await ThrowsApiExceptionAsync().ConfigureAwait(false);
+            }
 
-                Dispose();
+            return this;
+        }
 
-                throw exception;
+        /// <summary>
+        /// Ensures the request was successful and without any other error by throwing an exception in case of failure
+        /// </summary>
+        /// <returns>The current <see cref="ApiResponse{T}"/></returns>
+        /// <exception cref="ApiException"></exception>
+        public async Task<ApiResponse<T>> EnsureSuccessAsync()
+        {
+            if (!IsSuccess)
+            {
+                await ThrowsApiExceptionAsync().ConfigureAwait(false);
             }
 
             return this;
@@ -146,6 +157,24 @@ namespace Refit
             disposed = true;
 
             response.Dispose();
+        }
+
+        private async Task<ApiException> ThrowsApiExceptionAsync()
+        {
+            var exception =
+                    Error
+                    ?? await ApiException
+                        .Create(
+                            response.RequestMessage!,
+                            response.RequestMessage!.Method,
+                            response,
+                            Settings
+                        )
+                        .ConfigureAwait(false);
+
+            Dispose();
+
+            throw exception;
         }
     }
 
@@ -171,10 +200,17 @@ namespace Refit
         /// <summary>
         /// Indicates whether the request was successful.
         /// </summary>
-        [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
         [MemberNotNullWhen(false, nameof(Error))]
         new bool IsSuccessStatusCode { get; }
+
+        /// <summary>
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during deserialization).
+        /// </summary>
+        [MemberNotNullWhen(true, nameof(Content))]
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+        new bool IsSuccess { get; }
 #endif
 
         /// <summary>
@@ -206,6 +242,15 @@ namespace Refit
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
         bool IsSuccessStatusCode { get; }
+
+        /// <summary>
+        /// Indicates whether the request was successful and there wasn't any other error (for example, during deserialization).
+        /// </summary>
+#if NET6_0_OR_GREATER        
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
+        bool IsSuccess { get; }
 
         /// <summary>
         /// HTTP response status code.

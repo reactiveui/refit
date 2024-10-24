@@ -45,6 +45,11 @@ namespace Refit
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        public bool IsSuccess { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         public bool IsSuccessStatusCode { get; }
         public string? ReasonPhrase { get; }
         public System.Net.Http.HttpRequestMessage? RequestMessage { get; }
@@ -52,6 +57,7 @@ namespace Refit
         public System.Net.HttpStatusCode StatusCode { get; }
         public System.Version Version { get; }
         public void Dispose() { }
+        public System.Threading.Tasks.Task<Refit.ApiResponse<T>> EnsureSuccessAsync() { }
         public System.Threading.Tasks.Task<Refit.ApiResponse<T>> EnsureSuccessStatusCodeAsync() { }
     }
     [System.AttributeUsage(System.AttributeTargets.Property | System.AttributeTargets.Parameter)]
@@ -189,6 +195,11 @@ namespace Refit
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        bool IsSuccess { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         bool IsSuccessStatusCode { get; }
         string? ReasonPhrase { get; }
         System.Net.Http.HttpRequestMessage? RequestMessage { get; }
@@ -205,6 +216,11 @@ namespace Refit
         [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "Content")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        new bool IsSuccess { get; }
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
+        [System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
+        [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(false, "Error")]
         [get: System.Diagnostics.CodeAnalysis.MemberNotNullWhen(true, "ContentHeaders")]
         new bool IsSuccessStatusCode { get; }
     }
