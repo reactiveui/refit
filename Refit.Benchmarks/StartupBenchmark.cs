@@ -28,20 +28,20 @@ public class StartupBenchmark
     public IPerformanceService CreateService() => RestService.For<IPerformanceService>(Host, settings);
 
     [Benchmark]
-    public async Task<string> FirstCallConstantRouteAsync() => await initialisedService.ConstantRoute();
+    public async Task<HttpResponseMessage> FirstCallConstantRouteAsync() => await initialisedService.ConstantRoute();
 
     [Benchmark]
-    public async Task<string> ConstantRouteAsync()
+    public async Task<HttpResponseMessage> ConstantRouteAsync()
     {
         var service = RestService.For<IPerformanceService>(Host, settings);
         return await service.ConstantRoute();
     }
 
     [Benchmark]
-    public async Task<string> FirstCallComplexRequestAsync() => await initialisedService.ObjectRequest(new PathBoundObject(){SomeProperty = "myProperty", SomeQuery = "myQuery"});
+    public async Task<HttpResponseMessage> FirstCallComplexRequestAsync() => await initialisedService.ObjectRequest(new PathBoundObject(){SomeProperty = "myProperty", SomeQuery = "myQuery"});
 
     [Benchmark]
-    public async Task<string> ComplexRequestAsync()
+    public async Task<HttpResponseMessage> ComplexRequestAsync()
     {
         var service = RestService.For<IPerformanceService>(Host, settings);
         return await service.ObjectRequest(new PathBoundObject(){SomeProperty = "myProperty", SomeQuery = "myQuery"});

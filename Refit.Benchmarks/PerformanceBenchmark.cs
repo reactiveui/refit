@@ -32,17 +32,17 @@ public class PerformanceBenchmark
     }
 
     [Benchmark]
-    public async Task<string> ConstantRouteAsync() => await service.ConstantRoute();
+    public async Task<HttpResponseMessage> ConstantRouteAsync() => await service.ConstantRoute();
 
     [Benchmark]
-    public async Task<string> DynamicRouteAsync() => await service.DynamicRoute(101);
+    public async Task<HttpResponseMessage> DynamicRouteAsync() => await service.DynamicRoute(101);
 
     [Benchmark]
-    public async Task<string> ComplexDynamicRouteAsync() => await service.ComplexDynamicRoute(101, "tom", "yCxv");
+    public async Task<HttpResponseMessage> ComplexDynamicRouteAsync() => await service.ComplexDynamicRoute(101, "tom", "yCxv");
 
     [Benchmark]
-    public async Task<string> ObjectRequestAsync() => await service.ObjectRequest(new PathBoundObject(){SomeProperty = "myProperty", SomeQuery = "myQuery"});
+    public async Task<HttpResponseMessage> ObjectRequestAsync() => await service.ObjectRequest(new PathBoundObject(){SomeProperty = "myProperty", SomeQuery = "myQuery"});
 
     [Benchmark]
-    public async Task<string> ComplexRequestAsync() => await service.ComplexRequest(101, new PathBoundObject(){SomeProperty = "myProperty", SomeQuery = "myQuery"}, [1,2,3,4,5,6]);
+    public async Task<HttpResponseMessage> ComplexRequestAsync() => await service.ComplexRequest(101, new PathBoundObject(){SomeProperty = "myProperty", SomeQuery = "myQuery"}, [1,2,3,4,5,6]);
 }
