@@ -1,41 +1,54 @@
 ﻿using System.Collections.Generic;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
-using Microsoft.CodeAnalysis.Testing.Verifiers;
 
-namespace Refit.Tests
+namespace Refit.Tests;
+
+public static partial class CSharpIncrementalSourceGeneratorVerifier<TIncrementalGenerator>
+    where TIncrementalGenerator : IIncrementalGenerator, new()
 {
-    public static partial class CSharpIncrementalSourceGeneratorVerifier<TIncrementalGenerator>
-        where TIncrementalGenerator : IIncrementalGenerator, new()
+    public class Test : CSharpSourceGeneratorTest<EmptySourceGeneratorProvider, DefaultVerifier>
     {
-        public class Test : CSharpSourceGeneratorTest<EmptySourceGeneratorProvider, XUnitVerifier>
+        public Test()
         {
-            public Test()
-            {
-                SolutionTransforms.Add((solution, projectId) =>
+            SolutionTransforms.Add(
+                (solution, projectId) =>
                 {
                     var compilationOptions = solution.GetProject(projectId).CompilationOptions;
                     compilationOptions = compilationOptions.WithSpecificDiagnosticOptions(
-                        compilationOptions.SpecificDiagnosticOptions.SetItems(CSharpVerifierHelper.NullableWarnings));
-                    solution = solution.WithProjectCompilationOptions(projectId, compilationOptions);
+                        compilationOptions.SpecificDiagnosticOptions.SetItems(
+                            CSharpVerifierHelper.NullableWarnings
+                        )
+                    );
+                    solution = solution.WithProjectCompilationOptions(
+                        projectId,
+                        compilationOptions
+                    );
 
                     return solution;
-                });
-            }
+                }
+            );
+        }
 
-            protected override IEnumerable<ISourceGenerator> GetSourceGenerators()
-            {
-                yield return new TIncrementalGenerator().AsSourceGenerator();
-            }
+        /// <summary>
+        /// Gets the source generators.
+        /// </summary>
+        /// <returns></returns>
+        protected override IEnumerable<Type> GetSourceGenerators()
+        {
+            yield return new TIncrementalGenerator().AsSourceGenerator().GetGeneratorType();
+        }
 
-            protected override ParseOptions CreateParseOptions()
-            {
-                var parseOptions = (CSharpParseOptions)base.CreateParseOptions();
-                return parseOptions.WithLanguageVersion(LanguageVersion.Preview);
-            }
+        /// <summary>
+        /// Creates the parse options.
+        /// </summary>
+        /// <returns></returns>
+        protected override ParseOptions CreateParseOptions()
+        {
+            var parseOptions = (CSharpParseOptions)base.CreateParseOptions();
+            return parseOptions.WithLanguageVersion(LanguageVersion.Preview);
         }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Common.Helper;
-using Refit.Tests.Common;
 // InterfaceStubGenerator looks for this
 using Refit;
+using Refit.Tests.Common;
 
 namespace Refit.Tests
 {

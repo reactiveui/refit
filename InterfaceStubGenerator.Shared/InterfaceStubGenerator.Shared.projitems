@@ -9,7 +9,18 @@
     <Import_RootNamespace>InterfaceStubGenerator.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)DiagnosticDescriptors.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Emitter.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ImmutableEquatableArray.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IncrementalValuesProviderExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)InterfaceStubGenerator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IsExternalInit.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ITypeSymbolExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\ContextGenerationModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\InterfaceModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\MethodModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\ParameterModel.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\TypeConstraint.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
   </ItemGroup>
 </Project>

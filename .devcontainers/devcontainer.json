@@ -1,0 +1,54 @@
+{
+  "name": "DevContainer for .NET",
+
+  "build": {
+    "dockerfile": "./Dockerfile",
+    "context": ".",
+    "args": {
+      // version: 7.0, 7.0-bullseye-slim, 7.0-jammy, 6.0, 6.0-bullseye-slim, 6.0-jammy, 6.0-focal
+      "VARIANT": "7.0"
+    }
+  },
+
+  "features": {
+    // GitHub CLI
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "version": "latest"
+    },
+
+    // Install common utilities
+    "ghcr.io/devcontainers/features/common-utils:1": {
+      "installZsh": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "uid": "1000",
+      "gid": "1000"
+    }
+  },
+
+  "overrideFeatureInstallOrder": [
+    "ghcr.io/devcontainers/features/common-utils"
+  ],
+
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-vscode.PowerShell",
+        "VisualStudioExptTeam.vscodeintellicode"
+      ],
+      "settings": {
+      }
+    }
+  },
+
+  // Uncomment if you want to use bash in 'postCreateCommand' after the container is created
+  "postCreateCommand": "/bin/bash ./.devcontainer/post-create.sh > ~/post-create.log",
+
+  // Uncomment if you want to connect other than 'root'. More info: https://aka.ms/vscode-remote/containers/non-root.
+  "remoteUser": "vscode"
+}

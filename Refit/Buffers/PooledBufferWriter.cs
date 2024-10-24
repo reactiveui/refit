@@ -1,6 +1,4 @@
-﻿using System;
-using System.Buffers;
-using System.IO;
+﻿using System.Buffers;
 using System.Runtime.CompilerServices;
 
 namespace Refit.Buffers
@@ -37,8 +35,10 @@ namespace Refit.Buffers
         /// <inheritdoc/>
         public void Advance(int count)
         {
-            if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
-            if (position > buffer.Length - count) ThrowArgumentOutOfRangeExceptionForAdvancedTooFar();
+            if (count < 0)
+                ThrowArgumentOutOfRangeExceptionForNegativeCount();
+            if (position > buffer.Length - count)
+                ThrowArgumentOutOfRangeExceptionForAdvancedTooFar();
 
             position += count;
         }
@@ -64,20 +64,21 @@ namespace Refit.Buffers
         /// </summary>
         /// <param name="count">The size in bytes of the new data to insert into the buffer</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-void EnsureFreeCapacity(int count)
+        void EnsureFreeCapacity(int count)
         {
-            if (count < 0) ThrowArgumentOutOfRangeExceptionForNegativeCount();
+            if (count < 0)
+                ThrowArgumentOutOfRangeExceptionForNegativeCount();
 
-            if (count == 0) count = 1;
+            if (count == 0)
+                count = 1;
 
-            int
-                currentLength = buffer.Length,
+            int currentLength = buffer.Length,
                 freeCapacity = currentLength - position;
 
-            if (count <= freeCapacity) return;
+            if (count <= freeCapacity)
+                return;
 
-            int
-                growBy = Math.Max(count, currentLength),
+            int growBy = Math.Max(count, currentLength),
                 newSize = checked(currentLength + growBy);
 
             var rent = ArrayPool<byte>.Shared.Rent(newSize);
@@ -92,7 +93,8 @@ void EnsureFreeCapacity(int count)
         /// <inheritdoc/>
         public void Dispose()
         {
-            if (buffer.Length == 0) return;
+            if (buffer.Length == 0)
+                return;
 
             ArrayPool<byte>.Shared.Return(buffer);
         }

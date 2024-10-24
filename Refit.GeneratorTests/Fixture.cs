@@ -1,0 +1,146 @@
+﻿using System.Reflection;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Refit.Generator;
+
+namespace Refit.GeneratorTests;
+
+public static class Fixture
+{
+    static readonly MetadataReference RefitAssembly = MetadataReference.CreateFromFile(
+        typeof(GetAttribute).Assembly.Location,
+        documentation: XmlDocumentationProvider.CreateFromFile(
+            Path.ChangeExtension(typeof(GetAttribute).Assembly.Location, ".xml")
+        )
+    );
+
+    private static readonly Type[] ImportantAssemblies = {
+        typeof(Binder),
+        typeof(GetAttribute),
+        typeof(System.Reactive.Unit),
+        typeof(Enumerable),
+        typeof(Newtonsoft.Json.JsonConvert),
+        typeof(FactAttribute),
+        typeof(HttpContent),
+        typeof(Attribute)
+    };
+
+    private static Assembly[] AssemblyReferencesForCodegen =>
+        AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Concat(ImportantAssemblies.Select(x=>x.Assembly))
+            .Distinct()
+            .Where(a => !a.IsDynamic)
+            .ToArray();
+
+    public static Task VerifyForBody(string body, bool ignoreNonInterfaces = true)
+    {
+        var source =
+            $$"""
+              using System;
+              using System.Collections.Generic;
+              using System.Linq;
+              using System.Net.Http;
+              using System.Text;
+              using System.Threading;
+              using System.Threading.Tasks;
+              using Refit;
+
+              namespace RefitGeneratorTest;
+
+              public interface IGeneratedClient
+              {
+              {{body}}
+              }
+              """;
+
+        return VerifyGenerator(source, ignoreNonInterfaces);
+    }
+
+    public static Task VerifyForType(string declarations)
+    {
+        var source =
+            $$"""
+              using System;
+              using System.Collections.Generic;
+              using System.Linq;
+              using System.Net.Http;
+              using System.Text;
+              using System.Threading;
+              using System.Threading.Tasks;
+              using Refit;
+
+              namespace RefitGeneratorTest;
+
+              {{declarations}}
+              """;
+
+        return VerifyGenerator(source);
+    }
+
+    public static Task VerifyForDeclaration(string declarations)
+    {
+        var source =
+            $$"""
+              using System;
+              using System.Collections.Generic;
+              using System.Linq;
+              using System.Net.Http;
+              using System.Text;
+              using System.Threading;
+              using System.Threading.Tasks;
+              using Refit;
+
+              {{declarations}}
+              """;
+
+        return VerifyGenerator(source);
+    }
+
+    public static CSharpCompilation CreateLibrary(params SyntaxTree[] source)
+    {
+        var references = new List<MetadataReference>();
+        var assemblies = AssemblyReferencesForCodegen;
+        foreach (var assembly in assemblies)
+        {
+            if (!assembly.IsDynamic)
+            {
+                references.Add(MetadataReference.CreateFromFile(assembly.Location));
+            }
+        }
+
+        references.Add(RefitAssembly);
+        var compilation = CSharpCompilation.Create(
+            "compilation",
+            source,
+            references,
+            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
+        );
+
+        return compilation;
+    }
+
+    private static CSharpCompilation CreateLibrary(params string[] source)
+    {
+        return CreateLibrary(source.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray());
+    }
+
+    private static Task<VerifyResult> VerifyGenerator(string source, bool ignoreNonInterfaces = true)
+    {
+        var compilation = CreateLibrary(source);
+
+        var generator = new InterfaceStubGeneratorV2();
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var ranDriver = driver.RunGenerators(compilation);
+        var settings = new VerifySettings();
+        if (ignoreNonInterfaces)
+        {
+            settings.IgnoreGeneratedResult(x => x.HintName.Contains("PreserveAttribute.g.cs", StringComparison.Ordinal));
+            settings.IgnoreGeneratedResult(x => x.HintName.Contains("Generated.g.cs", StringComparison.Ordinal));
+        }
+
+        var verify = Verify(ranDriver, settings);
+        return verify.ToTask();
+    }
+}

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Refit
+﻿namespace Refit
 {
     class UniqueName
     {
@@ -28,10 +26,13 @@ namespace Refit
             // Or Nested+IFrob
             var genericArgs = string.Empty;
             // if there's any generics, split that
-            if(refitInterfaceType.IsGenericType)
+            if (refitInterfaceType.IsGenericType)
             {
                 genericArgs = interfaceTypeName.Substring(interfaceTypeName.IndexOf("["));
-                interfaceTypeName = interfaceTypeName.Substring(0, interfaceTypeName.Length - genericArgs.Length);
+                interfaceTypeName = interfaceTypeName.Substring(
+                    0,
+                    interfaceTypeName.Length - genericArgs.Length
+                );
             }
 
             // Remove any + from the type name portion
@@ -42,9 +43,10 @@ namespace Refit
 
             // Refit types will be generated as private classes within a Generated type in namespace
             // Refit.Implementation
-            // E.g., Refit.Implementation.Generated.NamespaceContaingTpeInterfaceType
+            // E.g., Refit.Implementation.Generated.NamespaceContainingTpeInterfaceType
 
-            var refitTypeName = $"Refit.Implementation.Generated+{ns}{interfaceTypeName}{genericArgs}";
+            var refitTypeName =
+                $"Refit.Implementation.Generated+{ns}{interfaceTypeName}{genericArgs}";
 
             var assmQualified = $"{refitTypeName}, {refitInterfaceType.Assembly.FullName}";
 

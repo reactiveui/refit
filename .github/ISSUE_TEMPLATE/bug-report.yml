@@ -1,0 +1,102 @@
+name: Bug Report
+description: Create a report to help us improve
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Please note although we can't commit to any timeline, priority will be given to those who are [Contributors](https://github.com/reactiveui/ReactiveUI#contribute ) to the project.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug 🐞
+      description: A clear and concise description of what the bug is.
+      value: "A bug happened!"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce-steps
+    attributes:
+      label: Step to reproduce
+      description: "Steps to reproduce the behavior:"
+      value: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+  - type: input
+    id: reproduce-repository
+    attributes:
+      label: Reproduction repository
+      description: "Simple repository representing the bug"
+      placeholder: https://github.com/reactiveui/refit
+      value: |
+        https://github.com/reactiveui/refit
+    validations:
+      required: false
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+      value: This should happen...
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots 🖼️
+      description: If applicable, add screenshots to help explain your problem.
+    validations:
+      required: false
+  - type: dropdown
+    id: ide
+    attributes:
+      label: IDE
+      multiple: true
+      options:
+        - Visual Studio 2022
+        - Visual Studio 2019
+        - Visual Studio 2017
+        - Visual Studio for Mac
+        - Rider Windows
+        - Rider macOS
+        - Visual Studio Code
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system
+      description: Windows, Linux, Mac OS...
+    validations:
+      required: false
+  - type: input
+    id: system-version
+    attributes:
+      label: Version
+      description: Version and distribution (if applicable)
+    validations:
+      required: false
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: Device e.g. iPhone 6
+    validations:
+      required: false
+  - type: input
+    id: refit-version
+    attributes:
+      label: Refit Version
+      description: e.g. 15.1.1
+    validations:
+      required: false
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: Additional information ℹ️
+      description: Add any other information about the problem here.
+    validations:
+      required: false

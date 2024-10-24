@@ -1,9 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Refit
 {
     /// <summary>
@@ -15,5 +9,10 @@ namespace Refit
         /// Returns the <see cref="System.Type"/> of the top-level interface where the method was called from
         /// </summary>
         public static string InterfaceType { get; } = "Refit.InterfaceType";
+
+        /// <summary>
+        /// Returns the <see cref="Refit.RestMethodInfo"/> of the top-level interface
+        /// </summary>
+        public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
     }
 }

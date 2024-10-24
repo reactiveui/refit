@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace Refit
+﻿namespace Refit
 {
     partial class RequestBuilderImplementation
     {
@@ -19,13 +15,17 @@ namespace Refit
             {
                 var cts = new CancellationTokenSource();
 #pragma warning disable VSTHRD110 // Observe result of async calls
-                taskFactory(cts.Token).ContinueWith(t =>
-                {
-                    if (cts.IsCancellationRequested) return;
+                taskFactory(cts.Token)
+                    .ContinueWith(
+                        t =>
+                        {
+                            if (cts.IsCancellationRequested)
+                                return;
 
-                    ToObservableDone(t, observer);
-                },
-                                                    TaskScheduler.Default);
+                            ToObservableDone(t, observer);
+                        },
+                        TaskScheduler.Default
+                    );
 
 #pragma warning restore VSTHRD110 // Observe result of async calls
 

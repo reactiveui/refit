@@ -1,11 +1,11 @@
-﻿using HttpClientDiagnostics;
-using Meow.Responses;
-using Refit;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using HttpClientDiagnostics;
+using Meow.Responses;
+using Refit;
 
 namespace Meow
 {
@@ -16,7 +16,10 @@ namespace Meow
 
         public CatsService(Uri baseUrl)
         {
-            _httpClient = new HttpClient(new HttpClientDiagnosticsHandler(new HttpClientHandler())) { BaseAddress = baseUrl };
+            _httpClient = new HttpClient(new HttpClientDiagnosticsHandler(new HttpClientHandler()))
+            {
+                BaseAddress = baseUrl
+            };
             _theCatsApi = RestService.For<ITheCatsAPI>(_httpClient);
         }
 

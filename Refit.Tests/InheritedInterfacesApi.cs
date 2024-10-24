@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Refit; // InterfaceStubGenerator looks for this
 using Refit.Tests.SeparateNamespaceWithModel;
-
 using static System.Math; // This is here to verify https://github.com/reactiveui/refit/issues/283
 
 namespace Refit.Tests
@@ -48,10 +47,7 @@ namespace Refit.Tests
         Task<ResponseModel> Get(List<Guid> guids);
     }
 
-    public interface IContainAandB : IAmInterfaceB, IAmInterfaceA
-    {
-
-    }
+    public interface IContainAandB : IAmInterfaceB, IAmInterfaceA { }
 
     public interface IAmInterfaceEWithNoRefit<T>
     {
@@ -69,6 +65,19 @@ namespace Refit.Tests
 
         [Get("/DoSomethingElse")]
         public new Task DoSomethingElse();
+    }
+
+    public interface IImplementTheInterfaceAndDontUseRefit : IAmInterfaceD
+    {
+#pragma warning disable CS0108 // Member hides inherited member; missing new keyword
+        Task<string> Test();
+#pragma warning restore CS0108 // Member hides inherited member; missing new keyword
+    }
+
+    public interface IMyClient
+    {
+        [Get("/")]
+        Task MyMethodAsync(string ex);
     }
 }
 
