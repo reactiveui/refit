@@ -1101,7 +1101,7 @@ var httpStatus = response.StatusCode;
 
 //Determining if a success status code was received and there wasn't any other error
 //(for example, during content deserialization)
-if(response.IsSuccessfull)
+if(response.IsSuccessful)
 {
     //YAY! Do the thing...
 }
