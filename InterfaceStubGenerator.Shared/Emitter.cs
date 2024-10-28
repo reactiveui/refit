@@ -112,17 +112,18 @@ namespace Refit.Implementation
 "
         );
 
-        var memberNames = new HashSet<string>(model.MemberNames);
+        var uniqueNames = new UniqueNameBuilder();
+        uniqueNames.Reserve(model.MemberNames);
 
         // Handle Refit Methods
         foreach (var method in model.RefitMethods)
         {
-            WriteRefitMethod(source, method, true, memberNames);
+            WriteRefitMethod(source, method, true, uniqueNames);
         }
 
         foreach (var method in model.DerivedRefitMethods)
         {
-            WriteRefitMethod(source, method, false, memberNames);
+            WriteRefitMethod(source, method, false, uniqueNames);
         }
 
         // Handle non-refit Methods that aren't static or properties or have a method body
@@ -155,18 +156,18 @@ namespace Refit.Implementation
     /// <param name="source"></param>
     /// <param name="methodModel"></param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
-    /// <param name="memberNames">Contains the unique member names in the interface scope.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     private static void WriteRefitMethod(
         StringBuilder source,
         MethodModel methodModel,
         bool isTopLevel,
-        HashSet<string> memberNames
+        UniqueNameBuilder uniqueNames
     )
     {
         var parameterTypesExpression = GenerateTypeParameterExpression(
             source,
             methodModel,
-            memberNames
+            uniqueNames
         );
 
         var returnType = methodModel.ReturnType;
@@ -253,7 +254,7 @@ namespace Refit.Implementation
     private static string GenerateTypeParameterExpression(
         StringBuilder source,
         MethodModel methodModel,
-        HashSet<string> memberNames
+        UniqueNameBuilder uniqueNames
     )
     {
         // use Array.Empty if method has no parameters.
@@ -268,7 +269,7 @@ namespace Refit.Implementation
         }
 
         // find a name and generate field declaration.
-        var typeParameterFieldName = UniqueName(TypeParameterVariableName, memberNames);
+        var typeParameterFieldName = uniqueNames.New(TypeParameterVariableName);
         var types = string.Join(", ", methodModel.Parameters.Select(x => $"typeof({x.Type})"));
         source.Append(
             $$"""
@@ -324,20 +325,6 @@ namespace Refit.Implementation
     }
 
     private static void WriteMethodClosing(StringBuilder source) => source.Append(@"    }");
-
-    private static string UniqueName(string name, HashSet<string> methodNames)
-    {
-        var candidateName = name;
-        var counter = 0;
-        while (methodNames.Contains(candidateName))
-        {
-            candidateName = $"{name}{counter}";
-            counter++;
-        }
-
-        methodNames.Add(candidateName);
-        return candidateName;
-    }
 
     private static string GenerateConstraints(
         ImmutableEquatableArray<TypeConstraint> typeParameters,
