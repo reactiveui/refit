@@ -1099,8 +1099,9 @@ var response = await gitHubApi.GetUser("octocat");
 //Getting the status code (returns a value from the System.Net.HttpStatusCode enumeration)
 var httpStatus = response.StatusCode;
 
-//Determining if a success status code was received
-if(response.IsSuccessStatusCode)
+//Determining if a success status code was received and there wasn't any other error
+//(for example, during content deserialization)
+if(response.IsSuccessful)
 {
     //YAY! Do the thing...
 }
@@ -1362,7 +1363,7 @@ You can then decide what to do like so:
 
 ```csharp
 var response = await _myRefitClient.GetSomeStuff();
-if(response.IsSuccessStatusCode)
+if(response.IsSuccessful)
 {
    //do your thing
 }
@@ -1371,6 +1372,9 @@ else
    _logger.LogError(response.Error, response.Error.Content);
 }
 ```
+
+> [!NOTE]  
+> The `IsSuccessful` property checks whether the response status code is in the range 200-299 and there wasn't any other error (for example, during content deserialization). If you just want to check the HTTP response status code, you can use the `IsSuccessStatusCode` property.
 
 #### When returning `Task<T>`
 Refit throws any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that occur when attempting to deserialize the response to `Task<T>`.
