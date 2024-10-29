@@ -175,7 +175,7 @@ public class ResponseTests
     }
 
     /// <summary>
-    /// Test to verify if IsSuccess returns false if we have a success status code, but there is a deserialization exception
+    /// Test to verify if IsSuccessful returns false if we have a success status code, but there is a deserialization error
     /// </summary>
     [Fact]
     public async Task When_SerializationErrorOnSuccessStatusCode_IsSuccessful_ShouldReturnFalse()
@@ -193,10 +193,34 @@ public class ResponseTests
 
         Assert.True(response.IsSuccessStatusCode);
         Assert.False(response.IsSuccessful);
+        Assert.NotNull(response.Error);
     }
 
     /// <summary>
-    /// Test to verify if EnsureSuccessAsync throws an ApiException if we have a success status code, but there is a deserialization exception
+    /// Test to verify if EnsureSuccessStatusCodeAsync do not throw an ApiException if we have a success status code, but there is a deserialization error
+    /// </summary>
+    [Fact]
+    public async Task When_SerializationErrorOnSuccessStatusCode_EnsureSuccesStatusCodeAsync_DoNotThrowApiException()
+    {
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("Invalid JSON")
+        };
+
+        mockHandler
+            .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
+            .Respond(req => expectedResponse);
+
+        using var response = await fixture.GetApiResponseTestObject();
+        await response.EnsureSuccessStatusCodeAsync();        
+
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.False(response.IsSuccessful);
+        Assert.NotNull(response.Error);
+    }
+
+    /// <summary>
+    /// Test to verify if EnsureSuccessfulAsync throws an ApiException if we have a success status code, but there is a deserialization error
     /// </summary>
     [Fact]
     public async Task When_SerializationErrorOnSuccessStatusCode_EnsureSuccessfulAsync_ThrowsApiException()
@@ -215,6 +239,8 @@ public class ResponseTests
             () => response.EnsureSuccessfulAsync()
         );
 
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.False(response.IsSuccessful);
         Assert.NotNull(actualException);
         Assert.IsType<System.Text.Json.JsonException>(actualException.InnerException);
     }
