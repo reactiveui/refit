@@ -39,6 +39,24 @@ public interface IRoundTripNotString
     Task<string> GetValue(int value);
 }
 
+public interface IRoundTrippingLeadingWhitespace
+{
+    [Get("/{ **path}")]
+    Task<string> GetValue(string path);
+}
+
+public interface IRoundTrippingTrailingWhitespace
+{
+    [Get("/{** path}")]
+    Task<string> GetValue(string path);
+}
+
+public interface IInvalidParamSubstitution
+{
+    [Get("/{/path}")]
+    Task<string> GetValue(string path);
+}
+
 public interface IUrlNoMatchingParameters
 {
     [Get("/{value}")]
@@ -123,6 +141,27 @@ public class RestServiceExceptionTests
     {
         var exception = Assert.Throws<ArgumentException>(() => RestService.For<IRoundTripNotString>("https://api.github.com"));
         AssertExceptionContains("has round-tripping parameter", exception);
+    }
+
+    [Fact]
+    public void RoundTripWithLeadingWhitespaceShouldThrow()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => RestService.For<IRoundTrippingLeadingWhitespace>("https://api.github.com"));
+        AssertExceptionContains("has parameter  **path, but no method parameter matches", exception);
+    }
+
+    [Fact]
+    public void RoundTripWithTrailingWhitespaceShouldThrow()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => RestService.For<IRoundTrippingTrailingWhitespace>("https://api.github.com"));
+        AssertExceptionContains("has parameter ** path, but no method parameter matches", exception);
+    }
+
+    [Fact]
+    public void InvalidParamSubstitutionShouldNotThrow()
+    {
+        var service = RestService.For<IInvalidParamSubstitution>("https://api.github.com");
+        Assert.NotNull(service);
     }
 
     [Fact]
