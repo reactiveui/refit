@@ -231,7 +231,7 @@ internal ref struct ValueStringBuilder
         _pos += count;
     }
 
-    public void Append(ReadOnlySpan<char> value)
+    public void Append(scoped ReadOnlySpan<char> value)
     {
         var pos = _pos;
         if (pos > _chars.Length - value.Length)
