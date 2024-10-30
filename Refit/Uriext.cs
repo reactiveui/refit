@@ -8,44 +8,45 @@ namespace Refit;
 
 internal static class UriExt
 {
-    private const int StackallocThreshold = 512;
+    public static void Temp(ref ValueStringBuilder vsb, object v)
+    {
+        if (v is ISpanFormattable spForm)
+        {
+            Span<char> ch = stackalloc char[512];
+            if(spForm.TryFormat(ch, out int written, string.Empty, null))
+            {
+                EscapeDataStringBuilder(ref vsb, ch.Slice(written));
+            }
+        }
+    }
+
     private static readonly SearchValues<char> Unreserved =
         SearchValues.Create("-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~");
 
-    public static string EscapeDataString(string stringToEscape) =>
-        EscapeString(stringToEscape, checkExistingEscaped: false, Unreserved);
-
-    public static string EscapeString(string stringToEscape, bool checkExistingEscaped, SearchValues<char> noEscape)
+    public static void EscapeDataStringBuilder(ref ValueStringBuilder vsb, scoped ReadOnlySpan<char> spanToEscape)
     {
-        ArgumentNullException.ThrowIfNull(stringToEscape);
-
-        return EscapeString(stringToEscape, checkExistingEscaped, noEscape, stringToEscape);
+        EscapeString(ref vsb, spanToEscape, false, Unreserved);
     }
 
-    public static string EscapeString(ReadOnlySpan<char> charsToEscape, bool checkExistingEscaped, SearchValues<char> noEscape, string? backingString)
+    private static void EscapeString(ref ValueStringBuilder vsb, scoped ReadOnlySpan<char> charsToEscape, bool checkExistingEscaped, SearchValues<char> noEscape)
     {
         Debug.Assert(!noEscape.Contains('%'), "Need to treat % specially; it should be part of any escaped set");
-        Debug.Assert(backingString is null || backingString.Length == charsToEscape.Length);
 
         int indexOfFirstToEscape = charsToEscape.IndexOfAnyExcept(noEscape);
         if (indexOfFirstToEscape < 0)
         {
-            // Nothing to escape, just return the original value.
-            return backingString ?? charsToEscape.ToString();
+            // Nothing to escape, just add the original value.
+            vsb.Append(charsToEscape);
+            return;
         }
 
-        // Otherwise, create a ValueStringBuilder to store the escaped data into,
-        // escape the rest, and concat the result with the characters we skipped above.
-        var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
-
+        // Escape the rest, and concat the result with the characters we skipped above.
         // We may throw for very large inputs (when growing the ValueStringBuilder).
         vsb.EnsureCapacity(charsToEscape.Length);
 
+        // Append section that does not need to be escaped, the rest will be added after.
+        vsb.Append(charsToEscape.Slice(0, indexOfFirstToEscape));
         EscapeStringToBuilder(charsToEscape.Slice(indexOfFirstToEscape), ref vsb, noEscape, checkExistingEscaped);
-
-        string result = string.Concat(charsToEscape.Slice(0, indexOfFirstToEscape), vsb.AsSpan());
-        vsb.Dispose();
-        return result;
     }
 
 
