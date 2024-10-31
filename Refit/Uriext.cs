@@ -1,5 +1,4 @@
-﻿#if NET8_0_OR_GREATER
-using System.Buffers;
+﻿using System.Buffers;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -8,22 +7,20 @@ namespace Refit;
 
 internal static class UriExt
 {
-    public static void Temp(ref ValueStringBuilder vsb, object v)
+    public static void EscapeDataString(ref ValueStringBuilder vsb, string stringToEscape)
     {
-        if (v is ISpanFormattable spForm)
-        {
-            Span<char> ch = stackalloc char[512];
-            if(spForm.TryFormat(ch, out int written, string.Empty, null))
-            {
-                EscapeDataStringBuilder(ref vsb, ch.Slice(written));
-            }
-        }
+#if NET8_0_OR_GREATER
+        EscapeDataStringBuilder(ref vsb, stringToEscape);
+#else
+        vsb.Append(Uri.EscapeDataString(stringToEscape));
+#endif
     }
+#if NET8_0_OR_GREATER
 
     private static readonly SearchValues<char> Unreserved =
         SearchValues.Create("-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~");
 
-    public static void EscapeDataStringBuilder(ref ValueStringBuilder vsb, scoped ReadOnlySpan<char> spanToEscape)
+    private static void EscapeDataStringBuilder(ref ValueStringBuilder vsb, scoped ReadOnlySpan<char> spanToEscape)
     {
         EscapeString(ref vsb, spanToEscape, false, Unreserved);
     }
@@ -125,8 +122,10 @@ internal static class UriExt
         to.Append('%');
         HexConverter.ToCharsBuffer(b, to.AppendSpan(2), 0);
     }
+#endif
 }
 
+#if NET8_0_OR_GREATER
 internal static class HexConverter
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
