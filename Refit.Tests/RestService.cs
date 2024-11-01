@@ -311,6 +311,9 @@ public interface IFragmentApi
     [Get("/foo#")]
     Task EmptyFragment();
 
+    [Get("/foo#first#second")]
+    Task ManyFragments();
+
     [Get("/foo#{frag}")]
     Task ParameterFragment(string frag);
 
@@ -2492,6 +2495,23 @@ public class RestServiceIntegrationTests
         var fixture = RestService.For<IFragmentApi>("https://github.com", settings);
 
         await fixture.EmptyFragment();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ShouldStripManyFragments()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IFragmentApi>("https://github.com", settings);
+
+        await fixture.ManyFragments();
 
         mockHttp.VerifyNoOutstandingExpectation();
     }
