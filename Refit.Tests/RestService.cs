@@ -303,6 +303,24 @@ public interface IQueryApi
     Task ParameterMappedQuery(string key, string value);
 }
 
+public interface IFragmentApi
+{
+    [Get("/foo#name")]
+    Task Fragment();
+
+    [Get("/foo#")]
+    Task EmptyFragment();
+
+    [Get("/foo#{frag}")]
+    Task ParameterFragment(string frag);
+
+    [Get("/foo?key=value#name")]
+    Task FragmentAfterQuery();
+
+    [Get("/foo#?key=value")]
+    Task QueryAfterFragment();
+}
+
 public class HttpBinGet
 {
     public Dictionary<string, object> Args { get; set; }
@@ -2440,6 +2458,92 @@ public class RestServiceIntegrationTests
         var fixture = RestService.For<IQueryApi>("https://github.com", settings);
 
         await fixture.ParameterMappedQuery("key1,", "value1,");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ShouldStripFragment()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IFragmentApi>("https://github.com", settings);
+
+        await fixture.Fragment();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ShouldStripEmptyFragment()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IFragmentApi>("https://github.com", settings);
+
+        await fixture.EmptyFragment();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ShouldStripParameterFragment()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IFragmentApi>("https://github.com", settings);
+
+        await fixture.ParameterFragment("ignore");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ShouldStripFragmentAfterQuery()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .WithExactQueryString("key=value")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IFragmentApi>("https://github.com", settings);
+
+        await fixture.FragmentAfterQuery();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ShouldStripQueryAfterFragment()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IFragmentApi>("https://github.com", settings);
+
+        await fixture.QueryAfterFragment();
 
         mockHttp.VerifyNoOutstandingExpectation();
     }
