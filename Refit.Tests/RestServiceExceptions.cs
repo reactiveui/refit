@@ -57,6 +57,12 @@ public interface IInvalidParamSubstitution
     Task<string> GetValue(string path);
 }
 
+public interface IInvalidFragmentParamSubstitution
+{
+    [Get("/{#path}")]
+    Task<string> GetValue(string path);
+}
+
 public interface IUrlNoMatchingParameters
 {
     [Get("/{value}")]
@@ -158,10 +164,19 @@ public class RestServiceExceptionTests
     }
 
     [Fact]
-    public void InvalidParamSubstitutionShouldNotThrow()
+    public async Task InvalidParamSubstitutionShouldThrow()
     {
         var service = RestService.For<IInvalidParamSubstitution>("https://api.github.com");
         Assert.NotNull(service);
+
+        await Assert.ThrowsAsync<ApiException>(() => service.GetValue("throws"));
+    }
+
+    [Fact]
+    public void InvalidFragmentParamSubstitutionShouldThrow()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => RestService.For<IInvalidFragmentParamSubstitution>("https://api.github.com"));
+        AssertExceptionContains("but no method parameter matches", exception);
     }
 
     [Fact]
