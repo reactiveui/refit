@@ -1008,7 +1008,7 @@ namespace Refit
                 foreach (var p in settings.HttpRequestMessageOptions)
                 {
 #if NET6_0_OR_GREATER
-                        ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+                    ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
 #else
                     ret.Properties.Add(p);
 #endif
@@ -1049,13 +1049,13 @@ namespace Refit
 #endif
         }
 
+#if NET6_0_OR_GREATER
         void AddVersionToRequest(HttpRequestMessage ret)
         {
-#if NET6_0_OR_GREATER
             ret.Version = settings.Version;
             ret.VersionPolicy = settings.VersionPolicy;
-#endif
         }
+#endif
 
         IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(
             object? param,
