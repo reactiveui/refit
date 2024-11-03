@@ -646,7 +646,7 @@ namespace Refit
                     ret.Content = multiPartContent;
                 }
 
-                var queryParamsToAdd = new List<KeyValuePair<string, string?>>();
+                List<KeyValuePair<string, string?>>? queryParamsToAdd = null;
                 var headersToAdd = restMethod.Headers.Count > 0 ?
                     new Dictionary<string, string?>(restMethod.Headers)
                     : null;
@@ -737,6 +737,7 @@ namespace Refit
                         || queryAttribute != null
                     )
                     {
+                        queryParamsToAdd ??= [];
                         AddQueryParameters(restMethod, queryAttribute, param, queryParamsToAdd, i, parameterInfo);
                         continue;
                     }
@@ -756,9 +757,9 @@ namespace Refit
                 var urlTarget = BuildRelativePath(basePath, restMethod, paramList);
 
                 var uri = new UriBuilder(new Uri(BaseUri, urlTarget));
-                ParseExistingQueryString(uri, queryParamsToAdd);
+                ParseExistingQueryString(uri, ref queryParamsToAdd);
 
-                if (queryParamsToAdd.Count != 0)
+                if (queryParamsToAdd is not null && queryParamsToAdd.Count != 0)
                 {
                     uri.Query = CreateQueryString(queryParamsToAdd);;
                 }
@@ -1172,11 +1173,12 @@ namespace Refit
             }
         }
 
-        static void ParseExistingQueryString(UriBuilder uri, List<KeyValuePair<string, string?>> queryParamsToAdd)
+        static void ParseExistingQueryString(UriBuilder uri, ref List<KeyValuePair<string, string?>>? queryParamsToAdd)
         {
             if (string.IsNullOrEmpty(uri.Query))
                 return;
 
+            queryParamsToAdd ??= [];
             var query = HttpUtility.ParseQueryString(uri.Query);
             var index = 0;
             foreach (var key in query.AllKeys)
