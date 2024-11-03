@@ -451,6 +451,25 @@ public class RestServiceIntegrationTests
     }
 
     [Fact]
+    public async Task GetWithLongPathBoundObject()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var longPathString = string.Concat(Enumerable.Repeat("barNone", 1000));
+        mockHttp
+            .Expect(HttpMethod.Get, $"http://foo/foos/12345/bar/{longPathString}")
+            .WithExactQueryString("")
+            .Respond("application/json", "Ok");
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+
+        await fixture.GetFooBars(
+            new PathBoundObject() { SomeProperty = 12345, SomeProperty2 = longPathString }
+        );
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
     public async Task GetWithPathBoundObjectDifferentCasing()
     {
         var mockHttp = new MockHttpMessageHandler();
