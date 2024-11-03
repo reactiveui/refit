@@ -83,11 +83,17 @@ Refit currently supports the following platforms and any .NET Standard 2.0 targe
 * Xamarin.Mac
 * Xamarin.iOS
 * Desktop .NET 4.6.1
-* .NET 5 / .NET Core
+* .NET 6 / 8
 * Blazor
 * Uno Platform
 
 ### SDK Requirements
+
+### Updates in 8.0.x
+Fixes for some issues experianced, this lead to some breaking changes
+See [Releases](https://github.com/reactiveui/refit/releases) for full details.
+
+### V6.x.x
 
 Refit 6 requires Visual Studio 16.8 or higher, or the .NET SDK 5.0.100 or higher. It can target any .NET Standard 2.0 platform.
 

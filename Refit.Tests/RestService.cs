@@ -273,6 +273,36 @@ public interface IValidApi
     Task Get();
 }
 
+public interface IQueryApi
+{
+    [Get("/foo?")]
+    Task EmptyQuery();
+
+    [Get("/foo?     ")]
+    Task WhiteSpaceQuery();
+
+    [Get("/foo?=value")]
+    Task EmptyQueryKey();
+
+    [Get("/foo?key=")]
+    Task EmptyQueryValue();
+
+    [Get("/foo?=")]
+    Task EmptyQueryKeyAndValue();
+
+    [Get("/foo?&&&")]
+    Task QueryManyAndSymbol();
+
+    [Get("/foo?key,=value,&key1(=value1(")]
+    Task UnescapedQuery();
+
+    [Get("/foo?key%2C=value%2C&key1%28=value1%28")]
+    Task EscapedQuery();
+
+    [Get("/foo?{key}={value}")]
+    Task ParameterMappedQuery(string key, string value);
+}
+
 public class HttpBinGet
 {
     public Dictionary<string, object> Args { get; set; }
@@ -2232,6 +2262,186 @@ public class RestServiceIntegrationTests
             as ITrimTrailingForwardSlashApi;
 
         Assert.Equal(fixture.Client.BaseAddress.AbsoluteUri, expectedBaseAddress);
+    }
+
+    [Fact]
+    public async Task EmptyQueryShouldBeEmpty()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo?")
+            .WithExactQueryString("")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.EmptyQuery();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task WhiteSpaceQueryShouldBeEmpty()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo?")
+            .WithExactQueryString("")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.WhiteSpaceQuery();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task EmptyQueryKeyShouldBeEmpty()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo?")
+            .WithExactQueryString("")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.EmptyQueryKey();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task EmptyQueryValueShouldNotBeEmpty()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo?key=")
+            .WithExactQueryString("key=")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.EmptyQueryValue();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task EmptyQueryKeyAndValueShouldBeEmpty()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo?")
+            .WithExactQueryString("")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.EmptyQueryKeyAndValue();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task QueryAndSymbolShouldBeEmpty()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo?&&&")
+            .WithExactQueryString("&&&")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.QueryManyAndSymbol();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task UnescapedQueryShouldBeEscaped()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .WithExactQueryString("key%2C=value%2C&key1%28=value1%28")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.UnescapedQuery();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task EscapedQueryShouldStillBeEscaped()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .WithExactQueryString("key%2C=value%2C&key1%28=value1%28")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.EscapedQuery();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ParameterMappedQueryShouldWork()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .WithExactQueryString("key1=value1")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.ParameterMappedQuery("key1", "value1");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ParameterMappedQueryShouldEscape()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .WithExactQueryString("key1%2C=value1%2C")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.ParameterMappedQuery("key1,", "value1,");
+
+        mockHttp.VerifyNoOutstandingExpectation();
     }
 
     [Fact]
