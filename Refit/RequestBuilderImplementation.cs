@@ -1068,12 +1068,12 @@ namespace Refit
                     new HttpRequestOptionsKey<RestMethodInfo>(
                         HttpRequestMessageOptions.RestMethodInfo
                     ),
-                    restMethod.ToRestMethodInfo()
+                    restMethod.RestMethodInfo
                 );
 #else
             ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
             ret.Properties[HttpRequestMessageOptions.RestMethodInfo] =
-                restMethod.ToRestMethodInfo();
+                restMethod.RestMethodInfo;
 #endif
         }
 
