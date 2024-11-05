@@ -754,53 +754,50 @@ namespace Refit
                 // NB: The URI methods in .NET are dumb. Also, we do this
                 // UriBuilder business so that we preserve any hardcoded query
                 // parameters as well as add the parameterized ones.
-                var urlTarget = BuildRelativePath(basePath, restMethod, paramList);
 
-                var uri = new UriBuilder(new Uri(BaseUri, urlTarget));
-                ParseExistingQueryString(uri, ref queryParamsToAdd);
+                var urlVsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
+
+                BuildRelativePath(ref urlVsb, basePath, restMethod, paramList);
+
+                // var uri = new UriBuilder(new Uri(BaseUri, urlTarget));
+                // ParseExistingQueryString(uri, ref queryParamsToAdd);
 
                 if (queryParamsToAdd is not null && queryParamsToAdd.Count != 0)
                 {
-                    uri.Query = CreateQueryString(queryParamsToAdd);;
-                }
-                else
-                {
-                    uri.Query = null;
+                    CreateQueryString(ref urlVsb, queryParamsToAdd, !restMethod.ContainsQuery);
                 }
 
                 ret.RequestUri = new Uri(
-                    uri.Uri.GetComponents(UriComponents.PathAndQuery, restMethod.QueryUriFormat),
+                    urlVsb.ToString(),
                     UriKind.Relative
                 );
                 return ret;
             };
         }
 
-        string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
+        void BuildRelativePath(ref ValueStringBuilder vsb, string basePath, RestMethodInfoInternal restMethod, object[] paramList)
         {
             basePath = basePath == "/" ? string.Empty : basePath;
+            vsb.Append(basePath);
+
             var pathFragments = restMethod.FragmentPath;
             if (pathFragments.Count == 0)
             {
-                return basePath;
+                return;
             }
             if (string.IsNullOrEmpty(basePath) && pathFragments.Count == 1)
             {
                 Debug.Assert(pathFragments[0].IsConstant);
-                return pathFragments[0].Value!;
+                vsb.Append(pathFragments[0].Value!);
+                return;
             }
 
-#pragma warning disable CA2000
-            var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
-#pragma warning restore CA2000
             vsb.Append(basePath);
 
             foreach (var fragment in pathFragments)
             {
                 AppendPathFragmentValue(ref vsb, restMethod, paramList, fragment);
             }
-
-            return vsb.ToString();
         }
 
         void AppendPathFragmentValue(ref ValueStringBuilder vsb, RestMethodInfoInternal restMethod, object[] paramList,
@@ -1173,13 +1170,13 @@ namespace Refit
             }
         }
 
-        static void ParseExistingQueryString(UriBuilder uri, ref List<KeyValuePair<string, string?>>? queryParamsToAdd)
+        internal static void ParseExistingQueryString(string uri, ref List<KeyValuePair<string, string?>>? queryParamsToAdd)
         {
-            if (string.IsNullOrEmpty(uri.Query))
+            if (string.IsNullOrEmpty(uri))
                 return;
 
             queryParamsToAdd ??= [];
-            var query = HttpUtility.ParseQueryString(uri.Query);
+            var query = HttpUtility.ParseQueryString(uri);
             var index = 0;
             foreach (var key in query.AllKeys)
             {
@@ -1193,17 +1190,19 @@ namespace Refit
             }
         }
 
-        static string CreateQueryString(List<KeyValuePair<string, string?>> queryParamsToAdd)
+        internal static void CreateQueryString(ref ValueStringBuilder vsb, List<KeyValuePair<string, string?>> queryParamsToAdd, bool firstQuery)
         {
-            // Suppress warning as ValueStringBuilder.ToString calls Dispose()
-#pragma warning disable CA2000
-            var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
-#pragma warning restore CA2000
-            var firstQuery = true;
             foreach (var queryParam in queryParamsToAdd)
             {
                 if(queryParam is not { Key: not null, Value: not null })
                     continue;
+
+                if (firstQuery)
+                {
+                    // query starts with ?
+                    vsb.Append('?');
+                }
+
                 if(!firstQuery)
                 {
                     // for all items after the first we add a & symbol
@@ -1221,6 +1220,37 @@ namespace Refit
                 vsb.Append(key);
                 vsb.Append('=');
                 vsb.Append(Uri.EscapeDataString(queryParam.Value ?? string.Empty));
+                if (firstQuery)
+                    firstQuery = false;
+            }
+        }
+
+        internal static string CreateQueryString2(List<KeyValuePair<string, string?>> queryParamsToAdd, bool firstQuery)
+        {
+            var vsb = new StringBuilder();
+            foreach (var queryParam in queryParamsToAdd)
+            {
+                if(queryParam is not { Key: not null, Value: not null })
+                    continue;
+                if(!firstQuery)
+                {
+                    // for all items after the first we add a & symbol
+                    vsb.Append('&');
+                }
+                // var key = Uri.EscapeDataString(queryParam.Key);
+                var key = queryParam.Key;
+#if NET6_0_OR_GREATER
+                // if first query does not start with ? then prepend it
+                if (vsb.Length == 0 && key.Length > 0 && key[0] != '?')
+                {
+                    // query starts with ?
+                    vsb.Append('?');
+                }
+#endif
+                vsb.Append(key);
+                vsb.Append('=');
+                // vsb.Append(Uri.EscapeDataString(queryParam.Value ?? string.Empty));
+                vsb.Append(queryParam.Value ?? string.Empty);
                 if (firstQuery)
                     firstQuery = false;
             }

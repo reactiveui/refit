@@ -35,6 +35,9 @@ namespace Refit
         public string RelativePath { get; }
         public bool IsMultipart { get; }
         public string MultipartBoundary { get; private set; }
+        public bool ContainsQuery { get; private set; }
+        public string? StrippedUrl { get; private set; }
+
         public RestMethodInfo RestMethodInfo { get; }
         public ParameterInfo? CancellationToken { get; }
         public UriFormat QueryUriFormat { get; }
@@ -86,12 +89,21 @@ namespace Refit
             DetermineReturnTypeInfo(methodInfo);
             DetermineIfResponseMustBeDisposed();
 
+            QueryUriFormat =  methodInfo.GetCustomAttribute<QueryUriFormatAttribute>()?.UriFormat
+                              ?? UriFormat.UriEscaped;
+
+            PreFormatUrl();
+
+
+
+
+
             // Exclude cancellation token parameters from this list
             ParameterInfoArray = methodInfo
                 .GetParameters()
                 .Where(static p => p.ParameterType != typeof(CancellationToken))
                 .ToArray();
-            (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray);
+            (ParameterMap, FragmentPath) = BuildParameterMap(StrippedUrl!, ParameterInfoArray);
             BodyParameterInfo = FindBodyParameter(ParameterInfoArray, IsMultipart, hma.Method);
             AuthorizeParameterInfo = FindAuthorizationParameter(ParameterInfoArray);
 
@@ -177,6 +189,66 @@ namespace Refit
                         || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)
                     )
                 || ReturnResultType == typeof(IApiResponse);
+        }
+
+        static readonly Uri BaseUri = new ("http://api");
+
+        private void PreFormatUrl()
+        {
+            // Extract path query
+            // If no query early exit and use stripped
+
+            // If query then:
+            // Check query for fragments
+            // If fragment early return and ensure implementation does runtime stripping
+            // If not fragments then parse
+            // Re add fragments if any exist -- Might cause issues for invalid queries as parser may ignore them
+
+            var ur = new Uri(BaseUri, RelativePath, true);
+            var urb = new UriBuilder(ur);
+            var aq = ur.Query;
+            var q = urb.Query;
+
+            if (string.IsNullOrEmpty(ur.Query))
+            {
+                StrippedUrl = RelativePath;
+                return;
+            }
+
+            var l = new List<KeyValuePair<string, string?>>();
+            RequestBuilderImplementation.ParseExistingQueryString(ur.Query, ref l);
+
+            string q1 = string.Empty;
+            if (l.Count > 0)
+            {
+                ContainsQuery = true;
+
+                if (q.Contains("name="))
+                {
+                }
+
+                q1 = RequestBuilderImplementation.CreateQueryString2(l, true);
+                // if (q.Contains("name="))
+                // {
+                //     throw new Exception(q1);
+                // }
+                #if NET6_0_OR_GREATER
+                StrippedUrl = urb.Path + q1;
+                #else
+                StrippedUrl = urb.Path + '?' + q1;
+                #endif
+                return;
+            }
+            else
+            {
+                StrippedUrl = urb.Uri.GetComponents(UriComponents.PathAndQuery, QueryUriFormat);
+                return;
+            }
+
+
+            if (q.Contains("name="))
+            {
+            }
         }
 
         public bool HasHeaderCollection => HeaderCollectionParameterIndex >= 0;
