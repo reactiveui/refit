@@ -27,30 +27,31 @@ namespace Refit
     [DebuggerDisplay("{MethodInfo}")]
     internal class RestMethodInfoInternal
     {
-        private int HeaderCollectionParameterIndex { get; set; }
-        public string Name { get; set; }
-        public Type Type { get; set; }
-        public MethodInfo MethodInfo { get; set; }
-        public HttpMethod HttpMethod { get; set; }
-        public string RelativePath { get; set; }
-        public bool IsMultipart { get; private set; }
+        private int HeaderCollectionParameterIndex { get;  }
+        private string Name => MethodInfo.Name;
+        public Type Type { get; }
+        public MethodInfo MethodInfo { get; }
+        public HttpMethod HttpMethod { get; }
+        public string RelativePath { get; }
+        public bool IsMultipart { get; }
         public string MultipartBoundary { get; private set; }
-        public ParameterInfo? CancellationToken { get; set; }
-        public UriFormat QueryUriFormat { get; set; }
-        public Dictionary<string, string?> Headers { get; set; }
-        public Dictionary<int, string> HeaderParameterMap { get; set; }
-        public Dictionary<int, string> PropertyParameterMap { get; set; }
-        public Tuple<BodySerializationMethod, bool, int>? BodyParameterInfo { get; set; }
-        public Tuple<string, int>? AuthorizeParameterInfo { get; set; }
-        public Dictionary<int, string> QueryParameterMap { get; set; }
-        public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; set; }
-        public ParameterInfo[] ParameterInfoArray { get; set; }
-        public Dictionary<int, RestMethodParameterInfo> ParameterMap { get; set; }
+        public RestMethodInfo RestMethodInfo { get; }
+        public ParameterInfo? CancellationToken { get; }
+        public UriFormat QueryUriFormat { get; }
+        public Dictionary<string, string?> Headers { get; }
+        public Dictionary<int, string> HeaderParameterMap { get; }
+        public Dictionary<int, string> PropertyParameterMap { get; }
+        public Tuple<BodySerializationMethod, bool, int>? BodyParameterInfo { get; }
+        public Tuple<string, int>? AuthorizeParameterInfo { get; }
+        public Dictionary<int, string> QueryParameterMap { get; }
+        public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; }
+        public ParameterInfo[] ParameterInfoArray { get; }
+        public Dictionary<int, RestMethodParameterInfo> ParameterMap { get; }
         public List<ParameterFragment> FragmentPath { get ; set ; }
         public Type ReturnType { get; set; }
         public Type ReturnResultType { get; set; }
         public Type DeserializedResultType { get; set; }
-        public RefitSettings RefitSettings { get; set; }
+        public RefitSettings RefitSettings { get; }
         public bool IsApiResponse { get; }
         public bool ShouldDisposeResponse { get; private set; }
 
@@ -67,7 +68,6 @@ namespace Refit
         {
             RefitSettings = refitSettings ?? new RefitSettings();
             Type = targetInterface ?? throw new ArgumentNullException(nameof(targetInterface));
-            Name = methodInfo.Name;
             MethodInfo = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
 
             var hma = methodInfo.GetCustomAttributes(true).OfType<HttpMethodAttribute>().First();
@@ -97,7 +97,7 @@ namespace Refit
 
             Headers = ParseHeaders(methodInfo);
             HeaderParameterMap = BuildHeaderParameterMap(ParameterInfoArray);
-            HeaderCollectionParameterIndex = RestMethodInfoInternal.GetHeaderCollectionParameterIndex(
+            HeaderCollectionParameterIndex = GetHeaderCollectionParameterIndex(
                 ParameterInfoArray
             );
             PropertyParameterMap = BuildRequestPropertyMap(ParameterInfoArray);
@@ -164,6 +164,7 @@ namespace Refit
                 );
             }
 
+            RestMethodInfo = new RestMethodInfo(Name, Type, MethodInfo, RelativePath, ReturnType!);
             CancellationToken = ctParam;
 
             QueryUriFormat =  methodInfo.GetCustomAttribute<QueryUriFormatAttribute>()?.UriFormat
@@ -215,9 +216,6 @@ namespace Refit
 
             return headerIndex;
         }
-
-        public RestMethodInfo ToRestMethodInfo() =>
-            new(Name, Type, MethodInfo, RelativePath, ReturnType);
 
         static Dictionary<int, string> BuildRequestPropertyMap(ParameterInfo[] parameterArray)
         {
