@@ -1,10 +1,16 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.Globalization;
+using System.Net.Http;
+using System.Reflection;
+using System.Text.Json;
+
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+
+using Refit.Implementation;
+
+using Xunit;
 
 namespace Refit.Tests;
-
-using System.Text.Json;
-using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 public class HttpClientFactoryExtensionsTests
 {
@@ -152,6 +158,37 @@ public class HttpClientFactoryExtensionsTests
                 .GetRequiredService<SettingsFor<IFooWithOtherAttribute>>()
                 .Settings!.ContentSerializer
         );
+    }
+
+    [Fact]
+    public void ProvidedHttpClientIsUsedAsNamedClient()
+    {
+        var baseUri = new Uri("https://0:1337");
+        var services = new ServiceCollection();
+
+        services.AddHttpClient("MyHttpClient", client => {
+            client.BaseAddress = baseUri;
+            client.DefaultRequestHeaders.Add("X-Powered-By", Environment.OSVersion.VersionString);
+        });
+        services.AddRefitClient<IGitHubApi>(null, "MyHttpClient");
+
+        var sp = services.BuildServiceProvider();
+        var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+        var httpClient = httpClientFactory.CreateClient("MyHttpClient");
+
+        var gitHubApi = sp.GetRequiredService<IGitHubApi>();
+
+        var memberInfos = typeof(Generated).GetMember("RefitTestsIGitHubApi", BindingFlags.NonPublic);
+        var genApi = Convert.ChangeType(gitHubApi, (Type)memberInfos[0], CultureInfo.InvariantCulture);
+        var genApiProperty = genApi.GetType().GetProperty("Client")!;
+        var genApiClient = (HttpClient)genApiProperty.GetValue(genApi)!;
+
+        Assert.NotSame(httpClient, genApiClient);
+        Assert.Equal(httpClient.BaseAddress, genApiClient.BaseAddress);
+        Assert.Equal(baseUri, genApiClient.BaseAddress);
+        Assert.Contains(
+            new KeyValuePair<string, IEnumerable<string>>("X-Powered-By",
+                new[] { Environment.OSVersion.VersionString }), genApiClient.DefaultRequestHeaders);
     }
 
     class ClientOptions
