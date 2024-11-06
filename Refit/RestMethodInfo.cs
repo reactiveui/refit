@@ -89,7 +89,7 @@ namespace Refit
             // Exclude cancellation token parameters from this list
             ParameterInfoArray = methodInfo
                 .GetParameters()
-                .Where(static p => p.ParameterType != typeof(CancellationToken))
+                .Where(static p => p.ParameterType != typeof(CancellationToken) && p.ParameterType != typeof(CancellationToken?))
                 .ToArray();
             (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray);
             BodyParameterInfo = FindBodyParameter(ParameterInfoArray, IsMultipart, hma.Method);
