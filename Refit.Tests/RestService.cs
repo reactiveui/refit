@@ -321,6 +321,18 @@ public interface IFragmentApi
     Task QueryAfterFragment();
 }
 
+public interface ICancellableApi
+{
+    [Get("/foo")]
+    Task GetWithCancellation(CancellationToken token = default);
+
+    [Get("/foo")]
+    Task<string> GetWithCancellationAndReturn(CancellationToken token = default);
+
+    [Get("/foo")]
+    Task GetWithNullableCancellation(CancellationToken? token);
+}
+
 public class HttpBinGet
 {
     public Dictionary<string, object> Args { get; set; }
@@ -2543,6 +2555,50 @@ public class RestServiceIntegrationTests
         var fixture = RestService.For<IFragmentApi>("https://github.com", settings);
 
         await fixture.QueryAfterFragment();
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task TaskShouldCancelWhenRequested()
+    {
+        var ctSource = new CancellationTokenSource();
+        var token = ctSource.Token;
+
+        var fixture = RestService.For<ICancellableApi>("https://github.com");
+
+        ctSource.Cancel();
+        var task = fixture.GetWithCancellation(token);
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await task);
+    }
+
+    [Fact]
+    public async Task TaskResultShouldCancelWhenRequested()
+    {
+        var ctSource = new CancellationTokenSource();
+        var token = ctSource.Token;
+
+        var fixture = RestService.For<ICancellableApi>("https://github.com");
+
+        ctSource.Cancel();
+        var task = fixture.GetWithCancellationAndReturn(token);
+        await Assert.ThrowsAsync<TaskCanceledException>(async () => await task);
+    }
+
+
+    [Fact]
+    public async Task NullableCancellationTokenShouldBeIgnored()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<ICancellableApi>("https://github.com", settings);
+
+        await fixture.GetWithNullableCancellation(null);
 
         mockHttp.VerifyNoOutstandingExpectation();
     }
