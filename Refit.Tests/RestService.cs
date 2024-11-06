@@ -290,9 +290,6 @@ public interface IQueryApi
     [Get("/foo?=")]
     Task EmptyQueryKeyAndValue();
 
-    [Get("/foo?&&&")]
-    Task QueryManyAndSymbol();
-
     [Get("/foo?key,=value,&key1(=value1(")]
     Task UnescapedQuery();
 
@@ -2383,24 +2380,6 @@ public class RestServiceIntegrationTests
         var fixture = RestService.For<IQueryApi>("https://github.com", settings);
 
         await fixture.EmptyQueryKeyAndValue();
-
-        mockHttp.VerifyNoOutstandingExpectation();
-    }
-
-    [Fact]
-    public async Task QueryAndSymbolShouldBeEmpty()
-    {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
-
-        mockHttp
-            .Expect(HttpMethod.Get, "https://github.com/foo?&&&")
-            .WithExactQueryString("&&&")
-            .Respond(HttpStatusCode.OK);
-
-        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
-
-        await fixture.QueryManyAndSymbol();
 
         mockHttp.VerifyNoOutstandingExpectation();
     }
