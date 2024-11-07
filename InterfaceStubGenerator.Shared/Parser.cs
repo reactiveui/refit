@@ -265,7 +265,7 @@ namespace {refitInternalNamespace}
         }
 
         // Remove dots
-        ns = ns!.Replace(".", "");
+        ns = ns!.Replace(".", "").Replace('-', '_');
         var interfaceDisplayName = interfaceSymbol.ToDisplayString(
             SymbolDisplayFormat.FullyQualifiedFormat
         );

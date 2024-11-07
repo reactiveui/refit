@@ -39,7 +39,7 @@
             interfaceTypeName = interfaceTypeName.Replace("+", "");
 
             // Get the namespace and remove the dots
-            var ns = refitInterfaceType.Namespace?.Replace(".", "");
+            var ns = refitInterfaceType.Namespace?.Replace(".", "").Replace("-", "_");
 
             // Refit types will be generated as private classes within a Generated type in namespace
             // Refit.Implementation
