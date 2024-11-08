@@ -34,6 +34,9 @@ internal static class Parser
 
         refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
 
+        // Remove - as they are valid in csproj, but invalid in a namespace
+        refitInternalNamespace = refitInternalNamespace.Replace('-', '_').Replace('@', '_');
+
         // we're going to create a new compilation that contains the attribute.
         // TODO: we should allow source generators to provide source during initialize, so that this step isn't required.
         var options = (CSharpParseOptions)compilation.SyntaxTrees[0].Options;
