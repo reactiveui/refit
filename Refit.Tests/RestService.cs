@@ -298,6 +298,9 @@ public interface IQueryApi
 
     [Get("/foo?{key}={value}")]
     Task ParameterMappedQuery(string key, string value);
+
+    [Get("/foo")]
+    Task NullableIntCollectionQuery([Query] int?[] values);
 }
 
 public interface IFragmentApi
@@ -2452,6 +2455,24 @@ public class RestServiceIntegrationTests
         var fixture = RestService.For<IQueryApi>("https://github.com", settings);
 
         await fixture.ParameterMappedQuery("key1,", "value1,");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task NullableIntCollectionQuery()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://github.com/foo")
+            .WithExactQueryString("values=3%2C4%2C")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IQueryApi>("https://github.com", settings);
+
+        await fixture.NullableIntCollectionQuery([3, 4, null]);
 
         mockHttp.VerifyNoOutstandingExpectation();
     }
