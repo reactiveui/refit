@@ -1,10 +1,21 @@
 {
-  "version": "7.2.1",
+  "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/master/src/NerdBank.GitVersioning/version.schema.json",
+  "version": "7.2",
   "publicReleaseRefSpec": [
-    "^refs/heads/main$", // we release out of main
-    "^refs/heads/rel/v\\d+\\.\\d+" // we also release branches starting with vN.N
+    "^refs/heads/master$", // we release out of master
+    "^refs/heads/main$",
+    "^refs/heads/latest$",
+    "^refs/heads/preview/.*", // we release previews
+    "^refs/heads/patches/.*", // we release previews
+    "^refs/heads/rel/\\d+\\.\\d+\\.\\d+" // we also release branches starting with rel/N.N.N
   ],
   "nugetPackageVersion":{
     "semVer": 2
+  },
+  "cloudBuild": {
+    "setVersionVariables": true,
+    "buildNumber": {
+      "enabled": false
+    }
   }
 }
