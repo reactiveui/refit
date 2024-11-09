@@ -1349,12 +1349,15 @@ namespace Refit
             type = intType.GetGenericArguments()[0];
             return ShouldReturn(type);
 
+            // Check if type is a simple string or IFormattable type, check underlying type if Nullable<T>
             static bool ShouldReturn(Type type) =>
-                type == typeof(string)
-                || type == typeof(bool)
-                || type == typeof(char)
-                || typeof(IFormattable).IsAssignableFrom(type)
-                || type == typeof(Uri);
+                Nullable.GetUnderlyingType(type) is { } underlyingType
+                    ? ShouldReturn(underlyingType)
+                    : type == typeof(string)
+                      || type == typeof(bool)
+                      || type == typeof(char)
+                      || typeof(IFormattable).IsAssignableFrom(type)
+                      || type == typeof(Uri);
         }
 
         static void SetHeader(HttpRequestMessage request, string name, string? value)
