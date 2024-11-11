@@ -151,7 +151,7 @@ internal static class Parser
 
         var supportsNullable = options.LanguageVersion >= LanguageVersion.CSharp8;
 
-        var keyCount = new Dictionary<string, int>();
+        var keyCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
         var attributeText =
             @$"
