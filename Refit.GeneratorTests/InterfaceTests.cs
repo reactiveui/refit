@@ -107,6 +107,44 @@ public class InterfaceTests
     }
 
     [Fact]
+    public Task InterfacesWithDifferentCasing()
+    {
+        return Fixture.VerifyForType(
+            """
+            public interface IApi
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+
+            public interface Iapi
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+            """);
+    }
+
+    [Fact]
+    public Task InterfacesWithDifferentSignature()
+    {
+        return Fixture.VerifyForType(
+            """
+            public interface IApi
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+
+            public interface IApi<T>
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+            """);
+    }
+
+    [Fact]
     public Task NestedNamespaceTest()
     {
         return Fixture.VerifyForDeclaration(
