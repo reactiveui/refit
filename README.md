@@ -162,8 +162,8 @@ case-sensitive, so it will work correctly if you name your parameter `groupId`
 in the path `/group/{groupid}/show` for example.
 
 ```csharp
-[Get("/group/{id}/users")]
-Task<List<User>> GroupList([AliasAs("id")] int groupId, [AliasAs("sort")] string sortOrder);
+[Get("/group/{groupid}/users")]
+Task<List<User>> GroupList(int groupId, [AliasAs("sort")] string sortOrder);
 
 GroupList(4, "desc");
 >>> "/group/4/users?sort=desc"
