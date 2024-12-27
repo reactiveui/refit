@@ -466,6 +466,12 @@ namespace Refit
         }
 
         /// <summary>
+        /// Used to specify that the value should be treated as a string.
+        /// Set to true if you want to call ToString() on the object before adding it to the query string.
+        /// </summary>
+        public bool TreatAsString { get; set; }
+
+        /// <summary>
         /// Used to customize the name of either the query parameter pair or of the form field when form encoding.
         /// </summary>
         /// <seealso cref="Prefix"/>
