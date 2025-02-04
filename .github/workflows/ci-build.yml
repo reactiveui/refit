@@ -16,4 +16,4 @@ jobs:
       configuration: Release
       productNamespacePrefix: "Refit"
       srcFolder: "./"
-      installWorkflows: false
+      installWorkflows: true
