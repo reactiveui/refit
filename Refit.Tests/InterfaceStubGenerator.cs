@@ -5,11 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
+
 using Refit.Generator;
+
 using Xunit;
+
 using Task = System.Threading.Tasks.Task;
 using VerifyCS = Refit.Tests.CSharpSourceGeneratorVerifier<Refit.Generator.InterfaceStubGenerator>;
 using VerifyCSV2 = Refit.Tests.CSharpIncrementalSourceGeneratorVerifier<Refit.Generator.InterfaceStubGeneratorV2>;
@@ -33,6 +37,8 @@ public class InterfaceStubGeneratorTests
         ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
 #elif NET8_0
         ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+#elif NET9_0
+        ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
 #else
         ReferenceAssemblies = ReferenceAssemblies.Default.AddPackages(
             ImmutableArray.Create(new PackageIdentity("System.Text.Json", "7.0.2"))

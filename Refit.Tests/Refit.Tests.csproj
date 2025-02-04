@@ -3,7 +3,7 @@
   <Import Project="..\Refit\targets\refit.props" />
   
   <PropertyGroup>
-    <TargetFrameworks>net48;net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0;net9.0</TargetFrameworks>
     <Deterministic>false</Deterministic> <!-- Some tests rely on CallerFilePath -->
     <RestoreAdditionalProjectSources>https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json</RestoreAdditionalProjectSources>
     <NoWarn>$(NoWarn);CS1591;CA1819;CA2000;CA2007;CA1056;CA1707;CA1861;xUnit1031</NoWarn>
@@ -13,16 +13,16 @@
     <EmbeddedResource Include="Test Files\Test.pdf" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net8.0'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'">
     <PackageReference Include="PublicApiGenerator" Version="*" />
     <PackageReference Include="Verify.Xunit" Version="*" />
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="coverlet.msbuild" Version="6.0.2" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.1" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />

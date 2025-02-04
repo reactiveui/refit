@@ -10,8 +10,7 @@ namespace Refit
         /// <summary>
         /// Collection of resulting errors for the request.
         /// </summary>
-        public Dictionary<string, string[]> Errors { get; set; } =
-            new Dictionary<string, string[]>();
+        public Dictionary<string, string[]> Errors { get; set; } = [];
 
         /// <summary>
         /// Collection of ProblemDetails extensions

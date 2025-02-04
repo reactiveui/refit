@@ -15,9 +15,14 @@ namespace Refit
     /// <summary>
     /// A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> which provides Xml content serialization.
     /// </summary>
-    public class XmlContentSerializer : IHttpContentSerializer
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="XmlContentSerializer"/> class.
+    /// </remarks>
+    /// <param name="settings">The settings.</param>
+    /// <exception cref="System.ArgumentNullException">settings</exception>
+    public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttpContentSerializer
     {
-        readonly XmlContentSerializerSettings settings;
+        readonly XmlContentSerializerSettings settings = settings ?? throw new ArgumentNullException(nameof(settings));
         readonly ConcurrentDictionary<Type, XmlSerializer> serializerCache = new();
 
         /// <summary>
@@ -25,16 +30,6 @@ namespace Refit
         /// </summary>
         public XmlContentSerializer()
             : this(new XmlContentSerializerSettings()) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="XmlContentSerializer"/> class.
-        /// </summary>
-        /// <param name="settings">The settings.</param>
-        /// <exception cref="System.ArgumentNullException">settings</exception>
-        public XmlContentSerializer(XmlContentSerializerSettings settings)
-        {
-            this.settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        }
 
         /// <summary>
         /// Serialize object of type <typeparamref name="T"/> to a <see cref="HttpContent"/> with Xml.
