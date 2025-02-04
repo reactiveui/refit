@@ -39,7 +39,7 @@ public class InterfaceStubGeneratorTests
         );
 #endif
 
-#if NET461
+#if NET48
         ReferenceAssemblies = ReferenceAssemblies
             .AddAssemblies(ImmutableArray.Create("System.Web"))
             .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4")));
@@ -108,7 +108,7 @@ public class InterfaceStubGeneratorTests
     [Fact]
     public async Task NoRefitInterfacesSmokeTest()
     {
-#if NET462
+#if NET48
         var input = File.ReadAllText(IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs"));
 #else
         var input = await File.ReadAllTextAsync(
@@ -132,7 +132,7 @@ public class InterfaceStubGeneratorTests
     [Fact]
     public async Task FindInterfacesSmokeTest()
     {
-#if NET462
+#if NET48
         var input = File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs"));
 #else
         var input = await File.ReadAllTextAsync(IntegrationTestHelper.GetPath("GitHubApi.cs"));
@@ -794,7 +794,7 @@ namespace Refit.Implementation
     [Fact]
     public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
     {
-#if NET462
+#if NET48
         var input = File.ReadAllText(IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs"));
 #else
         var input = await File.ReadAllTextAsync(
