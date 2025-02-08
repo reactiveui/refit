@@ -440,8 +440,7 @@ public class RestServiceIntegrationTests
 
         var client = new HttpClient(mockHttp) { BaseAddress = new Uri("http://foo/") };
 
-        await client.GetAsync("/firstRequest");
-        ;
+        _ = await client.GetAsync(new Uri("/firstRequest", UriKind.RelativeOrAbsolute));
 
         var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
