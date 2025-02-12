@@ -23,6 +23,12 @@ namespace Refit.Tests
             Task<string> GetAuthenticated();
         }
 
+        public interface IInheritedAuthenticatedServiceWithHeadersCRLF //: IAuthenticatedServiceWithHeaders
+        {
+            [Get("/get-inherited-thing\r\n\r\nGET /smuggled")]
+            Task<string> GetInheritedThing();
+        }
+
 
         [Fact]
         public void DefaultHandlerIsHttpClientHandler()
@@ -119,6 +125,32 @@ namespace Refit.Tests
             handler.VerifyNoOutstandingExpectation();
 
             Assert.Equal("Ok", result);
+        }
+
+        [Fact]
+        public async void AuthentictedMethodFromInheritedClassWithHeadersAttributeUsesAuth_WithCRLFCheck()
+        {
+            var handler = new MockHttpMessageHandler();
+            var settings = new RefitSettings()
+            {
+                AuthorizationHeaderValueGetter = () => Task.FromResult("tokenValue"),
+                HttpMessageHandlerFactory = () => handler,
+            };
+
+            handler
+                .Expect(HttpMethod.Get, "http://api/get-inherited-thing")
+                .WithHeaders("Authorization", "Bearer tokenValue")
+                .Respond("text/plain", "Ok");
+
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+            {
+                var fixture = RestService.For<IInheritedAuthenticatedServiceWithHeadersCRLF>(
+                        "http://api",
+                        settings
+                    );
+
+                var result = await fixture.GetInheritedThing();
+            });
         }
     }
 }
