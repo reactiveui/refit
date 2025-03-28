@@ -71,4 +71,14 @@ public class ReturnTypeTests
             Task<string> Get<T>() where T : struct
             """);
     }
+
+    [Fact]
+    public Task ReturnIObservable()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users/{user}")]
+            IObservable<HttpResponseMessage> GetUser(string user);
+            """);
+    }
 }
