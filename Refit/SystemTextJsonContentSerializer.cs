@@ -95,7 +95,7 @@ namespace Refit
     public class ObjectToInferredTypesConverter : JsonConverter<object>
     {
         /// <summary>
-        /// Reads and converts the JSON to type <typeparamref name="T" />.
+        /// Reads and converts the JSON to type typeToConvert />.
         /// </summary>
         /// <param name="reader">The reader.</param>
         /// <param name="typeToConvert">The type to convert.</param>
