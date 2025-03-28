@@ -201,6 +201,11 @@ namespace Refit
         )
 #pragma warning restore VSTHRD200 // Use "Async" suffix for async methods
         {
+            if (response == null)
+            {
+                throw new ArgumentNullException(nameof(response));
+            }
+
             var exception = new ApiException(
                 exceptionMessage,
                 message,

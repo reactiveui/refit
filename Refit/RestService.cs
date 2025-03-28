@@ -17,10 +17,7 @@ namespace Refit
         /// <param name="client">The <see cref="HttpClient"/> the implementation will use to send requests.</param>
         /// <param name="builder"><see cref="IRequestBuilder"/> to use to build requests.</param>
         /// <returns>An instance that implements <typeparamref name="T"/>.</returns>
-        public static T For<T>(HttpClient client, IRequestBuilder<T> builder)
-        {
-            return (T)For(typeof(T), client, builder);
-        }
+        public static T For<T>(HttpClient client, IRequestBuilder<T> builder) => (T)For(typeof(T), client, builder);
 
         /// <summary>
         /// Generate a Refit implementation of the specified interface.

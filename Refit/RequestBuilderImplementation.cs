@@ -207,7 +207,7 @@ namespace Refit
                             restMethod.ReturnResultType,
                             restMethod.DeserializedResultType
                         )
-                    ).Invoke(this, new[] { restMethod });
+                    ).Invoke(this, [restMethod]);
 
                 return (client, args) => taskFunc!.DynamicInvoke(client, args);
             }
@@ -223,7 +223,7 @@ namespace Refit
                         restMethod.ReturnResultType,
                         restMethod.DeserializedResultType
                     )
-                ).Invoke(this, new[] { restMethod });
+                ).Invoke(this, [restMethod]);
 
             return (client, args) => rxFunc!.DynamicInvoke(client, args);
         }
@@ -368,7 +368,7 @@ namespace Refit
                                     resp,
                                     settings,
                                     ex
-                                );
+                                ).ConfigureAwait(false);
                             }
                         }
 
@@ -409,7 +409,7 @@ namespace Refit
                                     resp,
                                     settings,
                                     ex
-                                );
+                                ).ConfigureAwait(false);
                             }
                         }
                     }
@@ -682,7 +682,7 @@ namespace Refit
                     // if header, add to request headers
                     if (restMethod.HeaderParameterMap.TryGetValue(i, out var headerParameterValue))
                     {
-                        headersToAdd ??= new Dictionary<string, string?>();
+                        headersToAdd ??= [];
                         headersToAdd[headerParameterValue] = param?.ToString();
                         isParameterMappedToRequest = true;
                     }
@@ -694,7 +694,7 @@ namespace Refit
                         {
                             foreach (var header in headerCollection)
                             {
-                                headersToAdd ??= new Dictionary<string, string?>();
+                                headersToAdd ??= [];
                                 headersToAdd[header.Key] = header.Value;
                             }
                         }
@@ -708,7 +708,7 @@ namespace Refit
                         && restMethod.AuthorizeParameterInfo.Item2 == i
                     )
                     {
-                        headersToAdd ??= new Dictionary<string, string?>();
+                        headersToAdd ??= [];
                         headersToAdd["Authorization"] =
                             $"{restMethod.AuthorizeParameterInfo.Item1} {param}";
                         isParameterMappedToRequest = true;

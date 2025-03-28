@@ -5,11 +5,15 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
+
 using Refit.Generator;
+
 using Xunit;
+
 using Task = System.Threading.Tasks.Task;
 using VerifyCS = Refit.Tests.CSharpSourceGeneratorVerifier<Refit.Generator.InterfaceStubGenerator>;
 using VerifyCSV2 = Refit.Tests.CSharpIncrementalSourceGeneratorVerifier<Refit.Generator.InterfaceStubGeneratorV2>;
@@ -33,13 +37,15 @@ public class InterfaceStubGeneratorTests
         ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
 #elif NET8_0
         ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+#elif NET9_0
+        ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
 #else
         ReferenceAssemblies = ReferenceAssemblies.Default.AddPackages(
             ImmutableArray.Create(new PackageIdentity("System.Text.Json", "7.0.2"))
         );
 #endif
 
-#if NET461
+#if NET48
         ReferenceAssemblies = ReferenceAssemblies
             .AddAssemblies(ImmutableArray.Create("System.Web"))
             .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4")));
@@ -108,7 +114,7 @@ public class InterfaceStubGeneratorTests
     [Fact]
     public async Task NoRefitInterfacesSmokeTest()
     {
-#if NET462
+#if NET48
         var input = File.ReadAllText(IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs"));
 #else
         var input = await File.ReadAllTextAsync(
@@ -132,7 +138,7 @@ public class InterfaceStubGeneratorTests
     [Fact]
     public async Task FindInterfacesSmokeTest()
     {
-#if NET462
+#if NET48
         var input = File.ReadAllText(IntegrationTestHelper.GetPath("GitHubApi.cs"));
 #else
         var input = await File.ReadAllTextAsync(IntegrationTestHelper.GetPath("GitHubApi.cs"));
@@ -794,7 +800,7 @@ namespace Refit.Implementation
     [Fact]
     public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
     {
-#if NET462
+#if NET48
         var input = File.ReadAllText(IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs"));
 #else
         var input = await File.ReadAllTextAsync(
