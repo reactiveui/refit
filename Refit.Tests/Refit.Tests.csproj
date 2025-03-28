@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'">
-    <PackageReference Include="PublicApiGenerator" Version="*" />
-    <PackageReference Include="Verify.Xunit" Version="*" />
+    <PackageReference Include="PublicApiGenerator" Version="11.4.5" />
+    <PackageReference Include="Verify.Xunit" Version="28.14.1" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net9.0'))">
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.3" />
@@ -29,14 +29,14 @@
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Formats.Asn1" Version="9.0.3" />
     <PackageReference Include="coverlet.msbuild" Version="6.0.4" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
-    <PackageReference Include="System.Formats.Asn1" Version="5.0.0" />
+    <PackageReference Include="System.Formats.Asn1" Version="9.0.3" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />

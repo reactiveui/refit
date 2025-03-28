@@ -16,4 +16,3 @@ jobs:
       productNamespacePrefix: "Refit"
       srcFolder: "./"
       installWorkflows: true
-      useVisualStudioPreview: true
