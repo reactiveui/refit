@@ -32,6 +32,8 @@ internal static class Parser
         if (compilation == null)
             throw new ArgumentNullException(nameof(compilation));
 
+        var wellKnownTypes = new WellKnownTypes(compilation);
+
         refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
 
         // Remove - as they are valid in csproj, but invalid in a namespace
@@ -41,8 +43,8 @@ internal static class Parser
         // TODO: we should allow source generators to provide source during initialize, so that this step isn't required.
         var options = (CSharpParseOptions)compilation.SyntaxTrees[0].Options;
 
-        var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable")!;
-        var httpMethodBaseAttributeSymbol = compilation.GetTypeByMetadataName(
+        var disposableInterfaceSymbol = wellKnownTypes.Get(typeof(IDisposable));
+        var httpMethodBaseAttributeSymbol = wellKnownTypes.TryGet(
             "Refit.HttpMethodAttribute"
         );
 

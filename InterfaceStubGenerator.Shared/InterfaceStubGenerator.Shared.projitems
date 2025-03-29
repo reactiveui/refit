@@ -21,6 +21,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Models\MethodModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\ParameterModel.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Models\TypeConstraint.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Models\WellKnownTYpes.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Parser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UniqueNameBuilder.cs" />
   </ItemGroup>
