@@ -44,11 +44,18 @@ public class InterfaceStubGeneratorTests
             .AddPackages(ImmutableArray.Create(new PackageIdentity("System.Net.Http", "4.3.4")));
 #endif
 
-        // Initialise Verify
-        DerivePathInfo((file, _, type, method) => new(Path.Combine(Path.GetDirectoryName(file), "_snapshots"), type.Name, method.Name));
+        try
+        {
+            // Initialise Verify
+            DerivePathInfo((file, _, type, method) => new(Path.Combine(Path.GetDirectoryName(file), "_snapshots"), type.Name, method.Name));
 
-        VerifySourceGenerators.Initialize();
-        VerifyDiffPlex.Initialize(OutputType.Compact);
+            VerifySourceGenerators.Initialize();
+            VerifyDiffPlex.Initialize(OutputType.Compact);
+        }
+        catch
+        {
+
+        }
     }
 
     public static async Task<VerifyResult> VerifyGenerator(string input)
