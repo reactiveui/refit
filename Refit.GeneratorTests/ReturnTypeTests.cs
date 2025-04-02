@@ -81,4 +81,14 @@ public class ReturnTypeTests
             IObservable<HttpResponseMessage> GetUser(string user);
             """);
     }
+
+    [Fact]
+    public Task ReturnUnsupportedType()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users/{user}")]
+            string GetUser(string user);
+            """);
+    }
 }
