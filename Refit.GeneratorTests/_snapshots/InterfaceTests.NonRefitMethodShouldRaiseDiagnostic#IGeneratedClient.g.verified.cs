@@ -50,7 +50,7 @@ namespace Refit.Implementation
         /// <inheritdoc />
         void global::RefitGeneratorTest.IGeneratedClient.NonRefitMethod()
         {
-                throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
+            throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
         }
     }
     }
