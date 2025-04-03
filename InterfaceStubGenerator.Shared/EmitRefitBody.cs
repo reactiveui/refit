@@ -3,7 +3,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
-
 using Refit.Generator.Configuration;
 
 namespace Refit.Generator;
@@ -18,7 +17,11 @@ static class EmitRefitBody
     const string SettingsExpression = "this.requestBuilder.Settings";
 
     // TODO: use UniqueNameBuilder
-    public static void WriteRefitBody(StringBuilder source, MethodModel methodModel, UniqueNameBuilder uniqueNames)
+    public static void WriteRefitBody(
+        StringBuilder source,
+        MethodModel methodModel,
+        UniqueNameBuilder uniqueNames
+    )
     {
         var methodScope = uniqueNames.NewScope();
         var innerMethodName = methodScope.New(InnerMethodName);
@@ -30,13 +33,18 @@ static class EmitRefitBody
         source.AppendLine(
             $"""
 
-                          var {requestName} = {innerMethodName}();
-              """);
+                        var {requestName} = {innerMethodName}();
+            """
+        );
         WriteReturn(source, methodModel, uniqueNames, requestName);
     }
 
-    static void WriteCreateRequestMethod(StringBuilder source, RefitBodyModel model, UniqueNameBuilder uniqueNames,
-        string innerMethodName)
+    static void WriteCreateRequestMethod(
+        StringBuilder source,
+        RefitBodyModel model,
+        UniqueNameBuilder uniqueNames,
+        string innerMethodName
+    )
     {
         uniqueNames = uniqueNames.NewScope();
 
@@ -44,11 +52,14 @@ static class EmitRefitBody
         source.Append(
             $$"""
 
-                          global::System.Net.Http.HttpRequestMessage {{innerMethodName}}()
-                          {
-                              var {{requestName}} = new global::System.Net.Http.HttpRequestMessage() { Method = {{HttpMethodToEnumString(model.HttpMethod)}} };
-
-              """);
+                        global::System.Net.Http.HttpRequestMessage {{innerMethodName}}()
+                        {
+                            var {{requestName}} = new global::System.Net.Http.HttpRequestMessage() { Method = {{HttpMethodToEnumString(
+                model.HttpMethod
+            )}} };
+            
+            """
+        );
 
         // TryWriteMultiPartInit(source, model, requestName);
         TryWriteBody(source, model, requestName);
@@ -62,9 +73,10 @@ static class EmitRefitBody
         source.AppendLine(
             $$"""
 
-                              return {{requestName}};
-                          }
-              """);
+                            return {{requestName}};
+                        }
+            """
+        );
     }
 
     static string HttpMethodToEnumString(HttpMethod method)
@@ -102,12 +114,19 @@ static class EmitRefitBody
     }
 
     // TODO: make into scope names
-    static string? WriteParameterInfoArray(StringBuilder source, RefitBodyModel model,
-        UniqueNameBuilder uniqueNames)
+    static string? WriteParameterInfoArray(
+        StringBuilder source,
+        RefitBodyModel model,
+        UniqueNameBuilder uniqueNames
+    )
     {
         throw new NotImplementedException();
         // if no usage of ParameterInfo then exit early
-        if (model.QueryParameters.Count == 0 && model.UrlFragments.OfType<ConstantFragmentModel>().Count() == model.UrlFragments.Count)
+        if (
+            model.QueryParameters.Count == 0
+            && model.UrlFragments.OfType<ConstantFragmentModel>().Count()
+                == model.UrlFragments.Count
+        )
         {
             return null;
         }
@@ -118,37 +137,47 @@ static class EmitRefitBody
         return null;
     }
 
-    static void TryWriteMultiPartInit(StringBuilder source, RefitBodyModel model, string requestName)
+    static void TryWriteMultiPartInit(
+        StringBuilder source,
+        RefitBodyModel model,
+        string requestName
+    )
     {
-        if(model.MultipartBoundary is null)
+        if (model.MultipartBoundary is null)
             return;
 
         source.Append(
-$$"""
-                    throw new NotImplementedException("MultiPart");
-                  {{requestName}}.Content = new global::System.Net.Http.MultipartFormDataContent({{model.MultipartBoundary}});
-  """);
+            $$"""
+                              throw new NotImplementedException("MultiPart");
+                            {{requestName}}.Content = new global::System.Net.Http.MultipartFormDataContent({{model.MultipartBoundary}});
+            """
+        );
     }
 
     static void TryWriteBody(StringBuilder source, RefitBodyModel model, string requestName)
     {
-        if(model.BodyParameter is null)
+        if (model.BodyParameter is null)
             return;
         var isBuffered = WriteBool(model.BodyParameter.Buffered);
         var serializationMethod = model.BodyParameter.SerializationMethod switch
         {
             BodySerializationMethod.Default => "global::Refit.BodySerializationMethod.Default",
             BodySerializationMethod.Json => "global::Refit.BodySerializationMethod.Json",
-            BodySerializationMethod.UrlEncoded => "global::Refit.BodySerializationMethod.UrlEncoded",
-            BodySerializationMethod.Serialized => "global::Refit.BodySerializationMethod.Serialized",
+            BodySerializationMethod.UrlEncoded =>
+                "global::Refit.BodySerializationMethod.UrlEncoded",
+            BodySerializationMethod.Serialized =>
+                "global::Refit.BodySerializationMethod.Serialized",
         };
 
         // TODO: use full alias for type
         source.Append(
             $$"""
 
-                              global::Refit.RefitHelper.AddBody({{requestName}}, {{SettingsExpression}}, {{model.BodyParameter.Parameter}}, {{isBuffered}}, {{serializationMethod}});
-              """);
+                            global::Refit.RefitHelper.AddBody({{requestName}}, {{SettingsExpression}}, {{model
+                .BodyParameter
+                .Parameter}}, {{isBuffered}}, {{serializationMethod}});
+            """
+        );
     }
 
     static void TryWriteHeaders(StringBuilder source, RefitBodyModel model, string requestName)
@@ -161,86 +190,97 @@ $$"""
         source.AppendLine(
             $$"""
 
-                              {{requestName}}.Content = new global::System.Net.Http.ByteArrayContent([]);
-              """);
+                            {{requestName}}.Content = new global::System.Net.Http.ByteArrayContent([]);
+            """
+        );
 
         foreach (var headerPs in model.HeaderPs)
         {
             if (headerPs.Type == HeaderType.Static)
             {
                 source.AppendLine(
-                 $$"""
-                                   global::Refit.RefitHelper.AddHeader({{requestName}}, {{headerPs.Static.Value.Key}}, {{headerPs.Static.Value.Value}}.ToString());
-                   """);
+                    $$"""
+                                    global::Refit.RefitHelper.AddHeader({{requestName}}, {{headerPs
+                        .Static
+                        .Value
+                        .Key}}, {{headerPs.Static.Value.Value}}.ToString());
+                    """
+                );
             }
             else if (headerPs.Type == HeaderType.Collection)
             {
                 source.AppendLine(
                     $$"""
-                                      global::Refit.RefitHelper.AddHeaderCollection({{requestName}}, {{model.HeaderCollectionParam}});
-                      """);
+                                    global::Refit.RefitHelper.AddHeaderCollection({{requestName}}, {{model.HeaderCollectionParam}});
+                    """
+                );
             }
-            else if(headerPs.Type == HeaderType.Authorise)
+            else if (headerPs.Type == HeaderType.Authorise)
             {
                 source.AppendLine(
                     $$"""
-                                      global::Refit.RefitHelper.AddHeader({{requestName}}, "Authorization", $"{{headerPs.Authorise.Value.Scheme}} {{{headerPs.Authorise.Value.Parameter}}.ToString()}");
-                      """);
+                                    global::Refit.RefitHelper.AddHeader({{requestName}}, "Authorization", $"{{headerPs
+                        .Authorise
+                        .Value
+                        .Scheme}} {{{headerPs.Authorise.Value.Parameter}}.ToString()}");
+                    """
+                );
             }
         }
-//         // TODO: implement
-//         // if no method headers, parameter headers or header collections don't emit
-//         if (model.Headers.Count == 0 && model.HeaderParameters.Count == 0)
-//         {
-//             if(model.HeaderCollectionParam is null)
-//                 return;
-//
-//             // TODO: ensure that AddHeaderCollection adds content
-//             source.AppendLine(
-//                 $$"""
-//                                   global::Refit.RefitHelper.AddHeaderCollection({{requestName}}, {{model.HeaderCollectionParam}});
-//                   """);
-//             return;
-//         }
-//
-//         // TODO: only emit if http method can have a body
-//         source.AppendLine(
-//             $$"""
-//                               global::Refit.RefitHelper.SetContentForHeaders({{requestName}}, );
-//               """);
-//
-//         foreach (var methodHeader in model.Headers)
-//         {
-//             source.AppendLine(
-//                 $$"""
-//                                   global::Refit.RefitHelper.AddHeader({{requestName}}, {{methodHeader.Key}}, {{methodHeader.Value}});
-//                   """);
-//         }
-//
-//         foreach (var parameterHeader in model.HeaderParameters)
-//         {
-//             source.AppendLine(
-//                 $$"""
-//                                   global::Refit.RefitHelper.AddHeader({{requestName}}, {{parameterHeader.HeaderKey}}, {{parameterHeader.Parameter}});
-//                   """);
-//         }
+        //         // TODO: implement
+        //         // if no method headers, parameter headers or header collections don't emit
+        //         if (model.Headers.Count == 0 && model.HeaderParameters.Count == 0)
+        //         {
+        //             if(model.HeaderCollectionParam is null)
+        //                 return;
+        //
+        //             // TODO: ensure that AddHeaderCollection adds content
+        //             source.AppendLine(
+        //                 $$"""
+        //                                   global::Refit.RefitHelper.AddHeaderCollection({{requestName}}, {{model.HeaderCollectionParam}});
+        //                   """);
+        //             return;
+        //         }
+        //
+        //         // TODO: only emit if http method can have a body
+        //         source.AppendLine(
+        //             $$"""
+        //                               global::Refit.RefitHelper.SetContentForHeaders({{requestName}}, );
+        //               """);
+        //
+        //         foreach (var methodHeader in model.Headers)
+        //         {
+        //             source.AppendLine(
+        //                 $$"""
+        //                                   global::Refit.RefitHelper.AddHeader({{requestName}}, {{methodHeader.Key}}, {{methodHeader.Value}});
+        //                   """);
+        //         }
+        //
+        //         foreach (var parameterHeader in model.HeaderParameters)
+        //         {
+        //             source.AppendLine(
+        //                 $$"""
+        //                                   global::Refit.RefitHelper.AddHeader({{requestName}}, {{parameterHeader.HeaderKey}}, {{parameterHeader.Parameter}});
+        //                   """);
+        //         }
     }
-
 
     static void WriteProperties(StringBuilder source, RefitBodyModel refitModel, string requestName)
     {
         // add refit settings properties
         source.AppendLine(
-$"""
+            $"""
 
-                  global::Refit.RefitHelper.WriteRefitSettingsProperties({requestName}, {SettingsExpression});
-  """);
+                            global::Refit.RefitHelper.WriteRefitSettingsProperties({requestName}, {SettingsExpression});
+            """
+        );
 
         // add each property
         foreach (var property in refitModel.Properties)
         {
             source.AppendLine(
-                $"""                global::Refit.RefitHelper.WriteProperty({requestName}, "{property.Key}", {property.Parameter});""");
+                $"""                global::Refit.RefitHelper.WriteProperty({requestName}, "{property.Key}", {property.Parameter});"""
+            );
         }
 
         // TODO: implement add top level types
@@ -249,19 +289,26 @@ $"""
         // I could prolly create a static instance for the latter
         source.AppendLine(
             $"""
-                              global::Refit.RefitHelper.AddTopLevelTypes({requestName}, null, null);
-              """);
+                            global::Refit.RefitHelper.AddTopLevelTypes({requestName}, null, null);
+            """
+        );
     }
 
     static void WriteVersion(StringBuilder source, RefitBodyModel model, string requestName)
     {
         source.AppendLine(
             $"""
-                              global::Refit.RefitHelper.AddVersionToRequest({requestName}, {SettingsExpression});
-              """);
+                            global::Refit.RefitHelper.AddVersionToRequest({requestName}, {SettingsExpression});
+            """
+        );
     }
 
-    static void WriteBuildUrl(StringBuilder source, RefitBodyModel model, string requestName, UniqueNameBuilder uniqueName)
+    static void WriteBuildUrl(
+        StringBuilder source,
+        RefitBodyModel model,
+        string requestName,
+        UniqueNameBuilder uniqueName
+    )
     {
         // TODO: why is this assertion here
         // Debug.Assert(model.UrlFragments.Count > 1);
@@ -275,17 +322,18 @@ $"""
             // TODO: consider base addresses with path and queries, does it break this
             // TODO: do urls containing " break this?
             // TODO: get queryUriFormat
-              source.AppendLine(
-                  $$"""
-                                    var basePath = Client.BaseAddress.AbsolutePath == "/" ? string.Empty : Client.BaseAddress.AbsolutePath;
-                                    var uri = new UriBuilder(new Uri(global::Refit.RefitHelper.BaseUri, $"{basePath}{{constant!.Value}}"));
+            source.AppendLine(
+                $$"""
+                                var basePath = Client.BaseAddress.AbsolutePath == "/" ? string.Empty : Client.BaseAddress.AbsolutePath;
+                                var uri = new UriBuilder(new Uri(global::Refit.RefitHelper.BaseUri, $"{basePath}{{constant!.Value}}"));
 
-                                    {{requestName}}.RequestUri = new Uri(
-                                        uri.Uri.GetComponents(global::System.UriComponents.PathAndQuery, global::System.UriFormat.{{model.UriFormat.ToString()}}),
-                                        UriKind.Relative
-                                    );
-                    """);
-              return;
+                                {{requestName}}.RequestUri = new Uri(
+                                    uri.Uri.GetComponents(global::System.UriComponents.PathAndQuery, global::System.UriFormat.{{model.UriFormat.ToString()}}),
+                                    UriKind.Relative
+                                );
+                """
+            );
+            return;
         }
 
         // TODO: uniqueName for vsb & RefitSettings
@@ -293,9 +341,10 @@ $"""
         source.AppendLine(
             $"""
 
-                              var vsb = new ValueStringBuilder(stackalloc char[256]);
-                              vsb.Append(Client.BaseAddress.AbsolutePath == "/" ? string.Empty : Client.BaseAddress.AbsolutePath);
-              """);
+                            var vsb = new ValueStringBuilder(stackalloc char[256]);
+                            vsb.Append(Client.BaseAddress.AbsolutePath == "/" ? string.Empty : Client.BaseAddress.AbsolutePath);
+            """
+        );
         // TODO: add initial section to url
         // TODO: add get static info
 
@@ -305,8 +354,9 @@ $"""
             {
                 source.AppendLine(
                     $$"""
-                                      vsb.Append("{{constant.Value}}");
-                      """);
+                                    vsb.Append("{{constant.Value}}");
+                    """
+                );
                 continue;
             }
 
@@ -314,8 +364,9 @@ $"""
             {
                 source.AppendLine(
                     $$"""
-                                      global::Refit.RefitHelper.AddUrlFragment(ref vsb, {{dynamic.Access}}, {{SettingsExpression}}, typeof({{dynamic.TypeDeclaration}}));
-                      """);
+                                    global::Refit.RefitHelper.AddUrlFragment(ref vsb, {{dynamic.Access}}, {{SettingsExpression}}, typeof({{dynamic.TypeDeclaration}}));
+                    """
+                );
                 continue;
             }
 
@@ -323,8 +374,9 @@ $"""
             {
                 source.AppendLine(
                     $$"""
-                                      global::Refit.RefitHelper.AddRoundTripUrlFragment(ref vsb, {{SettingsExpression}}, typeof({{roundTrip.TypeDeclaration}}));
-                      """);
+                                    global::Refit.RefitHelper.AddRoundTripUrlFragment(ref vsb, {{SettingsExpression}}, typeof({{roundTrip.TypeDeclaration}}));
+                    """
+                );
                 continue;
             }
 
@@ -332,16 +384,16 @@ $"""
             {
                 source.AppendLine(
                     $$"""
-                                      global::Refit.RefitHelper.AddPropertyFragment(ref vsb, {{SettingsExpression}}, typeof({{dynamicProperty.TypeDeclaration}}));
-                      """);
+                                    global::Refit.RefitHelper.AddPropertyFragment(ref vsb, {{SettingsExpression}}, typeof({{dynamicProperty.TypeDeclaration}}));
+                    """
+                );
                 continue;
             }
         }
 
         if (model.QueryParameters.Count > 0)
         {
-            source.AppendLine(
-                  """                vsb.Append("?");""");
+            source.AppendLine("""                vsb.Append("?");""");
         }
 
         for (int i = 0; i < model.QueryParameters.Count; i++)
@@ -350,34 +402,37 @@ $"""
 
             if (i > 0)
             {
-                source.AppendLine(
-                    """                vsb.Append("&");""");
+                source.AppendLine("""                vsb.Append("&");""");
             }
 
             // TODO: create overload for a default or non existent QueryAttribute?
             // TODO: escape params
             source.AppendLine(
                 $$"""
-                                  global::Refit.RefitHelper.AddQueryObject(ref vsb, {{SettingsExpression}}, "{{query.Parameter}}", {{query.Parameter}});
-                  """);
+                                global::Refit.RefitHelper.AddQueryObject(ref vsb, {{SettingsExpression}}, "{{query.Parameter}}", {{query.Parameter}});
+                """
+            );
         }
 
         source.AppendLine(
             $$"""
 
-                              var uri = new UriBuilder(new Uri(global::Refit.RefitHelper.BaseUri, vsb.ToString()));
+                            var uri = new UriBuilder(new Uri(global::Refit.RefitHelper.BaseUri, vsb.ToString()));
 
-                              {{requestName}}.RequestUri = new Uri(
-                                  uri.Uri.GetComponents(global::System.UriComponents.PathAndQuery, global::System.UriFormat.{{model.UriFormat.ToString()}}),
-                                  UriKind.Relative
-                              );
-              """);
-
+                            {{requestName}}.RequestUri = new Uri(
+                                uri.Uri.GetComponents(global::System.UriComponents.PathAndQuery, global::System.UriFormat.{{model.UriFormat.ToString()}}),
+                                UriKind.Relative
+                            );
+            """
+        );
     }
 
-    static void WriteReturn(StringBuilder source, MethodModel model,
+    static void WriteReturn(
+        StringBuilder source,
+        MethodModel model,
         UniqueNameBuilder uniqueNames,
-        string requestExpression)
+        string requestExpression
+    )
     {
         var refitModel = model.RefitBody!;
 
@@ -389,68 +444,86 @@ $"""
         {
             source.AppendLine(
                 $"""
-                             await global::Refit.RefitHelper.SendVoidTaskAsync({requestExpression}, Client, {SettingsExpression}, {cacellationTokenExpression});
-                 """);
+                            await global::Refit.RefitHelper.SendVoidTaskAsync({requestExpression}, Client, {SettingsExpression}, {cacellationTokenExpression});
+                """
+            );
         }
-        else if (model.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult && !refitModel.IsApiResponse)
+        else if (
+            model.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult
+            && !refitModel.IsApiResponse
+        )
         {
             source.AppendLine(
                 $"""
-                             return await global::Refit.RefitHelper.SendTaskResultAsync<{refitModel.GenericInnerReturnType}>({requestExpression}, Client, {SettingsExpression}, {WriteBool(refitModel.BodyParameter?.Buffered)}, {cacellationTokenExpression});
-                 """);
+                            return await global::Refit.RefitHelper.SendTaskResultAsync<{refitModel.GenericInnerReturnType}>({requestExpression}, Client, {SettingsExpression}, {WriteBool(
+                    refitModel.BodyParameter?.Buffered
+                )}, {cacellationTokenExpression});
+                """
+            );
         }
         else if (model.ReturnTypeMetadata == ReturnTypeInfo.AsyncResult && refitModel.IsApiResponse)
         {
             source.AppendLine(
                 $"""
-                             return await global::Refit.RefitHelper.SendTaskIApiResultAsync<{refitModel.GenericInnerReturnType}, {refitModel.DeserializedResultType}>({requestExpression}, Client, {SettingsExpression}, {WriteBool(refitModel.BodyParameter?.Buffered)}, {cacellationTokenExpression});
-                 """);
+                            return await global::Refit.RefitHelper.SendTaskIApiResultAsync<{refitModel.GenericInnerReturnType}, {refitModel.DeserializedResultType}>({requestExpression}, Client, {SettingsExpression}, {WriteBool(
+                    refitModel.BodyParameter?.Buffered
+                )}, {cacellationTokenExpression});
+                """
+            );
         }
         else
         {
-                  // TODO: this should be an extracted
-                  // TODO: is ReturnTypeMetadata broken?
-                  // TODO: if return insert throw? should this be done in refitmodel and just emit fail
-                  // TODO: use uniqueNameBuilder on all identifiers
-                  // TODO: emit TaskToObservab
-                  source.AppendLine(
-                  $$"""
-                             return new global::Refit.RequestBuilderImplementation.TaskToObservable<{{refitModel.GenericInnerReturnType}}>(ct =>
-                             {
-                  """);
+            // TODO: this should be an extracted
+            // TODO: is ReturnTypeMetadata broken?
+            // TODO: if return insert throw? should this be done in refitmodel and just emit fail
+            // TODO: use uniqueNameBuilder on all identifiers
+            // TODO: emit TaskToObservab
+            source.AppendLine(
+                $$"""
+                           return new global::Refit.RequestBuilderImplementation.TaskToObservable<{{refitModel.GenericInnerReturnType}}>(ct =>
+                           {
+                """
+            );
 
             var ctToken = refitModel.CancellationTokenParam is null ? "ct" : "cts";
             if (refitModel.CancellationTokenParam is not null)
             {
                 source.AppendLine(
                     $$"""
-                                     var cts = global::System.Threading.CancellationTokenSource.CreateLinkedTokenSource(methodCt, {{refitModel.CancellationTokenParam}});
-                      """);
+                                   var cts = global::System.Threading.CancellationTokenSource.CreateLinkedTokenSource(methodCt, {{refitModel.CancellationTokenParam}});
+                    """
+                );
             }
 
             if (refitModel.IsApiResponse)
             {
                 source.AppendLine(
                     $"""
-                                 return global::Refit.RefitHelper.SendTaskIApiResultAsync<{refitModel.GenericInnerReturnType}, {refitModel.DeserializedResultType}>({requestExpression}, Client, {SettingsExpression}, {WriteBool(refitModel.BodyParameter?.Buffered)}, {ctToken});
-                     """);
+                                return global::Refit.RefitHelper.SendTaskIApiResultAsync<{refitModel.GenericInnerReturnType}, {refitModel.DeserializedResultType}>({requestExpression}, Client, {SettingsExpression}, {WriteBool(
+                        refitModel.BodyParameter?.Buffered
+                    )}, {ctToken});
+                    """
+                );
             }
             else
             {
                 source.AppendLine(
                     $"""
-                                 return global::Refit.RefitHelper.SendTaskResultAsync<{refitModel.GenericInnerReturnType}>({requestExpression}, Client, {SettingsExpression}, {WriteBool(refitModel.BodyParameter?.Buffered)}, {ctToken});
-                     """);
+                                return global::Refit.RefitHelper.SendTaskResultAsync<{refitModel.GenericInnerReturnType}>({requestExpression}, Client, {SettingsExpression}, {WriteBool(
+                        refitModel.BodyParameter?.Buffered
+                    )}, {ctToken});
+                    """
+                );
             }
 
-
-            source.AppendLine(
-                """           });""");
+            source.AppendLine("""           });""");
         }
     }
 
     static string WriteBool(bool? value)
     {
-        return value is null ? "false" : value.Value ? "true" : "false";
+        return value is null ? "false"
+            : value.Value ? "true"
+            : "false";
     }
 }

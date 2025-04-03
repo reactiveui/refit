@@ -44,17 +44,45 @@ internal sealed record RefitBodyModel(
 );
 
 internal record struct HeaderModel(string Key, string Value);
+
 internal record struct HeaderParameterModel(string Parameter, string HeaderKey);
+
 internal record struct PropertyModel(string Parameter, string Key);
+
 internal record struct AuthoriseModel(string Parameter, string Scheme);
 
 internal record ConstantFragmentModel(string Value) : ParameterFragment;
-internal record DynamicFragmentModel(string Access, int ParameterIndex, string TypeDeclaration) : ParameterFragment;
-internal record DynamicRoundTripFragmentModel(string Access, int ParameterIndex, string TypeDeclaration) : ParameterFragment;
-internal record DynamicPropertyFragmentModel(string Access, string PropertyName, string ContainingType, string TypeDeclaration) : ParameterFragment;
 
-internal record QueryModel(string Parameter, int ParameterIndex, Refit.Generator.Configuration.CollectionFormat CollectionFormat, string Delimiter, string? Prefix, string? Format);
-internal record BodyModel(string Parameter, bool Buffered, Refit.Generator.Configuration.BodySerializationMethod SerializationMethod);
+internal record DynamicFragmentModel(string Access, int ParameterIndex, string TypeDeclaration)
+    : ParameterFragment;
+
+internal record DynamicRoundTripFragmentModel(
+    string Access,
+    int ParameterIndex,
+    string TypeDeclaration
+) : ParameterFragment;
+
+internal record DynamicPropertyFragmentModel(
+    string Access,
+    string PropertyName,
+    string ContainingType,
+    string TypeDeclaration
+) : ParameterFragment;
+
+internal record QueryModel(
+    string Parameter,
+    int ParameterIndex,
+    Refit.Generator.Configuration.CollectionFormat CollectionFormat,
+    string Delimiter,
+    string? Prefix,
+    string? Format
+);
+
+internal record BodyModel(
+    string Parameter,
+    bool Buffered,
+    Refit.Generator.Configuration.BodySerializationMethod SerializationMethod
+);
 
 // TODO: decide how to handle enum types
 internal record HeaderPsModel(
@@ -62,7 +90,8 @@ internal record HeaderPsModel(
     HeaderModel? Static,
     HeaderParameterModel? Dynamic,
     string? Collection,
-    AuthoriseModel? Authorise);
+    AuthoriseModel? Authorise
+);
 
 internal enum BodyParameterType
 {
@@ -79,4 +108,4 @@ internal enum HeaderType
     Authorise,
 }
 
-internal record ParameterFragment{}
+internal record ParameterFragment { }

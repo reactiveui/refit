@@ -35,5 +35,5 @@ public enum CollectionFormat
     /// <summary>
     /// Multiple parameter instances
     /// </summary>
-    Multi
+    Multi,
 }

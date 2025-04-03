@@ -1,16 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
-
 using DefaultNamespace;
-
 using Microsoft.CodeAnalysis;
-
 using Refit.Generator.Configuration;
 
 namespace Refit.Generator;
 
- /// <summary>
+/// <summary>
 /// RestMethodInfo
 /// </summary>
 public record RestMethodSymbol(
@@ -25,10 +22,11 @@ public record RestMethodSymbol(
 [DebuggerDisplay("{MethodInfo}")]
 internal class RestMethodSymbolInternal
 {
-    static readonly QueryConfiguration DefaultQueryAttribute = new ();
+    static readonly QueryConfiguration DefaultQueryAttribute = new();
 
     private int HeaderCollectionParameterIndex { get; set; }
     public string Name { get; set; }
+
     // public Type Type { get; set; }
     public IMethodSymbol MethodInfo { get; set; }
     public HttpMethod HttpMethod { get; set; }
@@ -64,10 +62,7 @@ internal class RestMethodSymbolInternal
     static readonly HttpMethod PatchMethod = new("PATCH");
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    public RestMethodSymbolInternal(
-        IMethodSymbol methodSymbol,
-        WellKnownTypes knownTypes
-    )
+    public RestMethodSymbolInternal(IMethodSymbol methodSymbol, WellKnownTypes knownTypes)
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     {
         // RefitSettings = refitSettings ?? new RefitSettings();
@@ -81,7 +76,10 @@ internal class RestMethodSymbolInternal
         RelativePath = hma.Path;
 
         var multiPartSymbol = knownTypes.TryGet("Refit.MultipartAttribute");
-        var multiPartsAttribute = methodSymbol.AccessFirstOrDefault<MulitpartConfiguration>(multiPartSymbol, knownTypes);
+        var multiPartsAttribute = methodSymbol.AccessFirstOrDefault<MulitpartConfiguration>(
+            multiPartSymbol,
+            knownTypes
+        );
         IsMultipart = multiPartsAttribute is not null;
 
         // TODO: default boundary
@@ -90,8 +88,7 @@ internal class RestMethodSymbolInternal
         //       ?? new MultipartAttribute().BoundaryText
         //     : null;
         MultipartBoundary = IsMultipart
-            ? multiPartsAttribute?.BoundaryText
-              ?? "----MyGreatBoundary"
+            ? multiPartsAttribute?.BoundaryText ?? "----MyGreatBoundary"
             : null;
 
         VerifyUrlPathIsSane(RelativePath);
@@ -101,11 +98,19 @@ internal class RestMethodSymbolInternal
         // Exclude cancellation token parameters from this list
         var cancellationToken = knownTypes.Get<CancellationToken>();
         ParameterSymbolArray = methodSymbol
-            .Parameters
-            .Where(p => !SymbolEqualityComparer.Default.Equals(cancellationToken, p))
+            .Parameters.Where(p => !SymbolEqualityComparer.Default.Equals(cancellationToken, p))
             .ToArray();
-        (ParameterMap, PathFragments) = BuildParameterMap2(RelativePath, ParameterSymbolArray, knownTypes);
-        BodyParameterInfo = FindBodyParameter(ParameterSymbolArray, IsMultipart, hma.Method, knownTypes);
+        (ParameterMap, PathFragments) = BuildParameterMap2(
+            RelativePath,
+            ParameterSymbolArray,
+            knownTypes
+        );
+        BodyParameterInfo = FindBodyParameter(
+            ParameterSymbolArray,
+            IsMultipart,
+            hma.Method,
+            knownTypes
+        );
         AuthorizeParameterInfo = FindAuthorizationParameter(ParameterSymbolArray, knownTypes);
 
         // TODO: make pseudo enum header to represent the 3 types of headers
@@ -113,7 +118,8 @@ internal class RestMethodSymbolInternal
         Headers = ParseHeaders(methodSymbol, knownTypes);
         HeaderParameterMap = BuildHeaderParameterMap(ParameterSymbolArray, knownTypes);
         HeaderCollectionParameterIndex = RestMethodSymbolInternal.GetHeaderCollectionParameterIndex(
-            ParameterSymbolArray, knownTypes
+            ParameterSymbolArray,
+            knownTypes
         );
         PropertyParameterMap = BuildRequestPropertyMap(ParameterSymbolArray, knownTypes);
 
@@ -133,7 +139,10 @@ internal class RestMethodSymbolInternal
                     continue;
                 }
 
-                var attachmentName = GetAttachmentNameForParameter(ParameterSymbolArray[i], knownTypes);
+                var attachmentName = GetAttachmentNameForParameter(
+                    ParameterSymbolArray[i],
+                    knownTypes
+                );
                 if (attachmentName == null)
                     continue;
 
@@ -169,8 +178,7 @@ internal class RestMethodSymbolInternal
         QueryParameterMap = queryDict ?? new Dictionary<int, string>();
 
         var ctParamEnumerable = methodSymbol
-            .Parameters
-            .Where(p => SymbolEqualityComparer.Default.Equals(p.Type, cancellationToken))
+            .Parameters.Where(p => SymbolEqualityComparer.Default.Equals(p.Type, cancellationToken))
             .ToArray();
         if (ctParamEnumerable.Length > 1)
         {
@@ -184,17 +192,22 @@ internal class RestMethodSymbolInternal
         CancellationToken = ctParamEnumerable.FirstOrDefault();
 
         var queryUriAttribute = knownTypes.TryGet("Refit.QueryUriFormatAttribute")!;
-        QueryUriFormat =  methodSymbol.AccessFirstOrDefault<QueryUriFormatConfiguration>(queryUriAttribute, knownTypes)?.UriFormat
-                          ?? UriFormat.UriEscaped;
+        QueryUriFormat =
+            methodSymbol
+                .AccessFirstOrDefault<QueryUriFormatConfiguration>(queryUriAttribute, knownTypes)
+                ?.UriFormat ?? UriFormat.UriEscaped;
 
         var apiResponse = knownTypes.TryGet("Refit.ApiResponse`1");
         var unboundIApiResponse = knownTypes.TryGet("Refit.IApiResponse`1");
         var iApiResponse = knownTypes.TryGet("Refit.IApiResponse");
 
         IsApiResponse =
-            ReturnResultType is INamedTypeSymbol {IsGenericType: true } namedTypeSymbol
+            ReturnResultType is INamedTypeSymbol { IsGenericType: true } namedTypeSymbol
                 && (
-                    SymbolEqualityComparer.Default.Equals(namedTypeSymbol.OriginalDefinition, apiResponse)
+                    SymbolEqualityComparer.Default.Equals(
+                        namedTypeSymbol.OriginalDefinition,
+                        apiResponse
+                    )
                     || namedTypeSymbol.OriginalDefinition.InheritsFromOrEquals(unboundIApiResponse)
                 )
             || SymbolEqualityComparer.Default.Equals(ReturnResultType, iApiResponse);
@@ -202,7 +215,8 @@ internal class RestMethodSymbolInternal
 
     public bool HasHeaderCollection => HeaderCollectionParameterIndex >= 0;
 
-    public bool HeaderCollectionAt(int index) => HeaderCollectionParameterIndex >= 0 && HeaderCollectionParameterIndex == index;
+    public bool HeaderCollectionAt(int index) =>
+        HeaderCollectionParameterIndex >= 0 && HeaderCollectionParameterIndex == index;
 
     // TODO: this should be moved to a new class, along with most model logic
     public RefitBodyModel ToRefitBodyModel()
@@ -217,28 +231,42 @@ internal class RestMethodSymbolInternal
         // TODO: headercollectionParam is broken
         // TODO: Is query model logic correct?
 
-        return new RefitBodyModel(HttpMethod,
-            ReturnResultType?.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat),
+        return new RefitBodyModel(
+            HttpMethod,
+            ReturnResultType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             DeserializedResultType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             IsApiResponse,
-            CancellationToken?.Name, MultipartBoundary,
+            CancellationToken?.Name,
+            MultipartBoundary,
             PathFragments.ToImmutableEquatableArray(),
             BuildHeaderPsModel().ToImmutableEquatableArray(),
             Headers.Select(kp => new HeaderModel(kp.Key, kp.Value)).ToImmutableEquatableArray(),
-            HeaderParameterMap.Select(kp => new HeaderParameterModel(ParameterSymbolArray[kp.Key].Name, kp.Value))
+            HeaderParameterMap
+                .Select(kp => new HeaderParameterModel(ParameterSymbolArray[kp.Key].Name, kp.Value))
                 .ToImmutableEquatableArray(),
-            HeaderCollectionParameterIndex < 0 ? null : ParameterSymbolArray[HeaderCollectionParameterIndex].Name,
+            HeaderCollectionParameterIndex < 0
+                ? null
+                : ParameterSymbolArray[HeaderCollectionParameterIndex].Name,
             ImmutableEquatableArray<AuthoriseModel>.Empty,
-            PropertyParameterMap.Select(kp => new PropertyModel(ParameterSymbolArray[kp.Key].Name, kp.Value))
+            PropertyParameterMap
+                .Select(kp => new PropertyModel(ParameterSymbolArray[kp.Key].Name, kp.Value))
                 .ToImmutableEquatableArray(),
             QueryModels.ToImmutableEquatableArray(),
-            BodyParameterInfo is null ? null : new BodyModel(ParameterSymbolArray[BodyParameterInfo.Item3].Name, BodyParameterInfo.Item2,BodyParameterInfo.Item1),
-            QueryUriFormat);
-
+            BodyParameterInfo is null
+                ? null
+                : new BodyModel(
+                    ParameterSymbolArray[BodyParameterInfo.Item3].Name,
+                    BodyParameterInfo.Item2,
+                    BodyParameterInfo.Item1
+                ),
+            QueryUriFormat
+        );
     }
 
-    static HttpMethodConfiguration GetHttpMethod(IMethodSymbol methodSymbol, WellKnownTypes knownTypes)
+    static HttpMethodConfiguration GetHttpMethod(
+        IMethodSymbol methodSymbol,
+        WellKnownTypes knownTypes
+    )
     {
         var attributeSymbol = knownTypes.TryGet("Refit.HttpMethodAttribute")!;
         var attribute = methodSymbol.GetAttributesFor(attributeSymbol).FirstOrDefault()!;
@@ -289,30 +317,39 @@ internal class RestMethodSymbolInternal
         return hma;
     }
 
-    static int GetHeaderCollectionParameterIndex(IParameterSymbol[] parameterArray, WellKnownTypes knownTypes)
+    static int GetHeaderCollectionParameterIndex(
+        IParameterSymbol[] parameterArray,
+        WellKnownTypes knownTypes
+    )
     {
         var headerIndex = -1;
 
         // TODO: convert this into a real string string dictionary
-        var dictionaryOpenType  = knownTypes.Get(typeof(IDictionary<,>));
+        var dictionaryOpenType = knownTypes.Get(typeof(IDictionary<,>));
         var stringType = knownTypes.Get<string>();
-        var genericDictionary  = dictionaryOpenType.Construct(stringType, stringType);
+        var genericDictionary = dictionaryOpenType.Construct(stringType, stringType);
 
         for (var i = 0; i < parameterArray.Length; i++)
         {
             var param = parameterArray[i];
             var headerCollectionSymbol = knownTypes.TryGet("Refit.HeaderCollectionAttribute")!;
-            var headerCollection = param.AccessFirstOrDefault<HeaderCollectionConfiguration>(headerCollectionSymbol, knownTypes);
+            var headerCollection = param.AccessFirstOrDefault<HeaderCollectionConfiguration>(
+                headerCollectionSymbol,
+                knownTypes
+            );
 
-            if (headerCollection == null) continue;
+            if (headerCollection == null)
+                continue;
 
             // TODO: this check may not work in nullable contexts.
             //opted for IDictionary<string, string> semantics here as opposed to the looser IEnumerable<KeyValuePair<string, string>> because IDictionary will enforce uniqueness of keys
             if (SymbolEqualityComparer.Default.Equals(param.Type, genericDictionary))
             {
                 // throw if there is already a HeaderCollection parameter
-                if(headerIndex >= 0)
-                    throw new ArgumentException("Only one parameter can be a HeaderCollection parameter");
+                if (headerIndex >= 0)
+                    throw new ArgumentException(
+                        "Only one parameter can be a HeaderCollection parameter"
+                    );
 
                 headerIndex = i;
             }
@@ -331,7 +368,10 @@ internal class RestMethodSymbolInternal
     //     new(Name, Type, MethodInfo, RelativePath, ReturnType);
 
     // TODO: need to escape strings line [Property("hey\"world")]
-    static Dictionary<int, string> BuildRequestPropertyMap(IParameterSymbol[] parameterArray, WellKnownTypes knownTypes)
+    static Dictionary<int, string> BuildRequestPropertyMap(
+        IParameterSymbol[] parameterArray,
+        WellKnownTypes knownTypes
+    )
     {
         Dictionary<int, string>? propertyMap = null;
 
@@ -339,8 +379,10 @@ internal class RestMethodSymbolInternal
         {
             var param = parameterArray[i];
             var propertySymbol = knownTypes.TryGet("Refit.PropertyAttribute")!;
-            var propertyAttribute = param
-                .AccessFirstOrDefault<PropertyConfiguration>(propertySymbol, knownTypes);
+            var propertyAttribute = param.AccessFirstOrDefault<PropertyConfiguration>(
+                propertySymbol,
+                knownTypes
+            );
 
             if (propertyAttribute != null)
             {
@@ -377,10 +419,7 @@ internal class RestMethodSymbolInternal
             }
 
             // if marked as body, add to content
-            if (
-                this.BodyParameterInfo != null
-                && this.BodyParameterInfo.Item3 == i
-            )
+            if (this.BodyParameterInfo != null && this.BodyParameterInfo.Item3 == i)
             {
                 // AddBodyToRequest(restMethod, param, ret);
                 isParameterMappedToRequest = true;
@@ -399,10 +438,7 @@ internal class RestMethodSymbolInternal
             }
 
             //if authorize, add to request headers with scheme
-            if (
-                this.AuthorizeParameterInfo != null
-                && this.AuthorizeParameterInfo.Item2 == i
-            )
+            if (this.AuthorizeParameterInfo != null && this.AuthorizeParameterInfo.Item2 == i)
             {
                 isParameterMappedToRequest = true;
             }
@@ -433,7 +469,14 @@ internal class RestMethodSymbolInternal
             )
             {
                 queryParamsToAdd ??= [];
-                AddQueryParameters(queryAttribute, param, queryParamsToAdd, i, parameterInfo, knownTypes);
+                AddQueryParameters(
+                    queryAttribute,
+                    param,
+                    queryParamsToAdd,
+                    i,
+                    parameterInfo,
+                    knownTypes
+                );
                 continue;
             }
 
@@ -443,11 +486,16 @@ internal class RestMethodSymbolInternal
         return queryParamsToAdd;
     }
 
-    static void AddQueryParameters(QueryConfiguration? queryAttribute, IParameterSymbol param,
-        List<QueryModel> queryParamsToAdd, int i, RestMethodParameterInfo? parameterInfo,
-        WellKnownTypes knownTypes)
+    static void AddQueryParameters(
+        QueryConfiguration? queryAttribute,
+        IParameterSymbol param,
+        List<QueryModel> queryParamsToAdd,
+        int i,
+        RestMethodParameterInfo? parameterInfo,
+        WellKnownTypes knownTypes
+    )
     {
-        queryParamsToAdd.Add(new QueryModel(param.Name,0,CollectionFormat.Csv,"-", null, null));
+        queryParamsToAdd.Add(new QueryModel(param.Name, 0, CollectionFormat.Csv, "-", null, null));
     }
 
     // void AddQueryParameters(QueryConfiguration? queryAttribute, IParameterSymbol param,
@@ -508,7 +556,10 @@ internal class RestMethodSymbolInternal
             // if (iface.OriginalDefinition.SpecialType == SpecialType.System_Collections_IEnumerable)
             //     return false;
 
-            if (iface.TypeArguments.Length == 1 && iface.OriginalDefinition.InheritsFromOrEquals(iEnumerableTSymbol))
+            if (
+                iface.TypeArguments.Length == 1
+                && iface.OriginalDefinition.InheritsFromOrEquals(iEnumerableTSymbol)
+            )
             {
                 return ShouldReturn(iface.TypeArguments[0], knownTypes);
             }
@@ -521,10 +572,12 @@ internal class RestMethodSymbolInternal
         // Check if type is a simple string or IFormattable type, check underlying type if Nullable<T>
         static bool ShouldReturn(ITypeSymbol typeSymbol, WellKnownTypes knownTypes)
         {
-            if (typeSymbol is INamedTypeSymbol namedType &&
-                namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T &&
-                namedType.TypeArguments.Length == 1 &&
-                namedType.TypeArguments[0].IsValueType)
+            if (
+                typeSymbol is INamedTypeSymbol namedType
+                && namedType.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T
+                && namedType.TypeArguments.Length == 1
+                && namedType.TypeArguments[0].IsValueType
+            )
             {
                 return ShouldReturn(namedType.TypeArguments[0], knownTypes);
             }
@@ -533,12 +586,13 @@ internal class RestMethodSymbolInternal
             var uriSymbol = knownTypes.Get<Uri>();
 
             return typeSymbol.SpecialType == SpecialType.System_String
-                  || typeSymbol.SpecialType == SpecialType.System_Boolean
-                  || typeSymbol.SpecialType == SpecialType.System_Char
-                  || typeSymbol.InheritsFromOrEquals(iFormattableSymbol)
-                  || SymbolEqualityComparer.Default.Equals(typeSymbol, uriSymbol);
+                || typeSymbol.SpecialType == SpecialType.System_Boolean
+                || typeSymbol.SpecialType == SpecialType.System_Char
+                || typeSymbol.InheritsFromOrEquals(iFormattableSymbol)
+                || SymbolEqualityComparer.Default.Equals(typeSymbol, uriSymbol);
         }
     }
+
     //
     // IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(
     //         ITypeSymbol param,
@@ -636,7 +690,8 @@ internal class RestMethodSymbolInternal
     static IEnumerable<IPropertySymbol> GetParameterProperties(IParameterSymbol parameter)
     {
         return parameter
-            .Type.GetMembers().OfType<IPropertySymbol>()
+            .Type.GetMembers()
+            .OfType<IPropertySymbol>()
             .Where(static p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
             .Where(static p => p.GetMethod is { DeclaredAccessibility: Accessibility.Public });
     }
@@ -658,329 +713,363 @@ internal class RestMethodSymbolInternal
             );
     }
 
-//     static Dictionary<int, RestMethodParameterInfo> BuildParameterMap(
-//         string relativePath,
-//         IParameterSymbol[] parameterSymbol,
-//         WellKnownTypes knownTypes
-//     )
-//     {
-//         var ret = new Dictionary<int, RestMethodParameterInfo>();
-//
-//         // This section handles pattern matching in the URL. We also need it to add parameter key/values for any attribute with a [Query]
-//         var parameterizedParts = relativePath
-//             .Split('/', '?')
-//             .SelectMany(x => ParameterRegex.Matches(x).Cast<Match>())
-//             .ToList();
-//
-//         if (parameterizedParts.Count > 0)
-//         {
-//             var paramValidationDict = parameterSymbol.ToDictionary(
-//                 k => GetUrlNameForParameter(k, knownTypes).ToLowerInvariant(),
-//                 v => v
-//             );
-//             //if the param is an lets make a dictionary for all it's potential parameters
-//             var objectParamValidationDict = parameterSymbol
-//                 .Where(x => x.Type.IsReferenceType)
-//                 .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
-//                 .GroupBy(
-//                     i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2, knownTypes)}".ToLowerInvariant()
-//                 )
-//                 .ToDictionary(k => k.Key, v => v.First());
-//             foreach (var match in parameterizedParts)
-//             {
-//                 var rawName = match.Groups[1].Value.ToLowerInvariant();
-//                 var isRoundTripping = rawName.StartsWith("**");
-//                 string name;
-//                 if (isRoundTripping)
-//                 {
-//                     name = rawName.Substring(2);
-//                 }
-//                 else
-//                 {
-//                     name = rawName;
-//                 }
-//
-//                 if (paramValidationDict.TryGetValue(name, out var value)) //if it's a standard parameter
-//                 {
-//                     var paramType = value.Type;
-//                     if (isRoundTripping && paramType.SpecialType != SpecialType.System_String)
-//                     {
-//                         throw new ArgumentException(
-//                             $"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.Name}. It must be a string."
-//                         );
-//                     }
-//                     var parameterType = isRoundTripping
-//                         ? ParameterType.RoundTripping
-//                         : ParameterType.Normal;
-//                     var restMethodParameterInfo = new RestMethodParameterInfo(name, value)
-//                     {
-//                         Type = parameterType
-//                     };
-// #if NET6_0_OR_GREATER
-//                     ret.TryAdd(
-//                         Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo),
-//                         restMethodParameterInfo
-//                     );
-// #else
-//                     var idx = Array.IndexOf(parameterSymbol, restMethodParameterInfo.ParameterInfo);
-//                     if (!ret.ContainsKey(idx))
-//                     {
-//                         ret.Add(idx, restMethodParameterInfo);
-//                     }
-// #endif
-//                 }
-//                 //else if it's a property on a object parameter
-//                 else if (
-//                     objectParamValidationDict.TryGetValue(name, out var value1)
-//                     && !isRoundTripping
-//                 )
-//                 {
-//                     var property = value1;
-//                     var parameterIndex = Array.IndexOf(parameterSymbol, property.Item1);
-//                     //If we already have this parameter, add additional ParameterProperty
-//                     if (ret.TryGetValue(parameterIndex, out var value2))
-//                     {
-//                         if (!value2.IsObjectPropertyParameter)
-//                         {
-//                             throw new ArgumentException(
-//                                 $"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object"
-//                             );
-//                         }
-//
-//                         value2.ParameterProperties.Add(
-//                             new RestMethodParameterProperty(name, property.Item2)
-//                         );
-//                     }
-//                     else
-//                     {
-//                         var restMethodParameterInfo = new RestMethodParameterInfo(
-//                             true,
-//                             property.Item1
-//                         );
-//                         restMethodParameterInfo.ParameterProperties.Add(
-//                             new RestMethodParameterProperty(name, property.Item2)
-//                         );
-// #if NET6_0_OR_GREATER
-//                         ret.TryAdd(
-//                             Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo),
-//                             restMethodParameterInfo
-//                         );
-// #else
-//                         // Do the contains check
-//                         var idx = Array.IndexOf(parameterSymbol, restMethodParameterInfo.ParameterInfo);
-//                         if (!ret.ContainsKey(idx))
-//                         {
-//                             ret.Add(idx, restMethodParameterInfo);
-//                         }
-// #endif
-//                     }
-//                 }
-//                 else
-//                 {
-//                     throw new ArgumentException(
-//                         $"URL {relativePath} has parameter {rawName}, but no method parameter matches"
-//                     );
-//                 }
-//             }
-//         }
-//         return ret;
-//     }
+    //     static Dictionary<int, RestMethodParameterInfo> BuildParameterMap(
+    //         string relativePath,
+    //         IParameterSymbol[] parameterSymbol,
+    //         WellKnownTypes knownTypes
+    //     )
+    //     {
+    //         var ret = new Dictionary<int, RestMethodParameterInfo>();
+    //
+    //         // This section handles pattern matching in the URL. We also need it to add parameter key/values for any attribute with a [Query]
+    //         var parameterizedParts = relativePath
+    //             .Split('/', '?')
+    //             .SelectMany(x => ParameterRegex.Matches(x).Cast<Match>())
+    //             .ToList();
+    //
+    //         if (parameterizedParts.Count > 0)
+    //         {
+    //             var paramValidationDict = parameterSymbol.ToDictionary(
+    //                 k => GetUrlNameForParameter(k, knownTypes).ToLowerInvariant(),
+    //                 v => v
+    //             );
+    //             //if the param is an lets make a dictionary for all it's potential parameters
+    //             var objectParamValidationDict = parameterSymbol
+    //                 .Where(x => x.Type.IsReferenceType)
+    //                 .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
+    //                 .GroupBy(
+    //                     i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2, knownTypes)}".ToLowerInvariant()
+    //                 )
+    //                 .ToDictionary(k => k.Key, v => v.First());
+    //             foreach (var match in parameterizedParts)
+    //             {
+    //                 var rawName = match.Groups[1].Value.ToLowerInvariant();
+    //                 var isRoundTripping = rawName.StartsWith("**");
+    //                 string name;
+    //                 if (isRoundTripping)
+    //                 {
+    //                     name = rawName.Substring(2);
+    //                 }
+    //                 else
+    //                 {
+    //                     name = rawName;
+    //                 }
+    //
+    //                 if (paramValidationDict.TryGetValue(name, out var value)) //if it's a standard parameter
+    //                 {
+    //                     var paramType = value.Type;
+    //                     if (isRoundTripping && paramType.SpecialType != SpecialType.System_String)
+    //                     {
+    //                         throw new ArgumentException(
+    //                             $"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.Name}. It must be a string."
+    //                         );
+    //                     }
+    //                     var parameterType = isRoundTripping
+    //                         ? ParameterType.RoundTripping
+    //                         : ParameterType.Normal;
+    //                     var restMethodParameterInfo = new RestMethodParameterInfo(name, value)
+    //                     {
+    //                         Type = parameterType
+    //                     };
+    // #if NET6_0_OR_GREATER
+    //                     ret.TryAdd(
+    //                         Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo),
+    //                         restMethodParameterInfo
+    //                     );
+    // #else
+    //                     var idx = Array.IndexOf(parameterSymbol, restMethodParameterInfo.ParameterInfo);
+    //                     if (!ret.ContainsKey(idx))
+    //                     {
+    //                         ret.Add(idx, restMethodParameterInfo);
+    //                     }
+    // #endif
+    //                 }
+    //                 //else if it's a property on a object parameter
+    //                 else if (
+    //                     objectParamValidationDict.TryGetValue(name, out var value1)
+    //                     && !isRoundTripping
+    //                 )
+    //                 {
+    //                     var property = value1;
+    //                     var parameterIndex = Array.IndexOf(parameterSymbol, property.Item1);
+    //                     //If we already have this parameter, add additional ParameterProperty
+    //                     if (ret.TryGetValue(parameterIndex, out var value2))
+    //                     {
+    //                         if (!value2.IsObjectPropertyParameter)
+    //                         {
+    //                             throw new ArgumentException(
+    //                                 $"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object"
+    //                             );
+    //                         }
+    //
+    //                         value2.ParameterProperties.Add(
+    //                             new RestMethodParameterProperty(name, property.Item2)
+    //                         );
+    //                     }
+    //                     else
+    //                     {
+    //                         var restMethodParameterInfo = new RestMethodParameterInfo(
+    //                             true,
+    //                             property.Item1
+    //                         );
+    //                         restMethodParameterInfo.ParameterProperties.Add(
+    //                             new RestMethodParameterProperty(name, property.Item2)
+    //                         );
+    // #if NET6_0_OR_GREATER
+    //                         ret.TryAdd(
+    //                             Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo),
+    //                             restMethodParameterInfo
+    //                         );
+    // #else
+    //                         // Do the contains check
+    //                         var idx = Array.IndexOf(parameterSymbol, restMethodParameterInfo.ParameterInfo);
+    //                         if (!ret.ContainsKey(idx))
+    //                         {
+    //                             ret.Add(idx, restMethodParameterInfo);
+    //                         }
+    // #endif
+    //                     }
+    //                 }
+    //                 else
+    //                 {
+    //                     throw new ArgumentException(
+    //                         $"URL {relativePath} has parameter {rawName}, but no method parameter matches"
+    //                     );
+    //                 }
+    //             }
+    //         }
+    //         return ret;
+    //     }
 
-     static (Dictionary<int, RestMethodParameterInfo> ret, List<ParameterFragment> fragmentList) BuildParameterMap2(
-            string relativePath,
-            IParameterSymbol[] parameterSymbols,
-            WellKnownTypes knownTypes
-        )
+    static (
+        Dictionary<int, RestMethodParameterInfo> ret,
+        List<ParameterFragment> fragmentList
+    ) BuildParameterMap2(
+        string relativePath,
+        IParameterSymbol[] parameterSymbols,
+        WellKnownTypes knownTypes
+    )
+    {
+        var ret = new Dictionary<int, RestMethodParameterInfo>();
+
+        // This section handles pattern matching in the URL. We also need it to add parameter key/values for any attribute with a [Query]
+        var parameterizedParts = ParameterRegex2.Matches(relativePath).Cast<Match>().ToArray();
+
+        if (parameterizedParts.Length == 0)
         {
-            var ret = new Dictionary<int, RestMethodParameterInfo>();
+            // TODO: does this handle cases where we start with round tripping?
+            if (string.IsNullOrEmpty(relativePath))
+                return (ret, new List<ParameterFragment>());
 
-            // This section handles pattern matching in the URL. We also need it to add parameter key/values for any attribute with a [Query]
-            var parameterizedParts = ParameterRegex2.Matches(relativePath).Cast<Match>().ToArray();
+            return (ret, new List<ParameterFragment>() { new ConstantFragmentModel(relativePath) });
+        }
 
-            if (parameterizedParts.Length == 0)
+        var paramValidationDict = parameterSymbols.ToDictionary(
+            k => GetUrlNameForParameter(k, knownTypes).ToLowerInvariant(),
+            v => v
+        );
+        //if the param is an lets make a dictionary for all it's potential parameters
+        var objectParamValidationDict = parameterSymbols
+            .Where(x => x.Type.IsReferenceType)
+            .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
+            .GroupBy(i =>
+                $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2, knownTypes)}".ToLowerInvariant()
+            )
+            .ToDictionary(k => k.Key, v => v.First());
+
+        var fragmentList = new List<ParameterFragment>();
+        var index = 0;
+        foreach (var match in parameterizedParts)
+        {
+            // Add constant value from given http path and continue
+            if (match.Index != index)
             {
-                // TODO: does this handle cases where we start with round tripping?
-                if(string.IsNullOrEmpty(relativePath))
-                    return (ret, new List<ParameterFragment>());
-
-                return (ret, new List<ParameterFragment>(){new ConstantFragmentModel(relativePath)});
+                fragmentList.Add(
+                    new ConstantFragmentModel(relativePath.Substring(index, match.Index - index))
+                );
             }
+            index = match.Index + match.Length;
 
-            var paramValidationDict = parameterSymbols.ToDictionary(
-                k => GetUrlNameForParameter(k, knownTypes).ToLowerInvariant(),
-                v => v
-            );
-            //if the param is an lets make a dictionary for all it's potential parameters
-            var objectParamValidationDict = parameterSymbols
-                .Where(x => x.Type.IsReferenceType)
-                .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
-                .GroupBy(
-                    i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2, knownTypes)}".ToLowerInvariant()
-                )
-                .ToDictionary(k => k.Key, v => v.First());
+            var rawName = match.Groups[1].Value.ToLowerInvariant();
+            var isRoundTripping = rawName.StartsWith("**");
+            var name = isRoundTripping ? rawName.Substring(2) : rawName;
 
-            var fragmentList = new List<ParameterFragment>();
-            var index = 0;
-            foreach (var match in parameterizedParts)
+            if (paramValidationDict.TryGetValue(name, out var value)) //if it's a standard parameter
             {
-                // Add constant value from given http path and continue
-                if (match.Index != index)
+                var paramType = value.Type;
+                if (isRoundTripping && paramType.SpecialType == SpecialType.System_String)
                 {
-                    fragmentList.Add(new ConstantFragmentModel(relativePath.Substring(index, match.Index - index)));
-                }
-                index = match.Index + match.Length;
-
-                var rawName = match.Groups[1].Value.ToLowerInvariant();
-                var isRoundTripping = rawName.StartsWith("**");
-                var name = isRoundTripping ? rawName.Substring(2) : rawName;
-
-                if (paramValidationDict.TryGetValue(name, out var value)) //if it's a standard parameter
-                {
-                    var paramType = value.Type;
-                    if (isRoundTripping && paramType.SpecialType == SpecialType.System_String)
-                    {
-                        throw new ArgumentException(
-                            $"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.ToDisplayString(
+                    throw new ArgumentException(
+                        $"URL {relativePath} has round-tripping parameter {rawName}, but the type of matched method parameter is {paramType.ToDisplayString(
                                 SymbolDisplayFormat.FullyQualifiedFormat
                             )}. It must be a string."
+                    );
+                }
+                var parameterType = isRoundTripping
+                    ? ParameterType.RoundTripping
+                    : ParameterType.Normal;
+                var restMethodParameterInfo = new RestMethodParameterInfo(name, value)
+                {
+                    Type = parameterType,
+                };
+
+                var paramSymbol = restMethodParameterInfo.ParameterInfo;
+                var parameterIndex = Array.IndexOf(
+                    parameterSymbols,
+                    restMethodParameterInfo.ParameterInfo
+                );
+                var parameterTypeDeclaration = paramSymbol.Type.ToDisplayString(
+                    SymbolDisplayFormat.FullyQualifiedFormat
+                );
+                fragmentList.Add(
+                    new DynamicFragmentModel(
+                        paramSymbol.Name,
+                        paramSymbol.Ordinal,
+                        parameterTypeDeclaration
+                    )
+                );
+#if NET6_0_OR_GREATER
+                ret.TryAdd(parameterIndex, restMethodParameterInfo);
+#else
+                if (!ret.ContainsKey(parameterIndex))
+                {
+                    ret.Add(parameterIndex, restMethodParameterInfo);
+                }
+#endif
+            }
+            //else if it's a property on a object parameter
+            else if (
+                objectParamValidationDict.TryGetValue(name, out var value1) && !isRoundTripping
+            )
+            {
+                var property = value1;
+                var parameterIndex = Array.IndexOf(parameterSymbols, property.Item1);
+                //If we already have this parameter, add additional ParameterProperty
+                if (ret.TryGetValue(parameterIndex, out var value2))
+                {
+                    if (!value2.IsObjectPropertyParameter)
+                    {
+                        throw new ArgumentException(
+                            $"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object"
                         );
                     }
-                    var parameterType = isRoundTripping
-                        ? ParameterType.RoundTripping
-                        : ParameterType.Normal;
-                    var restMethodParameterInfo = new RestMethodParameterInfo(name, value)
-                    {
-                        Type = parameterType
-                    };
 
-                    var paramSymbol = restMethodParameterInfo.ParameterInfo;
-                    var parameterIndex = Array.IndexOf(parameterSymbols, restMethodParameterInfo.ParameterInfo);
-                    var parameterTypeDeclaration = paramSymbol.Type.ToDisplayString(
+                    value2.ParameterProperties.Add(
+                        new RestMethodParameterProperty(name, property.Item2)
+                    );
+
+                    var propertyAccessExpression = $"{property.Item1.Name}.{property.Item2.Name}";
+                    var containingType = property.Item2.ContainingType.ToDisplayString(
                         SymbolDisplayFormat.FullyQualifiedFormat
                     );
-                    fragmentList.Add(new DynamicFragmentModel(paramSymbol.Name, paramSymbol.Ordinal, parameterTypeDeclaration));
-#if NET6_0_OR_GREATER
-                    ret.TryAdd(
-                        parameterIndex,
-                        restMethodParameterInfo
+                    var typeDeclaration = property.Item2.Type.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
                     );
-#else
-                    if (!ret.ContainsKey(parameterIndex))
-                    {
-                        ret.Add(parameterIndex, restMethodParameterInfo);
-                    }
-#endif
-                }
-                //else if it's a property on a object parameter
-                else if (
-                    objectParamValidationDict.TryGetValue(name, out var value1)
-                    && !isRoundTripping
-                )
-                {
-                    var property = value1;
-                    var parameterIndex = Array.IndexOf(parameterSymbols, property.Item1);
-                    //If we already have this parameter, add additional ParameterProperty
-                    if (ret.TryGetValue(parameterIndex, out var value2))
-                    {
-                        if (!value2.IsObjectPropertyParameter)
-                        {
-                            throw new ArgumentException(
-                                $"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object"
-                            );
-                        }
 
-                        value2.ParameterProperties.Add(
-                            new RestMethodParameterProperty(name, property.Item2)
-                        );
-
-                        var propertyAccessExpression = $"{property.Item1.Name}.{property.Item2.Name}";
-                        var containingType = property.Item2.ContainingType.ToDisplayString(
-                            SymbolDisplayFormat.FullyQualifiedFormat
-                        );
-                        var typeDeclaration = property.Item2.Type.ToDisplayString(
-                            SymbolDisplayFormat.FullyQualifiedFormat
-                        );
-
-                        fragmentList.Add(new DynamicPropertyFragmentModel(propertyAccessExpression, property.Item2.Name, containingType, typeDeclaration));
-                    }
-                    else
-                    {
-                        var restMethodParameterInfo = new RestMethodParameterInfo(
-                            true,
-                            property.Item1
-                        );
-                        restMethodParameterInfo.ParameterProperties.Add(
-                            new RestMethodParameterProperty(name, property.Item2)
-                        );
-
-                        var idx = Array.IndexOf(parameterSymbols, restMethodParameterInfo.ParameterInfo);
-                        var propertyAccessExpression = $"{property.Item1.Name}.{property.Item2.Name}";
-                        var containingType = property.Item2.ContainingType.ToDisplayString(
-                            SymbolDisplayFormat.FullyQualifiedFormat
-                        );
-                        var typeDeclaration = property.Item2.Type.ToDisplayString(
-                            SymbolDisplayFormat.FullyQualifiedFormat
-                        );
-                        fragmentList.Add(new DynamicPropertyFragmentModel(propertyAccessExpression, property.Item2.Name, containingType, typeDeclaration));
-#if NET6_0_OR_GREATER
-                        ret.TryAdd(
-                            idx,
-                            restMethodParameterInfo
-                        );
-#else
-                        // Do the contains check
-                        if (!ret.ContainsKey(idx))
-                        {
-                            ret.Add(idx, restMethodParameterInfo);
-                        }
-#endif
-                    }
+                    fragmentList.Add(
+                        new DynamicPropertyFragmentModel(
+                            propertyAccessExpression,
+                            property.Item2.Name,
+                            containingType,
+                            typeDeclaration
+                        )
+                    );
                 }
                 else
                 {
-                    throw new ArgumentException(
-                        $"URL {relativePath} has parameter {rawName}, but no method parameter matches"
+                    var restMethodParameterInfo = new RestMethodParameterInfo(true, property.Item1);
+                    restMethodParameterInfo.ParameterProperties.Add(
+                        new RestMethodParameterProperty(name, property.Item2)
                     );
+
+                    var idx = Array.IndexOf(
+                        parameterSymbols,
+                        restMethodParameterInfo.ParameterInfo
+                    );
+                    var propertyAccessExpression = $"{property.Item1.Name}.{property.Item2.Name}";
+                    var containingType = property.Item2.ContainingType.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    );
+                    var typeDeclaration = property.Item2.Type.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    );
+                    fragmentList.Add(
+                        new DynamicPropertyFragmentModel(
+                            propertyAccessExpression,
+                            property.Item2.Name,
+                            containingType,
+                            typeDeclaration
+                        )
+                    );
+#if NET6_0_OR_GREATER
+                    ret.TryAdd(idx, restMethodParameterInfo);
+#else
+                    // Do the contains check
+                    if (!ret.ContainsKey(idx))
+                    {
+                        ret.Add(idx, restMethodParameterInfo);
+                    }
+#endif
                 }
             }
-
-            // add trailing string
-            if (index < relativePath.Length - 1)
+            else
             {
-                var s = relativePath.Substring(index, relativePath.Length - index);
-                fragmentList.Add(new ConstantFragmentModel(s));
+                throw new ArgumentException(
+                    $"URL {relativePath} has parameter {rawName}, but no method parameter matches"
+                );
             }
-            return (ret, fragmentList);
         }
 
-     // TODO: could these two methods be merged?
+        // add trailing string
+        if (index < relativePath.Length - 1)
+        {
+            var s = relativePath.Substring(index, relativePath.Length - index);
+            fragmentList.Add(new ConstantFragmentModel(s));
+        }
+        return (ret, fragmentList);
+    }
+
+    // TODO: could these two methods be merged?
     static string GetUrlNameForParameter(IParameterSymbol paramSymbol, WellKnownTypes knownTypes)
     {
         var aliasAsSymbol = knownTypes.TryGet("Refit.AliasAsAttribute");
-        var aliasAttr = paramSymbol.AccessFirstOrDefault<AliasAsConfiguration>(aliasAsSymbol, knownTypes);
+        var aliasAttr = paramSymbol.AccessFirstOrDefault<AliasAsConfiguration>(
+            aliasAsSymbol,
+            knownTypes
+        );
         return aliasAttr != null ? aliasAttr.Name : paramSymbol.Name!;
     }
 
     static string GetUrlNameForProperty(IPropertySymbol propSymbol, WellKnownTypes knownTypes)
     {
         var aliasAsSymbol = knownTypes.TryGet("Refit.AliasAsAttribute");
-        var aliasAttr = propSymbol.AccessFirstOrDefault<AliasAsConfiguration>(aliasAsSymbol, knownTypes);
+        var aliasAttr = propSymbol.AccessFirstOrDefault<AliasAsConfiguration>(
+            aliasAsSymbol,
+            knownTypes
+        );
         return aliasAttr != null ? aliasAttr.Name : propSymbol.Name;
     }
 
-    static string GetAttachmentNameForParameter(IParameterSymbol paramSymbol, WellKnownTypes knownTypes)
+    static string GetAttachmentNameForParameter(
+        IParameterSymbol paramSymbol,
+        WellKnownTypes knownTypes
+    )
     {
         var attachmentNameSymbol = knownTypes.TryGet("Refit.AttachmentNameAttribute");
         var aliasAsSymbol = knownTypes.TryGet("Refit.AliasAsAttribute");
 
 #pragma warning disable CS0618 // Type or member is obsolete
-        var nameAttr = paramSymbol
-            .AccessFirstOrDefault<AttachmentNameConfiguration>(attachmentNameSymbol, knownTypes);
+        var nameAttr = paramSymbol.AccessFirstOrDefault<AttachmentNameConfiguration>(
+            attachmentNameSymbol,
+            knownTypes
+        );
 #pragma warning restore CS0618 // Type or member is obsolete
 
         // also check for AliasAs
         return nameAttr?.Name
-            ?? paramSymbol.AccessFirstOrDefault<AliasAsConfiguration>(aliasAsSymbol, knownTypes)?.Name!;
+            ?? paramSymbol
+                .AccessFirstOrDefault<AliasAsConfiguration>(aliasAsSymbol, knownTypes)
+                ?.Name!;
     }
 
     Tuple<BodySerializationMethod, bool, int>? FindBodyParameter(
@@ -997,8 +1086,7 @@ internal class RestMethodSymbolInternal
 
         var bodySymbol = knownTypes.TryGet("Refit.BodyAttribute");
         var bodyParamEnumerable = parameterArray
-            .Select(
-                x =>
+            .Select(x =>
                 (
                     Parameter: x,
                     BodyAttribute: x.AccessFirstOrDefault<BodyConfiguration>(bodySymbol, knownTypes)
@@ -1012,9 +1100,7 @@ internal class RestMethodSymbolInternal
         {
             if (bodyParamEnumerable.Length > 0)
             {
-                throw new ArgumentException(
-                    "Multipart requests may not contain a Body parameter"
-                );
+                throw new ArgumentException("Multipart requests may not contain a Body parameter");
             }
             return null;
         }
@@ -1062,13 +1148,16 @@ internal class RestMethodSymbolInternal
         // see if we're a post/put/patch
         // explicitly skip [Query], [HeaderCollection], and [Property]-denoted params
         var refParamEnumerable = parameterArray
-            .Where(
-                pi =>
-                    !pi.Type.IsValueType
-                    && pi.Type.SpecialType != SpecialType.System_String
-                    && pi.AccessFirstOrDefault<QueryConfiguration>(querySymbol, knownTypes) == null
-                    && pi.AccessFirstOrDefault<HeaderCollectionConfiguration>(headerCollectionSymbol, knownTypes) == null
-                    && pi.AccessFirstOrDefault<PropertyConfiguration>(propertySymbol, knownTypes) == null
+            .Where(pi =>
+                !pi.Type.IsValueType
+                && pi.Type.SpecialType != SpecialType.System_String
+                && pi.AccessFirstOrDefault<QueryConfiguration>(querySymbol, knownTypes) == null
+                && pi.AccessFirstOrDefault<HeaderCollectionConfiguration>(
+                    headerCollectionSymbol,
+                    knownTypes
+                ) == null
+                && pi.AccessFirstOrDefault<PropertyConfiguration>(propertySymbol, knownTypes)
+                    == null
             )
             .ToArray();
 
@@ -1100,15 +1189,20 @@ internal class RestMethodSymbolInternal
         return null;
     }
 
-    static Tuple<string, int>? FindAuthorizationParameter(IParameterSymbol[] parameterArray, WellKnownTypes knownTypes)
+    static Tuple<string, int>? FindAuthorizationParameter(
+        IParameterSymbol[] parameterArray,
+        WellKnownTypes knownTypes
+    )
     {
         var authorizeSymbol = knownTypes.TryGet("Refit.AuthorizeAttribute");
         var authorizeParams = parameterArray
-            .Select(
-                x =>
+            .Select(x =>
                 (
                     Parameter: x,
-                    AuthorizeAttribute: x.AccessFirstOrDefault<AuthorizeConfiguration>(authorizeSymbol, knownTypes)
+                    AuthorizeAttribute: x.AccessFirstOrDefault<AuthorizeConfiguration>(
+                        authorizeSymbol,
+                        knownTypes
+                    )
                 )
             )
             .Where(x => x.AuthorizeAttribute != null)
@@ -1124,32 +1218,39 @@ internal class RestMethodSymbolInternal
             var authorizeParam = authorizeParams.First();
             return Tuple.Create(
                 authorizeParam!.AuthorizeAttribute!.Scheme,
-                    Array.IndexOf(parameterArray, authorizeParam.Parameter)
+                Array.IndexOf(parameterArray, authorizeParam.Parameter)
             );
         }
 
         return null;
     }
 
-    static Dictionary<string, string?> ParseHeaders(IMethodSymbol methodSymbol, WellKnownTypes knownTypes)
+    static Dictionary<string, string?> ParseHeaders(
+        IMethodSymbol methodSymbol,
+        WellKnownTypes knownTypes
+    )
     {
         var headersSymbol = knownTypes.TryGet("Refit.HeadersAttribute");
         var inheritedAttributes =
             methodSymbol.ContainingType != null
                 ? methodSymbol
-                    .ContainingType.AllInterfaces
-                    .SelectMany(i => i.Access<HeadersConfiguration>(headersSymbol, knownTypes))
+                    .ContainingType.AllInterfaces.SelectMany(i =>
+                        i.Access<HeadersConfiguration>(headersSymbol, knownTypes)
+                    )
                     .Reverse()
                 : [];
 
-        var declaringTypeAttributes = methodSymbol.ContainingType!.Access<HeadersConfiguration>(headersSymbol,knownTypes);
+        var declaringTypeAttributes = methodSymbol.ContainingType!.Access<HeadersConfiguration>(
+            headersSymbol,
+            knownTypes
+        );
 
         // Headers set on the declaring type have to come first,
         // so headers set on the method can replace them. Switching
         // the order here will break stuff.
         var headers = inheritedAttributes
             .Concat(declaringTypeAttributes)
-            .Concat(methodSymbol.Access<HeadersConfiguration>(headersSymbol ,knownTypes))
+            .Concat(methodSymbol.Access<HeadersConfiguration>(headersSymbol, knownTypes))
             .SelectMany(ha => ha.Headers);
 
         var ret = new Dictionary<string, string?>();
@@ -1166,14 +1267,16 @@ internal class RestMethodSymbolInternal
 
             var parsedHeader = EnsureSafe(header);
             var parts = parsedHeader.Split(':');
-            ret[parts[0].Trim()] =
-                parts.Length > 1 ? string.Join(":", parts.Skip(1)).Trim() : null;
+            ret[parts[0].Trim()] = parts.Length > 1 ? string.Join(":", parts.Skip(1)).Trim() : null;
         }
 
         return ret;
     }
 
-    static Dictionary<int, string> BuildHeaderParameterMap(IParameterSymbol[] parameterArray, WellKnownTypes knownTypes)
+    static Dictionary<int, string> BuildHeaderParameterMap(
+        IParameterSymbol[] parameterArray,
+        WellKnownTypes knownTypes
+    )
     {
         var ret = new System.Collections.Generic.Dictionary<int, string>();
         var headerSymbol = knownTypes.TryGet("Refit.HeaderAttribute");
@@ -1208,8 +1311,14 @@ internal class RestMethodSymbolInternal
         foreach (var pair in Headers)
         {
             headersToAdd.Add(
-                new HeaderPsModel(HeaderType.Static, new HeaderModel($""" "{pair.Key}" """, $""" "{pair.Value}" """), null,
-                    null, null));
+                new HeaderPsModel(
+                    HeaderType.Static,
+                    new HeaderModel($""" "{pair.Key}" """, $""" "{pair.Value}" """),
+                    null,
+                    null,
+                    null
+                )
+            );
         }
 
         for (var i = 0; i < ParameterSymbolArray.Length; i++)
@@ -1231,10 +1340,7 @@ internal class RestMethodSymbolInternal
             }
 
             // if marked as body, add to content
-            if (
-                this.BodyParameterInfo != null
-                && this.BodyParameterInfo.Item3 == i
-            )
+            if (this.BodyParameterInfo != null && this.BodyParameterInfo.Item3 == i)
             {
                 // AddBodyToRequest(restMethod, param, ret);
                 isParameterMappedToRequest = true;
@@ -1244,8 +1350,14 @@ internal class RestMethodSymbolInternal
             if (this.HeaderParameterMap.TryGetValue(i, out var headerParameterValue))
             {
                 headersToAdd.Add(
-                    new HeaderPsModel(HeaderType.Static, new HeaderModel($""" "{headerParameterValue}" """, param.Name), null,
-                        null, null));
+                    new HeaderPsModel(
+                        HeaderType.Static,
+                        new HeaderModel($""" "{headerParameterValue}" """, param.Name),
+                        null,
+                        null,
+                        null
+                    )
+                );
                 isParameterMappedToRequest = true;
             }
 
@@ -1253,29 +1365,36 @@ internal class RestMethodSymbolInternal
             if (this.HeaderCollectionAt(i))
             {
                 headersToAdd.Add(
-                    new HeaderPsModel(HeaderType.Collection, null, null, param.Name, null));
+                    new HeaderPsModel(HeaderType.Collection, null, null, param.Name, null)
+                );
 
                 isParameterMappedToRequest = true;
             }
 
             //if authorize, add to request headers with scheme
-            if (
-                this.AuthorizeParameterInfo != null
-                && this.AuthorizeParameterInfo.Item2 == i
-            )
+            if (this.AuthorizeParameterInfo != null && this.AuthorizeParameterInfo.Item2 == i)
             {
                 // headersToAdd["Authorization"] =
                 //     $"{this.AuthorizeParameterInfo.Item1} {param}";
                 //
                 headersToAdd.Add(
-                    new HeaderPsModel(HeaderType.Authorise, null, null,null, new AuthoriseModel(ParameterSymbolArray[this.AuthorizeParameterInfo.Item2].Name, this.AuthorizeParameterInfo.Item1)));
+                    new HeaderPsModel(
+                        HeaderType.Authorise,
+                        null,
+                        null,
+                        null,
+                        new AuthoriseModel(
+                            ParameterSymbolArray[this.AuthorizeParameterInfo.Item2].Name,
+                            this.AuthorizeParameterInfo.Item1
+                        )
+                    )
+                );
 
                 isParameterMappedToRequest = true;
             }
         }
 
         return headersToAdd;
-
     }
 
     void DetermineReturnTypeInfo(IMethodSymbol methodInfo, WellKnownTypes knownTypes)
@@ -1290,9 +1409,18 @@ internal class RestMethodSymbolInternal
         if (
             returnType is INamedTypeSymbol { IsGenericType: true } namedType
             && (
-                SymbolEqualityComparer.Default.Equals(namedType.OriginalDefinition, unboundTaskSymbol)
-                || SymbolEqualityComparer.Default.Equals(namedType.OriginalDefinition, valueTaskSymbol)
-                || SymbolEqualityComparer.Default.Equals(namedType.OriginalDefinition, observableSymbol)
+                SymbolEqualityComparer.Default.Equals(
+                    namedType.OriginalDefinition,
+                    unboundTaskSymbol
+                )
+                || SymbolEqualityComparer.Default.Equals(
+                    namedType.OriginalDefinition,
+                    valueTaskSymbol
+                )
+                || SymbolEqualityComparer.Default.Equals(
+                    namedType.OriginalDefinition,
+                    observableSymbol
+                )
             )
         )
         {
@@ -1307,10 +1435,16 @@ internal class RestMethodSymbolInternal
             // TODO: maybe use inherits from here?
             // Does refit support types inheriting from IApiResponse
             if (
-                ReturnResultType is INamedTypeSymbol {IsGenericType: true} returnResultNamedType
+                ReturnResultType is INamedTypeSymbol { IsGenericType: true } returnResultNamedType
                 && (
-                    SymbolEqualityComparer.Default.Equals(returnResultNamedType.OriginalDefinition, unboundApiResponseSymbol)
-                    || SymbolEqualityComparer.Default.Equals(returnResultNamedType.OriginalDefinition, unboundIApiResponseSymbol)
+                    SymbolEqualityComparer.Default.Equals(
+                        returnResultNamedType.OriginalDefinition,
+                        unboundApiResponseSymbol
+                    )
+                    || SymbolEqualityComparer.Default.Equals(
+                        returnResultNamedType.OriginalDefinition,
+                        unboundIApiResponseSymbol
+                    )
                 )
             )
             {
@@ -1472,5 +1606,5 @@ public enum ParameterType
     /// <summary>
     /// The round tripping
     /// </summary>
-    RoundTripping
+    RoundTripping,
 }

@@ -35,7 +35,7 @@ internal static class Emitter
                 }
             }
             #pragma warning restore
-
+            
             """;
         // add the attribute text
         addSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
@@ -64,7 +64,7 @@ internal static class Emitter
                 }
             }
             #pragma warning restore
-
+            
             """;
         addSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
 
@@ -75,48 +75,48 @@ internal static class Emitter
         // TODO: emit ValueStringBuilder
         var generatedHelpers = $$"""
 
-                                   #pragma warning disable
-                                   namespace Refit.Implementation
-                                   {
+            #pragma warning disable
+            namespace Refit.Implementation
+            {
 
-                                       /// <inheritdoc />
-                                       [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                                       [global::System.Diagnostics.DebuggerNonUserCode]
-                                       [{{model.PreserveAttributeDisplayName}}]
-                                       [global::System.Reflection.Obfuscation(Exclude=true)]
-                                       [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                                       internal static partial class Generated
-                                       {
-                                   #if NET5_0_OR_GREATER
-                                           [System.Runtime.CompilerServices.ModuleInitializer]
-                                           [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
-                                           public static void Initialize()
-                                           {
-                                           }
-                                   #endif
-                                            internal static class ____GeneratedHelpers
-                                            {
-                                                public static void WriteRefitSettingsProperties(global::System.Net.Http.HttpRequestMessage request, global::Refit.RefitSettings settings)
-                                                {
-                                                    // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
-                                                   if (settings.HttpRequestMessageOptions != null)
-                                                   {
-                                                       foreach (var p in settings.HttpRequestMessageOptions)
-                                                       {
-                                           #if NET6_0_OR_GREATER
-                                                               ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
-                                           #else
-                                                           ret.Properties.Add(p);
-                                           #endif
-                                                       }
-                                                   }
-                                                   }
-                                                    }
-                                       }
-                                   }
-                                   #pragma warning restore
-
-                                   """;
+                /// <inheritdoc />
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.Diagnostics.DebuggerNonUserCode]
+                [{{model.PreserveAttributeDisplayName}}]
+                [global::System.Reflection.Obfuscation(Exclude=true)]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                internal static partial class Generated
+                {
+            #if NET5_0_OR_GREATER
+                    [System.Runtime.CompilerServices.ModuleInitializer]
+                    [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
+                    public static void Initialize()
+                    {
+                    }
+            #endif
+                     internal static class ____GeneratedHelpers
+                     {
+                         public static void WriteRefitSettingsProperties(global::System.Net.Http.HttpRequestMessage request, global::Refit.RefitSettings settings)
+                         {
+                             // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
+                            if (settings.HttpRequestMessageOptions != null)
+                            {
+                                foreach (var p in settings.HttpRequestMessageOptions)
+                                {
+                    #if NET6_0_OR_GREATER
+                                        ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+                    #else
+                                    ret.Properties.Add(p);
+                    #endif
+                                }
+                            }
+                            }
+                             }
+                }
+            }
+            #pragma warning restore
+            
+            """;
         // addSource("GeneratedHelper.g.cs", SourceText.From(generatedHelpers, Encoding.UTF8));
     }
 
@@ -270,9 +270,11 @@ namespace Refit.Implementation
 
             if (methodModel.Error is not null)
             {
-                source.AppendLine(@$"
-            // {methodModel.Error.Replace("\r","").Replace("\n","")}
-        ");
+                source.AppendLine(
+                    @$"
+            // {methodModel.Error.Replace("\r", "").Replace("\n", "")}
+        "
+                );
             }
 
             source.Append(
@@ -289,11 +291,10 @@ namespace Refit.Implementation
             try
             {
                 EmitRefitBody.WriteRefitBody(source, methodModel, uniqueNames);
-
             }
             catch (Exception e)
             {
-                source.AppendLine($"// {e.ToString().Replace("\r","").Replace("\n","")}");
+                source.AppendLine($"// {e.ToString().Replace("\r", "").Replace("\n", "")}");
             }
         }
 

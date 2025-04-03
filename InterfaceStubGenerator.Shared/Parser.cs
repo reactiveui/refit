@@ -488,7 +488,12 @@ namespace {refitInternalNamespace}
         return false;
     }
 
-    private static MethodModel ParseMethod(IMethodSymbol methodSymbol, bool isImplicitInterface, bool isRefit, WellKnownTypes knownTypes)
+    private static MethodModel ParseMethod(
+        IMethodSymbol methodSymbol,
+        bool isImplicitInterface,
+        bool isRefit,
+        WellKnownTypes knownTypes
+    )
     {
         var returnType = methodSymbol.ReturnType.ToDisplayString(
             SymbolDisplayFormat.FullyQualifiedFormat
@@ -515,7 +520,10 @@ namespace {refitInternalNamespace}
         {
             try
             {
-                var restMethodSymbolInternal = new RestMethodSymbolInternal(methodSymbol, knownTypes);
+                var restMethodSymbolInternal = new RestMethodSymbolInternal(
+                    methodSymbol,
+                    knownTypes
+                );
                 refitMethodModel = restMethodSymbolInternal.ToRefitBodyModel();
             }
             catch (Exception e)

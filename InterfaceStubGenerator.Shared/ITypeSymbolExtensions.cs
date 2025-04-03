@@ -9,7 +9,8 @@ namespace Refit.Generator
 {
     static class ITypeSymbolExtensions
     {
-        internal static IEnumerable<IFieldSymbol> GetFields(this ITypeSymbol symbol) => symbol.GetMembers().OfType<IFieldSymbol>();
+        internal static IEnumerable<IFieldSymbol> GetFields(this ITypeSymbol symbol) =>
+            symbol.GetMembers().OfType<IFieldSymbol>();
 
         public static IEnumerable<ITypeSymbol> GetBaseTypesAndThis(this ITypeSymbol? type)
         {
@@ -47,9 +48,13 @@ namespace Refit.Generator
                 .Any(t => t.Equals(baseType, SymbolEqualityComparer.Default));
         }
 
-        public static IEnumerable<AttributeData> GetAttributesFor(this ISymbol type, ITypeSymbol attributeType)
+        public static IEnumerable<AttributeData> GetAttributesFor(
+            this ISymbol type,
+            ITypeSymbol attributeType
+        )
         {
-            return type.GetAttributes().Where(t => t.AttributeClass!.InheritsFromOrEquals(attributeType));
+            return type.GetAttributes()
+                .Where(t => t.AttributeClass!.InheritsFromOrEquals(attributeType));
         }
 
         // TODO: most of this stuff isnt needed, I tried using this to supoort HttpMethodAttribute inheritance
@@ -62,15 +67,24 @@ namespace Refit.Generator
             var syntax = (AttributeSyntax?)attributeData.ApplicationSyntaxReference?.GetSyntax();
             var syntaxArguments =
                 (IReadOnlyList<AttributeArgumentSyntax>?)syntax?.ArgumentList?.Arguments
-                ?? new AttributeArgumentSyntax[attributeData.ConstructorArguments.Length + attributeData.NamedArguments.Length];
+                ?? new AttributeArgumentSyntax[
+                    attributeData.ConstructorArguments.Length + attributeData.NamedArguments.Length
+                ];
 
-            if (attributeData.AttributeConstructor != null && attributeData.ConstructorArguments.Length > 0)
+            if (
+                attributeData.AttributeConstructor != null
+                && attributeData.ConstructorArguments.Length > 0
+            )
             {
-                attribute = (T) Activator.CreateInstance(typeof(T), attributeData.GetActualConstructorParams().ToArray());
+                attribute = (T)
+                    Activator.CreateInstance(
+                        typeof(T),
+                        attributeData.GetActualConstructorParams().ToArray()
+                    );
             }
             else
             {
-                attribute = (T) Activator.CreateInstance(typeof(T));
+                attribute = (T)Activator.CreateInstance(typeof(T));
             }
             foreach (var p in attributeData.NamedArguments)
             {
@@ -79,13 +93,23 @@ namespace Refit.Generator
 
             var syntaxIndex = attributeData.ConstructorArguments.Length;
 
-            var propertiesByName = dataType.GetProperties().GroupBy(x => x.Name).ToDictionary(x => x.Key, x => x.First());
+            var propertiesByName = dataType
+                .GetProperties()
+                .GroupBy(x => x.Name)
+                .ToDictionary(x => x.Key, x => x.First());
             foreach (var namedArgument in attributeData.NamedArguments)
             {
                 if (!propertiesByName.TryGetValue(namedArgument.Key, out var prop))
-                    throw new InvalidOperationException($"Could not get property {namedArgument.Key} of attribute ");
+                    throw new InvalidOperationException(
+                        $"Could not get property {namedArgument.Key} of attribute "
+                    );
 
-                var value = BuildArgumentValue(namedArgument.Value, prop.PropertyType, syntaxArguments[syntaxIndex], knownTypes);
+                var value = BuildArgumentValue(
+                    namedArgument.Value,
+                    prop.PropertyType,
+                    syntaxArguments[syntaxIndex],
+                    knownTypes
+                );
                 prop.SetValue(attribute, value);
                 syntaxIndex++;
             }
@@ -102,10 +126,12 @@ namespace Refit.Generator
         {
             return arg.Kind switch
             {
-                _ when (targetType == typeof(AttributeValue?) || targetType == typeof(AttributeValue)) && syntax != null => new AttributeValue(
-                    arg,
-                    syntax.Expression
-                ),
+                _
+                    when (
+                        targetType == typeof(AttributeValue?)
+                        || targetType == typeof(AttributeValue)
+                    )
+                        && syntax != null => new AttributeValue(arg, syntax.Expression),
                 _ when arg.IsNull => null,
                 TypedConstantKind.Enum => GetEnumValue(arg, targetType),
                 TypedConstantKind.Array => BuildArrayValue(arg, targetType, knownTypes),
@@ -117,16 +143,29 @@ namespace Refit.Generator
             };
         }
 
-        public readonly record struct AttributeValue(TypedConstant ConstantValue, ExpressionSyntax Expression);
+        public readonly record struct AttributeValue(
+            TypedConstant ConstantValue,
+            ExpressionSyntax Expression
+        );
 
-
-        private static object?[] BuildArrayValue(TypedConstant arg, Type targetType, WellKnownTypes? symbolAccessor)
+        private static object?[] BuildArrayValue(
+            TypedConstant arg,
+            Type targetType,
+            WellKnownTypes? symbolAccessor
+        )
         {
-            if (!targetType.IsGenericType || targetType.GetGenericTypeDefinition() != typeof(IReadOnlyCollection<>))
-                throw new InvalidOperationException($"{nameof(IReadOnlyCollection<object>)} is the only supported array type");
+            if (
+                !targetType.IsGenericType
+                || targetType.GetGenericTypeDefinition() != typeof(IReadOnlyCollection<>)
+            )
+                throw new InvalidOperationException(
+                    $"{nameof(IReadOnlyCollection<object>)} is the only supported array type"
+                );
 
             var elementTargetType = targetType.GetGenericArguments()[0];
-            return arg.Values.Select(x => BuildArgumentValue(x, elementTargetType, null, symbolAccessor)).ToArray();
+            return arg
+                .Values.Select(x => BuildArgumentValue(x, elementTargetType, null, symbolAccessor))
+                .ToArray();
         }
 
         private static object? GetEnumValue(TypedConstant arg, Type targetType)
@@ -138,7 +177,10 @@ namespace Refit.Generator
             if (targetType == typeof(IFieldSymbol))
                 return enumRoslynType.GetFields().First(f => Equals(f.ConstantValue, arg.Value));
 
-            if (targetType.IsConstructedGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            if (
+                targetType.IsConstructedGenericType
+                && targetType.GetGenericTypeDefinition() == typeof(Nullable<>)
+            )
             {
                 targetType = Nullable.GetUnderlyingType(targetType)!;
             }
@@ -146,8 +188,9 @@ namespace Refit.Generator
             return Enum.ToObject(targetType, arg.Value);
         }
 
-
-        public static IEnumerable<object> GetActualConstructorParams(this AttributeData attributeData)
+        public static IEnumerable<object> GetActualConstructorParams(
+            this AttributeData attributeData
+        )
         {
             foreach (var arg in attributeData.ConstructorArguments)
             {
@@ -165,16 +208,23 @@ namespace Refit.Generator
             }
         }
 
-        public static TResult? AccessFirstOrDefault<TAttribute, TResult>(this ISymbol symbol, WellKnownTypes knownTypes)
-        where TAttribute : Attribute
-        where TResult : class
+        public static TResult? AccessFirstOrDefault<TAttribute, TResult>(
+            this ISymbol symbol,
+            WellKnownTypes knownTypes
+        )
+            where TAttribute : Attribute
+            where TResult : class
         {
             var attributeSymbol = knownTypes.Get<TAttribute>();
             var attribute = symbol.GetAttributesFor(attributeSymbol).FirstOrDefault();
             return attribute?.MapToType<TResult>(knownTypes);
         }
 
-        public static TResult? AccessFirstOrDefault<TResult>(this ISymbol symbol, INamedTypeSymbol attributeSymbol, WellKnownTypes knownTypes)
+        public static TResult? AccessFirstOrDefault<TResult>(
+            this ISymbol symbol,
+            INamedTypeSymbol attributeSymbol,
+            WellKnownTypes knownTypes
+        )
             where TResult : class
         {
             var attribute = symbol.GetAttributesFor(attributeSymbol).FirstOrDefault();
@@ -193,7 +243,11 @@ namespace Refit.Generator
         //     }
         // }
 
-        public static IEnumerable<TResult> Access<TResult>(this ISymbol symbol, INamedTypeSymbol attributeSymbol, WellKnownTypes knownTypes)
+        public static IEnumerable<TResult> Access<TResult>(
+            this ISymbol symbol,
+            INamedTypeSymbol attributeSymbol,
+            WellKnownTypes knownTypes
+        )
         {
             var attributes = symbol.GetAttributesFor(attributeSymbol);
 

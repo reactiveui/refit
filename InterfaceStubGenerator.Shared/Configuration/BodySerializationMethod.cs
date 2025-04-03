@@ -25,5 +25,5 @@ public enum BodySerializationMethod
     /// <summary>
     /// Encodes everything using the ContentSerializer in RefitSettings
     /// </summary>
-    Serialized = 3
+    Serialized = 3,
 }

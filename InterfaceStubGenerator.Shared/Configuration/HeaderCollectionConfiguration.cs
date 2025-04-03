@@ -1,6 +1,3 @@
 ﻿namespace Refit.Generator.Configuration;
 
-public class HeaderCollectionConfiguration
-{
-
-}
+public class HeaderCollectionConfiguration { }

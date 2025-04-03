@@ -21,5 +21,5 @@ internal enum Nullability : byte
 {
     Enabled,
     Disabled,
-    None
+    None,
 }

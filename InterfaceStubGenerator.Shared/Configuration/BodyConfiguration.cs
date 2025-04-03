@@ -49,6 +49,5 @@ public class BodyConfiguration
     /// <value>
     /// The serialization method.
     /// </value>
-    public BodySerializationMethod SerializationMethod { get; } =
-        BodySerializationMethod.Default;
+    public BodySerializationMethod SerializationMethod { get; } = BodySerializationMethod.Default;
 }
