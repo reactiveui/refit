@@ -177,6 +177,7 @@ namespace Refit
             Type[]? genericArgumentTypes = null
         )
         {
+            throw new Exception($"Used fallback {BuildRestResultFuncForMethod} :(");
             if (!interfaceHttpMethods.ContainsKey(methodName))
             {
                 throw new ArgumentException(
