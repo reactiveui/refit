@@ -10,6 +10,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <Nullable>enable</Nullable>
     <MsCACSharpVersion>3.8.0</MsCACSharpVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

@@ -69,20 +69,18 @@ internal static class Emitter
         addSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
     }
 
-    public static string EmitInterface(InterfaceModel model)
+    public static SourceText EmitInterface(InterfaceModel model)
     {
-        var source = new StringBuilder();
+        var source = new SourceWriter();
 
         // if nullability is supported emit the nullable directive
         if (model.Nullability != Nullability.None)
         {
-            source.Append("#nullable ");
-            source.Append(model.Nullability == Nullability.Enabled ? "enable" : "disable");
+            source.WriteLine("#nullable " + (model.Nullability == Nullability.Enabled ? "enable" : "disable"));
         }
 
-        source.Append(
-            $@"
-#pragma warning disable
+        source.WriteLine(
+            $@"#pragma warning disable
 namespace Refit.Implementation
 {{
 
@@ -108,8 +106,7 @@ namespace Refit.Implementation
         {{
             Client = client;
             this.requestBuilder = requestBuilder;
-        }}
-"
+        }}"
         );
 
         var uniqueNames = new UniqueNameBuilder();
@@ -138,16 +135,15 @@ namespace Refit.Implementation
             WriteDisposableMethod(source);
         }
 
-        source.Append(
+        source.WriteLine(
             @"
     }
     }
 }
 
-#pragma warning restore
-"
+#pragma warning restore"
         );
-        return source.ToString();
+        return source.ToSourceText();
     }
 
     /// <summary>
@@ -158,7 +154,7 @@ namespace Refit.Implementation
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     private static void WriteRefitMethod(
-        StringBuilder source,
+        SourceWriter source,
         MethodModel methodModel,
         bool isTopLevel,
         UniqueNameBuilder uniqueNames
@@ -220,23 +216,23 @@ namespace Refit.Implementation
         WriteMethodClosing(source);
     }
 
-    private static void WriteNonRefitMethod(StringBuilder source, MethodModel methodModel)
+    private static void WriteNonRefitMethod(SourceWriter source, MethodModel methodModel)
     {
         WriteMethodOpening(source, methodModel, true);
 
-        source.Append(
+        source.WriteLine(
             @"
-                throw new global::System.NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");
-    "
-        );
+            throw new global::System.NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");");
 
+        source.Indentation += 1;
         WriteMethodClosing(source);
+        source.Indentation -= 1;
     }
 
     // TODO: This assumes that the Dispose method is a void that takes no parameters.
     // The previous version did not.
     // Does the bool overload cause an issue here.
-    private static void WriteDisposableMethod(StringBuilder source)
+    private static void WriteDisposableMethod(SourceWriter source)
     {
         source.Append(
             """
@@ -252,7 +248,7 @@ namespace Refit.Implementation
     }
 
     private static string GenerateTypeParameterExpression(
-        StringBuilder source,
+        SourceWriter source,
         MethodModel methodModel,
         UniqueNameBuilder uniqueNames
     )
@@ -283,7 +279,7 @@ namespace Refit.Implementation
     }
 
     private static void WriteMethodOpening(
-        StringBuilder source,
+        SourceWriter source,
         MethodModel methodModel,
         bool isExplicitInterface,
         bool isAsync = false
@@ -324,7 +320,7 @@ namespace Refit.Implementation
         );
     }
 
-    private static void WriteMethodClosing(StringBuilder source) => source.Append(@"    }");
+    private static void WriteMethodClosing(SourceWriter source) => source.Append(@"    }");
 
     private static string GenerateConstraints(
         ImmutableEquatableArray<TypeConstraint> typeParameters,

@@ -61,7 +61,7 @@ namespace Refit.Implementation
          where T3 : struct
          where T5 : class
         {
-                throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
+            throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
         }
     }
     }

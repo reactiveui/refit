@@ -60,7 +60,7 @@ internal static class IncrementalValuesProviderExtensions
             static (spc, model) =>
             {
                 var mapperText = Emitter.EmitInterface(model);
-                spc.AddSource(model.FileName, SourceText.From(mapperText, Encoding.UTF8));
+                spc.AddSource(model.FileName, mapperText);
             }
         );
     }
