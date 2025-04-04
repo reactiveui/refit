@@ -15,7 +15,6 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class RefitGeneratorTestIGeneratedClient
         : global::RefitGeneratorTest.IGeneratedClient
-
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }

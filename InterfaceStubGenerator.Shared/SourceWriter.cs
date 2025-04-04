@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Text;
-
 using Microsoft.CodeAnalysis.Text;
 
 namespace Refit.Generator;
@@ -8,15 +7,15 @@ namespace Refit.Generator;
 // From https://github.com/dotnet/runtime/blob/233826c88d2100263fb9e9535d96f75824ba0aea/src/libraries/Common/src/SourceGenerators/SourceWriter.cs#L11
 internal sealed class SourceWriter
 {
-    private const char IndentationChar = ' ';
-    private const int CharsPerIndentation = 4;
+    const char IndentationChar = ' ';
+    const int CharsPerIndentation = 4;
 
-    private readonly StringBuilder _sb = new();
-    private int _indentation;
+    readonly StringBuilder sb = new();
+    int indentation;
 
     public int Indentation
     {
-        get => _indentation;
+        get => indentation;
         set
         {
             if (value < 0)
@@ -25,46 +24,24 @@ internal sealed class SourceWriter
                 static void Throw() => throw new ArgumentOutOfRangeException(nameof(value));
             }
 
-            _indentation = value;
+            indentation = value;
         }
     }
 
-    public void Append(string text)
-    {
-        if (_indentation == 0)
-        {
-            _sb.Append(text);
-            return;
-        }
-
-        bool isFinalLine;
-        ReadOnlySpan<char> remainingText = text.AsSpan();
-        do
-        {
-            ReadOnlySpan<char> nextLine = GetNextLine(ref remainingText, out isFinalLine);
-
-            AddIndentation();
-            AppendSpan(_sb, nextLine);
-            if (!isFinalLine)
-            {
-                _sb.AppendLine();
-            }
-        }
-        while (!isFinalLine);
-    }
+    public void Append(string text) => sb.Append(text);
 
     public void WriteLine(char value)
     {
         AddIndentation();
-        _sb.Append(value);
-        _sb.AppendLine();
+        sb.Append(value);
+        sb.AppendLine();
     }
 
     public void WriteLine(string text)
     {
-        if (_indentation == 0)
+        if (indentation == 0)
         {
-            _sb.AppendLine(text);
+            sb.AppendLine(text);
             return;
         }
 
@@ -74,31 +51,37 @@ internal sealed class SourceWriter
         {
             ReadOnlySpan<char> nextLine = GetNextLine(ref remainingText, out isFinalLine);
 
-            AddIndentation();
-            AppendSpan(_sb, nextLine);
-            _sb.AppendLine();
+            if (!nextLine.IsEmpty)
+            {
+                AddIndentation();
+            }
+            AppendSpan(sb, nextLine);
+            sb.AppendLine();
         }
         while (!isFinalLine);
     }
 
-    public void WriteLine() => _sb.AppendLine();
+    public void WriteLine() => sb.AppendLine();
 
     public SourceText ToSourceText()
     {
-        Debug.Assert(_indentation == 0 && _sb.Length > 0);
-        return SourceText.From(_sb.ToString(), Encoding.UTF8);
+        Debug.Assert(indentation == 0 && sb.Length > 0);
+        return SourceText.From(sb.ToString(), Encoding.UTF8);
     }
 
     public void Reset()
     {
-        _sb.Clear();
-        _indentation = 0;
+        sb.Clear();
+        indentation = 0;
     }
 
-    private void AddIndentation()
-        => _sb.Append(IndentationChar, CharsPerIndentation * _indentation);
+    private void AddIndentation() =>
+        sb.Append(IndentationChar, CharsPerIndentation * indentation);
 
-    private static ReadOnlySpan<char> GetNextLine(ref ReadOnlySpan<char> remainingText, out bool isFinalLine)
+    private static ReadOnlySpan<char> GetNextLine(
+        ref ReadOnlySpan<char> remainingText,
+        out bool isFinalLine
+    )
     {
         if (remainingText.IsEmpty)
         {
