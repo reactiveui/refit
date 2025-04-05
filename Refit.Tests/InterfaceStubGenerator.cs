@@ -208,7 +208,6 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class RefitTestsIGitHubApi
         : global::Refit.Tests.IGitHubApi
-
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
@@ -515,7 +514,6 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class RefitTestsIGitHubApiDisposable
         : global::Refit.Tests.IGitHubApiDisposable
-
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
@@ -575,7 +573,6 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class RefitTestsTestNestedINestedGitHubApi
         : global::Refit.Tests.TestNested.INestedGitHubApi
-
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
@@ -870,7 +867,6 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class IServiceWithoutNamespace
         : global::IServiceWithoutNamespace
-
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }

@@ -18,54 +18,54 @@ internal static class Emitter
 
         var attributeText = $$"""
 
-              #pragma warning disable
-              namespace {{model.RefitInternalNamespace}}
-              {
-                  [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                  [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                  [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
-                  sealed class PreserveAttribute : global::System.Attribute
-                  {
-                      //
-                      // Fields
-                      //
-                      public bool AllMembers;
+            #pragma warning disable
+            namespace {{model.RefitInternalNamespace}}
+            {
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
+                sealed class PreserveAttribute : global::System.Attribute
+                {
+                    //
+                    // Fields
+                    //
+                    public bool AllMembers;
 
-                      public bool Conditional;
-                  }
-              }
-              #pragma warning restore
+                    public bool Conditional;
+                }
+            }
+            #pragma warning restore
 
-              """;
+            """;
         // add the attribute text
         addSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
 
         var generatedClassText = $$"""
 
-              #pragma warning disable
-              namespace Refit.Implementation
-              {
+            #pragma warning disable
+            namespace Refit.Implementation
+            {
 
-                  /// <inheritdoc />
-                  [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                  [global::System.Diagnostics.DebuggerNonUserCode]
-                  [{{model.PreserveAttributeDisplayName}}]
-                  [global::System.Reflection.Obfuscation(Exclude=true)]
-                  [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                  internal static partial class Generated
-                  {
-              #if NET5_0_OR_GREATER
-                      [System.Runtime.CompilerServices.ModuleInitializer]
-                      [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
-                      public static void Initialize()
-                      {
-                      }
-              #endif
-                  }
-              }
-              #pragma warning restore
+                /// <inheritdoc />
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.Diagnostics.DebuggerNonUserCode]
+                [{{model.PreserveAttributeDisplayName}}]
+                [global::System.Reflection.Obfuscation(Exclude=true)]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                internal static partial class Generated
+                {
+            #if NET5_0_OR_GREATER
+                    [System.Runtime.CompilerServices.ModuleInitializer]
+                    [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
+                    public static void Initialize()
+                    {
+                    }
+            #endif
+                }
+            }
+            #pragma warning restore
 
-              """;
+            """;
         addSource("Generated.g.cs", SourceText.From(generatedClassText, Encoding.UTF8));
     }
 
@@ -76,39 +76,53 @@ internal static class Emitter
         // if nullability is supported emit the nullable directive
         if (model.Nullability != Nullability.None)
         {
-            source.WriteLine("#nullable " + (model.Nullability == Nullability.Enabled ? "enable" : "disable"));
+            source.WriteLine(
+                "#nullable " + (model.Nullability == Nullability.Enabled ? "enable" : "disable")
+            );
         }
 
         source.WriteLine(
-            $@"#pragma warning disable
-namespace Refit.Implementation
-{{
+            $$"""
+            #pragma warning disable
+            namespace Refit.Implementation
+            {
 
-    partial class Generated
-    {{
+                partial class Generated
+                {
 
-    /// <inheritdoc />
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    [global::System.Diagnostics.DebuggerNonUserCode]
-    [{model.PreserveAttributeDisplayName}]
-    [global::System.Reflection.Obfuscation(Exclude=true)]
-    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    partial class {model.Ns}{model.ClassDeclaration}
-        : {model.InterfaceDisplayName}{GenerateConstraints(model.Constraints, false)}
-
-    {{
-        /// <inheritdoc />
-        public global::System.Net.Http.HttpClient Client {{ get; }}
-        readonly global::Refit.IRequestBuilder requestBuilder;
-
-        /// <inheritdoc />
-        public {model.Ns}{model.ClassSuffix}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
-        {{
-            Client = client;
-            this.requestBuilder = requestBuilder;
-        }}"
+                /// <inheritdoc />
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.Diagnostics.DebuggerNonUserCode]
+                [{{model.PreserveAttributeDisplayName}}]
+                [global::System.Reflection.Obfuscation(Exclude=true)]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                partial class {{model.Ns}}{{model.ClassDeclaration}}
+                    : {{model.InterfaceDisplayName}}
+            """
         );
 
+        source.Indentation += 2;
+        GenerateConstraints(source, model.Constraints, false);
+        source.Indentation--;
+
+        source.WriteLine(
+            $$"""
+            {
+                /// <inheritdoc />
+                public global::System.Net.Http.HttpClient Client { get; }
+                readonly global::Refit.IRequestBuilder requestBuilder;
+
+                /// <inheritdoc />
+                public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
+                {
+                    Client = client;
+                    this.requestBuilder = requestBuilder;
+                }
+
+            """
+        );
+
+        source.Indentation++;
         var uniqueNames = new UniqueNameBuilder();
         uniqueNames.Reserve(model.MemberNames);
 
@@ -135,13 +149,15 @@ namespace Refit.Implementation
             WriteDisposableMethod(source);
         }
 
+        source.Indentation -= 2;
         source.WriteLine(
-            @"
-    }
-    }
-}
+            """
+                }
+                }
+            }
 
-#pragma warning restore"
+            #pragma warning restore
+            """
         );
         return source.ToSourceText();
     }
@@ -172,12 +188,11 @@ namespace Refit.Implementation
             ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.Return => (false, "return ", ""),
-            _
-                => throw new ArgumentOutOfRangeException(
-                    nameof(methodModel.ReturnTypeMetadata),
-                    methodModel.ReturnTypeMetadata,
-                    "Unsupported value."
-                )
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(methodModel.ReturnTypeMetadata),
+                methodModel.ReturnTypeMetadata,
+                "Unsupported value."
+            ),
         };
 
         WriteMethodOpening(source, methodModel, !isTopLevel, isAsync);
@@ -204,13 +219,13 @@ namespace Refit.Implementation
                 ? $", new global::System.Type[] {{ {string.Join(", ", genericArray)} }}"
                 : string.Empty;
 
-        source.Append(
-            @$"
+        source.WriteLine(
+            $"""
             var ______arguments = {argumentsArrayString};
-            var ______func = requestBuilder.BuildRestResultFuncForMethod(""{methodModel.Name}"", {parameterTypesExpression}{genericString} );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("{methodModel.Name}", {parameterTypesExpression}{genericString} );
 
             {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
-    "
+            """
         );
 
         WriteMethodClosing(source);
@@ -221,12 +236,10 @@ namespace Refit.Implementation
         WriteMethodOpening(source, methodModel, true);
 
         source.WriteLine(
-            @"
-            throw new global::System.NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");");
+            @"throw new global::System.NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");"
+        );
 
-        source.Indentation += 1;
         WriteMethodClosing(source);
-        source.Indentation -= 1;
     }
 
     // TODO: This assumes that the Dispose method is a void that takes no parameters.
@@ -234,16 +247,15 @@ namespace Refit.Implementation
     // Does the bool overload cause an issue here.
     private static void WriteDisposableMethod(SourceWriter source)
     {
-        source.Append(
+        source.WriteLine(
             """
 
-
-                              /// <inheritdoc />
-                              void global::System.IDisposable.Dispose()
-                              {
-                                      Client?.Dispose();
-                              }
-                      """
+            /// <inheritdoc />
+            void global::System.IDisposable.Dispose()
+            {
+                    Client?.Dispose();
+            }
+            """
         );
     }
 
@@ -267,12 +279,12 @@ namespace Refit.Implementation
         // find a name and generate field declaration.
         var typeParameterFieldName = uniqueNames.New(TypeParameterVariableName);
         var types = string.Join(", ", methodModel.Parameters.Select(x => $"typeof({x.Type})"));
-        source.Append(
+
+        source.WriteLine(
             $$"""
 
-
-                        private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] {{{types}} };
-                """
+            private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] {{{types}} };
+            """
         );
 
         return typeParameterFieldName;
@@ -288,18 +300,17 @@ namespace Refit.Implementation
         var visibility = !isExplicitInterface ? "public " : string.Empty;
         var async = isAsync ? "async " : "";
 
-        source.Append(
-            @$"
-
-        /// <inheritdoc />
-        {visibility}{async}{methodModel.ReturnType} "
+        var builder = new StringBuilder();
+        builder.Append(
+            @$"/// <inheritdoc />
+{visibility}{async}{methodModel.ReturnType} "
         );
 
         if (isExplicitInterface)
         {
-            source.Append(@$"{methodModel.ContainingType}.");
+            builder.Append(@$"{methodModel.ContainingType}.");
         }
-        source.Append(@$"{methodModel.DeclaredMethod}(");
+        builder.Append(@$"{methodModel.DeclaredMethod}(");
 
         if (methodModel.Parameters.Count > 0)
         {
@@ -311,38 +322,45 @@ namespace Refit.Implementation
                 list.Add($@"{param.Type}{(annotation ? '?' : string.Empty)} @{param.MetadataName}");
             }
 
-            source.Append(string.Join(", ", list));
+            builder.Append(string.Join(", ", list));
         }
 
-        source.Append(
-            @$"){GenerateConstraints(methodModel.Constraints, isExplicitInterface)}
-        {{"
-        );
+        builder.Append(")");
+
+        source.WriteLine();
+        source.WriteLine(builder.ToString());
+        source.Indentation++;
+        GenerateConstraints(source, methodModel.Constraints, isExplicitInterface);
+        source.Indentation--;
+        source.WriteLine("{");
+        source.Indentation++;
     }
 
-    private static void WriteMethodClosing(SourceWriter source) => source.Append(@"    }");
+    private static void WriteMethodClosing(SourceWriter source)
+    {
+        source.Indentation--;
+        source.WriteLine("}");
+    }
 
-    private static string GenerateConstraints(
+    private static void GenerateConstraints(
+        SourceWriter writer,
         ImmutableEquatableArray<TypeConstraint> typeParameters,
         bool isOverrideOrExplicitImplementation
     )
     {
-        var source = new StringBuilder();
         // Need to loop over the constraints and create them
         foreach (var typeParameter in typeParameters)
         {
             WriteConstraintsForTypeParameter(
-                source,
+                writer,
                 typeParameter,
                 isOverrideOrExplicitImplementation
             );
         }
-
-        return source.ToString();
     }
 
     private static void WriteConstraintsForTypeParameter(
-        StringBuilder source,
+        SourceWriter source,
         TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation
     )
@@ -388,10 +406,7 @@ namespace Refit.Implementation
 
         if (parameters.Count > 0)
         {
-            source.Append(
-                @$"
-         where {typeParameter.TypeName} : {string.Join(", ", parameters)}"
-            );
+            source.WriteLine($"where {typeParameter.TypeName} : {string.Join(", ", parameters)}");
         }
     }
 }
