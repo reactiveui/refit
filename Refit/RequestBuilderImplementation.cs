@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
@@ -57,7 +58,7 @@ namespace Refit
         }
 
         void AddInterfaceHttpMethods(
-            Type interfaceType,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]Type interfaceType,
             Dictionary<string, List<RestMethodInfoInternal>> methods
         )
         {
