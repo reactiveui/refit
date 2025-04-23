@@ -1031,6 +1031,55 @@ public class RestServiceIntegrationTests
     }
 
     [Fact]
+    public async Task HitTheGitHubUserApiAsObservableIApiResponse()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => mockHttp,
+            ContentSerializer = new NewtonsoftJsonContentSerializer(
+                new JsonSerializerSettings()
+                {
+                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                }
+            )
+        };
+
+        var responseMessage = new HttpResponseMessage()
+        {
+            StatusCode = HttpStatusCode.OK,
+            Content = new StringContent(
+                "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }",
+                System.Text.Encoding.UTF8,
+                "application/json"
+            ),
+        };
+        responseMessage.Headers.Add("Cookie", "Value");
+
+        mockHttp
+            .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
+            .Respond(req => responseMessage);
+
+        var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+        var result = await fixture
+            .GetUserIApiResponseObservableWithMetadata("octocat")
+            .Timeout(TimeSpan.FromSeconds(10));
+
+        Assert.True(result.Headers.Any());
+        Assert.True(result.IsSuccessStatusCode);
+        Assert.NotNull(result.ReasonPhrase);
+        Assert.NotNull(result.RequestMessage);
+        Assert.False(result.StatusCode == default);
+        Assert.NotNull(result.Version);
+        Assert.Equal("octocat", result.Content.Login);
+        Assert.False(string.IsNullOrEmpty(result.Content.AvatarUrl));
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
     public async Task HitTheGitHubUserApi()
     {
         var mockHttp = new MockHttpMessageHandler();
