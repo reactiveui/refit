@@ -70,7 +70,7 @@
         /// <returns>The suffix to be added to the unique name of a given type.</returns>
         static string GetServiceKeySuffix(object? serviceKey)
         {
-            return serviceKey is null or "" ? string.Empty : $"{serviceKey}";
+            return serviceKey is null or "" ? string.Empty : $", ServiceKey={serviceKey}";
         }
     }
 }
