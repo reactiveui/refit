@@ -74,6 +74,14 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
+    public void DefaultHandlerIsNull()
+    {
+        var handler = new AuthenticatedHttpClientHandler(null, ((_, _) => Task.FromResult(string.Empty)));
+
+        Assert.Null(handler.InnerHandler);
+    }
+
+    [Fact]
     public void NullTokenGetterThrows()
     {
         Assert.Throws<ArgumentNullException>(() => new AuthenticatedHttpClientHandler(null));
