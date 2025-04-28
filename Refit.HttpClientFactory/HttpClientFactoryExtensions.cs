@@ -154,8 +154,13 @@ namespace Refit
                     )
             );
 
+            httpClientName ??=
+                UniqueName.ForType<T>()
+                + (serviceKey is null or ""
+                    ? string.Empty
+                    : $";{serviceKey}");
             return services
-                .AddHttpClient(httpClientName ?? UniqueName.ForType<T>())
+                .AddHttpClient(httpClientName)
                 .ConfigurePrimaryHttpMessageHandler(serviceProvider =>
                 {
                     var settings = serviceProvider.GetRequiredKeyedService<SettingsFor<T>>(serviceKey).Settings;
