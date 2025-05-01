@@ -30,6 +30,30 @@ public class HttpClientFactoryExtensionsTests
     }
 
     [Fact]
+    public void HttpClientServicesAreDifferentThanKeyedServices()
+    {
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
+        serviceCollection.AddKeyedRefitClient<IFooWithOtherAttribute>("keyed");
+
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        var nonKeyedService = serviceProvider.GetService<IFooWithOtherAttribute>();
+        var keyedService = serviceProvider.GetKeyedService<IFooWithOtherAttribute>("keyed");
+
+        Assert.NotNull(nonKeyedService);
+        Assert.NotNull(keyedService);
+        Assert.NotSame(nonKeyedService, keyedService);
+
+        var nonKeyedSettings = serviceProvider.GetService<SettingsFor<IFooWithOtherAttribute>>();
+        var keyedSettings = serviceProvider.GetKeyedService<SettingsFor<IFooWithOtherAttribute>>("keyed");
+        Assert.NotSame(nonKeyedSettings, keyedSettings);
+
+        var nonKeyedRequestBuilder = serviceProvider.GetService<IRequestBuilder<IFooWithOtherAttribute>>();
+        var keyedRequestBuilder = serviceProvider.GetKeyedService<IRequestBuilder<IFooWithOtherAttribute>>("keyed");
+        Assert.NotSame(nonKeyedRequestBuilder, keyedRequestBuilder);
+    }
+
+    [Fact]
     public void HttpClientServicesAreAddedCorrectlyGivenGenericArgument()
     {
         var serviceCollection = new ServiceCollection();
