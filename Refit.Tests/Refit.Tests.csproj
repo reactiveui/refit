@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'">
-    <PackageReference Include="PublicApiGenerator" Version="11.4.5" />
+    <PackageReference Include="PublicApiGenerator" Version="11.4.6" />
     <PackageReference Include="Verify.Xunit" Version="29.3.0" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net9.0'))">
