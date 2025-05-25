@@ -9,7 +9,7 @@
     <SignAssembly>true</SignAssembly>
     <IsRoslynComponent>true</IsRoslynComponent>
     <Nullable>enable</Nullable>
-    <MsCACSharpVersion>3.8.0</MsCACSharpVersion>
+    <MsCACSharpVersion>3.11.0</MsCACSharpVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
