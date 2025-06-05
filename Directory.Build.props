@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.13.61" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
