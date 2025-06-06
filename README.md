@@ -90,7 +90,7 @@ Refit currently supports the following platforms and any .NET Standard 2.0 targe
 ### SDK Requirements
 
 ### Updates in 8.0.x
-Fixes for some issues experianced, this lead to some breaking changes
+Fixes for some issues experienced, this lead to some breaking changes.
 See [Releases](https://github.com/reactiveui/refit/releases) for full details.
 
 ### V6.x.x
