@@ -18,7 +18,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'">
     <PackageReference Include="PublicApiGenerator" Version="11.4.6" />
-    <PackageReference Include="Verify.Xunit" Version="29.5.0" />
+    <PackageReference Include="Verify.Xunit" Version="30.4.0" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework.StartsWith('net9.0'))">
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.3" />
@@ -44,7 +44,7 @@
     <PackageReference Include="RichardSzalay.MockHttp" Version="$(MockHttpVersion)" />
     <PackageReference Include="Verify.DiffPlex" Version="3.1.2" />
     <PackageReference Include="Verify.SourceGenerators" Version="2.5.0" />
-    <PackageReference Include="Verify.Xunit" Version="29.5.0" />
+    <PackageReference Include="Verify.Xunit" Version="30.4.0" />
     <ProjectReference Include="..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
     <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\Refit.Xml\Refit.Xml.csproj" />
