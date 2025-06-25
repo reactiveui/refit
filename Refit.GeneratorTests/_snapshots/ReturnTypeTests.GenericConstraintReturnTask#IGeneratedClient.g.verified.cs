@@ -15,7 +15,6 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class RefitGeneratorTestIGeneratedClient
         : global::RefitGeneratorTest.IGeneratedClient
-
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
@@ -31,7 +30,7 @@ namespace Refit.Implementation
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<string> Get<T>()
-         where T : class, global::System.IDisposable, new()
+            where T : class, global::System.IDisposable, new()
         {
             var ______arguments = global::System.Array.Empty<object>();
             var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>(), new global::System.Type[] { typeof(T) } );
@@ -41,7 +40,7 @@ namespace Refit.Implementation
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<string> global::RefitGeneratorTest.IGeneratedClient.Get<T>()
-         where T : class
+            where T : class
         {
             var ______arguments = global::System.Array.Empty<object>();
             var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>(), new global::System.Type[] { typeof(T) } );

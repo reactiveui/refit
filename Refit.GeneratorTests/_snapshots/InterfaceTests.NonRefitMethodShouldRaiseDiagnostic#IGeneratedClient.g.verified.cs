@@ -15,7 +15,6 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class RefitGeneratorTestIGeneratedClient
         : global::RefitGeneratorTest.IGeneratedClient
-
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
@@ -50,7 +49,7 @@ namespace Refit.Implementation
         /// <inheritdoc />
         void global::RefitGeneratorTest.IGeneratedClient.NonRefitMethod()
         {
-                throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
+            throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
         }
     }
     }

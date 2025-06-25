@@ -1,33 +1,50 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\Refit\targets\refit.props" />
-  
+
   <PropertyGroup>
-    <TargetFrameworks>net462;net6.0;net8.0</TargetFrameworks>
-    <Deterministic>false</Deterministic> <!-- Some tests rely on CallerFilePath -->
+    <TargetFrameworks>net48;net8.0;net9.0</TargetFrameworks>
+    <Deterministic>false</Deterministic>
+    <!-- Some tests rely on CallerFilePath -->
     <RestoreAdditionalProjectSources>https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json</RestoreAdditionalProjectSources>
     <NoWarn>$(NoWarn);CS1591;CA1819;CA2000;CA2007;CA1056;CA1707;CA1861;xUnit1031</NoWarn>
+    <MockHttpVersion>6.0.0</MockHttpVersion>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Test Files\Test.pdf" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net8.0'">
-    <PackageReference Include="PublicApiGenerator" Version="*" />
-    <PackageReference Include="Verify.Xunit" Version="*" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'">
+    <PackageReference Include="PublicApiGenerator" Version="11.4.6" />
+    <PackageReference Include="Verify.Xunit" Version="29.5.0" />
   </ItemGroup>
-  
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net9.0'))">
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.3" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net8.0'))">
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.3.0" />
+  </ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="coverlet.msbuild" Version="6.0.2" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="xunit" Version="2.9.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="System.Formats.Asn1" Version="9.0.3" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />
-    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.2" />
-    <PackageReference Include="RichardSzalay.MockHttp" Version="6.0.0" />
+    <PackageReference Include="RichardSzalay.MockHttp" Version="$(MockHttpVersion)" />
+    <PackageReference Include="Verify.DiffPlex" Version="3.1.2" />
+    <PackageReference Include="Verify.SourceGenerators" Version="2.5.0" />
+    <PackageReference Include="Verify.Xunit" Version="29.5.0" />
     <ProjectReference Include="..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
     <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\Refit.Xml\Refit.Xml.csproj" />
@@ -36,4 +53,16 @@
   </ItemGroup>
 
   <Import Project="..\Refit\targets\refit.targets" />
+
+  <ItemGroup>
+    <None Include="..\Refit.Tests\_snapshots\**">
+      <Link>%(RecursiveDir)\resources\%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="_snapshots\" />
+  </ItemGroup>
 </Project>

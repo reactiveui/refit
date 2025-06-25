@@ -90,7 +90,7 @@ Refit currently supports the following platforms and any .NET Standard 2.0 targe
 ### SDK Requirements
 
 ### Updates in 8.0.x
-Fixes for some issues experianced, this lead to some breaking changes
+Fixes for some issues experienced, this lead to some breaking changes.
 See [Releases](https://github.com/reactiveui/refit/releases) for full details.
 
 ### V6.x.x
@@ -501,13 +501,9 @@ public class Foo
 To apply the benefits of the new [JSON source generator](https://devblogs.microsoft.com/dotnet/try-the-new-system-text-json-source-generator/) for System.Text.Json added in .NET 6, you can use `SystemTextJsonContentSerializer` with a custom instance of `RefitSettings` and `JsonSerializerOptions`:
 
 ```csharp
-var options = new JsonSerializerOptions() {
-    TypeInfoResolver = MyJsonSerializerContext.Default
-};
-
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     new RefitSettings {
-        ContentSerializer = new SystemTextJsonContentSerializer(options)
+        ContentSerializer = new SystemTextJsonContentSerializer(MyJsonSerializerContext.Default.Options)
     });
 ```
 

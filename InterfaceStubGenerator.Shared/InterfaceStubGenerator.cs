@@ -63,7 +63,7 @@ namespace Refit.Generator
                 var interfaceText = Emitter.EmitInterface(interfaceModel);
                 context.AddSource(
                     interfaceModel.FileName,
-                    SourceText.From(interfaceText, Encoding.UTF8)
+                    interfaceText
                 );
             }
 

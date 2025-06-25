@@ -15,12 +15,11 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class IGeneratedInterface<T1, T2, T3, T4, T5>
         : global::IGeneratedInterface<T1, T2, T3, T4, T5>
-         where T1 : class
-         where T2 : unmanaged
-         where T3 : struct
-         where T4 : notnull
-         where T5 : class, global::System.IDisposable, new()
-
+        where T1 : class
+        where T2 : unmanaged
+        where T3 : struct
+        where T4 : notnull
+        where T5 : class, global::System.IDisposable, new()
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }

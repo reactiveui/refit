@@ -15,7 +15,6 @@ namespace Refit.Implementation
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
     partial class RefitGeneratorTestIGeneratedClient
         : global::RefitGeneratorTest.IGeneratedClient
-
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
@@ -31,11 +30,11 @@ namespace Refit.Implementation
 
         /// <inheritdoc />
         public async global::System.Threading.Tasks.Task<string> Get<T1, T2, T3, T4, T5>()
-         where T1 : class
-         where T2 : unmanaged
-         where T3 : struct
-         where T4 : notnull
-         where T5 : class, global::System.IDisposable, new()
+            where T1 : class
+            where T2 : unmanaged
+            where T3 : struct
+            where T4 : notnull
+            where T5 : class, global::System.IDisposable, new()
         {
             var ______arguments = global::System.Array.Empty<object>();
             var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>(), new global::System.Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) } );
@@ -45,9 +44,9 @@ namespace Refit.Implementation
 
         /// <inheritdoc />
         async global::System.Threading.Tasks.Task<string> global::RefitGeneratorTest.IGeneratedClient.Get<T1, T2, T3, T4, T5>()
-         where T1 : class
-         where T3 : struct
-         where T5 : class
+            where T1 : class
+            where T3 : struct
+            where T5 : class
         {
             var ______arguments = global::System.Array.Empty<object>();
             var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>(), new global::System.Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) } );
@@ -57,11 +56,11 @@ namespace Refit.Implementation
 
         /// <inheritdoc />
         void global::RefitGeneratorTest.IGeneratedClient.NonRefitMethod<T1, T2, T3, T4, T5>()
-         where T1 : class
-         where T3 : struct
-         where T5 : class
+            where T1 : class
+            where T3 : struct
+            where T5 : class
         {
-                throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
+            throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
         }
     }
     }

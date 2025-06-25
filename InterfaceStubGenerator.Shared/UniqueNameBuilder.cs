@@ -1,5 +1,8 @@
 ﻿namespace Refit.Generator;
 
+// <Summary>
+// UniqueNameBuilder.
+// </Summary>
 public class UniqueNameBuilder()
 {
     private readonly HashSet<string> _usedNames = new(StringComparer.Ordinal);
@@ -11,10 +14,23 @@ public class UniqueNameBuilder()
         _parentScope = parentScope;
     }
 
+    /// <summary>
+    /// Reserve a name.
+    /// </summary>
+    /// <param name="name"></param>
     public void Reserve(string name) => _usedNames.Add(name);
 
+    /// <summary>
+    /// Create a new scope.
+    /// </summary>
+    /// <returns>Unique Name Builder.</returns>
     public UniqueNameBuilder NewScope() => new(this);
 
+    /// <summary>
+    /// Generate a unique name.
+    /// </summary>
+    /// <param name="name">THe name.</param>
+    /// <returns></returns>
     public string New(string name)
     {
         var i = 0;
@@ -30,8 +46,17 @@ public class UniqueNameBuilder()
         return uniqueName;
     }
 
+    /// <summary>
+    /// Reserve names.
+    /// </summary>
+    /// <param name="names">The name.</param>
     public void Reserve(IEnumerable<string> names)
     {
+        if (names == null)
+        {
+            return;
+        }
+
         foreach (var name in names)
         {
             _usedNames.Add(name);

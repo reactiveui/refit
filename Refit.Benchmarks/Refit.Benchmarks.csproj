@@ -1,10 +1,10 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <Import Project="..\Refit\targets\refit.props" />
   
     <PropertyGroup>
       <OutputType>Exe</OutputType>
-      <TargetFrameworks>net6.0</TargetFrameworks>
+      <TargetFrameworks>net8.0</TargetFrameworks>
       <IsPackable>false</IsPackable>
       <NoWarn>$(NoWarn);CS1591</NoWarn>
     </PropertyGroup>
@@ -18,6 +18,8 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="System.Net.Http" Version="4.3.4" />
+      <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
       <PackageReference Include="AutoFixture" Version="4.18.1" />
       <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0-3.24523.4" />

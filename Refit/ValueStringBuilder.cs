@@ -55,10 +55,7 @@ internal ref struct ValueStringBuilder
     /// This overload is pattern matched in the C# 7.3+ compiler so you can omit
     /// the explicit method call, and write eg "fixed (char* c = builder)"
     /// </summary>
-    public ref char GetPinnableReference()
-    {
-        return ref MemoryMarshal.GetReference(_chars);
-    }
+    public ref char GetPinnableReference() => ref MemoryMarshal.GetReference(_chars);
 
     /// <summary>
     /// Get a pinnable reference to the builder.

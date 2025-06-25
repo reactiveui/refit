@@ -7,6 +7,16 @@
             return ForType(typeof(T));
         }
 
+        public static string ForType<T>(object? serviceKey)
+        {
+            return ForType(typeof(T), serviceKey);
+        }
+
+        public static string ForType(Type refitInterfaceType, object? serviceKey)
+        {
+            return ForType(refitInterfaceType) + GetServiceKeySuffix(serviceKey);
+        }
+
         public static string ForType(Type refitInterfaceType)
         {
             var interfaceTypeName = refitInterfaceType.FullName!;
@@ -51,6 +61,16 @@
             var assmQualified = $"{refitTypeName}, {refitInterfaceType.Assembly.FullName}";
 
             return assmQualified;
+        }
+
+        /// <summary>
+        /// Returns the suffix for the service key to be added to the unique name for a given type.
+        /// </summary>
+        /// <param name="serviceKey">The service key to create the suffix from.</param>
+        /// <returns>The suffix to be added to the unique name of a given type.</returns>
+        static string GetServiceKeySuffix(object? serviceKey)
+        {
+            return serviceKey is null or "" ? string.Empty : $", ServiceKey={serviceKey}";
         }
     }
 }
