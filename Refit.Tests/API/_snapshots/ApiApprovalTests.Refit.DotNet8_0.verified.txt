@@ -338,6 +338,7 @@ namespace Refit
         public string? Format { get; set; }
         public bool IsCollectionFormatSpecified { get; }
         public string? Prefix { get; protected set; }
+        public bool TreatAsString { get; set; }
     }
     [System.AttributeUsage(System.AttributeTargets.Method)]
     public class QueryUriFormatAttribute : System.Attribute

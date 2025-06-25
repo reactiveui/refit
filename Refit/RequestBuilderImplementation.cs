@@ -947,7 +947,18 @@ namespace Refit
             List<KeyValuePair<string, string?>> queryParamsToAdd, int i, RestMethodParameterInfo? parameterInfo)
         {
             var attr = queryAttribute ?? DefaultQueryAttribute;
-            if (DoNotConvertToQueryMap(param))
+            if (attr.TreatAsString)
+            {
+                queryParamsToAdd.AddRange(
+                    ParseQueryParameter(
+                        param.ToString(),
+                        restMethod.ParameterInfoArray[i],
+                        restMethod.QueryParameterMap[i],
+                        attr
+                    )
+                );
+            }
+            else if (DoNotConvertToQueryMap(param))
             {
                 queryParamsToAdd.AddRange(
                     ParseQueryParameter(
