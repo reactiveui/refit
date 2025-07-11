@@ -2044,6 +2044,7 @@ namespace Refit.Tests
             int id,
             [Query] string text = null,
             [Query] int? optionalId = null,
+            [Query(TreatAsString = true)] Foo foo = null,
             [Query(CollectionFormat = CollectionFormat.Multi)] string[] filters = null
         );
 
@@ -3541,12 +3542,12 @@ namespace Refit.Tests
         }
 
         [Theory]
-        [InlineData("/api/123?text=title&optionalId=999&filters=A&filters=B")]
+        [InlineData("/api/123?text=title&optionalId=999&foo=foo&filters=A&filters=B")]
         public void TestNullableQueryStringParams(string expectedQuery)
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
-            var output = factory(new object[] { 123, "title", 999, new string[] { "A", "B" } });
+            var output = factory(new object[] { 123, "title", 999, new Foo(), new string[] { "A", "B" } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal(expectedQuery, uri.PathAndQuery);
@@ -3558,7 +3559,7 @@ namespace Refit.Tests
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
             var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
-            var output = factory(new object[] { 123, "title", null, new string[] { "A", "B" } });
+            var output = factory(new object[] { 123, "title", null, null, new string[] { "A", "B" } });
 
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
             Assert.Equal(expectedQuery, uri.PathAndQuery);
@@ -3941,6 +3942,14 @@ namespace Refit.Tests
                 $"/foo?TestDictionary.{(int)TestEnum.A}=value1{TestEnumUrlParameterFormatter.StringParameterSuffix}&TestDictionary.{(int)TestEnum.B}=value2{TestEnumUrlParameterFormatter.StringParameterSuffix}",
                 uri.PathAndQuery
             );
+        }
+    }
+
+    public record Foo
+    {
+        public override string ToString()
+        {
+            return "foo";
         }
     }
 
