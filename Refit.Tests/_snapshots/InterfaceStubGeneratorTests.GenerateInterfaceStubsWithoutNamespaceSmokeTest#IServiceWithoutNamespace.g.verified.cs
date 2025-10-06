@@ -45,24 +45,6 @@ namespace Refit.Implementation
 
             await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
-
-        /// <inheritdoc />
-        async global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.GetRoot()
-        {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetRoot", global::System.Array.Empty<global::System.Type>() );
-
-            await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc />
-        async global::System.Threading.Tasks.Task global::IServiceWithoutNamespace.PostRoot()
-        {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("PostRoot", global::System.Array.Empty<global::System.Type>() );
-
-            await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
-        }
     }
     }
 }

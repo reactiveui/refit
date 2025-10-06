@@ -38,16 +38,7 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        async global::System.Threading.Tasks.Task<string> global::RefitGeneratorTest.IGeneratedClient.Get()
-        {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>() );
-
-            return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc />
-        void global::RefitGeneratorTest.IGeneratedClient.NonRefitMethod()
+        public void NonRefitMethod()
         {
             throw new global::System.NotImplementedException("Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.");
         }

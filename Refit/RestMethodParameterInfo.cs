@@ -73,26 +73,20 @@ namespace Refit
     /// <summary>
     /// RestMethodParameterProperty.
     /// </summary>
-    public class RestMethodParameterProperty
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="RestMethodParameterProperty"/> class.
+    /// </remarks>
+    /// <param name="name">The name.</param>
+    /// <param name="propertyInfo">The property information.</param>
+    public class RestMethodParameterProperty(string name, PropertyInfo propertyInfo)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RestMethodParameterProperty"/> class.
-        /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="propertyInfo">The property information.</param>
-        public RestMethodParameterProperty(string name, PropertyInfo propertyInfo)
-        {
-            Name = name;
-            PropertyInfo = propertyInfo;
-        }
-
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
         /// <value>
         /// The name.
         /// </value>
-        public string Name { get; set; }
+        public string Name { get; set; } = name;
 
         /// <summary>
         /// Gets or sets the property information.
@@ -100,7 +94,7 @@ namespace Refit
         /// <value>
         /// The property information.
         /// </value>
-        public PropertyInfo PropertyInfo { get; set; }
+        public PropertyInfo PropertyInfo { get; set; } = propertyInfo;
     }
 
     /// <summary>

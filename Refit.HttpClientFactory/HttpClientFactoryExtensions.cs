@@ -213,10 +213,9 @@ namespace Refit
                         .MakeGenericMethod(refitInterfaceType)
                         .Invoke(
                             null,
-                            new object?[]
-                            {
+                            [
                                 ((ISettingsFor)provider.GetRequiredService(settingsType)).Settings
-                            }
+                            ]
                         )!
             );
 
@@ -284,10 +283,9 @@ namespace Refit
                         .MakeGenericMethod(refitInterfaceType)
                         .Invoke(
                             null,
-                            new object?[]
-                            {
+                            [
                                 ((ISettingsFor)provider.GetRequiredKeyedService(settingsType, serviceKey)).Settings
-                            }
+                            ]
                         )!
             );
 

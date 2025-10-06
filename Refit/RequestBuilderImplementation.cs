@@ -46,7 +46,7 @@ namespace Refit
 
             TargetType = refitInterfaceType;
 
-            var dict = new Dictionary<string, List<RestMethodInfoInternal>>();
+            var dict = new Dictionary<string, List<RestMethodInfoInternal>>(StringComparer.Ordinal);
 
             AddInterfaceHttpMethods(refitInterfaceType, dict);
             foreach (var inheritedInterface in targetInterfaceInheritedInterfaces)
@@ -57,12 +57,18 @@ namespace Refit
             interfaceHttpMethods = dict;
         }
 
+        static string GetLookupKeyForMethod(MethodInfo methodInfo)
+        {
+            var name = methodInfo.Name;
+            var lastDot = name.LastIndexOf('.');
+            return lastDot >= 0 ? name.Substring(lastDot + 1) : name;
+        }
+
         void AddInterfaceHttpMethods(
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]Type interfaceType,
             Dictionary<string, List<RestMethodInfoInternal>> methods
         )
         {
-            // Consider public (the implicit visibility) and non-public abstract members of the interfaceType
             var methodInfos = interfaceType
                 .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
                 .Where(i => i.IsAbstract);
@@ -73,10 +79,11 @@ namespace Refit
                 var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
                 if (hasHttpMethod)
                 {
-                    if (!methods.TryGetValue(methodInfo.Name, out var value))
+                    var key = GetLookupKeyForMethod(methodInfo);
+                    if (!methods.TryGetValue(key, out var value))
                     {
                         value = [];
-                        methods.Add(methodInfo.Name, value);
+                        methods.Add(key, value);
                     }
 
                     var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, settings);
@@ -116,7 +123,6 @@ namespace Refit
                 method => method.MethodInfo.GetParameters().Length == parameterTypes.Length
             );
 
-            // If it's a generic method, add that filter
             if (isGeneric)
                 possibleMethodsCollection = possibleMethodsCollection.Where(
                     method =>
@@ -124,7 +130,7 @@ namespace Refit
                         && method.MethodInfo.GetGenericArguments().Length
                             == genericArgumentTypes!.Length
                 );
-            else // exclude generic methods
+            else
                 possibleMethodsCollection = possibleMethodsCollection.Where(
                     method => !method.MethodInfo.IsGenericMethod
                 );
@@ -187,17 +193,16 @@ namespace Refit
                 parameterTypes,
                 genericArgumentTypes
             );
+
+            // Task (void)
             if (restMethod.ReturnType == typeof(Task))
             {
                 return BuildVoidTaskFuncForMethod(restMethod);
             }
 
-            if (restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+            // Task<T>
+            if (restMethod.ReturnType.GetTypeInfo().IsGenericType && restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
-                // NB: This jacked up reflection code is here because it's
-                // difficult to upcast Task<object> to an arbitrary T, especially
-                // if you need to AOT everything, so we need to reflectively
-                // invoke buildTaskFuncForMethod.
                 var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(
                     nameof(BuildTaskFuncForMethod),
                     BindingFlags.NonPublic | BindingFlags.Instance
@@ -213,20 +218,48 @@ namespace Refit
                 return (client, args) => taskFunc!.DynamicInvoke(client, args);
             }
 
-            // Same deal
-            var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(
-                nameof(BuildRxFuncForMethod),
+            // IObservable<T>
+            if (restMethod.ReturnType.GetTypeInfo().IsGenericType && restMethod.ReturnType.GetGenericTypeDefinition() == typeof(IObservable<>))
+            {
+                var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(
+                    nameof(BuildRxFuncForMethod),
+                    BindingFlags.NonPublic | BindingFlags.Instance
+                );
+                var rxFunc = (MulticastDelegate?)
+                    (
+                        rxFuncMi!.MakeGenericMethod(
+                            restMethod.ReturnResultType,
+                            restMethod.DeserializedResultType
+                        )
+                    ).Invoke(this, [restMethod]);
+
+                return (client, args) => rxFunc!.DynamicInvoke(client, args);
+            }
+
+            // Synchronous return types: build a sync wrapper that awaits internally and returns the value
+            var syncFuncMi = typeof(RequestBuilderImplementation).GetMethod(
+                nameof(BuildSyncFuncForMethod),
                 BindingFlags.NonPublic | BindingFlags.Instance
             );
-            var rxFunc = (MulticastDelegate?)
+            var syncFunc = (MulticastDelegate?)
                 (
-                    rxFuncMi!.MakeGenericMethod(
+                    syncFuncMi!.MakeGenericMethod(
                         restMethod.ReturnResultType,
                         restMethod.DeserializedResultType
                     )
                 ).Invoke(this, [restMethod]);
 
-            return (client, args) => rxFunc!.DynamicInvoke(client, args);
+            return (client, args) => syncFunc!.DynamicInvoke(client, args);
+        }
+
+        private Func<HttpClient, object[], object?> BuildSyncFuncForMethod<T, TBody>(RestMethodInfoInternal restMethod)
+        {
+            var taskFunc = BuildTaskFuncForMethod<T, TBody>(restMethod);
+            return (client, paramList) =>
+            {
+                var task = taskFunc(client, paramList);
+                return (object?)task.GetAwaiter().GetResult();
+            };
         }
 
         void AddMultipartItem(

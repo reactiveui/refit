@@ -38,15 +38,6 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        async global::System.Threading.Tasks.Task global::Refit.Tests.IGitHubApiDisposable.RefitMethod()
-        {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("RefitMethod", global::System.Array.Empty<global::System.Type>() );
-
-            await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
-        }
-
-        /// <inheritdoc />
         void global::System.IDisposable.Dispose()
         {
                 Client?.Dispose();

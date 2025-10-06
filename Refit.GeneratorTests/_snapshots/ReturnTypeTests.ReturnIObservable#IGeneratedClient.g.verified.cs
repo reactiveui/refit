@@ -38,17 +38,6 @@ namespace Refit.Implementation
 
             return (global::System.IObservable<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
         }
-
-        private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] {typeof(string) };
-
-        /// <inheritdoc />
-        global::System.IObservable<global::System.Net.Http.HttpResponseMessage> global::RefitGeneratorTest.IGeneratedClient.GetUser(string @user)
-        {
-            var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters0 );
-
-            return (global::System.IObservable<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments);
-        }
     }
     }
 }

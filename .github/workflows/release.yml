@@ -14,7 +14,6 @@ jobs:
       configuration: Release
       productNamespacePrefix: "Refit"
       srcFolder: "./"
-      installWorkflows: false
     secrets:
       SIGN_ACCOUNT_NAME: ${{ secrets.SIGN_ACCOUNT_NAME }}
       SIGN_PROFILE_NAME: ${{ secrets.SIGN_PROFILE_NAME }}

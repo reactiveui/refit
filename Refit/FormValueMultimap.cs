@@ -166,9 +166,7 @@ namespace Refit
 
         static PropertyInfo[] GetProperties(Type type)
         {
-            return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Where(p => p.CanRead && p.GetMethod?.IsPublic == true)
-                .ToArray();
+            return [.. type.GetProperties(BindingFlags.Instance | BindingFlags.Public).Where(p => p.CanRead && p.GetMethod?.IsPublic == true)];
         }
 
         public IEnumerator<KeyValuePair<string?, string?>> GetEnumerator()

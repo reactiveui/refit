@@ -23,7 +23,9 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)buildtask.snk</AssemblyOriginatorKeyFile>
     <!--<SignAssembly>true</SignAssembly>-->
-    <RefitTargets>net462;netstandard2.0;net8.0;net9.0</RefitTargets>
+    <RefitTargets Condition="$([MSBuild]::IsOsPlatform('Windows'))">net462</RefitTargets>
+    <RefitTestTargets>net8.0;net9.0;net10.0</RefitTestTargets>
+    <RefitTargets>$(RefitTargets);netstandard2.0;$(RefitTestTargets)</RefitTargets>
     <NoWarn>IDE0040;CA1054;CA1510</NoWarn>
   </PropertyGroup>
 

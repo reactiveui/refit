@@ -1,4 +1,6 @@
-﻿namespace Refit.Generator;
+﻿using System.Collections.Immutable;
+
+namespace Refit.Generator;
 
 internal sealed record MethodModel(
     string Name,
@@ -7,7 +9,8 @@ internal sealed record MethodModel(
     string DeclaredMethod,
     ReturnTypeInfo ReturnTypeMetadata,
     ImmutableEquatableArray<ParameterModel> Parameters,
-    ImmutableEquatableArray<TypeConstraint> Constraints
+    ImmutableEquatableArray<TypeConstraint> Constraints,
+    bool IsExplicitInterface
 );
 
 internal enum ReturnTypeInfo : byte

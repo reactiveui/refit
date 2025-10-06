@@ -36,15 +36,6 @@ namespace Refit.Implementation
 
             await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
-
-        /// <inheritdoc />
-        async global::System.Threading.Tasks.Task global::RefitGeneratorTest.IGeneratedClient.Post()
-        {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("Post", global::System.Array.Empty<global::System.Type>() );
-
-            await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
-        }
     }
     }
 }

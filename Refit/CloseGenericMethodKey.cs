@@ -2,7 +2,7 @@
 
 namespace Refit
 {
-    struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKey>
+    readonly struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKey>
     {
         internal CloseGenericMethodKey(MethodInfo openMethodInfo, Type[] types)
         {

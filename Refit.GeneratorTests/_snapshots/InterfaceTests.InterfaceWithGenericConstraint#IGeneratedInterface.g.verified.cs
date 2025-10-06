@@ -41,15 +41,6 @@ namespace Refit.Implementation
 
             return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
-
-        /// <inheritdoc />
-        async global::System.Threading.Tasks.Task<string> global::IGeneratedInterface<T1, T2, T3, T4, T5>.Get()
-        {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>() );
-
-            return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
-        }
     }
     }
 }
