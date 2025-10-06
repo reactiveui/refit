@@ -64,7 +64,7 @@ internal sealed class ImmutableEquatableArray<T>
 
     IEnumerator IEnumerable.GetEnumerator() => _values.GetEnumerator();
 
-    public struct Enumerator
+    public record struct Enumerator
     {
         private readonly T[] _values;
         private int _index;

@@ -195,7 +195,8 @@ internal static class Emitter
             ),
         };
 
-        WriteMethodOpening(source, methodModel, !isTopLevel, isAsync);
+        var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
+        WriteMethodOpening(source, methodModel, isExplicit, isExplicit, isAsync);
 
         // Build the list of args for the array
         var argArray = methodModel
@@ -219,10 +220,18 @@ internal static class Emitter
                 ? $", new global::System.Type[] {{ {string.Join(", ", genericArray)} }}"
                 : string.Empty;
 
+        // Normalize method lookup key: strip explicit interface prefix if present (e.g. IFoo.Bar -> Bar)
+        var lookupName = methodModel.Name;
+        var lastDotIndex = lookupName.LastIndexOf('.');
+        if (lastDotIndex >= 0 && lastDotIndex < lookupName.Length - 1)
+        {
+            lookupName = lookupName.Substring(lastDotIndex + 1);
+        }
+
         source.WriteLine(
             $"""
             var ______arguments = {argumentsArrayString};
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("{methodModel.Name}", {parameterTypesExpression}{genericString} );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("{lookupName}", {parameterTypesExpression}{genericString} );
 
             {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
             """
@@ -233,7 +242,8 @@ internal static class Emitter
 
     private static void WriteNonRefitMethod(SourceWriter source, MethodModel methodModel)
     {
-        WriteMethodOpening(source, methodModel, true);
+        var isExplicit = methodModel.IsExplicitInterface;
+        WriteMethodOpening(source, methodModel, isExplicit, isExplicit);
 
         source.WriteLine(
             @"throw new global::System.NotImplementedException(""Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument."");"
@@ -242,9 +252,6 @@ internal static class Emitter
         WriteMethodClosing(source);
     }
 
-    // TODO: This assumes that the Dispose method is a void that takes no parameters.
-    // The previous version did not.
-    // Does the bool overload cause an issue here.
     private static void WriteDisposableMethod(SourceWriter source)
     {
         source.WriteLine(
@@ -293,6 +300,7 @@ internal static class Emitter
     private static void WriteMethodOpening(
         SourceWriter source,
         MethodModel methodModel,
+        bool isDerivedExplicitImpl,
         bool isExplicitInterface,
         bool isAsync = false
     )
@@ -308,7 +316,12 @@ internal static class Emitter
 
         if (isExplicitInterface)
         {
-            builder.Append(@$"{methodModel.ContainingType}.");
+            var ct = methodModel.ContainingType;
+            if (!ct.StartsWith("global::"))
+            {
+                ct = "global::" + ct;
+            }
+            builder.Append(@$"{ct}.");
         }
         builder.Append(@$"{methodModel.DeclaredMethod}(");
 
@@ -318,7 +331,6 @@ internal static class Emitter
             foreach (var param in methodModel.Parameters)
             {
                 var annotation = param.Annotation;
-
                 list.Add($@"{param.Type}{(annotation ? '?' : string.Empty)} @{param.MetadataName}");
             }
 
@@ -330,7 +342,7 @@ internal static class Emitter
         source.WriteLine();
         source.WriteLine(builder.ToString());
         source.Indentation++;
-        GenerateConstraints(source, methodModel.Constraints, isExplicitInterface);
+        GenerateConstraints(source, methodModel.Constraints, isDerivedExplicitImpl || isExplicitInterface);
         source.Indentation--;
         source.WriteLine("{");
         source.Indentation++;

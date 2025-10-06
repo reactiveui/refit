@@ -309,6 +309,34 @@ namespace {refitInternalNamespace}
             .Cast<IMethodSymbol>()
             .ToArray();
 
+        // Exclude base interface methods that the current interface explicitly implements.
+        // This avoids false positive RF001 diagnostics for cases like:
+        // interface IFoo { int Bar(); } and interface IRemoteFoo : IFoo { [Get] abstract int IFoo.Bar(); }
+        if (derivedNonRefitMethods.Length > 0)
+        {
+            var explicitlyImplementedBaseMethods = new HashSet<IMethodSymbol>(
+                SymbolEqualityComparer.Default
+            );
+
+            foreach (var member in interfaceSymbol.GetMembers().OfType<IMethodSymbol>())
+            {
+                foreach (var baseMethod in member.ExplicitInterfaceImplementations)
+                {
+                    // Use OriginalDefinition for robustness when comparing generic methods
+                    explicitlyImplementedBaseMethods.Add(
+                        baseMethod.OriginalDefinition ?? baseMethod
+                    );
+                }
+            }
+
+            if (explicitlyImplementedBaseMethods.Count > 0)
+            {
+                derivedNonRefitMethods = derivedNonRefitMethods
+                    .Where(m => !explicitlyImplementedBaseMethods.Contains(m.OriginalDefinition ?? m))
+                    .ToArray();
+            }
+        }
+
         var memberNames = interfaceSymbol
             .GetMembers()
             .Select(x => x.Name)
@@ -319,24 +347,39 @@ namespace {refitInternalNamespace}
         var refitMethodsArray = refitMethods
             .Select(m => ParseMethod(m, true))
             .ToImmutableEquatableArray();
-        var derivedRefitMethodsArray = refitMethods
-            .Concat(derivedRefitMethods)
+
+        // Only include refit methods discovered on base interfaces here.
+        // Do NOT duplicate the current interface's refit methods.
+        var derivedRefitMethodsArray = derivedRefitMethods
             .Select(m => ParseMethod(m, false))
             .ToImmutableEquatableArray();
 
         // Handle non-refit Methods that aren't static or properties or have a method body
         var nonRefitMethodModelList = new List<MethodModel>();
-        foreach (var method in nonRefitMethods.Concat(derivedNonRefitMethods))
+        foreach (var method in nonRefitMethods)
         {
             if (
                 method.IsStatic
                 || method.MethodKind == MethodKind.PropertyGet
                 || method.MethodKind == MethodKind.PropertySet
                 || !method.IsAbstract
-            ) // If an interface method has a body, it won't be abstract
+            )
                 continue;
 
-            nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics));
+            nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics, isDerived: false));
+        }
+        foreach (var method in derivedNonRefitMethods)
+        {
+            if (
+                method.IsStatic
+                || method.MethodKind == MethodKind.PropertyGet
+                || method.MethodKind == MethodKind.PropertySet
+                || !method.IsAbstract
+            )
+                continue;
+
+            // Derived non-refit methods should be emitted as explicit interface implementations
+            nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics, isDerived: true));
         }
 
         var nonRefitMethodModels = nonRefitMethodModelList.ToImmutableEquatableArray();
@@ -369,7 +412,8 @@ namespace {refitInternalNamespace}
 
     private static MethodModel ParseNonRefitMethod(
         IMethodSymbol methodSymbol,
-        List<Diagnostic> diagnostics
+        List<Diagnostic> diagnostics,
+        bool isDerived
     )
     {
         // report invalid error diagnostic
@@ -384,7 +428,58 @@ namespace {refitInternalNamespace}
             diagnostics.Add(diagnostic);
         }
 
-        return ParseMethod(methodSymbol, false);
+        // Parse like a regular method, but force explicit implementation for derived base-interface methods
+        var explicitImpl = methodSymbol.ExplicitInterfaceImplementations.FirstOrDefault();
+        var containingTypeSymbol = explicitImpl?.ContainingType ?? methodSymbol.ContainingType;
+        var containingType = containingTypeSymbol.ToDisplayString(
+            SymbolDisplayFormat.FullyQualifiedFormat
+        );
+
+        // Method name should be simple name only (never include interface qualifier)
+        var declaredBaseName = methodSymbol.Name;
+        var lastDot = declaredBaseName.LastIndexOf('.');
+        if (lastDot >= 0)
+        {
+            declaredBaseName = declaredBaseName.Substring(lastDot + 1);
+        }
+
+        if (methodSymbol.TypeParameters.Length > 0)
+        {
+            var typeParams = string.Join(
+                ", ",
+                methodSymbol.TypeParameters.Select(
+                    tp => tp.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                )
+            );
+            declaredBaseName += $"<{typeParams}>";
+        }
+
+        var returnType = methodSymbol.ReturnType.ToDisplayString(
+            SymbolDisplayFormat.FullyQualifiedFormat
+        );
+
+        var returnTypeInfo = methodSymbol.ReturnType.MetadataName switch
+        {
+            "Task" => ReturnTypeInfo.AsyncVoid,
+            "Task`1" or "ValueTask`1" => ReturnTypeInfo.AsyncResult,
+            _ => ReturnTypeInfo.Return,
+        };
+
+        var parameters = methodSymbol.Parameters.Select(ParseParameter).ToImmutableEquatableArray();
+
+        var isExplicit = isDerived || explicitImpl is not null;
+        var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit);
+
+        return new MethodModel(
+            methodSymbol.Name,
+            returnType,
+            containingType,
+            declaredBaseName,
+            returnTypeInfo,
+            parameters,
+            constraints,
+            isExplicit
+        );
     }
 
     private static bool IsRefitMethod(
@@ -497,10 +592,33 @@ namespace {refitInternalNamespace}
             SymbolDisplayFormat.FullyQualifiedFormat
         );
 
-        var containingType = methodSymbol.ContainingType.ToDisplayString(
+        // For explicit interface implementations, the containing type for the explicit method signature
+        // must be the interface being implemented (e.g. IFoo), not the interface that declares it.
+        var explicitImpl = methodSymbol.ExplicitInterfaceImplementations.FirstOrDefault();
+        var containingTypeSymbol = explicitImpl?.ContainingType ?? methodSymbol.ContainingType;
+        var containingType = containingTypeSymbol.ToDisplayString(
             SymbolDisplayFormat.FullyQualifiedFormat
         );
-        var declaredMethod = methodSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+        // Simple method name (strip any explicit interface qualifier if present)
+        var declaredBaseName = methodSymbol.Name;
+        var lastDot = declaredBaseName.LastIndexOf('.');
+        if (lastDot >= 0)
+        {
+            declaredBaseName = declaredBaseName.Substring(lastDot + 1);
+        }
+
+        if (methodSymbol.TypeParameters.Length > 0)
+        {
+            var typeParams = string.Join(
+                ", ",
+                methodSymbol.TypeParameters.Select(
+                    tp => tp.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+                )
+            );
+            declaredBaseName += $"<{typeParams}>";
+        }
+
         var returnTypeInfo = methodSymbol.ReturnType.MetadataName switch
         {
             "Task" => ReturnTypeInfo.AsyncVoid,
@@ -510,16 +628,18 @@ namespace {refitInternalNamespace}
 
         var parameters = methodSymbol.Parameters.Select(ParseParameter).ToImmutableEquatableArray();
 
-        var constraints = GenerateConstraints(methodSymbol.TypeParameters, !isImplicitInterface);
+        var isExplicit = explicitImpl is not null;
+        var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit || !isImplicitInterface);
 
         return new MethodModel(
             methodSymbol.Name,
             returnType,
             containingType,
-            declaredMethod,
+            declaredBaseName,
             returnTypeInfo,
             parameters,
-            constraints
+            constraints,
+            isExplicit
         );
     }
 }

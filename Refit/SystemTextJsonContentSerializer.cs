@@ -9,27 +9,17 @@ namespace Refit
     /// <summary>
     /// A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the System.Text.Json APIs
     /// </summary>
-    public sealed class SystemTextJsonContentSerializer : IHttpContentSerializer
+    /// <remarks>
+    /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
+    /// </remarks>
+    /// <param name="jsonSerializerOptions">The serialization options to use for the current instance</param>
+    public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions) : IHttpContentSerializer
     {
-        /// <summary>
-        /// The JSON serialization options to use
-        /// </summary>
-        readonly JsonSerializerOptions jsonSerializerOptions;
-
         /// <summary>
         /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
         /// </summary>
         public SystemTextJsonContentSerializer()
             : this(GetDefaultJsonSerializerOptions()) { }
-
-        /// <summary>
-        /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
-        /// </summary>
-        /// <param name="jsonSerializerOptions">The serialization options to use for the current instance</param>
-        public SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
-        {
-            this.jsonSerializerOptions = jsonSerializerOptions;
-        }
 
         /// <inheritdoc/>
         public HttpContent ToHttpContent<T>(T item)

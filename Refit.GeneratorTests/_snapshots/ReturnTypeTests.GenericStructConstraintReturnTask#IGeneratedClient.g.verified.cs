@@ -37,16 +37,6 @@ namespace Refit.Implementation
 
             return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
-
-        /// <inheritdoc />
-        async global::System.Threading.Tasks.Task<string> global::RefitGeneratorTest.IGeneratedClient.Get<T>()
-            where T : struct
-        {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>(), new global::System.Type[] { typeof(T) } );
-
-            return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
-        }
     }
     }
 }

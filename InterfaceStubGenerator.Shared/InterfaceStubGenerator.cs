@@ -10,13 +10,8 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Refit.Generator
 {
-    // * Search for all Interfaces, find the method definitions
-    //   and make sure there's at least one Refit attribute on one
-    // * Generate the data we need for the template based on interface method
-    //   defn's
-
     /// <summary>
-    /// InterfaceStubGeneratorV2.
+    /// InterfaceStubGenerator.
     /// </summary>
     [Generator]
 #if ROSLYN_4
@@ -28,7 +23,6 @@ namespace Refit.Generator
         private const string TypeParameterVariableName = "______typeParameters";
 
 #if !ROSLYN_4
-
         /// <summary>
         /// Executes the specified context.
         /// </summary>
@@ -51,13 +45,11 @@ namespace Refit.Generator
                 context.CancellationToken
             );
 
-            // Emit diagnostics
             foreach (var diagnostic in parseStep.diagnostics)
             {
                 context.ReportDiagnostic(diagnostic);
             }
 
-            // Emit interface stubs
             foreach (var interfaceModel in parseStep.contextGenerationSpec.Interfaces)
             {
                 var interfaceText = Emitter.EmitInterface(interfaceModel);
@@ -67,7 +59,6 @@ namespace Refit.Generator
                 );
             }
 
-            // Emit PreserveAttribute and Generated.Initialize
             Emitter.EmitSharedCode(
                 parseStep.contextGenerationSpec,
                 (name, code) => context.AddSource(name, code)
@@ -76,15 +67,9 @@ namespace Refit.Generator
 #endif
 
 #if ROSLYN_4
-
-        /// <summary>
-        /// Initializes the specified context.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        /// <returns></returns>
+        /// <inheritdoc/>
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            // We're looking for methods with an attribute that are in an interface
             var candidateMethodsProvider = context.SyntaxProvider.CreateSyntaxProvider(
                 (syntax, cancellationToken) =>
                     syntax
@@ -96,8 +81,6 @@ namespace Refit.Generator
                 (context, cancellationToken) => (MethodDeclarationSyntax)context.Node
             );
 
-            // We also look for interfaces that derive from others, so we can see if any base methods contain
-            // Refit methods
             var candidateInterfacesProvider = context.SyntaxProvider.CreateSyntaxProvider(
                 (syntax, cancellationToken) =>
                     syntax is InterfaceDeclarationSyntax { BaseList: not null },
@@ -146,9 +129,6 @@ namespace Refit.Generator
                 }
             );
 
-            // output the diagnostics
-            // use `ImmutableEquatableArray` to cache cases where there are no diagnostics
-            // otherwise the subsequent steps will always rerun.
             var diagnostics = parseStep
                 .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
                 .WithTrackingName(RefitGeneratorStepName.ReportDiagnostics);
@@ -168,14 +148,11 @@ namespace Refit.Generator
                 }
             );
         }
-
 #else
-
         /// <summary>
         /// Initializes the specified context.
         /// </summary>
         /// <param name="context">The context.</param>
-        /// <returns></returns>
         public void Initialize(GeneratorInitializationContext context)
         {
             context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
@@ -189,7 +166,6 @@ namespace Refit.Generator
 
             public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
             {
-                // We're looking for methods with an attribute that are in an interfaces
                 if (
                     syntaxNode is MethodDeclarationSyntax methodDeclarationSyntax
                     && methodDeclarationSyntax.Parent is InterfaceDeclarationSyntax
@@ -199,15 +175,12 @@ namespace Refit.Generator
                     CandidateMethods.Add(methodDeclarationSyntax);
                 }
 
-                // We also look for interfaces that derive from others, so we can see if any base methods contain
-                // Refit methods
                 if (syntaxNode is InterfaceDeclarationSyntax iface && iface.BaseList is not null)
                 {
                     CandidateInterfaces.Add(iface);
                 }
             }
         }
-
 #endif
     }
 

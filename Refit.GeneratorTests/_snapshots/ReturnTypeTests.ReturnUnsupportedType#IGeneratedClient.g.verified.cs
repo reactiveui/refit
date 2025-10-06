@@ -38,17 +38,6 @@ namespace Refit.Implementation
 
             return (string)______func(this.Client, ______arguments);
         }
-
-        private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] {typeof(string) };
-
-        /// <inheritdoc />
-        string global::RefitGeneratorTest.IGeneratedClient.GetUser(string @user)
-        {
-            var ______arguments = new object[] { @user };
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters0 );
-
-            return (string)______func(this.Client, ______arguments);
-        }
     }
     }
 }

@@ -672,9 +672,24 @@ namespace Refit
                 DeserializedResultType = typeof(void);
             }
             else
-                throw new ArgumentException(
-                    $"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>"
-                );
+            {
+                // Allow synchronous return types only for non-public or explicit interface members.
+                // This supports internal Refit methods and explicit interface members annotated with Refit attributes.
+                var isExplicitInterfaceMember = methodInfo.Name.IndexOf('.') >= 0;
+                var isNonPublic = !(methodInfo.IsPublic);
+                if (!(isExplicitInterfaceMember || isNonPublic))
+                {
+                    throw new ArgumentException(
+                        $"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>"
+                    );
+                }
+
+                ReturnType = methodInfo.ReturnType;
+                ReturnResultType = methodInfo.ReturnType;
+                DeserializedResultType = methodInfo.ReturnType == typeof(IApiResponse)
+                    ? typeof(HttpContent)
+                    : methodInfo.ReturnType;
+            }
         }
 
         void DetermineIfResponseMustBeDisposed()
