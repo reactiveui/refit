@@ -15,4 +15,6 @@ jobs:
     with:
       productNamespacePrefix: "Refit"
       srcFolder: "./"
-      installWorkflows: true
+      installWorkloads: true
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
