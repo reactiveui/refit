@@ -9,11 +9,23 @@
   </PropertyGroup>
   <PropertyGroup Condition="$(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0')) or $(TargetFramework.StartsWith('net10.0'))">
     <IsAotCompatible>true</IsAotCompatible>
+    <PublishAotSupported>true</PublishAotSupported>
+    <TrimMode>link</TrimMode>
+    <IsTrimmable>true</IsTrimmable>
+    <IlcGenerateCompleteTypeMetadata>true</IlcGenerateCompleteTypeMetadata>
+  </PropertyGroup>
+
+  <!-- Ensure DisableRuntimeMarshalling is only emitted for .NET 10, not .NET 8/9 -->
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0'))">
+    <DisableRuntimeMarshalling>false</DisableRuntimeMarshalling>
+  </PropertyGroup>
+  <PropertyGroup Condition="$(TargetFramework.StartsWith('net10.0'))">
+    <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net462'">
-    <PackageReference Include="System.Text.Json" Version="9.0.3" />
-    <PackageReference Include="System.Net.Http.Json" Version="9.0.3" />
+    <PackageReference Include="System.Text.Json" Version="9.0.9" />
+    <PackageReference Include="System.Net.Http.Json" Version="9.0.9" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">

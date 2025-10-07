@@ -1,4 +1,5 @@
-﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.HttpClientFactory")]
+﻿[assembly: System.Runtime.CompilerServices.DisableRuntimeMarshalling]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.HttpClientFactory")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Newtonsoft.Json")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Tests")]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Refit.Xml")]
@@ -367,10 +368,14 @@ namespace Refit
     }
     public static class RequestBuilder
     {
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces " +
+            "and DTOs are preserved when trimming.")]
         public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType) { }
-        public static Refit.IRequestBuilder ForType(System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
-        public static Refit.IRequestBuilder<T> ForType<T>() { }
-        public static Refit.IRequestBuilder<T> ForType<T>(Refit.RefitSettings? settings) { }
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces " +
+            "and DTOs are preserved when trimming.")]
+        public static Refit.IRequestBuilder ForType([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] System.Type refitInterfaceType, Refit.RefitSettings? settings) { }
+        public static Refit.IRequestBuilder<T> ForType<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)]  T>() { }
+        public static Refit.IRequestBuilder<T> ForType<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)]  T>(Refit.RefitSettings? settings) { }
     }
     public class RestMethodInfo : System.IEquatable<Refit.RestMethodInfo>
     {
