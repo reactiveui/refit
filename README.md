@@ -998,7 +998,7 @@ class RequestPropertyHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         // Get the method info
-        if (request.Options.TryGetValue(HttpRequestMessageOptions.RestMethodInfoKey, out RestMethodInfo restMethodInfo))
+        if (request.Options.TryGetValue(new HttpRequestOptionsKey<RestMethodInfo>(HttpRequestMessageOptions.RestMethodInfo), out RestMethodInfo restMethodInfo))
         {
             var builder = new UriBuilder(request.RequestUri);
             // Alter the Path in some way based on the method info or an attribute on it
@@ -1013,7 +1013,7 @@ class RequestPropertyHandler : DelegatingHandler
 ```
 [//]: # ({% endraw %})
 
-Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOptions.InterfaceTypeKey` and `HttpRequestMessageOptions.RestMethodInfoKey` to respectively access the interface type and REST method info from the options.
+Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOptions.InterfaceType` and `HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the options.
 
 ### Multipart uploads
 
@@ -1375,7 +1375,7 @@ else
 }
 ```
 
-> [!NOTE]  
+> [!NOTE]
 > The `IsSuccessful` property checks whether the response status code is in the range 200-299 and there wasn't any other error (for example, during content deserialization). If you just want to check the HTTP response status code, you can use the `IsSuccessStatusCode` property.
 
 #### When returning `Task<T>`
