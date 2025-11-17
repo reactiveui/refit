@@ -5,6 +5,7 @@
     <Description>Refit HTTP Client Factory Extensions</Description>
     <TargetFrameworks>$(RefitTargets)</TargetFrameworks>
     <Nullable>enable</Nullable>
+    <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
   <ItemGroup>

@@ -7,7 +7,7 @@
     <Deterministic>false</Deterministic>
     <!-- Some tests rely on CallerFilePath -->
     <RestoreAdditionalProjectSources>https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-tools/nuget/v3/index.json</RestoreAdditionalProjectSources>
-    <NoWarn>$(NoWarn);CS1591;CA1819;CA2000;CA2007;CA1056;CA1707;CA1861;xUnit1031</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;CA1819;CA2000;CA2007;CA1056;CA1707;CA1861;CA1515;xUnit1031</NoWarn>
     <MockHttpVersion>6.0.0</MockHttpVersion>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
