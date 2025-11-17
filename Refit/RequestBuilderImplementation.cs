@@ -1,17 +1,31 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Web;
+#if NET5_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Refit
 {
-    class RequestBuilderImplementation<TApi>(RefitSettings? refitSettings = null)
-        : RequestBuilderImplementation(typeof(TApi), refitSettings),
-            IRequestBuilder<TApi> { }
+#if NET5_0_OR_GREATER
+    class RequestBuilderImplementation<
+        [
+            DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods
+            )] TApi> : RequestBuilderImplementation, IRequestBuilder<TApi>
+#else
+    class RequestBuilderImplementation<TApi> : RequestBuilderImplementation, IRequestBuilder<TApi>
+#endif
+    {
+        public RequestBuilderImplementation(RefitSettings? refitSettings = null)
+            : base(typeof(TApi), refitSettings)
+        {
+        }
+    }
 
     partial class RequestBuilderImplementation : IRequestBuilder
     {
@@ -27,7 +41,15 @@ namespace Refit
         readonly RefitSettings settings;
         public Type TargetType { get; }
 
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("RequestBuilder uses reflection on the provided Refit interface and DTO types. Ensure necessary members are preserved when trimming.")]
+#endif
         public RequestBuilderImplementation(
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods
+            )]
+#endif
             Type refitInterfaceType,
             RefitSettings? refitSettings = null
         )
@@ -65,7 +87,10 @@ namespace Refit
         }
 
         void AddInterfaceHttpMethods(
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]Type interfaceType,
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+#endif
+            Type interfaceType,
             Dictionary<string, List<RestMethodInfoInternal>> methods
         )
         {
@@ -175,6 +200,9 @@ namespace Refit
             return restMethodInfo;
         }
 
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Building rest result delegates uses reflection over interface methods and DTOs. Ensure required members are preserved.")]
+#endif
         public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
             string methodName,
             Type[]? parameterTypes = null,
@@ -1197,12 +1225,12 @@ namespace Refit
                             CollectionFormat.Ssv => " ",
                             CollectionFormat.Tsv => "\t",
                             CollectionFormat.Pipes => "|",
-                            _ => ","
+                            _ => "," 
                         };
 
                     // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
                     var formattedValues = paramValues
-                        .Cast<object>()
+                        .Cast<object> ()
                         .Select(
                             v =>
                                 settings.UrlParameterFormatter.Format(

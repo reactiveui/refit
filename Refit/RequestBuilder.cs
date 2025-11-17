@@ -1,19 +1,12 @@
 ﻿using System.Net.Http;
+#if NET10_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Refit
 {
-    /// <summary>
-    /// IRequestBuilder.
-    /// </summary>
     public interface IRequestBuilder
     {
-        /// <summary>
-        /// Builds the rest result function for method.
-        /// </summary>
-        /// <param name="methodName">Name of the method.</param>
-        /// <param name="parameterTypes">The parameter types.</param>
-        /// <param name="genericArgumentTypes">The generic argument types.</param>
-        /// <returns></returns>
         Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
             string methodName,
             Type[]? parameterTypes = null,
@@ -21,51 +14,64 @@ namespace Refit
         );
     }
 
-    /// <summary>
-    ///
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
     public interface IRequestBuilder<T> : IRequestBuilder { }
 
-    /// <summary>
-    /// RequestBuilder.
-    /// </summary>
     public static class RequestBuilder
     {
         static readonly RequestBuilderFactory PlatformRequestBuilderFactory = new();
 
-        /// <summary>
-        /// Fors the type.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="settings">The settings.</param>
-        /// <returns></returns>
+#if NET10_0_OR_GREATER
+        public static IRequestBuilder<T> ForType< [
+            DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.None |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods
+            )] T >(RefitSettings? settings) =>
+            PlatformRequestBuilderFactory.Create<T>(settings);
+#else
         public static IRequestBuilder<T> ForType<T>(RefitSettings? settings) =>
             PlatformRequestBuilderFactory.Create<T>(settings);
+#endif
 
-        /// <summary>
-        /// Fors the type.
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
+#if NET10_0_OR_GREATER
+        public static IRequestBuilder<T> ForType< [
+            DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.None |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods
+            )] T >() =>
+            PlatformRequestBuilderFactory.Create<T>(null);
+#else
         public static IRequestBuilder<T> ForType<T>() =>
             PlatformRequestBuilderFactory.Create<T>(null);
+#endif
 
-        /// <summary>
-        /// Fors the type.
-        /// </summary>
-        /// <param name="refitInterfaceType">Type of the refit interface.</param>
-        /// <param name="settings">The settings.</param>
-        /// <returns></returns>
-        public static IRequestBuilder ForType(Type refitInterfaceType, RefitSettings? settings) =>
-            PlatformRequestBuilderFactory.Create(refitInterfaceType, settings);
+#if NET10_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
+        public static IRequestBuilder ForType(
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.None |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods
+            )] Type refitInterfaceType,
+            RefitSettings? settings
+        )
+#else
+        public static IRequestBuilder ForType(
+            Type refitInterfaceType,
+            RefitSettings? settings
+        )
+#endif
+        {
+            return new CachedRequestBuilderImplementation(
+                new RequestBuilderImplementation(refitInterfaceType, settings)
+            );
+        }
 
-        /// <summary>
-        /// Fors the type.
-        /// </summary>
-        /// <param name="refitInterfaceType">Type of the refit interface.</param>
-        /// <returns></returns>
+#if NET10_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
+#endif
         public static IRequestBuilder ForType(Type refitInterfaceType) =>
-            PlatformRequestBuilderFactory.Create(refitInterfaceType, null);
+            ForType(refitInterfaceType, null);
     }
 }
