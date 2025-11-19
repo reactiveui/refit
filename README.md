@@ -1020,16 +1020,16 @@ Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and R
 Methods decorated with `Multipart` attribute will be submitted with multipart content type.
 At this time, multipart methods support the following parameter types:
 
- - string (parameter name will be used as name and string value as value)
+ - `string` (parameter name will be used as name and string value as value)
  - byte array
- - Stream
- - FileInfo
+ - `Stream`
+ - `FileInfo`
 
 Name of the field in the multipart data priority precedence:
 
-* multipartItem.Name if specified and not null (optional); dynamic, allows naming form data part at execution time.
-* [AliasAs] attribute  (optional) that decorate the streamPart parameter in the method signature (see below); static, defined in code.
-* MultipartItem parameter name (default) as defined in the method signature; static, defined in code.
+* `multipartItem.Name` if specified and not null (optional); dynamic, allows naming form data part at execution time.
+* `[AliasAs]` attribute  (optional) that decorate the streamPart parameter in the method signature (see below); static, defined in code.
+* `MultipartItem` parameter name (default) as defined in the method signature; static, defined in code.
 
 A custom boundary can be specified with an optional string parameter to the `Multipart` attribute. If left empty, this defaults to `----MyGreatBoundary`.
 
@@ -1045,13 +1045,13 @@ public interface ISomeApi
 }
 ```
 
-To pass a Stream to this method, construct a StreamPart object like so:
+To pass a `Stream` to this method, construct a StreamPart object like so:
 
 ```csharp
 someApiInstance.UploadPhoto(id, new StreamPart(myPhotoStream, "photo.jpg", "image/jpeg"));
 ```
 
-Note: The AttachmentName attribute that was previously described in this section has been deprecated and its use is not recommended.
+Note: The `AttachmentName` attribute that was previously described in this section has been deprecated and its use is not recommended.
 
 ### Retrieving the response
 
