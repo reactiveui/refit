@@ -22,7 +22,7 @@
     <ImplicitUsings>true</ImplicitUsings>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)buildtask.snk</AssemblyOriginatorKeyFile>
-    <!--<SignAssembly>true</SignAssembly>-->
+    <SignAssembly>true</SignAssembly>
     <RefitTargets Condition="$([MSBuild]::IsOsPlatform('Windows'))">net462</RefitTargets>
     <RefitTestTargets>net8.0;net9.0;net10.0</RefitTestTargets>
     <RefitTargets>$(RefitTargets);netstandard2.0;$(RefitTestTargets)</RefitTargets>
