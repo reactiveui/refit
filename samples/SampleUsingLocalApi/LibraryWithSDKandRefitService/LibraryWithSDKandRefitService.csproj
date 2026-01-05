@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Refit" Version="8.0.0" />
+    <PackageReference Include="Refit" Version="9.0.2" />
   </ItemGroup>
 
 </Project>
