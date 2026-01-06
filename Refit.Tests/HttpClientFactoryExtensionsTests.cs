@@ -190,11 +190,12 @@ public class HttpClientFactoryExtensionsTests
         var baseUri = new Uri("https://0:1337");
         var services = new ServiceCollection();
 
-        services.AddHttpClient("MyHttpClient", client => {
+        services.AddHttpClient("MyHttpClient", client =>
+        {
             client.BaseAddress = baseUri;
             client.DefaultRequestHeaders.Add("X-Powered-By", Environment.OSVersion.VersionString);
         });
-        services.AddRefitClient<IGitHubApi>(null, "MyHttpClient");
+        services.AddRefitClient<IGitHubApi>(settingsAction: null, "MyHttpClient");
 
         var sp = services.BuildServiceProvider();
         var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();

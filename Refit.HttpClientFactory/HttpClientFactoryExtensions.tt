@@ -1,0 +1,181 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ output extension=".cs" #>
+using System;
+using System.Linq;
+using System.Net.Http;
+using System.Reflection;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http;
+
+namespace Refit
+{
+    /// <summary>
+    /// HttpClientFactoryExtensions.
+    /// </summary>
+    public static class HttpClientFactoryExtensions
+    {
+<#
+    // 位运算控制组合
+    for (int bits = 0; bits < 16; bits++)
+    {
+        bool hasKeyed = (bits & 1) != 0;      // 0001: 是否有Keyed
+        bool hasGeneric = (bits & 2) != 0;    // 0010: 是否泛型
+        bool isBuilder = (bits & 4) != 0;     // 0100: 是否builder扩展
+        bool hasAction = (bits & 8) != 0;     // 1000: 是否有settingsAction
+        
+        // 生成XML注释
+#>
+        /// <summary>
+<# if (hasKeyed) { #>
+        /// Adds a Refit client to the DI container with a specified service key
+<# } else { #>
+        /// Adds a Refit client to the DI container
+<# } #>
+        /// </summary>
+<# if (hasGeneric) { #>
+        /// <typeparam name="T">Type of the Refit interface</typeparam>
+<# } else { #>
+        /// <param name="refitInterfaceType">Type of the Refit interface</param>
+<# } #>
+<# if (isBuilder) { #>
+        /// <param name="builder">The HTTP client builder</param>
+<# } else { #>
+        /// <param name="services">container</param>
+<# } #>
+<# if (hasKeyed) { #>
+        /// <param name="serviceKey">An optional key to associate with the specific Refit client instance</param>
+<# } #>
+<# if (hasAction) { #>
+        /// <param name="settingsAction">Optional. Action to configure refit settings.</param>
+<# } else { #>
+        /// <param name="settings">Optional. Settings to configure the instance with</param>
+<# } #>
+<# if (!isBuilder) { #>
+        /// <param name="httpClientName">Optional. Allows users to change the HttpClient name.</param>
+<# } #>
+        /// <returns></returns>
+<# if(hasAction) { #>
+#if NET9_0_OR_GREATER
+        [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
+#endif
+<# } #>
+<# 
+        // 生成方法签名
+        string methodName = (hasKeyed ? "AddKeyedRefitClient" : "AddRefitClient"); 
+#>
+        public static IHttpClientBuilder <#= methodName #><#= hasGeneric ? "<T>" : "" #>(
+            this <#= isBuilder ? "IHttpClientBuilder" : "IServiceCollection" #> <#= isBuilder ? "builder" : "services" #>,
+<# if (!hasGeneric) { #>
+            Type refitInterfaceType,
+<# } #>
+<# if (hasKeyed) { #>
+            object? serviceKey,
+<# } #>
+<# if (hasAction) { #>
+            Func<IServiceProvider, RefitSettings?>? settingsAction<#= !isBuilder ? "," : "" #>
+<# } else { #>
+            RefitSettings? settings = null<#= !isBuilder ? "," : "" #>
+<# } #>
+<# if (!isBuilder) { #>
+            string? httpClientName = null
+<# } #>
+        )
+<# if (hasGeneric) { #>
+            where T : class
+<# } #>
+        {
+<# 
+        // 生成参数验证
+        if (isBuilder) 
+        { 
+#>
+            if (builder == null) throw new ArgumentNullException(nameof(builder));
+<# 
+        } 
+        else 
+        { 
+#>
+            if (services == null) throw new ArgumentNullException(nameof(services));
+<# 
+        } 
+        
+        if (!hasGeneric) 
+        { 
+#>
+            if (refitInterfaceType == null) throw new ArgumentNullException(nameof(refitInterfaceType));
+<# 
+        } 
+        
+        if (hasKeyed) 
+        { 
+#>
+            if (serviceKey == null) throw new ArgumentNullException(nameof(serviceKey));
+<# 
+        }  
+#>
+
+<# 
+        // 生成Core方法调用
+        string coreMethod = "HttpClientFactoryCore.";
+        coreMethod += (hasKeyed ? "AddKeyedRefitClient" : "AddRefitClient") + "Core";
+        coreMethod += hasGeneric ? "<T>" : "";
+        coreMethod += "(";
+        
+        // 第一个参数：services
+        if (isBuilder)
+        {
+            coreMethod += "builder.Services";
+        }
+        else
+        {
+            coreMethod += "services";
+        }
+        
+        // 第二个参数：Type
+        if (hasGeneric)
+        {
+            coreMethod += ", typeof(T)";
+        }
+        else
+        {
+            coreMethod += ", refitInterfaceType";
+        }
+        
+        // 第三个参数：serviceKey
+        if (hasKeyed)
+        {
+            coreMethod += ", serviceKey";
+        }
+        
+        // 第四个参数：settingsAction
+        if (hasAction)
+        {
+            coreMethod += ", settingsAction";
+        }
+        else
+        {
+            coreMethod += ", _ => settings";
+        }
+        
+        // 第五个参数：httpClientName
+        if (isBuilder)
+        {
+            // IHttpClientBuilder 版本使用 builder.Name
+            coreMethod += ", builder.Name";
+        }
+        else
+        {
+            // IServiceCollection 版本使用传入的 httpClientName
+            coreMethod += ", httpClientName";
+        }
+        
+        coreMethod += ")";
+#>
+            return <#= coreMethod #>;
+        }
+
+<#
+    }
+#>
+    }
+}
