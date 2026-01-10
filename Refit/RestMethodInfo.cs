@@ -402,7 +402,7 @@ namespace Refit
             }
 
             // add trailing string
-            if (index < relativePath.Length - 1)
+            if (index < relativePath.Length)
             {
                 var trailingConstant = relativePath.Substring(index, relativePath.Length - index);
                 fragmentList.Add(ParameterFragment.Constant(trailingConstant));
