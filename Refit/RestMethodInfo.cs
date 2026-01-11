@@ -27,7 +27,7 @@ namespace Refit
     [DebuggerDisplay("{MethodInfo}")]
     internal class RestMethodInfoInternal
     {
-        private int HeaderCollectionParameterIndex { get;  }
+        private int HeaderCollectionParameterIndex { get; }
         private string Name => MethodInfo.Name;
         public Type Type { get; }
         public MethodInfo MethodInfo { get; }
@@ -47,7 +47,7 @@ namespace Refit
         public Dictionary<int, Tuple<string, string>> AttachmentNameMap { get; }
         public ParameterInfo[] ParameterInfoArray { get; }
         public Dictionary<int, RestMethodParameterInfo> ParameterMap { get; }
-        public List<ParameterFragment> FragmentPath { get ; set ; }
+        public List<ParameterFragment> FragmentPath { get; set; }
         public Type ReturnType { get; set; }
         public Type ReturnResultType { get; set; }
         public Type DeserializedResultType { get; set; }
@@ -167,7 +167,7 @@ namespace Refit
             RestMethodInfo = new RestMethodInfo(Name, Type, MethodInfo, RelativePath, ReturnType!);
             CancellationToken = ctParam;
 
-            QueryUriFormat =  methodInfo.GetCustomAttribute<QueryUriFormatAttribute>()?.UriFormat
+            QueryUriFormat = methodInfo.GetCustomAttribute<QueryUriFormatAttribute>()?.UriFormat
                               ?? UriFormat.UriEscaped;
 
             IsApiResponse =
@@ -201,7 +201,7 @@ namespace Refit
                 if (param.ParameterType.IsAssignableFrom(typeof(IDictionary<string, string>)))
                 {
                     // throw if there is already a HeaderCollection parameter
-                    if(headerIndex >= 0)
+                    if (headerIndex >= 0)
                         throw new ArgumentException("Only one parameter can be a HeaderCollection parameter");
 
                     headerIndex = i;
@@ -278,7 +278,7 @@ namespace Refit
 
             if (parameterizedParts.Length == 0)
             {
-                if(string.IsNullOrEmpty(relativePath))
+                if (string.IsNullOrEmpty(relativePath))
                     return (ret, []);
 
                 return (ret, [ParameterFragment.Constant(relativePath)]);
@@ -300,7 +300,7 @@ namespace Refit
             var fragmentList = new List<ParameterFragment>();
             var index = 0;
 
-           foreach (var match in parameterizedParts)
+            foreach (var match in parameterizedParts)
             {
                 // Add constant value from given http path
                 if (match.Index != index)
@@ -402,7 +402,7 @@ namespace Refit
             }
 
             // add trailing string
-            if (index < relativePath.Length - 1)
+            if (index < relativePath.Length)
             {
                 var trailingConstant = relativePath.Substring(index, relativePath.Length - index);
                 fragmentList.Add(ParameterFragment.Constant(trailingConstant));
@@ -708,8 +708,8 @@ namespace Refit
         public bool IsDynamicRoute => ArgumentIndex >= 0 && PropertyIndex < 0;
         public bool IsObjectProperty => ArgumentIndex >= 0 && PropertyIndex >= 0;
 
-        public static ParameterFragment Constant(string value) => new (value, -1, -1);
-        public static ParameterFragment Dynamic(int index) => new (null, index, -1);
-        public static ParameterFragment DynamicObject(int index, int propertyIndex) => new (null, index, propertyIndex);
+        public static ParameterFragment Constant(string value) => new(value, -1, -1);
+        public static ParameterFragment Dynamic(int index) => new(null, index, -1);
+        public static ParameterFragment DynamicObject(int index, int propertyIndex) => new(null, index, propertyIndex);
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +9,9 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.WebUtilities;
+
 using Xunit;
 
 namespace Refit.Tests
@@ -1726,6 +1728,21 @@ namespace Refit.Tests
                     )
             );
         }
+
+        [Fact]
+        public void ShouldCaptureLastCharacterWhenRouteEndsWithConstant()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(
+                "GetWithParenthesis"
+            );
+            var output = factory(["1"]);
+
+            var uri = new Uri(new Uri("http://api/foo/bar/"), output.RequestUri);
+
+            Assert.EndsWith(")", uri.PathAndQuery, StringComparison.Ordinal);
+            Assert.Contains("/foo/bar/(1)", uri.PathAndQuery, StringComparison.Ordinal);
+        }
     }
 
     [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
@@ -1766,6 +1783,9 @@ namespace Refit.Tests
 
         [Get("/foo/bar/{id}?param1={id}&param2={id}")]
         Task<string> FetchSomeStuffWithTheSameId(int id);
+
+        [Get("/foo/bar/({id})")]
+        Task<string> GetWithParenthesis(int id);
 
         [Get("/foo/bar?param=first {id} and second {id}")]
         Task<string> FetchSomeStuffWithTheIdInAParameterMultipleTimes(int id);
