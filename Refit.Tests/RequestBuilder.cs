@@ -1770,6 +1770,15 @@ namespace Refit.Tests
         [Get("/foo/bar?param=first {id} and second {id}")]
         Task<string> FetchSomeStuffWithTheIdInAParameterMultipleTimes(int id);
 
+        [Get("/foo?q=app_metadata.id:\"{id}\"")]
+        Task<string> FetchSomeStuffWithDoubleQuotesInUrl(int id);
+
+        [Get("/foo/bar/({id})")]
+        Task<string> GetWithTrainingParenthesis(int id);
+
+        [Get("/foo/bar/{id}/")]
+        Task<string> GetWithTrailingSlash(int id);
+
         [Post("/foo/bar/{id}")]
         [Headers("Content-Type: literally/anything")]
         Task<string> PostSomeStuffWithHardCodedContentTypeHeader(int id, [Body] string content);
@@ -2592,6 +2601,37 @@ namespace Refit.Tests
                 "/void/6%2F6/path?a=test%40example.com&b=push%21%3Dpull",
                 uri.PathAndQuery
             );
+        }
+
+        [Fact]
+        public void QueryParamWhichEndsInDoubleQuotesShouldNotBeTruncated()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(
+                "FetchSomeStuffWithDoubleQuotesInUrl"
+            );
+            var output = factory([42]);
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+
+            Assert.Equal("/foo?q=app_metadata.id%3A%2242%22", uri.PathAndQuery);
+        }
+
+        [Theory]
+        [InlineData("GetWithTrainingParenthesis", ")", "/foo/bar/(1)")]
+        [InlineData("GetWithTrailingSlash", "/", "/foo/bar/1/")]
+        public void ShouldCaptureLastCharacterWhenRouteEndsWithConstant(string methodToTest, string constantChar, string contains)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(
+                methodToTest
+            );
+            var output = factory(["1"]);
+
+            var uri = new Uri(new Uri("http://api/"), output.RequestUri!);
+
+            Assert.EndsWith(constantChar, uri.PathAndQuery, StringComparison.Ordinal);
+            Assert.Contains(contains, uri.PathAndQuery, StringComparison.Ordinal);
         }
 
         [Fact]

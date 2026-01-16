@@ -401,12 +401,12 @@ namespace Refit
                 }
             }
 
+            if (index >= relativePath.Length) return (ret, fragmentList);
+
             // add trailing string
-            if (index < relativePath.Length - 1)
-            {
-                var trailingConstant = relativePath.Substring(index, relativePath.Length - index);
-                fragmentList.Add(ParameterFragment.Constant(trailingConstant));
-            }
+            var trailingConstant = relativePath.Substring(index);
+            fragmentList.Add(ParameterFragment.Constant(trailingConstant));
+
             return (ret, fragmentList);
         }
 
