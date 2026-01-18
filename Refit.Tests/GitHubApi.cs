@@ -81,7 +81,7 @@ public interface IGitHubApi
     Task<ApiResponse<User>> NothingToSeeHereWithMetadata();
 
     [Get("/users/{username}")]
-    Task<ApiResponse<User>> GetUserWithMetadata(string userName);
+    Task<ApiResponse<User>> GetUserWithMetadata(string userName, CancellationToken cancellationToken = default);
 
     [Get("/users/{username}")]
     IObservable<ApiResponse<User>> GetUserObservableWithMetadata(string userName);
