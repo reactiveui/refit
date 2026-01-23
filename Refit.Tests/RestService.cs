@@ -1277,7 +1277,6 @@ public class RestServiceIntegrationTests
 
         mockHttp
             .When(HttpMethod.Get, "https://api.github.com/users/github")
-            //.Throw(new HttpRequestException("Unable to connect to test server."));
             .Respond(req =>
             {
                 // Cancel the request

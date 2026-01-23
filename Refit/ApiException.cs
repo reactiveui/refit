@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 namespace Refit
 {
     /// <summary>
-    /// Represents an error that occured after a response was received from the server.
+    /// Represents an error that occurred after a response was received from the server.
     /// </summary>
     [Serializable]
 #pragma warning disable CA1032 // Implement standard exception constructors

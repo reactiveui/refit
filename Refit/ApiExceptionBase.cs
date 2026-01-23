@@ -3,7 +3,7 @@
 namespace Refit;
 
 /// <summary>
-/// Represents an error that occured while sending an API request.
+/// Represents an error that occurred while sending an API request.
 /// </summary>
 [Serializable]
 #pragma warning disable CA1032 // Implement standard exception constructors

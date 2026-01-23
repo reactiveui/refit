@@ -3,7 +3,7 @@
 namespace Refit;
 
 /// <summary>
-/// Represents an error that occured while sending an API request before a response could be received from the server.
+/// Represents an error that occurred while sending an API request before a response could be received from the server.
 /// </summary>
 /// <remarks>
 /// This exception will wrap those thrown by <see cref="HttpClient.SendAsync(HttpRequestMessage)"/>,
