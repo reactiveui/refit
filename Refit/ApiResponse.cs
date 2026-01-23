@@ -8,15 +8,17 @@ namespace Refit
     static class ApiResponse
     {
         internal static T Create<T, TBody>(
-            HttpResponseMessage resp,
+            HttpRequestMessage request,
+            HttpResponseMessage? resp,
             object? content,
             RefitSettings settings,
-            ApiException? error = null
+            ApiExceptionBase? error = null
         )
         {
             return (T)
                 Activator.CreateInstance(
                     typeof(ApiResponse<TBody>),
+                    request,
                     resp,
                     content,
                     settings,
@@ -32,19 +34,20 @@ namespace Refit
     /// <remarks>
     /// Create an instance of <see cref="ApiResponse{T}"/> with type <typeparamref name="T"/>.
     /// </remarks>
+    /// <param name="request">Original HTTP Request.</param>
     /// <param name="response">Original HTTP Response message.</param>
     /// <param name="content">Response content.</param>
     /// <param name="settings">Refit settings used to send the request.</param>
-    /// <param name="error">The ApiException, if the request failed.</param>
+    /// <param name="error">The exception, if the request failed.</param>
     /// <exception cref="ArgumentNullException"></exception>
     public sealed class ApiResponse<T>(
-        HttpResponseMessage response,
+        HttpRequestMessage request,
+        HttpResponseMessage? response,
         T? content,
         RefitSettings settings,
-        ApiException? error = null
+        ApiExceptionBase? error = null
         ) : IApiResponse<T>
     {
-        readonly HttpResponseMessage response = response ?? throw new ArgumentNullException(nameof(response));
         bool disposed;
 
         /// <summary>
@@ -60,56 +63,101 @@ namespace Refit
         /// <summary>
         /// HTTP response headers.
         /// </summary>
-        public HttpResponseHeaders Headers => response.Headers;
+        public HttpResponseHeaders? Headers => response?.Headers;
 
         /// <summary>
         /// HTTP response content headers as defined in RFC 2616.
         /// </summary>
-        public HttpContentHeaders? ContentHeaders => response.Content?.Headers;
+        public HttpContentHeaders? ContentHeaders => response?.Content?.Headers;
 
         /// <summary>
         /// Indicates whether the request was successful.
         /// </summary>
 #if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Headers))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(true, nameof(StatusCode))]
+        [MemberNotNullWhen(true, nameof(Version))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
-        public bool IsSuccessStatusCode => response.IsSuccessStatusCode;
+        public bool IsSuccessStatusCode => response?.IsSuccessStatusCode ?? false;
 
         /// <summary>
         /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization).
         /// </summary>
 #if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Headers))]
         [MemberNotNullWhen(true, nameof(Content))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(true, nameof(StatusCode))]
+        [MemberNotNullWhen(true, nameof(Version))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
         public bool IsSuccessful => IsSuccessStatusCode && Error is null;
 
+        /// <inheritdoc />
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Headers))]
+        [MemberNotNullWhen(true, nameof(Content))]
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(true, nameof(StatusCode))]
+        [MemberNotNullWhen(true, nameof(Version))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
+        public bool IsReceived => response != null;
+
         /// <summary>
         /// The reason phrase which typically is sent by the server together with the status code.
         /// </summary>
-        public string? ReasonPhrase => response.ReasonPhrase;
+        public string? ReasonPhrase => response?.ReasonPhrase;
 
         /// <summary>
         /// The HTTP Request message which led to this response.
         /// </summary>
-        public HttpRequestMessage? RequestMessage => response.RequestMessage;
+        public HttpRequestMessage RequestMessage => request;
 
         /// <summary>
         /// HTTP response status code.
         /// </summary>
-        public HttpStatusCode StatusCode => response.StatusCode;
+        public HttpStatusCode? StatusCode => response?.StatusCode;
 
         /// <summary>
         /// HTTP Message version.
         /// </summary>
-        public Version Version => response.Version;
+        public Version? Version => response?.Version;
 
         /// <summary>
-        /// The <see cref="ApiException" /> object in case of unsuccessful response.
+        /// The <see cref="ApiExceptionBase" /> object in case of unsuccessful request or response.
         /// </summary>
-        public ApiException? Error { get; private set; } = error;
+        /// <remarks>
+        /// The <see cref="HasRequestError"/> and <see cref="HasResponseError"/> methods can be
+        /// used to check the type of error.
+        /// </remarks>
+        public ApiExceptionBase? Error { get; private set; } = error;
+
+        /// <summary>
+        /// Implementation of <see cref="IApiResponse{T}"/> that provides additional functionalities.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <remarks>
+        /// Create an instance of <see cref="ApiResponse{T}"/> with type <typeparamref name="T"/>.
+        /// </remarks>
+        /// <param name="response">Original HTTP Response message.</param>
+        /// <param name="content">Response content.</param>
+        /// <param name="settings">Refit settings used to send the request.</param>
+        /// <param name="error">The exception, if the request failed.</param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public ApiResponse(
+            HttpResponseMessage response,
+            T? content,
+            RefitSettings settings,
+            ApiExceptionBase? error = null)
+            : this(
+            (response ?? throw new ArgumentNullException(nameof(response))).RequestMessage,
+            response,
+            content,
+            settings,
+            error) { }
 
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
@@ -123,7 +171,8 @@ namespace Refit
         /// Ensures the request was successful by throwing an exception in case of failure
         /// </summary>
         /// <returns>The current <see cref="ApiResponse{T}"/></returns>
-        /// <exception cref="ApiException"></exception>
+        /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
+        /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
         public async Task<ApiResponse<T>> EnsureSuccessStatusCodeAsync()
         {
             if (!IsSuccessStatusCode)
@@ -138,7 +187,8 @@ namespace Refit
         /// Ensures the request was successful and without any other error by throwing an exception in case of failure
         /// </summary>
         /// <returns>The current <see cref="ApiResponse{T}"/></returns>
-        /// <exception cref="ApiException"></exception>
+        /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
+        /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
         public async Task<ApiResponse<T>> EnsureSuccessfulAsync()
         {
             if (!IsSuccessful)
@@ -149,6 +199,39 @@ namespace Refit
             return this;
         }
 
+        /// <inheritdoc/>
+        [SuppressMessage(
+            "Naming",
+            "CA1716:Identifiers should not match keywords",
+            Justification = "By Design"
+        )]
+        
+        public bool HasRequestError(
+#if NET6_0_OR_GREATER
+            [MaybeNullWhen(false)]
+#endif
+            out ApiRequestException error)
+        {
+            error = Error as ApiRequestException;
+            return error != null;
+        }
+
+        /// <inheritdoc/>
+        [SuppressMessage(
+            "Naming",
+            "CA1716:Identifiers should not match keywords",
+            Justification = "By Design"
+        )]
+        public bool HasResponseError(
+#if NET6_0_OR_GREATER
+            [MaybeNullWhen(false)]
+#endif
+            out ApiException error)
+        {
+            error = Error as ApiException;
+            return error != null;
+        }
+
         void Dispose(bool disposing)
         {
             if (!disposing || disposed)
@@ -156,17 +239,17 @@ namespace Refit
 
             disposed = true;
 
-            response.Dispose();
+            response?.Dispose();
         }
 
-        private async Task<ApiException> ThrowsApiExceptionAsync()
+        private async Task ThrowsApiExceptionAsync()
         {
             var exception =
                     Error
                     ?? await ApiException
                         .Create(
-                            response.RequestMessage!,
-                            response.RequestMessage!.Method,
+                            request,
+                            request.Method,
                             response,
                             Settings
                         )
@@ -183,14 +266,18 @@ namespace Refit
     {
 #if NET6_0_OR_GREATER
         /// <summary>
-        /// The <see cref="ApiException"/> object in case of unsuccessful response.
+        /// The exception object in case of unsuccessful request or response.
         /// </summary>
+        /// <remarks>
+        /// The <see cref="IApiResponse.HasRequestError"/> and <see cref="IApiResponse.HasResponseError"/> methods can be
+        /// used to check the type of error.
+        /// </remarks>
         [SuppressMessage(
             "Naming",
             "CA1716:Identifiers should not match keywords",
             Justification = "By Design"
         )]
-        new ApiException? Error { get; }
+        new ApiExceptionBase? Error { get; }
 
         /// <summary>
         /// HTTP response content headers as defined in RFC 2616.
@@ -227,7 +314,7 @@ namespace Refit
         /// <summary>
         /// HTTP response headers.
         /// </summary>
-        HttpResponseHeaders Headers { get; }
+        HttpResponseHeaders? Headers { get; }
 
         /// <summary>
         /// HTTP response content headers as defined in RFC 2616.
@@ -238,7 +325,10 @@ namespace Refit
         /// Indicates whether the request was successful.
         /// </summary>
 #if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Headers))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(true, nameof(StatusCode))]
+        [MemberNotNullWhen(true, nameof(Version))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
         bool IsSuccessStatusCode { get; }
@@ -246,16 +336,31 @@ namespace Refit
         /// <summary>
         /// Indicates whether the request was successful and there wasn't any other error (for example, during content deserialization).
         /// </summary>
-#if NET6_0_OR_GREATER        
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Headers))]
         [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(true, nameof(StatusCode))]
+        [MemberNotNullWhen(true, nameof(Version))]
         [MemberNotNullWhen(false, nameof(Error))]
 #endif
         bool IsSuccessful { get; }
 
         /// <summary>
+        /// Indicates whether a response was received from the server.
+        /// </summary>
+#if NET6_0_OR_GREATER
+        [MemberNotNullWhen(true, nameof(Headers))]
+        [MemberNotNullWhen(true, nameof(ContentHeaders))]
+        [MemberNotNullWhen(true, nameof(StatusCode))]
+        [MemberNotNullWhen(true, nameof(Version))]
+        [MemberNotNullWhen(false, nameof(Error))]
+#endif
+        bool IsReceived { get; }
+
+        /// <summary>
         /// HTTP response status code.
         /// </summary>
-        HttpStatusCode StatusCode { get; }
+        HttpStatusCode? StatusCode { get; }
 
         /// <summary>
         /// The reason phrase which typically is sent by the server together with the status code.
@@ -270,16 +375,51 @@ namespace Refit
         /// <summary>
         /// HTTP Message version.
         /// </summary>
-        Version Version { get; }
+        Version? Version { get; }
 
         /// <summary>
-        /// The <see cref="ApiException"/> object in case of unsuccessful response.
+        /// The exception object in case of unsuccessful request or response.
         /// </summary>
+        /// <remarks>
+        /// <see cref="HasRequestError"/> and <see cref="HasResponseError"/> methods can be used to check the type of error.
+        /// </remarks>
         [SuppressMessage(
            "Naming",
            "CA1716:Identifiers should not match keywords",
            Justification = "By Design"
        )]
-        ApiException? Error { get; }
+        ApiExceptionBase? Error { get; }
+
+        /// <summary>
+        /// Checks if the call failed before a response was received from the server.
+        /// </summary>
+        /// <param name="error">The <see cref="ApiRequestException"/> object in case of an unsuccessful request.</param>
+        /// <returns><c>true</c> if the call failed before a response was received from the server, otherwise <c>false</c>.</returns>
+        [SuppressMessage(
+            "Naming",
+            "CA1716:Identifiers should not match keywords",
+            Justification = "By Design"
+        )]
+        bool HasRequestError(
+#if NET6_0_OR_GREATER
+            [MaybeNullWhen(false)]
+#endif
+            out ApiRequestException error);
+
+        /// <summary>
+        /// Checks if the call failed due to an unsuccessful response from the server.
+        /// </summary>
+        /// <param name="error">The <see cref="ApiException"/> object in case of unsuccessful response.</param>
+        /// <returns><c>true</c> if the call failed due to an unsuccessful response from the server, otherwise <c>false</c>.</returns>
+        [SuppressMessage(
+            "Naming",
+            "CA1716:Identifiers should not match keywords",
+            Justification = "By Design"
+        )]
+        bool HasResponseError(
+#if NET6_0_OR_GREATER
+            [MaybeNullWhen(false)]
+#endif
+            out ApiException error);
     }
 }

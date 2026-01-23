@@ -191,6 +191,7 @@ public class ResponseTests
 
         using var response = await fixture.GetApiResponseTestObject();
 
+        Assert.True(response.IsReceived);
         Assert.True(response.IsSuccessStatusCode);
         Assert.False(response.IsSuccessful);
         Assert.NotNull(response.Error);
@@ -212,8 +213,9 @@ public class ResponseTests
             .Respond(req => expectedResponse);
 
         using var response = await fixture.GetApiResponseTestObject();
-        await response.EnsureSuccessStatusCodeAsync();        
+        await response.EnsureSuccessStatusCodeAsync();
 
+        Assert.True(response.IsReceived);
         Assert.True(response.IsSuccessStatusCode);
         Assert.False(response.IsSuccessful);
         Assert.NotNull(response.Error);
@@ -226,7 +228,7 @@ public class ResponseTests
     public async Task When_SerializationErrorOnSuccessStatusCode_EnsureSuccessfulAsync_ThrowsApiException()
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {           
+        {
             Content = new StringContent("Invalid JSON")
         };
 
@@ -239,6 +241,7 @@ public class ResponseTests
             () => response.EnsureSuccessfulAsync()
         );
 
+        Assert.True(response.IsReceived);
         Assert.True(response.IsSuccessStatusCode);
         Assert.False(response.IsSuccessful);
         Assert.NotNull(actualException);
@@ -399,8 +402,9 @@ public class ResponseTests
 
         Assert.NotNull(apiResponse);
         Assert.NotNull(apiResponse.Error);
-        Assert.NotNull(apiResponse.Error.Content);
-        Assert.Equal("Hello world", apiResponse.Error.Content);
+        Assert.True(apiResponse.HasResponseError(out var error));
+        Assert.NotNull(error.Content);
+        Assert.Equal("Hello world", error.Content);
     }
 
     [Fact]
@@ -420,8 +424,9 @@ public class ResponseTests
 
         Assert.NotNull(apiResponse);
         Assert.NotNull(apiResponse.Error);
-        Assert.NotNull(apiResponse.Error.Content);
-        Assert.Equal("Hello world", apiResponse.Error.Content);
+        Assert.True(apiResponse.HasResponseError(out var error));
+        Assert.NotNull(error.Content);
+        Assert.Equal("Hello world", error.Content);
     }
 
     [Fact]
@@ -489,8 +494,9 @@ public class ResponseTests
 
         Assert.NotNull(apiResponse.Error);
         Assert.IsType<System.Text.Json.JsonException>(apiResponse.Error.InnerException);
-        Assert.NotNull(apiResponse.Error.Content);
-        Assert.Equal(htmlResponse, apiResponse.Error.Content);
+        Assert.True(apiResponse.HasResponseError(out var error));
+        Assert.NotNull(error.Content);
+        Assert.Equal(htmlResponse, error.Content);
     }
 
     [Fact]
@@ -548,8 +554,9 @@ public class ResponseTests
 
         Assert.NotNull(apiResponse.Error);
         Assert.IsType<JsonReaderException>(apiResponse.Error.InnerException);
-        Assert.NotNull(apiResponse.Error.Content);
-        Assert.Equal(nonJsonResponse, apiResponse.Error.Content);
+        Assert.True(apiResponse.HasResponseError(out var error));
+        Assert.NotNull(error.Content);
+        Assert.Equal(nonJsonResponse, error.Content);
     }
 }
 

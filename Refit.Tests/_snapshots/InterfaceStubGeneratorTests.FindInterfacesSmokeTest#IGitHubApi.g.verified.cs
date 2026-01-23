@@ -119,12 +119,12 @@ namespace Refit.Implementation
             return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
 
-        private static readonly global::System.Type[] ______typeParameters4 = new global::System.Type[] {typeof(string) };
+        private static readonly global::System.Type[] ______typeParameters4 = new global::System.Type[] {typeof(string), typeof(global::System.Threading.CancellationToken) };
 
         /// <inheritdoc />
-        public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName)
+        public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName, global::System.Threading.CancellationToken @cancellationToken)
         {
-            var ______arguments = new object[] { @userName };
+            var ______arguments = new object[] { @userName, @cancellationToken };
             var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ______typeParameters4 );
 
             return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)______func(this.Client, ______arguments)).ConfigureAwait(false);

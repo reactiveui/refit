@@ -1254,11 +1254,53 @@ public class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var result = await Assert.ThrowsAsync<TaskCanceledException>(
+        var result = await Assert.ThrowsAsync<ApiRequestException>(
             async () => await fixture.GetOrgMembers("github", cts.Token)
         );
 
+        Assert.NotNull(result.InnerException);
+        Assert.IsType<TaskCanceledException>(result.InnerException);
         AssertStackTraceContains(nameof(IGitHubApi.GetOrgMembers), result.StackTrace);
+    }
+
+    [Fact]
+    public async Task RequestCanceledBeforeResponseReadWithIApiResponse()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => mockHttp
+        };
+
+        var cts = new CancellationTokenSource();
+
+        mockHttp
+            .When(HttpMethod.Get, "https://api.github.com/users/github")
+            .Respond(req =>
+            {
+                // Cancel the request
+                cts.Cancel();
+
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]",
+                        Encoding.UTF8,
+                        "application/json"
+                    )
+                };
+            });
+
+        var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+
+        var result = await fixture.GetUserWithMetadata("github", cts.Token);
+
+        Assert.False(result.IsReceived);
+        Assert.NotNull(result.Error);
+        Assert.True(result.HasRequestError(out var error));
+        Assert.IsType<TaskCanceledException>(error.InnerException);
+        Assert.False(result.HasResponseError(out _));
     }
 
     [Fact]
@@ -1774,7 +1816,9 @@ public class RestServiceIntegrationTests
         Assert.False(response.IsSuccessStatusCode);
         Assert.NotNull(response.Error);
 
-        var errors = await response.Error.GetContentAsAsync<ErrorResponse>();
+        Assert.False(response.HasRequestError(out _));
+        Assert.True(response.HasResponseError(out var error));
+        var errors = await error.GetContentAsAsync<ErrorResponse>();
 
         Assert.Contains("error1", errors.Errors);
         Assert.Contains("message", errors.Errors);
@@ -2651,7 +2695,8 @@ public class RestServiceIntegrationTests
 
         ctSource.Cancel();
         var task = fixture.GetWithCancellationAndReturn(token);
-        await Assert.ThrowsAsync<TaskCanceledException>(async () => await task);
+        var exception = await Assert.ThrowsAsync<ApiRequestException>(async () => await task);
+        Assert.IsType<TaskCanceledException>(exception.InnerException);
     }
 
 
