@@ -73,6 +73,7 @@ services
   * [When returning Task&lt;T&gt;](#when-returning-taskt)
   * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
   * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
+* [Friend projects](#friend-projects)
 
 ### Where does this work?
 
@@ -1452,3 +1453,14 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
 For users of [Serilog](https://serilog.net), you can enrich the logging of `ApiException` using the
 [Serilog.Exceptions.Refit](https://www.nuget.org/packages/Serilog.Exceptions.Refit) NuGet package. Details of how to
 integrate this package into your applications can be found [here](https://github.com/RehanSaeed/Serilog.Exceptions#serilogexceptionsrefit).
+
+### Friend projects
+
+Here are some projects built on top of Refit or using it to deliver some more value:
+
+- Generating code:
+    - [REST API Client Code Generator](https://github.com/christianhelle/apiclientcodegen): A collection of Visual Studio C# custom tool code generators for Swagger / OpenAPI specification files, including [Refitter](https://github.com/christianhelle/refitter).
+    - [Refitter](https://github.com/christianhelle/refitter): Generate the Refit interface and contracts from Swagger / OpenAPI specifications, plus some optional registration helpers with or without [Apizr](https://apizr.net)
+- Extending features:
+    - [Apizr](https://apizr.net): Refit's client resilient manager (fault handling, connectivity checking, cache management, authentication handling, http tracing, priority management, data mapping and more...)
+    - [Refit.Insane.PowerPack](https://github.com/thefex/Refit.Insane.PowerPack): Refit library extensions which provides attribute based cache and auto-retry features
