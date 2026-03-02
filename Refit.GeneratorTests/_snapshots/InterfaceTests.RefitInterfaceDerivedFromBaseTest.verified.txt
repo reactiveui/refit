@@ -1,24 +1,3 @@
-﻿{
-  Diagnostics: [
-    {
-      Location: /*
 {
-    void NonRefitMethod();
-         ^^^^^^^^^^^^^^
-}
-*/
- : (19,9)-(19,23),
-      Message: Method IBaseInterface.NonRefitMethod either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument,
-      Severity: Warning,
-      WarningLevel: 1,
-      Descriptor: {
-        Id: RF001,
-        Title: Refit types must have Refit HTTP method attributes,
-        MessageFormat: Method {0}.{1} either has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument,
-        Category: Refit,
-        DefaultSeverity: Warning,
-        IsEnabledByDefault: true
-      }
-    }
-  ]
+  Diagnostics: []
 }

@@ -304,6 +304,17 @@ namespace {refitInternalNamespace}
         var derivedRefitMethods = derivedMethods
             .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
             .ToArray();
+
+        // Identify base interfaces that contain at least one Refit method.
+        // Diagnostics (RF001) should only be raised for non-Refit methods from these
+        // "Refit-enabled" interfaces. Methods from purely non-Refit base interfaces
+        // (like a custom IBaseApi without any HTTP attributes) should still have
+        // stubs generated (for compilation) but should NOT raise diagnostics.
+        var refitEnabledBaseInterfaces = new HashSet<INamedTypeSymbol>(
+            derivedRefitMethods.Select(m => m.ContainingType),
+            SymbolEqualityComparer.Default
+        );
+
         var derivedNonRefitMethods = derivedMethods
             .Except(derivedRefitMethods, SymbolEqualityComparer.Default)
             .Cast<IMethodSymbol>()
@@ -378,8 +389,13 @@ namespace {refitInternalNamespace}
             )
                 continue;
 
-            // Derived non-refit methods should be emitted as explicit interface implementations
-            nonRefitMethodModelList.Add(ParseNonRefitMethod(method, diagnostics, isDerived: true));
+            // Derived non-refit methods should be emitted as explicit interface implementations.
+            // Only emit RF001 diagnostic if the method comes from a Refit-enabled base interface.
+            // Methods from purely non-Refit base interfaces should not raise diagnostics.
+            var shouldEmitDiagnostic = refitEnabledBaseInterfaces.Contains(method.ContainingType);
+            nonRefitMethodModelList.Add(
+                ParseNonRefitMethod(method, diagnostics, isDerived: true, shouldEmitDiagnostic)
+            );
         }
 
         var nonRefitMethodModels = nonRefitMethodModelList.ToImmutableEquatableArray();
@@ -413,19 +429,25 @@ namespace {refitInternalNamespace}
     private static MethodModel ParseNonRefitMethod(
         IMethodSymbol methodSymbol,
         List<Diagnostic> diagnostics,
-        bool isDerived
+        bool isDerived,
+        bool shouldEmitDiagnostic = true
     )
     {
-        // report invalid error diagnostic
-        foreach (var location in methodSymbol.Locations)
+        // Only report RF001 diagnostic if requested.
+        // For methods from non-Refit base interfaces, we generate stubs (for compilation)
+        // but don't raise diagnostics since these methods are expected to be non-Refit.
+        if (shouldEmitDiagnostic)
         {
-            var diagnostic = Diagnostic.Create(
-                DiagnosticDescriptors.InvalidRefitMember,
-                location,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.Name
-            );
-            diagnostics.Add(diagnostic);
+            foreach (var location in methodSymbol.Locations)
+            {
+                var diagnostic = Diagnostic.Create(
+                    DiagnosticDescriptors.InvalidRefitMember,
+                    location,
+                    methodSymbol.ContainingType.Name,
+                    methodSymbol.Name
+                );
+                diagnostics.Add(diagnostic);
+            }
         }
 
         // Parse like a regular method, but force explicit implementation for derived base-interface methods
