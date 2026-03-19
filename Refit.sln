@@ -30,6 +30,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "InterfaceStubGenerator.Shar
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Roslyn41", "InterfaceStubGenerator.Roslyn41\InterfaceStubGenerator.Roslyn41.csproj", "{A4B61169-3314-41DB-8156-BE9677C90C9F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InterfaceStubGenerator.Roslyn50", "InterfaceStubGenerator.Roslyn50\InterfaceStubGenerator.Roslyn50.csproj", "{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Refit.Xml", "Refit.Xml\Refit.Xml.csproj", "{C4E38B33-3D17-47A7-A47F-8F3900F07499}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Refit.Benchmarks", "Refit.Benchmarks\Refit.Benchmarks.csproj", "{ABD72A27-9C30-481A-8303-D8F825A8FD47}"
@@ -156,6 +158,22 @@ Global
 		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x64.Build.0 = Release|Any CPU
 		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x86.ActiveCfg = Release|Any CPU
 		{A4B61169-3314-41DB-8156-BE9677C90C9F}.Release|x86.Build.0 = Release|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Debug|ARM.ActiveCfg = Debug|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Debug|ARM.Build.0 = Debug|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Debug|x64.Build.0 = Debug|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Debug|x86.Build.0 = Debug|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Release|ARM.ActiveCfg = Release|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Release|ARM.Build.0 = Release|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Release|x64.ActiveCfg = Release|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Release|x64.Build.0 = Release|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Release|x86.ActiveCfg = Release|Any CPU
+		{4F855D43-6D47-4D31-9C17-82E6D7EF50A1}.Release|x86.Build.0 = Release|Any CPU
 		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4E38B33-3D17-47A7-A47F-8F3900F07499}.Debug|ARM.ActiveCfg = Debug|Any CPU
@@ -304,6 +322,7 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{72869789-0310-4916-9a41-20d16a01c1b8}*SharedItemsImports = 5
 		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{a4b61169-3314-41db-8156-be9677c90c9f}*SharedItemsImports = 5
+		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{4f855d43-6d47-4d31-9c17-82e6d7ef50a1}*SharedItemsImports = 5
 		InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems*{b591423d-f92d-4e00-b0eb-615c9853506c}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal

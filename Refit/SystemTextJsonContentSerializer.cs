@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+#if NET8_0_OR_GREATER
+using System.Text.Json.Serialization.Metadata;
+#endif
 
 namespace Refit
 {
@@ -24,9 +27,13 @@ namespace Refit
         /// <inheritdoc/>
         public HttpContent ToHttpContent<T>(T item)
         {
-            var content = JsonContent.Create(item, options: jsonSerializerOptions);
-
-            return content;
+#if NET8_0_OR_GREATER
+            if (TryGetJsonTypeInfo<T>(out var jsonTypeInfo))
+            {
+                return JsonContent.Create(item, jsonTypeInfo);
+            }
+#endif
+            return JsonContent.Create(item, options: jsonSerializerOptions);
         }
 
         /// <inheritdoc/>
@@ -35,10 +42,15 @@ namespace Refit
             CancellationToken cancellationToken = default
         )
         {
-            var item = await content
+#if NET8_0_OR_GREATER
+            if (TryGetJsonTypeInfo<T>(out var jsonTypeInfo))
+            {
+                return await content.ReadFromJsonAsync(jsonTypeInfo, cancellationToken).ConfigureAwait(false);
+            }
+#endif
+            return await content
                 .ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken)
                 .ConfigureAwait(false);
-            return item;
         }
 
         /// <summary>
@@ -70,12 +82,28 @@ namespace Refit
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             };
             jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-            jsonSerializerOptions.Converters.Add(
-                new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
-            );
+            jsonSerializerOptions.Converters.Add(new CamelCaseStringEnumConverter());
 
             return jsonSerializerOptions;
         }
+
+#if NET8_0_OR_GREATER
+        bool TryGetJsonTypeInfo<T>(out JsonTypeInfo<T> jsonTypeInfo)
+        {
+            if (jsonSerializerOptions.TypeInfoResolver is not null)
+            {
+                var typeInfo = jsonSerializerOptions.GetTypeInfo(typeof(T));
+                if (typeInfo is JsonTypeInfo<T> typedTypeInfo)
+                {
+                    jsonTypeInfo = typedTypeInfo;
+                    return true;
+                }
+            }
+
+            jsonTypeInfo = null!;
+            return false;
+        }
+#endif
     }
 
     /// <summary>
@@ -119,6 +147,113 @@ namespace Refit
             Utf8JsonWriter writer,
             object objectToWrite,
             JsonSerializerOptions options
-        ) => JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
+        )
+        {
+#if NET8_0_OR_GREATER
+            if (options.TypeInfoResolver is not null)
+            {
+                JsonSerializer.Serialize(writer, objectToWrite, options.GetTypeInfo(objectToWrite.GetType()));
+                return;
+            }
+#endif
+            JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
+        }
+    }
+
+    sealed class CamelCaseStringEnumConverter : JsonConverterFactory
+    {
+        public override bool CanConvert(Type typeToConvert) =>
+            (Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert).IsEnum;
+
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+        {
+            var enumType = Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert;
+            var isNullable = Nullable.GetUnderlyingType(typeToConvert) != null;
+
+            return new NonGenericEnumConverter(typeToConvert, enumType, isNullable);
+        }
+
+        sealed class NonGenericEnumConverter(Type targetType, Type enumType, bool isNullable)
+            : JsonConverter<object?>
+        {
+            public override bool CanConvert(Type typeToConvert) => typeToConvert == targetType;
+
+            public override object? Read(
+                ref Utf8JsonReader reader,
+                Type typeToConvert,
+                JsonSerializerOptions options
+            )
+            {
+                if (reader.TokenType == JsonTokenType.Null)
+                {
+                    if (!isNullable)
+                        throw new JsonException($"Cannot convert null to {targetType}.");
+
+                    return null;
+                }
+
+                if (reader.TokenType == JsonTokenType.String)
+                {
+                    var value = reader.GetString();
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        if (isNullable)
+                            return null;
+
+                        throw new JsonException($"Cannot convert an empty value to {targetType}.");
+                    }
+
+                    foreach (var name in Enum.GetNames(enumType))
+                    {
+                        if (string.Equals(ToCamelCase(name), value, StringComparison.Ordinal))
+                            return Enum.Parse(enumType, name, ignoreCase: false);
+                    }
+
+                    try
+                    {
+                        return Enum.Parse(enumType, value, ignoreCase: true);
+                    }
+                    catch (ArgumentException)
+                    {
+                        throw new JsonException($"Unable to convert '{value}' to {targetType}.");
+                    }
+                }
+
+                if (reader.TokenType == JsonTokenType.Number)
+                {
+                    var numericValue = reader.GetInt64();
+                    return Enum.ToObject(enumType, numericValue);
+                }
+
+                throw new JsonException($"Unexpected token {reader.TokenType} when parsing {targetType}.");
+            }
+
+            public override void Write(
+                Utf8JsonWriter writer,
+                object? value,
+                JsonSerializerOptions options
+            )
+            {
+                if (value is null)
+                {
+                    writer.WriteNullValue();
+                    return;
+                }
+
+                var name = Enum.GetName(enumType, value);
+                if (name is null)
+                {
+                    writer.WriteNumberValue(Convert.ToInt64(value));
+                    return;
+                }
+
+                writer.WriteStringValue(ToCamelCase(name));
+            }
+
+            static string ToCamelCase(string value) =>
+                string.IsNullOrEmpty(value) || !char.IsUpper(value[0])
+                    ? value
+                    : char.ToLowerInvariant(value[0]) + value.Substring(1);
+        }
     }
 }

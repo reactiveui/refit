@@ -3,13 +3,16 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace Refit.Tests;
 
-public class SerializedContentTests
+public partial class SerializedContentTests
 {
     const string BaseAddress = "https://api/";
 
@@ -187,6 +190,90 @@ public class SerializedContentTests
 
         Assert.NotNull(result);
         Assert.Equal("Road Runner", result.Name);
+    }
+
+    [Fact]
+    public async Task SystemTextJsonContentSerializer_UsesSourceGeneratedMetadataWhenProvided()
+    {
+        var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            TypeInfoResolver = resolver
+        };
+        var serializer = new SystemTextJsonContentSerializer(options);
+        var model = new User
+        {
+            Name = "Road Runner",
+            Company = "ACME",
+            CreatedAt = "1949-09-17"
+        };
+
+        var content = serializer.ToHttpContent(model);
+        var roundTrip = await serializer.FromHttpContentAsync<User>(content);
+
+        Assert.NotNull(roundTrip);
+        Assert.Equal(model.Name, roundTrip.Name);
+        Assert.Equal(model.Company, roundTrip.Company);
+        Assert.Equal(model.CreatedAt, roundTrip.CreatedAt);
+        Assert.Contains(typeof(User), resolver.RequestedTypes);
+    }
+
+    [Fact]
+    public async Task RestService_CanUseSourceGeneratedSystemTextJsonMetadata()
+    {
+        var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
+        var settings = new RefitSettings(
+            new SystemTextJsonContentSerializer(
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+                {
+                    TypeInfoResolver = resolver
+                }
+            )
+        )
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(
+                _ => new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        "{\"name\":\"Road Runner\",\"company\":\"ACME\",\"createdAt\":\"1949-09-17\"}",
+                        Encoding.UTF8,
+                        "application/json"
+                    )
+                }
+            )
+        };
+
+        var api = RestService.For<IGitHubApi>(BaseAddress, settings);
+        var user = await api.GetUser("roadrunner");
+
+        Assert.NotNull(user);
+        Assert.Equal("Road Runner", user.Name);
+        Assert.Equal("ACME", user.Company);
+        Assert.Equal("1949-09-17", user.CreatedAt);
+        Assert.Contains(typeof(User), resolver.RequestedTypes);
+    }
+
+    [JsonSerializable(typeof(User))]
+    internal sealed partial class SerializedContentJsonSerializerContext : JsonSerializerContext { }
+
+    sealed class TrackingTypeInfoResolver(IJsonTypeInfoResolver innerResolver) : IJsonTypeInfoResolver
+    {
+        public HashSet<Type> RequestedTypes { get; } = [];
+
+        public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options)
+        {
+            RequestedTypes.Add(type);
+            return innerResolver.GetTypeInfo(type, options);
+        }
+    }
+
+    sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
+        : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        ) => Task.FromResult(responder(request));
     }
 
     sealed class AsyncOnlyJsonContent(string json) : HttpContent

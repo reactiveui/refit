@@ -24,5 +24,6 @@
 - [ ] Final decision on #2050 (`non-Refit` base interface inheritance) behavior:
   - Option A: keep current analyzer warning behavior (non-breaking)
   - Option B: suppress generation warnings for non-Refit inherited members (behavioral change)
-- [ ] Decide if any additional AoT-focused breaking changes are acceptable (e.g., stricter API constraints or source-generator-only paths).
+- [x] Fixed cross-TFM build break in AoT serializer changes by replacing unsupported enum parsing/range usage with netstandard2.0/net462-compatible code; validated with `dotnet build Refit.sln` and targeted net8.0 tests.
+- [x] Executed source-generator-first AoT path: strengthened runtime guidance/error messaging toward generated clients, documented source-generated `System.Text.Json` metadata setup in README, and added tests covering source-generated metadata usage through `SystemTextJsonContentSerializer` and `RestService`.
 - [ ] Commit all changes for this thread once final direction is approved.
