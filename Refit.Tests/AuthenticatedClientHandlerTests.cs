@@ -390,4 +390,52 @@ public class AuthenticatedClientHandlerTests
             var result = await fixture.GetInheritedThing();
         });
     }
+
+    [Fact]
+    public async Task AuthorizationHeaderValueGetterIsUsedWhenSupplyingHttpClient()
+    {
+        var handler = new MockHttpMessageHandler();
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://api") };
+
+        var settings = new RefitSettings
+        {
+            AuthorizationHeaderValueGetter = (_, __) => Task.FromResult("tokenValue")
+        };
+
+        handler
+            .Expect(HttpMethod.Get, "http://api/auth")
+            .WithHeaders("Authorization", "Bearer tokenValue")
+            .Respond("text/plain", "Ok");
+
+        var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
+
+        var result = await fixture.GetAuthenticated();
+
+        handler.VerifyNoOutstandingExpectation();
+        Assert.Equal("Ok", result);
+    }
+
+    [Fact]
+    public async Task AuthorizationHeaderValueGetterDoesNotOverrideExplicitTokenWhenSupplyingHttpClient()
+    {
+        var handler = new MockHttpMessageHandler();
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://api") };
+
+        var settings = new RefitSettings
+        {
+            AuthorizationHeaderValueGetter = (_, __) => Task.FromResult("token-from-getter")
+        };
+
+        handler
+            .Expect(HttpMethod.Get, "http://api/auth")
+            .WithHeaders("Authorization", "Bearer token-from-parameter")
+            .Respond("text/plain", "Ok");
+
+        var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
+
+        var result = await fixture.GetAuthenticatedWithTokenInMethod("token-from-parameter");
+
+        handler.VerifyNoOutstandingExpectation();
+        Assert.Equal("Ok", result);
+    }
 }
