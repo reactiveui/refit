@@ -20,6 +20,7 @@
 
 ## Remaining
 
+- [x] Fixed example source-generator wiring for project-reference workflows (Roslyn analyzer now referenced in example class libraries), validated by running `examples/Meow` and building `examples/SampleUsingLocalApi.sln`.
 - [ ] Final decision on #2050 (`non-Refit` base interface inheritance) behavior:
   - Option A: keep current analyzer warning behavior (non-breaking)
   - Option B: suppress generation warnings for non-Refit inherited members (behavioral change)
