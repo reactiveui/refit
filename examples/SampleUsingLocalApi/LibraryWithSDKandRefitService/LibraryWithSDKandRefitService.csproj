@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
+    <ProjectReference Include="..\..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\..\InterfaceStubGenerator.Roslyn41\InterfaceStubGenerator.Roslyn41.csproj"
+                      ReferenceOutputAssembly="false"
+                      OutputItemType="Analyzer"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

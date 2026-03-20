@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Web;
@@ -575,6 +576,9 @@ namespace Refit
 
             foreach (var propertyInfo in props)
             {
+                if (ShouldIgnorePropertyInQueryMap(propertyInfo))
+                    continue;
+
                 var obj = propertyInfo.GetValue(@object);
                 if (obj == null)
                     continue;
@@ -702,6 +706,24 @@ namespace Refit
             return kvps;
         }
 
+        static bool ShouldIgnorePropertyInQueryMap(PropertyInfo propertyInfo)
+        {
+            foreach (var attributeData in propertyInfo.GetCustomAttributesData())
+            {
+                var fullName = attributeData.AttributeType.FullName;
+                if (
+                    fullName == "System.Runtime.Serialization.IgnoreDataMemberAttribute"
+                    || fullName == "System.Text.Json.Serialization.JsonIgnoreAttribute"
+                    || fullName == "Newtonsoft.Json.JsonIgnoreAttribute"
+                )
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(
             RestMethodInfoInternal restMethod,
             string basePath,
@@ -710,9 +732,12 @@ namespace Refit
         {
             return paramList =>
             {
+                var cancellationToken = CancellationToken.None;
+
                 // make sure we strip out any cancellation tokens
                 if (paramsContainsCancellationToken)
                 {
+                    cancellationToken = paramList.OfType<CancellationToken>().FirstOrDefault();
                     paramList = paramList
                         .Where(o => o == null || o.GetType() != typeof(CancellationToken))
                         .ToArray();
@@ -828,6 +853,9 @@ namespace Refit
                 }
 
                 AddHeadersToRequest(headersToAdd, ret);
+                AddAuthorizationHeadersFromGetterAsync(ret, cancellationToken)
+                    .GetAwaiter()
+                    .GetResult();
 
                 AddPropertiesToRequest(restMethod, ret, paramList);
 #if NET6_0_OR_GREATER
@@ -1119,6 +1147,20 @@ namespace Refit
             {
                 SetHeader(ret, header.Key, header.Value);
             }
+        }
+
+        async Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (settings.AuthorizationHeaderValueGetter == null)
+                return;
+
+            var auth = request.Headers.Authorization;
+            if (auth == null || !string.IsNullOrWhiteSpace(auth.Parameter))
+                return;
+
+            var token = await settings.AuthorizationHeaderValueGetter(request, cancellationToken)
+                .ConfigureAwait(false);
+            request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
         }
 
         void AddPropertiesToRequest(RestMethodInfoInternal restMethod, HttpRequestMessage ret, object[] paramList)

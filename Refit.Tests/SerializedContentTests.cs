@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -173,5 +175,74 @@ public class SerializedContentTests
         Assert.NotNull(json.Headers.ContentType);
         Assert.Equal("utf-8", json.Headers.ContentType.CharSet);
         Assert.Equal("application/json", json.Headers.ContentType.MediaType);
+    }
+
+    [Fact]
+    public async Task StreamDeserialization_UsingNewtonsoftJsonContentSerializer_DoesNotUseSynchronousReads()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+        var content = new AsyncOnlyJsonContent("{\"name\":\"Road Runner\"}");
+
+        var result = await serializer.FromHttpContentAsync<User>(content);
+
+        Assert.NotNull(result);
+        Assert.Equal("Road Runner", result.Name);
+    }
+
+    sealed class AsyncOnlyJsonContent(string json) : HttpContent
+    {
+        readonly byte[] _bytes = Encoding.UTF8.GetBytes(json);
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            stream.WriteAsync(_bytes, 0, _bytes.Length);
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = _bytes.Length;
+            return true;
+        }
+
+        protected override Task<Stream> CreateContentReadStreamAsync() =>
+            Task.FromResult<Stream>(new AsyncOnlyReadStream(_bytes));
+    }
+
+    sealed class AsyncOnlyReadStream(byte[] bytes) : Stream
+    {
+        readonly MemoryStream _inner = new(bytes, writable: false);
+
+        public override bool CanRead => true;
+        public override bool CanSeek => _inner.CanSeek;
+        public override bool CanWrite => false;
+        public override long Length => _inner.Length;
+
+        public override long Position
+        {
+            get => _inner.Position;
+            set => _inner.Position = value;
+        }
+
+        public override void Flush() => _inner.Flush();
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException("Synchronous reads are intentionally not supported.");
+
+        public override ValueTask<int> ReadAsync(
+            Memory<byte> buffer,
+            CancellationToken cancellationToken = default
+        ) => _inner.ReadAsync(buffer, cancellationToken);
+
+        public override Task<int> ReadAsync(
+            byte[] buffer,
+            int offset,
+            int count,
+            CancellationToken cancellationToken
+        ) => _inner.ReadAsync(buffer, offset, count, cancellationToken);
+
+        public override long Seek(long offset, SeekOrigin origin) => _inner.Seek(offset, origin);
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException();
     }
 }

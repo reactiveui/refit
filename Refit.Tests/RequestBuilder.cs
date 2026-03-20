@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -454,6 +454,12 @@ namespace Refit.Tests
         [AliasAs("listOfObjectsCsv")]
         [Query(CollectionFormat.Csv)]
         public List<object> ObjectCollectionCcv { get; set; }
+
+        [IgnoreDataMember]
+        public string InternalUseOnlyIgnoredByDataMember { get; set; }
+
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string InternalUseOnlyIgnoredBySystemTextJson { get; set; }
     }
 
     public class RestMethodInfoTests
@@ -568,6 +574,27 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestUri);
 
             Assert.Equal("/foo?test-query-alias=one&TestAlias2=two", uri.PathAndQuery);
+        }
+
+        [Fact]
+        public void PostWithObjectQueryParameterSkipsIgnoredProperties()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(
+                nameof(IDummyHttpApi.PostWithComplexTypeQuery)
+            );
+
+            var param = new ComplexQueryObject
+            {
+                TestAlias1 = "one",
+                InternalUseOnlyIgnoredByDataMember = "nope",
+                InternalUseOnlyIgnoredBySystemTextJson = "nope"
+            };
+
+            var output = factory(new object[] { param });
+
+            Assert.Equal("/foo?test-query-alias=one", output.RequestUri.PathAndQuery);
         }
 
         [Fact]
@@ -2123,6 +2150,13 @@ namespace Refit.Tests
         Task<string> GetWithCancellationAndReturn(CancellationToken token = default);
     }
 
+    interface IAuthenticatedCancellableMethods
+    {
+        [Headers("Authorization: Bearer")]
+        [Get("/foo")]
+        Task GetWithAuthorizationAndCancellation(CancellationToken token = default);
+    }
+
     public enum FooWithEnumMember
     {
         A,
@@ -2290,6 +2324,29 @@ namespace Refit.Tests
 
             var output = factory(new object[] { cts.Token });
             Assert.True(output.CancellationToken.IsCancellationRequested);
+        }
+
+        [Fact]
+        public void AuthorizationHeaderValueGetterReceivesMethodCancellationToken()
+        {
+            var observedCancellationToken = CancellationToken.None;
+            var settings = new RefitSettings
+            {
+                AuthorizationHeaderValueGetter = (_, cancellationToken) =>
+                {
+                    observedCancellationToken = cancellationToken;
+                    return Task.FromResult("tokenValue");
+                }
+            };
+
+            var fixture = new RequestBuilderImplementation<IAuthenticatedCancellableMethods>(settings);
+            var factory = fixture.RunRequest("GetWithAuthorizationAndCancellation");
+            var cts = new CancellationTokenSource();
+
+            var output = factory(new object[] { cts.Token });
+
+            Assert.Equal(cts.Token, observedCancellationToken);
+            Assert.Equal("Bearer tokenValue", output.RequestMessage.Headers.Authorization?.ToString());
         }
 
         [Fact]
