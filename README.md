@@ -239,6 +239,12 @@ Task<Tweet> PostTweet([Query]TweetParams params);
 
 Where `TweetParams` is a POCO, and properties will also support `[AliasAs]` attributes.
 
+If you need to keep internal-only properties on your query DTO, mark them with one of the standard ignore attributes and Refit will skip them when building the query string:
+
+- `[IgnoreDataMember]`
+- `[System.Text.Json.Serialization.JsonIgnore]`
+- `[Newtonsoft.Json.JsonIgnore]`
+
 #### Collections as Querystring parameters
 
 Use the `Query` attribute to specify format in which collections should be formatted in query string
@@ -706,6 +712,8 @@ Most APIs need some sort of Authentication. The most common is OAuth Bearer auth
 1. Add `[Headers("Authorization: Bearer")]` to the interface or methods which need the token.
 2. Set `AuthorizationHeaderValueGetter` in the `RefitSettings` instance. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
 
+`AuthorizationHeaderValueGetter` works whether you create clients with `RestService.For<T>("https://...")` or supply your own `HttpClient` via `RestService.For<T>(httpClient, settings)`. If your API methods accept a `CancellationToken`, that token is propagated to the getter delegate.
+
 #### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
 Although we make provisions for adding dynamic headers at runtime directly in Refit,
 most use-cases would likely benefit from registering a custom `DelegatingHandler` in order to inject the headers as part of the `HttpClient` middleware pipeline
@@ -907,6 +915,8 @@ The attribute constructor optionally takes a string which becomes the key in the
 If no key is explicitly defined then the name of the parameter becomes the key.
 If a key is defined multiple times the value in `HttpRequestMessage.Properties` will be overwritten.
 The parameter itself can be any `object`. Properties can be accessed inside a `DelegatingHandler` as follows:
+
+> ⚠️ **Important for `IHttpClientFactory` users:** `DelegatingHandler` instances are pooled and can live longer than a single request scope. Avoid reading per-request state from services that may be scoped/cached across handler lifetimes (for example a tenant/customer resolver stored on the handler). For per-request values like `CustomerId`, pass the value through `[Property]` so each request carries its own state.
 
 ```csharp
 class RequestPropertyHandler : DelegatingHandler

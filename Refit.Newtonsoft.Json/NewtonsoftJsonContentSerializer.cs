@@ -58,10 +58,8 @@ namespace Refit
 
             var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
-            using var stream = await content
-                .ReadAsStreamAsync(cancellationToken)
-                .ConfigureAwait(false);
-            using var reader = new StreamReader(stream);
+            var json = await content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            using var reader = new StringReader(json);
             using var jsonTextReader = new JsonTextReader(reader);
 
             return serializer.Deserialize<T>(jsonTextReader);
