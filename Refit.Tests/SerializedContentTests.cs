@@ -2,12 +2,14 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Xunit;
 
 namespace Refit.Tests;
@@ -193,6 +195,52 @@ public partial class SerializedContentTests
     }
 
     [Fact]
+    public async Task StreamDeserialization_UsingNewtonsoftJsonContentSerializer_ReturnsDefaultForNullContent()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+
+        var result = await serializer.FromHttpContentAsync<User>(null!);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ReturnsJsonPropertyName()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+        var property = typeof(NewtonsoftFieldNameModel).GetProperty(
+            nameof(NewtonsoftFieldNameModel.Name)
+        );
+
+        var fieldName = serializer.GetFieldNameForProperty(property!);
+
+        Assert.Equal("json_name", fieldName);
+    }
+
+    [Fact]
+    public void NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ReturnsNullWithoutJsonPropertyAttribute()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+        var property = typeof(NewtonsoftFieldNameModel).GetProperty(
+            nameof(NewtonsoftFieldNameModel.Unaliased)
+        );
+
+        var fieldName = serializer.GetFieldNameForProperty(property!);
+
+        Assert.Null(fieldName);
+    }
+
+    [Fact]
+    public void NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ThrowsForNullProperty()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+
+        var exception = Assert.Throws<ArgumentNullException>(() => serializer.GetFieldNameForProperty(null!));
+
+        Assert.Equal("propertyInfo", exception.ParamName);
+    }
+
+    [Fact]
     public async Task SystemTextJsonContentSerializer_UsesSourceGeneratedMetadataWhenProvided()
     {
         var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
@@ -274,6 +322,14 @@ public partial class SerializedContentTests
             HttpRequestMessage request,
             CancellationToken cancellationToken
         ) => Task.FromResult(responder(request));
+    }
+
+    sealed class NewtonsoftFieldNameModel
+    {
+        [JsonProperty(PropertyName = "json_name")]
+        public string Name { get; set; }
+
+        public string Unaliased { get; set; }
     }
 
     sealed class AsyncOnlyJsonContent(string json) : HttpContent
