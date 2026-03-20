@@ -1,5 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Http;
+#if NET8_0_OR_GREATER
+using System.Diagnostics.CodeAnalysis;
+#endif
 
 namespace Refit
 {
@@ -25,6 +28,9 @@ namespace Refit
             Func<HttpClient, object[], object?>
         > MethodDictionary = new();
 
+#if NET8_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
+#endif
         public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
             string methodName,
             Type[]? parameterTypes = null,
