@@ -138,7 +138,6 @@ namespace Refit
         /// <summary>
         /// Implementation of <see cref="IApiResponse{T}"/> that provides additional functionalities.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <remarks>
         /// Create an instance of <see cref="ApiResponse{T}"/> with type <typeparamref name="T"/>.
         /// </remarks>
@@ -205,7 +204,6 @@ namespace Refit
             "CA1716:Identifiers should not match keywords",
             Justification = "By Design"
         )]
-        
         public bool HasRequestError(
 #if NET6_0_OR_GREATER
             [MaybeNullWhen(false)]
