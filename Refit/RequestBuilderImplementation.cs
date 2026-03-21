@@ -1003,7 +1003,10 @@ namespace Refit
                     case BodySerializationMethod.Json:
 #pragma warning restore CS0618 // Type or member is obsolete
                     case BodySerializationMethod.Serialized:
-                        var content = serializer.ToHttpContent(param);
+                        var declaredBodyType = restMethod.ParameterInfoArray[
+                            restMethod.BodyParameterInfo.Item3
+                        ].ParameterType;
+                        var content = SerializeBody(serializer, param, declaredBodyType);
                         switch (restMethod.BodyParameterInfo.Item2)
                         {
                             case false:
@@ -1199,6 +1202,25 @@ namespace Refit
             ret.VersionPolicy = settings.VersionPolicy;
         }
 #endif
+
+        static readonly MethodInfo SerializeBodyMethod =
+            typeof(RequestBuilderImplementation).GetMethod(
+                nameof(SerializeBodyGeneric),
+                BindingFlags.Static | BindingFlags.NonPublic
+            )!;
+
+        static HttpContent SerializeBody(
+            IHttpContentSerializer serializer,
+            object? body,
+            Type declaredBodyType
+        )
+        {
+            var serializeMethod = SerializeBodyMethod.MakeGenericMethod(declaredBodyType);
+            return (HttpContent)serializeMethod.Invoke(null, [serializer, body])!;
+        }
+
+        static HttpContent SerializeBodyGeneric<T>(IHttpContentSerializer serializer, object? body) =>
+            serializer.ToHttpContent((T)body!);
 
         IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(
             object? param,
