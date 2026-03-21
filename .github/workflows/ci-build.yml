@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+# Needed so the reusable workflow can optionally delete the temp per-OS artifacts it creates.
+permissions:
+  contents: read
+  actions: write
+
 env:
   productNamespacePrefix: "Refit"
 
