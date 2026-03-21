@@ -1835,7 +1835,9 @@ public class RestServiceIntegrationTests
         }
         catch (InvalidOperationException exception)
         {
-            Assert.StartsWith("INoRefitHereBuddy", exception.Message);
+            Assert.StartsWith("INoRefitHereBuddy", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("Refit source generator", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("Native AOT", exception.Message, StringComparison.Ordinal);
         }
     }
 
