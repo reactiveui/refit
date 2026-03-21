@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
