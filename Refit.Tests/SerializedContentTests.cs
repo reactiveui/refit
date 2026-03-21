@@ -2,14 +2,20 @@
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using SystemTextJsonSerializer = System.Text.Json.JsonSerializer;
 using Xunit;
 
 namespace Refit.Tests;
 
-public class SerializedContentTests
+public partial class SerializedContentTests
 {
     const string BaseAddress = "https://api/";
 
@@ -187,6 +193,446 @@ public class SerializedContentTests
 
         Assert.NotNull(result);
         Assert.Equal("Road Runner", result.Name);
+    }
+
+    [Fact]
+    public async Task StreamDeserialization_UsingNewtonsoftJsonContentSerializer_ReturnsDefaultForNullContent()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+
+        var result = await serializer.FromHttpContentAsync<User>(null!);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ReturnsJsonPropertyName()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+        var property = typeof(NewtonsoftFieldNameModel).GetProperty(
+            nameof(NewtonsoftFieldNameModel.Name)
+        );
+
+        var fieldName = serializer.GetFieldNameForProperty(property!);
+
+        Assert.Equal("json_name", fieldName);
+    }
+
+    [Fact]
+    public void NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ReturnsNullWithoutJsonPropertyAttribute()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+        var property = typeof(NewtonsoftFieldNameModel).GetProperty(
+            nameof(NewtonsoftFieldNameModel.Unaliased)
+        );
+
+        var fieldName = serializer.GetFieldNameForProperty(property!);
+
+        Assert.Null(fieldName);
+    }
+
+    [Fact]
+    public void NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ThrowsForNullProperty()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+
+        var exception = Assert.Throws<ArgumentNullException>(() => serializer.GetFieldNameForProperty(null!));
+
+        Assert.Equal("propertyInfo", exception.ParamName);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_GetFieldNameForProperty_ReturnsJsonPropertyName()
+    {
+        var serializer = new SystemTextJsonContentSerializer();
+        var property = typeof(SystemTextFieldNameModel).GetProperty(
+            nameof(SystemTextFieldNameModel.Name)
+        );
+
+        var fieldName = serializer.GetFieldNameForProperty(property!);
+
+        Assert.Equal("json_name", fieldName);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_GetFieldNameForProperty_ReturnsNullWithoutJsonPropertyNameAttribute()
+    {
+        var serializer = new SystemTextJsonContentSerializer();
+        var property = typeof(SystemTextFieldNameModel).GetProperty(
+            nameof(SystemTextFieldNameModel.Unaliased)
+        );
+
+        var fieldName = serializer.GetFieldNameForProperty(property!);
+
+        Assert.Null(fieldName);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_GetFieldNameForProperty_ThrowsForNullProperty()
+    {
+        var serializer = new SystemTextJsonContentSerializer();
+
+        var exception = Assert.Throws<ArgumentNullException>(() => serializer.GetFieldNameForProperty(null!));
+
+        Assert.Equal("propertyInfo", exception.ParamName);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_InferBooleanObjectValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
+            """{"value":true}""",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.True(Assert.IsType<bool>(result!.Value));
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_InferIntegralObjectValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
+            """{"value":42}""",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(42L, Assert.IsType<long>(result!.Value));
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_InferFloatingPointObjectValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
+            """{"value":42.5}""",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(42.5, Assert.IsType<double>(result!.Value));
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_InferDateObjectValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
+            """{"value":"2024-01-02T03:04:05Z"}""",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(
+            new DateTime(2024, 1, 2, 3, 4, 5, DateTimeKind.Utc),
+            Assert.IsType<DateTime>(result!.Value)
+        );
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_InferStringObjectValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
+            """{"value":"Road Runner"}""",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal("Road Runner", Assert.IsType<string>(result!.Value));
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializeObjectValuesAsJsonElements()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
+            """{"value":{"company":"ACME"}}""",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(JsonValueKind.Object, Assert.IsType<JsonElement>(result!.Value).ValueKind);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_SerializeObjectEnumValuesAsCamelCase()
+    {
+        var json = SystemTextJsonSerializer.Serialize(
+            new ObjectValueContainer { Value = CamelCaseEnum.ValueOne },
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal("""{"value":"valueOne"}""", json);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_SerializeNullObjectValuesAsJsonNull()
+    {
+        var json = SystemTextJsonSerializer.Serialize(
+            new ObjectValueContainer { Value = null },
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal("""{"value":null}""", json);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_UseResolverWhenSerializingObjectValues()
+    {
+        var resolver = new TrackingTypeInfoResolver(ObjectValueContainerJsonSerializerContext.Default);
+        var options = new JsonSerializerOptions(
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        )
+        {
+            TypeInfoResolver = resolver
+        };
+
+        var json = SystemTextJsonSerializer.Serialize(
+            new ObjectValueContainer { Value = "Road Runner" },
+            options
+        );
+
+        Assert.Equal("""{"value":"Road Runner"}""", json);
+        Assert.Contains(typeof(string), resolver.RequestedTypes);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializeCamelCaseEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+            "\"valueOne\"",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(CamelCaseEnum.ValueOne, result);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializeCaseInsensitiveEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+            "\"VALUEONE\"",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(CamelCaseEnum.ValueOne, result);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializeLowercaseEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+            "\"alreadyLowercase\"",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(CamelCaseEnum.alreadyLowercase, result);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializeNumericEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+            "2",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(CamelCaseEnum.alreadyLowercase, result);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializeNullNullableEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum?>(
+            "null",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializeEmptyNullableEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum?>(
+            "\"\"",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_ThrowForNullNonNullableEnumValues()
+    {
+        Assert.Throws<System.Text.Json.JsonException>(
+            () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                "null",
+                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+            )
+        );
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_ThrowForEmptyNonNullableEnumValues()
+    {
+        Assert.Throws<System.Text.Json.JsonException>(
+            () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                "\"\"",
+                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+            )
+        );
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_ThrowForInvalidEnumValues()
+    {
+        Assert.Throws<System.Text.Json.JsonException>(
+            () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                "\"notAValue\"",
+                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+            )
+        );
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_ThrowForUnexpectedTokensWhenParsingEnums()
+    {
+        Assert.Throws<System.Text.Json.JsonException>(
+            () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                "true",
+                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+            )
+        );
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_SerializeUndefinedEnumValuesAsNumbers()
+    {
+        var json = SystemTextJsonSerializer.Serialize(
+            (CamelCaseEnum)999,
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal("999", json);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_SerializeLowercaseEnumNamesUnchanged()
+    {
+        var json = SystemTextJsonSerializer.Serialize(
+            CamelCaseEnum.alreadyLowercase,
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal("\"alreadyLowercase\"", json);
+    }
+
+    [Fact]
+    public async Task SystemTextJsonContentSerializer_UsesSourceGeneratedMetadataWhenProvided()
+    {
+        var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            TypeInfoResolver = resolver
+        };
+        var serializer = new SystemTextJsonContentSerializer(options);
+        var model = new User
+        {
+            Name = "Road Runner",
+            Company = "ACME",
+            CreatedAt = "1949-09-17"
+        };
+
+        var content = serializer.ToHttpContent(model);
+        var roundTrip = await serializer.FromHttpContentAsync<User>(content);
+
+        Assert.NotNull(roundTrip);
+        Assert.Equal(model.Name, roundTrip.Name);
+        Assert.Equal(model.Company, roundTrip.Company);
+        Assert.Equal(model.CreatedAt, roundTrip.CreatedAt);
+        Assert.Contains(typeof(User), resolver.RequestedTypes);
+    }
+
+    [Fact]
+    public async Task RestService_CanUseSourceGeneratedSystemTextJsonMetadata()
+    {
+        var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
+        var settings = new RefitSettings(
+            new SystemTextJsonContentSerializer(
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+                {
+                    TypeInfoResolver = resolver
+                }
+            )
+        )
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(
+                _ => new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(
+                        "{\"name\":\"Road Runner\",\"company\":\"ACME\",\"createdAt\":\"1949-09-17\"}",
+                        Encoding.UTF8,
+                        "application/json"
+                    )
+                }
+            )
+        };
+
+        var api = RestService.For<IGitHubApi>(BaseAddress, settings);
+        var user = await api.GetUser("roadrunner");
+
+        Assert.NotNull(user);
+        Assert.Equal("Road Runner", user.Name);
+        Assert.Equal("ACME", user.Company);
+        Assert.Equal("1949-09-17", user.CreatedAt);
+        Assert.Contains(typeof(User), resolver.RequestedTypes);
+    }
+
+    [JsonSerializable(typeof(User))]
+    internal sealed partial class SerializedContentJsonSerializerContext : JsonSerializerContext { }
+
+    [JsonSerializable(typeof(ObjectValueContainer))]
+    [JsonSerializable(typeof(string))]
+    internal sealed partial class ObjectValueContainerJsonSerializerContext : JsonSerializerContext { }
+
+    sealed class TrackingTypeInfoResolver(IJsonTypeInfoResolver innerResolver) : IJsonTypeInfoResolver
+    {
+        public HashSet<Type> RequestedTypes { get; } = [];
+
+        public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options)
+        {
+            RequestedTypes.Add(type);
+            return innerResolver.GetTypeInfo(type, options);
+        }
+    }
+
+    sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
+        : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken
+        ) => Task.FromResult(responder(request));
+    }
+
+    sealed class NewtonsoftFieldNameModel
+    {
+        [JsonProperty(PropertyName = "json_name")]
+        public string Name { get; set; }
+
+        public string Unaliased { get; set; }
+    }
+
+    sealed class SystemTextFieldNameModel
+    {
+        [JsonPropertyName("json_name")]
+        public string Name { get; set; }
+
+        public string Unaliased { get; set; }
+    }
+
+    public sealed class ObjectValueContainer
+    {
+        public object Value { get; set; }
+    }
+
+    enum CamelCaseEnum
+    {
+        ValueOne = 1,
+        alreadyLowercase = 2
     }
 
     sealed class AsyncOnlyJsonContent(string json) : HttpContent

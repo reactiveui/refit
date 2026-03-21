@@ -32,6 +32,7 @@
     <Reference Include="System.Web" />
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn41\InterfaceStubGenerator.Roslyn41.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn50\InterfaceStubGenerator.Roslyn50.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup Label="Package">
@@ -44,6 +45,8 @@
     <None Include="..\InterfaceStubGenerator.Roslyn38\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV1.dll" PackagePath="analyzers\dotnet\roslyn3.8\cs" Pack="true" Visible="false" />
 
     <None Include="..\InterfaceStubGenerator.Roslyn41\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll" PackagePath="analyzers\dotnet\roslyn4.1\cs" Pack="true" Visible="false" />
+
+    <None Include="..\InterfaceStubGenerator.Roslyn50\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV3.dll" PackagePath="analyzers\dotnet\roslyn5.0\cs" Pack="true" Visible="false" />
   </ItemGroup>
 
 </Project>

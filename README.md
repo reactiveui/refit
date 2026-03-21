@@ -1335,10 +1335,9 @@ RestService.For<ISomeApi>(new HttpClient()
 });
 ```
 
-However, when supplying a custom `HttpClient` instance the following `RefitSettings` properties will not work:
+However, when supplying a custom `HttpClient` instance, `HttpMessageHandlerFactory` will not be used because you already control the handler pipeline.
 
-* `AuthorizationHeaderValueGetter`
-* `HttpMessageHandlerFactory`
+`AuthorizationHeaderValueGetter` does still work with `RestService.For<T>(httpClient, settings)` when the request includes an `Authorization` header placeholder (for example `[Headers("Authorization: Bearer")]`).
 
 If you still want to be able to configure the `HtttpClient` instance that `Refit` provides while still making use of the above settings, simply expose the `HttpClient` on the API interface:
 
@@ -1364,6 +1363,38 @@ SomeApi = RestService.For<ISomeApi>("https://www.someapi.com/api/", new RefitSet
 
 SomeApi.Client.Timeout = timeout;
 ```
+
+### Native AoT / trimming guidance
+
+Refit's recommended **source-generator-first** setup for Native AoT and trimmed applications is:
+
+1. Use normal Refit interfaces so the Refit source generator produces the client implementation at build time.
+2. Prefer `RestService.For<T>(...)` over reflection-heavy manual patterns around `Type` where possible.
+3. Supply source-generated `System.Text.Json` metadata for your DTOs.
+
+For the default `SystemTextJsonContentSerializer` on .NET 8+, Refit prefers `JsonTypeInfo` metadata from your configured `JsonSerializerOptions` when it is available. That means Native AoT apps can improve compatibility by supplying source-generated metadata through a `JsonSerializerContext` or `TypeInfoResolver` on the serializer options they pass into `SystemTextJsonContentSerializer`.
+
+```csharp
+[JsonSerializable(typeof(Todo))]
+public partial class TodoJsonContext : JsonSerializerContext
+{
+}
+
+var settings = new RefitSettings(
+    new SystemTextJsonContentSerializer(
+        new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            TypeInfoResolver = TodoJsonContext.Default
+        }
+    )
+);
+
+var api = RestService.For<ITodoApi>("https://api.example.com", settings);
+```
+
+If a generated Refit client cannot be found at runtime, Refit now explicitly points you back to the source generator/build output and recommends generated clients plus source-generated `System.Text.Json` metadata for Native AoT scenarios.
+
+Refit also ships analyzers for newer Roslyn toolchains, including a Roslyn 5.0 build for newer Visual Studio versions.
 
 ### Handling exceptions
 Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they return `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`.
