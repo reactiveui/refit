@@ -38,7 +38,7 @@ services
 
 * [Where does this work?](#where-does-this-work)
   * [Breaking changes in 6.x](#breaking-changes-in-6x)
-  * [Breaking changes in 10.x](#breaking-changes-in-10x)
+  * [Breaking changes in 11.x](#breaking-changes-in-11x)
 * [API Attributes](#api-attributes)
 * [Querystrings](#querystrings)
   * [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
@@ -113,9 +113,9 @@ Refit 6.3 splits out the XML serialization via `XmlContentSerializer` into a sep
 is to reduce the dependency size when using Refit with Web Assembly (WASM) applications. If you require XML, add a reference
 to `Refit.Xml`.
 
-### V10.x.x
+### V11.x.x
 
-#### Breaking changes in 10.x
+#### Breaking changes in 11.x
 
 Refit 10 introduces `ApiRequestException` to represent requests that fail before receiving a response from the server.
 This exception will now wrap previous exceptions such as `HttpRequestException` and `TaskCanceledException` when they occur during request execution.
