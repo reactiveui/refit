@@ -560,14 +560,16 @@ public partial class SerializedContentTests
         )
         {
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(
-                _ => new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(
-                        "{\"name\":\"Road Runner\",\"company\":\"ACME\",\"createdAt\":\"1949-09-17\"}",
-                        Encoding.UTF8,
-                        "application/json"
-                    )
-                }
+                _ => Task.FromResult(
+                    new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(
+                            "{\"name\":\"Road Runner\",\"company\":\"ACME\",\"createdAt\":\"1949-09-17\"}",
+                            Encoding.UTF8,
+                            "application/json"
+                        )
+                    }
+                )
             )
         };
 
@@ -581,8 +583,58 @@ public partial class SerializedContentTests
         Assert.Contains(typeof(User), resolver.RequestedTypes);
     }
 
+    [Fact]
+    public async Task RestService_SerializesBodyUsingDeclaredPolymorphicBaseType()
+    {
+        string? serializedBody = null;
+        var settings = new RefitSettings(
+            new SystemTextJsonContentSerializer(
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+                {
+                    TypeInfoResolver = PolymorphicRequestJsonSerializerContext.Default
+                }
+            )
+        )
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
+            {
+                serializedBody = await request.Content!.ReadAsStringAsync();
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+            })
+        };
+
+        var api = RestService.For<IPolymorphicRequestApi>(BaseAddress, settings);
+        await api.CreateWeapon(new LaserWeaponRequest { Name = "Photon" });
+
+        Assert.NotNull(serializedBody);
+        Assert.Contains("\"$type\":\"laser\"", serializedBody, StringComparison.Ordinal);
+        Assert.Contains("\"name\":\"Photon\"", serializedBody, StringComparison.Ordinal);
+    }
+
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+    [JsonDerivedType(typeof(LaserWeaponRequest), "laser")]
+    public abstract class CreateWeaponRequest
+    {
+        public string? Name { get; set; }
+    }
+
+    public sealed class LaserWeaponRequest : CreateWeaponRequest { }
+
+    public interface IPolymorphicRequestApi
+    {
+        [Post("/weapons")]
+        Task CreateWeapon(CreateWeaponRequest request);
+    }
+
     [JsonSerializable(typeof(User))]
     internal sealed partial class SerializedContentJsonSerializerContext : JsonSerializerContext { }
+
+    [JsonSerializable(typeof(CreateWeaponRequest))]
+    [JsonSerializable(typeof(LaserWeaponRequest))]
+    internal sealed partial class PolymorphicRequestJsonSerializerContext : JsonSerializerContext { }
 
     [JsonSerializable(typeof(ObjectValueContainer))]
     [JsonSerializable(typeof(string))]
@@ -599,13 +651,13 @@ public partial class SerializedContentTests
         }
     }
 
-    sealed class StubHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> responder)
+    sealed class StubHttpMessageHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> responder)
         : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken
-        ) => Task.FromResult(responder(request));
+        ) => responder(request);
     }
 
     sealed class NewtonsoftFieldNameModel

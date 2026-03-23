@@ -532,6 +532,8 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     });
 ```
 
+When using `System.Text.Json` polymorphism features such as `[JsonDerivedType]` / `[JsonPolymorphic]`, Refit serializes request bodies using the **declared Refit method parameter type** rather than the boxed runtime `object`. This ensures type discriminators configured on the base contract are preserved in outgoing request payloads.
+
 #### XML Content
 
 XML requests and responses are serialized/deserialized using _System.Xml.Serialization.XmlSerializer_.
