@@ -176,7 +176,14 @@ namespace Refit
         sealed class NonGenericEnumConverter(Type targetType, Type enumType, bool isNullable)
             : JsonConverter<object?>
         {
-            readonly Dictionary<string, object> namesToValues = GetNamesToValues(enumType);
+            readonly Dictionary<string, object> namesToValues = GetNamesToValues(
+                enumType,
+                StringComparer.Ordinal
+            );
+            readonly Dictionary<string, object> namesToValuesIgnoreCase = GetNamesToValues(
+                enumType,
+                StringComparer.OrdinalIgnoreCase
+            );
             readonly Dictionary<object, string> valuesToNames = GetValuesToNames(enumType);
 
             public override bool CanConvert(Type typeToConvert) => typeToConvert == targetType;
@@ -208,6 +215,9 @@ namespace Refit
 
                     if (namesToValues.TryGetValue(value, out var namedValue))
                         return namedValue;
+
+                    if (namesToValuesIgnoreCase.TryGetValue(value, out var namedValueIgnoreCase))
+                        return namedValueIgnoreCase;
 
                     throw new JsonException($"Unable to convert '{value}' to {targetType}.");
                 }
@@ -242,9 +252,12 @@ namespace Refit
                 writer.WriteStringValue(name);
             }
 
-            static Dictionary<string, object> GetNamesToValues(Type enumType)
+            static Dictionary<string, object> GetNamesToValues(
+                Type enumType,
+                StringComparer comparer
+            )
             {
-                var map = new Dictionary<string, object>(StringComparer.Ordinal);
+                var map = new Dictionary<string, object>(comparer);
 
                 foreach (var field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
                 {
