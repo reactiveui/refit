@@ -520,6 +520,54 @@ public partial class SerializedContentTests
         Assert.Equal("\"alreadyLowercase\"", json);
     }
 
+    [Theory]
+    [InlineData("vAlUeOnE")]
+    [InlineData("ValueOne")]
+    [InlineData("VALUEONE")]
+    [InlineData("valueone")]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializesEnumValuesWithVariousCasings(
+        string jsonValue
+    )
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+            $"\"{jsonValue}\"",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(CamelCaseEnum.ValueOne, result);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_ExactCaseMatchTakesPriorityOverCaseInsensitiveWhenMembersDifferByCase()
+    {
+        // When enum has members whose names differ only by case, the exact serialized form
+        // (camelCase) should be used first (case-sensitive), falling back to case-insensitive only
+        // for inputs that do not exactly match any known serialized form.
+
+        // CaseDifferentMembers.Alpha serializes to "alpha" (camelCase),
+        // CaseDifferentMembers.ALPHA serializes to "aLPHA" (camelCase).
+        // Exact-match lookups must correctly disambiguate these.
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+
+        Assert.Equal(
+            CaseDifferentMembers.Alpha,
+            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"alpha\"", options)
+        );
+        Assert.Equal(
+            CaseDifferentMembers.ALPHA,
+            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"aLPHA\"", options)
+        );
+        // Field names are also accepted via exact match
+        Assert.Equal(
+            CaseDifferentMembers.Alpha,
+            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"Alpha\"", options)
+        );
+        Assert.Equal(
+            CaseDifferentMembers.ALPHA,
+            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"ALPHA\"", options)
+        );
+    }
+
     [Fact]
     public async Task SystemTextJsonContentSerializer_UsesSourceGeneratedMetadataWhenProvided()
     {
@@ -757,6 +805,14 @@ public partial class SerializedContentTests
     {
         ValueOne = 1,
         alreadyLowercase = 2
+    }
+
+    // Members Alpha and ALPHA differ only by case; this enum is used to verify that
+    // the case-sensitive lookup takes priority and the correct member is chosen.
+    enum CaseDifferentMembers
+    {
+        Alpha = 1,
+        ALPHA = 2,
     }
 
     sealed class AsyncOnlyJsonContent(string json) : HttpContent
