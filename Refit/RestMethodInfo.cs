@@ -688,9 +688,25 @@ namespace Refit
 
                 ReturnType = methodInfo.ReturnType;
                 ReturnResultType = methodInfo.ReturnType;
-                DeserializedResultType = methodInfo.ReturnType == typeof(IApiResponse)
-                    ? typeof(HttpContent)
-                    : methodInfo.ReturnType;
+
+                if (
+                    ReturnResultType.IsGenericType
+                    && (
+                        ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+                        || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)
+                    )
+                )
+                {
+                    DeserializedResultType = ReturnResultType.GetGenericArguments()[0];
+                }
+                else if (ReturnResultType == typeof(IApiResponse))
+                {
+                    DeserializedResultType = typeof(HttpContent);
+                }
+                else
+                {
+                    DeserializedResultType = ReturnResultType;
+                }
             }
         }
 

@@ -281,57 +281,191 @@ namespace Refit
             RestMethodInfoInternal restMethod
         )
         {
-            var factory = BuildRequestFactoryForMethod(
-                restMethod,
-                string.Empty,
-                paramsContainsCancellationToken: false
-            );
+            // void return: mirror BuildVoidTaskFuncForMethod – run ExceptionFactory, return null
+            if (restMethod.ReturnResultType == typeof(void))
+            {
+                return (client, paramList) =>
+                {
+                    if (client.BaseAddress == null)
+                        throw new InvalidOperationException(
+                            "BaseAddress must be set on the HttpClient instance"
+                        );
 
+                    var factory = BuildRequestFactoryForMethod(
+                        restMethod,
+                        client.BaseAddress.AbsolutePath,
+                        paramsContainsCancellationToken: false
+                    );
+                    using var rq = factory(paramList);
+                    using var resp = client
+                        .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead)
+                        .GetAwaiter()
+                        .GetResult();
+                    var e = settings.ExceptionFactory(resp).GetAwaiter().GetResult();
+                    if (e != null)
+                        throw e;
+                    return null;
+                };
+            }
+
+            // Non-void: dispatch to the generic implementation that replicates the full
+            // BuildCancellableTaskFuncForMethod pipeline (ExceptionFactory, IsApiResponse,
+            // ShouldDisposeResponse, DeserializationExceptionFactory).
+            var syncFuncMi = typeof(RequestBuilderImplementation).GetMethod(
+                nameof(BuildGeneratedSyncFuncForMethodGeneric),
+                BindingFlags.NonPublic | BindingFlags.Instance
+            );
+            return (Func<HttpClient, object[], object?>)
+                syncFuncMi!
+                    .MakeGenericMethod(
+                        restMethod.ReturnResultType,
+                        restMethod.DeserializedResultType
+                    )
+                    .Invoke(this, [restMethod])!;
+        }
+
+        Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
+            RestMethodInfoInternal restMethod
+        )
+        {
             return (client, paramList) =>
             {
-                using var rq = factory(paramList);
-                var resp = client.SendAsync(rq).GetAwaiter().GetResult();
+                if (client.BaseAddress == null)
+                    throw new InvalidOperationException(
+                        "BaseAddress must be set on the HttpClient instance"
+                    );
 
+                var factory = BuildRequestFactoryForMethod(
+                    restMethod,
+                    client.BaseAddress.AbsolutePath,
+                    paramsContainsCancellationToken: false
+                );
+                var rq = factory(paramList);
+                HttpResponseMessage? resp = null;
+                HttpContent? content = null;
+                var disposeResponse = true;
                 try
                 {
-                    if (restMethod.ReturnResultType == typeof(void))
+                    if (IsBodyBuffered(restMethod, rq))
                     {
-                        return null;
+                        rq.Content!.LoadIntoBufferAsync().GetAwaiter().GetResult();
+                    }
+                    resp = client
+                        .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead)
+                        .GetAwaiter()
+                        .GetResult();
+                    content = resp.Content ?? new StringContent(string.Empty);
+                    Exception? e = null;
+                    disposeResponse = restMethod.ShouldDisposeResponse;
+
+                    if (typeof(T) != typeof(HttpResponseMessage))
+                    {
+                        e = settings.ExceptionFactory(resp).GetAwaiter().GetResult();
                     }
 
-                    return DeserializeSyncResponse(resp, restMethod.DeserializedResultType);
+                    if (restMethod.IsApiResponse)
+                    {
+                        var body = default(TBody);
+                        try
+                        {
+                            body =
+                                e == null
+                                    ? DeserializeContentSync<TBody>(resp, content)
+                                    : default;
+                        }
+                        catch (Exception ex)
+                        {
+                            if (settings.DeserializationExceptionFactory != null)
+                                e = settings
+                                    .DeserializationExceptionFactory(resp, ex)
+                                    .GetAwaiter()
+                                    .GetResult();
+                            else
+                            {
+                                e = ApiException
+                                    .Create(
+                                        "An error occured deserializing the response.",
+                                        resp.RequestMessage!,
+                                        resp.RequestMessage!.Method,
+                                        resp,
+                                        settings,
+                                        ex
+                                    )
+                                    .GetAwaiter()
+                                    .GetResult();
+                            }
+                        }
+
+                        return ApiResponse.Create<T, TBody>(resp, body, settings, e as ApiException);
+                    }
+                    else if (e != null)
+                    {
+                        disposeResponse = false; // caller must dispose
+                        throw e;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            return DeserializeContentSync<T>(resp, content);
+                        }
+                        catch (Exception ex)
+                        {
+                            if (settings.DeserializationExceptionFactory != null)
+                            {
+                                var customEx = settings
+                                    .DeserializationExceptionFactory(resp, ex)
+                                    .GetAwaiter()
+                                    .GetResult();
+                                if (customEx != null)
+                                    throw customEx;
+                                return default;
+                            }
+                            else
+                            {
+                                throw ApiException
+                                    .Create(
+                                        "An error occured deserializing the response.",
+                                        resp.RequestMessage!,
+                                        resp.RequestMessage!.Method,
+                                        resp,
+                                        settings,
+                                        ex
+                                    )
+                                    .GetAwaiter()
+                                    .GetResult();
+                            }
+                        }
+                    }
                 }
                 finally
                 {
-                    resp.Dispose();
+                    rq.Dispose();
+                    if (disposeResponse)
+                    {
+                        resp?.Dispose();
+                        content?.Dispose();
+                    }
                 }
             };
         }
 
-        object? DeserializeSyncResponse(HttpResponseMessage response, Type resultType)
+        T? DeserializeContentSync<T>(HttpResponseMessage resp, HttpContent content)
         {
-            if (resultType == typeof(HttpContent))
-            {
-                return response.Content;
-            }
-
-            var deserializeMethod = typeof(RequestBuilderImplementation).GetMethod(
-                nameof(DeserializeSyncResponseGeneric),
-                BindingFlags.NonPublic | BindingFlags.Instance
-            )!;
-
-            return deserializeMethod.MakeGenericMethod(resultType).Invoke(this, [response]);
-        }
-
-        T? DeserializeSyncResponseGeneric<T>(HttpResponseMessage response)
-        {
+            if (typeof(T) == typeof(HttpResponseMessage))
+                return (T)(object)resp;
+            if (typeof(T) == typeof(HttpContent))
+                return (T)(object)content;
+            if (typeof(T) == typeof(Stream))
+                return (T)(object)content.ReadAsStreamAsync().GetAwaiter().GetResult();
             if (typeof(T) == typeof(string))
             {
-                return (T?)(object?)response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                using var stream = content.ReadAsStreamAsync().GetAwaiter().GetResult();
+                using var reader = new StreamReader(stream);
+                return (T)(object)reader.ReadToEnd();
             }
-
             return settings.ContentSerializer
-                .FromHttpContentAsync<T>(response.Content)
+                .FromHttpContentAsync<T>(content)
                 .GetAwaiter()
                 .GetResult();
         }
