@@ -384,7 +384,7 @@ namespace Refit
                             {
                                 e = ApiException
                                     .Create(
-                                        "An error occured deserializing the response.",
+                                        "An error occurred deserializing the response.",
                                         resp.RequestMessage!,
                                         resp.RequestMessage!.Method,
                                         resp,
@@ -425,7 +425,7 @@ namespace Refit
                             {
                                 throw ApiException
                                     .Create(
-                                        "An error occured deserializing the response.",
+                                        "An error occurred deserializing the response.",
                                         resp.RequestMessage!,
                                         resp.RequestMessage!.Method,
                                         resp,
