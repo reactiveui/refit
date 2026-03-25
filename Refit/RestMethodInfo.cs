@@ -673,11 +673,13 @@ namespace Refit
             }
             else
             {
-                // Allow synchronous return types only for non-public or explicit interface members.
-                // This supports internal Refit methods and explicit interface members annotated with Refit attributes.
+                // Allow synchronous return types only for methods that are implemented by generated stubs
+                // (for example explicit/default interface implementations). Public top-level Refit methods must
+                // still use async-compatible return shapes.
                 var isExplicitInterfaceMember = methodInfo.Name.IndexOf('.') >= 0;
-                var isNonPublic = !(methodInfo.IsPublic);
-                if (!(isExplicitInterfaceMember || isNonPublic))
+                var isNonPublic = !methodInfo.IsPublic;
+
+                if (!isExplicitInterfaceMember && !isNonPublic)
                 {
                     throw new ArgumentException(
                         $"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>"

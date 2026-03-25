@@ -265,30 +265,75 @@ namespace Refit
                 return (client, args) => rxFunc!.DynamicInvoke(client, args);
             }
 
-            // Synchronous return types: build a sync wrapper that awaits internally and returns the value
-            var syncFuncMi = typeof(RequestBuilderImplementation).GetMethod(
-                nameof(BuildSyncFuncForMethod),
-                BindingFlags.NonPublic | BindingFlags.Instance
-            );
-            var syncFunc = (MulticastDelegate?)
-                (
-                    syncFuncMi!.MakeGenericMethod(
-                        restMethod.ReturnResultType,
-                        restMethod.DeserializedResultType
-                    )
-                ).Invoke(this, [restMethod]);
+            var isExplicitInterfaceMember = restMethod.MethodInfo.Name.IndexOf('.') >= 0;
+            var isNonPublic = !restMethod.MethodInfo.IsPublic;
+            if (isExplicitInterfaceMember || isNonPublic)
+            {
+                return BuildGeneratedSyncFuncForMethod(restMethod);
+            }
 
-            return (client, args) => syncFunc!.DynamicInvoke(client, args);
+            throw new ArgumentException(
+                $"Method \"{restMethod.MethodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>"
+            );
         }
 
-        private Func<HttpClient, object[], object?> BuildSyncFuncForMethod<T, TBody>(RestMethodInfoInternal restMethod)
+        Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethod(
+            RestMethodInfoInternal restMethod
+        )
         {
-            var taskFunc = BuildTaskFuncForMethod<T, TBody>(restMethod);
+            var factory = BuildRequestFactoryForMethod(
+                restMethod,
+                string.Empty,
+                paramsContainsCancellationToken: false
+            );
+
             return (client, paramList) =>
             {
-                var task = taskFunc(client, paramList);
-                return (object?)task.GetAwaiter().GetResult();
+                using var rq = factory(paramList);
+                var resp = client.SendAsync(rq).GetAwaiter().GetResult();
+
+                try
+                {
+                    if (restMethod.ReturnResultType == typeof(void))
+                    {
+                        return null;
+                    }
+
+                    return DeserializeSyncResponse(resp, restMethod.DeserializedResultType);
+                }
+                finally
+                {
+                    resp.Dispose();
+                }
             };
+        }
+
+        object? DeserializeSyncResponse(HttpResponseMessage response, Type resultType)
+        {
+            if (resultType == typeof(HttpContent))
+            {
+                return response.Content;
+            }
+
+            var deserializeMethod = typeof(RequestBuilderImplementation).GetMethod(
+                nameof(DeserializeSyncResponseGeneric),
+                BindingFlags.NonPublic | BindingFlags.Instance
+            )!;
+
+            return deserializeMethod.MakeGenericMethod(resultType).Invoke(this, [response]);
+        }
+
+        T? DeserializeSyncResponseGeneric<T>(HttpResponseMessage response)
+        {
+            if (typeof(T) == typeof(string))
+            {
+                return (T?)(object?)response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            }
+
+            return settings.ContentSerializer
+                .FromHttpContentAsync<T>(response.Content)
+                .GetAwaiter()
+                .GetResult();
         }
 
         void AddMultipartItem(

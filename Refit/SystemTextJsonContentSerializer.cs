@@ -176,6 +176,9 @@ namespace Refit
         sealed class NonGenericEnumConverter(Type targetType, Type enumType, bool isNullable)
             : JsonConverter<object?>
         {
+            readonly Dictionary<string, object> namesToValues = GetNamesToValues(enumType);
+            readonly Dictionary<object, string> valuesToNames = GetValuesToNames(enumType);
+
             public override bool CanConvert(Type typeToConvert) => typeToConvert == targetType;
 
             public override object? Read(
@@ -203,20 +206,10 @@ namespace Refit
                         throw new JsonException($"Cannot convert an empty value to {targetType}.");
                     }
 
-                    foreach (var name in Enum.GetNames(enumType))
-                    {
-                        if (string.Equals(ToCamelCase(name), value, StringComparison.Ordinal))
-                            return Enum.Parse(enumType, name, ignoreCase: false);
-                    }
+                    if (namesToValues.TryGetValue(value, out var namedValue))
+                        return namedValue;
 
-                    try
-                    {
-                        return Enum.Parse(enumType, value, ignoreCase: true);
-                    }
-                    catch (ArgumentException)
-                    {
-                        throw new JsonException($"Unable to convert '{value}' to {targetType}.");
-                    }
+                    throw new JsonException($"Unable to convert '{value}' to {targetType}.");
                 }
 
                 if (reader.TokenType == JsonTokenType.Number)
@@ -240,14 +233,61 @@ namespace Refit
                     return;
                 }
 
-                var name = Enum.GetName(enumType, value);
-                if (name is null)
+                if (!valuesToNames.TryGetValue(value, out var name))
                 {
                     writer.WriteNumberValue(Convert.ToInt64(value));
                     return;
                 }
 
-                writer.WriteStringValue(ToCamelCase(name));
+                writer.WriteStringValue(name);
+            }
+
+            static Dictionary<string, object> GetNamesToValues(Type enumType)
+            {
+                var map = new Dictionary<string, object>(StringComparer.Ordinal);
+
+                foreach (var field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
+                {
+                    var value = Enum.Parse(enumType, field.Name, ignoreCase: false);
+                    foreach (var name in GetSerializedNames(field))
+                    {
+                        map[name] = value;
+                    }
+                }
+
+                return map;
+            }
+
+            static Dictionary<object, string> GetValuesToNames(Type enumType)
+            {
+                var map = new Dictionary<object, string>();
+
+                foreach (var field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
+                {
+                    var value = Enum.Parse(enumType, field.Name, ignoreCase: false);
+                    map[value] = GetPreferredSerializedName(field);
+                }
+
+                return map;
+            }
+
+            static IEnumerable<string> GetSerializedNames(FieldInfo field)
+            {
+                var preferredName = GetPreferredSerializedName(field);
+                yield return preferredName;
+
+                if (!string.Equals(field.Name, preferredName, StringComparison.Ordinal))
+                    yield return field.Name;
+            }
+
+            static string GetPreferredSerializedName(FieldInfo field)
+            {
+#if NET9_0_OR_GREATER
+                var enumMemberNameAttribute = field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>();
+                if (enumMemberNameAttribute is not null)
+                    return enumMemberNameAttribute.Name;
+#endif
+                return ToCamelCase(field.Name);
             }
 
             static string ToCamelCase(string value) =>

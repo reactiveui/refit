@@ -8,6 +8,12 @@ namespace Refit.Tests;
 
 public class ExplicitInterfaceRefitTests
 {
+    sealed class SyncCapableMockHttpMessageHandler : MockHttpMessageHandler
+    {
+        protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            SendAsync(request, cancellationToken).GetAwaiter().GetResult();
+    }
+
     public interface IFoo
     {
         int Bar();
@@ -32,7 +38,7 @@ public class ExplicitInterfaceRefitTests
     [Fact]
     public void DefaultInterfaceImplementation_calls_internal_refit_method()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
         mockHttp
@@ -50,7 +56,7 @@ public class ExplicitInterfaceRefitTests
     [Fact]
     public void Explicit_interface_member_with_refit_attribute_is_invoked()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
         mockHttp
