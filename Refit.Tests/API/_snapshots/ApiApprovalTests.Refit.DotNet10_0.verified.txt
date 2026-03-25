@@ -302,6 +302,8 @@ namespace Refit
     }
     public interface IRequestBuilder
     {
+        [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces " +
+            "and DTOs are preserved when trimming.")]
         System.Func<System.Net.Http.HttpClient, object[], object?> BuildRestResultFuncForMethod(string methodName, System.Type[]? parameterTypes = null, System.Type[]? genericArgumentTypes = null);
     }
     public interface IRequestBuilder<T> : Refit.IRequestBuilder { }
@@ -470,16 +472,16 @@ namespace Refit
     public static class RestService
     {
         public static System.Net.Http.HttpClient CreateHttpClient(string hostUrl, Refit.RefitSettings? settings) { }
-        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client) { }
-        public static object For(System.Type refitInterfaceType, string hostUrl) { }
-        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.IRequestBuilder builder) { }
-        public static object For(System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
-        public static object For(System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings? settings) { }
-        public static T For<T>(System.Net.Http.HttpClient client) { }
-        public static T For<T>(string hostUrl) { }
-        public static T For<T>(System.Net.Http.HttpClient client, Refit.IRequestBuilder<T> builder) { }
-        public static T For<T>(System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
-        public static T For<T>(string hostUrl, Refit.RefitSettings? settings) { }
+        public static object For([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] System.Type refitInterfaceType, System.Net.Http.HttpClient client) { }
+        public static object For([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] System.Type refitInterfaceType, string hostUrl) { }
+        public static object For([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.IRequestBuilder builder) { }
+        public static object For([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] System.Type refitInterfaceType, System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
+        public static object For([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)] System.Type refitInterfaceType, string hostUrl, Refit.RefitSettings? settings) { }
+        public static T For<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)]  T>(System.Net.Http.HttpClient client) { }
+        public static T For<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)]  T>(string hostUrl) { }
+        public static T For<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)]  T>(System.Net.Http.HttpClient client, Refit.IRequestBuilder<T> builder) { }
+        public static T For<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)]  T>(System.Net.Http.HttpClient client, Refit.RefitSettings? settings) { }
+        public static T For<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.None | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.NonPublicMethods)]  T>(string hostUrl, Refit.RefitSettings? settings) { }
     }
     public class StreamPart : Refit.MultipartItem
     {

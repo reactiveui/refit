@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>InterfaceStubGeneratorV3</AssemblyName>
     <RootNamespace>Refit.Generator</RootNamespace>
     <IsPackable>false</IsPackable>
