@@ -6,11 +6,11 @@ using System.Net.Http.Headers;
 namespace Refit
 {
     /// <summary>
-    /// Represents an error that occured while sending an API request.
+    /// Represents an error that occurred after a response was received from the server.
     /// </summary>
     [Serializable]
 #pragma warning disable CA1032 // Implement standard exception constructors
-    public class ApiException : Exception
+    public class ApiException : ApiExceptionBase
 #pragma warning restore CA1032 // Implement standard exception constructors
     {
         /// <summary>
@@ -29,21 +29,6 @@ namespace Refit
         public HttpResponseHeaders Headers { get; }
 
         /// <summary>
-        /// The HTTP method used to send the request.
-        /// </summary>
-        public HttpMethod HttpMethod { get; }
-
-        /// <summary>
-        /// The <see cref="System.Uri"/> used to send the HTTP request.
-        /// </summary>
-        public Uri? Uri => RequestMessage.RequestUri;
-
-        /// <summary>
-        /// The HTTP Request message used to send the request.
-        /// </summary>
-        public HttpRequestMessage RequestMessage { get; }
-
-        /// <summary>
         /// HTTP response content headers as defined in RFC 2616.
         /// </summary>
         public HttpContentHeaders? ContentHeaders { get; private set; }
@@ -60,11 +45,6 @@ namespace Refit
         [MemberNotNullWhen(true, nameof(Content))]
         #endif
         public bool HasContent => !string.IsNullOrWhiteSpace(Content);
-
-        /// <summary>
-        /// Refit settings used to send the request.
-        /// </summary>
-        public RefitSettings RefitSettings { get; }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiException"/> class.
@@ -122,14 +102,11 @@ namespace Refit
             RefitSettings refitSettings,
             Exception? innerException = null
         )
-            : base(exceptionMessage, innerException)
+            : base(exceptionMessage, message, httpMethod, refitSettings, innerException)
         {
-            RequestMessage = message;
-            HttpMethod = httpMethod;
             StatusCode = statusCode;
             ReasonPhrase = reasonPhrase;
             Headers = headers;
-            RefitSettings = refitSettings;
             Content = content;
         }
 
@@ -187,7 +164,7 @@ namespace Refit
         /// <param name="message">The HTTP Request message used to send the request.</param>
         /// <param name="httpMethod">The HTTP method used to send the request.</param>
         /// <param name="response">The HTTP Response message.</param>
-        /// <param name="refitSettings">Refit settings used to sent the request.</param>
+        /// <param name="refitSettings">Refit settings used to send the request.</param>
         /// <param name="innerException">Add an inner exception to the <see cref="ApiException"/>.</param>
         /// <returns>A newly created <see cref="ApiException"/>.</returns>
 #pragma warning disable VSTHRD200 // Use "Async" suffix for async methods

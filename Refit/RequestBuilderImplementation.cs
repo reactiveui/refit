@@ -392,9 +392,27 @@ namespace Refit
                     {
                         await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
                     }
-                    resp = await client
-                        .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct)
-                        .ConfigureAwait(false);
+
+                    try
+                    {
+                        resp = await client
+                            .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (!restMethod.IsApiResponse)
+                            throw new ApiRequestException(rq, rq.Method, settings, ex);
+
+                        return ApiResponse.Create<T, TBody>(
+                            rq,
+                            resp,
+                            null,
+                            settings,
+                            new ApiRequestException(rq, rq.Method, settings, ex)
+                        );
+                    }
+
                     content = resp.Content ?? new StringContent(string.Empty);
                     Exception? e = null;
                     disposeResponse = restMethod.ShouldDisposeResponse;
@@ -436,6 +454,7 @@ namespace Refit
                         }
 
                         return ApiResponse.Create<T, TBody>(
+                            rq,
                             resp,
                             body,
                             settings,
@@ -458,7 +477,8 @@ namespace Refit
                         {
                             if (settings.DeserializationExceptionFactory != null)
                             {
-                                var customEx = await settings.DeserializationExceptionFactory(resp, ex).ConfigureAwait(false);
+                                var customEx = await settings.DeserializationExceptionFactory(resp, ex)
+                                    .ConfigureAwait(false);
                                 if (customEx != null)
                                     throw customEx;
                                 return default;
@@ -1289,7 +1309,7 @@ namespace Refit
                             CollectionFormat.Ssv => " ",
                             CollectionFormat.Tsv => "\t",
                             CollectionFormat.Pipes => "|",
-                            _ => "," 
+                            _ => ","
                         };
 
                     // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
