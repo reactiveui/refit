@@ -586,7 +586,7 @@ namespace Refit
                         return ApiResponse.Create<T, TBody>(
                             rq,
                             resp,
-                            null,
+                            default,
                             settings,
                             new ApiRequestException(rq, rq.Method, settings, ex)
                         );
