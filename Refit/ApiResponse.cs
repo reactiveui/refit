@@ -10,20 +10,12 @@ namespace Refit
         internal static T Create<T, TBody>(
             HttpRequestMessage request,
             HttpResponseMessage? resp,
-            object? content,
+            TBody? content,
             RefitSettings settings,
             ApiExceptionBase? error = null
         )
         {
-            return (T)
-                Activator.CreateInstance(
-                    typeof(ApiResponse<TBody>),
-                    request,
-                    resp,
-                    content,
-                    settings,
-                    error
-                )!;
+            return (T)(object)new ApiResponse<TBody>(request, resp, content, settings, error);
         }
     }
 
