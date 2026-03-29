@@ -2444,6 +2444,37 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public void GeneratedSyncApiResponseShouldPreserveRequestMessage()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var restMethod = new RestMethodInfoInternal(
+                typeof(IDummyHttpApi),
+                typeof(IDummyHttpApi)
+                    .GetMethods()
+                    .First(x => x.Name == nameof(IDummyHttpApi.FetchSomeStringWithMetadata))
+            );
+            var buildGeneratedSyncFuncForMethod = typeof(RequestBuilderImplementation).GetMethod(
+                "BuildGeneratedSyncFuncForMethod",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            );
+            var factory = (Func<HttpClient, object[], object?>)
+                buildGeneratedSyncFuncForMethod!.Invoke(fixture, [restMethod])!;
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var response = (ApiResponse<string>)
+                factory(
+                    new HttpClient(testHttpMessageHandler)
+                    {
+                        BaseAddress = new Uri("http://api/")
+                    },
+                    [42]
+                )!;
+
+            Assert.Same(testHttpMessageHandler.RequestMessage, response.RequestMessage);
+            Assert.Equal(testHttpMessageHandler.RequestMessage.RequestUri, response.RequestMessage.RequestUri);
+        }
+
+        [Fact]
         public void StreamResponseTest()
         {
             var fixture = new RequestBuilderImplementation<IStreamApi>();

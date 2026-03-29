@@ -189,7 +189,8 @@ public class ExplicitInterfaceRefitTests
         using var apiResp = fixture.GetApiResponse();
         Assert.False(apiResp.IsSuccessStatusCode);
         Assert.NotNull(apiResp.Error);
-        Assert.Equal(HttpStatusCode.InternalServerError, apiResp.Error!.StatusCode);
+        Assert.True(apiResp.HasResponseError(out var error));
+        Assert.Equal(HttpStatusCode.InternalServerError, error.StatusCode);
 
         mockHttp.VerifyNoOutstandingExpectation();
     }
@@ -209,6 +210,8 @@ public class ExplicitInterfaceRefitTests
         using var apiResp = fixture.GetApiResponse();
         Assert.True(apiResp.IsSuccessStatusCode);
         Assert.Null(apiResp.Error);
+        Assert.Equal(HttpMethod.Get, apiResp.RequestMessage.Method);
+        Assert.Equal("http://foo/resource", apiResp.RequestMessage.RequestUri?.ToString());
         // The string branch reads the raw stream (no JSON unwrapping), same as the async path
         Assert.Equal("\"hello\"", apiResp.Content);
 

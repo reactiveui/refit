@@ -256,7 +256,7 @@ namespace Refit
                 );
                 var rxFunc = (MulticastDelegate?)
                     (
-                        rxFuncMi!.MakeGenericMethod(
+                        rxFuncMi?.MakeGenericMethod(
                             restMethod.ReturnResultType,
                             restMethod.DeserializedResultType
                         )
@@ -281,47 +281,34 @@ namespace Refit
             RestMethodInfoInternal restMethod
         )
         {
-            // void return: mirror BuildVoidTaskFuncForMethod – run ExceptionFactory, return null
             if (restMethod.ReturnResultType == typeof(void))
             {
                 return (client, paramList) =>
                 {
-                    if (client.BaseAddress == null)
-                        throw new InvalidOperationException(
-                            "BaseAddress must be set on the HttpClient instance"
-                        );
-
-                    var factory = BuildRequestFactoryForMethod(
-                        restMethod,
-                        client.BaseAddress.AbsolutePath,
-                        paramsContainsCancellationToken: false
+                    RunSynchronous(() =>
+                        ExecuteVoidRequestAsync(
+                            client,
+                            restMethod,
+                            paramList,
+                            CancellationToken.None,
+                            paramsContainsCancellationToken: false
+                        )
                     );
-                    using var rq = factory(paramList);
-                    using var resp = client
-                        .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead)
-                        .GetAwaiter()
-                        .GetResult();
-                    var e = settings.ExceptionFactory(resp).GetAwaiter().GetResult();
-                    if (e != null)
-                        throw e;
                     return null;
                 };
             }
 
-            // Non-void: dispatch to the generic implementation that replicates the full
-            // BuildCancellableTaskFuncForMethod pipeline (ExceptionFactory, IsApiResponse,
-            // ShouldDisposeResponse, DeserializationExceptionFactory).
             var syncFuncMi = typeof(RequestBuilderImplementation).GetMethod(
                 nameof(BuildGeneratedSyncFuncForMethodGeneric),
                 BindingFlags.NonPublic | BindingFlags.Instance
             );
             return (Func<HttpClient, object[], object?>)
-                syncFuncMi!
+                syncFuncMi
                     .MakeGenericMethod(
                         restMethod.ReturnResultType,
                         restMethod.DeserializedResultType
                     )
-                    .Invoke(this, [restMethod])!;
+                    .Invoke(this, [restMethod]);
         }
 
         Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
@@ -329,145 +316,207 @@ namespace Refit
         )
         {
             return (client, paramList) =>
-            {
-                if (client.BaseAddress == null)
-                    throw new InvalidOperationException(
-                        "BaseAddress must be set on the HttpClient instance"
-                    );
-
-                var factory = BuildRequestFactoryForMethod(
-                    restMethod,
-                    client.BaseAddress.AbsolutePath,
-                    paramsContainsCancellationToken: false
+                RunSynchronous(() =>
+                    ExecuteRequestAsync<T, TBody>(
+                        client,
+                        restMethod,
+                        paramList,
+                        CancellationToken.None,
+                        paramsContainsCancellationToken: false
+                    )
                 );
-                var rq = factory(paramList);
-                HttpResponseMessage? resp = null;
-                HttpContent? content = null;
-                var disposeResponse = true;
-                try
-                {
-                    if (IsBodyBuffered(restMethod, rq))
-                    {
-                        rq.Content!.LoadIntoBufferAsync().GetAwaiter().GetResult();
-                    }
-                    resp = client
-                        .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead)
-                        .GetAwaiter()
-                        .GetResult();
-                    content = resp.Content ?? new StringContent(string.Empty);
-                    Exception? e = null;
-                    disposeResponse = restMethod.ShouldDisposeResponse;
-
-                    if (typeof(T) != typeof(HttpResponseMessage))
-                    {
-                        e = settings.ExceptionFactory(resp).GetAwaiter().GetResult();
-                    }
-
-                    if (restMethod.IsApiResponse)
-                    {
-                        var body = default(TBody);
-                        try
-                        {
-                            body =
-                                e == null
-                                    ? DeserializeContentSync<TBody>(resp, content)
-                                    : default;
-                        }
-                        catch (Exception ex)
-                        {
-                            if (settings.DeserializationExceptionFactory != null)
-                                e = settings
-                                    .DeserializationExceptionFactory(resp, ex)
-                                    .GetAwaiter()
-                                    .GetResult();
-                            else
-                            {
-                                e = ApiException
-                                    .Create(
-                                        "An error occurred deserializing the response.",
-                                        resp.RequestMessage!,
-                                        resp.RequestMessage!.Method,
-                                        resp,
-                                        settings,
-                                        ex
-                                    )
-                                    .GetAwaiter()
-                                    .GetResult();
-                            }
-                        }
-
-                        return ApiResponse.Create<T, TBody>(resp, body, settings, e as ApiException);
-                    }
-                    else if (e != null)
-                    {
-                        disposeResponse = false; // caller must dispose
-                        throw e;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            return DeserializeContentSync<T>(resp, content);
-                        }
-                        catch (Exception ex)
-                        {
-                            if (settings.DeserializationExceptionFactory != null)
-                            {
-                                var customEx = settings
-                                    .DeserializationExceptionFactory(resp, ex)
-                                    .GetAwaiter()
-                                    .GetResult();
-                                if (customEx != null)
-                                    throw customEx;
-                                return default;
-                            }
-                            else
-                            {
-                                throw ApiException
-                                    .Create(
-                                        "An error occurred deserializing the response.",
-                                        resp.RequestMessage!,
-                                        resp.RequestMessage!.Method,
-                                        resp,
-                                        settings,
-                                        ex
-                                    )
-                                    .GetAwaiter()
-                                    .GetResult();
-                            }
-                        }
-                    }
-                }
-                finally
-                {
-                    rq.Dispose();
-                    if (disposeResponse)
-                    {
-                        resp?.Dispose();
-                        content?.Dispose();
-                    }
-                }
-            };
         }
 
-        T? DeserializeContentSync<T>(HttpResponseMessage resp, HttpContent content)
+        static void RunSynchronous(Func<Task> taskFactory) =>
+            Task.Run(taskFactory).GetAwaiter().GetResult();
+
+        static T? RunSynchronous<T>(Func<Task<T?>> taskFactory) =>
+            Task.Run(taskFactory).GetAwaiter().GetResult();
+
+        async Task ExecuteVoidRequestAsync(
+            HttpClient client,
+            RestMethodInfoInternal restMethod,
+            object[] paramList,
+            CancellationToken cancellationToken,
+            bool paramsContainsCancellationToken
+        )
         {
-            if (typeof(T) == typeof(HttpResponseMessage))
-                return (T)(object)resp;
-            if (typeof(T) == typeof(HttpContent))
-                return (T)(object)content;
-            if (typeof(T) == typeof(Stream))
-                return (T)(object)content.ReadAsStreamAsync().GetAwaiter().GetResult();
-            if (typeof(T) == typeof(string))
+            if (client.BaseAddress == null)
+                throw new InvalidOperationException(
+                    "BaseAddress must be set on the HttpClient instance"
+                );
+
+            using var rq = await BuildRequestMessageForMethodAsync(
+                    restMethod,
+                    client.BaseAddress.AbsolutePath,
+                    paramsContainsCancellationToken,
+                    paramList
+                )
+                .ConfigureAwait(false);
+
+            if (IsBodyBuffered(restMethod, rq))
             {
-                using var stream = content.ReadAsStreamAsync().GetAwaiter().GetResult();
-                using var reader = new StreamReader(stream);
-                return (T)(object)reader.ReadToEnd();
+                await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
             }
-            return settings.ContentSerializer
-                .FromHttpContentAsync<T>(content)
-                .GetAwaiter()
-                .GetResult();
+
+            using var resp = await client
+                .SendAsync(rq, cancellationToken)
+                .ConfigureAwait(false);
+
+            var exception = await settings.ExceptionFactory(resp).ConfigureAwait(false);
+            if (exception != null)
+            {
+                throw exception;
+            }
+        }
+
+        async Task<T?> ExecuteRequestAsync<T, TBody>(
+            HttpClient client,
+            RestMethodInfoInternal restMethod,
+            object[] paramList,
+            CancellationToken cancellationToken,
+            bool paramsContainsCancellationToken
+        )
+        {
+            if (client.BaseAddress == null)
+                throw new InvalidOperationException(
+                    "BaseAddress must be set on the HttpClient instance"
+                );
+
+            using var rq = await BuildRequestMessageForMethodAsync(
+                    restMethod,
+                    client.BaseAddress.AbsolutePath,
+                    paramsContainsCancellationToken,
+                    paramList
+                )
+                .ConfigureAwait(false);
+
+            HttpResponseMessage? resp = null;
+            HttpContent? content = null;
+            var disposeResponse = true;
+            try
+            {
+                if (IsBodyBuffered(restMethod, rq))
+                {
+                    await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
+                }
+
+                try
+                {
+                    resp = await client
+                        .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    if (!restMethod.IsApiResponse)
+                        throw new ApiRequestException(rq, rq.Method, settings, ex);
+
+                    return ApiResponse.Create<T, TBody>(
+                        rq,
+                        resp,
+                        default,
+                        settings,
+                        new ApiRequestException(rq, rq.Method, settings, ex)
+                    );
+                }
+
+                content = resp.Content ?? new StringContent(string.Empty);
+                Exception? e = null;
+                disposeResponse = restMethod.ShouldDisposeResponse;
+
+                if (typeof(T) != typeof(HttpResponseMessage))
+                {
+                    e = await settings.ExceptionFactory(resp).ConfigureAwait(false);
+                }
+
+                if (restMethod.IsApiResponse)
+                {
+                    var body = default(TBody);
+
+                    try
+                    {
+                        body =
+                            e == null
+                                ? await DeserializeContentAsync<TBody>(
+                                        resp,
+                                        content,
+                                        cancellationToken
+                                    ).ConfigureAwait(false)
+                                : default;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (settings.DeserializationExceptionFactory != null)
+                            e = await settings
+                                .DeserializationExceptionFactory(resp, ex)
+                                .ConfigureAwait(false);
+                        else
+                        {
+                            e = await ApiException.Create(
+                                "An error occured deserializing the response.",
+                                resp.RequestMessage!,
+                                resp.RequestMessage!.Method,
+                                resp,
+                                settings,
+                                ex
+                            ).ConfigureAwait(false);
+                        }
+                    }
+
+                    return ApiResponse.Create<T, TBody>(
+                        rq,
+                        resp,
+                        body,
+                        settings,
+                        e as ApiException
+                    );
+                }
+                else if (e != null)
+                {
+                    disposeResponse = false; // caller has to dispose
+                    throw e;
+                }
+                else
+                {
+                    try
+                    {
+                        return await DeserializeContentAsync<T>(resp, content, cancellationToken)
+                            .ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (settings.DeserializationExceptionFactory != null)
+                        {
+                            var customEx = await settings
+                                .DeserializationExceptionFactory(resp, ex)
+                                .ConfigureAwait(false);
+                            if (customEx != null)
+                                throw customEx;
+                            return default;
+                        }
+                        else
+                        {
+                            throw await ApiException.Create(
+                                "An error occured deserializing the response.",
+                                resp.RequestMessage!,
+                                resp.RequestMessage!.Method,
+                                resp,
+                                settings,
+                                ex
+                            ).ConfigureAwait(false);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeResponse)
+                {
+                    resp?.Dispose();
+                    content?.Dispose();
+                }
+            }
         }
 
         void AddMultipartItem(
@@ -903,28 +952,43 @@ namespace Refit
             return false;
         }
 
-        Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(
+        Func<object[], HttpRequestMessage?> BuildRequestFactoryForMethod(
             RestMethodInfoInternal restMethod,
             string basePath,
             bool paramsContainsCancellationToken
         )
         {
             return paramList =>
+                RunSynchronous(() =>
+                    BuildRequestMessageForMethodAsync(
+                        restMethod,
+                        basePath,
+                        paramsContainsCancellationToken,
+                        paramList
+                    )
+                );
+        }
+
+        async Task<HttpRequestMessage?> BuildRequestMessageForMethodAsync(
+            RestMethodInfoInternal restMethod,
+            string basePath,
+            bool paramsContainsCancellationToken,
+            object[] paramList
+        )
+        {
+            var cancellationToken = CancellationToken.None;
+
+            if (paramsContainsCancellationToken)
             {
-                var cancellationToken = CancellationToken.None;
+                cancellationToken = paramList.OfType<CancellationToken>().FirstOrDefault();
+                paramList = paramList
+                    .Where(o => o == null || o.GetType() != typeof(CancellationToken))
+                    .ToArray();
+            }
 
-                // make sure we strip out any cancellation tokens
-                if (paramsContainsCancellationToken)
-                {
-                    cancellationToken = paramList.OfType<CancellationToken>().FirstOrDefault();
-                    paramList = paramList
-                        .Where(o => o == null || o.GetType() != typeof(CancellationToken))
-                        .ToArray();
-                }
-
-                var ret = new HttpRequestMessage { Method = restMethod.HttpMethod };
-
-                // set up multipart content
+            var ret = new HttpRequestMessage { Method = restMethod.HttpMethod };
+            try
+            {
                 MultipartFormDataContent? multiPartContent = null;
                 if (restMethod.IsMultipart)
                 {
@@ -933,8 +997,8 @@ namespace Refit
                 }
 
                 List<KeyValuePair<string, string?>>? queryParamsToAdd = null;
-                var headersToAdd = restMethod.Headers.Count > 0 ?
-                    new Dictionary<string, string?>(restMethod.Headers)
+                var headersToAdd = restMethod.Headers.Count > 0
+                    ? new Dictionary<string, string?>(restMethod.Headers)
                     : null;
 
                 RestMethodParameterInfo? parameterInfo = null;
@@ -943,19 +1007,15 @@ namespace Refit
                 {
                     var isParameterMappedToRequest = false;
                     var param = paramList[i];
-                    // if part of REST resource URL, substitute it in
                     if (restMethod.ParameterMap.TryGetValue(i, out var parameterMapValue))
                     {
                         parameterInfo = parameterMapValue;
                         if (!parameterInfo.IsObjectPropertyParameter)
                         {
-                            // mark parameter mapped if not an object
-                            // we want objects to fall through so any parameters on this object not bound here get passed as query parameters
                             isParameterMappedToRequest = true;
                         }
                     }
 
-                    // if marked as body, add to content
                     if (
                         restMethod.BodyParameterInfo != null
                         && restMethod.BodyParameterInfo.Item3 == i
@@ -965,7 +1025,6 @@ namespace Refit
                         isParameterMappedToRequest = true;
                     }
 
-                    // if header, add to request headers
                     if (restMethod.HeaderParameterMap.TryGetValue(i, out var headerParameterValue))
                     {
                         headersToAdd ??= [];
@@ -973,7 +1032,6 @@ namespace Refit
                         isParameterMappedToRequest = true;
                     }
 
-                    //if header collection, add to request headers
                     if (restMethod.HeaderCollectionAt(i))
                     {
                         if (param is IDictionary<string, string> headerCollection)
@@ -988,7 +1046,6 @@ namespace Refit
                         isParameterMappedToRequest = true;
                     }
 
-                    //if authorize, add to request headers with scheme
                     if (
                         restMethod.AuthorizeParameterInfo != null
                         && restMethod.AuthorizeParameterInfo.Item2 == i
@@ -1000,19 +1057,14 @@ namespace Refit
                         isParameterMappedToRequest = true;
                     }
 
-                    //if property, add to populate into HttpRequestMessage.Properties
                     if (restMethod.PropertyParameterMap.ContainsKey(i))
                     {
                         isParameterMappedToRequest = true;
                     }
 
-                    // ignore nulls and already processed parameters
                     if (isParameterMappedToRequest || param == null)
                         continue;
 
-                    // for anything that fell through to here, if this is not a multipart method add the parameter to the query string
-                    // or if is an object bound to the path add any non-path bound properties to query string
-                    // or if it's an object with a query attribute
                     var queryAttribute = restMethod
                         .ParameterInfoArray[i]
                         .GetCustomAttribute<QueryAttribute>();
@@ -1024,7 +1076,14 @@ namespace Refit
                     )
                     {
                         queryParamsToAdd ??= [];
-                        AddQueryParameters(restMethod, queryAttribute, param, queryParamsToAdd, i, parameterInfo);
+                        AddQueryParameters(
+                            restMethod,
+                            queryAttribute,
+                            param,
+                            queryParamsToAdd,
+                            i,
+                            parameterInfo
+                        );
                         continue;
                     }
 
@@ -1032,17 +1091,13 @@ namespace Refit
                 }
 
                 AddHeadersToRequest(headersToAdd, ret);
-                AddAuthorizationHeadersFromGetterAsync(ret, cancellationToken)
-                    .GetAwaiter()
-                    .GetResult();
+                await AddAuthorizationHeadersFromGetterAsync(ret, cancellationToken)
+                    .ConfigureAwait(false);
 
                 AddPropertiesToRequest(restMethod, ret, paramList);
 #if NET6_0_OR_GREATER
                 AddVersionToRequest(ret);
 #endif
-                // NB: The URI methods in .NET are dumb. Also, we do this
-                // UriBuilder business so that we preserve any hardcoded query
-                // parameters as well as add the parameterized ones.
                 var urlTarget = BuildRelativePath(basePath, restMethod, paramList);
 
                 var uri = new UriBuilder(new Uri(BaseUri, urlTarget));
@@ -1062,7 +1117,12 @@ namespace Refit
                     UriKind.Relative
                 );
                 return ret;
-            };
+            }
+            catch
+            {
+                ret.Dispose();
+                throw;
+            }
         }
 
         string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
@@ -1613,20 +1673,8 @@ namespace Refit
             RestMethodInfoInternal restMethod
         )
         {
-            return async (client, paramList) =>
+            return (client, paramList) =>
             {
-                if (client.BaseAddress == null)
-                    throw new InvalidOperationException(
-                        "BaseAddress must be set on the HttpClient instance"
-                    );
-
-                var factory = BuildRequestFactoryForMethod(
-                    restMethod,
-                    client.BaseAddress.AbsolutePath,
-                    restMethod.CancellationToken != null
-                );
-                var rq = factory(paramList);
-
                 var ct = CancellationToken.None;
 
                 if (restMethod.CancellationToken != null)
@@ -1634,18 +1682,13 @@ namespace Refit
                     ct = paramList.OfType<CancellationToken>().FirstOrDefault();
                 }
 
-                // Load the data into buffer when body should be buffered.
-                if (IsBodyBuffered(restMethod, rq))
-                {
-                    await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
-                }
-                using var resp = await client.SendAsync(rq, ct).ConfigureAwait(false);
-
-                var exception = await settings.ExceptionFactory(resp).ConfigureAwait(false);
-                if (exception != null)
-                {
-                    throw exception;
-                }
+                return ExecuteVoidRequestAsync(
+                    client,
+                    restMethod,
+                    paramList,
+                    ct,
+                    restMethod.CancellationToken != null
+                );
             };
         }
 
