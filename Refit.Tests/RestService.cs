@@ -238,6 +238,12 @@ public interface IStreamApi
     Task<ApiResponse<Stream>> GetRemoteFileWithMetadata(string filename);
 }
 
+public interface IValueTaskApi
+{
+    [Get("/{value}")]
+    ValueTask<string> GetValue(string value);
+}
+
 public interface IApiWithDecimal
 {
     [Get("/withDecimal")]

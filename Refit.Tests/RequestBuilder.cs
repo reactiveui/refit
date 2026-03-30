@@ -2505,6 +2505,31 @@ namespace Refit.Tests
         }
 
         [Fact]
+        public async Task ValueTaskMethodsShouldWork()
+        {
+            var fixture = new RequestBuilderImplementation<IValueTaskApi>();
+            var factory = fixture.BuildRestResultFuncForMethod("GetValue");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+
+            var valueTask = (ValueTask<string>)
+                factory(
+                    new HttpClient(testHttpMessageHandler)
+                    {
+                        BaseAddress = new Uri("http://api/")
+                    },
+                    new object[] { "value" }
+                )!;
+
+            var result = await valueTask;
+
+            Assert.Equal("test", result);
+            Assert.Equal(
+                "http://api/value",
+                testHttpMessageHandler.RequestMessage.RequestUri.ToString()
+            );
+        }
+
+        [Fact]
         public void MethodsThatDontHaveAnHttpMethodShouldFail()
         {
             var failureMethods = new[] { "SomeOtherMethod", "weofjwoeijfwe", null, };

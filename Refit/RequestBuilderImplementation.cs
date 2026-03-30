@@ -247,6 +247,24 @@ namespace Refit
                 return (client, args) => taskFunc!.DynamicInvoke(client, args);
             }
 
+            // ValueTask<T>
+            if (restMethod.ReturnType.GetTypeInfo().IsGenericType && restMethod.ReturnType.GetGenericTypeDefinition() == typeof(ValueTask<>))
+            {
+                var valueTaskFuncMi = typeof(RequestBuilderImplementation).GetMethod(
+                    nameof(BuildValueTaskFuncForMethod),
+                    BindingFlags.NonPublic | BindingFlags.Instance
+                );
+                var valueTaskFunc = (MulticastDelegate?)
+                    (
+                        valueTaskFuncMi!.MakeGenericMethod(
+                            restMethod.ReturnResultType,
+                            restMethod.DeserializedResultType
+                        )
+                    ).Invoke(this, [restMethod]);
+
+                return (client, args) => valueTaskFunc!.DynamicInvoke(client, args);
+            }
+
             // IObservable<T>
             if (restMethod.ReturnType.GetTypeInfo().IsGenericType && restMethod.ReturnType.GetGenericTypeDefinition() == typeof(IObservable<>))
             {
@@ -1667,6 +1685,15 @@ namespace Refit
 
                 return ret(client, CancellationToken.None, paramList);
             };
+        }
+
+        Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
+            RestMethodInfoInternal restMethod
+        )
+        {
+            var ret = BuildTaskFuncForMethod<T, TBody>(restMethod);
+
+            return (client, paramList) => new ValueTask<T?>(ret(client, paramList));
         }
 
         Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(
