@@ -36,6 +36,7 @@ services
 
 # Table of Contents
 
+* [Sponsors](#sponsors)
 * [Where does this work?](#where-does-this-work)
   * [Breaking changes in 6.x](#breaking-changes-in-6x)
   * [Breaking changes in 11.x](#breaking-changes-in-11x)
@@ -75,16 +76,22 @@ services
   * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
   * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
 
+### Sponsors
+
+Refit is sponsored by the following:
+
+||
+||
+|[![lombiq logo](Images/lombiq.svg)](https://lombiq.com)|[![jetbrains logo](Images/jetbrains.svg)](https://www.jetbrains.com)|[![claude logo](Images/claude.svg)](https://claude.com)|
+
+
 ### Where does this work?
 
 Refit currently supports the following platforms and any .NET Standard 2.0 target:
 
-* UWP
-* Xamarin.Android
-* Xamarin.Mac
-* Xamarin.iOS
-* Desktop .NET 4.6.1
-* .NET 6 / 8
+* WinUI
+* Desktop .NET Framework 4.6.2+
+* .NET 8 / 9 / 10
 * Blazor
 * Uno Platform
 
