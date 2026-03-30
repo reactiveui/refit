@@ -36,6 +36,7 @@ services
 
 # Table of Contents
 
+* [Sponsors](#sponsors)
 * [Where does this work?](#where-does-this-work)
   * [Breaking changes in 6.x](#breaking-changes-in-6x)
   * [Breaking changes in 11.x](#breaking-changes-in-11x)
