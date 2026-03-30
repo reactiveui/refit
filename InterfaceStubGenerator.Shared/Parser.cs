@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Text;
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -304,9 +305,18 @@ namespace {refitInternalNamespace}
         var derivedRefitMethods = derivedMethods
             .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
             .ToArray();
+       
         var derivedNonRefitMethods = derivedMethods
             .Except(derivedRefitMethods, SymbolEqualityComparer.Default)
             .Cast<IMethodSymbol>()
+            .Where(m =>
+                // Only flag methods from interfaces that have at least one Refit method.
+                // Methods from plain non-Refit interfaces (e.g. IBaseApi with GetBaseUri())
+                // should be silently ignored — they are not HTTP endpoints.
+                m.ContainingType.GetMembers()
+                    .OfType<IMethodSymbol>()
+                    .Any(im => IsRefitMethod(im, httpMethodBaseAttributeSymbol))
+            )
             .ToArray();
 
         // Exclude base interface methods that the current interface explicitly implements.
