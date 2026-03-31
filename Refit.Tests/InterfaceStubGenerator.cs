@@ -147,6 +147,13 @@ public class InterfaceStubGeneratorTests
         var path = IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs");
         await VerifyGenerator(path);
     }
+
+    [Fact]
+    public async Task InheritingFromNonRefitInterfaceDoesNotGenerateDiagnostic()
+    {
+        var path = IntegrationTestHelper.GetPath("IInterfaceInheritingNonRefit.cs");
+        await VerifyGenerator(path);
+    }
 }
 
 public static class ThisIsDumbButMightHappen
@@ -210,3 +217,4 @@ public interface INonGenericInterfaceWithGenericMethod
 }
 
 public interface IMessage;
+

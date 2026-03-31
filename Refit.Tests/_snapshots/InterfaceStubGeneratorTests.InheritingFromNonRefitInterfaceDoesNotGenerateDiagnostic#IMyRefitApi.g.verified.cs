@@ -1,4 +1,4 @@
-﻿//HintName: IGeneratedInterface.g.cs
+﻿//HintName: IMyRefitApi.g.cs
 #nullable disable
 #pragma warning disable
 namespace Refit.Implementation
@@ -13,15 +13,15 @@ namespace Refit.Implementation
     [global::RefitInternalGenerated.PreserveAttribute]
     [global::System.Reflection.Obfuscation(Exclude=true)]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    partial class RefitGeneratorTestIGeneratedInterface
-        : global::RefitGeneratorTest.IGeneratedInterface
+    partial class RefitTestsIMyRefitApi
+        : global::Refit.Tests.IMyRefitApi
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
         readonly global::Refit.IRequestBuilder requestBuilder;
 
         /// <inheritdoc />
-        public RefitGeneratorTestIGeneratedInterface(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
+        public RefitTestsIMyRefitApi(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
         {
             Client = client;
             this.requestBuilder = requestBuilder;
@@ -29,14 +29,13 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public async global::System.Threading.Tasks.Task<string> Get()
+        public async Task<List<string>> GetUsers()
         {
             var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>() );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetUsers", global::System.Array.Empty<global::System.Type>() );
 
-            return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
+            return await ((Task<List<string>>)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
-
     }
     }
 }

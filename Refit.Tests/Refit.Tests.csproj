@@ -70,4 +70,10 @@
   <ItemGroup>
     <Folder Include="_snapshots\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="IInterfaceInheritingNonRefit.cs" />
+  </ItemGroup>
+
+  
 </Project>
