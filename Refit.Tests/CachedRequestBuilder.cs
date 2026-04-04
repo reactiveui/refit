@@ -35,6 +35,26 @@ public interface IDuplicateNames
 public class CachedRequestBuilderTests
 {
     [Fact]
+    public void CachedBuilder_ThrowsForNullInnerBuilder()
+    {
+        Assert.Throws<ArgumentNullException>(() => new CachedRequestBuilderImplementation(null!));
+    }
+
+    [Fact]
+    public void MethodTableKey_ObjectEquals_And_GenericArgumentDifference_AreCovered()
+    {
+        var key = new MethodTableKey("Foo", [typeof(string)], [typeof(int)]);
+        object same = new MethodTableKey("Foo", [typeof(string)], [typeof(int)]);
+        object different = new MethodTableKey("Foo", [typeof(string)], [typeof(long)]);
+        var differentParameter = new MethodTableKey("Foo", [typeof(int)], [typeof(int)]);
+
+        Assert.True(key.Equals(same));
+        Assert.False(key.Equals(different));
+        Assert.False(key.Equals(differentParameter));
+        Assert.False(key.Equals(new object()));
+    }
+
+    [Fact]
     public async Task CacheHasCorrectNumberOfElementsTest()
     {
         var mockHttp = new MockHttpMessageHandler();

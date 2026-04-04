@@ -647,23 +647,7 @@ namespace Refit
             {
                 ReturnType = returnType;
                 ReturnResultType = returnType.GetGenericArguments()[0];
-
-                if (
-                    ReturnResultType.IsGenericType
-                    && (
-                        ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
-                        || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)
-                    )
-                )
-                {
-                    DeserializedResultType = ReturnResultType.GetGenericArguments()[0];
-                }
-                else if (ReturnResultType == typeof(IApiResponse))
-                {
-                    DeserializedResultType = typeof(HttpContent);
-                }
-                else
-                    DeserializedResultType = ReturnResultType;
+                DeserializedResultType = DetermineDeserializedResultType(ReturnResultType);
             }
             else if (returnType == typeof(Task))
             {
@@ -688,26 +672,26 @@ namespace Refit
 
                 ReturnType = methodInfo.ReturnType;
                 ReturnResultType = methodInfo.ReturnType;
-
-                if (
-                    ReturnResultType.IsGenericType
-                    && (
-                        ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
-                        || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)
-                    )
-                )
-                {
-                    DeserializedResultType = ReturnResultType.GetGenericArguments()[0];
-                }
-                else if (ReturnResultType == typeof(IApiResponse))
-                {
-                    DeserializedResultType = typeof(HttpContent);
-                }
-                else
-                {
-                    DeserializedResultType = ReturnResultType;
-                }
+                DeserializedResultType = DetermineDeserializedResultType(ReturnResultType);
             }
+        }
+
+        static Type DetermineDeserializedResultType(Type returnResultType)
+        {
+            if (
+                returnResultType.IsGenericType
+                && (
+                    returnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+                    || returnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)
+                )
+            )
+            {
+                return returnResultType.GetGenericArguments()[0];
+            }
+
+            return returnResultType == typeof(IApiResponse)
+                ? typeof(HttpContent)
+                : returnResultType;
         }
 
         void DetermineIfResponseMustBeDisposed()

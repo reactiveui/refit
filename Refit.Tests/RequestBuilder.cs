@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Serialization;
+using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.WebUtilities;
@@ -1753,6 +1754,38 @@ namespace Refit.Tests
                     )
             );
         }
+
+        [Fact]
+        public void InternalSyncGenericReturnTypeSetsDeserializedTypeToReturnType()
+        {
+            var input = typeof(IInternalSyncGenericReturnTypeApi);
+            var fixture = new RestMethodInfoInternal(
+                input,
+                input
+                    .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                    .First(x => x.Name == nameof(IInternalSyncGenericReturnTypeApi.GetValues))
+            );
+
+            Assert.Equal(typeof(List<string>), fixture.ReturnType);
+            Assert.Equal(typeof(List<string>), fixture.ReturnResultType);
+            Assert.Equal(typeof(List<string>), fixture.DeserializedResultType);
+        }
+
+        [Fact]
+        public void InternalSyncIApiResponseGenericReturnTypeSetsDeserializedTypeToGenericArgument()
+        {
+            var input = typeof(IInternalSyncGenericApiResponseReturnTypeApi);
+            var fixture = new RestMethodInfoInternal(
+                input,
+                input
+                    .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                    .First(x => x.Name == nameof(IInternalSyncGenericApiResponseReturnTypeApi.GetResponse))
+            );
+
+            Assert.Equal(typeof(IApiResponse<string>), fixture.ReturnType);
+            Assert.Equal(typeof(IApiResponse<string>), fixture.ReturnResultType);
+            Assert.Equal(typeof(string), fixture.DeserializedResultType);
+        }
     }
 
     [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
@@ -2154,7 +2187,25 @@ namespace Refit.Tests
     {
         [Headers("Authorization: Bearer")]
         [Get("/foo")]
-        Task GetWithAuthorizationAndCancellation(CancellationToken token = default);
+        Task GetWithAuthorizationAndCancellation(CancellationToken token=default);
+    }
+
+    interface IObservableCancellableMethods
+    {
+        [Get("/value/{value}")]
+        IObservable<string> GetWithCancellation(string value, CancellationToken token = default);
+    }
+
+    interface IInternalSyncGenericReturnTypeApi
+    {
+        [Get("/values")]
+        internal List<string> GetValues();
+    }
+
+    interface IInternalSyncGenericApiResponseReturnTypeApi
+    {
+        [Get("/response")]
+        internal IApiResponse<string> GetResponse();
     }
 
     public enum FooWithEnumMember
@@ -2553,6 +2604,79 @@ namespace Refit.Tests
             Assert.Equal(
                 "http://api/value",
                 response.RequestMessage.RequestUri.ToString()
+            );
+        }
+
+        [Fact]
+        public async Task ObservableMethodsWithCancellationTokenShouldWork()
+        {
+            var fixture = new RequestBuilderImplementation<IObservableCancellableMethods>();
+            var factory = fixture.BuildRestResultFuncForMethod("GetWithCancellation");
+            var testHttpMessageHandler = new TestHttpMessageHandler();
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            var observable = (IObservable<string>)
+                factory(
+                    new HttpClient(testHttpMessageHandler)
+                    {
+                        BaseAddress = new Uri("http://api/")
+                    },
+                    new object[] { "value", cts.Token }
+                )!;
+
+            var result = observable.Wait();
+
+            Assert.Equal("test", result);
+            Assert.Equal(
+                "http://api/value/value",
+                testHttpMessageHandler.RequestMessage.RequestUri.ToString()
+            );
+            Assert.True(testHttpMessageHandler.CancellationToken.IsCancellationRequested);
+        }
+
+        [Fact]
+        public void BuildRestResultFuncForMethodThrowsForInvalidPublicSyncMethodFromInjectedMetadata()
+        {
+            var fixture = new RequestBuilderImplementation<ICancellableMethods>();
+            var interfaceHttpMethodsField = typeof(RequestBuilderImplementation).GetField(
+                "interfaceHttpMethods",
+                BindingFlags.Instance | BindingFlags.NonPublic
+            );
+            var interfaceHttpMethods =
+                (Dictionary<string, List<RestMethodInfoInternal>>)interfaceHttpMethodsField!.GetValue(fixture)!;
+
+            var restMethod = (RestMethodInfoInternal)FormatterServices.GetUninitializedObject(
+                typeof(RestMethodInfoInternal)
+            );
+            typeof(RestMethodInfoInternal)
+                .GetField("<MethodInfo>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(
+                    restMethod,
+                    typeof(IInvalidReturnTypeIApiResponse).GetMethod(nameof(IInvalidReturnTypeIApiResponse.GetValue))
+                );
+            typeof(RestMethodInfoInternal)
+                .GetField("<ReturnType>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(restMethod, typeof(IApiResponse));
+            typeof(RestMethodInfoInternal)
+                .GetField("<ReturnResultType>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .SetValue(restMethod, typeof(IApiResponse));
+            typeof(RestMethodInfoInternal)
+                .GetField(
+                    "<DeserializedResultType>k__BackingField",
+                    BindingFlags.Instance | BindingFlags.NonPublic
+                )!
+                .SetValue(restMethod, typeof(HttpContent));
+
+            interfaceHttpMethods["GetValue"] = [restMethod];
+
+            var exception = Assert.Throws<ArgumentException>(
+                () => fixture.BuildRestResultFuncForMethod("GetValue")
+            );
+
+            Assert.Contains(
+                "All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>",
+                exception.Message
             );
         }
 

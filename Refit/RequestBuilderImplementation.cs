@@ -274,7 +274,7 @@ namespace Refit
                 );
                 var rxFunc = (MulticastDelegate?)
                     (
-                        rxFuncMi?.MakeGenericMethod(
+                        rxFuncMi!.MakeGenericMethod(
                             restMethod.ReturnResultType,
                             restMethod.DeserializedResultType
                         )

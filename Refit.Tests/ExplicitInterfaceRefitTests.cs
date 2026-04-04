@@ -219,6 +219,27 @@ public class ExplicitInterfaceRefitTests
     }
 
     [Fact]
+    public void Sync_method_returns_raw_IApiResponse_on_success()
+    {
+        var mockHttp = new SyncCapableMockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        mockHttp
+            .Expect(HttpMethod.Get, "http://foo/resource")
+            .Respond("text/plain", "hello");
+
+        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+
+        using var apiResp = fixture.GetRawApiResponse();
+        Assert.True(apiResp.IsSuccessStatusCode);
+        Assert.Null(apiResp.Error);
+        Assert.Equal(HttpMethod.Get, apiResp.RequestMessage.Method);
+        Assert.Equal("http://foo/resource", apiResp.RequestMessage.RequestUri?.ToString());
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
     public void Sync_void_method_throws_ApiException_on_error_response()
     {
         var mockHttp = new SyncCapableMockHttpMessageHandler();
