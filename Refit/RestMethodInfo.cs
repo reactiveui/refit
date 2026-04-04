@@ -647,23 +647,7 @@ namespace Refit
             {
                 ReturnType = returnType;
                 ReturnResultType = returnType.GetGenericArguments()[0];
-
-                if (
-                    ReturnResultType.IsGenericType
-                    && (
-                        ReturnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
-                        || ReturnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)
-                    )
-                )
-                {
-                    DeserializedResultType = ReturnResultType.GetGenericArguments()[0];
-                }
-                else if (ReturnResultType == typeof(IApiResponse))
-                {
-                    DeserializedResultType = typeof(HttpContent);
-                }
-                else
-                    DeserializedResultType = ReturnResultType;
+                DeserializedResultType = DetermineDeserializedResultType(ReturnResultType);
             }
             else if (returnType == typeof(Task))
             {
@@ -673,11 +657,13 @@ namespace Refit
             }
             else
             {
-                // Allow synchronous return types only for non-public or explicit interface members.
-                // This supports internal Refit methods and explicit interface members annotated with Refit attributes.
+                // Allow synchronous return types only for methods that are implemented by generated stubs
+                // (for example explicit/default interface implementations). Public top-level Refit methods must
+                // still use async-compatible return shapes.
                 var isExplicitInterfaceMember = methodInfo.Name.IndexOf('.') >= 0;
-                var isNonPublic = !(methodInfo.IsPublic);
-                if (!(isExplicitInterfaceMember || isNonPublic))
+                var isNonPublic = !methodInfo.IsPublic;
+
+                if (!isExplicitInterfaceMember && !isNonPublic)
                 {
                     throw new ArgumentException(
                         $"Method \"{methodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>"
@@ -686,10 +672,26 @@ namespace Refit
 
                 ReturnType = methodInfo.ReturnType;
                 ReturnResultType = methodInfo.ReturnType;
-                DeserializedResultType = methodInfo.ReturnType == typeof(IApiResponse)
-                    ? typeof(HttpContent)
-                    : methodInfo.ReturnType;
+                DeserializedResultType = DetermineDeserializedResultType(ReturnResultType);
             }
+        }
+
+        static Type DetermineDeserializedResultType(Type returnResultType)
+        {
+            if (
+                returnResultType.IsGenericType
+                && (
+                    returnResultType.GetGenericTypeDefinition() == typeof(ApiResponse<>)
+                    || returnResultType.GetGenericTypeDefinition() == typeof(IApiResponse<>)
+                )
+            )
+            {
+                return returnResultType.GetGenericArguments()[0];
+            }
+
+            return returnResultType == typeof(IApiResponse)
+                ? typeof(HttpContent)
+                : returnResultType;
         }
 
         void DetermineIfResponseMustBeDisposed()

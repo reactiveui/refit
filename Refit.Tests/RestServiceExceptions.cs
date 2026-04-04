@@ -105,6 +105,12 @@ public interface IInvalidReturnType
     string GetValue();
 }
 
+public interface IInvalidReturnTypeIApiResponse
+{
+    [Get("/")]
+    IApiResponse GetValue();
+}
+
 public class RestServiceExceptionTests
 {
     [Fact]
@@ -218,6 +224,13 @@ public class RestServiceExceptionTests
     public void InvalidReturnTypeShouldThrow()
     {
         var exception = Assert.Throws<ArgumentException>(() => RestService.For<IInvalidReturnType>("https://api.github.com"));
+        AssertExceptionContains("is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>", exception);
+    }
+
+    [Fact]
+    public void InvalidRawApiResponseReturnTypeShouldThrow()
+    {
+        var exception = Assert.Throws<ArgumentException>(() => RestService.For<IInvalidReturnTypeIApiResponse>("https://api.github.com"));
         AssertExceptionContains("is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>", exception);
     }
 
