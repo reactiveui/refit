@@ -2,11 +2,20 @@
 
 namespace Refit
 {
-#if !NET6_0_OR_GREATER
+#if !NET9_0_OR_GREATER
     static class HttpContentExtensions
     {
 #pragma warning disable IDE0079 // Remove unnecessary suppression
 #pragma warning disable IDE0060 // Remove unused parameter
+        public static Task LoadIntoBufferAsync(
+            this HttpContent httpContent,
+            CancellationToken cancellationToken
+        )
+        {
+            return httpContent.LoadIntoBufferAsync();
+        }
+#if !NET6_0_OR_GREATER
+
         public static Task<Stream> ReadAsStreamAsync(
             this HttpContent httpContent,
             CancellationToken cancellationToken
@@ -22,6 +31,7 @@ namespace Refit
         {
             return httpContent.ReadAsStringAsync();
         }
+#endif
 #pragma warning restore IDE0060 // Remove unused parameter
 #pragma warning restore IDE0079 // Remove unnecessary suppression
     }

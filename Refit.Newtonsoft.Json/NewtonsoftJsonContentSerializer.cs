@@ -58,11 +58,52 @@ namespace Refit
 
             var serializer = JsonSerializer.Create(jsonSerializerSettings.Value);
 
-            var json = await content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-            using var reader = new StringReader(json);
-            using var jsonTextReader = new JsonTextReader(reader);
+            await content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
+            var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 
-            return serializer.Deserialize<T>(jsonTextReader);
+#if NET6_0_OR_GREATER
+            await using (stream.ConfigureAwait(false))
+#else
+            using (stream)
+#endif
+            {
+                using var reader = new StreamReader(stream, GetEncoding(content) ?? Encoding.UTF8);
+
+                var jsonTextReader = new JsonTextReader(reader);
+#if NET6_0_OR_GREATER
+                await using (jsonTextReader.ConfigureAwait(false))
+#else
+                using (jsonTextReader)
+#endif
+                {
+                    return serializer.Deserialize<T>(jsonTextReader);
+                }
+            }
+        }
+
+        // Mirrors System.Text.Json's charset handling so behavior matches across serializers.
+        // See JsonHelpers.GetEncoding in System.Net.Http.Json:
+        // https://github.com/dotnet/runtime/blob/main/src/libraries/System.Net.Http.Json/src/System/Net/Http/Json/JsonHelpers.cs
+        private static Encoding? GetEncoding(HttpContent content)
+        {
+            var charset = content.Headers.ContentType?.CharSet;
+            if (charset is null)
+            {
+                return null;
+            }
+
+            try
+            {
+                if (charset.Length > 2 && charset[0] == '"' && charset[charset.Length - 1] == '"')
+                {
+                    charset = charset.Substring(1, charset.Length - 2);
+                }
+                return Encoding.GetEncoding(charset);
+            }
+            catch (ArgumentException e)
+            {
+                throw new InvalidOperationException("The character set provided in ContentType is invalid.", e);
+            }
         }
 
         /// <summary>
