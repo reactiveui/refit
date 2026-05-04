@@ -26,8 +26,15 @@ namespace Refit
             Func<HttpClient, IRequestBuilder, object> factory
         )
         {
-            ArgumentNullException.ThrowIfNull(refitInterfaceType);
-            ArgumentNullException.ThrowIfNull(factory);
+            if (refitInterfaceType is null)
+            {
+                throw new ArgumentNullException(nameof(refitInterfaceType));
+            }
+
+            if (factory is null)
+            {
+                throw new ArgumentNullException(nameof(factory));
+            }
 
             GeneratedFactories[refitInterfaceType] = factory;
         }

@@ -1,0 +1,39 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="ARM" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Examples/">
+    <Project Path="examples/BlazorWasmIssue2065/BlazorWasmIssue2065.csproj" />
+    <Project Path="examples/Meow.Common/Meow.Common.csproj" />
+    <Project Path="examples/Meow/Meow.csproj" />
+    <Project Path="examples/SampleUsingLocalApi/ConsoleApplication/ConsoleSampleUsingLocalApi.csproj" />
+    <Project Path="examples/SampleUsingLocalApi/LibraryWithSDKandRefitService/LibraryWithSDKandRefitService.csproj" />
+    <Project Path="examples/SampleUsingLocalApi/RestApiforTest/RestApiForTest.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="../.editorconfig" />
+    <File Path="../.github/workflows/ci-build.yml" />
+    <File Path="../.github/workflows/release.yml" />
+    <File Path="../LICENSE" />
+    <File Path="../README.md" />
+    <File Path="../version.json" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Refit.Benchmarks/Refit.Benchmarks.csproj" />
+    <Project Path="Refit.GeneratorTests/Refit.GeneratorTests.csproj" />
+    <Project Path="Refit.Tests/Refit.Tests.csproj" />
+  </Folder>
+  <Project Path="InterfaceStubGenerator.Roslyn38/InterfaceStubGenerator.Roslyn38.csproj" />
+  <Project Path="InterfaceStubGenerator.Roslyn41/InterfaceStubGenerator.Roslyn41.csproj" />
+  <Project Path="InterfaceStubGenerator.Roslyn50/InterfaceStubGenerator.Roslyn50.csproj" />
+  <Project Path="InterfaceStubGenerator.Shared/InterfaceStubGenerator.Shared.shproj" />
+  <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
+  <Project Path="Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj" />
+  <Project Path="Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />
+  <Project Path="Refit.Xml/Refit.Xml.csproj" />
+  <Project Path="Refit/Refit.csproj" />
+</Solution>
