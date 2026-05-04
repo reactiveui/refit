@@ -1,4 +1,4 @@
-![Refit](refit_logo.png)
+![Refit](images/logo.png)
 
 ## Refit: The automatic type-safe REST library for .NET Core, Xamarin and .NET
 
@@ -80,7 +80,7 @@ services
 
 Refit is sponsored by the following:
 
-[![lombiq logo](Images/lombiq.svg)](https://lombiq.com)[![jetbrains logo](Images/jetbrains.svg)](https://www.jetbrains.com)[![claude logo](Images/claude.svg)](https://claude.com)
+[![lombiq logo](images/lombiq.svg)](https://lombiq.com)[![jetbrains logo](images/jetbrains.svg)](https://www.jetbrains.com)[![claude logo](images/claude.svg)](https://claude.com)
 
 
 ### Where does this work?

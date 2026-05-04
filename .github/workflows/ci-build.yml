@@ -19,6 +19,6 @@ jobs:
     uses: reactiveui/actions-common/.github/workflows/workflow-common-setup-and-build.yml@main
     with:
       productNamespacePrefix: "Refit"
-      srcFolder: "./"
+      srcFolder: "./src"
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

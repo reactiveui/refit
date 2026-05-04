@@ -1,0 +1,153 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+:root {
+  color-scheme: light;
+  --refit-bg: #fbfaf7;
+  --refit-surface: #fdfefb;
+  --refit-panel: #f1f1ea;
+  --refit-text: #232323;
+  --refit-muted: #595959;
+  --refit-border: #ccc;
+  --refit-code-bg: #fdfefb;
+  --refit-code-text: #000;
+  --refit-link: #c30000;
+  --refit-link-hover: #9f0010;
+  --refit-header-bg: #171717;
+  --refit-header-text: #fdfdfb;
+  --refit-table-header: #232323;
+  --refit-table-cell: #e4e4dc;
+}
+
+body {
+  background-color: var(--refit-bg);
+  color: var(--refit-text);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+code,
+pre,
+dl,
+dt,
+dd,
+dl p {
+  color: var(--refit-text);
+}
+
+h1,
+h2,
+h3,
+hr,
+table,
+img,
+pre {
+  border-color: var(--refit-border);
+}
+
+a {
+  color: var(--refit-link);
+}
+
+a:hover {
+  color: var(--refit-link-hover);
+}
+
+pre,
+.highlight {
+  background: var(--refit-code-bg);
+  color: var(--refit-code-text);
+}
+
+code {
+  color: var(--refit-code-text);
+}
+
+td {
+  background: var(--refit-table-cell);
+}
+
+th {
+  background: var(--refit-table-header);
+  color: var(--refit-surface);
+}
+
+header {
+  background-color: var(--refit-header-bg);
+  color: var(--refit-header-text);
+}
+
+h1.header,
+a.header,
+a.name,
+header a,
+a.buttons:hover {
+  color: var(--refit-header-text);
+}
+
+footer {
+  color: var(--refit-muted);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --refit-bg: #101214;
+    --refit-surface: #171a1d;
+    --refit-panel: #202327;
+    --refit-text: #e8eaed;
+    --refit-muted: #aeb6bf;
+    --refit-border: #3d434a;
+    --refit-code-bg: #171a1d;
+    --refit-code-text: #f3f5f7;
+    --refit-link: #ff706b;
+    --refit-link-hover: #ff9a96;
+    --refit-header-bg: #08090a;
+    --refit-header-text: #f7f8f9;
+    --refit-table-header: #2a3036;
+    --refit-table-cell: #1d2227;
+  }
+
+  img {
+    background: var(--refit-surface);
+  }
+
+  blockquote {
+    color: var(--refit-muted);
+  }
+
+  .highlight .c,
+  .highlight .cm,
+  .highlight .c1,
+  .highlight .cs {
+    color: #a9b2bc;
+  }
+
+  .highlight .k,
+  .highlight .o,
+  .type-csharp .highlight .k,
+  .type-csharp .highlight .kt {
+    color: #8ab4f8;
+  }
+
+  .highlight .s,
+  .highlight .s1,
+  .highlight .s2,
+  .highlight .sc,
+  .type-csharp .highlight .s,
+  .type-csharp .highlight .sc {
+    color: #f6a5a5;
+  }
+
+  .highlight .m,
+  .highlight .mi,
+  .highlight .mf {
+    color: #7dd3c7;
+  }
+}

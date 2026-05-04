@@ -1,0 +1,26 @@
+{
+  "platform": {
+    "execution": {
+      "parallel": true
+    }
+  },
+  "extensions": [
+    {
+      "extensionId": "Microsoft.Testing.Extensions.CodeCoverage",
+      "settings": {
+        "format": "cobertura",
+        "skipAutoProperties": true,
+        "modulePaths": {
+          "include": [
+            "Refit(\\..+)?"
+          ],
+          "exclude": [
+            ".*Tests.*",
+            ".*TestSupport.*",
+            ".*Benchmarks.*"
+          ]
+        }
+      }
+    }
+  ]
+}

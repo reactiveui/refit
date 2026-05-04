@@ -11,7 +11,7 @@ jobs:
   release:
     uses: reactiveui/actions-common/.github/workflows/workflow-common-release.yml@main
     with:
-      srcFolder: "./"
+      srcFolder: "./src"
     secrets:
       ES_USERNAME: ${{ secrets.ES_USERNAME }}
       ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
