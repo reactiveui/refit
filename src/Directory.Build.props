@@ -3,7 +3,7 @@
     <RepositoryRoot>$(MSBuildThisFileDirectory)..\</RepositoryRoot>
     <MinClientVersion>2.12</MinClientVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsTestProject>$(MSBuildProjectName.Contains('Test'))</IsTestProject>
+    <IsTestProject>$(MSBuildProjectName.EndsWith('Tests'))</IsTestProject>
     <DebugType>embedded</DebugType>
     <Authors>.NET Foundation and Contributors</Authors>
     <Copyright>Copyright (c) .NET Foundation and Contributors</Copyright>
