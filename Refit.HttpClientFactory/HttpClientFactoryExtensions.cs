@@ -13,6 +13,19 @@ namespace Refit
     public static class HttpClientFactoryExtensions
     {
         /// <summary>
+        /// Adds a Refit client to the DI container.
+        /// </summary>
+        /// <param name="refitInterfaceType">Type of the Refit interface.</param>
+        /// <param name="services">Container.</param>
+        /// <param name="settings">Settings to configure the instance with.</param>
+        /// <returns></returns>
+        public static IHttpClientBuilder AddRefitClient(
+            this IServiceCollection services,
+            Type refitInterfaceType,
+            RefitSettings? settings
+        ) => AddRefitClient(services, refitInterfaceType, settings, httpClientName: null);
+
+        /// <summary>
         /// Adds a Refit client to the DI container
         /// </summary>
         /// <param name="refitInterfaceType">Type of the Refit interface</param>
@@ -56,6 +69,20 @@ namespace Refit
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore(services, refitInterfaceType, serviceKey, _ => settings, httpClientName);
         }
+
+        /// <summary>
+        /// Adds a Refit client to the DI container.
+        /// </summary>
+        /// <typeparam name="T">Type of the Refit interface.</typeparam>
+        /// <param name="services">Container.</param>
+        /// <param name="settings">Settings to configure the instance with.</param>
+        /// <returns></returns>
+        public static IHttpClientBuilder AddRefitClient<T>(
+            this IServiceCollection services,
+            RefitSettings? settings
+        )
+            where T : class =>
+            AddRefitClient<T>(services, settings, httpClientName: null);
 
         /// <summary>
         /// Adds a Refit client to the DI container

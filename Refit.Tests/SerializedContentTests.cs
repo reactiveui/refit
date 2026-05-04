@@ -711,6 +711,28 @@ public partial class SerializedContentTests
 
         Assert.Equal(EnumMemberNameStatus.TotallyReady, result.Status);
     }
+
+    [Fact]
+    public async Task RestService_DefaultSystemTextJsonSerializerHonorsJsonStringEnumMemberNameWithAttributedConverter()
+    {
+        string serializedBody = string.Empty;
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer())
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
+            {
+                serializedBody = await request.Content!.ReadAsStringAsync();
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+            })
+        };
+
+        var api = RestService.For<IIssue2083ColorApi>(BaseAddress, settings);
+        await api.PostColorAsync(new EnumMemberNameColorEnvelope { Color = EnumMemberNameColor.Green });
+
+        Assert.Equal("""{"color":"GREEN"}""", serializedBody);
+    }
 #endif
 
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
@@ -746,6 +768,27 @@ public partial class SerializedContentTests
     {
         [Get("/status")]
         Task<EnumMemberNameEnvelope> GetStatusAsync();
+    }
+
+    [System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter<EnumMemberNameColor>))]
+    public enum EnumMemberNameColor
+    {
+        [JsonStringEnumMemberName("GREEN")]
+        Green,
+
+        [JsonStringEnumMemberName("RED")]
+        Red
+    }
+
+    public sealed class EnumMemberNameColorEnvelope
+    {
+        public EnumMemberNameColor Color { get; set; }
+    }
+
+    public interface IIssue2083ColorApi
+    {
+        [Post("/color")]
+        Task PostColorAsync([Body] EnumMemberNameColorEnvelope body);
     }
 #endif
 
