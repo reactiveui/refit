@@ -43,6 +43,26 @@ public class ReturnTypeTests
     }
 
     [Fact]
+    public Task GenericValueTaskShouldWork()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            ValueTask<string> Get();
+            """);
+    }
+
+    [Fact]
+    public Task ValueTaskApiResponseShouldWork()
+    {
+        return Fixture.VerifyForBody(
+            """
+            [Get("/users")]
+            ValueTask<ApiResponse<string>> Get();
+            """);
+    }
+
+    [Fact]
     public Task GenericConstraintReturnTask()
     {
         return Fixture.VerifyForBody(

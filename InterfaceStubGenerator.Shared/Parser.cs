@@ -472,6 +472,7 @@ namespace {refitInternalNamespace}
         {
             "Task" => ReturnTypeInfo.AsyncVoid,
             "Task`1" or "ValueTask`1" => ReturnTypeInfo.AsyncResult,
+            "Void" => ReturnTypeInfo.SyncVoid,
             _ => ReturnTypeInfo.Return,
         };
 
@@ -633,6 +634,7 @@ namespace {refitInternalNamespace}
         {
             "Task" => ReturnTypeInfo.AsyncVoid,
             "Task`1" or "ValueTask`1" => ReturnTypeInfo.AsyncResult,
+            "Void" => ReturnTypeInfo.SyncVoid,
             _ => ReturnTypeInfo.Return,
         };
 

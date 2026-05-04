@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
@@ -182,6 +183,47 @@ public class HttpClientFactoryExtensionsTests
                 .GetRequiredService<SettingsFor<IFooWithOtherAttribute>>()
                 .Settings!.ContentSerializer
         );
+    }
+
+    [Fact]
+    public void AddRefitClient_ServiceCollectionGenericSettingsOverload_RemainsBinaryCompatible()
+    {
+        var method = typeof(HttpClientFactoryExtensions)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .SingleOrDefault(method =>
+                method.Name == nameof(HttpClientFactoryExtensions.AddRefitClient)
+                && method.IsGenericMethodDefinition
+                && method.GetGenericArguments().Length == 1
+                && method.GetParameters() is
+                [
+                    { ParameterType: var servicesType },
+                    { ParameterType: var settingsType }
+                ]
+                && servicesType == typeof(IServiceCollection)
+                && settingsType == typeof(RefitSettings));
+
+        Assert.NotNull(method);
+    }
+
+    [Fact]
+    public void AddRefitClient_ServiceCollectionTypeSettingsOverload_RemainsBinaryCompatible()
+    {
+        var method = typeof(HttpClientFactoryExtensions)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .SingleOrDefault(method =>
+                method.Name == nameof(HttpClientFactoryExtensions.AddRefitClient)
+                && !method.IsGenericMethodDefinition
+                && method.GetParameters() is
+                [
+                    { ParameterType: var servicesType },
+                    { ParameterType: var refitInterfaceType },
+                    { ParameterType: var settingsType }
+                ]
+                && servicesType == typeof(IServiceCollection)
+                && refitInterfaceType == typeof(Type)
+                && settingsType == typeof(RefitSettings));
+
+        Assert.NotNull(method);
     }
 
     [Fact]

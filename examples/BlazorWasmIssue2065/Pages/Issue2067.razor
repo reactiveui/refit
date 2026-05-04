@@ -1,0 +1,31 @@
+@page "/issue2067"
+@inject IIssue2067Api Api
+
+<PageTitle>Issue 2067</PageTitle>
+
+<h1>Issue 2067</h1>
+
+<p>This sample proves Refit's default System.Text.Json enum converter supports JsonStringEnumMemberName.</p>
+
+<button @onclick="CallApi">Load status</button>
+
+<p id="issue2067-status">@status</p>
+
+@code {
+    private string status = "Ready";
+
+    private async Task CallApi()
+    {
+        status = "Calling...";
+
+        try
+        {
+            var payload = await Api.GetStatusAsync();
+            status = $"Success: {payload.Status}";
+        }
+        catch (Exception ex)
+        {
+            status = $"Failure: {ex.GetType().Name} - {ex.Message}";
+        }
+    }
+}

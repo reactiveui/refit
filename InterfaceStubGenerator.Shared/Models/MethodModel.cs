@@ -17,5 +17,6 @@ internal enum ReturnTypeInfo : byte
 {
     Return,
     AsyncVoid,
-    AsyncResult
+    AsyncResult,
+    SyncVoid
 }

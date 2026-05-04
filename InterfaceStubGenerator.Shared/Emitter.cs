@@ -188,6 +188,7 @@ internal static class Emitter
             ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.Return => (false, "return ", ""),
+            ReturnTypeInfo.SyncVoid => (false, "", ""),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(methodModel.ReturnTypeMetadata),
                 methodModel.ReturnTypeMetadata,
@@ -228,12 +229,16 @@ internal static class Emitter
             lookupName = lookupName.Substring(lastDotIndex + 1);
         }
 
+        var callExpression = methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid
+            ? $"______func(this.Client, ______arguments);"
+            : $"{@return}({returnType})______func(this.Client, ______arguments){configureAwait};";
+
         source.WriteLine(
             $"""
             var ______arguments = {argumentsArrayString};
             var ______func = requestBuilder.BuildRestResultFuncForMethod("{lookupName}", {parameterTypesExpression}{genericString} );
 
-            {@return}({returnType})______func(this.Client, ______arguments){configureAwait};
+            {callExpression}
             """
         );
 

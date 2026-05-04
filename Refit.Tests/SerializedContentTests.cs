@@ -520,6 +520,54 @@ public partial class SerializedContentTests
         Assert.Equal("\"alreadyLowercase\"", json);
     }
 
+    [Theory]
+    [InlineData("vAlUeOnE")]
+    [InlineData("ValueOne")]
+    [InlineData("VALUEONE")]
+    [InlineData("valueone")]
+    public void SystemTextJsonContentSerializer_DefaultOptions_DeserializesEnumValuesWithVariousCasings(
+        string jsonValue
+    )
+    {
+        var result = SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+            $"\"{jsonValue}\"",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        Assert.Equal(CamelCaseEnum.ValueOne, result);
+    }
+
+    [Fact]
+    public void SystemTextJsonContentSerializer_DefaultOptions_ExactCaseMatchTakesPriorityOverCaseInsensitiveWhenMembersDifferByCase()
+    {
+        // When enum has members whose names differ only by case, the exact serialized form
+        // (camelCase) should be used first (case-sensitive), falling back to case-insensitive only
+        // for inputs that do not exactly match any known serialized form.
+
+        // CaseDifferentMembers.Alpha serializes to "alpha" (camelCase),
+        // CaseDifferentMembers.ALPHA serializes to "aLPHA" (camelCase).
+        // Exact-match lookups must correctly disambiguate these.
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+
+        Assert.Equal(
+            CaseDifferentMembers.Alpha,
+            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"alpha\"", options)
+        );
+        Assert.Equal(
+            CaseDifferentMembers.ALPHA,
+            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"aLPHA\"", options)
+        );
+        // Field names are also accepted via exact match
+        Assert.Equal(
+            CaseDifferentMembers.Alpha,
+            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"Alpha\"", options)
+        );
+        Assert.Equal(
+            CaseDifferentMembers.ALPHA,
+            SystemTextJsonSerializer.Deserialize<CaseDifferentMembers>("\"ALPHA\"", options)
+        );
+    }
+
     [Fact]
     public async Task SystemTextJsonContentSerializer_UsesSourceGeneratedMetadataWhenProvided()
     {
@@ -614,6 +662,79 @@ public partial class SerializedContentTests
         Assert.Contains("\"name\":\"Photon\"", serializedBody, StringComparison.Ordinal);
     }
 
+#if NET9_0_OR_GREATER
+    [Fact]
+    public async Task SystemTextJsonContentSerializer_SupportsJsonStringEnumMemberName()
+    {
+        var serializer = new SystemTextJsonContentSerializer(
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+        );
+
+        var content = serializer.ToHttpContent(
+            new EnumMemberNameEnvelope { Status = EnumMemberNameStatus.TotallyReady }
+        );
+        var serialized = await content.ReadAsStringAsync();
+        var roundTrip = await serializer.FromHttpContentAsync<EnumMemberNameEnvelope>(
+            new StringContent("{\"status\":\"totally-ready\"}", Encoding.UTF8, "application/json")
+        );
+
+        Assert.Contains("totally-ready", serialized, StringComparison.Ordinal);
+        Assert.NotNull(roundTrip);
+        Assert.Equal(EnumMemberNameStatus.TotallyReady, roundTrip.Status);
+    }
+
+    [Fact]
+    public async Task RestService_UsesDefaultEnumConverterWithJsonStringEnumMemberName()
+    {
+        var settings = new RefitSettings(
+            new SystemTextJsonContentSerializer(
+                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()
+            )
+        )
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(_ =>
+                Task.FromResult(
+                    new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(
+                            "{\"status\":\"totally-ready\"}",
+                            Encoding.UTF8,
+                            "application/json"
+                        )
+                    }
+                )
+            )
+        };
+
+        var api = RestService.For<IIssue2067StatusApi>(BaseAddress, settings);
+        var result = await api.GetStatusAsync();
+
+        Assert.Equal(EnumMemberNameStatus.TotallyReady, result.Status);
+    }
+
+    [Fact]
+    public async Task RestService_DefaultSystemTextJsonSerializerHonorsJsonStringEnumMemberNameWithAttributedConverter()
+    {
+        string serializedBody = string.Empty;
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer())
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
+            {
+                serializedBody = await request.Content!.ReadAsStringAsync();
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+            })
+        };
+
+        var api = RestService.For<IIssue2083ColorApi>(BaseAddress, settings);
+        await api.PostColorAsync(new EnumMemberNameColorEnvelope { Color = EnumMemberNameColor.Green });
+
+        Assert.Equal("""{"color":"GREEN"}""", serializedBody);
+    }
+#endif
+
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
     [JsonDerivedType(typeof(LaserWeaponRequest), "laser")]
     public abstract class CreateWeaponRequest
@@ -628,6 +749,48 @@ public partial class SerializedContentTests
         [Post("/weapons")]
         Task CreateWeapon(CreateWeaponRequest request);
     }
+
+#if NET9_0_OR_GREATER
+    public enum EnumMemberNameStatus
+    {
+        [JsonStringEnumMemberName("totally-ready")]
+        TotallyReady,
+
+        NeedsReview
+    }
+
+    public sealed class EnumMemberNameEnvelope
+    {
+        public EnumMemberNameStatus Status { get; set; }
+    }
+
+    public interface IIssue2067StatusApi
+    {
+        [Get("/status")]
+        Task<EnumMemberNameEnvelope> GetStatusAsync();
+    }
+
+    [System.Text.Json.Serialization.JsonConverter(typeof(JsonStringEnumConverter<EnumMemberNameColor>))]
+    public enum EnumMemberNameColor
+    {
+        [JsonStringEnumMemberName("GREEN")]
+        Green,
+
+        [JsonStringEnumMemberName("RED")]
+        Red
+    }
+
+    public sealed class EnumMemberNameColorEnvelope
+    {
+        public EnumMemberNameColor Color { get; set; }
+    }
+
+    public interface IIssue2083ColorApi
+    {
+        [Post("/color")]
+        Task PostColorAsync([Body] EnumMemberNameColorEnvelope body);
+    }
+#endif
 
     [JsonSerializable(typeof(User))]
     internal sealed partial class SerializedContentJsonSerializerContext : JsonSerializerContext { }
@@ -685,6 +848,14 @@ public partial class SerializedContentTests
     {
         ValueOne = 1,
         alreadyLowercase = 2
+    }
+
+    // Members Alpha and ALPHA differ only by case; this enum is used to verify that
+    // the case-sensitive lookup takes priority and the correct member is chosen.
+    enum CaseDifferentMembers
+    {
+        Alpha = 1,
+        ALPHA = 2,
     }
 
     sealed class AsyncOnlyJsonContent(string json) : HttpContent

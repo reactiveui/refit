@@ -24,8 +24,8 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net462'">
-    <PackageReference Include="System.Text.Json" Version="9.0.9" />
-    <PackageReference Include="System.Net.Http.Json" Version="9.0.9" />
+    <PackageReference Include="System.Text.Json" Version="10.0.5" />
+    <PackageReference Include="System.Net.Http.Json" Version="10.0.5" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">

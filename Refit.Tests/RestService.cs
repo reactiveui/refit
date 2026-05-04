@@ -238,6 +238,18 @@ public interface IStreamApi
     Task<ApiResponse<Stream>> GetRemoteFileWithMetadata(string filename);
 }
 
+public interface IValueTaskApi
+{
+    [Get("/{value}")]
+    ValueTask<string> GetValue(string value);
+}
+
+public interface IValueTaskApiResponseApi
+{
+    [Get("/{value}")]
+    ValueTask<ApiResponse<string>> GetValue(string value);
+}
+
 public interface IApiWithDecimal
 {
     [Get("/withDecimal")]
@@ -355,6 +367,41 @@ public class RestServiceIntegrationTests
         Assert.NotNull(instance);
     }
 #endif
+
+    [Fact]
+    public async Task ValueTaskMethodsShouldWork()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        mockHttp.Expect(HttpMethod.Get, "http://foo/value").Respond("text/plain", "test");
+
+        var fixture = RestService.For<IValueTaskApi>("http://foo", settings);
+
+        var result = await fixture.GetValue("value");
+
+        Assert.Equal("test", result);
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Fact]
+    public async Task ValueTaskApiResponseMethodsShouldWork()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        mockHttp.Expect(HttpMethod.Get, "http://foo/value").Respond("text/plain", "test");
+
+        var fixture = RestService.For<IValueTaskApiResponseApi>("http://foo", settings);
+
+        using var response = await fixture.GetValue("value");
+
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.Equal("test", response.Content);
+        Assert.Equal(HttpMethod.Get, response.RequestMessage.Method);
+        Assert.Equal("http://foo/value", response.RequestMessage.RequestUri?.ToString());
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
 
     [Fact]
     public async Task CanAddContentHeadersToPostWithoutBody()

@@ -416,6 +416,34 @@ public class AuthenticatedClientHandlerTests
     }
 
     [Fact]
+    public async Task AuthorizationHeaderValueGetterCanAwaitWhenSupplyingHttpClient()
+    {
+        var handler = new MockHttpMessageHandler();
+        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://api") };
+
+        var settings = new RefitSettings
+        {
+            AuthorizationHeaderValueGetter = async (_, __) =>
+            {
+                await Task.Yield();
+                return "tokenValue";
+            }
+        };
+
+        handler
+            .Expect(HttpMethod.Get, "http://api/auth")
+            .WithHeaders("Authorization", "Bearer tokenValue")
+            .Respond("text/plain", "Ok");
+
+        var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
+
+        var result = await fixture.GetAuthenticated();
+
+        handler.VerifyNoOutstandingExpectation();
+        Assert.Equal("Ok", result);
+    }
+
+    [Fact]
     public async Task AuthorizationHeaderValueGetterDoesNotOverrideExplicitTokenWhenSupplyingHttpClient()
     {
         var handler = new MockHttpMessageHandler();

@@ -1,0 +1,31 @@
+@page "/"
+@inject IIssue2065Api Api
+
+<PageTitle>Issue 2065</PageTitle>
+
+<h1>Issue 2065</h1>
+
+<p>This sample proves Refit works inside Blazor WebAssembly without blocking sync waits.</p>
+
+<button @onclick="CallApi">Call Refit API</button>
+
+<p id="status">@status</p>
+
+@code {
+    private string status = "Ready";
+
+    private async Task CallApi()
+    {
+        status = "Calling...";
+
+        try
+        {
+            var payload = await Api.GetPayload();
+            status = $"Success: {payload}";
+        }
+        catch (Exception ex)
+        {
+            status = $"Failure: {ex.GetType().Name} - {ex.Message}";
+        }
+    }
+}

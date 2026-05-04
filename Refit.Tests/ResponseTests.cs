@@ -52,6 +52,9 @@ public class ResponseTests
 
         [Get("/GetIApiResponse")]
         Task<IApiResponse> GetIApiResponse();
+
+        [Get("/GetValueTaskIApiResponse")]
+        ValueTask<IApiResponse> GetValueTaskIApiResponse();
     }
 
     [Fact]
@@ -421,6 +424,28 @@ public class ResponseTests
             .Respond(req => expectedResponse);
 
         var apiResponse = await fixture.GetIApiResponse();
+
+        Assert.NotNull(apiResponse);
+        Assert.NotNull(apiResponse.Error);
+        Assert.True(apiResponse.HasResponseError(out var error));
+        Assert.NotNull(error.Content);
+        Assert.Equal("Hello world", error.Content);
+    }
+
+    [Fact]
+    public async Task BadRequestWithStringContent_ShouldReturnValueTaskIApiResponse()
+    {
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent("Hello world")
+        };
+        expectedResponse.Content.Headers.Clear();
+
+        mockHandler
+            .Expect(HttpMethod.Get, $"http://api/{nameof(fixture.GetValueTaskIApiResponse)}")
+            .Respond(req => expectedResponse);
+
+        var apiResponse = await fixture.GetValueTaskIApiResponse();
 
         Assert.NotNull(apiResponse);
         Assert.NotNull(apiResponse.Error);
