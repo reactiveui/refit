@@ -2607,7 +2607,7 @@ namespace Refit.Tests
         }
 
         [Test]
-        public async Task ObservableMethodsWithCancellationTokenShouldWork()
+        public void ObservableMethodsWithCancellationTokenShouldCancelWhenRequested()
         {
             var fixture = new RequestBuilderImplementation<IObservableCancellableMethods>();
             var factory = fixture.BuildRestResultFuncForMethod("GetWithCancellation");
@@ -2624,9 +2624,7 @@ namespace Refit.Tests
                     new object[] { "value", cts.Token }
                 )!;
 
-            var result = observable.Wait();
-
-            Assert.Equal("test", result);
+            Assert.Throws<TaskCanceledException>(() => observable.Wait());
             Assert.Equal(
                 "http://api/value/value",
                 testHttpMessageHandler.RequestMessage.RequestUri.ToString()

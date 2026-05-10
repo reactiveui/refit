@@ -473,8 +473,8 @@ namespace Refit
                         {
                             e = await ApiException.Create(
                                 "An error occured deserializing the response.",
-                                resp.RequestMessage!,
-                                resp.RequestMessage!.Method,
+                                rq,
+                                rq.Method,
                                 resp,
                                 settings,
                                 ex
@@ -502,6 +502,10 @@ namespace Refit
                         return await DeserializeContentAsync<T>(resp, content, cancellationToken)
                             .ConfigureAwait(false);
                     }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
                     catch (Exception ex)
                     {
                         if (settings.DeserializationExceptionFactory != null)
@@ -517,8 +521,8 @@ namespace Refit
                         {
                             throw await ApiException.Create(
                                 "An error occured deserializing the response.",
-                                resp.RequestMessage!,
-                                resp.RequestMessage!.Method,
+                                rq,
+                                rq.Method,
                                 resp,
                                 settings,
                                 ex
@@ -690,8 +694,8 @@ namespace Refit
                             {
                                 e = await ApiException.Create(
                                     "An error occured deserializing the response.",
-                                    resp.RequestMessage!,
-                                    resp.RequestMessage!.Method,
+                                    rq,
+                                    rq.Method,
                                     resp,
                                     settings,
                                     ex
@@ -719,6 +723,10 @@ namespace Refit
                             return await DeserializeContentAsync<T>(resp, content, ct)
                                 .ConfigureAwait(false);
                         }
+                        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                        {
+                            throw;
+                        }
                         catch (Exception ex)
                         {
                             if (settings.DeserializationExceptionFactory != null)
@@ -733,8 +741,8 @@ namespace Refit
                             {
                                 throw await ApiException.Create(
                                     "An error occured deserializing the response.",
-                                    resp.RequestMessage!,
-                                    resp.RequestMessage!.Method,
+                                    rq,
+                                    rq.Method,
                                     resp,
                                     settings,
                                     ex
@@ -787,7 +795,12 @@ namespace Refit
                     .ReadAsStreamAsync(cancellationToken)
                     .ConfigureAwait(false);
                 using var reader = new StreamReader(stream);
+#if NET8_0_OR_GREATER
                 var str = (object)await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+#else
+                cancellationToken.ThrowIfCancellationRequested();
+                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+#endif
                 result = (T)str;
             }
             else
