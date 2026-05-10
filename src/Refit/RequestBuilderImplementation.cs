@@ -787,7 +787,7 @@ namespace Refit
                     .ReadAsStreamAsync(cancellationToken)
                     .ConfigureAwait(false);
                 using var reader = new StreamReader(stream);
-                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                var str = (object)await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
                 result = (T)str;
             }
             else
