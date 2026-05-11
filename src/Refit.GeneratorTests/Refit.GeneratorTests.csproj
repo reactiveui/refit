@@ -28,7 +28,7 @@
     <PackageReference Include="TUnit" Version="1.43.11" />
     <PackageReference Include="Verify.DiffPlex" Version="3.1.2" />
     <PackageReference Include="Verify.SourceGenerators" Version="2.5.0" />
-    <PackageReference Include="Verify.TUnit" Version="31.16.2" />
+    <PackageReference Include="Verify.TUnit" Version="31.16.3" />
     <PackageReference Include="System.Reactive" Version="6.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3" />
