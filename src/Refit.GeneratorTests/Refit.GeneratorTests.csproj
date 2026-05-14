@@ -25,7 +25,7 @@
     <PackageReference Include="System.Formats.Asn1" Version="9.0.*" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.6.2" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" /> 
-    <PackageReference Include="TUnit" Version="1.43.11" />
+    <PackageReference Include="TUnit" Version="1.44.0" />
     <PackageReference Include="Verify.DiffPlex" Version="3.1.2" />
     <PackageReference Include="Verify.SourceGenerators" Version="2.5.0" />
     <PackageReference Include="Verify.TUnit" Version="31.16.3" />
