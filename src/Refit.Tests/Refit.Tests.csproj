@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
-    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.3.10" />
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.8" />
   </ItemGroup>
 
   <ItemGroup>
