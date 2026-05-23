@@ -10,7 +10,7 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);ROSLYN_4</DefineConstants>
-    <MsCACSharpVersion>4.1.0</MsCACSharpVersion>
+    <MsCACSharpVersion>5.3.0</MsCACSharpVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
