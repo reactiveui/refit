@@ -15,12 +15,15 @@ on:
 permissions:
   contents: write
   id-token: write
+  packages: read
 
 jobs:
   release:
     uses: reactiveui/actions-common/.github/workflows/workflow-common-release.yml@main
     with:
       srcFolder: "./src"
+      versioningTool: minver
+      minverMinimumMajorMinor: '10.2'
       bump: ${{ inputs.bump }}
     secrets:
       CERTUM_USER_ID: ${{ secrets.CERTUM_USER_ID }}
