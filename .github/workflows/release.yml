@@ -2,6 +2,15 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Release level'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -12,11 +21,11 @@ jobs:
     uses: reactiveui/actions-common/.github/workflows/workflow-common-release.yml@main
     with:
       srcFolder: "./src"
+      bump: ${{ inputs.bump }}
     secrets:
-      ES_USERNAME: ${{ secrets.ES_USERNAME }}
-      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
-      CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
-      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+      CERTUM_USER_ID: ${{ secrets.CERTUM_USER_ID }}
+      CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
+      CERTUM_CERT_FINGERPRINT: ${{ secrets.CERTUM_CERT_FINGERPRINT }}
 
   publish-nuget:
     needs: release
@@ -51,3 +60,4 @@ jobs:
     uses: reactiveui/actions-common/.github/workflows/workflow-common-create-release.yml@main
     with:
       version: ${{ needs.release.outputs.semver2 }}
+      tag: ${{ needs.release.outputs.tag }}
