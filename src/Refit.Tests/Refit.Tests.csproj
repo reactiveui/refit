@@ -40,7 +40,7 @@
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.7.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="System.Formats.Asn1" Version="10.0.8" />
-    <PackageReference Include="TUnit" Version="1.45.29" />
+    <PackageReference Include="TUnit" Version="1.47.0" />
     <PackageReference Include="System.Reactive" Version="6.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3" />
