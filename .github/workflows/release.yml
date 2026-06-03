@@ -27,7 +27,8 @@ jobs:
   release:
     uses: reactiveui/actions-common/.github/workflows/workflow-common-release.yml@main
     with:
-      srcFolder: "./src"
+      srcFolder: "."
+      solutionFile: "Refit.sln"
       minverMinimumMajorMinor: '10.2'
       bump: ${{ inputs.bump }}
       ref: ${{ inputs.sourceRef }}
