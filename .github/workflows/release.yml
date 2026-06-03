@@ -12,6 +12,12 @@ on:
           - minor
           - major
 
+      sourceRef:
+        description: 'Optional git ref (tag/branch/SHA) to release from. Leave blank to release from this branch (normally main).'
+        required: false
+        type: string
+        default: ''
+
 permissions:
   contents: write
   id-token: write
@@ -24,6 +30,7 @@ jobs:
       srcFolder: "./src"
       minverMinimumMajorMinor: '10.2'
       bump: ${{ inputs.bump }}
+      ref: ${{ inputs.sourceRef }}
     secrets:
       CERTUM_USER_ID: ${{ secrets.CERTUM_USER_ID }}
       CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
@@ -63,3 +70,4 @@ jobs:
     with:
       version: ${{ needs.release.outputs.semver2 }}
       tag: ${{ needs.release.outputs.tag }}
+      target: ${{ needs.release.outputs.sourceSha }}
