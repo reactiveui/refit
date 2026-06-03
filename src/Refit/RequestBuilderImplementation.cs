@@ -626,12 +626,13 @@ namespace Refit
                         "BaseAddress must be set on the HttpClient instance"
                     );
 
-                var factory = BuildRequestFactoryForMethod(
+                var rq = await BuildRequestMessageForMethodAsync(
                     restMethod,
                     client.BaseAddress.AbsolutePath,
-                    restMethod.CancellationToken != null
-                );
-                var rq = factory(paramList);
+                    restMethod.CancellationToken != null,
+                    paramList
+                ).ConfigureAwait(false);
+
                 HttpResponseMessage? resp = null;
                 HttpContent? content = null;
                 var disposeResponse = true;
@@ -982,24 +983,6 @@ namespace Refit
 
             return false;
         }
-
-        Func<object[], HttpRequestMessage?> BuildRequestFactoryForMethod(
-            RestMethodInfoInternal restMethod,
-            string basePath,
-            bool paramsContainsCancellationToken
-        )
-        {
-            return paramList =>
-                RunSynchronous(() =>
-                    BuildRequestMessageForMethodAsync(
-                        restMethod,
-                        basePath,
-                        paramsContainsCancellationToken,
-                        paramList
-                    )
-                );
-        }
-
         async Task<HttpRequestMessage?> BuildRequestMessageForMethodAsync(
             RestMethodInfoInternal restMethod,
             string basePath,
