@@ -2,21 +2,33 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Release level'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
   id-token: write
+  packages: read
 
 jobs:
   release:
     uses: reactiveui/actions-common/.github/workflows/workflow-common-release.yml@main
     with:
-      srcFolder: "./"
+      srcFolder: "."
+      solutionFile: "Refit.sln"
+      minverMinimumMajorMinor: '10.2'
+      bump: ${{ inputs.bump }}
     secrets:
-      ES_USERNAME: ${{ secrets.ES_USERNAME }}
-      ES_PASSWORD: ${{ secrets.ES_PASSWORD }}
-      CREDENTIAL_ID: ${{ secrets.CREDENTIAL_ID }}
-      ES_TOTP_SECRET: ${{ secrets.ES_TOTP_SECRET }}
+      CERTUM_USER_ID: ${{ secrets.CERTUM_USER_ID }}
+      CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
+      CERTUM_CERT_FINGERPRINT: ${{ secrets.CERTUM_CERT_FINGERPRINT }}
 
   publish-nuget:
     needs: release
@@ -36,7 +48,7 @@ jobs:
 
       - name: NuGet login (OIDC trusted publishing)
         id: nuget-login
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ secrets.NUGET_USER }}
 
@@ -46,8 +58,11 @@ jobs:
           for pkg in *.nupkg; do
             dotnet nuget push "$pkg" --source https://api.nuget.org/v3/index.json --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
           done
+
   create-release:
     needs: [release, publish-nuget]
     uses: reactiveui/actions-common/.github/workflows/workflow-common-create-release.yml@main
     with:
       version: ${{ needs.release.outputs.semver2 }}
+      tag: ${{ needs.release.outputs.tag }}
+      target: ${{ needs.release.outputs.sourceSha }}
