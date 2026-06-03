@@ -12,6 +12,12 @@ on:
           - minor
           - major
 
+      sourceRef:
+        description: 'Optional git ref (tag/branch/SHA) to release from. Leave blank to release from this branch.'
+        required: false
+        type: string
+        default: ''
+
 permissions:
   contents: write
   id-token: write
@@ -25,6 +31,7 @@ jobs:
       solutionFile: "Refit.sln"
       minverMinimumMajorMinor: '10.2'
       bump: ${{ inputs.bump }}
+      ref: ${{ inputs.sourceRef }}
     secrets:
       CERTUM_USER_ID: ${{ secrets.CERTUM_USER_ID }}
       CERTUM_OTP_URI: ${{ secrets.CERTUM_OTP_URI }}
