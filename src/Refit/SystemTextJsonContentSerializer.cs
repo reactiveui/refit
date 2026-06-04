@@ -27,6 +27,13 @@ namespace Refit
         /// <inheritdoc/>
         public HttpContent ToHttpContent<T>(T item)
         {
+            if (item is not null
+                && (typeof(T).IsInterface || typeof(T).IsAbstract)
+                && !DeclaredTypeIsPolymorphic(typeof(T)))
+            {
+                return ToHttpContentRuntimeTyped(item, item.GetType());
+            }
+
 #if NET8_0_OR_GREATER
             if (TryGetJsonTypeInfo<T>(out var jsonTypeInfo))
             {
@@ -34,6 +41,34 @@ namespace Refit
             }
 #endif
             return JsonContent.Create(item, options: jsonSerializerOptions);
+        }
+
+        HttpContent ToHttpContentRuntimeTyped(object item, Type runtimeType)
+        {
+#if NET8_0_OR_GREATER
+            if (jsonSerializerOptions.TypeInfoResolver is not null)
+            {
+                return JsonContent.Create(item, jsonSerializerOptions.GetTypeInfo(runtimeType));
+            }
+#endif
+            return JsonContent.Create(item, runtimeType, options: jsonSerializerOptions);
+        }
+
+        bool DeclaredTypeIsPolymorphic(Type type)
+        {
+            if (type.IsDefined(typeof(JsonPolymorphicAttribute), inherit: false)
+                || type.IsDefined(typeof(JsonDerivedTypeAttribute), inherit: false))
+            {
+                return true;
+            }
+
+#if NET8_0_OR_GREATER
+            if (jsonSerializerOptions.TypeInfoResolver is not null)
+            {
+                return jsonSerializerOptions.GetTypeInfo(type).PolymorphismOptions is not null;
+            }
+#endif
+            return false;
         }
 
         /// <inheritdoc/>

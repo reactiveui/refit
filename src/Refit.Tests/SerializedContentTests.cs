@@ -661,6 +661,52 @@ public partial class SerializedContentTests
         Assert.Contains("\"name\":\"Photon\"", serializedBody, StringComparison.Ordinal);
     }
 
+    [Test]
+    public async Task RestService_SerializesBodyUsingRuntimeTypeWhenDeclaredTypeIsInterface()
+    {
+        string? serializedBody = null;
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer())
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
+            {
+                serializedBody = await request.Content!.ReadAsStringAsync();
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+            })
+        };
+
+        var api = RestService.For<IInterfaceRequestApi>(BaseAddress, settings);
+        await api.CreateWeapon(new InterfaceLaserWeaponRequest { Name = "Photon" });
+
+        Assert.NotNull(serializedBody);
+        Assert.Equal("""{"name":"Photon"}""", serializedBody);
+    }
+
+    [Test]
+    public async Task RestService_SerializesBodyUsingRuntimeTypeWhenDeclaredTypeIsAbstract()
+    {
+        string? serializedBody = null;
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer())
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
+            {
+                serializedBody = await request.Content!.ReadAsStringAsync();
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+            })
+        };
+
+        var api = RestService.For<IAbstractRequestApi>(BaseAddress, settings);
+        await api.CreateWeapon(new AbstractLaserWeaponRequest { Name = "Photon" });
+
+        Assert.NotNull(serializedBody);
+        Assert.Equal("""{"name":"Photon"}""", serializedBody);
+    }
+
 #if NET9_0_OR_GREATER
     [Test]
     public async Task SystemTextJsonContentSerializer_SupportsJsonStringEnumMemberName()
@@ -747,6 +793,32 @@ public partial class SerializedContentTests
     {
         [Post("/weapons")]
         Task CreateWeapon(CreateWeaponRequest request);
+    }
+
+    public interface InterfaceCreateWeaponRequest;
+
+    public sealed class InterfaceLaserWeaponRequest : InterfaceCreateWeaponRequest
+    {
+        public string? Name { get; set; }
+    }
+
+    public interface IInterfaceRequestApi
+    {
+        [Post("/weapons")]
+        Task CreateWeapon([Body] InterfaceCreateWeaponRequest request);
+    }
+
+    public abstract class AbstractCreateWeaponRequest;
+
+    public sealed class AbstractLaserWeaponRequest : AbstractCreateWeaponRequest
+    {
+        public string? Name { get; set; }
+    }
+
+    public interface IAbstractRequestApi
+    {
+        [Post("/weapons")]
+        Task CreateWeapon([Body] AbstractCreateWeaponRequest request);
     }
 
 #if NET9_0_OR_GREATER
