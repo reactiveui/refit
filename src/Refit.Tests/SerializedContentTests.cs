@@ -795,7 +795,7 @@ public partial class SerializedContentTests
         Task CreateWeapon(CreateWeaponRequest request);
     }
 
-    public interface InterfaceCreateWeaponRequest;
+    public interface InterfaceCreateWeaponRequest { }
 
     public sealed class InterfaceLaserWeaponRequest : InterfaceCreateWeaponRequest
     {
@@ -808,7 +808,7 @@ public partial class SerializedContentTests
         Task CreateWeapon([Body] InterfaceCreateWeaponRequest request);
     }
 
-    public abstract class AbstractCreateWeaponRequest;
+    public abstract class AbstractCreateWeaponRequest { }
 
     public sealed class AbstractLaserWeaponRequest : AbstractCreateWeaponRequest
     {
