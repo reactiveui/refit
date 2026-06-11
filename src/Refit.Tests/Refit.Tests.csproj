@@ -42,8 +42,8 @@
     <PackageReference Include="System.Formats.Asn1" Version="10.0.8" />
     <PackageReference Include="TUnit" Version="1.47.0" />
     <PackageReference Include="System.Reactive" Version="6.1.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.14.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.4" />
     <PackageReference Include="RichardSzalay.MockHttp" Version="$(MockHttpVersion)" />
     <PackageReference Include="Verify.DiffPlex" Version="3.2.0" />
     <PackageReference Include="Verify.SourceGenerators" Version="2.5.0" />
