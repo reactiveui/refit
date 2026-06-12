@@ -22,7 +22,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="System.Formats.Asn1" Version="9.0.*" />
+    <PackageReference Include="System.Formats.Asn1" Version="9.0.1*" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.7.0" />
     <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" /> 
     <PackageReference Include="TUnit" Version="1.47.0" />
