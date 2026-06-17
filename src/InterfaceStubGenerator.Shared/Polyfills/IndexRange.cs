@@ -11,6 +11,11 @@ namespace System
     /// <c>System.Index</c> is not available. It should not be used as a general-purpose
     /// substitute outside of this project.
     /// </remarks>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Design",
+        "CA2225:Operator overloads have named alternates",
+        Justification = "Polyfill mirroring the shape of the BCL System.Index; it is internal to the generator and intentionally matches the framework type."
+    )]
     public readonly record struct Index
     {
         private readonly int _value;

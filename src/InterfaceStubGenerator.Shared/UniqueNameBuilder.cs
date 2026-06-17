@@ -1,12 +1,18 @@
 ﻿namespace Refit.Generator;
 
-// <Summary>
-// UniqueNameBuilder.
-// </Summary>
-public class UniqueNameBuilder()
+/// <summary>
+/// Builds unique identifier names within a nested scope hierarchy, ensuring generated members
+/// do not collide with names already used in the current or any parent scope.
+/// </summary>
+public class UniqueNameBuilder
 {
     private readonly HashSet<string> _usedNames = new(StringComparer.Ordinal);
     private readonly UniqueNameBuilder? _parentScope;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="UniqueNameBuilder"/> class representing a root scope.
+    /// </summary>
+    public UniqueNameBuilder() { }
 
     private UniqueNameBuilder(UniqueNameBuilder parentScope)
         : this()

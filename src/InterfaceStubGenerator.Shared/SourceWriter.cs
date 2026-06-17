@@ -10,7 +10,11 @@ internal sealed class SourceWriter
     const char IndentationChar = ' ';
     const int CharsPerIndentation = 4;
 
-    readonly StringBuilder sb = new();
+    // Pre-size the buffer for a typical generated interface stub so the common case avoids
+    // repeated StringBuilder doublings (a fresh writer is created per interface).
+    const int DefaultCapacity = 4096;
+
+    readonly StringBuilder sb = new(DefaultCapacity);
     int indentation;
 
     public int Indentation

@@ -27,8 +27,7 @@
     <Project Path="Refit.GeneratorTests/Refit.GeneratorTests.csproj" />
     <Project Path="Refit.Tests/Refit.Tests.csproj" />
   </Folder>
-  <Project Path="InterfaceStubGenerator.Roslyn38/InterfaceStubGenerator.Roslyn38.csproj" />
-  <Project Path="InterfaceStubGenerator.Roslyn41/InterfaceStubGenerator.Roslyn41.csproj" />
+  <Project Path="InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" />
   <Project Path="InterfaceStubGenerator.Roslyn50/InterfaceStubGenerator.Roslyn50.csproj" />
   <Project Path="InterfaceStubGenerator.Shared/InterfaceStubGenerator.Shared.shproj" />
   <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />

@@ -14,59 +14,8 @@ namespace Refit.Generator
     /// InterfaceStubGenerator.
     /// </summary>
     [Generator]
-#if ROSLYN_4
     public class InterfaceStubGeneratorV2 : IIncrementalGenerator
-#else
-    public class InterfaceStubGenerator : ISourceGenerator
-#endif
     {
-        private const string TypeParameterVariableName = "______typeParameters";
-
-#if !ROSLYN_4
-        /// <summary>
-        /// Executes the specified context.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        public void Execute(GeneratorExecutionContext context)
-        {
-            if (context.SyntaxReceiver is not SyntaxReceiver receiver)
-                return;
-
-            context.AnalyzerConfigOptions.GlobalOptions.TryGetValue(
-                "build_property.RefitInternalNamespace",
-                out var refitInternalNamespace
-            );
-
-            var parseStep = Parser.GenerateInterfaceStubs(
-                (CSharpCompilation)context.Compilation,
-                refitInternalNamespace,
-                receiver.CandidateMethods.ToImmutableArray(),
-                receiver.CandidateInterfaces.ToImmutableArray(),
-                context.CancellationToken
-            );
-
-            foreach (var diagnostic in parseStep.diagnostics)
-            {
-                context.ReportDiagnostic(diagnostic);
-            }
-
-            foreach (var interfaceModel in parseStep.contextGenerationSpec.Interfaces)
-            {
-                var interfaceText = Emitter.EmitInterface(interfaceModel);
-                context.AddSource(
-                    interfaceModel.FileName,
-                    interfaceText
-                );
-            }
-
-            Emitter.EmitSharedCode(
-                parseStep.contextGenerationSpec,
-                (name, code) => context.AddSource(name, code)
-            );
-        }
-#endif
-
-#if ROSLYN_4
         /// <inheritdoc/>
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -148,40 +97,6 @@ namespace Refit.Generator
                 }
             );
         }
-#else
-        /// <summary>
-        /// Initializes the specified context.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        public void Initialize(GeneratorInitializationContext context)
-        {
-            context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
-        }
-
-        class SyntaxReceiver : ISyntaxReceiver
-        {
-            public List<MethodDeclarationSyntax> CandidateMethods { get; } = [];
-
-            public List<InterfaceDeclarationSyntax> CandidateInterfaces { get; } = [];
-
-            public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-            {
-                if (
-                    syntaxNode is MethodDeclarationSyntax methodDeclarationSyntax
-                    && methodDeclarationSyntax.Parent is InterfaceDeclarationSyntax
-                    && methodDeclarationSyntax.AttributeLists.Count > 0
-                )
-                {
-                    CandidateMethods.Add(methodDeclarationSyntax);
-                }
-
-                if (syntaxNode is InterfaceDeclarationSyntax iface && iface.BaseList is not null)
-                {
-                    CandidateInterfaces.Add(iface);
-                }
-            }
-        }
-#endif
     }
 
     internal static class RefitGeneratorStepName

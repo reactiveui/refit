@@ -1,9 +1,8 @@
 ﻿using System.Collections.Immutable;
-using System.Text;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 
 namespace Refit.Generator;
 
@@ -32,19 +31,17 @@ internal static class Parser
         if (compilation == null)
             throw new ArgumentNullException(nameof(compilation));
 
-        var wellKnownTypes = new WellKnownTypes(compilation);
-
         refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
 
         // Remove - as they are valid in csproj, but invalid in a namespace
         refitInternalNamespace = refitInternalNamespace.Replace('-', '_').Replace('@', '_');
 
-        // we're going to create a new compilation that contains the attribute.
-        // TODO: we should allow source generators to provide source during initialize, so that this step isn't required.
         var options = (CSharpParseOptions)compilation.SyntaxTrees[0].Options;
 
-        var disposableInterfaceSymbol = wellKnownTypes.Get(typeof(IDisposable));
-        var httpMethodBaseAttributeSymbol = wellKnownTypes.TryGet(
+        // Resolve the handful of well-known symbols directly. The previous WellKnownTypes wrapper
+        // allocated a dictionary-backed cache object every pass for just these two lookups.
+        var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable");
+        var httpMethodBaseAttributeSymbol = compilation.GetTypeByMetadataName(
             "Refit.HttpMethodAttribute"
         );
 
@@ -62,79 +59,63 @@ internal static class Parser
             );
         }
 
-        // Check the candidates and keep the ones we're actually interested in
-
+        // Check the candidates and keep the ones we're actually interested in. LINQ (GroupBy,
+        // ToDictionary, SelectMany) is deliberately avoided here: this runs on every generator
+        // pass and the iterator/closure allocations add up. Group refit methods by their declaring
+        // interface as they are discovered, building the dictionary in a single pass.
 #pragma warning disable RS1024 // Compare symbols correctly
         var interfaceToNullableEnabledMap = new Dictionary<INamedTypeSymbol, bool>(
             SymbolEqualityComparer.Default
         );
+        var interfaces = new Dictionary<INamedTypeSymbol, List<IMethodSymbol>>(
+            SymbolEqualityComparer.Default
+        );
 #pragma warning restore RS1024 // Compare symbols correctly
-        var methodSymbols = new List<IMethodSymbol>();
-        foreach (var group in candidateMethods.GroupBy(m => m.SyntaxTree))
+
+        var compilationNullableEnabled =
+            compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
+
+        foreach (var method in candidateMethods)
         {
-            var model = compilation.GetSemanticModel(group.Key);
-            foreach (var method in group)
+            // GetSemanticModel is cached per syntax tree, so calling it per method is cheap and
+            // lets us skip a GroupBy-by-tree allocation.
+            var model = compilation.GetSemanticModel(method.SyntaxTree);
+            var methodSymbol = model.GetDeclaredSymbol(method, cancellationToken: cancellationToken);
+            if (!IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
+                continue;
+
+            var containingType = methodSymbol!.ContainingType;
+            interfaceToNullableEnabledMap[containingType] =
+                compilationNullableEnabled
+                || model.GetNullableContext(method.SpanStart) == NullableContext.Enabled;
+
+            if (!interfaces.TryGetValue(containingType, out var interfaceMethods))
             {
-                // Get the symbol being declared by the method
-                var methodSymbol = model.GetDeclaredSymbol(
-                    method,
-                    cancellationToken: cancellationToken
-                );
-                if (!IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
-                    continue;
-
-                var isAnnotated =
-                    compilation.Options.NullableContextOptions == NullableContextOptions.Enable
-                    || model.GetNullableContext(method.SpanStart) == NullableContext.Enabled;
-                interfaceToNullableEnabledMap[methodSymbol!.ContainingType] = isAnnotated;
-
-                methodSymbols.Add(methodSymbol!);
+                interfaceMethods = [];
+                interfaces[containingType] = interfaceMethods;
             }
+
+            interfaceMethods.Add(methodSymbol!);
         }
 
-        var interfaces = methodSymbols
-            .GroupBy<IMethodSymbol, INamedTypeSymbol>(
-                m => m.ContainingType,
-                SymbolEqualityComparer.Default
-            )
-            .ToDictionary<
-                IGrouping<INamedTypeSymbol, IMethodSymbol>,
-                INamedTypeSymbol,
-                List<IMethodSymbol>
-            >(g => g.Key, v => [.. v], SymbolEqualityComparer.Default);
-
-        // Look through the candidate interfaces
-        var interfaceSymbols = new List<INamedTypeSymbol>();
-        foreach (var group in candidateInterfaces.GroupBy(i => i.SyntaxTree))
+        // Look through the candidate interfaces for ones whose Refit methods are only inherited.
+        foreach (var iface in candidateInterfaces)
         {
-            var model = compilation.GetSemanticModel(group.Key);
-            foreach (var iface in group)
+            var model = compilation.GetSemanticModel(iface.SyntaxTree);
+            var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken: cancellationToken);
+
+            // See if we already know about it, might be a dup
+            if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
+                continue;
+
+            // The interface has no refit methods of its own, but its base interfaces might.
+            if (HasDerivedRefitMethods(ifaceSymbol, httpMethodBaseAttributeSymbol))
             {
-                // get the symbol belonging to the interface
-                var ifaceSymbol = model.GetDeclaredSymbol(
-                    iface,
-                    cancellationToken: cancellationToken
-                );
-
-                // See if we already know about it, might be a dup
-                if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
-                    continue;
-
-                // The interface has no refit methods, but its base interfaces might
-                var hasDerivedRefit = ifaceSymbol
-                    .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
-                    .Any(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol));
-
-                if (hasDerivedRefit)
-                {
-                    // Add the interface to the generation list with an empty set of methods
-                    // The logic already looks for base refit methods
-                    interfaces.Add(ifaceSymbol, []);
-                    var isAnnotated =
-                        model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
-
-                    interfaceToNullableEnabledMap[ifaceSymbol] = isAnnotated;
-                }
+                // Add the interface to the generation list with an empty set of methods;
+                // the logic already looks for base refit methods.
+                interfaces.Add(ifaceSymbol, []);
+                interfaceToNullableEnabledMap[ifaceSymbol] =
+                    model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
             }
         }
 
@@ -155,49 +136,14 @@ internal static class Parser
 
         var keyCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        var attributeText =
-            @$"
-#pragma warning disable
-namespace {refitInternalNamespace}
-{{
-    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    [global::System.AttributeUsage (global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct | global::System.AttributeTargets.Enum | global::System.AttributeTargets.Constructor | global::System.AttributeTargets.Method | global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | global::System.AttributeTargets.Delegate)]
-    sealed class PreserveAttribute : global::System.Attribute
-    {{
-        //
-        // Fields
-        //
-        public bool AllMembers;
+        // The PreserveAttribute is emitted into the consumer's compilation by the emitter
+        // (see Emitter.EmitSharedCode). Its fully-qualified display name is fully determined
+        // by refitInternalNamespace, so we compute it directly instead of round-tripping
+        // through compilation.AddSyntaxTrees + GetTypeByMetadataName + ToDisplayString on
+        // every generator pass, which mutated the compilation and forced an extra bind.
+        var preserveAttributeDisplayName = $"global::{refitInternalNamespace}.PreserveAttribute";
 
-        public bool Conditional;
-    }}
-}}
-#pragma warning restore
-";
-
-        // TODO: Delete?
-        // Is it necessary to add the attributes to the compilation now, does it affect the users ide experience?
-        // Is it needed in order to get the preserve attribute display name.
-        // Will the compilation ever change this.
-        compilation = compilation.AddSyntaxTrees(
-            CSharpSyntaxTree.ParseText(
-                SourceText.From(attributeText, Encoding.UTF8),
-                options,
-                cancellationToken: cancellationToken
-            )
-        );
-
-        // get the newly bound attribute
-        var preserveAttributeSymbol = compilation.GetTypeByMetadataName(
-            $"{refitInternalNamespace}.PreserveAttribute"
-        )!;
-
-        var preserveAttributeDisplayName = preserveAttributeSymbol.ToDisplayString(
-            SymbolDisplayFormat.FullyQualifiedFormat
-        );
-
-        var interfaceModels = new List<InterfaceModel>();
+        var interfaceModels = new List<InterfaceModel>(interfaces.Count);
         // group the fields by interface and generate the source
         foreach (var group in interfaces)
         {
@@ -238,13 +184,18 @@ namespace {refitInternalNamespace}
         return (diagnostics, contextGenerationSpec);
     }
 
+    [SuppressMessage(
+        "Reliability",
+        "CA1508:Avoid dead conditional code",
+        Justification = "False positive: the analyzer does not track the dispose method assigned in an earlier iteration of the inherited-member loop, so the null checks are not dead."
+    )]
     static InterfaceModel ProcessInterface(
         string fileName,
         List<Diagnostic> diagnostics,
         INamedTypeSymbol interfaceSymbol,
         List<IMethodSymbol> refitMethods,
         string preserveAttributeDisplayName,
-        ISymbol disposableInterfaceSymbol,
+        ISymbol? disposableInterfaceSymbol,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         bool supportsNullable,
         bool nullableEnabled
@@ -275,52 +226,76 @@ namespace {refitInternalNamespace}
             SymbolDisplayFormat.FullyQualifiedFormat
         );
 
-        // Get any other methods on the refit interfaces. We'll need to generate something for them and warn
-        var nonRefitMethods = interfaceSymbol
-            .GetMembers()
-            .OfType<IMethodSymbol>()
-            .Except(refitMethods, SymbolEqualityComparer.Default)
-            .Cast<IMethodSymbol>()
-            .ToArray();
-
-        // get methods for all inherited
-        var derivedMethods = interfaceSymbol
-            .AllInterfaces.SelectMany(i => i.GetMembers().OfType<IMethodSymbol>())
-            .ToList();
-
-        // Look for disposable
-        var disposeMethod = derivedMethods.Find(
-            m =>
-                m.ContainingType?.Equals(disposableInterfaceSymbol, SymbolEqualityComparer.Default)
-                == true
+        // Get any other (non-Refit) methods declared directly on the interface. LINQ is avoided
+        // throughout this method because it runs for every interface on every generator pass; the
+        // HashSets below reproduce the de-duplicating semantics of the previous Except/Distinct.
+        var members = interfaceSymbol.GetMembers();
+        var refitMethodSet = new HashSet<IMethodSymbol>(
+            refitMethods,
+            SymbolEqualityComparer.Default
         );
-        if (disposeMethod != null)
+        var nonRefitMethods = new List<IMethodSymbol>(members.Length);
+        // HashSet has no capacity ctor on netstandard2.0, so it is left unsized.
+        var seenNonRefitMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        foreach (var member in members)
         {
-            //remove it from the derived methods list so we don't process it with the rest
-            derivedMethods.Remove(disposeMethod);
+            if (
+                member is IMethodSymbol method
+                && !refitMethodSet.Contains(method)
+                && seenNonRefitMethods.Add(method)
+            )
+            {
+                nonRefitMethods.Add(method);
+            }
         }
 
-        // Pull out the refit methods from the derived types
-        var derivedRefitMethods = derivedMethods
-            .Where(m => IsRefitMethod(m, httpMethodBaseAttributeSymbol))
-            .ToArray();
-        var derivedNonRefitMethods = derivedMethods
-            .Except(derivedRefitMethods, SymbolEqualityComparer.Default)
-            .Cast<IMethodSymbol>()
-            .ToArray();
+        // Walk all inherited interfaces once, pulling out the IDisposable.Dispose method and
+        // splitting the rest into Refit and non-Refit methods.
+        IMethodSymbol? disposeMethod = null;
+        var derivedRefitMethods = new List<IMethodSymbol>();
+        var derivedNonRefitMethods = new List<IMethodSymbol>();
+        var seenDerivedNonRefitMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        foreach (var baseInterface in interfaceSymbol.AllInterfaces)
+        {
+            foreach (var member in baseInterface.GetMembers())
+            {
+                if (member is not IMethodSymbol method)
+                    continue;
+
+                if (
+                    disposeMethod is null
+                    && method.ContainingType?.Equals(
+                        disposableInterfaceSymbol,
+                        SymbolEqualityComparer.Default
+                    ) == true
+                )
+                {
+                    disposeMethod = method;
+                    continue;
+                }
+
+                if (IsRefitMethod(method, httpMethodBaseAttributeSymbol))
+                    derivedRefitMethods.Add(method);
+                else if (seenDerivedNonRefitMethods.Add(method))
+                    derivedNonRefitMethods.Add(method);
+            }
+        }
 
         // Exclude base interface methods that the current interface explicitly implements.
         // This avoids false positive RF001 diagnostics for cases like:
         // interface IFoo { int Bar(); } and interface IRemoteFoo : IFoo { [Get] abstract int IFoo.Bar(); }
-        if (derivedNonRefitMethods.Length > 0)
+        if (derivedNonRefitMethods.Count > 0)
         {
             var explicitlyImplementedBaseMethods = new HashSet<IMethodSymbol>(
                 SymbolEqualityComparer.Default
             );
 
-            foreach (var member in interfaceSymbol.GetMembers().OfType<IMethodSymbol>())
+            foreach (var member in members)
             {
-                foreach (var baseMethod in member.ExplicitInterfaceImplementations)
+                if (member is not IMethodSymbol method)
+                    continue;
+
+                foreach (var baseMethod in method.ExplicitInterfaceImplementations)
                 {
                     // Use OriginalDefinition for robustness when comparing generic methods
                     explicitlyImplementedBaseMethods.Add(
@@ -331,31 +306,52 @@ namespace {refitInternalNamespace}
 
             if (explicitlyImplementedBaseMethods.Count > 0)
             {
-                derivedNonRefitMethods = derivedNonRefitMethods
-                    .Where(m => !explicitlyImplementedBaseMethods.Contains(m.OriginalDefinition ?? m))
-                    .ToArray();
+                var filteredDerivedNonRefitMethods = new List<IMethodSymbol>(
+                    derivedNonRefitMethods.Count
+                );
+                foreach (var method in derivedNonRefitMethods)
+                {
+                    if (
+                        !explicitlyImplementedBaseMethods.Contains(
+                            method.OriginalDefinition ?? method
+                        )
+                    )
+                    {
+                        filteredDerivedNonRefitMethods.Add(method);
+                    }
+                }
+
+                derivedNonRefitMethods = filteredDerivedNonRefitMethods;
             }
         }
 
-        var memberNames = interfaceSymbol
-            .GetMembers()
-            .Select(x => x.Name)
-            .Distinct()
-            .ToImmutableEquatableArray();
+        var seenMemberNames = new HashSet<string>();
+        var memberNameList = new List<string>(members.Length);
+        foreach (var member in members)
+        {
+            if (seenMemberNames.Add(member.Name))
+                memberNameList.Add(member.Name);
+        }
+
+        var memberNames = memberNameList.ToImmutableEquatableArray();
 
         // Handle Refit Methods
-        var refitMethodsArray = refitMethods
-            .Select(m => ParseMethod(m, true))
-            .ToImmutableEquatableArray();
+        var refitMethodModels = new List<MethodModel>(refitMethods.Count);
+        foreach (var method in refitMethods)
+            refitMethodModels.Add(ParseMethod(method, true));
+        var refitMethodsArray = refitMethodModels.ToImmutableEquatableArray();
 
         // Only include refit methods discovered on base interfaces here.
         // Do NOT duplicate the current interface's refit methods.
-        var derivedRefitMethodsArray = derivedRefitMethods
-            .Select(m => ParseMethod(m, false))
-            .ToImmutableEquatableArray();
+        var derivedRefitMethodModels = new List<MethodModel>(derivedRefitMethods.Count);
+        foreach (var method in derivedRefitMethods)
+            derivedRefitMethodModels.Add(ParseMethod(method, false));
+        var derivedRefitMethodsArray = derivedRefitMethodModels.ToImmutableEquatableArray();
 
         // Handle non-refit Methods that aren't static or properties or have a method body
-        var nonRefitMethodModelList = new List<MethodModel>();
+        var nonRefitMethodModelList = new List<MethodModel>(
+            nonRefitMethods.Count + derivedNonRefitMethods.Count
+        );
         foreach (var method in nonRefitMethods)
         {
             if (
@@ -488,10 +484,34 @@ namespace {refitInternalNamespace}
         INamedTypeSymbol httpMethodAttribute
     )
     {
-        return methodSymbol
-                ?.GetAttributes()
-                .Any(ad => ad.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true)
-            == true;
+        if (methodSymbol is null)
+            return false;
+
+        // Avoid LINQ here: this is called for every candidate method and every inherited member.
+        foreach (var attributeData in methodSymbol.GetAttributes())
+        {
+            if (attributeData.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasDerivedRefitMethods(
+        INamedTypeSymbol interfaceSymbol,
+        INamedTypeSymbol httpMethodAttribute
+    )
+    {
+        foreach (var baseInterface in interfaceSymbol.AllInterfaces)
+        {
+            foreach (var member in baseInterface.GetMembers())
+            {
+                if (member is IMethodSymbol method && IsRefitMethod(method, httpMethodAttribute))
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     private static ImmutableEquatableArray<TypeConstraint> GenerateConstraints(
