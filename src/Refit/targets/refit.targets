@@ -24,9 +24,11 @@
           DependsOnTargets="_RefitGatherAnalyzers">
 
     <ItemGroup>
-      <!-- Remove our analyzers targeting roslyn4.x -->
+      <!-- On toolchains without Roslyn component versioning, NuGet does not select a single
+           analyzer folder. Keep only the baseline roslyn3.8 analyzer and remove the other
+           variants so exactly one source generator runs. -->
       <Analyzer Remove="@(_RefitAnalyzer)"
-                Condition="$([System.String]::Copy('%(_RefitAnalyzer.Identity)').IndexOf('roslyn4')) &gt;= 0"/>
+                Condition="$([System.String]::Copy('%(_RefitAnalyzer.Identity)').IndexOf('roslyn3.8')) &lt; 0"/>
     </ItemGroup>
   </Target>
 

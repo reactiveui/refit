@@ -1,0 +1,92 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Transitive pinning is intentionally OFF: the source generator and its test/benchmark
+         tooling deliberately use different Roslyn (Microsoft.CodeAnalysis.*) versions per
+         project (analyzers on 3.8/4.1/5.0, tests on 4.x), which a single pinned transitive
+         version cannot satisfy. -->
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <!-- Core runtime / serialization dependencies -->
+  <ItemGroup>
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageVersion Include="System.Net.Http.Json" Version="10.0.9" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.9" />
+    <PackageVersion Include="System.Reactive" Version="6.1.0" />
+  </ItemGroup>
+
+  <!-- Build, versioning and analyzers -->
+  <ItemGroup>
+    <PackageVersion Include="MinVer" Version="7.0.0" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
+    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
+  </ItemGroup>
+
+  <!-- Roslyn toolchain. Versions are intentionally held at their current bands:
+       the source generator multi-targets Roslyn 3.8/4.1/5.0 (selected per project via
+       the $(MsCACSharpVersion) VersionOverride) and the test/benchmark tooling tracks
+       the 4.x line. Renovate is configured to hold these back (see .github/renovate.json). -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3" />
+  </ItemGroup>
+
+  <!-- Test stack -->
+  <ItemGroup>
+    <PackageVersion Include="TUnit" Version="1.56.0" />
+    <PackageVersion Include="Verify.TUnit" Version="31.19.1" />
+    <PackageVersion Include="Verify.DiffPlex" Version="3.2.0" />
+    <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
+    <PackageVersion Include="PublicApiGenerator" Version="11.5.4" />
+    <!-- Held at 6.x: MockHttp 7.0 changed sequential Expect() matching semantics in a way
+         that breaks the trailing-slash mock tests. Adopt 7.x deliberately with test updates. -->
+    <PackageVersion Include="RichardSzalay.MockHttp" Version="6.0.0" />
+  </ItemGroup>
+
+  <!-- Benchmarks -->
+  <ItemGroup>
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageVersion Include="AutoFixture" Version="4.18.1" />
+  </ItemGroup>
+
+  <!-- Examples -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.9" />
+    <PackageVersion Include="Serilog" Version="4.3.1" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+  </ItemGroup>
+
+  <!-- Legacy System.* compatibility packages, scoped to the net4*/netstandard targets.
+       Pinned to their 4.3.x line; Renovate caps these below 5.0.0 (see renovate.json). -->
+  <ItemGroup>
+    <PackageVersion Include="System.Net.Http" Version="4.3.4" />
+    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
+  </ItemGroup>
+
+  <!-- Microsoft.AspNetCore.WebUtilities: multi-targeted per .NET major so each TFM
+       resolves the matching runtime-aligned version. -->
+  <Choose>
+    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
+      <ItemGroup>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.9" />
+      </ItemGroup>
+    </When>
+    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
+      <ItemGroup>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.17" />
+      </ItemGroup>
+    </When>
+    <Otherwise>
+      <ItemGroup>
+        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.28" />
+      </ItemGroup>
+    </Otherwise>
+  </Choose>
+
+</Project>
