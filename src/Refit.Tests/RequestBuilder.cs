@@ -2180,6 +2180,9 @@ namespace Refit.Tests
 
         [Get("/foo")]
         Task<string> GetWithCancellationAndReturn(CancellationToken token = default);
+
+        [Get("/foo/{id}")]
+        Task GetWithNullableCancellation(int id, CancellationToken? token = default);
     }
 
     interface IAuthenticatedCancellableMethods
@@ -2346,6 +2349,34 @@ namespace Refit.Tests
             var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
             Assert.Equal("/foo", uri.PathAndQuery);
             Assert.False(output.CancellationToken.IsCancellationRequested);
+        }
+
+        [Test]
+        public void MethodsWithNullableCancellationTokenShouldBuildRequest()
+        {
+            var fixture = new RequestBuilderImplementation<ICancellableMethods>();
+            var factory = fixture.RunRequest("GetWithNullableCancellation");
+
+            using var cts = new CancellationTokenSource();
+            var output = factory(new object[] { 42, cts.Token });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestMessage.RequestUri);
+            Assert.Equal("/foo/42", uri.PathAndQuery);
+            Assert.False(output.CancellationToken.IsCancellationRequested);
+        }
+
+        [Test]
+        public void MethodsWithNullableCancellationTokenShouldCancelWhenRequested()
+        {
+            var fixture = new RequestBuilderImplementation<ICancellableMethods>();
+            var factory = fixture.RunRequest("GetWithNullableCancellation");
+
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            var output = factory(new object[] { 42, cts.Token });
+
+            Assert.True(output.CancellationToken.IsCancellationRequested);
         }
 
         [Test]
