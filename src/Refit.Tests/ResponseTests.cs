@@ -27,6 +27,18 @@ public class TestAliasObject
     public string ShortNameForJsonProperty { get; set; }
 }
 
+[System.Xml.Serialization.XmlRoot("XmlResponse")]
+public class XmlResponse
+{
+    public string Identifier { get; set; }
+}
+
+public interface IXmlResponseService
+{
+    [Get("/xmlTest")]
+    Task<XmlResponse> GetXmlObject();
+}
+
 public class ResponseTests
 {
     readonly MockHttpMessageHandler mockHandler;
@@ -368,6 +380,86 @@ public class ResponseTests
             result.ShortNameForAlias
         );
         Assert.Equal(nameof(TestAliasObject), result.ShortNameForJsonProperty);
+    }
+
+    [Test]
+    public async Task DeserializationFailureWithNonSeekableStream_PopulatesApiExceptionContent()
+    {
+        // Regression test for #2098: when deserialization fails, ApiException.Content
+        // must still expose the raw response body. With a non-seekable/non-buffered
+        // stream the serializer consumes the content, so ApiException.Create could no
+        // longer re-read it and Content ended up null.
+        const string rawBody = "{ this is not valid json";
+
+        var localHandler = new MockHttpMessageHandler();
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer())
+        {
+            HttpMessageHandlerFactory = () => localHandler
+        };
+
+        using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
+        var bytes = Encoding.UTF8.GetBytes(rawBody);
+        contentStream.Write(bytes, 0, bytes.Length);
+        contentStream.Position = 0;
+        contentStream.CanGetLength = false;
+
+        var httpContent = new StreamContent(contentStream);
+        httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
+
+        localHandler
+            .Expect(HttpMethod.Get, "http://api/aliasTest")
+            .Respond(req => expectedResponse);
+
+        var localFixture = RestService.For<IMyAliasService>("http://api", settings);
+
+        var actualException = await Assert.ThrowsAsync<ApiException>(
+            () => localFixture.GetTestObject()
+        );
+
+        Assert.NotNull(actualException.Content);
+        Assert.Equal(rawBody, actualException.Content);
+    }
+
+    [Test]
+    public async Task XmlDeserializationWithNonSeekableStream_DoesNotThrowStreamConsumed()
+    {
+        // Regression test for #1729: the XML serializer reads the body via
+        // ReadAsStringAsync. The reverted #1705 probed/consumed the stream before
+        // deserializing, which threw "The stream was already consumed" for XML over a
+        // non-seekable network stream. Buffering via LoadIntoBufferAsync must keep this
+        // scenario working.
+        const string xml =
+            "<XmlResponse><Identifier>abc-123</Identifier></XmlResponse>";
+
+        var localHandler = new MockHttpMessageHandler();
+        var settings = new RefitSettings(new Refit.XmlContentSerializer())
+        {
+            HttpMessageHandlerFactory = () => localHandler
+        };
+
+        using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
+        var bytes = Encoding.UTF8.GetBytes(xml);
+        contentStream.Write(bytes, 0, bytes.Length);
+        contentStream.Position = 0;
+        contentStream.CanGetLength = false;
+
+        var httpContent = new StreamContent(contentStream);
+        httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/xml");
+
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
+
+        localHandler
+            .Expect(HttpMethod.Get, "http://api/xmlTest")
+            .Respond(req => expectedResponse);
+
+        var localFixture = RestService.For<IXmlResponseService>("http://api", settings);
+
+        var result = await localFixture.GetXmlObject();
+
+        Assert.NotNull(result);
+        Assert.Equal("abc-123", result.Identifier);
     }
 
     [Test]
