@@ -122,7 +122,7 @@ to `Refit.Xml`.
 
 #### Breaking changes in 11.x
 
-Refit 10 introduces `ApiRequestException` to represent requests that fail before receiving a response from the server.
+Refit 11 introduces `ApiRequestException` to represent requests that fail before receiving a response from the server.
 This exception will now wrap previous exceptions such as `HttpRequestException` and `TaskCanceledException` when they occur during request execution.
 
 * If you were not wrapping responses with `IApiResponse` and were catching these exceptions directly, you will need to update your code to catch `ApiRequestException` instead.
