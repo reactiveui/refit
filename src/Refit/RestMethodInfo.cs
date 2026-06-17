@@ -155,7 +155,7 @@ namespace Refit
 
             var ctParamEnumerable = methodInfo
                 .GetParameters()
-                .Where(p => p.ParameterType == typeof(CancellationToken))
+                .Where(p => p.ParameterType == typeof(CancellationToken) || p.ParameterType == typeof(CancellationToken?))
                 .TryGetSingle(out var ctParam);
             if (ctParamEnumerable == EnumerablePeek.Many)
             {
