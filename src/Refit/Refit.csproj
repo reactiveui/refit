@@ -7,7 +7,7 @@
 
     <Nullable>enable</Nullable>
   </PropertyGroup>
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0')) or $(TargetFramework.StartsWith('net10.0'))">
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
     <IsAotCompatible>true</IsAotCompatible>
     <PublishAotSupported>true</PublishAotSupported>
     <TrimMode>link</TrimMode>
@@ -15,17 +15,17 @@
     <IlcGenerateCompleteTypeMetadata>true</IlcGenerateCompleteTypeMetadata>
   </PropertyGroup>
 
-  <!-- Ensure DisableRuntimeMarshalling is only emitted for .NET 10, not .NET 8/9 -->
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('net8.0')) or $(TargetFramework.StartsWith('net9.0'))">
+  <!-- Ensure DisableRuntimeMarshalling is only emitted for .NET 10+, not .NET 8/9 -->
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0')) and !$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
     <DisableRuntimeMarshalling>false</DisableRuntimeMarshalling>
   </PropertyGroup>
-  <PropertyGroup Condition="$(TargetFramework.StartsWith('net10.0'))">
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
     <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net462'">
-    <PackageReference Include="System.Text.Json" Version="10.0.9" />
-    <PackageReference Include="System.Net.Http.Json" Version="10.0.9" />
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="System.Net.Http.Json" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">

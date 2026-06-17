@@ -15,8 +15,8 @@
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer"
                       PrivateAssets="all" />
-    <PackageReference Include="Serilog" Version="4.3.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Sinks.Console" />
   </ItemGroup>
 
 </Project>

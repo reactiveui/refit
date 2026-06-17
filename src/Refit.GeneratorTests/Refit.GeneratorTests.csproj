@@ -13,25 +13,19 @@
     <NoWarn>$(NoWarn);CS1591;CA1819;CA2000;CA2007;CA1056;CA1707;CA1861</NoWarn>
   </PropertyGroup>
   
-  <ItemGroup Condition="$(TargetFramework.StartsWith('net9.0'))">
-    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.1*" />
-  </ItemGroup>
-
-  <ItemGroup Condition="$(TargetFramework.StartsWith('net8.0'))">
-    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.2*" />
-  </ItemGroup>
-  
   <ItemGroup>
-    <PackageReference Include="System.Formats.Asn1" Version="9.0.1*" />
-    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0" />
-    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" /> 
-    <PackageReference Include="TUnit" Version="1.47.0" />
-    <PackageReference Include="Verify.DiffPlex" Version="3.2.0" />
-    <PackageReference Include="Verify.SourceGenerators" Version="2.5.0" />
-    <PackageReference Include="Verify.TUnit" Version="31.18.0" />
-    <PackageReference Include="System.Reactive" Version="6.1.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3" />
+    <!-- Versions are managed centrally in src/Directory.Packages.props.
+         Microsoft.AspNetCore.WebUtilities is multi-targeted per .NET major there. -->
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="System.Text.RegularExpressions" />
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="Verify.DiffPlex" />
+    <PackageReference Include="Verify.SourceGenerators" />
+    <PackageReference Include="Verify.TUnit" />
+    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
     <ProjectReference Include="..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\Refit.Xml\Refit.Xml.csproj" />
     <ProjectReference Include="..\InterfaceStubGenerator.Roslyn38\InterfaceStubGenerator.Roslyn38.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />

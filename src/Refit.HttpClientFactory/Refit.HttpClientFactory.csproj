@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Refit\Refit.csproj" PrivateAssets="Analyzers" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
   </ItemGroup>
 
   <ItemGroup>
