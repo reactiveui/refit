@@ -707,6 +707,40 @@ public partial class SerializedContentTests
         Assert.Equal("""{"name":"Photon"}""", serializedBody);
     }
 
+    [Test]
+    public async Task SystemTextJsonContentSerializer_SerializesBareObjectAsEmptyJson()
+    {
+        var serializer = new SystemTextJsonContentSerializer();
+
+        var content = serializer.ToHttpContent(new object());
+        var serialized = await content.ReadAsStringAsync();
+
+        Assert.Equal("{}", serialized);
+    }
+
+    [Test]
+    public async Task SystemTextJsonContentSerializer_RoundTripsEnumDictionaryKeys()
+    {
+        var serializer = new SystemTextJsonContentSerializer();
+
+        var source = new Dictionary<CamelCaseEnum, string>
+        {
+            [CamelCaseEnum.ValueOne] = "first",
+            [CamelCaseEnum.alreadyLowercase] = "second"
+        };
+
+        var content = serializer.ToHttpContent(source);
+        var serialized = await content.ReadAsStringAsync();
+
+        var roundTrip = await serializer.FromHttpContentAsync<Dictionary<CamelCaseEnum, string>>(
+            new StringContent(serialized, Encoding.UTF8, "application/json")
+        );
+
+        Assert.NotNull(roundTrip);
+        Assert.Equal("first", roundTrip[CamelCaseEnum.ValueOne]);
+        Assert.Equal("second", roundTrip[CamelCaseEnum.alreadyLowercase]);
+    }
+
 #if NET9_0_OR_GREATER
     [Test]
     public async Task SystemTextJsonContentSerializer_SupportsJsonStringEnumMemberName()

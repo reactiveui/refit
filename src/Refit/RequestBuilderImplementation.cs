@@ -806,6 +806,15 @@ namespace Refit
             }
             else
             {
+                // A 204 No Content response (or an explicitly empty body) has nothing to
+                // deserialize. Return the default value rather than letting the serializer
+                // fail on empty content.
+                if (resp.StatusCode == System.Net.HttpStatusCode.NoContent
+                    || content.Headers.ContentLength == 0)
+                {
+                    return default;
+                }
+
                 result = await serializer
                     .FromHttpContentAsync<T>(content, cancellationToken)
                     .ConfigureAwait(false);
