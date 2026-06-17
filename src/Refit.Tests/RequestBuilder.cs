@@ -559,6 +559,61 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void CultureInfoQueryParameterDoesNotStackOverflow()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(
+                nameof(IDummyHttpApi.QueryWithCultureInfo)
+            );
+
+            var output = factory(new object[] { new System.Globalization.CultureInfo("en-US") });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?culture=en-US", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void BaseAddressWithTrailingSlashDoesNotProduceDoubleSlash()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+
+            var factory = fixture.BuildRequestFactoryForMethod(
+                nameof(IDummyHttpApi.FetchSomeStuff),
+                baseAddress: "http://api/v1/"
+            );
+
+            var output = factory(new object[] { 42 });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/v1/foo/bar/42", uri.AbsolutePath);
+        }
+
+        [Test]
+        [Arguments("/api/123?SomeProperty2=test&text=title&filters=A&filters=B")]
+        public void DerivedPathBoundObjectDoesNotDuplicatePathPropertyAsQuery(string expectedQuery)
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(
+                "QueryWithOptionalParametersPathBoundObject"
+            );
+            var output = factory(
+                new object[]
+                {
+                    new DerivedPathBoundObject() { SomeProperty = 123, SomeProperty2 = "test" },
+                    "title",
+                    null,
+                    new string[] { "A", "B" }
+                }
+            );
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal(expectedQuery, uri.PathAndQuery);
+        }
+
+        [Test]
         public void PostWithObjectQueryParameterHasCorrectQuerystring()
         {
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
@@ -1790,6 +1845,9 @@ namespace Refit.Tests
     [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
     public interface IDummyHttpApi
     {
+        [Get("/foo")]
+        Task QueryWithCultureInfo([Query] System.Globalization.CultureInfo culture);
+
         [Get("/foo/bar/{id}")]
         Task<ApiResponse<string>> FetchSomeStringWithMetadata(int id);
 

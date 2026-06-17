@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
@@ -846,7 +847,10 @@ namespace Refit
                 //if we have a parameter info lets check it to make sure it isn't bound to the path
                 if (parameterInfo is { IsObjectPropertyParameter: true })
                 {
-                    if (parameterInfo.ParameterProperties.Any(x => x.PropertyInfo == propertyInfo))
+                    // Compare by name rather than PropertyInfo reference: for a derived runtime
+                    // type the inherited property is a different PropertyInfo instance, which
+                    // would otherwise be wrongly emitted as a duplicate query parameter.
+                    if (parameterInfo.ParameterProperties.Any(x => x.PropertyInfo.Name == propertyInfo.Name))
                     {
                         continue;
                     }
@@ -1141,7 +1145,9 @@ namespace Refit
 
         string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
         {
-            basePath = basePath == "/" ? string.Empty : basePath;
+            // Every path fragment is prefixed with '/', so trim a trailing slash from the
+            // base path to avoid emitting a double slash when the base address ends with one.
+            basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
             var pathFragments = restMethod.FragmentPath;
             if (pathFragments.Count == 0)
             {
@@ -1759,7 +1765,8 @@ namespace Refit
                       || type == typeof(bool)
                       || type == typeof(char)
                       || typeof(IFormattable).IsAssignableFrom(type)
-                      || type == typeof(Uri);
+                      || type == typeof(Uri)
+                      || typeof(CultureInfo).IsAssignableFrom(type);
         }
 
         static void SetHeader(HttpRequestMessage request, string name, string? value)

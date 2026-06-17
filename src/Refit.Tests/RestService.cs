@@ -144,6 +144,10 @@ public class PathBoundObject
     public string SomeProperty2 { get; set; }
 }
 
+public class DerivedPathBoundObject : PathBoundObject
+{
+}
+
 public class PathBoundObjectWithQuery
 {
     public int SomeProperty { get; set; }
@@ -664,7 +668,9 @@ public class RestServiceIntegrationTests
     [Test]
     public async Task GetWithDerivedObjectAsBaseType()
     {
-        // possibly a bug see https://github.com/reactiveui/refit/issues/1882
+        // see https://github.com/reactiveui/refit/issues/1882: a property bound to the
+        // path must not also be emitted as a query parameter when a derived instance is
+        // passed for a base-typed parameter.
         var mockHttp = new MockHttpMessageHandler();
         mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/1/bar")
@@ -672,8 +678,7 @@ public class RestServiceIntegrationTests
                 new[]
                 {
                     new KeyValuePair<string, string>("SomeProperty3", "test"),
-                    new KeyValuePair<string, string>("SomeProperty2", "barNone"),
-                    new KeyValuePair<string, string>("SomeProperty", "1")
+                    new KeyValuePair<string, string>("SomeProperty2", "barNone")
                 }
             )
             .Respond("application/json", "Ok");
