@@ -138,7 +138,10 @@ namespace Refit
                 if (
                     ParameterMap.ContainsKey(i)
                     || HeaderParameterMap.ContainsKey(i)
-                    || PropertyParameterMap.ContainsKey(i)
+                    // A parameter can carry both [Property] and [Query]; only exclude it from the
+                    // query map when it is a property AND does not also opt into the query string.
+                    || (PropertyParameterMap.ContainsKey(i)
+                        && ParameterInfoArray[i].GetCustomAttribute<QueryAttribute>() == null)
                     || HeaderCollectionAt(i)
                     || (BodyParameterInfo != null && BodyParameterInfo.Item3 == i)
                     || (AuthorizeParameterInfo != null && AuthorizeParameterInfo.Item2 == i)

@@ -1075,7 +1075,10 @@ namespace Refit
                         isParameterMappedToRequest = true;
                     }
 
-                    if (restMethod.PropertyParameterMap.ContainsKey(i))
+                    // A property parameter that also carries [Query] should still contribute to
+                    // the query string, so do not treat it as fully mapped in that case.
+                    if (restMethod.PropertyParameterMap.ContainsKey(i)
+                        && restMethod.ParameterInfoArray[i].GetCustomAttribute<QueryAttribute>() == null)
                     {
                         isParameterMappedToRequest = true;
                     }
@@ -1778,12 +1781,16 @@ namespace Refit
 
             // NB: We have to enumerate the header names to check existence because
             // Contains throws if it's the wrong header type for the collection.
-            if (request.Headers.Any(x => x.Key == name))
+            // HTTP header names are case-insensitive, so compare them that way; otherwise a
+            // differently cased header (e.g. "Content-type" vs "Content-Type") is not removed
+            // and ends up duplicated.
+            if (request.Headers.Any(x => string.Equals(x.Key, name, StringComparison.OrdinalIgnoreCase)))
             {
                 request.Headers.Remove(name);
             }
 
-            if (request.Content != null && request.Content.Headers.Any(x => x.Key == name))
+            if (request.Content != null
+                && request.Content.Headers.Any(x => string.Equals(x.Key, name, StringComparison.OrdinalIgnoreCase)))
             {
                 request.Content.Headers.Remove(name);
             }
