@@ -18,11 +18,13 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="System.Net.Http" Version="4.3.4" />
-      <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
-      <PackageReference Include="AutoFixture" Version="4.18.1" />
-      <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
-      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0-3.24523.4" />
+      <PackageReference Include="System.Net.Http" />
+      <PackageReference Include="System.Text.RegularExpressions" />
+      <PackageReference Include="AutoFixture" />
+      <PackageReference Include="BenchmarkDotNet" />
+      <!-- Aligned with the Roslyn version BenchmarkDotNet pulls in, so the benchmark's
+           Microsoft.CodeAnalysis.* assemblies stay on a single consistent version. -->
+      <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="4.14.0" />
     </ItemGroup>
 
     <ItemGroup>
