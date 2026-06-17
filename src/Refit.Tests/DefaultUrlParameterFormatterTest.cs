@@ -299,4 +299,47 @@ public class DefaultUrlParameterFormatterTests
             uri.Query
         );
     }
+
+    [Flags]
+    enum SampleFlags
+    {
+        None = 0,
+        First = 1,
+        Second = 2
+    }
+
+    class FlagsRequest
+    {
+        public SampleFlags Flags { get; set; }
+    }
+
+    [Test]
+    public void CombinedFlagsEnumValue_DoesNotThrow()
+    {
+        var parameters = new FlagsRequest { Flags = SampleFlags.First | SampleFlags.Second };
+
+        var urlParameterFormatter = new DefaultUrlParameterFormatter();
+
+        var output = urlParameterFormatter.Format(
+            parameters.Flags,
+            parameters.GetType().GetProperty(nameof(parameters.Flags))!,
+            parameters.GetType());
+
+        Assert.Equal("First, Second", output);
+    }
+
+    [Test]
+    public void UndefinedEnumValue_DoesNotThrow()
+    {
+        var parameters = new FlagsRequest { Flags = (SampleFlags)(-1) };
+
+        var urlParameterFormatter = new DefaultUrlParameterFormatter();
+
+        var output = urlParameterFormatter.Format(
+            parameters.Flags,
+            parameters.GetType().GetProperty(nameof(parameters.Flags))!,
+            parameters.GetType());
+
+        Assert.Equal("-1", output);
+    }
 }

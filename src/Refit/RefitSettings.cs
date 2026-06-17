@@ -324,8 +324,8 @@ namespace Refit
                     val =>
                         parameterType
                             .GetMember(val)
-                            .First()
-                            .GetCustomAttribute<EnumMemberAttribute>()
+                            .FirstOrDefault()
+                            ?.GetCustomAttribute<EnumMemberAttribute>()
                 );
             }
 
@@ -386,8 +386,8 @@ namespace Refit
                     val =>
                         parameterType
                             .GetMember(val)
-                            .First()
-                            .GetCustomAttribute<EnumMemberAttribute>()
+                            .FirstOrDefault()
+                            ?.GetCustomAttribute<EnumMemberAttribute>()
                 );
             }
 

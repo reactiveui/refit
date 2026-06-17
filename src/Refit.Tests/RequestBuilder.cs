@@ -1842,6 +1842,16 @@ namespace Refit.Tests
         [Headers("Content-Type: literally/anything")]
         Task<string> PostSomeStuffWithHardCodedContentTypeHeader(int id, [Body] string content);
 
+        [Post("/foo/bar/{id}")]
+        [Headers("Content-type: application/soap+xml")]
+        Task<string> PostSomeStuffWithNonCanonicalContentTypeHeader(int id, [Body] string content);
+
+        [Get("/foo/bar/{id}")]
+        Task<string> FetchSomeStuffWithPropertyAndQuery(
+            int id,
+            [Property("SomeProperty")] [Query] string someValue
+        );
+
         [Get("/foo/bar/{id}")]
         [Headers("Authorization: SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==")]
         Task<string> FetchSomeStuffWithDynamicHeader(
@@ -3033,6 +3043,31 @@ namespace Refit.Tests
                 "Content headers include Content-Type header"
             );
             Assert.Equal("literally/anything", output.Content.Headers.ContentType.ToString());
+        }
+
+        [Test]
+        public void NonCanonicalContentTypeHeaderCasingIsNotDuplicated()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(
+                "PostSomeStuffWithNonCanonicalContentTypeHeader"
+            );
+            var output = factory(new object[] { 6, "stuff" });
+
+            Assert.Equal("application/soap+xml", output.Content.Headers.ContentType.ToString());
+        }
+
+        [Test]
+        public void ParameterWithPropertyAndQueryAttributesIsAddedToQuery()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(
+                "FetchSomeStuffWithPropertyAndQuery"
+            );
+            var output = factory(new object[] { 6, "value1" });
+
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+            Assert.Equal("/foo/bar/6?someValue=value1", uri.PathAndQuery);
         }
 
         [Test]
