@@ -428,7 +428,13 @@ namespace Refit
             RefitSettings refitSettings
         )
         {
-            var requestMessage = responseMessage.RequestMessage!;
+            var requestMessage =
+                responseMessage.RequestMessage
+                ?? throw new InvalidOperationException(
+                    "The HttpResponseMessage has no associated RequestMessage. When supplying a "
+                        + "custom HttpMessageHandler (for example in a test), ensure it sets "
+                        + "HttpResponseMessage.RequestMessage."
+                );
             var method = requestMessage.Method;
 
             return await ApiException

@@ -582,6 +582,21 @@ public class ResponseTests
         Assert.NotNull(error.Content);
         Assert.Equal(nonJsonResponse, error.Content);
     }
+
+    [Test]
+    public async Task ExceptionFactory_WithoutRequestMessage_ThrowsClearException()
+    {
+        var settings = new RefitSettings();
+
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest);
+        // RequestMessage is left null, as a hand-rolled test HttpMessageHandler often does.
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => settings.ExceptionFactory(response)
+        );
+
+        Assert.Contains("RequestMessage", ex.Message, StringComparison.Ordinal);
+    }
 }
 
 public sealed class ThrowOnGetLengthMemoryStream : MemoryStream
