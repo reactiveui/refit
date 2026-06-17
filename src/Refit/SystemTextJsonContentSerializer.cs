@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Globalization;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
@@ -184,14 +185,26 @@ namespace Refit
             JsonSerializerOptions options
         )
         {
+            var runtimeType = objectToWrite.GetType();
+
+            // A bare System.Object has no properties to serialize. Serializing it by its
+            // runtime type would re-enter this converter (registered for object) and recurse
+            // until the stack overflows, so emit an empty JSON object directly.
+            if (runtimeType == typeof(object))
+            {
+                writer.WriteStartObject();
+                writer.WriteEndObject();
+                return;
+            }
+
 #if NET8_0_OR_GREATER
             if (options.TypeInfoResolver is not null)
             {
-                JsonSerializer.Serialize(writer, objectToWrite, options.GetTypeInfo(objectToWrite.GetType()));
+                JsonSerializer.Serialize(writer, objectToWrite, options.GetTypeInfo(runtimeType));
                 return;
             }
 #endif
-            JsonSerializer.Serialize(writer, objectToWrite, objectToWrite.GetType(), options);
+            JsonSerializer.Serialize(writer, objectToWrite, runtimeType, options);
         }
     }
 
@@ -285,6 +298,42 @@ namespace Refit
                 }
 
                 writer.WriteStringValue(name);
+            }
+
+            public override object? ReadAsPropertyName(
+                ref Utf8JsonReader reader,
+                Type typeToConvert,
+                JsonSerializerOptions options
+            )
+            {
+                var value = reader.GetString();
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    if (namesToValues.TryGetValue(value!, out var namedValue))
+                        return namedValue;
+
+                    if (namesToValuesIgnoreCase.TryGetValue(value!, out var namedValueIgnoreCase))
+                        return namedValueIgnoreCase;
+                }
+
+                throw new JsonException($"Unable to convert '{value}' to {targetType}.");
+            }
+
+            public override void WriteAsPropertyName(
+                Utf8JsonWriter writer,
+                object? value,
+                JsonSerializerOptions options
+            )
+            {
+                if (value is not null && valuesToNames.TryGetValue(value, out var name))
+                {
+                    writer.WritePropertyName(name);
+                    return;
+                }
+
+                writer.WritePropertyName(
+                    Convert.ToInt64(value).ToString(CultureInfo.InvariantCulture)
+                );
             }
 
             static Dictionary<string, object> GetNamesToValues(

@@ -288,6 +288,15 @@ public interface IValidApi
     Task Get();
 }
 
+public interface INoContentApi
+{
+    [Get("/values")]
+    Task<List<string>> GetValues();
+
+    [Get("/values")]
+    Task<ApiResponse<List<string>>> GetValuesResponse();
+}
+
 public interface IQueryApi
 {
     [Get("/foo?")]
@@ -475,6 +484,38 @@ public class RestServiceIntegrationTests
         var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo", settings);
 
         await fixture.Get();
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Test]
+    public async Task GetWithNoContentResponseReturnsDefault()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.Expect(HttpMethod.Get, "http://foo/values").Respond(HttpStatusCode.NoContent);
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var fixture = RestService.For<INoContentApi>("http://foo", settings);
+
+        var result = await fixture.GetValues();
+
+        Assert.Null(result);
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    [Test]
+    public async Task GetWithNoContentApiResponseReturnsNullContent()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        mockHttp.Expect(HttpMethod.Get, "http://foo/values").Respond(HttpStatusCode.NoContent);
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var fixture = RestService.For<INoContentApi>("http://foo", settings);
+
+        using var response = await fixture.GetValuesResponse();
+
+        Assert.True(response.IsSuccessStatusCode);
+        Assert.Null(response.Content);
+        Assert.Null(response.Error);
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
