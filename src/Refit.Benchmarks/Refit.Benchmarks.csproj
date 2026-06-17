@@ -21,7 +21,7 @@
       <PackageReference Include="System.Net.Http" Version="4.3.4" />
       <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
       <PackageReference Include="AutoFixture" Version="4.18.1" />
-      <PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+      <PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
       <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.12.0-3.24523.4" />
     </ItemGroup>
 
