@@ -5,17 +5,21 @@
     <AssemblyName>InterfaceStubGeneratorV2</AssemblyName>
     <RootNamespace>Refit.Generator</RootNamespace>
     <IsPackable>false</IsPackable>
-    <AssemblyOriginatorKeyFile>$(RepositoryRoot)buildtask.snk</AssemblyOriginatorKeyFile>
-    <SignAssembly>true</SignAssembly>
     <IsRoslynComponent>true</IsRoslynComponent>
     <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);ROSLYN_4</DefineConstants>
-    <MsCACSharpVersion>4.1.0</MsCACSharpVersion>
+    <MsCACSharpVersion>4.8.0</MsCACSharpVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="$(MsCACSharpVersion)" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Refit.Tests" />
   </ItemGroup>
 
   <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">

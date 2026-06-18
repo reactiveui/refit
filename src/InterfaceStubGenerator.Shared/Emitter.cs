@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
 
@@ -179,6 +180,11 @@ internal static class Emitter
     /// <param name="methodModel"></param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    [SuppressMessage(
+        "Usage",
+        "CA2208:Instantiate argument exceptions correctly",
+        Justification = "The ArgumentOutOfRangeException intentionally reports the offending model property (ReturnTypeMetadata) rather than a method parameter."
+    )]
     private static void WriteRefitMethod(
         SourceWriter source,
         MethodModel methodModel,
@@ -209,27 +215,43 @@ internal static class Emitter
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         WriteMethodOpening(source, methodModel, isExplicit, isExplicit, isAsync);
 
-        // Build the list of args for the array
-        var argArray = methodModel
-            .Parameters.AsArray()
-            .Select(static param => $"@{param.MetadataName}")
-            .ToArray();
+        // Build the arguments array literal directly. This runs for every Refit method, so we
+        // avoid LINQ Select/ToArray + string.Join and their intermediate array/iterator allocations.
+        var parameters = methodModel.Parameters.AsArray();
+        string argumentsArrayString;
+        if (parameters.Length == 0)
+        {
+            argumentsArrayString = "global::System.Array.Empty<object>()";
+        }
+        else
+        {
+            var argsBuilder = new StringBuilder("new object[] { ");
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (i > 0)
+                    argsBuilder.Append(", ");
+                argsBuilder.Append('@').Append(parameters[i].MetadataName);
+            }
 
-        // List of generic arguments
-        var genericArray = methodModel
-            .Constraints.AsArray()
-            .Select(static typeParam => $"typeof({typeParam.DeclaredName})")
-            .ToArray();
+            argsBuilder.Append(" }");
+            argumentsArrayString = argsBuilder.ToString();
+        }
 
-        var argumentsArrayString =
-            argArray.Length == 0
-                ? "global::System.Array.Empty<object>()"
-                : $"new object[] {{ {string.Join(", ", argArray)} }}";
+        var constraints = methodModel.Constraints.AsArray();
+        var genericString = string.Empty;
+        if (constraints.Length > 0)
+        {
+            var genericBuilder = new StringBuilder(", new global::System.Type[] { ");
+            for (var i = 0; i < constraints.Length; i++)
+            {
+                if (i > 0)
+                    genericBuilder.Append(", ");
+                genericBuilder.Append("typeof(").Append(constraints[i].DeclaredName).Append(')');
+            }
 
-        var genericString =
-            genericArray.Length > 0
-                ? $", new global::System.Type[] {{ {string.Join(", ", genericArray)} }}"
-                : string.Empty;
+            genericBuilder.Append(" }");
+            genericString = genericBuilder.ToString();
+        }
 
         // Normalize method lookup key: strip explicit interface prefix if present (e.g. IFoo.Bar -> Bar)
         var lookupName = methodModel.Name;
@@ -312,6 +334,16 @@ internal static class Emitter
         return typeParameterFieldName;
     }
 
+    [SuppressMessage(
+        "Globalization",
+        "CA1310:Specify StringComparison for correctness",
+        Justification = "Generator emit path; the existing ordinal-by-default StartsWith must be preserved to keep generated output byte-identical."
+    )]
+    [SuppressMessage(
+        "Performance",
+        "CA1834:Consider using 'StringBuilder.Append(char)' when applicable",
+        Justification = "Generator emit path; keeping the string overload preserves the existing output."
+    )]
     private static void WriteMethodOpening(
         SourceWriter source,
         MethodModel methodModel,
@@ -340,13 +372,16 @@ internal static class Emitter
         }
         builder.Append(@$"{methodModel.DeclaredMethod}(");
 
-        if (methodModel.Parameters.Count > 0)
+        var parameters = methodModel.Parameters.AsArray();
+        if (parameters.Length > 0)
         {
-            var list = new List<string>();
-            foreach (var param in methodModel.Parameters)
+            // Size known up front: use an array rather than a growing List.
+            var list = new string[parameters.Length];
+            for (var i = 0; i < parameters.Length; i++)
             {
+                var param = parameters[i];
                 var annotation = param.Annotation;
-                list.Add($@"{param.Type}{(annotation ? '?' : string.Empty)} @{param.MetadataName}");
+                list[i] = $@"{param.Type}{(annotation ? '?' : string.Empty)} @{param.MetadataName}";
             }
 
             builder.Append(string.Join(", ", list));

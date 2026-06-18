@@ -57,74 +57,11 @@ public class InterfaceStubGeneratorTests
             new CSharpCompilationOptions(OutputKind.ConsoleApplication)
         );
 
-#if NET48
-        var generator = new InterfaceStubGenerator();
-#else
         var generator = new InterfaceStubGeneratorV2();
-#endif
         var driver = CSharpGeneratorDriver.Create(generator);
         var ranDriver = driver.RunGenerators(compilation);
 
         return await Verify(ranDriver).ToTask();
-    }
-
-    [Test, Skip("Generator in test issue")]
-    public void GenerateInterfaceStubsSmokeTest()
-    {
-        var fixture = new InterfaceStubGenerator();
-
-        var driver = CSharpGeneratorDriver.Create(fixture);
-
-        var inputCompilation = CreateCompilation(
-            IntegrationTestHelper.GetPath("RestService.cs"),
-            IntegrationTestHelper.GetPath("GitHubApi.cs"),
-            IntegrationTestHelper.GetPath("InheritedInterfacesApi.cs"),
-            IntegrationTestHelper.GetPath("InheritedGenericInterfacesApi.cs")
-        );
-
-        var diags = inputCompilation.GetDiagnostics();
-
-        // Make sure we don't have any errors
-        Assert.Empty(diags.Where(d => d.Severity == DiagnosticSeverity.Error));
-
-        var rundriver = driver.RunGeneratorsAndUpdateCompilation(
-            inputCompilation,
-            out var outputCompiliation,
-            out var diagnostics
-        );
-
-        var runResult = rundriver.GetRunResult();
-
-        var generated = runResult.Results[0];
-
-        var text = generated.GeneratedSources.First().SourceText.ToString();
-
-        Assert.Contains("IGitHubApi", text);
-        Assert.Contains("IAmInterfaceC", text);
-    }
-
-    static CSharpCompilation CreateCompilation(params string[] sourceFiles)
-    {
-        var keyReferences = new[]
-        {
-            typeof(Binder),
-            typeof(GetAttribute),
-            typeof(RichardSzalay.MockHttp.MockHttpMessageHandler),
-            typeof(System.Reactive.Unit),
-            typeof(System.Linq.Enumerable),
-            typeof(Newtonsoft.Json.JsonConvert),
-            typeof(TUnit.Core.TestAttribute),
-            typeof(System.Net.Http.HttpContent),
-            typeof(ModelObject),
-            typeof(Attribute)
-        };
-
-        return CSharpCompilation.Create(
-            "compilation",
-            sourceFiles.Select(source => CSharpSyntaxTree.ParseText(File.ReadAllText(source))),
-            keyReferences.Select(t => MetadataReference.CreateFromFile(t.Assembly.Location)),
-            new CSharpCompilationOptions(OutputKind.ConsoleApplication)
-        );
     }
 
     [Test]
