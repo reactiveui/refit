@@ -143,6 +143,76 @@ public class ResponseTests
     }
 
     /// <summary>
+    /// #1945: ValidationApiException should expose the ContentHeaders of the
+    /// originating ApiException rather than leaving them null.
+    /// </summary>
+    [Test]
+    public async Task ValidationApiExceptionPropagatesContentHeaders()
+    {
+        var expectedContent = new ProblemDetails { Detail = "detail", Title = "title" };
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
+        };
+        expectedResponse.Content.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/problem+json"
+        );
+        mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+
+        var actualException = await Assert.ThrowsAsync<ValidationApiException>(
+            () => fixture.GetTestObject()
+        );
+
+        Assert.NotNull(actualException.ContentHeaders);
+        Assert.Equal(
+            "application/problem+json",
+            actualException.ContentHeaders.ContentType?.MediaType
+        );
+    }
+
+    /// <summary>
+    /// #1197: ValidationApiException must deserialize ProblemDetails with the configured
+    /// IHttpContentSerializer instead of a hardcoded System.Text.Json instance. A
+    /// case-sensitive serializer is used here, so the camelCase "detail" key must not map
+    /// to the PascalCase Detail property the way the old camelCase/case-insensitive
+    /// hardcoded options would have.
+    /// </summary>
+    [Test]
+    public async Task ValidationApiExceptionUsesConfiguredContentSerializer()
+    {
+        var localHandler = new MockHttpMessageHandler();
+        var settings = new RefitSettings(
+            new SystemTextJsonContentSerializer(
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = false }
+            )
+        )
+        {
+            HttpMessageHandlerFactory = () => localHandler
+        };
+
+        var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent("{\"Title\":\"mapped\",\"detail\":\"unmapped\"}")
+        };
+        expectedResponse.Content.Headers.ContentType = new MediaTypeHeaderValue(
+            "application/problem+json"
+        );
+        localHandler
+            .Expect(HttpMethod.Get, "http://api/aliasTest")
+            .Respond(req => expectedResponse);
+
+        var localFixture = RestService.For<IMyAliasService>("http://api", settings);
+
+        var actualException = await Assert.ThrowsAsync<ValidationApiException>(
+            () => localFixture.GetTestObject()
+        );
+
+        Assert.NotNull(actualException.Content);
+        Assert.Equal("mapped", actualException.Content.Title);
+        Assert.Null(actualException.Content.Detail);
+    }
+
+    /// <summary>
     /// Test to verify if EnsureSuccessStatusCodeAsync throws a ValidationApiException for a Bad Request in terms of RFC 7807
     /// </summary>
     [Test]

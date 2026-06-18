@@ -31,7 +31,7 @@ namespace Refit
         /// <summary>
         /// HTTP response content headers as defined in RFC 2616.
         /// </summary>
-        public HttpContentHeaders? ContentHeaders { get; private set; }
+        public HttpContentHeaders? ContentHeaders { get; protected set; }
 
         /// <summary>
         /// HTTP Response content as string.
@@ -214,7 +214,9 @@ namespace Refit
                         ?.Equals("application/problem+json") ?? false
                 )
                 {
-                    exception = ValidationApiException.Create(exception);
+                    exception = await ValidationApiException
+                        .CreateAsync(exception)
+                        .ConfigureAwait(false);
                 }
 
                 response.Content.Dispose();
