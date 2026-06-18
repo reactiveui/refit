@@ -816,6 +816,30 @@ namespace Refit
                     return default;
                 }
 
+                // Buffer the content into memory before deserializing so that, if the
+                // serializer throws, ApiException.Create can still re-read the raw body
+                // (see #2098). We deliberately do NOT probe the stream via
+                // ReadAsStreamAsync first: that consumes non-seekable network streams and
+                // breaks serializers that re-read via ReadAsStringAsync, e.g. XML (#1729,
+                // which reverted #1705). LoadIntoBufferAsync is a no-op for the already
+                // buffered content that HttpClient produces by default.
+#pragma warning disable CA1031 // Do not catch general exception types
+                try
+                {
+#if NET8_0_OR_GREATER
+                    await content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
+#else
+                    await content.LoadIntoBufferAsync().ConfigureAwait(false);
+#endif
+                }
+                catch
+                {
+                    // Best-effort: if the content cannot be buffered we fall back to
+                    // streaming deserialization. The only downside is that the raw body
+                    // may be unavailable on failure, which is the pre-existing behavior.
+                }
+#pragma warning restore CA1031 // Do not catch general exception types
+
                 result = await serializer
                     .FromHttpContentAsync<T>(content, cancellationToken)
                     .ConfigureAwait(false);
