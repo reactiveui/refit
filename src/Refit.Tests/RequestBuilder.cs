@@ -750,6 +750,39 @@ namespace Refit.Tests
         }
 
         [Test]
+        public void ObjectQueryParameterWithoutQueryAttributeHonorsMultiCollectionFormat()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(
+                nameof(IDummyHttpApi.ComplexTypeQueryWithoutQueryAttribute)
+            );
+
+            var param = new ComplexQueryObject
+            {
+                EnumCollectionMulti = new List<TestEnum> { TestEnum.A, TestEnum.B }
+            };
+            var output = factory(new object[] { param });
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?listOfEnumMulti=A&listOfEnumMulti=B", uri.PathAndQuery);
+        }
+
+        [Test]
+        public void ParameterLevelCollectionFormatAppliesToInnerCollectionsWithoutOwnQueryAttribute()
+        {
+            var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+            var factory = fixture.BuildRequestFactoryForMethod(
+                nameof(IDummyHttpApi.ComplexTypeQueryParameterLevelMulti)
+            );
+
+            var param = new ComplexQueryObject { TestCollection = new[] { 1, 2, 3 } };
+            var output = factory(new object[] { param });
+            var uri = new Uri(new Uri("http://api"), output.RequestUri);
+
+            Assert.Equal("/foo?TestCollection=1&TestCollection=2&TestCollection=3", uri.PathAndQuery);
+        }
+
+        [Test]
         public void MultipleQueryAttributesWithNulls()
         {
             var input = typeof(IRestMethodInfoTests);
@@ -2210,6 +2243,14 @@ namespace Refit.Tests
 
         [Get("/foo")]
         Task ComplexTypeQueryWithInnerCollection([Query] ComplexQueryObject queryParams);
+
+        [Get("/foo")]
+        Task ComplexTypeQueryWithoutQueryAttribute(ComplexQueryObject queryParams);
+
+        [Get("/foo")]
+        Task ComplexTypeQueryParameterLevelMulti(
+            [Query(CollectionFormat.Multi)] ComplexQueryObject queryParams
+        );
 
         [Get("/api/{obj.someProperty}")]
         Task QueryWithOptionalParametersPathBoundObject(

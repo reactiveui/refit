@@ -826,12 +826,13 @@ namespace Refit
         List<KeyValuePair<string, object?>> BuildQueryMap(
             object? @object,
             string? delimiter = null,
-            RestMethodParameterInfo? parameterInfo = null
+            RestMethodParameterInfo? parameterInfo = null,
+            CollectionFormat? collectionFormat = null
         )
         {
             if (@object is IDictionary idictionary)
             {
-                return BuildQueryMap(idictionary, delimiter);
+                return BuildQueryMap(idictionary, delimiter, collectionFormat);
             }
 
             var kvps = new List<KeyValuePair<string, object?>>();
@@ -888,7 +889,8 @@ namespace Refit
                             ienu,
                             propertyInfo,
                             propertyInfo.PropertyType,
-                            queryAttribute
+                            queryAttribute,
+                            collectionFormat
                         )
                     )
                     {
@@ -907,7 +909,7 @@ namespace Refit
                 switch (obj)
                 {
                     case IDictionary idict:
-                        foreach (var keyValuePair in BuildQueryMap(idict, delimiter))
+                        foreach (var keyValuePair in BuildQueryMap(idict, delimiter, collectionFormat))
                         {
                             kvps.Add(
                                 new KeyValuePair<string, object?>(
@@ -920,7 +922,7 @@ namespace Refit
                         break;
 
                     default:
-                        foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
+                        foreach (var keyValuePair in BuildQueryMap(obj, delimiter, null, collectionFormat))
                         {
                             kvps.Add(
                                 new KeyValuePair<string, object?>(
@@ -939,7 +941,8 @@ namespace Refit
 
         List<KeyValuePair<string, object?>> BuildQueryMap(
             IDictionary dictionary,
-            string? delimiter = null
+            string? delimiter = null,
+            CollectionFormat? collectionFormat = null
         )
         {
             var kvps = new List<KeyValuePair<string, object?>>();
@@ -964,7 +967,7 @@ namespace Refit
                 }
                 else
                 {
-                    foreach (var keyValuePair in BuildQueryMap(obj, delimiter))
+                    foreach (var keyValuePair in BuildQueryMap(obj, delimiter, null, collectionFormat))
                     {
                         kvps.Add(
                             new KeyValuePair<string, object?>(
@@ -1354,7 +1357,10 @@ namespace Refit
             }
             else
             {
-                foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo))
+                var parameterCollectionFormat = attr.IsCollectionFormatSpecified
+                    ? attr.CollectionFormat
+                    : (CollectionFormat?)null;
+                foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo, parameterCollectionFormat))
                 {
                     var path = !string.IsNullOrWhiteSpace(attr.Prefix)
                         ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}"
@@ -1551,13 +1557,17 @@ namespace Refit
             IEnumerable paramValues,
             ICustomAttributeProvider customAttributeProvider,
             Type type,
-            QueryAttribute? queryAttribute
+            QueryAttribute? queryAttribute,
+            CollectionFormat? fallbackCollectionFormat = null
         )
         {
+            // Precedence: the property's own [Query] format wins; otherwise the format
+            // supplied by the enclosing parameter's [Query] attribute (if any); finally
+            // the global RefitSettings default.
             var collectionFormat =
                 queryAttribute != null && queryAttribute.IsCollectionFormatSpecified
                     ? queryAttribute.CollectionFormat
-                    : settings.CollectionFormat;
+                    : fallbackCollectionFormat ?? settings.CollectionFormat;
 
             switch (collectionFormat)
             {
