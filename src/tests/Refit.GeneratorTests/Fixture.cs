@@ -18,6 +18,9 @@ namespace Refit.GeneratorTests;
     Justification = "Compiles generator inputs against on-disk assemblies; never run as a single-file app.")]
 public static class Fixture
 {
+    /// <summary>The runtime data key containing framework assemblies available to the current test host.</summary>
+    private const string TrustedPlatformAssemblies = "TRUSTED_PLATFORM_ASSEMBLIES";
+
     /// <summary>The metadata reference for the Refit assembly with documentation.</summary>
     private static readonly MetadataReference _refitAssembly = MetadataReference.CreateFromFile(
         typeof(GetAttribute).Assembly.Location,
@@ -240,13 +243,21 @@ public static class Fixture
     /// <returns>The created compilation.</returns>
     public static CSharpCompilation CreateLibrary(params SyntaxTree[] source)
     {
-        var references = new List<MetadataReference>();
+        var referencePaths = new HashSet<string>(StringComparer.Ordinal);
+        AddTrustedPlatformAssemblies(referencePaths);
+
         foreach (var assembly in GetAssemblyReferencesForCodegen())
         {
             if (!assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location))
             {
-                references.Add(MetadataReference.CreateFromFile(assembly.Location));
+                referencePaths.Add(assembly.Location);
             }
+        }
+
+        var references = new List<MetadataReference>(referencePaths.Count + 1);
+        foreach (var referencePath in referencePaths)
+        {
+            references.Add(MetadataReference.CreateFromFile(referencePath));
         }
 
         references.Add(_refitAssembly);
@@ -273,6 +284,28 @@ public static class Fixture
     /// <returns>The created compilation.</returns>
     private static CSharpCompilation CreateLibrary(params string[] source) =>
         CreateLibrary(source.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray());
+
+    /// <summary>Adds runtime framework references used by Roslyn in-memory compilations.</summary>
+    /// <param name="referencePaths">The reference path set to populate.</param>
+    private static void AddTrustedPlatformAssemblies(HashSet<string> referencePaths)
+    {
+        var trustedPlatformAssemblies = (string?)AppContext.GetData(TrustedPlatformAssemblies);
+        if (string.IsNullOrEmpty(trustedPlatformAssemblies))
+        {
+            return;
+        }
+
+        // CI hosts can type-forward BCL types, such as Uri, to implementation assemblies
+        // that are not loaded yet. The trusted platform assembly list gives Roslyn the
+        // complete runtime framework closure for generated-output compilation tests.
+        foreach (var referencePath in trustedPlatformAssemblies.Split(Path.PathSeparator))
+        {
+            if (!string.IsNullOrEmpty(referencePath))
+            {
+                referencePaths.Add(referencePath);
+            }
+        }
+    }
 
     /// <summary>Determines whether a diagnostic represents an error in generator output.</summary>
     /// <param name="diagnostic">The diagnostic to inspect.</param>
