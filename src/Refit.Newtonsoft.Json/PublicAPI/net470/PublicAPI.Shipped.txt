@@ -1,0 +1,7 @@
+#nullable enable
+Refit.NewtonsoftJsonContentSerializer
+Refit.NewtonsoftJsonContentSerializer.FromHttpContentAsync<T>(System.Net.Http.HttpContent! content, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
+Refit.NewtonsoftJsonContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyInfo! propertyInfo) -> string?
+Refit.NewtonsoftJsonContentSerializer.NewtonsoftJsonContentSerializer() -> void
+Refit.NewtonsoftJsonContentSerializer.NewtonsoftJsonContentSerializer(Newtonsoft.Json.JsonSerializerSettings? jsonSerializerSettings) -> void
+Refit.NewtonsoftJsonContentSerializer.ToHttpContent<T>(T item) -> System.Net.Http.HttpContent!

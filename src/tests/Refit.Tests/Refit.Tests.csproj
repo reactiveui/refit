@@ -28,7 +28,6 @@
   <ItemGroup>
     <!-- Versions are managed centrally in src/Directory.Packages.props.
          Microsoft.AspNetCore.WebUtilities is multi-targeted per .NET major there. -->
-    <PackageReference Include="PublicApiGenerator" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="Moq" />
