@@ -6,7 +6,7 @@
 
   <PropertyGroup Label="Shared Version Variables">
     <PrimitivesVersion>5.4.0</PrimitivesVersion>
-    <TUnitVersion>1.54.0</TUnitVersion>
+    <TUnitVersion>1.56.0</TUnitVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
@@ -69,14 +69,12 @@
   <!-- Test stack -->
   <ItemGroup Label="Test Stack">
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)"/>
-    <PackageVersion Include="Verify.TUnit" Version="31.19.1"/>
+    <PackageVersion Include="Verify.TUnit" Version="31.20.0"/>
     <PackageVersion Include="Verify.DiffPlex" Version="3.2.0"/>
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0"/>
     <PackageVersion Include="Moq" Version="4.20.72"/>
-    <!-- Held at 6.x: MockHttp 7.0 changed sequential Expect() matching semantics in a way
-         that breaks the trailing-slash mock tests. Adopt 7.x deliberately with test updates. -->
-    <PackageVersion Include="RichardSzalay.MockHttp" Version="6.0.0"/>
+    <PackageVersion Include="RichardSzalay.MockHttp" Version="7.0.0"/>
   </ItemGroup>
 
   <!-- Benchmarks -->
