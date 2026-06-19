@@ -1,1 +1,0 @@
-dotnet run --project ../../Refit.Benchmarks.csproj -c Release --framework=net6.0

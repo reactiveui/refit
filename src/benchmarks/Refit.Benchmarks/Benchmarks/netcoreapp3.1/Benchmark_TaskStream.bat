@@ -1,1 +1,0 @@
-dotnet run --project ../../Refit.Benchmarks.csproj -c Release --filter *TaskStream_Async* --framework=netcoreapp3.1
