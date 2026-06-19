@@ -6,8 +6,10 @@ namespace Refit.Generator;
 /// <summary>Model describing the shared generation context for a set of Refit interfaces.</summary>
 /// <param name="RefitInternalNamespace">The namespace used for Refit internal generated types.</param>
 /// <param name="PreserveAttributeDisplayName">The display name of the preserve attribute.</param>
+/// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled.</param>
 /// <param name="Interfaces">The interfaces to generate implementations for.</param>
 internal sealed record ContextGenerationModel(
     string RefitInternalNamespace,
     string PreserveAttributeDisplayName,
+    bool GeneratedRequestBuilding,
     ImmutableEquatableArray<InterfaceModel> Interfaces);

@@ -1,5 +1,7 @@
 //HintName: PreserveAttribute.g.cs
 
+// This file is generated into consumer projects; suppress all analyzers so
+// consumer analyzer policy does not report Refit implementation details.
 #pragma warning disable
 namespace RefitInternalGenerated
 {

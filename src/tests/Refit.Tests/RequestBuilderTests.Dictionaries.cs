@@ -675,6 +675,9 @@ public partial class RequestBuilderTests
         /// <summary>Gets the number of times the builder was invoked.</summary>
         public int CallCount { get; private set; }
 
+        /// <inheritdoc/>
+        public RefitSettings Settings { get; } = new();
+
         /// <summary>Records the invocation and returns null.</summary>
         /// <param name="methodName">The name of the method being built.</param>
         /// <param name="parameterTypes">The parameter types of the method, if any.</param>

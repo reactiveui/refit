@@ -10,10 +10,12 @@ namespace Refit.Generator;
 /// <param name="PreserveAttributeDisplayName">The display name of the generated preserve attribute.</param>
 /// <param name="DisposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
 /// <param name="HttpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
+/// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled.</param>
 /// <param name="SupportsNullable">Whether the compilation supports nullable reference types.</param>
 internal readonly record struct InterfaceGenerationContext(
     List<Diagnostic> Diagnostics,
     string PreserveAttributeDisplayName,
     ISymbol? DisposableInterfaceSymbol,
     INamedTypeSymbol HttpMethodBaseAttributeSymbol,
+    bool GeneratedRequestBuilding,
     bool SupportsNullable);

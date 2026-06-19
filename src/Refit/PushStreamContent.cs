@@ -175,12 +175,10 @@ namespace System.Net.Http
             public CompleteTaskOnCloseStream(
                 Stream innerStream,
                 TaskCompletionSource<bool> serializeToStreamTask)
-                : base(innerStream, ownsInnerStream: false)
-            {
+                : base(innerStream, ownsInnerStream: false) =>
                 _serializeToStreamTask =
                     serializeToStreamTask
                     ?? throw new ArgumentNullException(nameof(serializeToStreamTask));
-            }
 
             /// <inheritdoc/>
             protected override void Dispose(bool disposing)

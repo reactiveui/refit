@@ -359,7 +359,7 @@ internal class RestMethodInfoInternal
 
             var rawName = match.Groups[1].Value.ToLowerInvariant();
             var isRoundTripping = rawName.StartsWith("**", StringComparison.Ordinal);
-            var name = isRoundTripping ? rawName.Substring(2) : rawName;
+            var name = isRoundTripping ? rawName[2..] : rawName;
 
             if (paramValidationDict.TryGetValue(name, out var value))
             {
@@ -388,7 +388,7 @@ internal class RestMethodInfoInternal
         }
 
         // Add trailing string.
-        var trailingConstant = relativePath.Substring(index);
+        var trailingConstant = relativePath[index..];
         fragmentList.Add(ParameterFragment.Constant(trailingConstant));
 
         return (ret, fragmentList);

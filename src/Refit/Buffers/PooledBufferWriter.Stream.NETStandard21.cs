@@ -91,7 +91,7 @@ namespace Refit.Buffers
 
                 var bytesCopied = Math.Min(source.Length, buffer.Length);
 
-                var destination = buffer.Slice(0, bytesCopied);
+                var destination = buffer[..bytesCopied];
 
                 source.CopyTo(destination);
 

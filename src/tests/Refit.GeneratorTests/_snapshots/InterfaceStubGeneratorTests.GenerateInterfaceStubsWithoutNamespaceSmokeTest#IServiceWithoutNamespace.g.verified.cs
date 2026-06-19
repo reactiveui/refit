@@ -1,5 +1,7 @@
-//HintName: IGitHubApiDisposable.g.cs
+//HintName: IServiceWithoutNamespace.g.cs
 #nullable disable
+// This file is generated into consumer projects; suppress all analyzers so
+// consumer analyzer policy does not report Refit implementation details.
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -13,15 +15,15 @@ namespace Refit.Implementation
     [global::RefitInternalGenerated.PreserveAttribute]
     [global::System.Reflection.Obfuscation(Exclude=true)]
     [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-    partial class RefitTestsIGitHubApiDisposable
-        : global::Refit.Tests.IGitHubApiDisposable
+    partial class IServiceWithoutNamespace
+        : global::IServiceWithoutNamespace
     {
         /// <inheritdoc />
         public global::System.Net.Http.HttpClient Client { get; }
         readonly global::Refit.IRequestBuilder requestBuilder;
 
         /// <inheritdoc />
-        public RefitTestsIGitHubApiDisposable(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
+        public IServiceWithoutNamespace(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
         {
             Client = client;
             this.requestBuilder = requestBuilder;
@@ -29,18 +31,21 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public async global::System.Threading.Tasks.Task RefitMethod()
+        public async global::System.Threading.Tasks.Task GetRoot()
         {
             var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("RefitMethod", global::System.Array.Empty<global::System.Type>() );
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetRoot", global::System.Array.Empty<global::System.Type>() );
 
             await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
 
         /// <inheritdoc />
-        void global::System.IDisposable.Dispose()
+        public async global::System.Threading.Tasks.Task PostRoot()
         {
-                Client?.Dispose();
+            var ______arguments = global::System.Array.Empty<object>();
+            var ______func = requestBuilder.BuildRestResultFuncForMethod("PostRoot", global::System.Array.Empty<global::System.Type>() );
+
+            await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
         }
     }
     }

@@ -140,7 +140,7 @@ internal sealed partial class PooledBufferWriter
             }
 
             var destination = buffer.AsSpan(offset, count);
-            var source = _pooledBuffer.AsSpan(0, _length).Slice(_position);
+            var source = _pooledBuffer.AsSpan(0, _length)[_position..];
 
             // If the source is contained within the destination, copy the entire span
             if (source.Length <= destination.Length)
@@ -153,7 +153,7 @@ internal sealed partial class PooledBufferWriter
             }
 
             // Resize the source slice and only copy the overlapping region
-            source.Slice(0, destination.Length).CopyTo(destination);
+            source[..destination.Length].CopyTo(destination);
 
             _position += destination.Length;
 

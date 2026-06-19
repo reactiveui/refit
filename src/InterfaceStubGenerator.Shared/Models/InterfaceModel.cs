@@ -11,8 +11,10 @@ namespace Refit.Generator;
 /// <param name="ClassDeclaration">The generated class declaration text.</param>
 /// <param name="InterfaceDisplayName">The display name of the interface.</param>
 /// <param name="ClassSuffix">The suffix appended to the generated class name.</param>
+/// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled for this interface.</param>
 /// <param name="Constraints">The generic type constraints of the interface.</param>
 /// <param name="MemberNames">The names of the interface members.</param>
+/// <param name="Properties">The interface properties implemented by the generated stub.</param>
 /// <param name="NonRefitMethods">The non-Refit methods declared on the interface.</param>
 /// <param name="RefitMethods">The Refit methods declared on the interface.</param>
 /// <param name="DerivedRefitMethods">The Refit methods inherited from base interfaces.</param>
@@ -26,8 +28,10 @@ internal sealed record InterfaceModel(
     string ClassDeclaration,
     string InterfaceDisplayName,
     string ClassSuffix,
+    bool GeneratedRequestBuilding,
     ImmutableEquatableArray<TypeConstraint> Constraints,
     ImmutableEquatableArray<string> MemberNames,
+    ImmutableEquatableArray<InterfacePropertyModel> Properties,
     ImmutableEquatableArray<MethodModel> NonRefitMethods,
     ImmutableEquatableArray<MethodModel> RefitMethods,
     ImmutableEquatableArray<MethodModel> DerivedRefitMethods,

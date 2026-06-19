@@ -38,7 +38,6 @@
     </Folder>
     <Project Path="InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" />
     <Project Path="InterfaceStubGenerator.Roslyn50/InterfaceStubGenerator.Roslyn50.csproj" />
-    <Project Path="InterfaceStubGenerator.Shared/InterfaceStubGenerator.Shared.shproj" />
     <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
     <Project Path="Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj" />
     <Project Path="Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />

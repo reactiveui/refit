@@ -188,7 +188,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         private static string ToCamelCase(string value) =>
             string.IsNullOrEmpty(value) || !char.IsUpper(value[0])
                 ? value
-                : char.ToLowerInvariant(value[0]) + value.Substring(1);
+                : char.ToLowerInvariant(value[0]) + value[1..];
 
         /// <summary>Reads an enum value from either a string name or a numeric value.</summary>
         /// <param name="reader">The reader positioned on the value to read.</param>

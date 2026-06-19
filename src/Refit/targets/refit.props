@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <CompilerVisibleProperty Include="RefitInternalNamespace"/>
+    <CompilerVisibleProperty Include="RefitGeneratedRequestBuilding"/>
   </ItemGroup>
 
 </Project>

@@ -19,10 +19,6 @@ namespace System
         "CA2225:Operator overloads have named alternates",
         Justification =
             "Polyfill mirroring the shape of the BCL System.Index; it is internal to the generator and intentionally matches the framework type.")]
-    [Diagnostics.CodeAnalysis.SuppressMessage(
-        "StyleCop.CSharp.DocumentationRules",
-        "SST1649:File name should match first type name",
-        Justification = "File name retained for the shared project; contains the Index/Range polyfills.")]
     public readonly record struct Index
     {
         /// <summary>Initializes a new instance of the <see cref="Index"/> struct.</summary>
@@ -59,6 +55,11 @@ namespace System
         /// <summary>Implicitly converts an <see cref="int"/> to an <see cref="Index"/> from the start.</summary>
         /// <param name="value">The zero-based index from the start.</param>
         public static implicit operator Index(int value) => new(value);
+
+        /// <summary>Calculates the zero-based offset for a sequence of the given length.</summary>
+        /// <param name="length">The sequence length.</param>
+        /// <returns>The zero-based offset from the start of the sequence.</returns>
+        public int GetOffset(int length) => IsFromEnd ? length - Value : Value;
     }
 }
 #endif

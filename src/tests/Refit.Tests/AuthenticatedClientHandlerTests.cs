@@ -116,13 +116,11 @@ public class AuthenticatedClientHandlerTests
     /// <summary>Verifies a null token getter throws an <see cref="ArgumentNullException"/>.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task NullTokenGetterThrows()
-    {
+    public async Task NullTokenGetterThrows() =>
         await Assert
             .That(() => new AuthenticatedHttpClientHandler(
                 (Func<HttpRequestMessage, CancellationToken, Task<string>>)null!))
             .ThrowsExactly<ArgumentNullException>();
-    }
 
     /// <summary>Verifies unauthenticated calls do not send an authorization header.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>

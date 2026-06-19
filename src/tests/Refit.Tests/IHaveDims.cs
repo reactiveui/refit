@@ -14,17 +14,11 @@ public interface IHaveDims
     /// <summary>Returns a constant identifying name via a static interface method.</summary>
     /// <returns>The name of the interface.</returns>
     [SuppressMessage("Design", "CA1024:Use properties where appropriate", Justification = "Fixture intentionally exercises a static interface method to verify default interface member support.")]
-    static string GetStatic()
-    {
-        return nameof(IHaveDims);
-    }
+    static string GetStatic() => nameof(IHaveDims);
 
     /// <summary>Performs a request through a default interface method.</summary>
     /// <returns>The response body text.</returns>
-    Task<string> GetDim()
-    {
-        return GetPrivate();
-    }
+    Task<string> GetDim() => GetPrivate();
 #endif
 
     /// <summary>Performs a GET request through an internal interface member.</summary>
@@ -36,9 +30,6 @@ public interface IHaveDims
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>Performs a request through a private interface method.</summary>
     /// <returns>The response body text.</returns>
-    private Task<string> GetPrivate()
-    {
-        return GetInternal();
-    }
+    private Task<string> GetPrivate() => GetInternal();
 #endif
 }

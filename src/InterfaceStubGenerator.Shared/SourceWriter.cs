@@ -23,10 +23,20 @@ internal sealed class SourceWriter
     private const int DefaultCapacity = 4096;
 
     /// <summary>The underlying buffer that accumulates the written text.</summary>
-    private readonly StringBuilder _sb = new(DefaultCapacity);
+    private readonly StringBuilder _sb;
 
     /// <summary>The current indentation level.</summary>
     private int _indentation;
+
+    /// <summary>Initializes a new instance of the <see cref="SourceWriter"/> class.</summary>
+    public SourceWriter()
+        : this(DefaultCapacity)
+    {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="SourceWriter"/> class.</summary>
+    /// <param name="capacity">The initial backing buffer capacity.</param>
+    public SourceWriter(int capacity) => _sb = new(capacity);
 
     /// <summary>Gets or sets the current indentation level.</summary>
     public int Indentation
@@ -48,14 +58,12 @@ internal sealed class SourceWriter
     /// <param name="text">The text to append.</param>
     public void Append(string text) => _sb.Append(text);
 
-    /// <summary>Writes a single character on its own indented line.</summary>
-    /// <param name="value">The character to write.</param>
-    public void WriteLine(char value)
-    {
-        AddIndentation();
-        _sb.Append(value)
-            .AppendLine();
-    }
+    /// <summary>Appends a single character without any indentation or line break.</summary>
+    /// <param name="value">The character to append.</param>
+    public void Append(char value) => _sb.Append(value);
+
+    /// <summary>Appends indentation for the current indentation level.</summary>
+    public void WriteIndentation() => AddIndentation();
 
     /// <summary>Writes the given text, applying the current indentation to each line.</summary>
     /// <param name="text">The text to write.</param>
@@ -115,7 +123,6 @@ internal sealed class SourceWriter
             return default;
         }
 
-        ReadOnlySpan<char> next;
         ReadOnlySpan<char> rest;
 
         var lineLength = remainingText.IndexOf('\n');
@@ -127,7 +134,7 @@ internal sealed class SourceWriter
         }
         else
         {
-            rest = remainingText.Slice(lineLength + 1);
+            rest = remainingText[(lineLength + 1)..];
             isFinalLine = false;
         }
 
@@ -136,7 +143,7 @@ internal sealed class SourceWriter
             lineLength--;
         }
 
-        next = remainingText.Slice(0, lineLength);
+        var next = remainingText[..lineLength];
         remainingText = rest;
         return next;
     }

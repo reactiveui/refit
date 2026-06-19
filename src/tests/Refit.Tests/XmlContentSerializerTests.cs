@@ -139,15 +139,13 @@ public class XmlContentSerializerTests
         "Major Code Smell",
         "S6566:Prefer using \"DateTimeOffset\" instead of \"DateTime\"",
         Justification = "Test intentionally exercises DateTime XML round-trip via XmlConvert.ToDateTime.")]
-    private static Dto BuildDto()
-    {
-        return new Dto
+    private static Dto BuildDto() =>
+        new()
         {
             CreatedOn = DateTime.UtcNow,
             Identifier = Guid.NewGuid().ToString(),
             Name = "Test Dto Object"
         };
-    }
 
     /// <summary>A simple data transfer object used to exercise XML serialization.</summary>
     public class Dto

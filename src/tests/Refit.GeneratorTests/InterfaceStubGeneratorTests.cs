@@ -13,7 +13,7 @@ using Refit.Generator;
 
 using Task = System.Threading.Tasks.Task;
 
-namespace Refit.Tests;
+namespace Refit.GeneratorTests;
 
 /// <summary>Verifies the Refit interface stub source generator against known fixture interfaces.</summary>
 [RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
@@ -80,7 +80,7 @@ public class InterfaceStubGeneratorTests
     [Test]
     public async Task NoRefitInterfacesSmokeTest()
     {
-        var path = IntegrationTestHelper.GetPath("IInterfaceWithoutRefit.cs");
+        var path = GetFixturePath("IInterfaceWithoutRefit.cs");
         await VerifyGenerator(path);
     }
 
@@ -89,7 +89,7 @@ public class InterfaceStubGeneratorTests
     [Test]
     public async Task FindInterfacesSmokeTest()
     {
-        var path = IntegrationTestHelper.GetPath("GitHubApi.cs");
+        var path = GetFixturePath("GitHubApi.cs");
         await VerifyGenerator(path);
     }
 
@@ -98,7 +98,19 @@ public class InterfaceStubGeneratorTests
     [Test]
     public async Task GenerateInterfaceStubsWithoutNamespaceSmokeTest()
     {
-        var path = IntegrationTestHelper.GetPath("IServiceWithoutNamespace.cs");
+        var path = GetFixturePath("IServiceWithoutNamespace.cs");
         await VerifyGenerator(path);
+    }
+
+    /// <summary>Gets the path to a source fixture owned by the runtime test project.</summary>
+    /// <param name="paths">The fixture path parts.</param>
+    /// <returns>The absolute fixture path.</returns>
+    private static string GetFixturePath(params string[] paths)
+    {
+        var generatorTestProjectDirectory = Path.GetFullPath(
+            Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+        var runtimeTestProjectDirectory = Path.GetFullPath(
+            Path.Combine(generatorTestProjectDirectory, "..", "Refit.Tests"));
+        return Path.Combine([runtimeTestProjectDirectory, ..paths]);
     }
 }

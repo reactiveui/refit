@@ -9,6 +9,7 @@ namespace Refit.Generator;
 /// <param name="ContainingType">The fully qualified type that declares the method.</param>
 /// <param name="DeclaredMethod">The declared method signature.</param>
 /// <param name="ReturnTypeMetadata">Metadata describing the shape of the return type.</param>
+/// <param name="Request">The parsed request metadata for Refit methods.</param>
 /// <param name="Parameters">The method parameters.</param>
 /// <param name="Constraints">The generic type constraints for the method.</param>
 /// <param name="IsExplicitInterface">A value indicating whether the method is an explicit interface implementation.</param>
@@ -18,6 +19,7 @@ internal sealed record MethodModel(
     string ContainingType,
     string DeclaredMethod,
     ReturnTypeInfo ReturnTypeMetadata,
+    RequestModel Request,
     ImmutableEquatableArray<ParameterModel> Parameters,
     ImmutableEquatableArray<TypeConstraint> Constraints,
     bool IsExplicitInterface);

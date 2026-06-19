@@ -728,22 +728,18 @@ public class MultipartTests
     /// <summary>Verifies the <see cref="ByteArrayPart"/> constructor rejects a null file name.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName()
-    {
+    public async Task MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName() =>
         await Assert
             .That(() => _ = new ByteArrayPart([], null!, "application/pdf"))
             .ThrowsExactly<ArgumentNullException>();
-    }
 
     /// <summary>Verifies the <see cref="FileInfoPart"/> constructor rejects a null file info.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo()
-    {
+    public async Task FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo() =>
         await Assert
             .That(() => _ = new FileInfoPart(null!, "file.pdf", "application/pdf"))
             .ThrowsExactly<ArgumentNullException>();
-    }
 
     /// <summary>Loads an embedded test resource as a stream.</summary>
     /// <param name="relativeFilePath">The relative path of the embedded resource.</param>

@@ -18,10 +18,7 @@ public class CachedRequestBuilderTests
     /// <summary>Verifies the cached builder throws when constructed with a null inner builder.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task CachedBuilder_ThrowsForNullInnerBuilder()
-    {
-        await Assert.That(() => new CachedRequestBuilderImplementation(null!)).ThrowsExactly<ArgumentNullException>();
-    }
+    public async Task CachedBuilder_ThrowsForNullInnerBuilder() => await Assert.That(() => new CachedRequestBuilderImplementation(null!)).ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies method-table key equality, including object equality and generic-argument differences.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>

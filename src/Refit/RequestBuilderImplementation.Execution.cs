@@ -18,10 +18,8 @@ namespace Refit
         /// <returns><see langword="true"/> if the body should be buffered; otherwise <see langword="false"/>.</returns>
         private static bool IsBodyBuffered(
             RestMethodInfoInternal restMethod,
-            HttpRequestMessage? request)
-        {
-            return (restMethod.BodyParameterInfo?.Item2 ?? false) && (request?.Content is not null);
-        }
+            HttpRequestMessage? request) =>
+            (restMethod.BodyParameterInfo?.Item2 ?? false) && (request?.Content is not null);
 
         /// <summary>Attempts to buffer content into memory, ignoring buffering failures.</summary>
         /// <param name="content">The content to buffer.</param>

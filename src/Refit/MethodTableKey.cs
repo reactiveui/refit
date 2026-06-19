@@ -29,22 +29,20 @@ internal readonly struct MethodTableKey : IEquatable<MethodTableKey>
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        unchecked
+        HashCode hashCode = default;
+        hashCode.Add(MethodName);
+
+        foreach (var argument in Parameters)
         {
-            var hashCode = MethodName.GetHashCode();
-
-            foreach (var argument in Parameters)
-            {
-                hashCode = (hashCode * 397) ^ argument.GetHashCode();
-            }
-
-            foreach (var genericArgument in GenericArguments)
-            {
-                hashCode = (hashCode * 397) ^ genericArgument.GetHashCode();
-            }
-
-            return hashCode;
+            hashCode.Add(argument);
         }
+
+        foreach (var genericArgument in GenericArguments)
+        {
+            hashCode.Add(genericArgument);
+        }
+
+        return hashCode.ToHashCode();
     }
 
     /// <inheritdoc/>

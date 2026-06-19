@@ -713,8 +713,5 @@ public partial class RestServiceIntegrationTests
     /// <param name="expectedSubstring">The substring expected to appear in the stack trace.</param>
     /// <param name="actualString">The actual stack trace string to inspect.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    private static async Task AssertStackTraceContains(string expectedSubstring, string? actualString)
-    {
-        await Assert.That(actualString).Contains(expectedSubstring);
-    }
+    private static async Task AssertStackTraceContains(string expectedSubstring, string? actualString) => await Assert.That(actualString).Contains(expectedSubstring);
 }

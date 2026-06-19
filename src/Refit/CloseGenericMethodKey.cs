@@ -43,16 +43,13 @@ internal readonly struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKe
     /// <inheritdoc/>
     public override int GetHashCode()
     {
-        unchecked
+        HashCode hashCode = default;
+        hashCode.Add(OpenMethodInfo);
+        foreach (var type in Types)
         {
-            var hash = 17;
-            hash = (hash * 23) + OpenMethodInfo.GetHashCode();
-            foreach (var type in Types)
-            {
-                hash = (hash * 23) + type.GetHashCode();
-            }
-
-            return hash;
+            hashCode.Add(type);
         }
+
+        return hashCode.ToHashCode();
     }
 }

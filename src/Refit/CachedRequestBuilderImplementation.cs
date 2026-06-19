@@ -16,11 +16,12 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
 
     /// <summary>Initializes a new instance of the <see cref="CachedRequestBuilderImplementation"/> class.</summary>
     /// <param name="innerBuilder">The request builder whose results are cached.</param>
-    public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
-    {
+    public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder) =>
         _innerBuilder =
             innerBuilder ?? throw new ArgumentNullException(nameof(innerBuilder));
-    }
+
+    /// <inheritdoc/>
+    public RefitSettings Settings => _innerBuilder.Settings;
 
     /// <summary>Gets the cache of method keys to their built result functions.</summary>
     internal ConcurrentDictionary<

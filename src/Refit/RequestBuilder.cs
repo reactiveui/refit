@@ -76,11 +76,9 @@ public static class RequestBuilder
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
-        RefitSettings? settings)
-    {
-        return new CachedRequestBuilderImplementation(
+        RefitSettings? settings) =>
+        new CachedRequestBuilderImplementation(
             new RequestBuilderImplementation(refitInterfaceType, settings));
-    }
 
     /// <summary>Creates an instance of an IRequestBuilder for the specified Refit interface type.</summary>
     /// <remarks>The specified interface type must be decorated with Refit attributes to define the

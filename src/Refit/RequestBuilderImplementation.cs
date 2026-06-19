@@ -94,6 +94,9 @@ namespace Refit
         public Type TargetType { get; }
 
         /// <inheritdoc/>
+        public RefitSettings Settings => _settings;
+
+        /// <inheritdoc/>
 #if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
@@ -156,7 +159,7 @@ namespace Refit
         {
             var name = methodInfo.Name;
             var lastDot = name.LastIndexOf('.');
-            return lastDot >= 0 ? name.Substring(lastDot + 1) : name;
+            return lastDot >= 0 ? name[(lastDot + 1)..] : name;
         }
 
         /// <summary>Determines whether the method's return type is a closed generic of the supplied open generic type.</summary>

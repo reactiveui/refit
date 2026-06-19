@@ -586,50 +586,42 @@ public partial class SerializedContentTests
     /// <summary>Verifies that JSON null throws for a non-nullable enum.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForNullNonNullableEnumValues()
-    {
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForNullNonNullableEnumValues() =>
         await Assert.That(
-            () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-                "null",
-                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
+                () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                    "null",
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<System.Text.Json.JsonException>();
-    }
 
     /// <summary>Verifies that an empty string throws for a non-nullable enum.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForEmptyNonNullableEnumValues()
-    {
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForEmptyNonNullableEnumValues() =>
         await Assert.That(
-            () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-                "\"\"",
-                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
+                () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                    "\"\"",
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<System.Text.Json.JsonException>();
-    }
 
     /// <summary>Verifies that an unknown enum name throws.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForInvalidEnumValues()
-    {
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForInvalidEnumValues() =>
         await Assert.That(
-            () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-                "\"notAValue\"",
-                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
+                () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                    "\"notAValue\"",
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<System.Text.Json.JsonException>();
-    }
 
     /// <summary>Verifies that unexpected JSON tokens throw when parsing enums.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForUnexpectedTokensWhenParsingEnums()
-    {
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForUnexpectedTokensWhenParsingEnums() =>
         await Assert.That(
-            () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
-                "true",
-                SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
+                () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                    "true",
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<System.Text.Json.JsonException>();
-    }
 
     /// <summary>Verifies that undefined enum values are serialized as numbers.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>

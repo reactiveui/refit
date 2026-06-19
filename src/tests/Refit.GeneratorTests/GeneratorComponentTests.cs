@@ -11,7 +11,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 using Refit.Generator;
 
-namespace Refit.Tests;
+namespace Refit.GeneratorTests;
 
 /// <summary>
 /// Focused unit tests for the individual building blocks of the source generator,
@@ -22,6 +22,12 @@ public static class GeneratorComponentTests
     /// <summary>Tests for <see cref="UniqueNameBuilder"/>.</summary>
     public class UniqueNameBuilderTests
     {
+        /// <summary>The member name used to test simple generated-name collisions.</summary>
+        private const string ClientName = "client";
+
+        /// <summary>The first generated collision suffix for <see cref="ClientName"/>.</summary>
+        private const string FirstClientCollisionName = "client0";
+
         /// <summary>Verifies that an unused name is returned unchanged.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
@@ -29,7 +35,7 @@ public static class GeneratorComponentTests
         {
             var builder = new UniqueNameBuilder();
 
-            await Assert.That(builder.New("client")).IsEqualTo("client");
+            await Assert.That(builder.New(ClientName)).IsEqualTo(ClientName);
         }
 
         /// <summary>Verifies that a numeric suffix is appended when a name collides.</summary>
@@ -39,9 +45,9 @@ public static class GeneratorComponentTests
         {
             var builder = new UniqueNameBuilder();
 
-            await Assert.That(builder.New("client")).IsEqualTo("client");
-            await Assert.That(builder.New("client")).IsEqualTo("client0");
-            await Assert.That(builder.New("client")).IsEqualTo("client1");
+            await Assert.That(builder.New(ClientName)).IsEqualTo(ClientName);
+            await Assert.That(builder.New(ClientName)).IsEqualTo(FirstClientCollisionName);
+            await Assert.That(builder.New(ClientName)).IsEqualTo("client1");
         }
 
         /// <summary>Verifies that a reserved name is never handed out directly.</summary>
@@ -50,9 +56,9 @@ public static class GeneratorComponentTests
         public async Task Reserve_PreventsName_FromBeingHandedOut()
         {
             var builder = new UniqueNameBuilder();
-            builder.Reserve("client");
+            builder.Reserve([ClientName]);
 
-            await Assert.That(builder.New("client")).IsEqualTo("client0");
+            await Assert.That(builder.New(ClientName)).IsEqualTo(FirstClientCollisionName);
         }
 
         /// <summary>Verifies that reserving an enumerable prevents every supplied name.</summary>
@@ -61,9 +67,9 @@ public static class GeneratorComponentTests
         public async Task Reserve_Enumerable_PreventsAllNames()
         {
             var builder = new UniqueNameBuilder();
-            builder.Reserve(["client", "requestBuilder"]);
+            builder.Reserve([ClientName, "requestBuilder"]);
 
-            await Assert.That(builder.New("client")).IsEqualTo("client0");
+            await Assert.That(builder.New(ClientName)).IsEqualTo(FirstClientCollisionName);
             await Assert.That(builder.New("requestBuilder")).IsEqualTo("requestBuilder0");
         }
 
@@ -76,33 +82,33 @@ public static class GeneratorComponentTests
 
             builder.Reserve((IEnumerable<string>)null!);
 
-            await Assert.That(builder.New("client")).IsEqualTo("client");
+            await Assert.That(builder.New(ClientName)).IsEqualTo(ClientName);
         }
 
-        /// <summary>Verifies that a new scope inherits the parent's reservations.</summary>
+        /// <summary>Verifies that independent builders do not share reservations.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
-        public async Task NewScope_InheritsParentReservations()
+        public async Task IndependentBuilders_DoNotShareReservations()
         {
-            var parent = new UniqueNameBuilder();
-            parent.Reserve("client");
+            var first = new UniqueNameBuilder();
+            first.Reserve([ClientName]);
 
-            var child = parent.NewScope();
+            var second = new UniqueNameBuilder();
 
-            await Assert.That(child.New("client")).IsEqualTo("client0");
+            await Assert.That(second.New(ClientName)).IsEqualTo(ClientName);
         }
 
-        /// <summary>Verifies that names handed out in a child scope do not leak to the parent.</summary>
+        /// <summary>Verifies that names handed out in one builder do not leak to another builder.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
-        public async Task NewScope_ParentDoesNotSeeChildNames()
+        public async Task IndependentBuilders_DoNotShareGeneratedNames()
         {
-            var parent = new UniqueNameBuilder();
-            var child = parent.NewScope();
-            child.New("local");
+            var first = new UniqueNameBuilder();
+            first.New("local");
 
-            // The child's name must not leak back into the parent scope.
-            await Assert.That(parent.New("local")).IsEqualTo("local");
+            var second = new UniqueNameBuilder();
+
+            await Assert.That(second.New("local")).IsEqualTo("local");
         }
     }
 
@@ -190,19 +196,14 @@ public static class GeneratorComponentTests
         /// <summary>Verifies that the empty array has no elements.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
-        public async Task Empty_HasNoElements()
-        {
-            await Assert.That(ImmutableEquatableArray<string>.Empty.Count).IsEqualTo(0);
-        }
+        public async Task Empty_HasNoElements() => await Assert.That(ImmutableEquatableArray<string>.Empty.Count).IsEqualTo(0);
 
         /// <summary>Verifies that converting a null source yields an empty array.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
         public async Task ToImmutableEquatableArray_Null_ReturnsEmpty()
         {
-            IEnumerable<string>? source = null;
-
-            var result = source.ToImmutableEquatableArray();
+            var result = ((List<string>?)null).ToImmutableEquatableArray();
 
             await Assert.That(result.Count).IsEqualTo(0);
         }
@@ -212,34 +213,39 @@ public static class GeneratorComponentTests
         [Test]
         public async Task Enumerator_YieldsAllValuesInOrder()
         {
-            var array = new ImmutableEquatableArray<int>([10, 20, 30]);
+            const int FirstValue = 10;
+            const int SecondValue = 20;
+            const int ThirdValue = 30;
+            var array = new ImmutableEquatableArray<int>([FirstValue, SecondValue, ThirdValue]);
 
             var collected = new List<int>(array.Count);
             collected.AddRange(array);
 
-            await Assert.That(collected).IsCollectionEqualTo([10, 20, 30]);
-            await Assert.That(array[1]).IsEqualTo(20);
+            await Assert.That(collected).IsCollectionEqualTo([FirstValue, SecondValue, ThirdValue]);
+            await Assert.That(array[1]).IsEqualTo(SecondValue);
         }
     }
 
     /// <summary>Tests for the <c>ITypeSymbol</c> generator extension helpers.</summary>
     public class ITypeSymbolExtensionsTests
     {
-        /// <summary>Verifies that the base-type chain starts with the type itself and walks its bases.</summary>
+        /// <summary>The derived test type name used by inheritance assertions.</summary>
+        private const string DerivedTypeName = "Derived";
+
+        /// <summary>Verifies that inheritance checks walk through the full base-type chain.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
-        public async Task GetBaseTypesAndThis_ReturnsSelfThenBaseChain()
+        public async Task InheritsFromOrEquals_TransitiveBaseType_IsTrue()
         {
             var compilation = Compile("""
                 public class Base { }
                 public class Middle : Base { }
                 public class Derived : Middle { }
                 """);
-            var derived = GetType(compilation, "Derived");
+            var derived = GetType(compilation, DerivedTypeName);
+            var baseType = GetType(compilation, "Base");
 
-            var chain = derived.GetBaseTypesAndThis().Select(t => t.Name).ToArray();
-
-            await Assert.That(chain).IsCollectionEqualTo(["Derived", "Middle", "Base", "Object"]);
+            await Assert.That(derived.InheritsFromOrEquals(baseType)).IsTrue();
         }
 
         /// <summary>Verifies that a type inherits from or equals itself.</summary>
@@ -248,7 +254,7 @@ public static class GeneratorComponentTests
         public async Task InheritsFromOrEquals_SameType_IsTrue()
         {
             var compilation = Compile("public class Derived { }");
-            var derived = GetType(compilation, "Derived");
+            var derived = GetType(compilation, DerivedTypeName);
 
             await Assert.That(derived.InheritsFromOrEquals(derived)).IsTrue();
         }
@@ -264,7 +270,7 @@ public static class GeneratorComponentTests
                 """);
 
             await Assert.That(
-                GetType(compilation, "Derived").InheritsFromOrEquals(GetType(compilation, "Base"))).IsTrue();
+                GetType(compilation, DerivedTypeName).InheritsFromOrEquals(GetType(compilation, "Base"))).IsTrue();
         }
 
         /// <summary>Verifies that unrelated types do not inherit from one another.</summary>

@@ -20,11 +20,9 @@ internal class RequestBuilderFactory : IRequestBuilderFactory
         [DynamicallyAccessedMembers(
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(RefitSettings? settings)
-    {
-        return new CachedRequestBuilderImplementation<T>(
+        T>(RefitSettings? settings) =>
+        new CachedRequestBuilderImplementation<T>(
             new RequestBuilderImplementation<T>(settings));
-    }
 
     /// <inheritdoc/>
     [RequiresUnreferencedCode(
@@ -35,9 +33,7 @@ internal class RequestBuilderFactory : IRequestBuilderFactory
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
-        RefitSettings? settings)
-    {
-        return new CachedRequestBuilderImplementation(
+        RefitSettings? settings) =>
+        new CachedRequestBuilderImplementation(
             new RequestBuilderImplementation(refitInterfaceType, settings));
-    }
 }

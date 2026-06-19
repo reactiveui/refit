@@ -529,9 +529,12 @@ namespace Refit
                     break;
                 }
 
-#pragma warning disable CS0618 // Type or member is obsolete
+                // BodySerializationMethod.Json is obsolete, but the reflection path must still
+                // accept legacy [Body(BodySerializationMethod.Json)] usage from compiled callers.
+                // Falling through to Default would incorrectly send string bodies as raw text.
+#pragma warning disable CS0618 // Required for legacy BodySerializationMethod.Json compatibility.
                 case BodySerializationMethod.Default or BodySerializationMethod.Json or BodySerializationMethod.Serialized:
-#pragma warning restore CS0618 // Type or member is obsolete
+#pragma warning restore CS0618 // Compatibility switch complete; re-enable obsolete warnings.
                 {
                     AddSerializedBodyToRequest(restMethod, param, ret);
                     break;

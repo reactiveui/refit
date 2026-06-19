@@ -95,6 +95,7 @@ Refit.DeleteAttribute.DeleteAttribute(string! path) -> void
 Refit.FileInfoPart
 Refit.FileInfoPart.FileInfoPart(System.IO.FileInfo! value, string! fileName, string? contentType = null, string? name = null) -> void
 Refit.FileInfoPart.Value.get -> System.IO.FileInfo!
+Refit.GeneratedRequestRunner
 Refit.GetAttribute
 Refit.GetAttribute.GetAttribute(string! path) -> void
 Refit.HeadAttribute
@@ -137,6 +138,7 @@ Refit.IHttpContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyI
 Refit.IHttpContentSerializer.ToHttpContent<T>(T item) -> System.Net.Http.HttpContent!
 Refit.IRequestBuilder
 Refit.IRequestBuilder.BuildRestResultFuncForMethod(string! methodName, System.Type![]? parameterTypes = null, System.Type![]? genericArgumentTypes = null) -> System.Func<System.Net.Http.HttpClient!, object![]!, object?>!
+Refit.IRequestBuilder.Settings.get -> Refit.RefitSettings!
 Refit.IRequestBuilder<T>
 Refit.IUrlParameterFormatter
 Refit.IUrlParameterFormatter.Format(object? value, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string?
@@ -310,6 +312,13 @@ static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, Sy
 static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
 static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings) -> System.Threading.Tasks.Task<Refit.ApiException!>!
 static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
+static Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Type! interfaceType) -> void
+static Refit.GeneratedRequestRunner.AddHeaderCollection(System.Net.Http.HttpRequestMessage! request, System.Collections.Generic.IDictionary<string!, string!>? headers) -> void
+static Refit.GeneratedRequestRunner.AddRequestProperty<TValue>(System.Net.Http.HttpRequestMessage! request, string! key, TValue value) -> void
+static Refit.GeneratedRequestRunner.CreateBodyContent<TBody>(Refit.RefitSettings! settings, TBody body, Refit.BodySerializationMethod serializationMethod, bool streamBody) -> System.Net.Http.HttpContent!
+static Refit.GeneratedRequestRunner.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!
+static Refit.GeneratedRequestRunner.SendVoidAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
+static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage! request, string! name, string? value) -> void
 static Refit.HttpRequestMessageOptions.InterfaceType.get -> string!
 static Refit.HttpRequestMessageOptions.RestMethodInfo.get -> string!
 static Refit.RequestBuilder.ForType(System.Type! refitInterfaceType) -> Refit.IRequestBuilder!
