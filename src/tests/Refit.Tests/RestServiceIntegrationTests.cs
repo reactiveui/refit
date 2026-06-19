@@ -219,6 +219,10 @@ public partial class RestServiceIntegrationTests
     {
         var mockHttp = new MockHttpMessageHandler();
         mockHttp
+            .Expect(HttpMethod.Get, "http://foo/firstRequest")
+            .WithExactQueryString(string.Empty)
+            .Respond("application/json", "Ok");
+        mockHttp
             .Expect(HttpMethod.Get, "http://foo/someendpoint")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
