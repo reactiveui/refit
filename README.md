@@ -4,9 +4,9 @@
 
 [![Build](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml/badge.svg)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml) [![codecov](https://codecov.io/github/reactiveui/refit/branch/main/graph/badge.svg?token=2guEgHsDU2)](https://codecov.io/github/reactiveui/refit)
 
-||Refit|Refit.HttpClientFactory|Refit.Newtonsoft.Json|
-|-|-|-|-|
-|*NuGet*|[![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/)|[![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/)|[![NuGet](https://img.shields.io/nuget/v/Refit.Newtonsoft.Json.svg)](https://www.nuget.org/packages/Refit.Newtonsoft.Json/)|
+|         | Refit                                                                                       | Refit.HttpClientFactory                                                                                                         | Refit.Newtonsoft.Json                                                                                                       |
+|---------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| *NuGet* | [![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/) | [![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/) | [![NuGet](https://img.shields.io/nuget/v/Refit.Newtonsoft.Json.svg)](https://www.nuget.org/packages/Refit.Newtonsoft.Json/) |
 
 Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
@@ -27,7 +27,9 @@ The `RestService` class generates an implementation of `IGitHubApi` that uses
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com");
 var octocat = await gitHubApi.GetUser("octocat");
 ```
+
 .NET Core supports registering via HttpClientFactory
+
 ```csharp
 services
     .AddRefitClient<IGitHubApi>()
@@ -38,50 +40,49 @@ services
 
 * [Sponsors](#sponsors)
 * [Where does this work?](#where-does-this-work)
-  * [Breaking changes in 6.x](#breaking-changes-in-6x)
-  * [Breaking changes in 11.x](#breaking-changes-in-11x)
+    * [Breaking changes in 6.x](#breaking-changes-in-6x)
+    * [Breaking changes in 11.x](#breaking-changes-in-11x)
 * [API Attributes](#api-attributes)
 * [Querystrings](#querystrings)
-  * [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
-  * [Collections as Querystring parameters](#collections-as-querystring-parameters)
-  * [Unescape Querystring parameters](#unescape-querystring-parameters)
-  * [Custom Querystring Parameter formatting](#custom-querystring-parameter-formatting)
+    * [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
+    * [Collections as Querystring parameters](#collections-as-querystring-parameters)
+    * [Unescape Querystring parameters](#unescape-querystring-parameters)
+    * [Custom Querystring Parameter formatting](#custom-querystring-parameter-formatting)
 * [Body content](#body-content)
-  * [Buffering and the Content-Length header](#buffering-and-the-content-length-header)
-  * [JSON content](#json-content)
-  * [XML Content](#xml-content)
-  * [Form posts](#form-posts)
+    * [Buffering and the Content-Length header](#buffering-and-the-content-length-header)
+    * [JSON content](#json-content)
+    * [XML Content](#xml-content)
+    * [Form posts](#form-posts)
 * [Setting request headers](#setting-request-headers)
-  * [Static headers](#static-headers)
-  * [Dynamic headers](#dynamic-headers)
-  * [Bearer Authentication](#bearer-authentication)
-  * [Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)](#reducing-header-boilerplate-with-delegatinghandlers-authorization-headers-worked-example)
-  * [Redefining headers](#redefining-headers)
-  * [Removing headers](#removing-headers)
+    * [Static headers](#static-headers)
+    * [Dynamic headers](#dynamic-headers)
+    * [Bearer Authentication](#bearer-authentication)
+    * [Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)](#reducing-header-boilerplate-with-delegatinghandlers-authorization-headers-worked-example)
+    * [Redefining headers](#redefining-headers)
+    * [Removing headers](#removing-headers)
 * [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
-  * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
-  * [Target Interface type](#target-interface-type)
-  * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
+    * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
+    * [Target Interface type](#target-interface-type)
+    * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
 * [Interface inheritance](#interface-inheritance)
-  * [Headers inheritance](#headers-inheritance)
+    * [Headers inheritance](#headers-inheritance)
 * [Default Interface Methods](#default-interface-methods)
 * [Using HttpClientFactory](#using-httpclientfactory)
 * [Providing a custom HttpClient](#providing-a-custom-httpclient)
 * [Handling exceptions](#handling-exceptions)
-  * [When returning Task&lt;IApiResponse&gt;, Task&lt;IApiResponse&lt;T&gt;&gt;, or Task&lt;ApiResponse&lt;T&gt;&gt;](#when-returning-taskiapiresponse-taskiapiresponset-or-taskapiresponset)
-  * [When returning Task&lt;T&gt;](#when-returning-taskt)
-  * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
-  * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
+    * [When returning Task&lt;IApiResponse&gt;, Task&lt;IApiResponse&lt;T&gt;&gt;, or Task&lt;ApiResponse&lt;T&gt;&gt;](#when-returning-taskiapiresponse-taskiapiresponset-or-taskapiresponset)
+    * [When returning Task&lt;T&gt;](#when-returning-taskt)
+    * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
+    * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
 
 ### Sponsors
 
 Refit is sponsored by the following:
 
 [![lombiq logo](images/lombiq.svg)](https://lombiq.com)[![jetbrains logo](images/jetbrains.svg)](https://www.jetbrains.com)[![claude logo](images/claude.svg)](https://claude.com)
-
 
 ### Where does this work?
 
@@ -96,26 +97,39 @@ Refit currently supports the following platforms and any .NET Standard 2.0 targe
 ### SDK Requirements
 
 ### Updates in 8.0.x
+
 Fixes for some issues experienced, this lead to some breaking changes.
 See [Releases](https://github.com/reactiveui/refit/releases) for full details.
 
 ### V6.x.x
 
-Refit 6 requires Visual Studio 16.8 or higher, or the .NET SDK 5.0.100 or higher. It can target any .NET Standard 2.0 platform.
+Refit 6 requires Visual Studio 16.8 or higher, or the .NET SDK 5.0.100 or higher. It can target any .NET Standard 2.0
+platform.
 
-Refit 6 does not support the old `packages.config` format for NuGet references (as they do not support analyzers/source generators). You must
-[migrate to PackageReference](https://devblogs.microsoft.com/nuget/migrate-packages-config-to-package-reference/) to use Refit v6 and later.
+Refit 6 does not support the old `packages.config` format for NuGet references (as they do not support analyzers/source
+generators). You must
+[migrate to PackageReference](https://devblogs.microsoft.com/nuget/migrate-packages-config-to-package-reference/) to use
+Refit v6 and later.
 
 #### Breaking changes in 6.x
 
-Refit 6 makes [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview) the default JSON serializer. If you'd like to continue to use `Newtonsoft.Json`, add the `Refit.Newtonsoft.Json` NuGet package and set your `ContentSerializer` to `NewtonsoftJsonContentSerializer` on your `RefitSettings` instance. `System.Text.Json` is faster and uses less memory, though not all features are supported. The [migration guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to?pivots=dotnet-5-0) contains more details.
+Refit 6
+makes [System.Text.Json](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-overview) the
+default JSON serializer. If you'd like to continue to use `Newtonsoft.Json`, add the `Refit.Newtonsoft.Json` NuGet
+package and set your `ContentSerializer` to `NewtonsoftJsonContentSerializer` on your `RefitSettings` instance.
+`System.Text.Json` is faster and uses less memory, though not all features are supported.
+The [migration guide](https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to?pivots=dotnet-5-0)
+contains more details.
 
-`IContentSerializer` was renamed to `IHttpContentSerializer` to better reflect its purpose. Additionally, two of its methods were renamed, `SerializeAsync<T>` -> `ToHttpContent<T>` and `DeserializeAsync<T>` -> `FromHttpContentAsync<T>`. Any existing implementations of these will need to be updated, though the changes should be minor.
+`IContentSerializer` was renamed to `IHttpContentSerializer` to better reflect its purpose. Additionally, two of its
+methods were renamed, `SerializeAsync<T>` -> `ToHttpContent<T>` and `DeserializeAsync<T>` -> `FromHttpContentAsync<T>`.
+Any existing implementations of these will need to be updated, though the changes should be minor.
 
 ##### Updates in 6.3
 
 Refit 6.3 splits out the XML serialization via `XmlContentSerializer` into a separate package, `Refit.Xml`. This
-is to reduce the dependency size when using Refit with Web Assembly (WASM) applications. If you require XML, add a reference
+is to reduce the dependency size when using Refit with Web Assembly (WASM) applications. If you require XML, add a
+reference
 to `Refit.Xml`.
 
 ### V11.x.x
@@ -123,18 +137,27 @@ to `Refit.Xml`.
 #### Breaking changes in 11.x
 
 Refit 11 introduces `ApiRequestException` to represent requests that fail before receiving a response from the server.
-This exception will now wrap previous exceptions such as `HttpRequestException` and `TaskCanceledException` when they occur during request execution.
+This exception will now wrap previous exceptions such as `HttpRequestException` and `TaskCanceledException` when they
+occur during request execution.
 
-* If you were not wrapping responses with `IApiResponse` and were catching these exceptions directly, you will need to update your code to catch `ApiRequestException` instead.
-* If you were wrapping responses with `IApiResponse`, these exceptions will no longer be thrown and will instead be captured in the `IApiResponse.Error` property.
-You can use the new `IApiResponse.HasRequestError(out var apiRequestException)` method to safely check and retrieve the `ApiRequestException` instance.
+* If you were not wrapping responses with `IApiResponse` and were catching these exceptions directly, you will need to
+  update your code to catch `ApiRequestException` instead.
+* If you were wrapping responses with `IApiResponse`, these exceptions will no longer be thrown and will instead be
+  captured in the `IApiResponse.Error` property.
+  You can use the new `IApiResponse.HasRequestError(out var apiRequestException)` method to safely check and retrieve
+  the `ApiRequestException` instance.
 
-The `IApiResponse.Error` property's type has also changed to `ApiExceptionBase`, which is the new base class for `ApiException` and `ApiRequestException`.
-If your code accessed members specific to `ApiException` (i.e. anything related to the response from the server), you can use the new `IApiResponse.HasResponseError(out var apiException)` method to safely check and retrieve the `ApiException` instance.
+The `IApiResponse.Error` property's type has also changed to `ApiExceptionBase`, which is the new base class for
+`ApiException` and `ApiRequestException`.
+If your code accessed members specific to `ApiException` (i.e. anything related to the response from the server), you
+can use the new `IApiResponse.HasResponseError(out var apiException)` method to safely check and retrieve the
+`ApiException` instance.
 
 All response-related properties of `IApiResponse` are now nullable.
-The new `IApiResponse.IsReceived` property can be used to check if a response was received from the server, and will mark those properties as non-null.
-The original `IApiResponse.IsSuccessful` and `IApiResponse.IsSuccessStatusCode` properties can still be used to check if the response was received and is successful.
+The new `IApiResponse.IsReceived` property can be used to check if a response was received from the server, and will
+mark those properties as non-null.
+The original `IApiResponse.IsSuccessful` and `IApiResponse.IsSuccessStatusCode` properties can still be used to check if
+the response was received and is successful.
 
 ### API Attributes
 
@@ -193,9 +216,11 @@ GroupList(4, "desc");
 >>> "/group/4/users?sort=desc"
 ```
 
-Round-tripping route parameter syntax: Forward slashes aren't encoded when using a double-asterisk (\*\*) catch-all parameter syntax.
+Round-tripping route parameter syntax: Forward slashes aren't encoded when using a double-asterisk (\*\*) catch-all
+parameter syntax.
 
-During link generation, the routing system encodes the value captured in a double-asterisk (\*\*) catch-all parameter (for example, {**myparametername}) except the forward slashes.
+During link generation, the routing system encodes the value captured in a double-asterisk (\*\*) catch-all parameter (
+for example, {**myparametername}) except the forward slashes.
 
 The type of round-tripping route parameter must be string.
 
@@ -212,8 +237,10 @@ Search("admin/products");
 #### Dynamic Querystring Parameters
 
 If you specify an `object` as a query parameter, all public properties which are not null are used as query parameters.
-This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to Twitter's hybrid API that insists on non-GET requests with querystring parameters.
-Use the `Query` attribute to change the behavior to 'flatten' your query parameter object. If using this Attribute you can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
+This previously only applied to GET requests, but has now been expanded to all HTTP request methods, partly thanks to
+Twitter's hybrid API that insists on non-GET requests with querystring parameters.
+Use the `Query` attribute to change the behavior to 'flatten' your query parameter object. If using this Attribute you
+can specify values for the Delimiter and the Prefix which are used to 'flatten' the object.
 
 ```csharp
 public class MyQueryParams
@@ -253,9 +280,11 @@ GroupListWithAttribute(4, params)
 >>> "/group/4/users?search.order=desc&search.Limit=10&search.Kind=bar"
 ```
 
-A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no intellisense and/or type safety.
+A similar behavior exists if using a Dictionary, but without the advantages of the `AliasAs` attributes and of course no
+intellisense and/or type safety.
 
 You can also specify querystring parameters with [Query] and have them flattened in non-GET requests, similar to:
+
 ```csharp
 [Post("/statuses/update.json")]
 Task<Tweet> PostTweet([Query]TweetParams params);
@@ -263,7 +292,8 @@ Task<Tweet> PostTweet([Query]TweetParams params);
 
 Where `TweetParams` is a POCO, and properties will also support `[AliasAs]` attributes.
 
-If you need to keep internal-only properties on your query DTO, mark them with one of the standard ignore attributes and Refit will skip them when building the query string:
+If you need to keep internal-only properties on your query DTO, mark them with one of the standard ignore attributes and
+Refit will skip them when building the query string:
 
 - `[IgnoreDataMember]`
 - `[System.Text.Json.Serialization.JsonIgnore]`
@@ -287,7 +317,8 @@ Search(new [] {10, 20, 30})
 >>> "/users/list?ages=10%2C20%2C30"
 ```
 
-You can also specify collection format in `RefitSettings`, that will be used by default, unless explicitly defined in `Query` attribute.
+You can also specify collection format in `RefitSettings`, that will be used by default, unless explicitly defined in
+`Query` attribute.
 
 ```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
@@ -317,7 +348,8 @@ To customize the format of query keys, you have two main options:
 
 1. **Using the `AliasAs` Attribute**:
 
-   You can use the `AliasAs` attribute to specify a custom key name for a property. This attribute will always take precedence over any key formatter you specify.
+   You can use the `AliasAs` attribute to specify a custom key name for a property. This attribute will always take
+   precedence over any key formatter you specify.
 
    ```csharp
    public class MyQueryParams
@@ -345,7 +377,9 @@ To customize the format of query keys, you have two main options:
 
 2. **Using the `RefitSettings.UrlParameterKeyFormatter` Property**:
 
-   By default, Refit uses the property name as the query key without any additional formatting. If you want to apply a custom format across all your query keys, you can use the `UrlParameterKeyFormatter` property. Remember that if a property has an `AliasAs` attribute, it will be used regardless of the formatter.
+   By default, Refit uses the property name as the query key without any additional formatting. If you want to apply a
+   custom format across all your query keys, you can use the `UrlParameterKeyFormatter` property. Remember that if a
+   property has an `AliasAs` attribute, it will be used regardless of the formatter.
 
    The following example uses the built-in `CamelCaseUrlParameterKeyFormatter`:
 
@@ -371,15 +405,19 @@ To customize the format of query keys, you have two main options:
    /group/users?sortOrder=desc&queryLimit=10
    ```
 
-**Note**: The `AliasAs` attribute always takes the top priority. If both the attribute and a custom key formatter are present, the `AliasAs` attribute's value will be used.
+**Note**: The `AliasAs` attribute always takes the top priority. If both the attribute and a custom key formatter are
+present, the `AliasAs` attribute's value will be used.
 
 #### Formatting URL Parameter Values with the `UrlParameterFormatter`
 
-In Refit, the `UrlParameterFormatter` property within `RefitSettings` allows you to customize how parameter values are formatted in the URL. This can be particularly useful when you need to format dates, numbers, or other types in a specific manner that aligns with your API's expectations.
+In Refit, the `UrlParameterFormatter` property within `RefitSettings` allows you to customize how parameter values are
+formatted in the URL. This can be particularly useful when you need to format dates, numbers, or other types in a
+specific manner that aligns with your API's expectations.
 
 **Using `UrlParameterFormatter`**:
 
-Assign a custom formatter that implements the `IUrlParameterFormatter` interface to the `UrlParameterFormatter` property.
+Assign a custom formatter that implements the `IUrlParameterFormatter` interface to the `UrlParameterFormatter`
+property.
 
 ```csharp
 public class CustomDateUrlParameterFormatter : IUrlParameterFormatter
@@ -401,13 +439,16 @@ var settings = new RefitSettings
 };
 ```
 
-In this example, a custom formatter is created for date values. Whenever a `DateTime` parameter is encountered, it formats the date as `yyyyMMdd`.
+In this example, a custom formatter is created for date values. Whenever a `DateTime` parameter is encountered, it
+formats the date as `yyyyMMdd`.
 
 **Formatting Dictionary Keys**:
 
-When dealing with dictionaries, it's important to note that keys are treated as values. If you need custom formatting for dictionary keys, you should use the `UrlParameterFormatter` as well.
+When dealing with dictionaries, it's important to note that keys are treated as values. If you need custom formatting
+for dictionary keys, you should use the `UrlParameterFormatter` as well.
 
-For instance, if you have a dictionary parameter and you want to format its keys in a specific way, you can handle that in the custom formatter:
+For instance, if you have a dictionary parameter and you want to format its keys in a specific way, you can handle that
+in the custom formatter:
 
 ```csharp
 public class CustomDictionaryKeyFormatter : IUrlParameterFormatter
@@ -447,11 +488,12 @@ There are four possibilities for supplying the body data, depending on the
 type of the parameter:
 
 * If the type is `Stream`, the content will be streamed via `StreamContent`
-* If the type is `string`, the string will be used directly as the content unless `[Body(BodySerializationMethod.Json)]` is set which will send it as a `StringContent`
+* If the type is `string`, the string will be used directly as the content unless `[Body(BodySerializationMethod.Json)]`
+  is set which will send it as a `StringContent`
 * If the parameter has the attribute `[Body(BodySerializationMethod.UrlEncoded)]`,
   the content will be URL-encoded (see [form posts](#form-posts) below)
 * For all other types, the object will be serialized using the content serializer specified in
-RefitSettings (JSON is the default).
+  RefitSettings (JSON is the default).
 
 #### Buffering and the `Content-Length` header
 
@@ -468,15 +510,22 @@ Task CreateUser([Body(buffered: true)] User user);
 
 #### JSON content
 
-JSON requests and responses are serialized/deserialized using an instance of the `IHttpContentSerializer` interface. Refit provides two implementations out of the box: `SystemTextJsonContentSerializer` (which is the default JSON serializer) and `NewtonsoftJsonContentSerializer`. The first uses `System.Text.Json` APIs and is focused on high performance and low memory usage, while the latter uses the known `Newtonsoft.Json` library and is more versatile and customizable. You can read more about the two serializers and the main differences between the two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
+JSON requests and responses are serialized/deserialized using an instance of the `IHttpContentSerializer` interface.
+Refit provides two implementations out of the box: `SystemTextJsonContentSerializer` (which is the default JSON
+serializer) and `NewtonsoftJsonContentSerializer`. The first uses `System.Text.Json` APIs and is focused on high
+performance and low memory usage, while the latter uses the known `Newtonsoft.Json` library and is more versatile and
+customizable. You can read more about the two serializers and the main differences between the
+two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
 
-For instance, here is how to create a new `RefitSettings` instance using the `Newtonsoft.Json`-based serializer (you'll also need to add a `PackageReference` to `Refit.Newtonsoft.Json`):
+For instance, here is how to create a new `RefitSettings` instance using the `Newtonsoft.Json`-based serializer (you'll
+also need to add a `PackageReference` to `Refit.Newtonsoft.Json`):
 
 ```csharp
 var settings = new RefitSettings(new NewtonsoftJsonContentSerializer());
 ```
 
-If you're using `Newtonsoft.Json` APIs, you can customize their behavior by setting the `Newtonsoft.Json.JsonConvert.DefaultSettings` property:
+If you're using `Newtonsoft.Json` APIs, you can customize their behavior by setting the
+`Newtonsoft.Json.JsonConvert.DefaultSettings` property:
 
 ```csharp
 JsonConvert.DefaultSettings =
@@ -528,7 +577,10 @@ public class Foo
 
 ##### JSON source generator
 
-To apply the benefits of the new [JSON source generator](https://devblogs.microsoft.com/dotnet/try-the-new-system-text-json-source-generator/) for System.Text.Json added in .NET 6, you can use `SystemTextJsonContentSerializer` with a custom instance of `RefitSettings` and `JsonSerializerOptions`:
+To apply the benefits of the
+new [JSON source generator](https://devblogs.microsoft.com/dotnet/try-the-new-system-text-json-source-generator/) for
+System.Text.Json added in .NET 6, you can use `SystemTextJsonContentSerializer` with a custom instance of
+`RefitSettings` and `JsonSerializerOptions`:
 
 ```csharp
 var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
@@ -537,12 +589,15 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     });
 ```
 
-When using `System.Text.Json` polymorphism features such as `[JsonDerivedType]` / `[JsonPolymorphic]`, Refit serializes request bodies using the **declared Refit method parameter type** rather than the boxed runtime `object`. This ensures type discriminators configured on the base contract are preserved in outgoing request payloads.
+When using `System.Text.Json` polymorphism features such as `[JsonDerivedType]` / `[JsonPolymorphic]`, Refit serializes
+request bodies using the **declared Refit method parameter type** rather than the boxed runtime `object`. This ensures
+type discriminators configured on the base contract are preserved in outgoing request payloads.
 
 #### XML Content
 
 XML requests and responses are serialized/deserialized using _System.Xml.Serialization.XmlSerializer_.
-By default, Refit will use JSON content serialization, to use XML content configure the ContentSerializer to use the `XmlContentSerializer`:
+By default, Refit will use JSON content serialization, to use XML content configure the ContentSerializer to use the
+`XmlContentSerializer`:
 
 ```csharp
 var gitHubApi = RestService.For<IXmlApi>("https://www.w3.org/XML",
@@ -551,7 +606,8 @@ var gitHubApi = RestService.For<IXmlApi>("https://www.w3.org/XML",
     });
 ```
 
-Property serialization/deserialization can be customised using   attributes found in the _System.Xml.Serialization_ namespace:
+Property serialization/deserialization can be customised using attributes found in the _System.Xml.Serialization_
+namespace:
 
 ```csharp
     public class Foo
@@ -561,7 +617,8 @@ Property serialization/deserialization can be customised using   attributes foun
     }
 ```
 
-The _System.Xml.Serialization.XmlSerializer_ provides many options for serializing, those options can be set by providing an `XmlContentSerializerSettings` to the `XmlContentSerializer` constructor:
+The _System.Xml.Serialization.XmlSerializer_ provides many options for serializing, those options can be set by
+providing an `XmlContentSerializerSettings` to the `XmlContentSerializer` constructor:
 
 ```csharp
 var gitHubApi = RestService.For<IXmlApi>("https://www.w3.org/XML",
@@ -645,7 +702,8 @@ var measurement = new Measurement {
 await api.Collect(measurement);
 ```
 
-If you have a type that has `[JsonProperty(PropertyName)]` attributes setting property aliases, Refit will use those too (`[AliasAs]` will take precedence where you have both).
+If you have a type that has `[JsonProperty(PropertyName)]` attributes setting property aliases, Refit will use those
+too (`[AliasAs]` will take precedence where you have both).
 This means that the following type will serialize as `one=value1&two=value2`:
 
 ```csharp
@@ -662,7 +720,8 @@ public class SomeObject
 
 ```
 
-**NOTE:** This use of `AliasAs` applies to querystring parameters and form body posts, but not to response objects; for aliasing fields on response objects, you'll still need to use `[JsonProperty("full-property-name")]`.
+**NOTE:** This use of `AliasAs` applies to querystring parameters and form body posts, but not to response objects; for
+aliasing fields on response objects, you'll still need to use `[JsonProperty("full-property-name")]`.
 
 ### Setting request headers
 
@@ -705,7 +764,8 @@ Task<User> GetUser(string user, [Header("Authorization")] string authorization);
 var user = await GetUser("octocat", "token OAUTH-TOKEN");
 ```
 
-Adding an `Authorization` header is such a common use case that you can add an access token to a request by applying an `Authorize` attribute to a parameter and optionally specifying the scheme:
+Adding an `Authorization` header is such a common use case that you can add an access token to a request by applying an
+`Authorize` attribute to a parameter and optionally specifying the scheme:
 
 ```csharp
 [Get("/users/{user}")]
@@ -721,6 +781,7 @@ If you need to set multiple headers at runtime, you can add a `IDictionary<strin
 and apply a `HeaderCollection` attribute to the parameter and it will inject the headers into the request:
 
 [//]: # ({% raw %})
+
 ```csharp
 
 [Get("/users/{user}")]
@@ -729,28 +790,41 @@ Task<User> GetUser(string user, [HeaderCollection] IDictionary<string, string> h
 var headers = new Dictionary<string, string> {{"Authorization","Bearer tokenGoesHere"}, {"X-Tenant-Id","123"}};
 var user = await GetUser("octocat", headers);
 ```
+
 [//]: # ({% endraw %})
 
 #### Bearer Authentication
 
-Most APIs need some sort of Authentication. The most common is OAuth Bearer authentication. A header is added to each request of the form: `Authorization: Bearer <token>`. Refit makes it easy to insert your logic to get the token however your app needs, so you don't have to pass a token into each method.
+Most APIs need some sort of Authentication. The most common is OAuth Bearer authentication. A header is added to each
+request of the form: `Authorization: Bearer <token>`. Refit makes it easy to insert your logic to get the token however
+your app needs, so you don't have to pass a token into each method.
 
 1. Add `[Headers("Authorization: Bearer")]` to the interface or methods which need the token.
-2. Set `AuthorizationHeaderValueGetter` in the `RefitSettings` instance. Refit will call your delegate each time it needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the token lifetime.
+2. Set `AuthorizationHeaderValueGetter` in the `RefitSettings` instance. Refit will call your delegate each time it
+   needs to obtain the token, so it's a good idea for your mechanism to cache the token value for some period within the
+   token lifetime.
 
-`AuthorizationHeaderValueGetter` works whether you create clients with `RestService.For<T>("https://...")` or supply your own `HttpClient` via `RestService.For<T>(httpClient, settings)`. If your API methods accept a `CancellationToken`, that token is propagated to the getter delegate.
+`AuthorizationHeaderValueGetter` works whether you create clients with `RestService.For<T>("https://...")` or supply
+your own `HttpClient` via `RestService.For<T>(httpClient, settings)`. If your API methods accept a `CancellationToken`,
+that token is propagated to the getter delegate.
 
 #### Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)
+
 Although we make provisions for adding dynamic headers at runtime directly in Refit,
-most use-cases would likely benefit from registering a custom `DelegatingHandler` in order to inject the headers as part of the `HttpClient` middleware pipeline
+most use-cases would likely benefit from registering a custom `DelegatingHandler` in order to inject the headers as part
+of the `HttpClient` middleware pipeline
 thus removing the need to add lots of `[Header]` or `[HeaderCollection]` attributes.
 
-In the example above we are leveraging a `[HeaderCollection]` parameter to inject an `Authorization` and `X-Tenant-Id` header.
-This is quite a common scenario if you are integrating with a 3rd party that uses OAuth2. While it's ok for the occasional endpoint,
+In the example above we are leveraging a `[HeaderCollection]` parameter to inject an `Authorization` and `X-Tenant-Id`
+header.
+This is quite a common scenario if you are integrating with a 3rd party that uses OAuth2. While it's ok for the
+occasional endpoint,
 it would be quite cumbersome if we had to add that boilerplate to every method in our interface.
 
-In this example we will assume our application is a multi-tenant application that is able to pull information about a tenant through
-some interface `ITenantProvider` and has a data store `IAuthTokenStore` that can be used to retrieve an auth token to attach to the outbound request.
+In this example we will assume our application is a multi-tenant application that is able to pull information about a
+tenant through
+some interface `ITenantProvider` and has a data store `IAuthTokenStore` that can be used to retrieve an auth token to
+attach to the outbound request.
 
 ```csharp
 
@@ -869,7 +943,8 @@ var user = await GetUser("octocat");
 await CreateUser(user, ":trollface:");
 ```
 
-**Note:** This redefining behavior only applies to headers _with the same name_. Headers with different names are not replaced. The following code will result in all headers being included:
+**Note:** This redefining behavior only applies to headers _with the same name_. Headers with different names are not
+replaced. The following code will result in all headers being included:
 
 ```csharp
 [Headers("Header-A: 1")]
@@ -923,7 +998,8 @@ await CreateUser(user, "");
 
 ### Passing state into DelegatingHandlers
 
-If there is runtime state that you need to pass to a `DelegatingHandler` you can add a property with a dynamic value to the underlying `HttpRequestMessage.Properties`
+If there is runtime state that you need to pass to a `DelegatingHandler` you can add a property with a dynamic value to
+the underlying `HttpRequestMessage.Properties`
 by applying a `Property` attribute to a parameter:
 
 ```csharp
@@ -937,12 +1013,16 @@ public interface IGitHubApi
 }
 ```
 
-The attribute constructor optionally takes a string which becomes the key in the `HttpRequestMessage.Properties` dictionary.
+The attribute constructor optionally takes a string which becomes the key in the `HttpRequestMessage.Properties`
+dictionary.
 If no key is explicitly defined then the name of the parameter becomes the key.
 If a key is defined multiple times the value in `HttpRequestMessage.Properties` will be overwritten.
 The parameter itself can be any `object`. Properties can be accessed inside a `DelegatingHandler` as follows:
 
-> ⚠️ **Important for `IHttpClientFactory` users:** `DelegatingHandler` instances are pooled and can live longer than a single request scope. Avoid reading per-request state from services that may be scoped/cached across handler lifetimes (for example a tenant/customer resolver stored on the handler). For per-request values like `CustomerId`, pass the value through `[Property]` so each request carries its own state.
+> ⚠️ **Important for `IHttpClientFactory` users:** `DelegatingHandler` instances are pooled and can live longer than a
+> single request scope. Avoid reading per-request state from services that may be scoped/cached across handler lifetimes (
+> for example a tenant/customer resolver stored on the handler). For per-request values like `CustomerId`, pass the value
+> through `[Property]` so each request carries its own state.
 
 ```csharp
 class RequestPropertyHandler : DelegatingHandler
@@ -969,17 +1049,25 @@ class RequestPropertyHandler : DelegatingHandler
 }
 ```
 
-Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`.
+Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value
+into the new `HttpRequestMessage.Options`.
 
 #### Support for Polly and Polly.Context
 
 Because Refit supports `HttpClientFactory` it is possible to configure Polly policies on your HttpClient.
-If your policy makes use of `Polly.Context` this can be passed via Refit by adding `[Property("PolicyExecutionContext")] Polly.Context context`
-as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key `PolicyExecutionContext` and is of type `Polly.Context`. It's only recommended to pass the `Polly.Context` this way if your use case requires that the `Polly.Context` be initialized with dynamic content only known at runtime. If your `Polly.Context` only requires the same content every time (e.g an `ILogger` that you want to use to log from inside your policies) a cleaner approach is to inject the `Polly.Context` via a `DelegatingHandler` as described in [#801](https://github.com/reactiveui/refit/issues/801#issuecomment-1137318526)
+If your policy makes use of `Polly.Context` this can be passed via Refit by adding
+`[Property("PolicyExecutionContext")] Polly.Context context`
+as behind the scenes `Polly.Context` is simply stored in `HttpRequestMessage.Properties` under the key
+`PolicyExecutionContext` and is of type `Polly.Context`. It's only recommended to pass the `Polly.Context` this way if
+your use case requires that the `Polly.Context` be initialized with dynamic content only known at runtime. If your
+`Polly.Context` only requires the same content every time (e.g an `ILogger` that you want to use to log from inside your
+policies) a cleaner approach is to inject the `Polly.Context` via a `DelegatingHandler` as described
+in [#801](https://github.com/reactiveui/refit/issues/801#issuecomment-1137318526)
 
 #### Target Interface Type and method info
 
-There may be times when you want to know what the target interface type is of the Refit instance. An example is where you
+There may be times when you want to know what the target interface type is of the Refit instance. An example is where
+you
 have a derived interface that implements a common base like this:
 
 ```csharp
@@ -1001,6 +1089,7 @@ public interface IOrdersAPI : IGetAPI<Order>
 You can access the concrete type of the interface for use in a handler, such as to alter the URL of the request:
 
 [//]: # ({% raw %})
+
 ```csharp
 class RequestPropertyHandler : DelegatingHandler
 {
@@ -1021,11 +1110,14 @@ class RequestPropertyHandler : DelegatingHandler
     }
 }
 ```
+
 [//]: # ({% endraw %})
 
-The full method information (`RestMethodInfo`) is also always available in the request options. The `RestMethodInfo` contains more information about the method being called such as the full `MethodInfo` when using reflection is needed:
+The full method information (`RestMethodInfo`) is also always available in the request options. The `RestMethodInfo`
+contains more information about the method being called such as the full `MethodInfo` when using reflection is needed:
 
 [//]: # ({% raw %})
+
 ```csharp
 class RequestPropertyHandler : DelegatingHandler
 {
@@ -1047,29 +1139,36 @@ class RequestPropertyHandler : DelegatingHandler
     }
 }
 ```
+
 [//]: # ({% endraw %})
 
-Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOptions.InterfaceType` and `HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the options.
+Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and Refit will instead populate the value
+into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOptions.InterfaceType` and
+`HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the
+options.
 
 ### Multipart uploads
 
 Methods decorated with `Multipart` attribute will be submitted with multipart content type.
 At this time, multipart methods support the following parameter types:
 
- - `string` (parameter name will be used as name and string value as value)
- - byte array
- - `Stream`
- - `FileInfo`
+- `string` (parameter name will be used as name and string value as value)
+- byte array
+- `Stream`
+- `FileInfo`
 
 Name of the field in the multipart data priority precedence:
 
 * `multipartItem.Name` if specified and not null (optional); dynamic, allows naming form data part at execution time.
-* `[AliasAs]` attribute  (optional) that decorate the streamPart parameter in the method signature (see below); static, defined in code.
+* `[AliasAs]` attribute  (optional) that decorate the streamPart parameter in the method signature (see below); static,
+  defined in code.
 * `MultipartItem` parameter name (default) as defined in the method signature; static, defined in code.
 
-A custom boundary can be specified with an optional string parameter to the `Multipart` attribute. If left empty, this defaults to `----MyGreatBoundary`.
+A custom boundary can be specified with an optional string parameter to the `Multipart` attribute. If left empty, this
+defaults to `----MyGreatBoundary`.
 
-To specify the file name and content type for byte array (`byte[]`), `Stream` and `FileInfo` parameters, use of a wrapper class is required.
+To specify the file name and content type for byte array (`byte[]`), `Stream` and `FileInfo` parameters, use of a
+wrapper class is required.
 The wrapper classes for these types are `ByteArrayPart`, `StreamPart` and `FileInfoPart`.
 
 ```csharp
@@ -1087,7 +1186,8 @@ To pass a `Stream` to this method, construct a StreamPart object like so:
 someApiInstance.UploadPhoto(id, new StreamPart(myPhotoStream, "photo.jpg", "image/jpeg"));
 ```
 
-Note: The `AttachmentName` attribute that was previously described in this section has been deprecated and its use is not recommended.
+Note: The `AttachmentName` attribute that was previously described in this section has been deprecated and its use is
+not recommended.
 
 ### Retrieving the response
 
@@ -1124,7 +1224,12 @@ Task<string> GetUser(string user);
 IObservable<HttpResponseMessage> GetUser(string user);
 ```
 
-There is also a generic wrapper class called `ApiResponse<T>` that can be used as a return type. Using this class as a return type allows you to retrieve not just the content as an object, but also any metadata associated with the request/response. This includes information such as response headers, the http status code and reason phrase (e.g. 404 Not Found), the response version, the original request message that was sent and in the case of an error, an `ApiException` object containing details of the error. Following are some examples of how you can retrieve the response metadata.
+There is also a generic wrapper class called `ApiResponse<T>` that can be used as a return type. Using this class as a
+return type allows you to retrieve not just the content as an object, but also any metadata associated with the
+request/response. This includes information such as response headers, the http status code and reason phrase (e.g. 404
+Not Found), the response version, the original request message that was sent and in the case of an error, an
+`ApiException` object containing details of the error. Following are some examples of how you can retrieve the response
+metadata.
 
 ```csharp
 //Returns the content within a wrapper class containing metadata about the request/response
@@ -1166,7 +1271,8 @@ if (response.IsReceived)
 
 ### Using generic interfaces
 
-When using something like ASP.NET Web API, it's a fairly common pattern to have a whole stack of CRUD REST services. Refit now supports these, allowing you to define a single API interface with a generic type:
+When using something like ASP.NET Web API, it's a fairly common pattern to have a whole stack of CRUD REST services.
+Refit now supports these, allowing you to define a single API interface with a generic type:
 
 ```csharp
 public interface IReallyExcitingCrudApi<T, in TKey> where T : class
@@ -1195,9 +1301,11 @@ Which can be used like this:
 // than one type (unless you have a different domain for each type)
 var api = RestService.For<IReallyExcitingCrudApi<User, string>>("http://api.example.com/users");
 ```
+
 ### Interface inheritance
 
-When multiple services that need to be kept separate share a number of APIs, it is possible to leverage interface inheritance to avoid having to define the same Refit methods multiple times in different services:
+When multiple services that need to be kept separate share a number of APIs, it is possible to leverage interface
+inheritance to avoid having to define the same Refit methods multiple times in different services:
 
 ```csharp
 public interface IBaseService
@@ -1219,11 +1327,13 @@ public interface IDerivedServiceB : IBaseService
 }
 ```
 
-In this example, the `IDerivedServiceA` interface will expose both the `GetResource` and `DeleteResource` APIs, while `IDerivedServiceB` will expose `GetResource` and `AddResource`.
+In this example, the `IDerivedServiceA` interface will expose both the `GetResource` and `DeleteResource` APIs, while
+`IDerivedServiceB` will expose `GetResource` and `AddResource`.
 
 #### Headers inheritance
 
-When using inheritance, existing header attributes will be passed along as well, and the inner-most ones will have precedence:
+When using inheritance, existing header attributes will be passed along as well, and the inner-most ones will have
+precedence:
 
 ```csharp
 [Headers("User-Agent: AAA")]
@@ -1245,9 +1355,12 @@ public interface IAmInterfaceB : IAmInterfaceA
 }
 ```
 
-Here, `IAmInterfaceB.Pang()` will use `PANG` as its user agent, while `IAmInterfaceB.Foo` and `IAmInterfaceB.Ping` will use `BBB`.
-Note that if `IAmInterfaceB` didn't have a header attribute, `Foo` would then use the `AAA` value inherited from `IAmInterfaceA`.
-If an interface is inheriting more than one interface, the order of precedence is the same as the one in which the inherited interfaces are declared:
+Here, `IAmInterfaceB.Pang()` will use `PANG` as its user agent, while `IAmInterfaceB.Foo` and `IAmInterfaceB.Ping` will
+use `BBB`.
+Note that if `IAmInterfaceB` didn't have a header attribute, `Foo` would then use the `AAA` value inherited from
+`IAmInterfaceA`.
+If an interface is inheriting more than one interface, the order of precedence is the same as the one in which the
+inherited interfaces are declared:
 
 ```csharp
 public interface IAmInterfaceC : IAmInterfaceA, IAmInterfaceB
@@ -1257,10 +1370,14 @@ public interface IAmInterfaceC : IAmInterfaceA, IAmInterfaceB
 }
 ```
 
-Here `IAmInterfaceC.Foo` would use the header attribute inherited from `IAmInterfaceA`, if present, or the one inherited from `IAmInterfaceB`, and so on for all the declared interfaces.
+Here `IAmInterfaceC.Foo` would use the header attribute inherited from `IAmInterfaceA`, if present, or the one inherited
+from `IAmInterfaceB`, and so on for all the declared interfaces.
 
 ### Default Interface Methods
-Starting with C# 8.0, default interface methods (a.k.a. DIMs) can be defined on interfaces. Refit interfaces can provide additional logic using DIMs, optionally combined with private and/or static helper methods:
+
+Starting with C# 8.0, default interface methods (a.k.a. DIMs) can be defined on interfaces. Refit interfaces can provide
+additional logic using DIMs, optionally combined with private and/or static helper methods:
+
 ```csharp
 public interface IApiClient
 {
@@ -1274,10 +1391,17 @@ public interface IApiClient
         => $"The response is: {response}";
 }
 ```
-The type generated by Refit will implement the method `IApiClient.GetInternal`. If additional logic is required immediately before or after its invocation, it shouldn't be exposed directly and can thus be hidden from consumers by being marked as `internal`.
-The default interface method `IApiClient.Get` will be inherited by all types implementing `IApiClient`, including - of course - the type generated by Refit.
-Consumers of the `IApiClient` will call the public `Get` method and profit from the additional logic provided in its implementation (optionally, in this case, with the help of the private static helper `FormatResponse`).
-To support runtimes without DIM-support (.NET Core 2.x and below or .NET Standard 2.0 and below), two additional types would be required for the same solution.
+
+The type generated by Refit will implement the method `IApiClient.GetInternal`. If additional logic is required
+immediately before or after its invocation, it shouldn't be exposed directly and can thus be hidden from consumers by
+being marked as `internal`.
+The default interface method `IApiClient.Get` will be inherited by all types implementing `IApiClient`, including - of
+course - the type generated by Refit.
+Consumers of the `IApiClient` will call the public `Get` method and profit from the additional logic provided in its
+implementation (optionally, in this case, with the help of the private static helper `FormatResponse`).
+To support runtimes without DIM-support (.NET Core 2.x and below or .NET Standard 2.0 and below), two additional types
+would be required for the same solution.
+
 ```csharp
 internal interface IApiClientInternal
 {
@@ -1301,7 +1425,8 @@ internal class ApiClient : IApiClient
 
 ### Using HttpClientFactory
 
-Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Add a reference to `Refit.HttpClientFactory` and call
+Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Add a reference to `Refit.HttpClientFactory`
+and call
 the provided extension method in your `ConfigureServices` method to configure your Refit interface:
 
 ```csharp
@@ -1313,6 +1438,7 @@ services.AddRefitClient<IWebApi>()
 ```
 
 Optionally, a `RefitSettings` object can be included:
+
 ```csharp
 var settings = new RefitSettings();
 // Configure refit settings here
@@ -1331,7 +1457,9 @@ services.AddRefitClient<IWebApi>(provider => new RefitSettings() { /* configure 
         // .SetHandlerLifetime(TimeSpan.FromMinutes(2));
 
 ```
-Note that some of the properties of `RefitSettings` will be ignored because the `HttpClient` and `HttpClientHandlers` will be managed by the `HttpClientFactory` instead of Refit.
+
+Note that some of the properties of `RefitSettings` will be ignored because the `HttpClient` and `HttpClientHandlers`
+will be managed by the `HttpClientFactory` instead of Refit.
 
 You can then get the api interface using constructor injection:
 
@@ -1364,11 +1492,14 @@ RestService.For<ISomeApi>(new HttpClient()
 });
 ```
 
-However, when supplying a custom `HttpClient` instance, `HttpMessageHandlerFactory` will not be used because you already control the handler pipeline.
+However, when supplying a custom `HttpClient` instance, `HttpMessageHandlerFactory` will not be used because you already
+control the handler pipeline.
 
-`AuthorizationHeaderValueGetter` does still work with `RestService.For<T>(httpClient, settings)` when the request includes an `Authorization` header placeholder (for example `[Headers("Authorization: Bearer")]`).
+`AuthorizationHeaderValueGetter` does still work with `RestService.For<T>(httpClient, settings)` when the request
+includes an `Authorization` header placeholder (for example `[Headers("Authorization: Bearer")]`).
 
-If you still want to be able to configure the `HtttpClient` instance that `Refit` provides while still making use of the above settings, simply expose the `HttpClient` on the API interface:
+If you still want to be able to configure the `HtttpClient` instance that `Refit` provides while still making use of the
+above settings, simply expose the `HttpClient` on the API interface:
 
 ```csharp
 interface ISomeApi
@@ -1401,7 +1532,10 @@ Refit's recommended **source-generator-first** setup for Native AoT and trimmed 
 2. Prefer `RestService.For<T>(...)` over reflection-heavy manual patterns around `Type` where possible.
 3. Supply source-generated `System.Text.Json` metadata for your DTOs.
 
-For the default `SystemTextJsonContentSerializer` on .NET 8+, Refit prefers `JsonTypeInfo` metadata from your configured `JsonSerializerOptions` when it is available. That means Native AoT apps can improve compatibility by supplying source-generated metadata through a `JsonSerializerContext` or `TypeInfoResolver` on the serializer options they pass into `SystemTextJsonContentSerializer`.
+For the default `SystemTextJsonContentSerializer` on .NET 8+, Refit prefers `JsonTypeInfo` metadata from your configured
+`JsonSerializerOptions` when it is available. That means Native AoT apps can improve compatibility by supplying
+source-generated metadata through a `JsonSerializerContext` or `TypeInfoResolver` on the serializer options they pass
+into `SystemTextJsonContentSerializer`.
 
 ```csharp
 [JsonSerializable(typeof(Todo))]
@@ -1421,17 +1555,26 @@ var settings = new RefitSettings(
 var api = RestService.For<ITodoApi>("https://api.example.com", settings);
 ```
 
-If a generated Refit client cannot be found at runtime, Refit now explicitly points you back to the source generator/build output and recommends generated clients plus source-generated `System.Text.Json` metadata for Native AoT scenarios.
+If a generated Refit client cannot be found at runtime, Refit now explicitly points you back to the source
+generator/build output and recommends generated clients plus source-generated `System.Text.Json` metadata for Native AoT
+scenarios.
 
 Refit also ships analyzers for newer Roslyn toolchains, including a Roslyn 5.0 build for newer Visual Studio versions.
 
 ### Handling exceptions
-Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they return `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`.
 
-#### <a id="when-returning-taskapiresponset"></a>When returning `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`
-Refit traps any `HttpRequestException` or `TaskCanceledException` raised by the `HttpClient` in an `ApiRequestException`.
-Refit also traps any `ApiException` raised by the `ExceptionFactory` when processing the response, and any errors that occur when attempting to deserialize the response to `ApiResponse<T>`.
-In both cases, it will populate the exception into the `Error` property on `ApiResponse<T>` without throwing the exception.
+Refit has different exception handling behavior depending on if your Refit interface methods return `Task<T>` or if they
+return `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or `Task<ApiResponse<T>>`.
+
+#### <a id="when-returning-taskapiresponset"></a>When returning `Task<IApiResponse>`, `Task<IApiResponse<T>>`, or
+`Task<ApiResponse<T>>`
+
+Refit traps any `HttpRequestException` or `TaskCanceledException` raised by the `HttpClient` in an
+`ApiRequestException`.
+Refit also traps any `ApiException` raised by the `ExceptionFactory` when processing the response, and any errors that
+occur when attempting to deserialize the response to `ApiResponse<T>`.
+In both cases, it will populate the exception into the `Error` property on `ApiResponse<T>` without throwing the
+exception.
 
 You can then decide what to do like so:
 
@@ -1455,11 +1598,15 @@ else
 ```
 
 > [!NOTE]
-> The `IsSuccessful` property checks whether the response status code is in the range 200-299 and there wasn't any other error (for example, during content deserialization). If you just want to check the HTTP response status code, you can use the `IsSuccessStatusCode` property.
+> The `IsSuccessful` property checks whether the response status code is in the range 200-299 and there wasn't any other
+> error (for example, during content deserialization). If you just want to check the HTTP response status code, you can
+> use the `IsSuccessStatusCode` property.
 
 #### When returning `Task<T>`
+
 Refit throws any exception raised by the `HttpClient` and wraps it in an `ApiRequestException`.
-It also throws any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that occur when attempting to deserialize the response to `Task<T>`.
+It also throws any `ApiException` raised by the `ExceptionFactory` when processing the response and any errors that
+occur when attempting to deserialize the response to `Task<T>`.
 
 ```csharp
 // ...
@@ -1483,7 +1630,9 @@ catch (ApiExceptionBase exception)
 // ...
 ```
 
-Refit can also throw `ValidationApiException` instead which in addition to the information present on `ApiException` also contains `ProblemDetails` when the service implements the [RFC 7807](https://tools.ietf.org/html/rfc7807) specification for problem details and the response content type is `application/problem+json`
+Refit can also throw `ValidationApiException` instead which in addition to the information present on `ApiException`
+also contains `ProblemDetails` when the service implements the [RFC 7807](https://tools.ietf.org/html/rfc7807)
+specification for problem details and the response content type is `application/problem+json`
 
 For specific information on the problem details of the validation exception, simply catch `ValidationApiException`:
 
@@ -1510,7 +1659,9 @@ catch (ApiException exception)
 
 #### Providing a custom `ExceptionFactory`
 
-You can also override default exceptions behavior that are raised by the `ExceptionFactory` when processing the result by providing a custom exception factory in `RefitSettings`. For example, you can suppress all `ApiException`s with the following:
+You can also override default exceptions behavior that are raised by the `ExceptionFactory` when processing the result
+by providing a custom exception factory in `RefitSettings`. For example, you can suppress all `ApiException`s with the
+following:
 
 ```csharp
 var nullTask = Task.FromResult<Exception>(null);
@@ -1525,7 +1676,9 @@ For exceptions raised when attempting to deserialize the response use Deserializ
 
 #### Providing a custom `DeserializationExceptionFactory`
 
-You can override default deserialization exceptions behavior that are raised by the `DeserializationExceptionFactory` when processing the result by providing a custom exception factory in `RefitSettings`. For example, you can suppress all deserialization exceptions with the following:
+You can override default deserialization exceptions behavior that are raised by the `DeserializationExceptionFactory`
+when processing the result by providing a custom exception factory in `RefitSettings`. For example, you can suppress all
+deserialization exceptions with the following:
 
 ```csharp
 var nullTask = Task.FromResult<Exception>(null);
@@ -1540,4 +1693,5 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
 
 For users of [Serilog](https://serilog.net), you can enrich the logging of `ApiException` using the
 [Serilog.Exceptions.Refit](https://www.nuget.org/packages/Serilog.Exceptions.Refit) NuGet package. Details of how to
-integrate this package into your applications can be found [here](https://github.com/RehanSaeed/Serilog.Exceptions#serilogexceptionsrefit).
+integrate this package into your applications can be
+found [here](https://github.com/RehanSaeed/Serilog.Exceptions#serilogexceptionsrefit).

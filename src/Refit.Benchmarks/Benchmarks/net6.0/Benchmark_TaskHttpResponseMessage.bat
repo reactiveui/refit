@@ -1,1 +1,0 @@
-dotnet run --project ../../Refit.Benchmarks.csproj -c Release --filter *TaskHttpResponseMessage_Async* --framework=net6.0

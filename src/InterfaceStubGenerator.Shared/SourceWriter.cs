@@ -1,25 +1,37 @@
-﻿using System.Diagnostics;
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Refit.Generator;
 
 // From https://github.com/dotnet/runtime/blob/233826c88d2100263fb9e9535d96f75824ba0aea/src/libraries/Common/src/SourceGenerators/SourceWriter.cs#L11
+/// <summary>A lightweight indentation-aware writer used to build generated source text.</summary>
 internal sealed class SourceWriter
 {
-    const char IndentationChar = ' ';
-    const int CharsPerIndentation = 4;
+    /// <summary>The character used for a single unit of indentation.</summary>
+    private const char IndentationChar = ' ';
+
+    /// <summary>The number of indentation characters per indentation level.</summary>
+    private const int CharsPerIndentation = 4;
 
     // Pre-size the buffer for a typical generated interface stub so the common case avoids
     // repeated StringBuilder doublings (a fresh writer is created per interface).
-    const int DefaultCapacity = 4096;
+    /// <summary>The initial capacity used for the underlying buffer.</summary>
+    private const int DefaultCapacity = 4096;
 
-    readonly StringBuilder sb = new(DefaultCapacity);
-    int indentation;
+    /// <summary>The underlying buffer that accumulates the written text.</summary>
+    private readonly StringBuilder _sb = new(DefaultCapacity);
 
+    /// <summary>The current indentation level.</summary>
+    private int _indentation;
+
+    /// <summary>Gets or sets the current indentation level.</summary>
     public int Indentation
     {
-        get => indentation;
+        get => _indentation;
         set
         {
             if (value < 0)
@@ -28,64 +40,74 @@ internal sealed class SourceWriter
                 static void Throw() => throw new ArgumentOutOfRangeException(nameof(value));
             }
 
-            indentation = value;
+            _indentation = value;
         }
     }
 
-    public void Append(string text) => sb.Append(text);
+    /// <summary>Appends the given text without any indentation or line break.</summary>
+    /// <param name="text">The text to append.</param>
+    public void Append(string text) => _sb.Append(text);
 
+    /// <summary>Writes a single character on its own indented line.</summary>
+    /// <param name="value">The character to write.</param>
     public void WriteLine(char value)
     {
         AddIndentation();
-        sb.Append(value);
-        sb.AppendLine();
+        _sb.Append(value)
+            .AppendLine();
     }
 
+    /// <summary>Writes the given text, applying the current indentation to each line.</summary>
+    /// <param name="text">The text to write.</param>
     public void WriteLine(string text)
     {
-        if (indentation == 0)
+        if (_indentation == 0)
         {
-            sb.AppendLine(text);
+            _sb.AppendLine(text);
             return;
         }
 
         bool isFinalLine;
-        ReadOnlySpan<char> remainingText = text.AsSpan();
+        var remainingText = text.AsSpan();
         do
         {
-            ReadOnlySpan<char> nextLine = GetNextLine(ref remainingText, out isFinalLine);
+            var nextLine = GetNextLine(ref remainingText, out isFinalLine);
 
             if (!nextLine.IsEmpty)
             {
                 AddIndentation();
             }
-            AppendSpan(sb, nextLine);
-            sb.AppendLine();
-        }
-        while (!isFinalLine);
+
+            AppendSpan(_sb, nextLine);
+            _sb.AppendLine();
+        } while (!isFinalLine);
     }
 
-    public void WriteLine() => sb.AppendLine();
+    /// <summary>Writes an empty line.</summary>
+    public void WriteLine() => _sb.AppendLine();
 
+    /// <summary>Produces a <see cref="SourceText"/> from the accumulated content.</summary>
+    /// <returns>The accumulated content as a <see cref="SourceText"/>.</returns>
     public SourceText ToSourceText()
     {
-        Debug.Assert(indentation == 0 && sb.Length > 0);
-        return SourceText.From(sb.ToString(), Encoding.UTF8);
+        Debug.Assert(_indentation == 0 && _sb.Length > 0, "Source text should be produced only when indentation is reset and content has been written.");
+        return SourceText.From(_sb.ToString(), Encoding.UTF8);
     }
 
+    /// <summary>Clears the accumulated content and resets the indentation.</summary>
     public void Reset()
     {
-        sb.Clear();
-        indentation = 0;
+        _sb.Clear();
+        _indentation = 0;
     }
 
-    private void AddIndentation() =>
-        sb.Append(IndentationChar, CharsPerIndentation * indentation);
-
+    /// <summary>Extracts the next line from the remaining text.</summary>
+    /// <param name="remainingText">The remaining text, advanced past the returned line.</param>
+    /// <param name="isFinalLine">Set to <c>true</c> when the returned line is the last one.</param>
+    /// <returns>The next line of text.</returns>
     private static ReadOnlySpan<char> GetNextLine(
         ref ReadOnlySpan<char> remainingText,
-        out bool isFinalLine
-    )
+        out bool isFinalLine)
     {
         if (remainingText.IsEmpty)
         {
@@ -96,7 +118,7 @@ internal sealed class SourceWriter
         ReadOnlySpan<char> next;
         ReadOnlySpan<char> rest;
 
-        int lineLength = remainingText.IndexOf('\n');
+        var lineLength = remainingText.IndexOf('\n');
         if (lineLength == -1)
         {
             lineLength = remainingText.Length;
@@ -119,6 +141,9 @@ internal sealed class SourceWriter
         return next;
     }
 
+    /// <summary>Appends a span of characters to the given builder.</summary>
+    /// <param name="builder">The builder to append to.</param>
+    /// <param name="span">The characters to append.</param>
     private static unsafe void AppendSpan(StringBuilder builder, ReadOnlySpan<char> span)
     {
         fixed (char* ptr = span)
@@ -126,4 +151,8 @@ internal sealed class SourceWriter
             builder.Append(ptr, span.Length);
         }
     }
+
+    /// <summary>Appends the indentation characters for the current indentation level.</summary>
+    private void AddIndentation() =>
+        _sb.Append(IndentationChar, CharsPerIndentation * _indentation);
 }

@@ -1,0 +1,15 @@
+# Project-local analyzer overrides for this ASP.NET Core sample.
+# These rules conflict with framework conventions that this example must follow.
+[*.cs]
+
+# CA1812: The Startup class is instantiated reflectively by the ASP.NET Core host
+# via UseStartup<Startup>(), so the analyzer cannot see the instantiation.
+dotnet_diagnostic.CA1812.severity = none
+
+# CA1822: ConfigureServices/Configure are instance methods by ASP.NET Core's
+# Startup convention; the host discovers and invokes them by name on an instance.
+dotnet_diagnostic.CA1822.severity = none
+
+# S3400: MVC controller actions (e.g. ValuesController.Get) must be methods so the
+# routing framework can bind verbs/routes to them; they cannot be replaced by a constant.
+dotnet_diagnostic.S3400.severity = none

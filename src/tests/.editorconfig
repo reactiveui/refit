@@ -1,0 +1,13 @@
+# Relaxations for the test tree. These projects are not shipped libraries, so a handful of
+# analyzer rules that target production/library code are noise here. Adapted from the
+# ReactiveUI test-tree .editorconfig. Everything else inherits the repository-root .editorconfig.
+[*.cs]
+
+###################
+# Code Analysis (CA) — relaxed for test projects
+###################
+dotnet_diagnostic.CA1001.severity = none # Types that own disposable fields should be disposable
+dotnet_diagnostic.CA1063.severity = none # Implement IDisposable correctly
+dotnet_diagnostic.CA1065.severity = none # Do not raise exceptions in unexpected locations
+dotnet_diagnostic.CA1812.severity = none # Avoid uninstantiated internal classes (test fixtures/DTOs)
+dotnet_diagnostic.CA2213.severity = none # Disposable fields should be disposed

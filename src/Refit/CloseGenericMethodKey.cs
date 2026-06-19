@@ -1,42 +1,58 @@
-﻿using System.Reflection;
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+using System.Reflection;
 
-namespace Refit
+namespace Refit;
+
+/// <summary>A cache key that identifies a closed generic method by its open definition and type arguments.</summary>
+internal readonly struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKey>
 {
-    readonly struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKey>
+    /// <summary>Initializes a new instance of the <c>CloseGenericMethodKey</c> struct.</summary>
+    /// <param name="openMethodInfo">The open generic method definition.</param>
+    /// <param name="types">The type arguments used to close the method.</param>
+    internal CloseGenericMethodKey(MethodInfo openMethodInfo, Type[] types)
     {
-        internal CloseGenericMethodKey(MethodInfo openMethodInfo, Type[] types)
+        OpenMethodInfo = openMethodInfo;
+        Types = types;
+    }
+
+    /// <summary>Gets the open generic method definition.</summary>
+    public MethodInfo OpenMethodInfo { get; }
+
+    /// <summary>Gets the type arguments used to close the method.</summary>
+    public Type[] Types { get; }
+
+    /// <summary>Determines whether this key equals another key by open method definition and type arguments.</summary>
+    /// <param name="other">The key to compare against.</param>
+    /// <returns><see langword="true"/> if the keys are equal; otherwise, <see langword="false"/>.</returns>
+    public bool Equals(CloseGenericMethodKey other) =>
+        OpenMethodInfo == other.OpenMethodInfo && Types.SequenceEqual(other.Types);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj)
+    {
+        if (obj is not CloseGenericMethodKey closeGenericMethodKey)
         {
-            OpenMethodInfo = openMethodInfo;
-            Types = types;
-        }
-
-        public MethodInfo OpenMethodInfo { get; }
-        public Type[] Types { get; }
-
-        public bool Equals(CloseGenericMethodKey other) =>
-            OpenMethodInfo == other.OpenMethodInfo && Types.SequenceEqual(other.Types);
-
-        public override bool Equals(object? obj)
-        {
-            if (obj is CloseGenericMethodKey closeGenericMethodKey)
-            {
-                return Equals(closeGenericMethodKey);
-            }
             return false;
         }
 
-        public override int GetHashCode()
+        return Equals(closeGenericMethodKey);
+    }
+
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        unchecked
         {
-            unchecked
+            var hash = 17;
+            hash = (hash * 23) + OpenMethodInfo.GetHashCode();
+            foreach (var type in Types)
             {
-                var hash = 17;
-                hash = hash * 23 + OpenMethodInfo.GetHashCode();
-                foreach (var type in Types)
-                {
-                    hash = hash * 23 + type.GetHashCode();
-                }
-                return hash;
+                hash = (hash * 23) + type.GetHashCode();
             }
+
+            return hash;
         }
     }
 }

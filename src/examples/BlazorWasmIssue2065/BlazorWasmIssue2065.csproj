@@ -10,16 +10,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly"/>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all"/>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\Refit\Refit.csproj"/>
     <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn50\InterfaceStubGenerator.Roslyn50.csproj"
                       ReferenceOutputAssembly="false"
                       OutputItemType="Analyzer"
-                      PrivateAssets="all" />
+                      PrivateAssets="all"/>
   </ItemGroup>
 
 </Project>

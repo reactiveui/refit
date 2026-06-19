@@ -1,219 +1,237 @@
-﻿using System.Buffers;
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+using System.Buffers;
 
-#nullable enable
+namespace Refit.Buffers;
 
-namespace Refit.Buffers
+/// <summary>A buffer writer that rents its backing storage from a shared array pool.</summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "RoslynCommonAnalyzers",
+    "SST1432:Mark type as static",
+    Justification = "The full type has instance members and implements IBufferWriter<byte> and IDisposable; this partial part only declares a nested type.")]
+internal sealed partial class PooledBufferWriter
 {
-    internal sealed partial class PooledBufferWriter
+    /// <summary>An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool.</summary>
+#if NET6_0_OR_GREATER
+    private sealed partial class PooledMemoryStream : Stream
+#else
+    private sealed class PooledMemoryStream : Stream
+#endif
     {
-        /// <summary>
-        /// An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool
-        /// </summary>
-        private sealed partial class PooledMemoryStream : Stream
+        /// <summary>The current used length for <see cref="_pooledBuffer"/>.</summary>
+        private readonly int _length;
+
+        /// <summary>The buffer rented from <see cref="ArrayPool{T}"/> currently in use.</summary>
+        private byte[]? _pooledBuffer;
+
+        /// <summary>The current position within <see cref="_pooledBuffer"/>.</summary>
+        private int _position;
+
+        /// <summary>Initializes a new instance of the <see cref="PooledMemoryStream"/> class.</summary>
+        /// <param name="writer">The <see cref="PooledBufferWriter"/> whose buffer is detached into the stream.</param>
+        public PooledMemoryStream(PooledBufferWriter writer)
         {
-            /// <summary>
-            /// The current used length for <see cref="pooledBuffer"/>
-            /// </summary>
-            private readonly int length;
+            _length = writer._position;
+            _pooledBuffer = writer._buffer;
+        }
 
-            /// <summary>
-            /// The buffer rented from <see cref="ArrayPool{T}"/> currently in use
-            /// </summary>
-            private byte[]? pooledBuffer;
+        /// <summary>Finalizes an instance of the <see cref="PooledMemoryStream"/> class.</summary>
+        ~PooledMemoryStream() => Dispose(false);
 
-            /// <summary>
-            /// The current position within <see cref="pooledBuffer"/>
-            /// </summary>
-            private int position;
+        /// <inheritdoc/>
+        public override bool CanRead => true;
 
-            /// <summary>
-            /// Creates a new <see cref="PooledMemoryStream"/> instance
-            /// </summary>
-            public PooledMemoryStream(PooledBufferWriter writer)
+        /// <inheritdoc/>
+        public override bool CanSeek => false;
+
+        /// <inheritdoc/>
+        public override bool CanWrite => false;
+
+        /// <inheritdoc/>
+        public override long Length => _length;
+
+        /// <inheritdoc/>
+        public override long Position
+        {
+            get => _position;
+            set
             {
-                length = writer.position;
-                pooledBuffer = writer.buffer;
+                _ = value;
+                ThrowNotSupportedException();
+            }
+        }
+
+        /// <inheritdoc/>
+        public override void Flush()
+        {
+        }
+
+        /// <inheritdoc/>
+        public override Task FlushAsync(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromCanceled(cancellationToken);
             }
 
-            /// <summary>
-            /// Releases the resources for the current <see cref="PooledMemoryStream"/> instance
-            /// </summary>
-            ~PooledMemoryStream()
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc/>
+        public override
+#if NET6_0_OR_GREATER
+            async
+#endif
+            Task CopyToAsync(
+            Stream destination,
+            int bufferSize,
+            CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
             {
-                Dispose(true);
+#if NET6_0_OR_GREATER
+                cancellationToken.ThrowIfCancellationRequested();
+#else
+                return Task.FromCanceled(cancellationToken);
+#endif
             }
 
-            /// <inheritdoc/>
-            public override bool CanRead => true;
-
-            /// <inheritdoc/>
-            public override bool CanSeek => false;
-
-            /// <inheritdoc/>
-            public override bool CanWrite => false;
-
-            /// <inheritdoc/>
-            public override long Length => length;
-
-            /// <inheritdoc/>
-            public override long Position
+#if NET6_0_OR_GREATER
+            await CopyToInternalAsync(destination, cancellationToken).ConfigureAwait(false);
+#else
+            try
             {
-                get => position;
-                set => ThrowNotSupportedException();
-            }
-
-            /// <inheritdoc/>
-            public override void Flush() { }
-
-            /// <inheritdoc/>
-            public override Task FlushAsync(CancellationToken cancellationToken)
-            {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return Task.FromCanceled(cancellationToken);
-                }
-
+                CopyTo(destination, bufferSize);
                 return Task.CompletedTask;
             }
-
-            /// <inheritdoc/>
-            public override Task CopyToAsync(
-                Stream destination,
-                int bufferSize,
-                CancellationToken cancellationToken
-            )
+            catch (OperationCanceledException e)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return Task.FromCanceled(cancellationToken);
-                }
-
-                try
-                {
-#if NET6_0_OR_GREATER
-                    return CopyToInternalAsync(destination, cancellationToken);
-#else
-                    CopyTo(destination, bufferSize);
-                    return Task.CompletedTask;
+                return Task.FromCanceled(e.CancellationToken);
+            }
+            catch (Exception e)
+            {
+                return Task.FromException(e);
+            }
 #endif
-                }
-                catch (OperationCanceledException e)
-                {
-                    return Task.FromCanceled(e.CancellationToken);
-                }
-                catch (Exception e)
-                {
-                    return Task.FromException(e);
-                }
+        }
+
+        /// <inheritdoc/>
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (offset < 0)
+            {
+                ThrowArgumentOutOfRangeExceptionForNegativeOffset();
             }
 
-            /// <inheritdoc/>
-            public override int Read(byte[] buffer, int offset, int count)
+            if (count < 0)
             {
-                if (offset < 0)
-                    ThrowArgumentOutOfRangeExceptionForNegativeOffset();
-                if (count < 0)
-                    ThrowArgumentOutOfRangeExceptionForNegativeCount();
-                if (offset + count > buffer.Length)
-                    ThrowArgumentOutOfRangeExceptionForEndOfStreamReached();
-                if (pooledBuffer is null)
-                    ThrowObjectDisposedException();
-
-                var destination = buffer.AsSpan(offset, count);
-                var source = pooledBuffer.AsSpan(0, length).Slice(position);
-
-                // If the source is contained within the destination, copy the entire span
-                if (source.Length <= destination.Length)
-                {
-                    source.CopyTo(destination);
-
-                    position += source.Length;
-
-                    return source.Length;
-                }
-
-                // Resize the source slice and only copy the overlapping region
-                source.Slice(0, destination.Length).CopyTo(destination);
-
-                position += destination.Length;
-
-                return destination.Length;
+                ThrowArgumentOutOfRangeExceptionForNegativeCount();
             }
 
-            /// <inheritdoc/>
-            public override Task<int> ReadAsync(
-                byte[] buffer,
-                int offset,
-                int count,
-                CancellationToken cancellationToken
-            )
+            if (offset + count > buffer.Length)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return Task.FromCanceled<int>(cancellationToken);
-                }
-
-                try
-                {
-                    var result = Read(buffer, offset, count);
-
-                    return Task.FromResult(result);
-                }
-                catch (OperationCanceledException e)
-                {
-                    return Task.FromCanceled<int>(e.CancellationToken);
-                }
-                catch (Exception e)
-                {
-                    return Task.FromException<int>(e);
-                }
+                ThrowArgumentOutOfRangeExceptionForEndOfStreamReached();
             }
 
-            /// <inheritdoc/>
-            public override int ReadByte()
+            if (_pooledBuffer is null)
             {
-                if (pooledBuffer is null)
-                    ThrowObjectDisposedException();
+                ThrowObjectDisposedException();
+            }
 
-                if (position >= pooledBuffer!.Length)
+            var destination = buffer.AsSpan(offset, count);
+            var source = _pooledBuffer.AsSpan(0, _length).Slice(_position);
+
+            // If the source is contained within the destination, copy the entire span
+            if (source.Length <= destination.Length)
+            {
+                source.CopyTo(destination);
+
+                _position += source.Length;
+
+                return source.Length;
+            }
+
+            // Resize the source slice and only copy the overlapping region
+            source.Slice(0, destination.Length).CopyTo(destination);
+
+            _position += destination.Length;
+
+            return destination.Length;
+        }
+
+        /// <inheritdoc/>
+        public override Task<int> ReadAsync(
+            byte[] buffer,
+            int offset,
+            int count,
+            CancellationToken cancellationToken)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromCanceled<int>(cancellationToken);
+            }
+
+            try
+            {
+                var result = Read(buffer, offset, count);
+
+                return Task.FromResult(result);
+            }
+            catch (OperationCanceledException e)
+            {
+                return Task.FromCanceled<int>(e.CancellationToken);
+            }
+            catch (Exception e)
+            {
+                return Task.FromException<int>(e);
+            }
+        }
+
+        /// <inheritdoc/>
+        public override int ReadByte()
+        {
+            if (_pooledBuffer is null)
+            {
+                ThrowObjectDisposedException();
+            }
+
+            if (_position >= _pooledBuffer!.Length)
+            {
+                return -1;
+            }
+
+            return _pooledBuffer[_position++];
+        }
+
+        /// <inheritdoc/>
+        public override long Seek(long offset, SeekOrigin origin)
+        {
+            ThrowNotSupportedException();
+
+            return default;
+        }
+
+        /// <inheritdoc/>
+        public override void SetLength(long value) => ThrowNotSupportedException();
+
+        /// <inheritdoc/>
+        public override void Write(byte[] buffer, int offset, int count) => ThrowNotSupportedException();
+
+        /// <inheritdoc/>
+        protected override void Dispose(bool disposing)
+        {
+            try
+            {
+                if (_pooledBuffer is not null)
                 {
-                    return -1;
+                    ArrayPool<byte>.Shared.Return(_pooledBuffer);
+                    _pooledBuffer = null;
                 }
-
-                return pooledBuffer[position++];
             }
-
-            /// <inheritdoc/>
-            public override long Seek(long offset, SeekOrigin origin)
+            finally
             {
-                ThrowNotSupportedException();
-
-                return default;
-            }
-
-            /// <inheritdoc/>
-            public override void SetLength(long value)
-            {
-                ThrowNotSupportedException();
-            }
-
-            /// <inheritdoc/>
-            public override void Write(byte[] buffer, int offset, int count)
-            {
-                ThrowNotSupportedException();
-            }
-
-            /// <inheritdoc/>
-            protected override void Dispose(bool disposing)
-            {
-                if (pooledBuffer == null)
-                    return;
-
-                GC.SuppressFinalize(this);
-
-                ArrayPool<byte>.Shared.Return(pooledBuffer);
-
-                pooledBuffer = null;
+                base.Dispose(disposing);
             }
         }
     }

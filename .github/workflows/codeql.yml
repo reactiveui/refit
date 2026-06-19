@@ -1,0 +1,25 @@
+name: "CodeQL Advanced"
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+    schedule:
+        - cron: '43 6 * * 1'
+
+permissions:
+    security-events: write
+    contents: read
+    packages: read
+    actions: read
+
+jobs:
+    codeql:
+        uses: reactiveui/actions-common/.github/workflows/workflow-common-codeql.yml@main
+        with:
+            srcFolder: src
+            solutionFile: Refit.slnx
+            analyzeCSharp: true
+            analyzeActions: true
+            analyzeJavaScript: false

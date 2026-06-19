@@ -5,8 +5,8 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsTestProject>$(MSBuildProjectName.EndsWith('Tests'))</IsTestProject>
     <DebugType>embedded</DebugType>
-    <Authors>.NET Foundation and Contributors</Authors>
-    <Copyright>Copyright (c) .NET Foundation and Contributors</Copyright>
+    <Authors>ReactiveUI and Contributors</Authors>
+    <Copyright>Copyright (c) ReactiveUI and Contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
     <PackageIcon>logo.png</PackageIcon>
@@ -16,32 +16,88 @@
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <LangVersion>preview</LangVersion>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <!-- Net Analyzers config taken from : https://docs.microsoft.com/en-gb/visualstudio/code-quality/migrate-from-fxcop-analyzers-to-net-analyzers?view=vs-2019 -->
-    <EnableNETAnalyzers>True</EnableNETAnalyzers>
+    <LangVersion>latest</LangVersion>
+
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
-    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <RunAnalyzers>true</RunAnalyzers>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Nullable>enable</Nullable>
+
+    <WarningsAsErrors>nullable;CS4014</WarningsAsErrors>
+
     <ImplicitUsings>true</ImplicitUsings>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <AssemblyOriginatorKeyFile>$(RepositoryRoot)buildtask.snk</AssemblyOriginatorKeyFile>
-    <!--<SignAssembly>true</SignAssembly>-->
-    <RefitTargets Condition="$([MSBuild]::IsOsPlatform('Windows'))">net462</RefitTargets>
-    <RefitTestTargets>net8.0;net9.0;net10.0</RefitTestTargets>
-    <RefitTargets>$(RefitTargets);netstandard2.0;$(RefitTestTargets)</RefitTargets>
-    <NoWarn>IDE0040;CA1054;CA1510</NoWarn>
+
+    <!-- Emit source-generator output to obj/Generated so generated code is inspectable/diffable. -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(MSBuildProjectDirectory)/obj/Generated</CompilerGeneratedFilesOutputPath>
+    <RefitGeneratorTargets>netstandard2.0</RefitGeneratorTargets>
+    <RefitFrameworkTargets>net462;net470;net471;net472;net48;net481</RefitFrameworkTargets>
+    <RefitModernTargets>net8.0;net9.0;net10.0;net11.0</RefitModernTargets>
+    <RefitShippingTargets>$(RefitFrameworkTargets);$(RefitModernTargets)</RefitShippingTargets>
+    <RefitTestTargets>$(RefitModernTargets)</RefitTestTargets>
+    <RefitBenchmarkTargets>$(RefitModernTargets)</RefitBenchmarkTargets>
+    <RefitTargets>$(RefitShippingTargets)</RefitTargets>
+
+    <!-- Enable building Windows-specific targets on non-Windows platforms -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
+  <!-- AOT/trim analyzers on net8.0+ (netfx doesn't support them). -->
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+  </PropertyGroup>
+
   <ItemGroup>
-    <None Include="$(RepositoryRoot)images\logo.png" Pack="true" PackagePath="\" Visible="false" />
-    <None Include="$(RepositoryRoot)LICENSE" Pack="true" PackagePath="LICENSE" />
-    <None Include="$(RepositoryRoot)README.md" Pack="true" PackagePath="\" />
+    <None Include="$(RepositoryRoot)images\logo.png" Pack="true" PackagePath="\" Visible="false"/>
+    <None Include="$(RepositoryRoot)LICENSE" Pack="true" PackagePath="LICENSE"/>
+    <None Include="$(RepositoryRoot)README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)testconfig.json">
+      <Link>$(AssemblyName).testconfig.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="All"/>
+  </ItemGroup>
+
+  <!-- Each project compiles its own copy of the polyfill shims (DynamicallyAccessedMembers,
+       RequiresUnreferencedCode/RequiresDynamicCode, nullable attributes, IsExternalInit) on .NET
+       Framework, which lacks them. They are internal to each assembly, so there is no cross-assembly
+       conflict and no project needs InternalsVisibleTo access to Refit's copies. -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Compile Include="$(MSBuildThisFileDirectory)Polyfills\*.cs" Link="Polyfills\%(Filename)%(Extension)"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <PackageReference Include="System.Net.Http"/>
+    <Reference Include="System.Net.Http"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Using Include="System.Net.Http"/>
+  </ItemGroup>
+
+  <!-- Alias Lock to the dedicated System.Threading.Lock on .NET 9+ (faster EnterScope fast path),
+       and to a plain object elsewhere (the lock statement falls back to Monitor). -->
+  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
+    <Using Include="System.Threading.Lock" Alias="Lock"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
+    <Using Include="System.Object" Alias="Lock"/>
   </ItemGroup>
 
   <!-- MinVer (versioning) — replaces Nerdbank.GitVersioning. Floor at 10.2
@@ -56,7 +112,28 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
-    <PackageReference Include="MinVer" PrivateAssets="all" />
+    <PackageReference Include="MinVer" PrivateAssets="all"/>
+    <PackageReference Include="StyleSharp.Analyzers" PrivateAssets="all"/>
+    <PackageReference Include="Roslynator.Analyzers" PrivateAssets="All"/>
+    <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <!-- Per-TFM public-API tracking via Roslyn PublicApiAnalyzers (RS0016/RS0017/RS0037);
+       baselines live in <Project>/PublicAPI/<tfm>/. Only the shipped libraries are tracked;
+       the tests, benchmarks, examples, source generators, and the AOT smoke app opt out.
+       Run tools/generate-publicapi.sh after any public API change to refresh the baselines. -->
+  <PropertyGroup>
+    <TrackPublicApi Condition="'$(TrackPublicApi)' == ''">true</TrackPublicApi>
+    <TrackPublicApi Condition="$(MSBuildProjectDirectory.Contains('tests'))">false</TrackPublicApi>
+    <TrackPublicApi Condition="$(MSBuildProjectDirectory.Contains('benchmarks'))">false</TrackPublicApi>
+    <TrackPublicApi Condition="$(MSBuildProjectDirectory.Contains('examples'))">false</TrackPublicApi>
+    <TrackPublicApi Condition="$(MSBuildProjectName.Contains('InterfaceStubGenerator'))">false</TrackPublicApi>
+    <TrackPublicApi Condition="$(MSBuildProjectName.Contains('NativeAotSmoke'))">false</TrackPublicApi>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TrackPublicApi)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all"/>
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI\$(TargetFramework)\PublicAPI.Shipped.txt"/>
+    <AdditionalFiles Include="$(MSBuildProjectDirectory)\PublicAPI\$(TargetFramework)\PublicAPI.Unshipped.txt"/>
   </ItemGroup>
 
   <Target Name="AddCommitHashToAssemblyAttributes" BeforeTargets="GetAssemblyAttributes">

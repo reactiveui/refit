@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>$(RefitBenchmarkTargets)</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <!-- Benchmarks are console apps that intentionally exercise Refit's reflection-based APIs and
+         are never trimmed/AOT-published, so the trim/AOT analyzers do not apply here. -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
+    <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\Refit.Xml\Refit.Xml.csproj" />
+    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="AutoFixture" />
+    <PackageReference Include="BenchmarkDotNet" />
+    <!-- Aligned with the Roslyn version BenchmarkDotNet pulls in, so the benchmark's
+         Microsoft.CodeAnalysis.* assemblies stay on a single consistent version. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="4.14.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="newtonsoft-json-10-users.json" />
+    <EmbeddedResource Include="newtonsoft-json-10-users.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <None Remove="system-text-json-10-users.json" />
+    <EmbeddedResource Include="system-text-json-10-users.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

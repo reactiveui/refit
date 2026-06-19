@@ -1,7 +1,7 @@
 <Project>
   <!-- Inherit the repo-wide build settings (this file would otherwise stop the
        upward search for Directory.Build.props). -->
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
 
   <!-- Examples are never published to NuGet. This is a safety net so a new example
        project added without its own setting can't be packed/published by accident. -->

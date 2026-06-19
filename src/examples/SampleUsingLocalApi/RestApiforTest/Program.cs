@@ -1,25 +1,18 @@
-﻿namespace RestApiforTest;
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+namespace RestApiforTest;
 
-/// <summary>
-/// Provides the entry point and web host configuration methods for the application.
-/// </summary>
+/// <summary>Provides the entry point and web host configuration methods for the application.</summary>
 internal static class Program
 {
-    /// <summary>
-    /// Serves as the entry point for the application.
-    /// </summary>
+    /// <summary>Serves as the entry point for the application.</summary>
     /// <remarks>This method configures and starts the web host. It is typically called automatically
     /// by the runtime and should not be invoked directly.</remarks>
     /// <param name="args">An array of command-line arguments supplied to the application.</param>
-    public static void Main(string[] args)
-    {
-        CreateWebHostBuilder(args).Build().Run();
-    }
+    public static void Main(string[] args) => CreateWebHostBuilder(args).Build().Run();
 
-    /// <summary>
-    /// Initializes a new instance of the web host builder with pre-configured defaults and the specified startup
-    /// class.
-    /// </summary>
+    /// <summary>Initializes a new instance of the web host builder with pre-configured defaults and the specified startup class.</summary>
     /// <remarks>This method sets up the web host with default configuration, logging, and Kestrel
     /// server settings, and specifies the application's startup class. It is typically called from the
     /// application's entry point to configure and launch the ASP.NET Core application.</remarks>

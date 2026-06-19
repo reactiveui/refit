@@ -1,72 +1,81 @@
-﻿using System.Collections;
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+
 using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Globalization;
-using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text;
-using System.Web;
 #if NET5_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
 #endif
 
 namespace Refit
 {
-#if NET5_0_OR_GREATER
-    class RequestBuilderImplementation<
-        [
-            DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods
-            )] TApi> : RequestBuilderImplementation, IRequestBuilder<TApi>
-#else
-    class RequestBuilderImplementation<TApi> : RequestBuilderImplementation, IRequestBuilder<TApi>
-#endif
+    /// <summary>Reflection-based request builder that turns Refit interface calls into HTTP requests.</summary>
+    internal partial class RequestBuilderImplementation : IRequestBuilder
     {
-        public RequestBuilderImplementation(RefitSettings? refitSettings = null)
-            : base(typeof(TApi), refitSettings)
-        {
-        }
-    }
-
-    partial class RequestBuilderImplementation : IRequestBuilder
-    {
+        /// <summary>Maximum stack-allocated buffer size, in characters, used when building paths and query strings.</summary>
         private const int StackallocThreshold = 512;
-        static readonly QueryAttribute DefaultQueryAttribute = new ();
-        static readonly Uri BaseUri = new ("http://api");
-        readonly Dictionary<string, List<RestMethodInfoInternal>> interfaceHttpMethods;
-        readonly ConcurrentDictionary<
-            CloseGenericMethodKey,
-            RestMethodInfoInternal
-        > interfaceGenericHttpMethods;
-        readonly IHttpContentSerializer serializer;
-        readonly RefitSettings settings;
-        public Type TargetType { get; }
 
+        /// <summary>The message used when content cannot be deserialized into the requested type.</summary>
+        private const string DeserializationErrorMessage = "An error occured deserializing the response.";
+
+        /// <summary>The error message used when the HTTP client has no base address configured.</summary>
+        private const string BaseAddressRequiredMessage = "BaseAddress must be set on the HttpClient instance";
+
+        /// <summary>The default query attribute applied when a parameter has none.</summary>
+        private static readonly QueryAttribute DefaultQueryAttribute = new();
+
+        /// <summary>A placeholder base URI used while building relative request URIs. Its scheme and host are
+        /// discarded — only the combined path and query are kept (see <c>AssignRequestUri</c>), so it never
+        /// reaches the network.</summary>
+        private static readonly Uri BaseUri = new("https://api");
+
+        /// <summary>Lookup of HTTP methods keyed by method name.</summary>
+        private readonly Dictionary<string, List<RestMethodInfoInternal>> _interfaceHttpMethods;
+
+        /// <summary>Cache of closed generic method infos keyed by method and type arguments.</summary>
+        private readonly ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfoInternal> _interfaceGenericHttpMethods;
+
+        /// <summary>The content serializer from the active settings.</summary>
+        private readonly IHttpContentSerializer _serializer;
+
+        /// <summary>The settings controlling request building and serialization.</summary>
+        private readonly RefitSettings _settings;
+
+        /// <summary>Initializes a new instance of the <see cref="RequestBuilderImplementation"/> class for the given interface type.</summary>
+        /// <param name="refitInterfaceType">The Refit interface type to build requests for.</param>
+        /// <param name="refitSettings">The settings to use, or null for defaults.</param>
 #if NET5_0_OR_GREATER
-        [RequiresUnreferencedCode("RequestBuilder uses reflection on the provided Refit interface and DTO types. Ensure necessary members are preserved when trimming.")]
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
 #endif
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Minor Code Smell",
+            "SST1114:Remove the blank line between the declaration and the first parameter",
+            Justification = "False positive: the #if-guarded parameter attribute is required for trim annotations but is unavailable on non-net5 targets.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Minor Code Smell",
+            "SST1115:Remove the blank line before this parameter",
+            Justification = "False positive: the #if-guarded parameter attribute is required for trim annotations but is unavailable on non-net5 targets.")]
         public RequestBuilderImplementation(
 #if NET5_0_OR_GREATER
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods
-            )]
+                DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
 #endif
             Type refitInterfaceType,
-            RefitSettings? refitSettings = null
-        )
+            RefitSettings? refitSettings = null)
         {
-            var targetInterfaceInheritedInterfaces = refitInterfaceType.GetInterfaces();
-
-            settings = refitSettings ?? new RefitSettings();
-            serializer = settings.ContentSerializer;
-            interfaceGenericHttpMethods =
-                new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfoInternal>();
-
-            if (refitInterfaceType == null || !refitInterfaceType.GetTypeInfo().IsInterface)
+            if (refitInterfaceType?.GetTypeInfo().IsInterface != true)
             {
                 throw new ArgumentException("targetInterface must be an Interface");
             }
+
+            var targetInterfaceInheritedInterfaces = refitInterfaceType.GetInterfaces();
+
+            _settings = refitSettings ?? new RefitSettings();
+            _serializer = _settings.ContentSerializer;
+            _interfaceGenericHttpMethods =
+                new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfoInternal>();
 
             TargetType = refitInterfaceType;
 
@@ -78,23 +87,179 @@ namespace Refit
                 AddInterfaceHttpMethods(inheritedInterface, dict);
             }
 
-            interfaceHttpMethods = dict;
+            _interfaceHttpMethods = dict;
         }
 
-        static string GetLookupKeyForMethod(MethodInfo methodInfo)
+        /// <summary>Gets the Refit interface type this builder targets.</summary>
+        public Type TargetType { get; }
+
+        /// <inheritdoc/>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+#endif
+        public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
+            string methodName,
+            Type[]? parameterTypes = null,
+            Type[]? genericArgumentTypes = null)
+        {
+            if (!_interfaceHttpMethods.ContainsKey(methodName))
+            {
+                throw new ArgumentException(
+                    "Method must be defined and have an HTTP Method attribute");
+            }
+
+            var restMethod = FindMatchingRestMethodInfo(
+                methodName,
+                parameterTypes,
+                genericArgumentTypes);
+
+            // Task (void)
+            if (restMethod.ReturnType == typeof(Task))
+            {
+                return BuildVoidTaskFuncForMethod(restMethod);
+            }
+
+            // Task<T>
+            if (IsGenericReturnType(restMethod, typeof(Task<>)))
+            {
+                return BuildResultFuncForMethod(restMethod, nameof(BuildTaskFuncForMethod));
+            }
+
+            // ValueTask<T>
+            if (IsGenericReturnType(restMethod, typeof(ValueTask<>)))
+            {
+                return BuildResultFuncForMethod(restMethod, nameof(BuildValueTaskFuncForMethod));
+            }
+
+            // IObservable<T>
+            if (IsGenericReturnType(restMethod, typeof(IObservable<>)))
+            {
+                return BuildResultFuncForMethod(restMethod, nameof(BuildRxFuncForMethod));
+            }
+
+            var isExplicitInterfaceMember = restMethod.MethodInfo.Name.Contains('.');
+            var isNonPublic = !restMethod.MethodInfo.IsPublic;
+            if (isExplicitInterfaceMember || isNonPublic)
+            {
+                return BuildGeneratedSyncFuncForMethod(restMethod);
+            }
+
+            throw new ArgumentException(
+                $"Method \"{restMethod.MethodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>");
+        }
+
+        /// <summary>Gets the lookup key for a method, stripping any explicit-interface prefix from the name.</summary>
+        /// <param name="methodInfo">The method to derive a key for.</param>
+        /// <returns>The simple method name used as a lookup key.</returns>
+        private static string GetLookupKeyForMethod(MethodInfo methodInfo)
         {
             var name = methodInfo.Name;
             var lastDot = name.LastIndexOf('.');
             return lastDot >= 0 ? name.Substring(lastDot + 1) : name;
         }
 
-        void AddInterfaceHttpMethods(
+        /// <summary>Determines whether the method's return type is a closed generic of the supplied open generic type.</summary>
+        /// <param name="restMethod">The rest method to inspect.</param>
+        /// <param name="openGenericType">The open generic type definition to match.</param>
+        /// <returns><see langword="true"/> if the return type closes <paramref name="openGenericType"/>; otherwise <see langword="false"/>.</returns>
+        private static bool IsGenericReturnType(RestMethodInfoInternal restMethod, Type openGenericType) =>
+            restMethod.ReturnType.GetTypeInfo().IsGenericType
+            && restMethod.ReturnType.GetGenericTypeDefinition() == openGenericType;
+
+        /// <summary>Filters the candidate methods by parameter count and generic arity.</summary>
+        /// <param name="httpMethods">The candidate methods.</param>
+        /// <param name="parameterTypes">The parameter types to match.</param>
+        /// <param name="genericArgumentTypes">The generic argument types, or null.</param>
+        /// <returns>The matching candidate methods.</returns>
+        private static RestMethodInfoInternal[] FilterPossibleMethods(
+            List<RestMethodInfoInternal> httpMethods,
+            Type[] parameterTypes,
+            Type[]? genericArgumentTypes)
+        {
+            var isGeneric = genericArgumentTypes?.Length > 0;
+
+            var possibleMethodsCollection = httpMethods.Where(
+                method => method.MethodInfo.GetParameters().Length == parameterTypes.Length);
+
+            possibleMethodsCollection = isGeneric
+                ? possibleMethodsCollection.Where(
+                    method =>
+                        method.MethodInfo.IsGenericMethod
+                        && method.MethodInfo.GetGenericArguments().Length
+                            == genericArgumentTypes!.Length)
+                : possibleMethodsCollection.Where(
+                    method => !method.MethodInfo.IsGenericMethod);
+
+            return [.. possibleMethodsCollection];
+        }
+
+        /// <summary>Runs an asynchronous task factory synchronously and waits for completion.</summary>
+        /// <param name="taskFactory">The task factory to run.</param>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Usage",
+            "VSTHRD002:Avoid problematic synchronous waits",
+            Justification = "Deliberate sync-over-async bridge for synchronous (void/non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
+        private static void RunSynchronous(Func<Task> taskFactory) =>
+            Task.Run(taskFactory).GetAwaiter().GetResult();
+
+        /// <summary>Runs an asynchronous task factory synchronously and returns its result.</summary>
+        /// <typeparam name="T">The result type.</typeparam>
+        /// <param name="taskFactory">The task factory to run.</param>
+        /// <returns>The result produced by the task.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Usage",
+            "VSTHRD002:Avoid problematic synchronous waits",
+            Justification = "Deliberate sync-over-async bridge for synchronous (non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
+        private static T? RunSynchronous<T>(Func<Task<T?>> taskFactory) =>
+            Task.Run(taskFactory).GetAwaiter().GetResult();
+
+        /// <summary>Awaits the request task and disposes the linked cancellation source once it completes.</summary>
+        /// <typeparam name="T">The result type produced by the request.</typeparam>
+        /// <param name="task">The in-flight request task.</param>
+        /// <param name="cts">The linked cancellation source to dispose when the task finishes.</param>
+        /// <returns>The result produced by <paramref name="task"/>.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Usage",
+            "VSTHRD003:Avoid awaiting foreign Tasks",
+            Justification = "The task is the request just launched by the caller; awaiting it here only scopes disposal of the linked cancellation source.")]
+        private static async Task<T?> DisposeWhenDoneAsync<T>(Task<T?> task, CancellationTokenSource cts)
+        {
+            try
+            {
+                return await task.ConfigureAwait(false);
+            }
+            finally
+            {
+                cts.Dispose();
+            }
+        }
+
+        /// <summary>Discovers the Refit HTTP methods on an interface and adds them to the lookup dictionary.</summary>
+        /// <param name="interfaceType">The interface to scan for HTTP methods.</param>
+        /// <param name="methods">The dictionary to populate with discovered methods.</param>
 #if NET5_0_OR_GREATER
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+#endif
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Major Code Smell",
+            "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
+            Justification = "Refit must bind to non-public interface members to resolve explicit interface implementations.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Minor Code Smell",
+            "SST1114:Remove the blank line between the declaration and the first parameter",
+            Justification = "False positive: the #if-guarded parameter attribute is required for trim annotations but is unavailable on non-net5 targets.")]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Minor Code Smell",
+            "SST1115:Remove the blank line before this parameter",
+            Justification = "False positive: the #if-guarded parameter attribute is required for trim annotations but is unavailable on non-net5 targets.")]
+        private void AddInterfaceHttpMethods(
+#if NET5_0_OR_GREATER
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
 #endif
             Type interfaceType,
-            Dictionary<string, List<RestMethodInfoInternal>> methods
-        )
+            Dictionary<string, List<RestMethodInfoInternal>> methods)
         {
             var methodInfos = interfaceType
                 .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
@@ -113,59 +278,49 @@ namespace Refit
                         methods.Add(key, value);
                     }
 
-                    var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, settings);
+                    var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, _settings);
                     value.Add(restinfo);
                 }
             }
         }
 
-        RestMethodInfoInternal FindMatchingRestMethodInfo(
+        /// <summary>Finds the rest method matching the given name, parameter types and generic arguments.</summary>
+        /// <param name="key">The method lookup key.</param>
+        /// <param name="parameterTypes">The parameter types to match, or null to match a single overload.</param>
+        /// <param name="genericArgumentTypes">The generic argument types to close over, or null.</param>
+        /// <returns>The matching rest method info.</returns>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+#endif
+        private RestMethodInfoInternal FindMatchingRestMethodInfo(
             string key,
             Type[]? parameterTypes,
-            Type[]? genericArgumentTypes
-        )
+            Type[]? genericArgumentTypes)
         {
-            if (!interfaceHttpMethods.TryGetValue(key, out var httpMethods))
+            if (!_interfaceHttpMethods.TryGetValue(key, out var httpMethods))
             {
                 throw new ArgumentException(
-                    "Method must be defined and have an HTTP Method attribute"
-                );
+                    "Method must be defined and have an HTTP Method attribute");
             }
 
-            if (parameterTypes == null)
+            if (parameterTypes is null)
             {
                 if (httpMethods.Count > 1)
                 {
                     throw new ArgumentException(
-                        $"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined"
-                    );
+                        $"MethodName exists more than once, '{nameof(parameterTypes)}' mut be defined");
                 }
 
                 return CloseGenericMethodIfNeeded(httpMethods[0], genericArgumentTypes);
             }
 
-            var isGeneric = genericArgumentTypes?.Length > 0;
-
-            var possibleMethodsCollection = httpMethods.Where(
-                method => method.MethodInfo.GetParameters().Length == parameterTypes.Length
-            );
-
-            if (isGeneric)
-                possibleMethodsCollection = possibleMethodsCollection.Where(
-                    method =>
-                        method.MethodInfo.IsGenericMethod
-                        && method.MethodInfo.GetGenericArguments().Length
-                            == genericArgumentTypes!.Length
-                );
-            else
-                possibleMethodsCollection = possibleMethodsCollection.Where(
-                    method => !method.MethodInfo.IsGenericMethod
-                );
-
-            var possibleMethods = possibleMethodsCollection.ToArray();
+            var possibleMethods = FilterPossibleMethods(httpMethods, parameterTypes, genericArgumentTypes);
 
             if (possibleMethods.Length == 1)
+            {
                 return CloseGenericMethodIfNeeded(possibleMethods[0], genericArgumentTypes);
+            }
 
             foreach (var method in possibleMethods)
             {
@@ -179,126 +334,76 @@ namespace Refit
                 }
             }
 
-            throw new Exception("No suitable Method found...");
+            throw new InvalidOperationException("No suitable Method found...");
         }
 
-        RestMethodInfoInternal CloseGenericMethodIfNeeded(
+        /// <summary>Closes an open generic rest method over the supplied type arguments, caching the result.</summary>
+        /// <param name="restMethodInfo">The (possibly generic) rest method.</param>
+        /// <param name="genericArgumentTypes">The generic argument types, or null if not generic.</param>
+        /// <returns>The closed rest method info, or the original when no generic arguments are supplied.</returns>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+#endif
+        private RestMethodInfoInternal CloseGenericMethodIfNeeded(
             RestMethodInfoInternal restMethodInfo,
-            Type[]? genericArgumentTypes
-        )
+            Type[]? genericArgumentTypes)
         {
-            if (genericArgumentTypes != null)
+            if (genericArgumentTypes is not null)
             {
-                return interfaceGenericHttpMethods.GetOrAdd(
+                return _interfaceGenericHttpMethods.GetOrAdd(
                     new CloseGenericMethodKey(restMethodInfo.MethodInfo, genericArgumentTypes),
                     _ =>
                         new RestMethodInfoInternal(
                             restMethodInfo.Type,
                             restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes),
-                            restMethodInfo.RefitSettings
-                        )
-                );
+                            restMethodInfo.RefitSettings));
             }
+
             return restMethodInfo;
         }
 
+        /// <summary>Builds a result delegate for a method by invoking the named generic builder over the result types.</summary>
+        /// <param name="restMethod">The rest method to build a delegate for.</param>
+        /// <param name="builderMethodName">The name of the private generic builder method.</param>
+        /// <returns>A delegate that invokes the method.</returns>
 #if NET5_0_OR_GREATER
-        [RequiresUnreferencedCode("Building rest result delegates uses reflection over interface methods and DTOs. Ensure required members are preserved.")]
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
 #endif
-        public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
-            string methodName,
-            Type[]? parameterTypes = null,
-            Type[]? genericArgumentTypes = null
-        )
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Major Code Smell",
+            "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
+            Justification = "Refit must invoke its own non-public generic builder methods by reflection.")]
+        private Func<HttpClient, object[], object?> BuildResultFuncForMethod(
+            RestMethodInfoInternal restMethod,
+            string builderMethodName)
         {
-            if (!interfaceHttpMethods.ContainsKey(methodName))
-            {
-                throw new ArgumentException(
-                    "Method must be defined and have an HTTP Method attribute"
-                );
-            }
+            var builderMethodInfo = typeof(RequestBuilderImplementation).GetMethod(
+                builderMethodName,
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var resultFunc = (MulticastDelegate?)
+                builderMethodInfo!.MakeGenericMethod(
+                        restMethod.ReturnResultType,
+                        restMethod.DeserializedResultType)
+                    .Invoke(this, [restMethod]);
 
-            var restMethod = FindMatchingRestMethodInfo(
-                methodName,
-                parameterTypes,
-                genericArgumentTypes
-            );
-
-            // Task (void)
-            if (restMethod.ReturnType == typeof(Task))
-            {
-                return BuildVoidTaskFuncForMethod(restMethod);
-            }
-
-            // Task<T>
-            if (restMethod.ReturnType.GetTypeInfo().IsGenericType && restMethod.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
-            {
-                var taskFuncMi = typeof(RequestBuilderImplementation).GetMethod(
-                    nameof(BuildTaskFuncForMethod),
-                    BindingFlags.NonPublic | BindingFlags.Instance
-                );
-                var taskFunc = (MulticastDelegate?)
-                    (
-                        taskFuncMi!.MakeGenericMethod(
-                            restMethod.ReturnResultType,
-                            restMethod.DeserializedResultType
-                        )
-                    ).Invoke(this, [restMethod]);
-
-                return (client, args) => taskFunc!.DynamicInvoke(client, args);
-            }
-
-            // ValueTask<T>
-            if (restMethod.ReturnType.GetTypeInfo().IsGenericType && restMethod.ReturnType.GetGenericTypeDefinition() == typeof(ValueTask<>))
-            {
-                var valueTaskFuncMi = typeof(RequestBuilderImplementation).GetMethod(
-                    nameof(BuildValueTaskFuncForMethod),
-                    BindingFlags.NonPublic | BindingFlags.Instance
-                );
-                var valueTaskFunc = (MulticastDelegate?)
-                    (
-                        valueTaskFuncMi!.MakeGenericMethod(
-                            restMethod.ReturnResultType,
-                            restMethod.DeserializedResultType
-                        )
-                    ).Invoke(this, [restMethod]);
-
-                return (client, args) => valueTaskFunc!.DynamicInvoke(client, args);
-            }
-
-            // IObservable<T>
-            if (restMethod.ReturnType.GetTypeInfo().IsGenericType && restMethod.ReturnType.GetGenericTypeDefinition() == typeof(IObservable<>))
-            {
-                var rxFuncMi = typeof(RequestBuilderImplementation).GetMethod(
-                    nameof(BuildRxFuncForMethod),
-                    BindingFlags.NonPublic | BindingFlags.Instance
-                );
-                var rxFunc = (MulticastDelegate?)
-                    (
-                        rxFuncMi!.MakeGenericMethod(
-                            restMethod.ReturnResultType,
-                            restMethod.DeserializedResultType
-                        )
-                    ).Invoke(this, [restMethod]);
-
-                return (client, args) => rxFunc!.DynamicInvoke(client, args);
-            }
-
-            var isExplicitInterfaceMember = restMethod.MethodInfo.Name.IndexOf('.') >= 0;
-            var isNonPublic = !restMethod.MethodInfo.IsPublic;
-            if (isExplicitInterfaceMember || isNonPublic)
-            {
-                return BuildGeneratedSyncFuncForMethod(restMethod);
-            }
-
-            throw new ArgumentException(
-                $"Method \"{restMethod.MethodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>"
-            );
+            return (client, args) => resultFunc!.DynamicInvoke(client, args);
         }
 
-        Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethod(
-            RestMethodInfoInternal restMethod
-        )
+        /// <summary>Builds a synchronous invocation delegate for a generated (sync) interface method.</summary>
+        /// <param name="restMethod">The rest method to build a delegate for.</param>
+        /// <returns>A delegate that invokes the method synchronously.</returns>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+#endif
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Major Code Smell",
+            "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
+            Justification = "Refit must invoke its own non-public generic builder methods by reflection.")]
+        private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethod(
+            RestMethodInfoInternal restMethod)
         {
             if (restMethod.ReturnResultType == typeof(void))
             {
@@ -309,30 +414,39 @@ namespace Refit
                             client,
                             restMethod,
                             paramList,
-                            CancellationToken.None,
-                            paramsContainsCancellationToken: false
-                        )
-                    );
+                            paramsContainsCancellationToken: false,
+                            CancellationToken.None));
                     return null;
                 };
             }
 
             var syncFuncMi = typeof(RequestBuilderImplementation).GetMethod(
                 nameof(BuildGeneratedSyncFuncForMethodGeneric),
-                BindingFlags.NonPublic | BindingFlags.Instance
-            );
-            return (Func<HttpClient, object[], object?>)
-                syncFuncMi
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var func =
+                syncFuncMi!
                     .MakeGenericMethod(
                         restMethod.ReturnResultType,
-                        restMethod.DeserializedResultType
-                    )
+                        restMethod.DeserializedResultType)
                     .Invoke(this, [restMethod]);
+            return (Func<HttpClient, object[], object?>)func!;
         }
 
-        Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
-            RestMethodInfoInternal restMethod
-        )
+        /// <summary>Builds a synchronous invocation delegate for a generated method with known result and body types.</summary>
+        /// <typeparam name="T">The deserialized result type.</typeparam>
+        /// <typeparam name="TBody">The body type used for API responses.</typeparam>
+        /// <param name="restMethod">The rest method to build a delegate for.</param>
+        /// <returns>A delegate that invokes the method synchronously.</returns>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+#endif
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "Type parameter intentionally specified explicitly by callers.")]
+        private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
+            RestMethodInfoInternal restMethod)
         {
             return (client, paramList) =>
                 RunSynchronous(() =>
@@ -340,1368 +454,33 @@ namespace Refit
                         client,
                         restMethod,
                         paramList,
-                        CancellationToken.None,
-                        paramsContainsCancellationToken: false
-                    )
-                );
+                        paramsContainsCancellationToken: false,
+                        CancellationToken.None));
         }
 
-        static void RunSynchronous(Func<Task> taskFactory) =>
-            Task.Run(taskFactory).GetAwaiter().GetResult();
-
-        static T? RunSynchronous<T>(Func<Task<T?>> taskFactory) =>
-            Task.Run(taskFactory).GetAwaiter().GetResult();
-
-        async Task ExecuteVoidRequestAsync(
-            HttpClient client,
-            RestMethodInfoInternal restMethod,
-            object[] paramList,
-            CancellationToken cancellationToken,
-            bool paramsContainsCancellationToken
-        )
-        {
-            if (client.BaseAddress == null)
-                throw new InvalidOperationException(
-                    "BaseAddress must be set on the HttpClient instance"
-                );
-
-            using var rq = await BuildRequestMessageForMethodAsync(
-                    restMethod,
-                    client.BaseAddress.AbsolutePath,
-                    paramsContainsCancellationToken,
-                    paramList
-                )
-                .ConfigureAwait(false);
-
-            if (IsBodyBuffered(restMethod, rq))
-            {
-                await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
-            }
-
-            using var resp = await client
-                .SendAsync(rq, cancellationToken)
-                .ConfigureAwait(false);
-
-            var exception = await settings.ExceptionFactory(resp).ConfigureAwait(false);
-            if (exception != null)
-            {
-                throw exception;
-            }
-        }
-
-        async Task<T?> ExecuteRequestAsync<T, TBody>(
-            HttpClient client,
-            RestMethodInfoInternal restMethod,
-            object[] paramList,
-            CancellationToken cancellationToken,
-            bool paramsContainsCancellationToken
-        )
-        {
-            if (client.BaseAddress == null)
-                throw new InvalidOperationException(
-                    "BaseAddress must be set on the HttpClient instance"
-                );
-
-            using var rq = await BuildRequestMessageForMethodAsync(
-                    restMethod,
-                    client.BaseAddress.AbsolutePath,
-                    paramsContainsCancellationToken,
-                    paramList
-                )
-                .ConfigureAwait(false);
-
-            HttpResponseMessage? resp = null;
-            HttpContent? content = null;
-            var disposeResponse = true;
-            try
-            {
-                if (IsBodyBuffered(restMethod, rq))
-                {
-                    await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
-                }
-
-                try
-                {
-                    resp = await client
-                        .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (!restMethod.IsApiResponse)
-                        throw new ApiRequestException(rq, rq.Method, settings, ex);
-
-                    return ApiResponse.Create<T, TBody>(
-                        rq,
-                        resp,
-                        default,
-                        settings,
-                        new ApiRequestException(rq, rq.Method, settings, ex)
-                    );
-                }
-
-                content = resp.Content ?? new StringContent(string.Empty);
-                Exception? e = null;
-                disposeResponse = restMethod.ShouldDisposeResponse;
-
-                if (typeof(T) != typeof(HttpResponseMessage))
-                {
-                    e = await settings.ExceptionFactory(resp).ConfigureAwait(false);
-                }
-
-                if (restMethod.IsApiResponse)
-                {
-                    var body = default(TBody);
-
-                    try
-                    {
-                        body =
-                            e == null
-                                ? await DeserializeContentAsync<TBody>(
-                                        resp,
-                                        content,
-                                        cancellationToken
-                                    ).ConfigureAwait(false)
-                                : default;
-                    }
-                    catch (Exception ex)
-                    {
-                        if (settings.DeserializationExceptionFactory != null)
-                            e = await settings
-                                .DeserializationExceptionFactory(resp, ex)
-                                .ConfigureAwait(false);
-                        else
-                        {
-                            e = await ApiException.Create(
-                                "An error occured deserializing the response.",
-                                rq,
-                                rq.Method,
-                                resp,
-                                settings,
-                                ex
-                            ).ConfigureAwait(false);
-                        }
-                    }
-
-                    return ApiResponse.Create<T, TBody>(
-                        rq,
-                        resp,
-                        body,
-                        settings,
-                        e as ApiException
-                    );
-                }
-                else if (e != null)
-                {
-                    disposeResponse = false; // caller has to dispose
-                    throw e;
-                }
-                else
-                {
-                    try
-                    {
-                        return await DeserializeContentAsync<T>(resp, content, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-                    {
-                        throw;
-                    }
-                    catch (Exception ex)
-                    {
-                        if (settings.DeserializationExceptionFactory != null)
-                        {
-                            var customEx = await settings
-                                .DeserializationExceptionFactory(resp, ex)
-                                .ConfigureAwait(false);
-                            if (customEx != null)
-                                throw customEx;
-                            return default;
-                        }
-                        else
-                        {
-                            throw await ApiException.Create(
-                                "An error occured deserializing the response.",
-                                rq,
-                                rq.Method,
-                                resp,
-                                settings,
-                                ex
-                            ).ConfigureAwait(false);
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                if (disposeResponse)
-                {
-                    resp?.Dispose();
-                    content?.Dispose();
-                }
-            }
-        }
-
-        void AddMultipartItem(
-            MultipartFormDataContent multiPartContent,
-            string fileName,
-            string parameterName,
-            object itemValue
-        )
-        {
-            if (itemValue is HttpContent content)
-            {
-                multiPartContent.Add(content);
-                return;
-            }
-            if (itemValue is MultipartItem multipartItem)
-            {
-                var httpContent = multipartItem.ToContent();
-                multiPartContent.Add(
-                    httpContent,
-                    multipartItem.Name ?? parameterName,
-                    string.IsNullOrEmpty(multipartItem.FileName) ? fileName : multipartItem.FileName
-                );
-                return;
-            }
-
-            if (itemValue is Stream streamValue)
-            {
-                var streamContent = new StreamContent(streamValue);
-                multiPartContent.Add(streamContent, parameterName, fileName);
-                return;
-            }
-
-            if (itemValue is string stringValue)
-            {
-                multiPartContent.Add(new StringContent(stringValue), parameterName);
-                return;
-            }
-
-            if (itemValue is FileInfo fileInfoValue)
-            {
-                var fileContent = new StreamContent(fileInfoValue.OpenRead());
-                multiPartContent.Add(fileContent, parameterName, fileInfoValue.Name);
-                return;
-            }
-
-            if (itemValue is byte[] byteArrayValue)
-            {
-                var fileContent = new ByteArrayContent(byteArrayValue);
-                multiPartContent.Add(fileContent, parameterName, fileName);
-                return;
-            }
-
-            // Fallback to serializer
-            Exception e;
-            try
-            {
-                multiPartContent.Add(
-                    settings.ContentSerializer.ToHttpContent(itemValue),
-                    parameterName
-                );
-                return;
-            }
-            catch (Exception ex)
-            {
-                // Eat this since we're about to throw as a fallback anyway
-                e = ex;
-            }
-
-            throw new ArgumentException(
-                $"Unexpected parameter type in a Multipart request. Parameter {fileName} is of type {itemValue.GetType().Name}, whereas allowed types are String, Stream, FileInfo, Byte array and anything that's JSON serializable",
-                nameof(itemValue),
-                e
-            );
-        }
-
-        Func<HttpClient, CancellationToken, object[], Task<T?>> BuildCancellableTaskFuncForMethod<
-            T,
-            TBody
-        >(RestMethodInfoInternal restMethod)
-        {
-            return async (client, ct, paramList) =>
-            {
-                if (client.BaseAddress == null)
-                    throw new InvalidOperationException(
-                        "BaseAddress must be set on the HttpClient instance"
-                    );
-
-                var rq = await BuildRequestMessageForMethodAsync(
-                    restMethod,
-                    client.BaseAddress.AbsolutePath,
-                    restMethod.CancellationToken != null,
-                    paramList
-                ).ConfigureAwait(false);
-
-                HttpResponseMessage? resp = null;
-                HttpContent? content = null;
-                var disposeResponse = true;
-                try
-                {
-                    // Load the data into buffer when body should be buffered.
-                    if (IsBodyBuffered(restMethod, rq))
-                    {
-                        await rq.Content!.LoadIntoBufferAsync().ConfigureAwait(false);
-                    }
-
-                    try
-                    {
-                        resp = await client
-                            .SendAsync(rq, HttpCompletionOption.ResponseHeadersRead, ct)
-                            .ConfigureAwait(false);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (!restMethod.IsApiResponse)
-                            throw new ApiRequestException(rq, rq.Method, settings, ex);
-
-                        return ApiResponse.Create<T, TBody>(
-                            rq,
-                            resp,
-                            default,
-                            settings,
-                            new ApiRequestException(rq, rq.Method, settings, ex)
-                        );
-                    }
-
-                    content = resp.Content ?? new StringContent(string.Empty);
-                    Exception? e = null;
-                    disposeResponse = restMethod.ShouldDisposeResponse;
-
-                    if (typeof(T) != typeof(HttpResponseMessage))
-                    {
-                        e = await settings.ExceptionFactory(resp).ConfigureAwait(false);
-                    }
-
-                    if (restMethod.IsApiResponse)
-                    {
-                        var body = default(TBody);
-
-                        try
-                        {
-                            // Only attempt to deserialize content if no error present for backward-compatibility
-                            body =
-                                e == null
-                                    ? await DeserializeContentAsync<TBody>(resp, content, ct)
-                                        .ConfigureAwait(false)
-                                    : default;
-                        }
-                        catch (Exception ex)
-                        {
-                            //if an error occured while attempting to deserialize return the wrapped ApiException
-                            if (settings.DeserializationExceptionFactory != null)
-                                e = await settings.DeserializationExceptionFactory(resp, ex).ConfigureAwait(false);
-                            else
-                            {
-                                e = await ApiException.Create(
-                                    "An error occured deserializing the response.",
-                                    rq,
-                                    rq.Method,
-                                    resp,
-                                    settings,
-                                    ex
-                                ).ConfigureAwait(false);
-                            }
-                        }
-
-                        return ApiResponse.Create<T, TBody>(
-                            rq,
-                            resp,
-                            body,
-                            settings,
-                            e as ApiException
-                        );
-                    }
-                    else if (e != null)
-                    {
-                        disposeResponse = false; // caller has to dispose
-                        throw e;
-                    }
-                    else
-                    {
-                        try
-                        {
-                            return await DeserializeContentAsync<T>(resp, content, ct)
-                                .ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException) when (ct.IsCancellationRequested)
-                        {
-                            throw;
-                        }
-                        catch (Exception ex)
-                        {
-                            if (settings.DeserializationExceptionFactory != null)
-                            {
-                                var customEx = await settings.DeserializationExceptionFactory(resp, ex)
-                                    .ConfigureAwait(false);
-                                if (customEx != null)
-                                    throw customEx;
-                                return default;
-                            }
-                            else
-                            {
-                                throw await ApiException.Create(
-                                    "An error occured deserializing the response.",
-                                    rq,
-                                    rq.Method,
-                                    resp,
-                                    settings,
-                                    ex
-                                ).ConfigureAwait(false);
-                            }
-                        }
-                    }
-                }
-                finally
-                {
-                    // Ensure we clean up the request
-                    // Especially important if it has open files/streams
-                    rq.Dispose();
-                    if (disposeResponse)
-                    {
-                        resp?.Dispose();
-                        content?.Dispose();
-                    }
-                }
-            };
-        }
-
-        async Task<T?> DeserializeContentAsync<T>(
-            HttpResponseMessage resp,
-            HttpContent content,
-            CancellationToken cancellationToken
-        )
-        {
-            T? result;
-            if (typeof(T) == typeof(HttpResponseMessage))
-            {
-                // NB: This double-casting manual-boxing hate crime is the only way to make
-                // this work without a 'class' generic constraint. It could blow up at runtime
-                // and would be A Bad Idea if we hadn't already vetted the return type.
-                result = (T)(object)resp;
-            }
-            else if (typeof(T) == typeof(HttpContent))
-            {
-                result = (T)(object)content;
-            }
-            else if (typeof(T) == typeof(Stream))
-            {
-                var stream = (object)
-                    await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
-                result = (T)stream;
-            }
-            else if (typeof(T) == typeof(string))
-            {
-                using var stream = await content
-                    .ReadAsStreamAsync(cancellationToken)
-                    .ConfigureAwait(false);
-                using var reader = new StreamReader(stream);
-#if NET8_0_OR_GREATER
-                var str = (object)await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-#else
-                cancellationToken.ThrowIfCancellationRequested();
-                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+        /// <summary>Builds an observable invocation delegate for a method.</summary>
+        /// <typeparam name="T">The result type returned to the caller.</typeparam>
+        /// <typeparam name="TBody">The body type used for API responses.</typeparam>
+        /// <param name="restMethod">The rest method to build a delegate for.</param>
+        /// <returns>A delegate that returns an observable of the result.</returns>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
 #endif
-                result = (T)str;
-            }
-            else
-            {
-                // A 204 No Content response (or an explicitly empty body) has nothing to
-                // deserialize. Return the default value rather than letting the serializer
-                // fail on empty content.
-                if (resp.StatusCode == System.Net.HttpStatusCode.NoContent
-                    || content.Headers.ContentLength == 0)
-                {
-                    return default;
-                }
-
-                // Buffer the content into memory before deserializing so that, if the
-                // serializer throws, ApiException.Create can still re-read the raw body
-                // (see #2098). We deliberately do NOT probe the stream via
-                // ReadAsStreamAsync first: that consumes non-seekable network streams and
-                // breaks serializers that re-read via ReadAsStringAsync, e.g. XML (#1729,
-                // which reverted #1705). LoadIntoBufferAsync is a no-op for the already
-                // buffered content that HttpClient produces by default.
-#pragma warning disable CA1031 // Do not catch general exception types
-                try
-                {
-#if NET8_0_OR_GREATER
-                    await content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
-#else
-                    await content.LoadIntoBufferAsync().ConfigureAwait(false);
-#endif
-                }
-                catch
-                {
-                    // Best-effort: if the content cannot be buffered we fall back to
-                    // streaming deserialization. The only downside is that the raw body
-                    // may be unavailable on failure, which is the pre-existing behavior.
-                }
-#pragma warning restore CA1031 // Do not catch general exception types
-
-                result = await serializer
-                    .FromHttpContentAsync<T>(content, cancellationToken)
-                    .ConfigureAwait(false);
-            }
-            return result;
-        }
-
-        List<KeyValuePair<string, object?>> BuildQueryMap(
-            object? @object,
-            string? delimiter = null,
-            RestMethodParameterInfo? parameterInfo = null,
-            CollectionFormat? collectionFormat = null
-        )
-        {
-            if (@object is IDictionary idictionary)
-            {
-                return BuildQueryMap(idictionary, delimiter, collectionFormat);
-            }
-
-            var kvps = new List<KeyValuePair<string, object?>>();
-
-            if (@object is null)
-                return kvps;
-
-            var props = @object
-                .GetType()
-                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Where(p => p.CanRead && p.GetMethod?.IsPublic == true);
-
-            foreach (var propertyInfo in props)
-            {
-                if (ShouldIgnorePropertyInQueryMap(propertyInfo))
-                    continue;
-
-                var obj = propertyInfo.GetValue(@object);
-                if (obj == null)
-                    continue;
-
-                //if we have a parameter info lets check it to make sure it isn't bound to the path
-                if (parameterInfo is { IsObjectPropertyParameter: true })
-                {
-                    // Compare by name rather than PropertyInfo reference: for a derived runtime
-                    // type the inherited property is a different PropertyInfo instance, which
-                    // would otherwise be wrongly emitted as a duplicate query parameter.
-                    if (parameterInfo.ParameterProperties.Any(x => x.PropertyInfo.Name == propertyInfo.Name))
-                    {
-                        continue;
-                    }
-                }
-
-                var key = propertyInfo.Name;
-
-                var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
-                key = aliasAttribute?.Name ?? settings.UrlParameterKeyFormatter.Format(key);
-
-                // Look to see if the property has a Query attribute, and if so, format it accordingly
-                var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
-                if (queryAttribute is { Format: not null })
-                {
-                    obj = settings.FormUrlEncodedParameterFormatter.Format(
-                        obj,
-                        queryAttribute.Format
-                    );
-                }
-
-                // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
-                if (obj is not string && obj is IEnumerable ienu && obj is not IDictionary)
-                {
-                    foreach (
-                        var value in ParseEnumerableQueryParameterValue(
-                            ienu,
-                            propertyInfo,
-                            propertyInfo.PropertyType,
-                            queryAttribute,
-                            collectionFormat
-                        )
-                    )
-                    {
-                        kvps.Add(new KeyValuePair<string, object?>(key, value));
-                    }
-
-                    continue;
-                }
-
-                if (DoNotConvertToQueryMap(obj))
-                {
-                    kvps.Add(new KeyValuePair<string, object?>(key, obj));
-                    continue;
-                }
-
-                switch (obj)
-                {
-                    case IDictionary idict:
-                        foreach (var keyValuePair in BuildQueryMap(idict, delimiter, collectionFormat))
-                        {
-                            kvps.Add(
-                                new KeyValuePair<string, object?>(
-                                    $"{key}{delimiter}{keyValuePair.Key}",
-                                    keyValuePair.Value
-                                )
-                            );
-                        }
-
-                        break;
-
-                    default:
-                        foreach (var keyValuePair in BuildQueryMap(obj, delimiter, null, collectionFormat))
-                        {
-                            kvps.Add(
-                                new KeyValuePair<string, object?>(
-                                    $"{key}{delimiter}{keyValuePair.Key}",
-                                    keyValuePair.Value
-                                )
-                            );
-                        }
-
-                        break;
-                }
-            }
-
-            return kvps;
-        }
-
-        List<KeyValuePair<string, object?>> BuildQueryMap(
-            IDictionary dictionary,
-            string? delimiter = null,
-            CollectionFormat? collectionFormat = null
-        )
-        {
-            var kvps = new List<KeyValuePair<string, object?>>();
-
-            foreach (var key in dictionary.Keys)
-            {
-                var obj = dictionary[key];
-                if (obj == null)
-                    continue;
-
-                var keyType = key.GetType();
-                var formattedKey = settings.UrlParameterFormatter.Format(key, keyType, keyType);
-
-                if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
-                {
-                    continue;
-                }
-
-                if (DoNotConvertToQueryMap(obj))
-                {
-                    kvps.Add(new KeyValuePair<string, object?>(formattedKey!, obj));
-                }
-                else
-                {
-                    foreach (var keyValuePair in BuildQueryMap(obj, delimiter, null, collectionFormat))
-                    {
-                        kvps.Add(
-                            new KeyValuePair<string, object?>(
-                                $"{formattedKey}{delimiter}{keyValuePair.Key}",
-                                keyValuePair.Value
-                            )
-                        );
-                    }
-                }
-            }
-
-            return kvps;
-        }
-
-        static bool ShouldIgnorePropertyInQueryMap(PropertyInfo propertyInfo)
-        {
-            foreach (var attributeData in propertyInfo.GetCustomAttributesData())
-            {
-                var fullName = attributeData.AttributeType.FullName;
-                if (
-                    fullName == "System.Runtime.Serialization.IgnoreDataMemberAttribute"
-                    || fullName == "System.Text.Json.Serialization.JsonIgnoreAttribute"
-                    || fullName == "Newtonsoft.Json.JsonIgnoreAttribute"
-                )
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        async Task<HttpRequestMessage?> BuildRequestMessageForMethodAsync(
-            RestMethodInfoInternal restMethod,
-            string basePath,
-            bool paramsContainsCancellationToken,
-            object[] paramList
-        )
-        {
-            var cancellationToken = CancellationToken.None;
-
-            if (paramsContainsCancellationToken)
-            {
-                cancellationToken = paramList.OfType<CancellationToken>().FirstOrDefault();
-                paramList = paramList
-                    .Where(o => o == null || o.GetType() != typeof(CancellationToken))
-                    .ToArray();
-            }
-
-            var ret = new HttpRequestMessage { Method = restMethod.HttpMethod };
-            try
-            {
-                MultipartFormDataContent? multiPartContent = null;
-                if (restMethod.IsMultipart)
-                {
-                    multiPartContent = new MultipartFormDataContent(restMethod.MultipartBoundary);
-                    ret.Content = multiPartContent;
-                }
-
-                List<KeyValuePair<string, string?>>? queryParamsToAdd = null;
-                var headersToAdd = restMethod.Headers.Count > 0
-                    ? new Dictionary<string, string?>(restMethod.Headers)
-                    : null;
-
-                RestMethodParameterInfo? parameterInfo = null;
-
-                for (var i = 0; i < paramList.Length; i++)
-                {
-                    var isParameterMappedToRequest = false;
-                    var param = paramList[i];
-                    if (restMethod.ParameterMap.TryGetValue(i, out var parameterMapValue))
-                    {
-                        parameterInfo = parameterMapValue;
-                        if (!parameterInfo.IsObjectPropertyParameter)
-                        {
-                            isParameterMappedToRequest = true;
-                        }
-                    }
-
-                    if (
-                        restMethod.BodyParameterInfo != null
-                        && restMethod.BodyParameterInfo.Item3 == i
-                    )
-                    {
-                        AddBodyToRequest(restMethod, param, ret);
-                        isParameterMappedToRequest = true;
-                    }
-
-                    if (restMethod.HeaderParameterMap.TryGetValue(i, out var headerParameterValue))
-                    {
-                        headersToAdd ??= [];
-                        headersToAdd[headerParameterValue] = param?.ToString();
-                        isParameterMappedToRequest = true;
-                    }
-
-                    if (restMethod.HeaderCollectionAt(i))
-                    {
-                        if (param is IDictionary<string, string> headerCollection)
-                        {
-                            foreach (var header in headerCollection)
-                            {
-                                headersToAdd ??= [];
-                                headersToAdd[header.Key] = header.Value;
-                            }
-                        }
-
-                        isParameterMappedToRequest = true;
-                    }
-
-                    if (
-                        restMethod.AuthorizeParameterInfo != null
-                        && restMethod.AuthorizeParameterInfo.Item2 == i
-                    )
-                    {
-                        headersToAdd ??= [];
-                        headersToAdd["Authorization"] =
-                            $"{restMethod.AuthorizeParameterInfo.Item1} {param}";
-                        isParameterMappedToRequest = true;
-                    }
-
-                    // A property parameter that also carries [Query] should still contribute to
-                    // the query string, so do not treat it as fully mapped in that case.
-                    if (restMethod.PropertyParameterMap.ContainsKey(i)
-                        && restMethod.ParameterInfoArray[i].GetCustomAttribute<QueryAttribute>() == null)
-                    {
-                        isParameterMappedToRequest = true;
-                    }
-
-                    if (isParameterMappedToRequest || param == null)
-                        continue;
-
-                    var queryAttribute = restMethod
-                        .ParameterInfoArray[i]
-                        .GetCustomAttribute<QueryAttribute>();
-                    if (
-                        !restMethod.IsMultipart
-                        || restMethod.ParameterMap.ContainsKey(i)
-                            && restMethod.ParameterMap[i].IsObjectPropertyParameter
-                        || queryAttribute != null
-                    )
-                    {
-                        queryParamsToAdd ??= [];
-                        AddQueryParameters(
-                            restMethod,
-                            queryAttribute,
-                            param,
-                            queryParamsToAdd,
-                            i,
-                            parameterInfo
-                        );
-                        continue;
-                    }
-
-                    AddMultiPart(restMethod, i, param, multiPartContent);
-                }
-
-                AddHeadersToRequest(headersToAdd, ret);
-                await AddAuthorizationHeadersFromGetterAsync(ret, cancellationToken)
-                    .ConfigureAwait(false);
-
-                AddPropertiesToRequest(restMethod, ret, paramList);
-#if NET6_0_OR_GREATER
-                AddVersionToRequest(ret);
-#endif
-                var urlTarget = BuildRelativePath(basePath, restMethod, paramList);
-
-                var uri = new UriBuilder(new Uri(BaseUri, urlTarget));
-                ParseExistingQueryString(uri, ref queryParamsToAdd);
-
-                if (queryParamsToAdd is not null && queryParamsToAdd.Count != 0)
-                {
-                    uri.Query = CreateQueryString(queryParamsToAdd);;
-                }
-                else
-                {
-                    uri.Query = null;
-                }
-
-                ret.RequestUri = new Uri(
-                    uri.Uri.GetComponents(UriComponents.PathAndQuery, restMethod.QueryUriFormat),
-                    UriKind.Relative
-                );
-                return ret;
-            }
-            catch
-            {
-                ret.Dispose();
-                throw;
-            }
-        }
-
-        string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
-        {
-            // Every path fragment is prefixed with '/', so trim a trailing slash from the
-            // base path to avoid emitting a double slash when the base address ends with one.
-            basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
-            var pathFragments = restMethod.FragmentPath;
-            if (pathFragments.Count == 0)
-            {
-                return basePath;
-            }
-            if (string.IsNullOrEmpty(basePath) && pathFragments.Count == 1)
-            {
-                Debug.Assert(pathFragments[0].IsConstant);
-                return pathFragments[0].Value!;
-            }
-
-#pragma warning disable CA2000
-            var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
-#pragma warning restore CA2000
-            vsb.Append(basePath);
-
-            foreach (var fragment in pathFragments)
-            {
-                AppendPathFragmentValue(ref vsb, restMethod, paramList, fragment);
-            }
-
-            return vsb.ToString();
-        }
-
-        void AppendPathFragmentValue(ref ValueStringBuilder vsb, RestMethodInfoInternal restMethod, object[] paramList,
-            ParameterFragment fragment)
-        {
-            if (fragment.IsConstant)
-            {
-                vsb.Append(fragment.Value!);
-                return;
-            }
-
-            var contains = restMethod.ParameterMap.TryGetValue(fragment.ArgumentIndex, out var parameterMapValue);
-            if (!contains || parameterMapValue is null)
-                throw new InvalidOperationException($"{restMethod.ParameterMap} should contain parameter.");
-
-            if (fragment.IsObjectProperty)
-            {
-                var param = paramList[fragment.ArgumentIndex];
-                var property = parameterMapValue.ParameterProperties[fragment.PropertyIndex];
-                var propertyObject = property.PropertyInfo.GetValue(param);
-
-                vsb.Append(Uri.EscapeDataString(settings.UrlParameterFormatter.Format(
-                    propertyObject,
-                    property.PropertyInfo,
-                    property.PropertyInfo.PropertyType
-                ) ?? string.Empty));
-                return;
-            }
-
-            if (fragment.IsDynamicRoute)
-            {
-                var param = paramList[fragment.ArgumentIndex];
-
-                if (parameterMapValue.Type == ParameterType.Normal)
-                {
-                    vsb.Append(Uri.EscapeDataString(
-                        settings.UrlParameterFormatter.Format(
-                            param,
-                            restMethod.ParameterInfoArray[fragment.ArgumentIndex],
-                            restMethod.ParameterInfoArray[fragment.ArgumentIndex].ParameterType
-                        ) ?? string.Empty
-                    ));
-                    return;
-                }
-
-                // If round tripping, split string up, format each segment and append to vsb.
-                Debug.Assert(parameterMapValue.Type == ParameterType.RoundTripping);
-                var paramValue = (string)param;
-                var split = paramValue.Split('/');
-
-                var firstSection = true;
-                foreach (var section in split)
-                {
-                    if(!firstSection)
-                        vsb.Append('/');
-
-                    vsb.Append(
-                        Uri.EscapeDataString(
-                            settings.UrlParameterFormatter.Format(
-                                section,
-                                restMethod.ParameterInfoArray[fragment.ArgumentIndex],
-                                restMethod.ParameterInfoArray[fragment.ArgumentIndex].ParameterType
-                            ) ?? string.Empty
-                        ));
-                    firstSection = false;
-                }
-
-                return;
-            }
-
-            throw new ArgumentException($"{nameof(ParameterFragment)} is in an invalid form.");
-        }
-
-        void AddBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
-        {
-            if (param is HttpContent httpContentParam)
-            {
-                ret.Content = httpContentParam;
-            }
-            else if (param is Stream streamParam)
-            {
-                ret.Content = new StreamContent(streamParam);
-            }
-            // Default sends raw strings
-            else if (
-                restMethod.BodyParameterInfo!.Item1 == BodySerializationMethod.Default
-                && param is string stringParam
-            )
-            {
-                ret.Content = new StringContent(stringParam);
-            }
-            else
-            {
-                switch (restMethod.BodyParameterInfo.Item1)
-                {
-                    case BodySerializationMethod.UrlEncoded:
-                        ret.Content = param is string str
-                            ? (HttpContent)
-                            new StringContent(
-                                Uri.EscapeDataString(str),
-                                Encoding.UTF8,
-                                "application/x-www-form-urlencoded"
-                            )
-                            : new FormUrlEncodedContent(
-                                new FormValueMultimap(param, settings)
-                            );
-                        break;
-                    case BodySerializationMethod.Default:
-#pragma warning disable CS0618 // Type or member is obsolete
-                    case BodySerializationMethod.Json:
-#pragma warning restore CS0618 // Type or member is obsolete
-                    case BodySerializationMethod.Serialized:
-                        var declaredBodyType = restMethod.ParameterInfoArray[
-                            restMethod.BodyParameterInfo.Item3
-                        ].ParameterType;
-                        var content = SerializeBody(serializer, param, declaredBodyType);
-                        switch (restMethod.BodyParameterInfo.Item2)
-                        {
-                            case false:
-                                ret.Content = new PushStreamContent(
-#pragma warning disable IDE1006 // Naming Styles
-                                    async (stream, _, __) =>
-#pragma warning restore IDE1006 // Naming Styles
-                                    {
-                                        using (stream)
-                                        {
-                                            await content
-                                                .CopyToAsync(stream)
-                                                .ConfigureAwait(false);
-                                        }
-                                    },
-                                    content.Headers.ContentType
-                                );
-                                break;
-                            case true:
-                                ret.Content = content;
-                                break;
-                        }
-
-                        break;
-                }
-            }
-        }
-
-        void AddQueryParameters(RestMethodInfoInternal restMethod, QueryAttribute? queryAttribute, object param,
-            List<KeyValuePair<string, string?>> queryParamsToAdd, int i, RestMethodParameterInfo? parameterInfo)
-        {
-            var attr = queryAttribute ?? DefaultQueryAttribute;
-            if (attr.TreatAsString)
-            {
-                queryParamsToAdd.AddRange(
-                    ParseQueryParameter(
-                        param.ToString(),
-                        restMethod.ParameterInfoArray[i],
-                        restMethod.QueryParameterMap[i],
-                        attr
-                    )
-                );
-            }
-            else if (DoNotConvertToQueryMap(param))
-            {
-                queryParamsToAdd.AddRange(
-                    ParseQueryParameter(
-                        param,
-                        restMethod.ParameterInfoArray[i],
-                        restMethod.QueryParameterMap[i],
-                        attr
-                    )
-                );
-            }
-            else
-            {
-                var parameterCollectionFormat = attr.IsCollectionFormatSpecified
-                    ? attr.CollectionFormat
-                    : (CollectionFormat?)null;
-                foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo, parameterCollectionFormat))
-                {
-                    var path = !string.IsNullOrWhiteSpace(attr.Prefix)
-                        ? $"{attr.Prefix}{attr.Delimiter}{kvp.Key}"
-                        : kvp.Key;
-                    queryParamsToAdd.AddRange(
-                        ParseQueryParameter(
-                            kvp.Value,
-                            restMethod.ParameterInfoArray[i],
-                            path,
-                            attr
-                        )
-                    );
-                }
-            }
-        }
-
-        void AddMultiPart(RestMethodInfoInternal restMethod, int i, object param,
-            MultipartFormDataContent? multiPartContent)
-        {
-            // we are in a multipart method, add the part to the content
-            // the parameter name should be either the attachment name or the parameter name (as fallback)
-            string itemName;
-            string parameterName;
-
-            if (!restMethod.AttachmentNameMap.TryGetValue(i, out var attachment))
-            {
-                itemName = restMethod.QueryParameterMap[i];
-                parameterName = itemName;
-            }
-            else
-            {
-                itemName = attachment.Item1;
-                parameterName = attachment.Item2;
-            }
-
-            // Check to see if it's an IEnumerable
-            if (param is IEnumerable<object> enumerable)
-            {
-                foreach (var item in enumerable!)
-                {
-                    AddMultipartItem(multiPartContent!, itemName, parameterName, item);
-                }
-            }
-            else
-            {
-                AddMultipartItem(multiPartContent!, itemName, parameterName, param);
-            }
-        }
-
-        static void AddHeadersToRequest(Dictionary<string, string?>? headersToAdd, HttpRequestMessage ret)
-        {
-            // NB: We defer setting headers until the body has been
-            // added so any custom content headers don't get left out.
-            if (headersToAdd is null || headersToAdd.Count <= 0)
-                return;
-
-            // We could have content headers, so we need to make
-            // sure we have an HttpContent object to add them to,
-            // provided the HttpClient will allow it for the method
-            if (ret.Content == null && !IsBodyless(ret.Method))
-                ret.Content = new ByteArrayContent([]);
-
-            foreach (var header in headersToAdd)
-            {
-                SetHeader(ret, header.Key, header.Value);
-            }
-        }
-
-        async Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            if (settings.AuthorizationHeaderValueGetter == null)
-                return;
-
-            var auth = request.Headers.Authorization;
-            if (auth == null || !string.IsNullOrWhiteSpace(auth.Parameter))
-                return;
-
-            var token = await settings.AuthorizationHeaderValueGetter(request, cancellationToken)
-                .ConfigureAwait(false);
-            request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
-        }
-
-        void AddPropertiesToRequest(RestMethodInfoInternal restMethod, HttpRequestMessage ret, object[] paramList)
-        {
-            // Add RefitSetting.HttpRequestMessageOptions to the HttpRequestMessage
-            if (settings.HttpRequestMessageOptions != null)
-            {
-                foreach (var p in settings.HttpRequestMessageOptions)
-                {
-#if NET6_0_OR_GREATER
-                    ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
-#else
-                    ret.Properties.Add(p);
-#endif
-                }
-            }
-
-            for (var i = 0; i < paramList.Length; i++)
-            {
-                if (restMethod.PropertyParameterMap.TryGetValue(i, out var propertyKey))
-                {
-#if NET6_0_OR_GREATER
-                    ret.Options.Set(
-                        new HttpRequestOptionsKey<object?>(propertyKey),
-                        paramList[i]
-                    );
-#else
-                    ret.Properties[propertyKey] = paramList[i];
-#endif
-                }
-            }
-
-            // Always add the top-level type of the interface to the properties
-#if NET6_0_OR_GREATER
-                ret.Options.Set(
-                    new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType),
-                    TargetType
-                );
-                ret.Options.Set(
-                    new HttpRequestOptionsKey<RestMethodInfo>(
-                        HttpRequestMessageOptions.RestMethodInfo
-                    ),
-                    restMethod.RestMethodInfo
-                );
-#else
-            ret.Properties[HttpRequestMessageOptions.InterfaceType] = TargetType;
-            ret.Properties[HttpRequestMessageOptions.RestMethodInfo] =
-                restMethod.RestMethodInfo;
-#endif
-        }
-
-#if NET6_0_OR_GREATER
-        void AddVersionToRequest(HttpRequestMessage ret)
-        {
-            ret.Version = settings.Version;
-            ret.VersionPolicy = settings.VersionPolicy;
-        }
-#endif
-
-        static readonly MethodInfo SerializeBodyMethod =
-            typeof(RequestBuilderImplementation).GetMethod(
-                nameof(SerializeBodyGeneric),
-                BindingFlags.Static | BindingFlags.NonPublic
-            )!;
-
-        static HttpContent SerializeBody(
-            IHttpContentSerializer serializer,
-            object? body,
-            Type declaredBodyType
-        )
-        {
-            var serializeMethod = SerializeBodyMethod.MakeGenericMethod(declaredBodyType);
-            return (HttpContent)serializeMethod.Invoke(null, [serializer, body])!;
-        }
-
-        static HttpContent SerializeBodyGeneric<T>(IHttpContentSerializer serializer, object? body) =>
-            serializer.ToHttpContent((T)body!);
-
-        IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(
-            object? param,
-            ParameterInfo parameterInfo,
-            string queryPath,
-            QueryAttribute queryAttribute
-        )
-        {
-            if (param is not string && param is IEnumerable paramValues)
-            {
-                foreach (
-                    var value in ParseEnumerableQueryParameterValue(
-                        paramValues,
-                        parameterInfo,
-                        parameterInfo.ParameterType,
-                        queryAttribute
-                    )
-                )
-                {
-                    yield return new KeyValuePair<string, string?>(queryPath, value);
-                }
-            }
-            else
-            {
-                yield return new KeyValuePair<string, string?>(
-                    queryPath,
-                    settings.UrlParameterFormatter.Format(
-                        param,
-                        parameterInfo,
-                        parameterInfo.ParameterType
-                    )
-                );
-            }
-        }
-
-        IEnumerable<string?> ParseEnumerableQueryParameterValue(
-            IEnumerable paramValues,
-            ICustomAttributeProvider customAttributeProvider,
-            Type type,
-            QueryAttribute? queryAttribute,
-            CollectionFormat? fallbackCollectionFormat = null
-        )
-        {
-            // Precedence: the property's own [Query] format wins; otherwise the format
-            // supplied by the enclosing parameter's [Query] attribute (if any); finally
-            // the global RefitSettings default.
-            var collectionFormat =
-                queryAttribute != null && queryAttribute.IsCollectionFormatSpecified
-                    ? queryAttribute.CollectionFormat
-                    : fallbackCollectionFormat ?? settings.CollectionFormat;
-
-            switch (collectionFormat)
-            {
-                case CollectionFormat.Multi:
-                    foreach (var paramValue in paramValues)
-                    {
-                        yield return settings.UrlParameterFormatter.Format(
-                            paramValue,
-                            customAttributeProvider,
-                            type
-                        );
-                    }
-
-                    break;
-
-                default:
-                    var delimiter =
-                        collectionFormat switch
-                        {
-                            CollectionFormat.Ssv => " ",
-                            CollectionFormat.Tsv => "\t",
-                            CollectionFormat.Pipes => "|",
-                            _ => ","
-                        };
-
-                    // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
-                    var formattedValues = paramValues
-                        .Cast<object> ()
-                        .Select(
-                            v =>
-                                settings.UrlParameterFormatter.Format(
-                                    v,
-                                    customAttributeProvider,
-                                    type
-                                )
-                        );
-
-                    yield return string.Join(delimiter, formattedValues);
-
-                    break;
-            }
-        }
-
-        static void ParseExistingQueryString(UriBuilder uri, ref List<KeyValuePair<string, string?>>? queryParamsToAdd)
-        {
-            if (string.IsNullOrEmpty(uri.Query))
-                return;
-
-            queryParamsToAdd ??= [];
-            var query = HttpUtility.ParseQueryString(uri.Query);
-            var index = 0;
-            foreach (var key in query.AllKeys)
-            {
-                if (!string.IsNullOrWhiteSpace(key))
-                {
-                    queryParamsToAdd.Insert(
-                        index++,
-                        new KeyValuePair<string, string?>(key, query[key])
-                    );
-                }
-            }
-        }
-
-        static string CreateQueryString(List<KeyValuePair<string, string?>> queryParamsToAdd)
-        {
-            // Suppress warning as ValueStringBuilder.ToString calls Dispose()
-#pragma warning disable CA2000
-            var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
-#pragma warning restore CA2000
-            var firstQuery = true;
-            foreach (var queryParam in queryParamsToAdd)
-            {
-                if(queryParam is not { Key: not null, Value: not null })
-                    continue;
-                if(!firstQuery)
-                {
-                    // for all items after the first we add a & symbol
-                    vsb.Append('&');
-                }
-                var key = Uri.EscapeDataString(queryParam.Key);
-#if NET6_0_OR_GREATER
-                // if first query does not start with ? then prepend it
-                if (vsb.Length == 0 && key.Length > 0 && key[0] != '?')
-                {
-                    // query starts with ?
-                    vsb.Append('?');
-                }
-#endif
-                vsb.Append(key);
-                vsb.Append('=');
-                vsb.Append(Uri.EscapeDataString(queryParam.Value ?? string.Empty));
-                if (firstQuery)
-                    firstQuery = false;
-            }
-
-            return vsb.ToString();
-        }
-
-        Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
-            RestMethodInfoInternal restMethod
-        )
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "Type parameter intentionally specified explicitly by callers.")]
+        private Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
+            RestMethodInfoInternal restMethod)
         {
             var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
             return (client, paramList) =>
-            {
-                return new TaskToObservable<T>(ct =>
+                new TaskToObservable<T>(ct =>
                 {
                     var methodCt = CancellationToken.None;
-                    if (restMethod.CancellationToken != null)
+                    if (restMethod.CancellationToken is not null)
                     {
                         methodCt = paramList.OfType<CancellationToken>().FirstOrDefault();
                     }
@@ -1709,50 +488,81 @@ namespace Refit
                     // link the two
                     var cts = CancellationTokenSource.CreateLinkedTokenSource(methodCt, ct);
 
-                    return taskFunc(client, cts.Token, paramList);
+                    var task = taskFunc(client, cts.Token, paramList);
+
+                    // Keep the linked source alive until the request completes, then dispose it.
+                    return DisposeWhenDoneAsync(task, cts);
                 });
-            };
         }
 
-        Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(
-            RestMethodInfoInternal restMethod
-        )
+        /// <summary>Builds a task invocation delegate for a method.</summary>
+        /// <typeparam name="T">The result type returned to the caller.</typeparam>
+        /// <typeparam name="TBody">The body type used for API responses.</typeparam>
+        /// <param name="restMethod">The rest method to build a delegate for.</param>
+        /// <returns>A delegate that returns a task of the result.</returns>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+#endif
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "Type parameter intentionally specified explicitly by callers.")]
+        private Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(
+            RestMethodInfoInternal restMethod)
         {
             var ret = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
             return (client, paramList) =>
             {
-                if (restMethod.CancellationToken != null)
+                if (restMethod.CancellationToken is not null)
                 {
                     return ret(
                         client,
                         paramList.OfType<CancellationToken>().FirstOrDefault(),
-                        paramList
-                    );
+                        paramList);
                 }
 
                 return ret(client, CancellationToken.None, paramList);
             };
         }
 
-        Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
-            RestMethodInfoInternal restMethod
-        )
+        /// <summary>Builds a value-task invocation delegate for a method.</summary>
+        /// <typeparam name="T">The result type returned to the caller.</typeparam>
+        /// <typeparam name="TBody">The body type used for API responses.</typeparam>
+        /// <param name="restMethod">The rest method to build a delegate for.</param>
+        /// <returns>A delegate that returns a value task of the result.</returns>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+#endif
+        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "Type parameter intentionally specified explicitly by callers.")]
+        private Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
+            RestMethodInfoInternal restMethod)
         {
             var ret = BuildTaskFuncForMethod<T, TBody>(restMethod);
 
             return (client, paramList) => new ValueTask<T?>(ret(client, paramList));
         }
 
-        Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(
-            RestMethodInfoInternal restMethod
-        )
+        /// <summary>Builds a task invocation delegate for a method with no response body.</summary>
+        /// <param name="restMethod">The rest method to build a delegate for.</param>
+        /// <returns>A delegate that returns a task with no result.</returns>
+#if NET5_0_OR_GREATER
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+#endif
+        private Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(
+            RestMethodInfoInternal restMethod)
         {
             return (client, paramList) =>
             {
                 var ct = CancellationToken.None;
 
-                if (restMethod.CancellationToken != null)
+                if (restMethod.CancellationToken is not null)
                 {
                     ct = paramList.OfType<CancellationToken>().FirstOrDefault();
                 }
@@ -1761,108 +571,9 @@ namespace Refit
                     client,
                     restMethod,
                     paramList,
-                    ct,
-                    restMethod.CancellationToken != null
-                );
+                    restMethod.CancellationToken is not null,
+                    ct);
             };
         }
-
-        private static bool IsBodyBuffered(
-            RestMethodInfoInternal restMethod,
-            HttpRequestMessage? request
-        )
-        {
-            return (restMethod.BodyParameterInfo?.Item2 ?? false) && (request?.Content != null);
-        }
-
-        static bool DoNotConvertToQueryMap(object? value)
-        {
-            if (value == null)
-                return false;
-
-            var type = value.GetType();
-
-            // Bail out early & match string
-            if (ShouldReturn(type))
-                return true;
-
-            if (value is not IEnumerable)
-                return false;
-
-            // Get the element type for enumerables
-            var ienu = typeof(IEnumerable<>);
-            // We don't want to enumerate to get the type, so we'll just look for IEnumerable<T>
-            var intType = type.GetInterfaces()
-                .FirstOrDefault(
-                    i => i.GetTypeInfo().IsGenericType && i.GetGenericTypeDefinition() == ienu
-                );
-
-            if (intType == null)
-                return false;
-
-            type = intType.GetGenericArguments()[0];
-            return ShouldReturn(type);
-
-            // Check if type is a simple string or IFormattable type, check underlying type if Nullable<T>
-            static bool ShouldReturn(Type type) =>
-                Nullable.GetUnderlyingType(type) is { } underlyingType
-                    ? ShouldReturn(underlyingType)
-                    : type == typeof(string)
-                      || type == typeof(bool)
-                      || type == typeof(char)
-                      || typeof(IFormattable).IsAssignableFrom(type)
-                      || type == typeof(Uri)
-                      || typeof(CultureInfo).IsAssignableFrom(type);
-        }
-
-        static void SetHeader(HttpRequestMessage request, string name, string? value)
-        {
-            // Clear any existing version of this header that might be set, because
-            // we want to allow removal/redefinition of headers.
-            // We also don't want to double up content headers which may have been
-            // set for us automatically.
-
-            // NB: We have to enumerate the header names to check existence because
-            // Contains throws if it's the wrong header type for the collection.
-            // HTTP header names are case-insensitive, so compare them that way; otherwise a
-            // differently cased header (e.g. "Content-type" vs "Content-Type") is not removed
-            // and ends up duplicated.
-            if (request.Headers.Any(x => string.Equals(x.Key, name, StringComparison.OrdinalIgnoreCase)))
-            {
-                request.Headers.Remove(name);
-            }
-
-            if (request.Content != null
-                && request.Content.Headers.Any(x => string.Equals(x.Key, name, StringComparison.OrdinalIgnoreCase)))
-            {
-                request.Content.Headers.Remove(name);
-            }
-
-            if (value == null)
-                return;
-
-            // CRLF injection protection
-            name = EnsureSafe(name);
-            value = EnsureSafe(value);
-
-            var added = request.Headers.TryAddWithoutValidation(name, value);
-
-            // Don't even bother trying to add the header as a content header
-            // if we just added it to the other collection.
-            if (!added && request.Content != null)
-            {
-                request.Content.Headers.TryAddWithoutValidation(name, value);
-            }
-        }
-
-        static string EnsureSafe(string value)
-        {
-            // Remove CR and LF characters
-#pragma warning disable CA1307 // Specify StringComparison for clarity
-            return value.Replace("\r", string.Empty).Replace("\n", string.Empty);
-#pragma warning restore CA1307 // Specify StringComparison for clarity
-        }
-
-        static bool IsBodyless(HttpMethod method) => method == HttpMethod.Get || method == HttpMethod.Head;
     }
 }

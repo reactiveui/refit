@@ -1,24 +1,21 @@
 name: Build
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
 
 # Needed so the reusable workflow can optionally delete the temp per-OS artifacts it creates.
 permissions:
-  contents: read
-  actions: write
-
-env:
-  productNamespacePrefix: "Refit"
+    contents: read
+    actions: write
 
 jobs:
-  build:
-    uses: reactiveui/actions-common/.github/workflows/workflow-common-setup-and-build.yml@main
-    with:
-      productNamespacePrefix: "Refit"
-      srcFolder: "./src"
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    build:
+        uses: reactiveui/actions-common/.github/workflows/workflow-common-setup-and-build.yml@main
+        with:
+            srcFolder: src
+            minverMinimumMajorMinor: '10.2'
+        secrets:
+            CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

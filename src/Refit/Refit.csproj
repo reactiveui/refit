@@ -3,10 +3,22 @@
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
     <TargetFrameworks>$(RefitTargets)</TargetFrameworks>
-    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
 
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Refit.Tests"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Internal helpers shared across the Refit assemblies via linked source (one internal copy
+         per assembly) rather than InternalsVisibleTo. -->
+    <Compile Include="..\Shared\UniqueName.cs" Link="Shared\UniqueName.cs"/>
+    <Compile Include="..\Shared\HttpContentExtensions.cs" Link="Shared\HttpContentExtensions.cs"/>
+    <Compile Include="..\Shared\AuthenticatedHttpClientHandler.cs" Link="Shared\AuthenticatedHttpClientHandler.cs"/>
+  </ItemGroup>
+
   <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
     <IsAotCompatible>true</IsAotCompatible>
     <PublishAotSupported>true</PublishAotSupported>
@@ -23,27 +35,35 @@
     <DisableRuntimeMarshalling>true</DisableRuntimeMarshalling>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net462'">
-    <PackageReference Include="System.Text.Json" />
-    <PackageReference Include="System.Net.Http.Json" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'net462' Or '$(TargetFramework)' == 'net470' Or '$(TargetFramework)' == 'net471' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net481'">
+    <PackageReference Include="System.Text.Json"/>
+    <PackageReference Include="System.Net.Http.Json"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-    <Reference Include="System.Web" />
-    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn50\InterfaceStubGenerator.Roslyn50.csproj" ReferenceOutputAssembly="false" />
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="$(NetFrameworkReferenceAssembliesVersion)"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462' Or '$(TargetFramework)' == 'net470' Or '$(TargetFramework)' == 'net471' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net481'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462' Or '$(TargetFramework)' == 'net470' Or '$(TargetFramework)' == 'net471' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net481'">
+    <Reference Include="System.Web"/>
+    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" ReferenceOutputAssembly="false"/>
+    <ProjectReference Include="..\InterfaceStubGenerator.Roslyn50\InterfaceStubGenerator.Roslyn50.csproj" ReferenceOutputAssembly="false"/>
   </ItemGroup>
 
   <ItemGroup Label="Package">
-    <None Include="targets\refit.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true" />
-    <None Include="targets\refit.props" PackagePath="buildTransitive\netstandard2.0" Pack="true" />
+    <None Include="targets\refit.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true"/>
+    <None Include="targets\refit.props" PackagePath="buildTransitive\netstandard2.0" Pack="true"/>
 
     <!-- We need this one to catch older clients -->
-    <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true" />
+    <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true"/>
 
-    <None Include="..\InterfaceStubGenerator.Roslyn48\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll" PackagePath="analyzers\dotnet\roslyn4.8\cs" Pack="true" Visible="false" />
+    <None Include="..\InterfaceStubGenerator.Roslyn48\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll" PackagePath="analyzers\dotnet\roslyn4.8\cs" Pack="true" Visible="false"/>
 
-    <None Include="..\InterfaceStubGenerator.Roslyn50\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV3.dll" PackagePath="analyzers\dotnet\roslyn5.0\cs" Pack="true" Visible="false" />
+    <None Include="..\InterfaceStubGenerator.Roslyn50\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV3.dll" PackagePath="analyzers\dotnet\roslyn5.0\cs" Pack="true" Visible="false"/>
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,26 @@
+#nullable enable
+Refit.XmlContentSerializer
+Refit.XmlContentSerializer.FromHttpContentAsync<T>(System.Net.Http.HttpContent! content, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
+Refit.XmlContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyInfo! propertyInfo) -> string?
+Refit.XmlContentSerializer.ToHttpContent<T>(T item) -> System.Net.Http.HttpContent!
+Refit.XmlContentSerializer.XmlContentSerializer() -> void
+Refit.XmlContentSerializer.XmlContentSerializer(Refit.XmlContentSerializerSettings! settings) -> void
+Refit.XmlContentSerializerSettings
+Refit.XmlContentSerializerSettings.XmlAttributeOverrides.get -> System.Xml.Serialization.XmlAttributeOverrides!
+Refit.XmlContentSerializerSettings.XmlAttributeOverrides.set -> void
+Refit.XmlContentSerializerSettings.XmlContentSerializerSettings() -> void
+Refit.XmlContentSerializerSettings.XmlDefaultNamespace.get -> string?
+Refit.XmlContentSerializerSettings.XmlDefaultNamespace.set -> void
+Refit.XmlContentSerializerSettings.XmlNamespaces.get -> System.Xml.Serialization.XmlSerializerNamespaces!
+Refit.XmlContentSerializerSettings.XmlNamespaces.set -> void
+Refit.XmlContentSerializerSettings.XmlReaderWriterSettings.get -> Refit.XmlReaderWriterSettings!
+Refit.XmlContentSerializerSettings.XmlReaderWriterSettings.set -> void
+Refit.XmlReaderWriterSettings
+Refit.XmlReaderWriterSettings.ReaderSettings.get -> System.Xml.XmlReaderSettings!
+Refit.XmlReaderWriterSettings.ReaderSettings.set -> void
+Refit.XmlReaderWriterSettings.WriterSettings.get -> System.Xml.XmlWriterSettings!
+Refit.XmlReaderWriterSettings.WriterSettings.set -> void
+Refit.XmlReaderWriterSettings.XmlReaderWriterSettings() -> void
+Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlReaderSettings! readerSettings) -> void
+Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlReaderSettings! readerSettings, System.Xml.XmlWriterSettings! writerSettings) -> void
+Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlWriterSettings! writerSettings) -> void

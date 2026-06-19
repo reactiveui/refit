@@ -1,4 +1,7 @@
-﻿#if NET6_0_OR_GREATER
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+#if NET6_0_OR_GREATER
 
 using System;
 using System.IO;
@@ -9,64 +12,82 @@ using System.Threading.Tasks;
 
 namespace Refit.Buffers
 {
+    /// <summary>A buffer writer that rents its backing storage from a shared array pool.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST1432:Mark type as static",
+        Justification = "The full type has instance members and implements IBufferWriter<byte> and IDisposable; this partial part only adds members.")]
     internal sealed partial class PooledBufferWriter
     {
+        /// <summary>An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool.</summary>
         private sealed partial class PooledMemoryStream : Stream
         {
-            /// <inheritdoc/>
+            /// <summary>Asynchronously copies the remaining buffered bytes to the destination stream.</summary>
+            /// <param name="destination">The stream to copy the buffered bytes to.</param>
+            /// <param name="cancellationToken">A token to cancel the operation.</param>
+            /// <returns>A task representing the copy operation.</returns>
             public Task CopyToInternalAsync(Stream destination, CancellationToken cancellationToken)
             {
-                if (pooledBuffer is null)
+                if (_pooledBuffer is null)
+                {
                     ThrowObjectDisposedException();
+                }
 
-                var bytesAvailable = length - position;
+                var bytesAvailable = _length - _position;
 
-                var source = pooledBuffer.AsMemory(position, bytesAvailable);
+                var source = _pooledBuffer.AsMemory(_position, bytesAvailable);
 
-                position += source.Length;
+                _position += source.Length;
 
                 return destination.WriteAsync(source, cancellationToken).AsTask();
             }
 
             /// <inheritdoc/>
+            [System.Diagnostics.CodeAnalysis.SuppressMessage(
+                "Roslynator",
+                "RCS1229:Use async/await when necessary",
+                Justification = "Read is synchronous; results/exceptions surface via a completed ValueTask, avoiding an async state-machine allocation on this hot path.")]
             public override ValueTask<int> ReadAsync(
                 Memory<byte> buffer,
-                CancellationToken cancellationToken = default
-            )
+                CancellationToken cancellationToken = default)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    return new ValueTask<int>(Task.FromCanceled<int>(cancellationToken));
+                    return new(Task.FromCanceled<int>(cancellationToken));
                 }
 
                 try
                 {
                     var result = Read(buffer.Span);
 
-                    return new ValueTask<int>(result);
+                    return new(result);
                 }
                 catch (OperationCanceledException e)
                 {
-                    return new ValueTask<int>(Task.FromCanceled<int>(e.CancellationToken));
+                    return new(Task.FromCanceled<int>(e.CancellationToken));
                 }
                 catch (Exception e)
                 {
-                    return new ValueTask<int>(Task.FromException<int>(e));
+                    return new(Task.FromException<int>(e));
                 }
             }
 
             /// <inheritdoc/>
             public override int Read(Span<byte> buffer)
             {
-                if (pooledBuffer is null)
+                if (_pooledBuffer is null)
+                {
                     ThrowObjectDisposedException();
+                }
 
-                if (position >= length)
+                if (_position >= _length)
+                {
                     return 0;
+                }
 
-                var bytesAvailable = length - position;
+                var bytesAvailable = _length - _position;
 
-                var source = pooledBuffer.AsSpan(position, bytesAvailable);
+                var source = _pooledBuffer.AsSpan(_position, bytesAvailable);
 
                 var bytesCopied = Math.Min(source.Length, buffer.Length);
 
@@ -74,7 +95,7 @@ namespace Refit.Buffers
 
                 source.CopyTo(destination);
 
-                position += bytesCopied;
+                _position += bytesCopied;
 
                 return bytesCopied;
             }

@@ -4,23 +4,35 @@
       "parallel": true
     }
   },
-  "extensions": [
-    {
-      "extensionId": "Microsoft.Testing.Extensions.CodeCoverage",
-      "settings": {
-        "format": "cobertura",
-        "skipAutoProperties": true,
-        "modulePaths": {
-          "include": [
-            "Refit(\\..+)?"
+  "codeCoverage": {
+    "Configuration": {
+      "Format": "cobertura",
+      "ExcludeAssembliesWithoutSources": "None",
+      "CodeCoverage": {
+        "ModulePaths": {
+          "Include": [
+            ".*[\\\\/]Refit(\\..+)?\\.dll$"
           ],
-          "exclude": [
-            ".*Tests.*",
+          "Exclude": [
+            ".*Tests\\.dll$",
             ".*TestSupport.*",
-            ".*Benchmarks.*"
+            ".*Benchmarks\\.dll$",
+            ".*TestRunner.*"
+          ]
+        },
+        "Attributes": {
+          "Exclude": [
+            "^System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute$",
+            "^System.Runtime.CompilerServices.CompilerGeneratedAttribute$",
+            "^System.CodeDom.Compiler.GeneratedCodeAttribute$"
+          ]
+        },
+        "Sources": {
+          "Exclude": [
+            ".*\\.g\\.cs$"
           ]
         }
       }
     }
-  ]
+  }
 }

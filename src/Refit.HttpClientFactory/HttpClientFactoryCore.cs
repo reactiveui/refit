@@ -1,291 +1,325 @@
-﻿
-using System;
-using System.Linq;
-using System.Net.Http;
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http;
 
-namespace Refit
+namespace Refit;
+
+/// <summary>Shared registration logic backing the Refit HttpClientFactory extension methods.</summary>
+internal static class HttpClientFactoryCore
 {
-    /// <summary>
-    /// HttpClientFactoryExtensions
-    /// </summary>
-    internal static class HttpClientFactoryCore
+    /// <summary>Diagnostic message explaining why the reflection-based registration path is not trim-safe.</summary>
+    private const string RequiresUnreferencedCodeMessage =
+        "Refit's HttpClientFactory integration uses reflection to build clients and is not trim-safe; use the Refit source generator for trimmed/AOT apps.";
+
+    /// <summary>Diagnostic message explaining why the reflection-based registration path is not AOT-safe.</summary>
+    private const string RequiresDynamicCodeMessage =
+        "Refit's HttpClientFactory integration builds generic types at runtime; use the Refit source generator for AOT apps.";
+
+    /// <summary>Lazily cached generic RequestBuilder.ForType method used to build request builders by type.</summary>
+    private static MethodInfo? _requestBuilderGenericForTypeMethod;
+
+    /// <summary>Registers a Refit client and its dependencies for the given interface type.</summary>
+    /// <param name="services">The service collection to register into.</param>
+    /// <param name="refitInterfaceType">The Refit interface type to register.</param>
+    /// <param name="settings">A factory that produces the Refit settings, or null.</param>
+    /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
+    /// <returns>The HTTP client builder for further configuration.</returns>
+    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
+    internal static IHttpClientBuilder AddRefitClientCore(
+        IServiceCollection services,
+        Type refitInterfaceType,
+        Func<IServiceProvider, RefitSettings?>? settings,
+        string? httpClientName)
     {
-
-        internal static IHttpClientBuilder AddRefitClientCore(
-             IServiceCollection services,
-             Type refitInterfaceType,
-             Func<IServiceProvider, RefitSettings?>? settings,
-             string? httpClientName
-         )
+        if (services is null)
         {
-            if (services == null) throw new ArgumentNullException(nameof(services));
-            if (refitInterfaceType == null) throw new ArgumentNullException(nameof(refitInterfaceType));
-
-            // register settings
-            var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
-            services.AddSingleton(
-                settingsType,
-                provider => Activator.CreateInstance(
-                    typeof(SettingsFor<>).MakeGenericType(refitInterfaceType)!,
-                    settings?.Invoke(provider)
-                )!
-            );
-
-            // register RequestBuilder
-            var requestBuilderType = typeof(IRequestBuilder<>).MakeGenericType(refitInterfaceType);
-            services.AddSingleton(
-                requestBuilderType,
-                provider => RequestBuilderGenericForTypeMethod
-                    .MakeGenericMethod(refitInterfaceType)
-                    .Invoke(
-                        null,
-                        [((ISettingsFor)provider.GetRequiredService(settingsType)).Settings]
-                    )!
-            );
-
-            // create HttpClientBuilder
-            var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType(refitInterfaceType));
-
-            // configure message handler
-            builder.ConfigureHttpMessageHandlerBuilder(builderConfig =>
-            {
-                var handler = CreateInnerHandlerIfProvided(
-                    ((ISettingsFor)builderConfig.Services.GetRequiredService(settingsType)).Settings
-                );
-                if (handler != null)
-                {
-                    builderConfig.PrimaryHandler = handler;
-                }
-            });
-
-            // add typed client (register transient that resolves HttpClient from IHttpClientFactory and creates Refit client)
-            builder.Services.AddTransient(
-                refitInterfaceType,
-                s =>
-                {
-                    var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
-                    var httpClient = httpClientFactory.CreateClient(builder.Name);
-                    return RestService.For(
-                        refitInterfaceType,
-                        httpClient,
-                        (IRequestBuilder)s.GetRequiredService(requestBuilderType)
-                    );
-                }
-            );
-
-            return builder;
+            throw new ArgumentNullException(nameof(services));
         }
 
-        internal static IHttpClientBuilder AddKeyedRefitClientCore(
-            IServiceCollection services,
-            Type refitInterfaceType,
-            object? serviceKey,
-            Func<IServiceProvider, RefitSettings?>? settings,
-            string? httpClientName
-        )
+        if (refitInterfaceType is null)
         {
-            if (services == null) throw new ArgumentNullException(nameof(services));
-            if (refitInterfaceType == null) throw new ArgumentNullException(nameof(refitInterfaceType));
-            if (serviceKey == null) throw new ArgumentNullException(nameof(serviceKey));
-
-            // register settings
-            var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
-            services.AddKeyedSingleton(
-                settingsType,
-                serviceKey,
-                (provider, _) => Activator.CreateInstance(
-                    typeof(SettingsFor<>).MakeGenericType(refitInterfaceType)!,
-                    settings?.Invoke(provider)
-                )!
-            );
-
-            // register RequestBuilder
-            var requestBuilderType = typeof(IRequestBuilder<>).MakeGenericType(refitInterfaceType);
-            services.AddKeyedSingleton(
-                requestBuilderType,
-                serviceKey,
-                (provider, _) => RequestBuilderGenericForTypeMethod
-                    .MakeGenericMethod(refitInterfaceType)
-                    .Invoke(
-                        null,
-                        [((ISettingsFor)provider.GetRequiredKeyedService(settingsType, serviceKey)).Settings]
-                    )!
-            );
-
-            // create HttpClientBuilder
-            var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType(refitInterfaceType, serviceKey));
-
-            // configure primary handler
-            builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
-            {
-                var settingsInstance = (ISettingsFor)serviceProvider.GetRequiredKeyedService(settingsType, serviceKey);
-                return settingsInstance.Settings?.HttpMessageHandlerFactory?.Invoke() ?? new HttpClientHandler();
-            });
-
-            // configure additional handlers
-            builder.ConfigureAdditionalHttpMessageHandlers((handlers, serviceProvider) =>
-            {
-                var settingsInstance = (ISettingsFor)serviceProvider.GetRequiredKeyedService(settingsType, serviceKey);
-                if (settingsInstance.Settings?.AuthorizationHeaderValueGetter is { } getToken)
-                {
-                    handlers.Add(new AuthenticatedHttpClientHandler(null, getToken));
-                }
-            });
-
-            // add keyed typed client (register keyed transient that resolves HttpClient and creates Refit client)
-            builder.Services.AddKeyedTransient(
-                refitInterfaceType,
-                serviceKey,
-                (s, _) =>
-                {
-                    var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
-                    var httpClient = httpClientFactory.CreateClient(builder.Name);
-                    return RestService.For(
-                        refitInterfaceType,
-                        httpClient,
-                        (IRequestBuilder)s.GetRequiredKeyedService(requestBuilderType, serviceKey)
-                    );
-                }
-            );
-
-            return builder;
+            throw new ArgumentNullException(nameof(refitInterfaceType));
         }
 
-        internal static IHttpClientBuilder AddRefitClientCore<T>(
-            IServiceCollection services,
-            Type refitInterfaceType,
-            Func<IServiceProvider, RefitSettings?>? settings,
-            string? httpClientName
-        ) where T : class
-        {
-            if (services == null) throw new ArgumentNullException(nameof(services));
+        // register settings
+        var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
+        services.AddSingleton(
+            settingsType,
+            provider => Activator.CreateInstance(
+                typeof(SettingsFor<>).MakeGenericType(refitInterfaceType)!,
+                settings?.Invoke(provider))!);
 
-            // register settings
-            services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
+        // register RequestBuilder
+        var requestBuilderType = typeof(IRequestBuilder<>).MakeGenericType(refitInterfaceType);
+        services.AddSingleton(
+            requestBuilderType,
+            provider => GetRequestBuilderGenericForTypeMethod()
+                .MakeGenericMethod(refitInterfaceType)
+                .Invoke(
+                    null,
+                    [((ISettingsFor)provider.GetRequiredService(settingsType)).Settings])!);
 
-            // register RequestBuilder
-            services.AddSingleton(provider =>
-                RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings)
-            );
+        // create HttpClientBuilder
+        var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType(refitInterfaceType));
 
-            // create HttpClientBuilder
-            var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>());
+        // configure the primary handler from the supplied settings (or fall back to the default)
+        builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+            CreateInnerHandlerIfProvided(
+                ((ISettingsFor)serviceProvider.GetRequiredService(settingsType)).Settings)
+            ?? new HttpClientHandler());
 
-            // configure message handler
-            builder.ConfigureHttpMessageHandlerBuilder(builderConfig =>
+        // add typed client (register transient that resolves HttpClient from IHttpClientFactory and creates Refit client)
+        builder.Services.AddTransient(
+            refitInterfaceType,
+            s =>
             {
-                var handler = CreateInnerHandlerIfProvided(
-                    builderConfig.Services.GetRequiredService<SettingsFor<T>>().Settings
-                );
-                if (handler != null)
-                {
-                    builderConfig.PrimaryHandler = handler;
-                }
+                var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
+                var httpClient = httpClientFactory.CreateClient(builder.Name);
+                return RestService.For(
+                    refitInterfaceType,
+                    httpClient,
+                    (IRequestBuilder)s.GetRequiredService(requestBuilderType));
             });
 
-            // add typed client using framework AddTypedClient
-            return builder.AddTypedClient((client, serviceProvider) =>
-                RestService.For<T>(
-                    client,
-                    serviceProvider.GetRequiredService<IRequestBuilder<T>>()
-                )
-            );
+        return builder;
+    }
+
+    /// <summary>Registers a strongly typed Refit client and its dependencies.</summary>
+    /// <typeparam name="T">The Refit interface type to register.</typeparam>
+    /// <param name="services">The service collection to register into.</param>
+    /// <param name="settings">A factory that produces the Refit settings, or null.</param>
+    /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
+    /// <returns>The HTTP client builder for further configuration.</returns>
+    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
+    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+    internal static IHttpClientBuilder AddRefitClientCore<T>(
+        IServiceCollection services,
+        Func<IServiceProvider, RefitSettings?>? settings,
+        string? httpClientName)
+        where T : class
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
         }
 
-        internal static IHttpClientBuilder AddKeyedRefitClientCore<T>(
-            IServiceCollection services,
-            Type refitInterfaceType,
-            object? serviceKey,
-            Func<IServiceProvider, RefitSettings?>? settings,
-            string? httpClientName
-        ) where T : class
+        // register settings
+        services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
+
+        // register RequestBuilder
+        services.AddSingleton(provider =>
+            RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings));
+
+        // create HttpClientBuilder
+        var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>());
+
+        // configure the primary handler from the supplied settings (or fall back to the default)
+        builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+            CreateInnerHandlerIfProvided(
+                serviceProvider.GetRequiredService<SettingsFor<T>>().Settings)
+            ?? new HttpClientHandler());
+
+        // add typed client using framework AddTypedClient
+        return builder.AddTypedClient((client, serviceProvider) =>
+            RestService.For<T>(
+                client,
+                serviceProvider.GetRequiredService<IRequestBuilder<T>>()));
+    }
+
+    /// <summary>Registers a keyed Refit client and its dependencies for the given interface type.</summary>
+    /// <param name="services">The service collection to register into.</param>
+    /// <param name="refitInterfaceType">The Refit interface type to register.</param>
+    /// <param name="serviceKey">The key under which the client is registered.</param>
+    /// <param name="settings">A factory that produces the Refit settings, or null.</param>
+    /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
+    /// <returns>The HTTP client builder for further configuration.</returns>
+    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
+    internal static IHttpClientBuilder AddKeyedRefitClientCore(
+        IServiceCollection services,
+        Type refitInterfaceType,
+        object? serviceKey,
+        Func<IServiceProvider, RefitSettings?>? settings,
+        string? httpClientName)
+    {
+        if (services is null)
         {
-            if (services == null) throw new ArgumentNullException(nameof(services));
-            if (serviceKey == null) throw new ArgumentNullException(nameof(serviceKey));
-
-            // register settings
-            services.AddKeyedSingleton(
-                serviceKey,
-                (provider, _) => new SettingsFor<T>(settings?.Invoke(provider))
-            );
-
-            // register RequestBuilder
-            services.AddKeyedSingleton(
-                serviceKey,
-                (provider, _) =>
-                    RequestBuilder.ForType<T>(
-                        provider.GetRequiredKeyedService<SettingsFor<T>>(serviceKey).Settings
-                    )
-            );
-
-            // create HttpClientBuilder
-            var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>(serviceKey));
-
-            // configure primary handler
-            builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
-            {
-                var settingsInstance = serviceProvider.GetRequiredKeyedService<SettingsFor<T>>(serviceKey).Settings;
-                return settingsInstance?.HttpMessageHandlerFactory?.Invoke() ?? new HttpClientHandler();
-            });
-
-            // configure additional handlers
-            builder.ConfigureAdditionalHttpMessageHandlers((handlers, serviceProvider) =>
-            {
-                var settingsInstance = serviceProvider.GetRequiredKeyedService<SettingsFor<T>>(serviceKey).Settings;
-                if (settingsInstance?.AuthorizationHeaderValueGetter is { } getToken)
-                {
-                    handlers.Add(new AuthenticatedHttpClientHandler(null, getToken));
-                }
-            });
-
-            // add keyed typed client (inline keyed registration)
-            builder.Services.AddKeyedTransient(
-                serviceKey,
-                (s, _) =>
-                {
-                    var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
-                    var httpClient = httpClientFactory.CreateClient(builder.Name);
-                    return RestService.For<T>(
-                        httpClient,
-                        s.GetRequiredKeyedService<IRequestBuilder<T>>(serviceKey)
-                    );
-                }
-            );
-
-            return builder;
+            throw new ArgumentNullException(nameof(services));
         }
 
-        // helper - used by AddRefitClientCore and AddRefitClientCore<T>
-        private static HttpMessageHandler? CreateInnerHandlerIfProvided(RefitSettings? settings)
+        if (refitInterfaceType is null)
         {
-            HttpMessageHandler? innerHandler = null;
-            if (settings != null)
-            {
-                if (settings.HttpMessageHandlerFactory != null)
-                {
-                    innerHandler = settings.HttpMessageHandlerFactory();
-                }
+            throw new ArgumentNullException(nameof(refitInterfaceType));
+        }
 
-                if (settings.AuthorizationHeaderValueGetter != null)
-                {
-                    innerHandler = new AuthenticatedHttpClientHandler(
-                        settings.AuthorizationHeaderValueGetter,
-                        innerHandler
-                    );
-                }
+        if (serviceKey is null)
+        {
+            throw new ArgumentNullException(nameof(serviceKey));
+        }
+
+        // register settings
+        var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
+        services.AddKeyedSingleton(
+            settingsType,
+            serviceKey,
+            (provider, _) => Activator.CreateInstance(
+                typeof(SettingsFor<>).MakeGenericType(refitInterfaceType)!,
+                settings?.Invoke(provider))!);
+
+        // register RequestBuilder
+        var requestBuilderType = typeof(IRequestBuilder<>).MakeGenericType(refitInterfaceType);
+        services.AddKeyedSingleton(
+            requestBuilderType,
+            serviceKey,
+            (provider, _) => GetRequestBuilderGenericForTypeMethod()
+                .MakeGenericMethod(refitInterfaceType)
+                .Invoke(
+                    null,
+                    [((ISettingsFor)provider.GetRequiredKeyedService(settingsType, serviceKey)).Settings])!);
+
+        // create HttpClientBuilder
+        var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType(refitInterfaceType, serviceKey));
+
+        // configure primary and additional handlers from the keyed settings
+        ConfigureKeyedHandlers(
+            builder,
+            serviceProvider => (ISettingsFor)serviceProvider.GetRequiredKeyedService(settingsType, serviceKey));
+
+        // add keyed typed client (register keyed transient that resolves HttpClient and creates Refit client)
+        builder.Services.AddKeyedTransient(
+            refitInterfaceType,
+            serviceKey,
+            (s, _) =>
+            {
+                var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
+                var httpClient = httpClientFactory.CreateClient(builder.Name);
+                return RestService.For(
+                    refitInterfaceType,
+                    httpClient,
+                    (IRequestBuilder)s.GetRequiredKeyedService(requestBuilderType, serviceKey));
+            });
+
+        return builder;
+    }
+
+    /// <summary>Registers a strongly typed keyed Refit client and its dependencies.</summary>
+    /// <typeparam name="T">The Refit interface type to register.</typeparam>
+    /// <param name="services">The service collection to register into.</param>
+    /// <param name="serviceKey">The key under which the client is registered.</param>
+    /// <param name="settings">A factory that produces the Refit settings, or null.</param>
+    /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
+    /// <returns>The HTTP client builder for further configuration.</returns>
+    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
+    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+    internal static IHttpClientBuilder AddKeyedRefitClientCore<T>(
+        IServiceCollection services,
+        object? serviceKey,
+        Func<IServiceProvider, RefitSettings?>? settings,
+        string? httpClientName)
+        where T : class
+    {
+        if (services is null)
+        {
+            throw new ArgumentNullException(nameof(services));
+        }
+
+        if (serviceKey is null)
+        {
+            throw new ArgumentNullException(nameof(serviceKey));
+        }
+
+        // register settings
+        services.AddKeyedSingleton(
+            serviceKey,
+            (provider, _) => new SettingsFor<T>(settings?.Invoke(provider)));
+
+        // register RequestBuilder
+        services.AddKeyedSingleton(
+            serviceKey,
+            (provider, _) =>
+                RequestBuilder.ForType<T>(
+                    provider.GetRequiredKeyedService<SettingsFor<T>>(serviceKey).Settings));
+
+        // create HttpClientBuilder
+        var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>(serviceKey));
+
+        // configure primary and additional handlers from the keyed settings
+        ConfigureKeyedHandlers(
+            builder,
+            serviceProvider => serviceProvider.GetRequiredKeyedService<SettingsFor<T>>(serviceKey));
+
+        // add keyed typed client (inline keyed registration)
+        builder.Services.AddKeyedTransient(
+            serviceKey,
+            (s, _) =>
+            {
+                var httpClientFactory = s.GetRequiredService<IHttpClientFactory>();
+                var httpClient = httpClientFactory.CreateClient(builder.Name);
+                return RestService.For<T>(
+                    httpClient,
+                    s.GetRequiredKeyedService<IRequestBuilder<T>>(serviceKey));
+            });
+
+        return builder;
+    }
+
+    /// <summary>Resolves and caches the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
+    /// <returns>The open generic <c>RequestBuilder.ForType</c> method definition.</returns>
+    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
+    private static MethodInfo GetRequestBuilderGenericForTypeMethod() =>
+        _requestBuilderGenericForTypeMethod ??= typeof(RequestBuilder)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(z => z.IsGenericMethodDefinition && z.GetParameters().Length == 1);
+
+    /// <summary>Configures the primary and authorization handlers for a keyed Refit client from its settings.</summary>
+    /// <param name="builder">The HTTP client builder to configure.</param>
+    /// <param name="settingsResolver">Resolves the settings holder for the keyed client from a service provider.</param>
+    private static void ConfigureKeyedHandlers(
+        IHttpClientBuilder builder,
+        Func<IServiceProvider, ISettingsFor> settingsResolver)
+    {
+        builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+            settingsResolver(serviceProvider).Settings?.HttpMessageHandlerFactory?.Invoke() ?? new HttpClientHandler());
+
+        builder.ConfigureAdditionalHttpMessageHandlers((handlers, serviceProvider) =>
+        {
+            if (settingsResolver(serviceProvider).Settings?.AuthorizationHeaderValueGetter is not { } getToken)
+            {
+                return;
             }
 
-            return innerHandler;
+            handlers.Add(new AuthenticatedHttpClientHandler(null, getToken));
+        });
+    }
+
+    /// <summary>Builds the inner HTTP message handler from the supplied settings, if any.</summary>
+    /// <param name="settings">The Refit settings that may provide a handler factory or auth getter.</param>
+    /// <returns>The configured inner handler, or null when none is required.</returns>
+    private static HttpMessageHandler? CreateInnerHandlerIfProvided(RefitSettings? settings)
+    {
+        HttpMessageHandler? innerHandler = null;
+        if (settings is not null)
+        {
+            if (settings.HttpMessageHandlerFactory is not null)
+            {
+                innerHandler = settings.HttpMessageHandlerFactory();
+            }
+
+            if (settings.AuthorizationHeaderValueGetter is not null)
+            {
+                innerHandler = new AuthenticatedHttpClientHandler(
+                    settings.AuthorizationHeaderValueGetter,
+                    innerHandler);
+            }
         }
 
-        private static readonly MethodInfo RequestBuilderGenericForTypeMethod =
-            typeof(RequestBuilder)
-                .GetMethods(BindingFlags.Public | BindingFlags.Static)
-                .Single(z => z.IsGenericMethodDefinition && z.GetParameters().Length == 1);
+        return innerHandler;
     }
 }
