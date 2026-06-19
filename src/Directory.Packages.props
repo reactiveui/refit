@@ -1,94 +1,108 @@
 <Project>
-  <PropertyGroup>
+  <PropertyGroup Label="Central Package Management">
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Transitive pinning is intentionally OFF: the source generator and its test/benchmark
-         tooling deliberately use different Roslyn (Microsoft.CodeAnalysis.*) versions per
-         project (analyzers on 3.8/4.1/5.0, tests on 4.x), which a single pinned transitive
-         version cannot satisfy. -->
-    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Shared Version Variables">
+    <PrimitivesVersion>5.4.0</PrimitivesVersion>
+    <TUnitVersion>1.54.0</TUnitVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Framework-Aligned Versions">
+    <AspNetVersion>8.0.28</AspNetVersion>
+    <AspNetVersion Condition="$(TargetFramework.StartsWith('net9'))">9.0.17</AspNetVersion>
+    <AspNetVersion Condition="$(TargetFramework.StartsWith('net10'))">10.0.9</AspNetVersion>
+
+    <MicrosoftExtensionsVersion>10.0.9</MicrosoftExtensionsVersion>
+    <SystemTextJsonVersion>10.0.9</SystemTextJsonVersion>
+
+    <MicrosoftCodeAnalysisAnalyzersVersion>5.3.0</MicrosoftCodeAnalysisAnalyzersVersion>
+    <MicrosoftCodeAnalysisWorkspacesVersion>4.11.0</MicrosoftCodeAnalysisWorkspacesVersion>
+
+    <SourceLinkVersion>10.0.300</SourceLinkVersion>
+    <ThreadingAnalyzersVersion>17.14.15</ThreadingAnalyzersVersion>
+    <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>
 
   <!-- Core runtime / serialization dependencies -->
-  <ItemGroup>
-    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageVersion Include="System.Net.Http.Json" Version="10.0.9" />
-    <PackageVersion Include="System.Text.Json" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.9" />
-    <PackageVersion Include="System.Reactive" Version="6.1.0" />
+  <ItemGroup Label="Core Runtime And Serialization">
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
+    <PackageVersion Include="System.Reactive" Version="6.1.0"/>
+  </ItemGroup>
+
+
+  <ItemGroup Label="ReactiveUI Primitives">
+    <PackageVersion Include="ReactiveUI.Primitives" Version="$(PrimitivesVersion)"/>
   </ItemGroup>
 
   <!-- Build, versioning and analyzers -->
-  <ItemGroup>
-    <PackageVersion Include="MinVer" Version="7.0.0" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
-    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
-    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" />
+  <ItemGroup Label="Build And Versioning">
+    <PackageVersion Include="MinVer" Version="7.0.0"/>
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(SourceLinkVersion)"/>
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="$(ThreadingAnalyzersVersion)"/>
+  </ItemGroup>
+
+  <ItemGroup Label="Analyzers">
+    <PackageVersion Include="StyleSharp.Analyzers" Version="3.11.2"/>
+    <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.0.0-1.25277.114"/>
   </ItemGroup>
 
   <!-- Roslyn toolchain. Versions are intentionally held at their current bands:
        the source generator multi-targets Roslyn 4.8/5.0 (selected per project via
        the $(MsCACSharpVersion) VersionOverride) and the test/benchmark tooling tracks
        the 4.x line. Renovate is configured to hold these back (see .github/renovate.json). -->
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.11.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3" />
-    <!-- Analyzer-authoring rules (RS####) that flag incremental-pipeline cache hazards. -->
-    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.3.0" />
+  <ItemGroup Label="Roslyn Toolchain">
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(MicrosoftCodeAnalysisWorkspacesVersion)"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" Version="1.1.3"/>
+  </ItemGroup>
+
+  <ItemGroup Label="Microsoft Runtime And Extensions">
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="$(MicrosoftExtensionsVersion)"/>
+    <PackageVersion Include="System.Net.Http.Json" Version="$(SystemTextJsonVersion)"/>
+    <PackageVersion Include="System.Text.Json" Version="$(SystemTextJsonVersion)"/>
   </ItemGroup>
 
   <!-- Test stack -->
-  <ItemGroup>
-    <PackageVersion Include="TUnit" Version="1.56.0" />
-    <PackageVersion Include="Verify.TUnit" Version="31.19.1" />
-    <PackageVersion Include="Verify.DiffPlex" Version="3.2.0" />
-    <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0" />
-    <PackageVersion Include="Moq" Version="4.20.72" />
-    <PackageVersion Include="PublicApiGenerator" Version="11.5.4" />
+  <ItemGroup Label="Test Stack">
+    <PackageVersion Include="TUnit" Version="$(TUnitVersion)"/>
+    <PackageVersion Include="Verify.TUnit" Version="31.19.1"/>
+    <PackageVersion Include="Verify.DiffPlex" Version="3.2.0"/>
+    <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0"/>
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0"/>
+    <PackageVersion Include="Moq" Version="4.20.72"/>
+    <PackageVersion Include="PublicApiGenerator" Version="11.5.4"/>
     <!-- Held at 6.x: MockHttp 7.0 changed sequential Expect() matching semantics in a way
          that breaks the trailing-slash mock tests. Adopt 7.x deliberately with test updates. -->
-    <PackageVersion Include="RichardSzalay.MockHttp" Version="6.0.0" />
+    <PackageVersion Include="RichardSzalay.MockHttp" Version="6.0.0"/>
   </ItemGroup>
 
   <!-- Benchmarks -->
-  <ItemGroup>
-    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
-    <PackageVersion Include="AutoFixture" Version="4.18.1" />
+  <ItemGroup Label="Benchmarks">
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
+    <PackageVersion Include="AutoFixture" Version="4.18.1"/>
   </ItemGroup>
 
   <!-- Examples -->
-  <ItemGroup>
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.9" />
-    <PackageVersion Include="Serilog" Version="4.3.1" />
-    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+  <ItemGroup Label="Examples">
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(AspNetVersion)"/>
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(AspNetVersion)"/>
+    <PackageVersion Include="Serilog" Version="4.3.1"/>
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1"/>
   </ItemGroup>
 
   <!-- Legacy System.* compatibility packages, scoped to the net4*/netstandard targets.
        Pinned to their 4.3.x line; Renovate caps these below 5.0.0 (see renovate.json). -->
-  <ItemGroup>
-    <PackageVersion Include="System.Net.Http" Version="4.3.4" />
-    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
+  <ItemGroup Label="Legacy Compatibility">
+    <PackageVersion Include="System.Net.Http" Version="4.3.4"/>
+    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1"/>
   </ItemGroup>
 
-  <!-- Microsoft.AspNetCore.WebUtilities: multi-targeted per .NET major so each TFM
-       resolves the matching runtime-aligned version. -->
-  <Choose>
-    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
-      <ItemGroup>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.9" />
-      </ItemGroup>
-    </When>
-    <When Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
-      <ItemGroup>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.17" />
-      </ItemGroup>
-    </When>
-    <Otherwise>
-      <ItemGroup>
-        <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.28" />
-      </ItemGroup>
-    </Otherwise>
-  </Choose>
+  <ItemGroup Label="Microsoft ASP.NET">
+    <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="$(AspNetVersion)"/>
+  </ItemGroup>
 
 </Project>

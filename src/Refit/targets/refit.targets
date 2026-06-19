@@ -9,49 +9,35 @@
     <RefitInternalNamespace Condition=" '$(RefitInternalNamespace)' == '' ">$(RootNamespace)</RefitInternalNamespace>
 
     <_RefitMSBuildMinVersion>16.8.0</_RefitMSBuildMinVersion>
-    
+
   </PropertyGroup>
 
   <Target Name="_RefitGatherAnalyzers">
     <ItemGroup>
-      <_RefitAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'Refit'" />
+      <_RefitAnalyzer Include="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'Refit'"/>
     </ItemGroup>
   </Target>
 
-  <Target Name="_RefitAnalyzerMultiTargeting" 
-          Condition="'$(SupportsRoslynComponentVersioning)' != 'true'" 
-          AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
-          DependsOnTargets="_RefitGatherAnalyzers">
-
-    <ItemGroup>
-      <!-- On toolchains without Roslyn component versioning, NuGet does not select a single
-           analyzer folder. Keep only the baseline roslyn3.8 analyzer and remove the other
-           variants so exactly one source generator runs. -->
-      <Analyzer Remove="@(_RefitAnalyzer)"
-                Condition="$([System.String]::Copy('%(_RefitAnalyzer.Identity)').IndexOf('roslyn3.8')) &lt; 0"/>
-    </ItemGroup>
-  </Target>
-
-  <Target Name="_RefitRemoveAnalyzers" 
+  <Target Name="_RefitRemoveAnalyzers"
           Condition="'$(DisableRefitSourceGenerator)' == 'true'"
           AfterTargets="ResolvePackageDependenciesForBuild;ResolveNuGetPackageAssets"
           DependsOnTargets="_RefitGatherAnalyzers">
 
     <!-- Remove all our analyzers -->
     <ItemGroup>
-      <Analyzer Remove="@(_RefitAnalyzer)" />
+      <Analyzer Remove="@(_RefitAnalyzer)"/>
     </ItemGroup>
   </Target>
 
   <Target Name="_RefitMSBuildVersionCheck"
           Condition=" '$([System.Version]::Parse($(_RefitMSBuildMinVersion)).CompareTo($([System.Version]::Parse($(MSBuildVersion)))))' &gt; '0' "
-     BeforeTargets="ResolveAssemblyReferences;Build;Rebuild" >
+          BeforeTargets="ResolveAssemblyReferences;Build;Rebuild">
     <Error
-        Text = "Projects using Refit cannot build using MSBuild '$(MSBuildVersion)'. MSBuild '$(_RefitMSBuildMinVersion)' or later is required." />
+      Text="Projects using Refit cannot build using MSBuild '$(MSBuildVersion)'. MSBuild '$(_RefitMSBuildMinVersion)' or later is required."/>
   </Target>
 
   <Target Name="_RefitProjectRestoreTypeCheck" BeforeTargets="ResolveAssemblyReferences;Build;Rebuild" DependsOnTargets="_GetRestoreProjectStyle">
     <Error Condition="'$(RestoreProjectStyle)' == 'PackagesConfig'"
-           Text="Packages.config does not support Analyzers, including Source Generators. Migrate to PackageReference: 'https://devblogs.microsoft.com/nuget/migrate-packages-config-to-package-reference/'" />
+           Text="Packages.config does not support Analyzers, including Source Generators. Migrate to PackageReference: 'https://devblogs.microsoft.com/nuget/migrate-packages-config-to-package-reference/'"/>
   </Target>
 </Project>

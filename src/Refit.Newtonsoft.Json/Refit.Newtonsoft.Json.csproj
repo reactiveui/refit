@@ -3,25 +3,24 @@
   <PropertyGroup>
     <Product>Refit Serializer for Newtonsoft.Json ($(TargetFramework))</Product>
     <Description>Refit Serializers for Newtonsoft.Json</Description>
-    <TargetFrameworks>$(RefitTargets)</TargetFrameworks>
-    <GenerateDocumentationFile Condition=" '$(Configuration)' == 'Release' ">true</GenerateDocumentationFile>
-    <RootNamespace>Refit</RootNamespace>
-    <Nullable>enable</Nullable>
+    <TargetFrameworks>$(RefitShippingTargets)</TargetFrameworks>
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Newtonsoft.Json"/>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies"
-                      PrivateAssets="All" />
-    <Reference Include="System.Web" />
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Reference Include="System.Web"/>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Refit\Refit.csproj" />
+    <!-- Linked internal helper shared with Refit (one internal copy per assembly, no InternalsVisibleTo). -->
+    <Compile Include="..\Shared\HttpContentExtensions.cs" Link="Shared\HttpContentExtensions.cs"/>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Refit\Refit.csproj"/>
   </ItemGroup>
 
 </Project>

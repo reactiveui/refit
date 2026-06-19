@@ -1,396 +1,238 @@
-﻿using System.Globalization;
-using System.Net.Http;
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 #if NET8_0_OR_GREATER
+using System.Globalization;
 using System.Text.Json.Serialization.Metadata;
 #endif
 
-namespace Refit
+namespace Refit;
+
+/// <summary>A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the System.Text.Json APIs.</summary>
+/// <remarks>
+/// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters.
+/// </remarks>
+/// <param name="jsonSerializerOptions">The serialization options to use for the current instance.</param>
+public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
+    : IHttpContentSerializer
 {
-    /// <summary>
-    /// A <see langword="class"/> implementing <see cref="IHttpContentSerializer"/> using the System.Text.Json APIs
-    /// </summary>
-    /// <remarks>
-    /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance with the specified parameters
-    /// </remarks>
-    /// <param name="jsonSerializerOptions">The serialization options to use for the current instance</param>
-    public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions) : IHttpContentSerializer
+#if NET8_0_OR_GREATER
+    /// <summary>Justification shared by the reflection-fallback trim/AOT suppressions.</summary>
+    private const string ReflectionFallbackJustification =
+        "The reflection-based serialization fallback runs only when the supplied JsonSerializerOptions has no "
+        + "TypeInfoResolver. Such options originate from the [RequiresUnreferencedCode] default options, so the "
+        + "reflection requirement is already surfaced to callers; source-generated/AOT callers supply a resolver "
+        + "and take the metadata path instead.";
+#endif
+
+    /// <summary>Initializes a new instance of the <see cref="SystemTextJsonContentSerializer"/> class.</summary>
+    [RequiresUnreferencedCode("Default System.Text.Json serializer options include enum name reflection that trimming cannot statically preserve.")]
+    public SystemTextJsonContentSerializer()
+        : this(GetDefaultJsonSerializerOptions())
     {
-        /// <summary>
-        /// Creates a new <see cref="SystemTextJsonContentSerializer"/> instance
-        /// </summary>
-        public SystemTextJsonContentSerializer()
-            : this(GetDefaultJsonSerializerOptions()) { }
+    }
 
-        /// <inheritdoc/>
-        public HttpContent ToHttpContent<T>(T item)
+    /// <summary>Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters.</summary>
+    /// <returns>The default <see cref="JsonSerializerOptions"/>.</returns>
+    [RequiresUnreferencedCode("Default System.Text.Json serializer options include enum name reflection that trimming cannot statically preserve.")]
+    public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
+    {
+        // Default to case insensitive property name matching as that's likely the behavior most users expect
+        var jsonSerializerOptions = new JsonSerializerOptions
         {
-            if (item is not null
-                && (typeof(T).IsInterface || typeof(T).IsAbstract)
-                && !DeclaredTypeIsPolymorphic(typeof(T)))
-            {
-                return ToHttpContentRuntimeTyped(item, item.GetType());
-            }
+            PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+        jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
+        jsonSerializerOptions.Converters.Add(new CamelCaseStringEnumConverter());
 
-#if NET8_0_OR_GREATER
-            if (TryGetJsonTypeInfo<T>(out var jsonTypeInfo))
-            {
-                return JsonContent.Create(item, jsonTypeInfo);
-            }
-#endif
-            return JsonContent.Create(item, options: jsonSerializerOptions);
+        return jsonSerializerOptions;
+    }
+
+    /// <inheritdoc/>
+    public HttpContent ToHttpContent<T>(T item)
+    {
+        if (item is not null
+            && (typeof(T).IsInterface || typeof(T).IsAbstract)
+            && !DeclaredTypeIsPolymorphic(typeof(T), jsonSerializerOptions))
+        {
+            return ToHttpContentRuntimeTyped(item, item.GetType());
         }
 
-        HttpContent ToHttpContentRuntimeTyped(object item, Type runtimeType)
-        {
 #if NET8_0_OR_GREATER
-            if (jsonSerializerOptions.TypeInfoResolver is not null)
-            {
-                return JsonContent.Create(item, jsonSerializerOptions.GetTypeInfo(runtimeType));
-            }
-#endif
-            return JsonContent.Create(item, runtimeType, options: jsonSerializerOptions);
+        if (jsonSerializerOptions.TypeInfoResolver is not null)
+        {
+            return JsonContent.Create(item, GetJsonTypeInfo<T>());
         }
-
-        bool DeclaredTypeIsPolymorphic(Type type)
-        {
-            if (type.IsDefined(typeof(JsonPolymorphicAttribute), inherit: false)
-                || type.IsDefined(typeof(JsonDerivedTypeAttribute), inherit: false))
-            {
-                return true;
-            }
-
-#if NET8_0_OR_GREATER
-            if (jsonSerializerOptions.TypeInfoResolver is not null)
-            {
-                return jsonSerializerOptions.GetTypeInfo(type).PolymorphismOptions is not null;
-            }
 #endif
-            return false;
-        }
+        return ToHttpContentReflection(item);
+    }
 
-        /// <inheritdoc/>
-        public async Task<T?> FromHttpContentAsync<T>(
-            HttpContent content,
-            CancellationToken cancellationToken = default
-        )
-        {
+    /// <inheritdoc/>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameter for inference",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    public async Task<T?> FromHttpContentAsync<T>(
+        HttpContent content,
+        CancellationToken cancellationToken = default)
+    {
 #if NET8_0_OR_GREATER
-            if (TryGetJsonTypeInfo<T>(out var jsonTypeInfo))
-            {
-                return await content.ReadFromJsonAsync(jsonTypeInfo, cancellationToken).ConfigureAwait(false);
-            }
-#endif
+        if (jsonSerializerOptions.TypeInfoResolver is not null)
+        {
             return await content
-                .ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken)
+                .ReadFromJsonAsync(GetJsonTypeInfo<T>(), cancellationToken)
                 .ConfigureAwait(false);
         }
+#endif
+        return await FromHttpContentReflectionAsync<T>(content, cancellationToken).ConfigureAwait(false);
+    }
 
-        /// <summary>
-        /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands
-        /// </summary>
-        /// <param name="propertyInfo">A PropertyInfo object.</param>
-        /// <returns>
-        /// The calculated field name.
-        /// </returns>
-        /// <exception cref="System.ArgumentNullException">propertyInfo</exception>
-        public string? GetFieldNameForProperty(PropertyInfo propertyInfo) => propertyInfo switch
-        {
-            null => throw new ArgumentNullException(nameof(propertyInfo)),
-            _ => propertyInfo
+    /// <summary>
+    /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands.
+    /// </summary>
+    /// <param name="propertyInfo">A PropertyInfo object.</param>
+    /// <returns>
+    /// The calculated field name.
+    /// </returns>
+    /// <exception cref="System.ArgumentNullException">propertyInfo.</exception>
+    public string? GetFieldNameForProperty(PropertyInfo propertyInfo) => propertyInfo switch
+    {
+        null => throw new ArgumentNullException(nameof(propertyInfo)),
+        _ => propertyInfo
             .GetCustomAttributes<JsonPropertyNameAttribute>(true)
             .Select(a => a.Name)
             .FirstOrDefault()
-        };
+    };
 
-        /// <summary>
-        /// Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters
-        /// </summary>
-        public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
+    /// <summary>Determines whether the declared type is configured for polymorphic serialization.</summary>
+    /// <param name="type">The declared type to inspect.</param>
+    /// <param name="jsonSerializerOptions">The serializer options to consult for type metadata.</param>
+    /// <returns><see langword="true"/> if the type is polymorphic; otherwise <see langword="false"/>.</returns>
+    private static bool DeclaredTypeIsPolymorphic(Type type, JsonSerializerOptions jsonSerializerOptions)
+    {
+        if (type.IsDefined(typeof(JsonPolymorphicAttribute), false)
+            || type.IsDefined(typeof(JsonDerivedTypeAttribute), false))
         {
-            // Default to case insensitive property name matching as that's likely the behavior most users expect
-            var jsonSerializerOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            };
-            jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-            jsonSerializerOptions.Converters.Add(new CamelCaseStringEnumConverter());
-
-            return jsonSerializerOptions;
+            return true;
         }
 
 #if NET8_0_OR_GREATER
-        bool TryGetJsonTypeInfo<T>(out JsonTypeInfo<T> jsonTypeInfo)
+        if (jsonSerializerOptions.TypeInfoResolver is null)
         {
-            if (jsonSerializerOptions.TypeInfoResolver is not null)
-            {
-                var typeInfo = jsonSerializerOptions.GetTypeInfo(typeof(T));
-                if (typeInfo is JsonTypeInfo<T> typedTypeInfo)
-                {
-                    jsonTypeInfo = typedTypeInfo;
-                    return true;
-                }
-            }
-
-            jsonTypeInfo = null!;
             return false;
         }
+
+        return GetJsonTypeInfo(type, jsonSerializerOptions).PolymorphismOptions is not null;
+#else
+        _ = jsonSerializerOptions;
+        return false;
 #endif
     }
-
-    /// <summary>
-    /// ObjectToInferredTypesConverter.
-    /// From https://docs.microsoft.com/en-us/dotnet/standard/serialization/system-text-json-converters-how-to?pivots=dotnet-5-0#deserialize-inferred-types-to-object-properties
-    /// </summary>
-    public class ObjectToInferredTypesConverter : JsonConverter<object>
-    {
-        /// <summary>
-        /// Reads and converts the JSON to type typeToConvert />.
-        /// </summary>
-        /// <param name="reader">The reader.</param>
-        /// <param name="typeToConvert">The type to convert.</param>
-        /// <param name="options">An object that specifies serialization options to use.</param>
-        /// <returns>
-        /// The converted value.
-        /// </returns>
-        public override object? Read(
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options
-        ) =>
-            reader.TokenType switch
-            {
-                JsonTokenType.True => true,
-                JsonTokenType.False => false,
-                JsonTokenType.Number when reader.TryGetInt64(out var l) => l,
-                JsonTokenType.Number => reader.GetDouble(),
-                JsonTokenType.String when reader.TryGetDateTime(out var datetime) => datetime,
-                JsonTokenType.String => reader.GetString(),
-                _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
-            };
-
-        /// <summary>
-        /// Writes the specified writer.
-        /// </summary>
-        /// <param name="writer">The writer.</param>
-        /// <param name="objectToWrite">The object to write.</param>
-        /// <param name="options">The options.</param>
-        public override void Write(
-            Utf8JsonWriter writer,
-            object objectToWrite,
-            JsonSerializerOptions options
-        )
-        {
-            var runtimeType = objectToWrite.GetType();
-
-            // A bare System.Object has no properties to serialize. Serializing it by its
-            // runtime type would re-enter this converter (registered for object) and recurse
-            // until the stack overflows, so emit an empty JSON object directly.
-            if (runtimeType == typeof(object))
-            {
-                writer.WriteStartObject();
-                writer.WriteEndObject();
-                return;
-            }
 
 #if NET8_0_OR_GREATER
-            if (options.TypeInfoResolver is not null)
-            {
-                JsonSerializer.Serialize(writer, objectToWrite, options.GetTypeInfo(runtimeType));
-                return;
-            }
-#endif
-            JsonSerializer.Serialize(writer, objectToWrite, runtimeType, options);
-        }
-    }
+    /// <summary>Gets the JSON type metadata for the given runtime type from the supplied options.</summary>
+    /// <param name="type">The runtime type to resolve metadata for.</param>
+    /// <param name="jsonSerializerOptions">The serializer options to consult.</param>
+    /// <returns>The JSON type metadata.</returns>
+    private static JsonTypeInfo GetJsonTypeInfo(Type type, JsonSerializerOptions jsonSerializerOptions) =>
+        jsonSerializerOptions.GetTypeInfo(type)
+        ?? throw new InvalidOperationException(
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "The serializer options did not provide metadata for {0}.",
+                type));
 
-    sealed class CamelCaseStringEnumConverter : JsonConverterFactory
+#if NET11_0_OR_GREATER
+    /// <summary>Gets the JSON type metadata for the given type from the supplied options.</summary>
+    /// <typeparam name="T">The type to resolve metadata for.</typeparam>
+    /// <param name="jsonSerializerOptions">The serializer options to consult.</param>
+    /// <returns>The JSON type metadata.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameter for inference",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    private static JsonTypeInfo<T> GetJsonTypeInfo<T>(JsonSerializerOptions jsonSerializerOptions) =>
+        jsonSerializerOptions.GetTypeInfo<T>();
+#endif
+#endif
+
+#if NET8_0_OR_GREATER
+    /// <summary>Gets the JSON type metadata for the given type from the configured options.</summary>
+    /// <typeparam name="T">The type to resolve metadata for.</typeparam>
+    /// <returns>The JSON type metadata.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameter for inference",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    private JsonTypeInfo<T> GetJsonTypeInfo<T>() =>
+#if NET11_0_OR_GREATER
+        GetJsonTypeInfo<T>(jsonSerializerOptions)
+#else
+        (GetJsonTypeInfo(typeof(T), jsonSerializerOptions) as JsonTypeInfo<T>)
+#endif
+        ?? throw new InvalidOperationException(
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "The serializer options did not provide metadata for {0}.",
+                typeof(T)));
+#endif
+
+    /// <summary>Serializes the item to HTTP content using the supplied runtime type.</summary>
+    /// <param name="item">The item to serialize.</param>
+    /// <param name="runtimeType">The runtime type to serialize the item as.</param>
+    /// <returns>The serialized HTTP content.</returns>
+    private JsonContent ToHttpContentRuntimeTyped(object item, Type runtimeType)
     {
-        public override bool CanConvert(Type typeToConvert) =>
-            (Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert).IsEnum;
-
-        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+#if NET8_0_OR_GREATER
+        if (jsonSerializerOptions.TypeInfoResolver is not null)
         {
-            var enumType = Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert;
-            var isNullable = Nullable.GetUnderlyingType(typeToConvert) != null;
-
-            return new NonGenericEnumConverter(typeToConvert, enumType, isNullable);
+            return JsonContent.Create(item, GetJsonTypeInfo(runtimeType, jsonSerializerOptions));
         }
-
-        sealed class NonGenericEnumConverter(Type targetType, Type enumType, bool isNullable)
-            : JsonConverter<object?>
-        {
-            readonly Dictionary<string, object> namesToValues = GetNamesToValues(
-                enumType,
-                StringComparer.Ordinal
-            );
-            readonly Dictionary<string, object> namesToValuesIgnoreCase = GetNamesToValues(
-                enumType,
-                StringComparer.OrdinalIgnoreCase
-            );
-            readonly Dictionary<object, string> valuesToNames = GetValuesToNames(enumType);
-
-            public override bool CanConvert(Type typeToConvert) => typeToConvert == targetType;
-
-            public override object? Read(
-                ref Utf8JsonReader reader,
-                Type typeToConvert,
-                JsonSerializerOptions options
-            )
-            {
-                if (reader.TokenType == JsonTokenType.Null)
-                {
-                    if (!isNullable)
-                        throw new JsonException($"Cannot convert null to {targetType}.");
-
-                    return null;
-                }
-
-                if (reader.TokenType == JsonTokenType.String)
-                {
-                    var value = reader.GetString();
-                    if (string.IsNullOrWhiteSpace(value))
-                    {
-                        if (isNullable)
-                            return null;
-
-                        throw new JsonException($"Cannot convert an empty value to {targetType}.");
-                    }
-
-                    if (namesToValues.TryGetValue(value, out var namedValue))
-                        return namedValue;
-
-                    if (namesToValuesIgnoreCase.TryGetValue(value, out var namedValueIgnoreCase))
-                        return namedValueIgnoreCase;
-
-                    throw new JsonException($"Unable to convert '{value}' to {targetType}.");
-                }
-
-                if (reader.TokenType == JsonTokenType.Number)
-                {
-                    var numericValue = reader.GetInt64();
-                    return Enum.ToObject(enumType, numericValue);
-                }
-
-                throw new JsonException($"Unexpected token {reader.TokenType} when parsing {targetType}.");
-            }
-
-            public override void Write(
-                Utf8JsonWriter writer,
-                object? value,
-                JsonSerializerOptions options
-            )
-            {
-                if (value is null)
-                {
-                    writer.WriteNullValue();
-                    return;
-                }
-
-                if (!valuesToNames.TryGetValue(value, out var name))
-                {
-                    writer.WriteNumberValue(Convert.ToInt64(value));
-                    return;
-                }
-
-                writer.WriteStringValue(name);
-            }
-
-            public override object? ReadAsPropertyName(
-                ref Utf8JsonReader reader,
-                Type typeToConvert,
-                JsonSerializerOptions options
-            )
-            {
-                var value = reader.GetString();
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    if (namesToValues.TryGetValue(value!, out var namedValue))
-                        return namedValue;
-
-                    if (namesToValuesIgnoreCase.TryGetValue(value!, out var namedValueIgnoreCase))
-                        return namedValueIgnoreCase;
-                }
-
-                throw new JsonException($"Unable to convert '{value}' to {targetType}.");
-            }
-
-            public override void WriteAsPropertyName(
-                Utf8JsonWriter writer,
-                object? value,
-                JsonSerializerOptions options
-            )
-            {
-                if (value is not null && valuesToNames.TryGetValue(value, out var name))
-                {
-                    writer.WritePropertyName(name);
-                    return;
-                }
-
-                writer.WritePropertyName(
-                    Convert.ToInt64(value).ToString(CultureInfo.InvariantCulture)
-                );
-            }
-
-            static Dictionary<string, object> GetNamesToValues(
-                Type enumType,
-                StringComparer comparer
-            )
-            {
-                var map = new Dictionary<string, object>(comparer);
-
-                foreach (var field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
-                {
-                    var value = Enum.Parse(enumType, field.Name, ignoreCase: false);
-                    foreach (var name in GetSerializedNames(field))
-                    {
-                        map[name] = value;
-                    }
-                }
-
-                return map;
-            }
-
-            static Dictionary<object, string> GetValuesToNames(Type enumType)
-            {
-                var map = new Dictionary<object, string>();
-
-                foreach (var field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static))
-                {
-                    var value = Enum.Parse(enumType, field.Name, ignoreCase: false);
-                    map[value] = GetPreferredSerializedName(field);
-                }
-
-                return map;
-            }
-
-            static IEnumerable<string> GetSerializedNames(FieldInfo field)
-            {
-                var preferredName = GetPreferredSerializedName(field);
-                yield return preferredName;
-
-                if (!string.Equals(field.Name, preferredName, StringComparison.Ordinal))
-                    yield return field.Name;
-            }
-
-            static string GetPreferredSerializedName(FieldInfo field)
-            {
-#if NET9_0_OR_GREATER
-                var enumMemberNameAttribute = field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>();
-                if (enumMemberNameAttribute is not null)
-                    return enumMemberNameAttribute.Name;
 #endif
-                return ToCamelCase(field.Name);
-            }
-
-            static string ToCamelCase(string value) =>
-                string.IsNullOrEmpty(value) || !char.IsUpper(value[0])
-                    ? value
-                    : char.ToLowerInvariant(value[0]) + value.Substring(1);
-        }
+        return ToHttpContentRuntimeReflection(item, runtimeType);
     }
+
+    /// <summary>Serializes the item by runtime type using reflection-based metadata (used when the options provide no resolver).</summary>
+    /// <param name="item">The item to serialize.</param>
+    /// <param name="runtimeType">The runtime type to serialize the item as.</param>
+    /// <returns>The serialized HTTP content.</returns>
+#if NET8_0_OR_GREATER
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
+#endif
+    private JsonContent ToHttpContentRuntimeReflection(object item, Type runtimeType) =>
+        JsonContent.Create(item, runtimeType, options: jsonSerializerOptions);
+
+    /// <summary>Serializes the item using reflection-based metadata (used when the options provide no resolver).</summary>
+    /// <typeparam name="T">The type of the item being serialized.</typeparam>
+    /// <param name="item">The item to serialize.</param>
+    /// <returns>The serialized HTTP content.</returns>
+#if NET8_0_OR_GREATER
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
+#endif
+    private JsonContent ToHttpContentReflection<T>(T item) =>
+        JsonContent.Create(item, options: jsonSerializerOptions);
+
+    /// <summary>Deserializes the content using reflection-based metadata (used when the options provide no resolver).</summary>
+    /// <typeparam name="T">The type to deserialize.</typeparam>
+    /// <param name="content">The HTTP content to read from.</param>
+    /// <param name="cancellationToken">A token used to cancel the operation.</param>
+    /// <returns>The deserialized value.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameter for inference",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+#if NET8_0_OR_GREATER
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
+#endif
+    private Task<T?> FromHttpContentReflectionAsync<T>(HttpContent content, CancellationToken cancellationToken) =>
+        content.ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken);
 }

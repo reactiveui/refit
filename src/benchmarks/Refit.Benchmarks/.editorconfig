@@ -1,0 +1,13 @@
+[*.cs]
+
+# SST1424 wants the source-generator benchmark fields (_compilation/_driver and friends) marked
+# readonly, but BenchmarkDotNet assigns them from instance [GlobalSetup]/[IterationSetup] methods
+# (via tuple deconstruction), not from a constructor, so they genuinely cannot be readonly. This is
+# a structural false positive for the BenchmarkDotNet setup-method pattern.
+dotnet_diagnostic.SST1424.severity = none
+
+# S104 flags SourceGeneratorBenchmarksProjects.cs (~1.7k lines) as "too many lines". That file is a
+# single container of multi-line raw-string Refit source fixtures fed verbatim to the generator
+# benchmarks; the line count is the fixture payload itself, not logic, and splitting the strings
+# across files would only obscure the benchmark inputs.
+dotnet_diagnostic.S104.severity = none

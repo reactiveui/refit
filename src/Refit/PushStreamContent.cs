@@ -1,26 +1,12 @@
-﻿// Copyright(c) Microsoft Open Technologies, Inc.All rights reserved.
-// Microsoft Open Technologies would like to thank its contributors, a list
-// of whom are at http://aspnetwebstack.codeplex.com/wikipage?title=Contributors.
-//
-// Licensed under the Apache License, Version 2.0 (the "License"); you
-// may not use this file except in compliance with the License. You may
-// obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-// implied. See the License for the specific language governing permissions
-// and limitations under the License.
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
 
 // NOTICE
 // This has been converted from:
 // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/PushStreamContent.cs
 // to work on NET Standard 1.4
-
 using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Net.Http.Headers;
 
 namespace System.Net.Http
@@ -30,11 +16,14 @@ namespace System.Net.Http
     /// which can be written to directly. The ability to push data to the output stream differs from the
     /// <see cref="StreamContent"/> where data is pulled and not pushed.
     /// </summary>
-    // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/PushStreamContent.cs
+    /// <remarks>
+    /// https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/PushStreamContent.cs.
+    /// </remarks>
     [ExcludeFromCodeCoverage]
-    class PushStreamContent : HttpContent
+    internal class PushStreamContent : HttpContent
     {
-        readonly Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable;
+        /// <summary>The action invoked when the output stream becomes available.</summary>
+        private readonly Func<Stream, HttpContent, TransportContext?, Task> _onStreamAvailable;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PushStreamContent"/> class. The
@@ -45,80 +34,60 @@ namespace System.Net.Http
         /// </summary>
         /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
         public PushStreamContent(Action<Stream, HttpContent, TransportContext?> onStreamAvailable)
-            : this(Taskify(onStreamAvailable), (MediaTypeHeaderValue?)null) { }
+            : this(Taskify(onStreamAvailable), (MediaTypeHeaderValue?)null)
+        {
+        }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PushStreamContent"/> class.
-        /// </summary>
+        /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class.</summary>
         /// <param name="onStreamAvailable">The action to call when an output stream is available. The stream is automatically
         /// closed when the return task is completed.</param>
         public PushStreamContent(
-            Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable
-        )
-            : this(onStreamAvailable, (MediaTypeHeaderValue?)null) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given media type.
-        /// </summary>
-        public PushStreamContent(
-            Action<Stream, HttpContent, TransportContext?> onStreamAvailable,
-            string mediaType
-        )
-            : this(Taskify(onStreamAvailable), new MediaTypeHeaderValue(mediaType)) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given media type.
-        /// </summary>
-        public PushStreamContent(
-            Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable,
-            string mediaType
-        )
-            : this(onStreamAvailable, new MediaTypeHeaderValue(mediaType)) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.
-        /// </summary>
-        public PushStreamContent(
-            Action<Stream, HttpContent, TransportContext?> onStreamAvailable,
-            MediaTypeHeaderValue? mediaType
-        )
-            : this(Taskify(onStreamAvailable), mediaType) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.
-        /// </summary>
-        public PushStreamContent(
-            Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable,
-            MediaTypeHeaderValue? mediaType
-        )
+            Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable)
+            : this(onStreamAvailable, (MediaTypeHeaderValue?)null)
         {
-            this.onStreamAvailable =
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class with the given media type.</summary>
+        /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
+        /// <param name="mediaType">The media type to use for the content.</param>
+        public PushStreamContent(
+            Action<Stream, HttpContent, TransportContext?> onStreamAvailable,
+            string mediaType)
+            : this(Taskify(onStreamAvailable), new MediaTypeHeaderValue(mediaType))
+        {
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class with the given media type.</summary>
+        /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
+        /// <param name="mediaType">The media type to use for the content.</param>
+        public PushStreamContent(
+            Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable,
+            string mediaType)
+            : this(onStreamAvailable, new MediaTypeHeaderValue(mediaType))
+        {
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.</summary>
+        /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
+        /// <param name="mediaType">The media type to use for the content.</param>
+        public PushStreamContent(
+            Action<Stream, HttpContent, TransportContext?> onStreamAvailable,
+            MediaTypeHeaderValue? mediaType)
+            : this(Taskify(onStreamAvailable), mediaType)
+        {
+        }
+
+        /// <summary>Initializes a new instance of the <see cref="PushStreamContent"/> class with the given <see cref="MediaTypeHeaderValue"/>.</summary>
+        /// <param name="onStreamAvailable">The action to call when an output stream is available.</param>
+        /// <param name="mediaType">The media type to use for the content.</param>
+        public PushStreamContent(
+            Func<Stream, HttpContent, TransportContext?, Task> onStreamAvailable,
+            MediaTypeHeaderValue? mediaType)
+        {
+            _onStreamAvailable =
                 onStreamAvailable ?? throw new ArgumentNullException(nameof(onStreamAvailable));
             Headers.ContentType = mediaType ?? new MediaTypeHeaderValue("application/octet-stream");
         }
-
-        static Func<Stream, HttpContent, TransportContext?, Task> Taskify(
-            Action<Stream, HttpContent, TransportContext?> onStreamAvailable
-        )
-        {
-            if (onStreamAvailable == null)
-            {
-                throw new ArgumentNullException(nameof(onStreamAvailable));
-            }
-
-            return (Stream stream, HttpContent content, TransportContext? transportContext) =>
-            {
-                onStreamAvailable(stream, content, transportContext);
-                // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L10
-                return Task.FromResult<AsyncVoid>(default);
-            };
-        }
-
-        /// <summary>
-        /// Used as the T in a "conversion" of a Task into a Task{T}
-        /// </summary>
-        // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L65
-        struct AsyncVoid { }
 
         /// <summary>
         /// When this method is called, it calls the action provided in the constructor with the output
@@ -130,21 +99,21 @@ namespace System.Net.Http
         /// <returns>A <see cref="Task"/> instance that is asynchronously serializing the object's content.</returns>
         protected override async Task SerializeToStreamAsync(
             Stream stream,
-            TransportContext? context
-        )
+            TransportContext? context)
         {
             var serializeToStreamTask = new TaskCompletionSource<bool>();
 
-            using Stream wrappedStream = new CompleteTaskOnCloseStream(stream, serializeToStreamTask);
-            await onStreamAvailable(wrappedStream, this, context).ConfigureAwait(false);
+            var wrappedStream = new CompleteTaskOnCloseStream(stream, serializeToStreamTask);
+            using (wrappedStream)
+            {
+                await _onStreamAvailable(wrappedStream, this, context).ConfigureAwait(false);
 
-            // wait for wrappedStream.Close/Dispose to get called.
-            await serializeToStreamTask.Task.ConfigureAwait(false);
+                // wait for wrappedStream.Close/Dispose to get called.
+                await serializeToStreamTask.Task.ConfigureAwait(false);
+            }
         }
 
-        /// <summary>
-        /// Computes the length of the stream if possible.
-        /// </summary>
+        /// <summary>Computes the length of the stream if possible.</summary>
         /// <param name="length">The computed length of the stream.</param>
         /// <returns><c>true</c> if the length has been computed; otherwise <c>false</c>.</returns>
         protected override bool TryComputeLength(out long length)
@@ -154,162 +123,74 @@ namespace System.Net.Http
             return false;
         }
 
-        internal class CompleteTaskOnCloseStream : DelegatingStream
+        /// <summary>Wraps a synchronous stream callback in a task-returning callback.</summary>
+        /// <param name="onStreamAvailable">The synchronous action to wrap.</param>
+        /// <returns>A task-returning callback that invokes the action.</returns>
+        private static Func<Stream, HttpContent, TransportContext?, Task> Taskify(
+            Action<Stream, HttpContent, TransportContext?> onStreamAvailable)
         {
-            readonly TaskCompletionSource<bool> serializeToStreamTask;
+            if (onStreamAvailable is null)
+            {
+                throw new ArgumentNullException(nameof(onStreamAvailable));
+            }
 
+            return (stream, content, transportContext) =>
+            {
+                onStreamAvailable(stream, content, transportContext);
+
+                // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L10
+                return Task.FromResult<AsyncVoid>(default);
+            };
+        }
+
+        /// <summary>Used as the T in a "conversion" of a Task into a Task{T}.</summary>
+        /// <remarks>
+        /// https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L65.
+        /// </remarks>
+        [SuppressMessage(
+            "Design",
+            "SST1436:Add members to the type or remove it",
+            Justification = "Intentional empty placeholder struct for the void TaskCompletionSource pattern.")]
+        private readonly struct AsyncVoid : IEquatable<AsyncVoid>
+        {
+            /// <inheritdoc/>
+            public bool Equals(AsyncVoid other) => true;
+
+            /// <inheritdoc/>
+            public override bool Equals(object? obj) => obj is AsyncVoid;
+
+            /// <inheritdoc/>
+            public override int GetHashCode() => 0;
+        }
+
+        /// <summary>A delegating stream that signals completion when it is disposed.</summary>
+        internal sealed class CompleteTaskOnCloseStream : Refit.DelegatingStream
+        {
+            /// <summary>The task signalled when the stream is closed.</summary>
+            private readonly TaskCompletionSource<bool> _serializeToStreamTask;
+
+            /// <summary>Initializes a new instance of the <see cref="CompleteTaskOnCloseStream"/> class.</summary>
+            /// <param name="innerStream">The stream to delegate to.</param>
+            /// <param name="serializeToStreamTask">The task to signal when the stream closes.</param>
             public CompleteTaskOnCloseStream(
                 Stream innerStream,
-                TaskCompletionSource<bool> serializeToStreamTask
-            )
-                : base(innerStream)
+                TaskCompletionSource<bool> serializeToStreamTask)
+                : base(innerStream, ownsInnerStream: false)
             {
-                Contract.Assert(serializeToStreamTask != null);
-                this.serializeToStreamTask =
+                _serializeToStreamTask =
                     serializeToStreamTask
                     ?? throw new ArgumentNullException(nameof(serializeToStreamTask));
             }
 
-            [SuppressMessage("Usage", "CA2215:Dispose methods should call base class dispose", Justification = "We don't dispose the underlying stream because we don't own it. Dispose in this case just signifies that the user's action is finished.")]
+            /// <inheritdoc/>
             protected override void Dispose(bool disposing)
             {
                 // We don't dispose the underlying stream because we don't own it. Dispose in this case just signifies
-                // that the user's action is finished.
-                serializeToStreamTask.TrySetResult(true);
+                // that the user's action is finished. The base class honours ownsInnerStream: false and therefore
+                // does not dispose the inner stream.
+                _serializeToStreamTask.TrySetResult(true);
+                base.Dispose(disposing);
             }
-        }
-    }
-
-    /// <summary>
-    /// Stream that delegates to inner stream.
-    /// This is taken from System.Net.Http
-    /// </summary>
-    // https://github.com/ASP-NET-MVC/aspnetwebstack/blob/d5188c8a75b5b26b09ab89bedfd7ee635ae2ff17/src/System.Net.Http.Formatting/Internal/DelegatingStream.cs
-    [ExcludeFromCodeCoverage]
-    abstract class DelegatingStream(Stream innerStream) : Stream
-    {
-        protected Stream InnerStream { get; private set; } =
-            innerStream ?? throw new ArgumentNullException(nameof(innerStream));
-
-        public override bool CanRead
-        {
-            get { return InnerStream.CanRead; }
-        }
-
-        public override bool CanSeek
-        {
-            get { return InnerStream.CanSeek; }
-        }
-
-        public override bool CanWrite
-        {
-            get { return InnerStream.CanWrite; }
-        }
-
-        public override long Length
-        {
-            get { return InnerStream.Length; }
-        }
-
-        public override long Position
-        {
-            get { return InnerStream.Position; }
-            set { InnerStream.Position = value; }
-        }
-
-        public override int ReadTimeout
-        {
-            get { return InnerStream.ReadTimeout; }
-            set { InnerStream.ReadTimeout = value; }
-        }
-
-        public override bool CanTimeout
-        {
-            get { return InnerStream.CanTimeout; }
-        }
-
-        public override int WriteTimeout
-        {
-            get { return InnerStream.WriteTimeout; }
-            set { InnerStream.WriteTimeout = value; }
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                InnerStream.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            return InnerStream.Seek(offset, origin);
-        }
-
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            return InnerStream.Read(buffer, offset, count);
-        }
-
-        public override Task<int> ReadAsync(
-            byte[] buffer,
-            int offset,
-            int count,
-            CancellationToken cancellationToken
-        )
-        {
-            return InnerStream.ReadAsync(buffer, offset, count, cancellationToken);
-        }
-
-        public override int ReadByte()
-        {
-            return InnerStream.ReadByte();
-        }
-
-        public override void Flush()
-        {
-            InnerStream.Flush();
-        }
-
-        public override Task CopyToAsync(
-            Stream destination,
-            int bufferSize,
-            CancellationToken cancellationToken
-        )
-        {
-            return InnerStream.CopyToAsync(destination, bufferSize, cancellationToken);
-        }
-
-        public override Task FlushAsync(CancellationToken cancellationToken)
-        {
-            return InnerStream.FlushAsync(cancellationToken);
-        }
-
-        public override void SetLength(long value)
-        {
-            InnerStream.SetLength(value);
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            InnerStream.Write(buffer, offset, count);
-        }
-
-        public override Task WriteAsync(
-            byte[] buffer,
-            int offset,
-            int count,
-            CancellationToken cancellationToken
-        )
-        {
-            return InnerStream.WriteAsync(buffer, offset, count, cancellationToken);
-        }
-
-        public override void WriteByte(byte value)
-        {
-            InnerStream.WriteByte(value);
         }
     }
 }

@@ -20,7 +20,7 @@
 
         try
         {
-            var payload = await Api.GetPayload();
+            var payload = await Api.GetPayloadAsync();
             status = $"Success: {payload}";
         }
         catch (Exception ex)
@@ -28,4 +28,5 @@
             status = $"Failure: {ex.GetType().Name} - {ex.Message}";
         }
     }
+
 }

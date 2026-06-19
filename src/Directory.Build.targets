@@ -1,0 +1,13 @@
+<Project>
+  <!-- This props all need to be set in targets as they depend on the values set earlier -->
+
+  <PropertyGroup>
+    <Product>$(AssemblyName) ($(TargetFramework))</Product>
+    <AndroidUseIntermediateDesignerFile>False</AndroidUseIntermediateDesignerFile>
+    <EnableVSTestReferences>false</EnableVSTestReferences>
+  </PropertyGroup>
+
+  <Target Name="ValidateNugetProperties" Condition="!$(IsTestProject) or $(IsTestProject) == ''" BeforeTargets="Compile">
+    <Error Condition="$(PackageDescription) == '' or $(PackageDescription) == $(DefaultPackageDescription)" Text="The Nuget PackageDescription property needs to be set for the project. Currently : '$(PackageDescription)'"/>
+  </Target>
+</Project>

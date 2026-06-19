@@ -6,11 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Meow.Common\Meow.Common.csproj" />
+    <ProjectReference Include="..\Meow.Common\Meow.Common.csproj"/>
   </ItemGroup>
 
 </Project>

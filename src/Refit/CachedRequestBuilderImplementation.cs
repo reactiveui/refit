@@ -1,150 +1,61 @@
-﻿using System.Collections.Concurrent;
-using System.Net.Http;
-#if NET8_0_OR_GREATER
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-#endif
+using System.Net.Http;
 
-namespace Refit
+namespace Refit;
+
+/// <summary>Caches the result functions produced by an inner <see cref="IRequestBuilder"/> so each method is analyzed only once.</summary>
+internal class CachedRequestBuilderImplementation : IRequestBuilder
 {
-    class CachedRequestBuilderImplementation<T>
-        : CachedRequestBuilderImplementation,
-            IRequestBuilder<T>
+    /// <summary>The request builder whose results are cached.</summary>
+    private readonly IRequestBuilder _innerBuilder;
+
+    /// <summary>Initializes a new instance of the <see cref="CachedRequestBuilderImplementation"/> class.</summary>
+    /// <param name="innerBuilder">The request builder whose results are cached.</param>
+    public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
     {
-        public CachedRequestBuilderImplementation(IRequestBuilder<T> innerBuilder)
-            : base(innerBuilder) { }
+        _innerBuilder =
+            innerBuilder ?? throw new ArgumentNullException(nameof(innerBuilder));
     }
 
-    class CachedRequestBuilderImplementation : IRequestBuilder
+    /// <summary>Gets the cache of method keys to their built result functions.</summary>
+    internal ConcurrentDictionary<
+        MethodTableKey,
+        Func<HttpClient, object[], object?>
+    > MethodDictionary { get; } = new();
+
+    /// <inheritdoc/>
+    [RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
+    [RequiresDynamicCode("Refit may generate or invoke code dynamically for this path.")]
+    public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
+        string methodName,
+        Type[]? parameterTypes = null,
+        Type[]? genericArgumentTypes = null)
     {
-        public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
+        var cacheKey = new MethodTableKey(
+            methodName,
+            parameterTypes ?? [],
+            genericArgumentTypes ?? []);
+
+        if (MethodDictionary.TryGetValue(cacheKey, out var methodFunc))
         {
-            this.innerBuilder =
-                innerBuilder ?? throw new ArgumentNullException(nameof(innerBuilder));
+            return methodFunc;
         }
 
-        readonly IRequestBuilder innerBuilder;
-        internal readonly ConcurrentDictionary<
-            MethodTableKey,
-            Func<HttpClient, object[], object?>
-        > MethodDictionary = new();
-
-#if NET8_0_OR_GREATER
-        [RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-#endif
-        public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
-            string methodName,
-            Type[]? parameterTypes = null,
-            Type[]? genericArgumentTypes = null
-        )
-        {
-            var cacheKey = new MethodTableKey(
+        // use GetOrAdd with cloned array method table key. This prevents the array from being modified, breaking the dictionary.
+        return MethodDictionary.GetOrAdd(
+            new MethodTableKey(
                 methodName,
-                parameterTypes ?? Array.Empty<Type>(),
-                genericArgumentTypes ?? Array.Empty<Type>()
-            );
-
-            if (MethodDictionary.TryGetValue(cacheKey, out var methodFunc))
-            {
-                return methodFunc;
-            }
-
-            // use GetOrAdd with cloned array method table key. This prevents the array from being modified, breaking the dictionary.
-            var func = MethodDictionary.GetOrAdd(
-                new MethodTableKey(methodName,
-                    parameterTypes?.ToArray() ?? Array.Empty<Type>(),
-                    genericArgumentTypes?.ToArray() ?? Array.Empty<Type>()),
-                _ =>
-                    innerBuilder.BuildRestResultFuncForMethod(
-                        methodName,
-                        parameterTypes,
-                        genericArgumentTypes
-                    )
-            );
-
-            return func;
-        }
-    }
-
-    /// <summary>
-    /// Represents a method composed of its name, generic arguments and parameters.
-    /// </summary>
-    internal readonly struct MethodTableKey : IEquatable<MethodTableKey>
-    {
-        /// <summary>
-        /// Constructs an instance of <see cref="MethodTableKey"/>.
-        /// </summary>
-        /// <param name="methodName">Represents the methods name.</param>
-        /// <param name="parameters">Array containing the methods parameters.</param>
-        /// <param name="genericArguments">Array containing the methods generic arguments.</param>
-        public MethodTableKey (string methodName, Type[] parameters, Type[] genericArguments)
-        {
-            MethodName = methodName;
-            Parameters = parameters;
-            GenericArguments = genericArguments;
-        }
-
-        /// <summary>
-        /// The methods name.
-        /// </summary>
-        string MethodName { get; }
-
-        /// <summary>
-        /// Array containing the methods parameters.
-        /// </summary>
-        Type[] Parameters { get; }
-
-        /// <summary>
-        /// Array containing the methods generic arguments.
-        /// </summary>
-        Type[] GenericArguments { get; }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = MethodName.GetHashCode();
-
-                foreach (var argument in Parameters)
-                {
-                    hashCode = (hashCode * 397) ^ argument.GetHashCode();
-                }
-
-                foreach (var genericArgument in GenericArguments)
-                {
-                    hashCode = (hashCode * 397) ^ genericArgument.GetHashCode();
-                }
-                return hashCode;
-            }
-        }
-
-        public bool Equals(MethodTableKey other)
-        {
-            if (Parameters.Length != other.Parameters.Length
-                || GenericArguments.Length != other.GenericArguments.Length
-                || MethodName != other.MethodName)
-            {
-                return false;
-            }
-
-            for (var i = 0; i < Parameters.Length; i++)
-            {
-                if (Parameters[i] != other.Parameters[i])
-                {
-                    return false;
-                }
-            }
-
-            for (var i = 0; i < GenericArguments.Length; i++)
-            {
-                if (GenericArguments[i] != other.GenericArguments[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        public override bool Equals(object? obj) => obj is MethodTableKey other && Equals(other);
+                parameterTypes?.ToArray() ?? [],
+                genericArgumentTypes?.ToArray() ?? []),
+            _ =>
+                _innerBuilder.BuildRestResultFuncForMethod(
+                    methodName,
+                    parameterTypes,
+                    genericArgumentTypes));
     }
 }
