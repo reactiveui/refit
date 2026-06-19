@@ -342,6 +342,35 @@ public class GeneratedRequestRunnerTests
         await Assert.That(serializer.DeserializeCallCount).IsEqualTo(0);
     }
 
+    /// <summary>Verifies that generated response calls buffer request content when requested.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncBuffersRequestContentWhenRequested()
+    {
+        var handler = new CapturingHandler(
+            (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("buffered")
+                }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/resource")
+        {
+            Content = new StringContent("request-body")
+        };
+
+        var result = await GeneratedRequestRunner.SendAsync<string, string>(
+            client,
+            request,
+            CreateSettings(),
+            isApiResponse: false,
+            shouldDisposeResponse: true,
+            bufferBody: true,
+            CancellationToken.None);
+
+        await Assert.That(result).IsEqualTo("buffered");
+    }
+
     /// <summary>Verifies that HTTP response messages can be returned without running the exception factory.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -744,6 +773,39 @@ public class GeneratedRequestRunnerTests
 
         await Assert.That(thrown!.Message).IsEqualTo("An error occured deserializing the response.");
         await Assert.That(thrown.InnerException).IsTypeOf<FormatException>();
+    }
+
+    /// <summary>Verifies cancellation-triggered deserialization exceptions are rethrown directly.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncRethrowsCancellationRequestedDuringDeserialization()
+    {
+        var serializer = new RecordingContentSerializer
+        {
+            DeserializeException = new OperationCanceledException("cancelled")
+        };
+        var handler = new CapturingHandler(
+            (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("cancelled")
+                }));
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var tokenSource = new CancellationTokenSource();
+        await tokenSource.CancelAsync();
+
+        await Assert
+            .That(
+                () => GeneratedRequestRunner.SendAsync<GeneratedResult, GeneratedResult>(
+                    client,
+                    request,
+                    CreateSettings(serializer),
+                    isApiResponse: false,
+                    shouldDisposeResponse: true,
+                    bufferBody: false,
+                    tokenSource.Token))
+            .ThrowsExactly<OperationCanceledException>();
     }
 
     /// <summary>Verifies that best-effort response buffering failures do not prevent serializer deserialization.</summary>
