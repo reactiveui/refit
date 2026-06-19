@@ -696,21 +696,13 @@ public partial class RestServiceIntegrationTests
         // get resource stream
         var fullName = assembly
             .GetManifestResourceNames()
-            .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture));
-        if (fullName is null)
-        {
-            throw new InvalidOperationException(
+            .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture))
+            ?? throw new InvalidOperationException(
                 $"Unable to find resource for path \"{relativeFilePath}\". Resource with name ending on \"{relativeName}\" was not found in assembly.");
-        }
 
-        var stream = assembly.GetManifestResourceStream(fullName);
-        if (stream is null)
-        {
-            throw new InvalidOperationException(
+        return assembly.GetManifestResourceStream(fullName)
+            ?? throw new InvalidOperationException(
                 $"Unable to find resource for path \"{relativeFilePath}\". Resource named \"{fullName}\" was not found in assembly.");
-        }
-
-        return stream;
     }
 
     /// <summary>Asserts that the supplied stack trace string contains the expected substring.</summary>
