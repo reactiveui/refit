@@ -54,14 +54,16 @@ public class CachedRequestBuilderTests
             .Expect(HttpMethod.Post, "http://bar/foo")
             .Respond(HttpStatusCode.OK);
         await fixture.Empty();
-        await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
+
+        // The source-generated request path handles simple parameterless methods without using the reflection cache.
+        await Assert.That(requestBuilder.MethodDictionary).IsEmpty();
 
         mockHttp
             .Expect(HttpMethod.Post, "http://bar/foo")
             .WithQueryString("id", "id")
             .Respond(HttpStatusCode.OK);
         await fixture.SingleParameter("id");
-        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(2);
+        await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
 
         mockHttp
             .Expect(HttpMethod.Post, "http://bar/foo")
@@ -69,7 +71,7 @@ public class CachedRequestBuilderTests
             .WithQueryString("name", "name")
             .Respond(HttpStatusCode.OK);
         await fixture.MultiParameter("id", "name");
-        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(3);
+        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(2);
 
         mockHttp
             .Expect(HttpMethod.Post, "http://bar/foo")
@@ -78,7 +80,7 @@ public class CachedRequestBuilderTests
             .WithQueryString("generic", "generic")
             .Respond(HttpStatusCode.OK);
         await fixture.SingleGenericMultiParameter("id", "name", "generic");
-        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(4);
+        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(3);
 
         mockHttp.VerifyNoOutstandingExpectation();
     }

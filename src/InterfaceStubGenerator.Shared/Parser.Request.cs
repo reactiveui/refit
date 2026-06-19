@@ -50,7 +50,7 @@ internal static partial class Parser
 
         return new(
             httpMethod,
-            path,
+            NormalizeConstantPathForInline(path),
             returnTypes.ResultType,
             returnTypes.DeserializedResultType,
             returnTypes.IsApiResponse,
@@ -115,6 +115,114 @@ internal static partial class Parser
         && path.IndexOf('}') < 0
         && path.IndexOf('\r') < 0
         && path.IndexOf('\n') < 0;
+
+    /// <summary>Normalizes constant inline paths to match the reflection request builder URI cleanup.</summary>
+    /// <param name="path">The source path from the HTTP method attribute.</param>
+    /// <returns>The normalized path used by generated request construction.</returns>
+    private static string NormalizeConstantPathForInline(string path)
+    {
+        var fragmentIndex = path.IndexOf('#');
+        if (fragmentIndex >= 0)
+        {
+            path = path[..fragmentIndex];
+        }
+
+        var queryIndex = path.IndexOf('?');
+        if (queryIndex < 0)
+        {
+            return path;
+        }
+
+        var pathOnly = path[..queryIndex];
+        if (queryIndex == path.Length - 1)
+        {
+            return pathOnly;
+        }
+
+        var queryStart = queryIndex + 1;
+        var partStart = queryStart;
+        char[]? queryBuffer = null;
+        var queryLength = 0;
+
+        for (var i = queryStart; i <= path.Length; i++)
+        {
+            if (i < path.Length && path[i] != '&')
+            {
+                continue;
+            }
+
+            var partLength = i - partStart;
+            AppendNonEmptyQueryPart(path, queryStart, partStart, partLength, ref queryBuffer, ref queryLength);
+            partStart = i + 1;
+        }
+
+        return queryBuffer is null
+            ? pathOnly
+            : $"{pathOnly}?{new string(queryBuffer, 0, queryLength)}";
+    }
+
+    /// <summary>Appends a query segment unless its key is empty or whitespace.</summary>
+    /// <param name="path">The full path containing the query segment.</param>
+    /// <param name="queryStart">The query start index, used to size the lazy buffer.</param>
+    /// <param name="partStart">The query segment start index.</param>
+    /// <param name="partLength">The query segment length.</param>
+    /// <param name="queryBuffer">The query buffer, allocated only when a segment is retained.</param>
+    /// <param name="queryLength">The number of characters currently written to the query buffer.</param>
+    private static void AppendNonEmptyQueryPart(
+        string path,
+        int queryStart,
+        int partStart,
+        int partLength,
+        ref char[]? queryBuffer,
+        ref int queryLength)
+    {
+        if (partLength <= 0)
+        {
+            return;
+        }
+
+        var equalsIndex = path.IndexOf('=', partStart, partLength);
+        var keyLength = equalsIndex >= 0
+            ? equalsIndex - partStart
+            : partLength;
+        if (IsWhiteSpace(path, partStart, keyLength))
+        {
+            return;
+        }
+
+        queryBuffer ??= new char[path.Length - queryStart];
+        if (queryLength > 0)
+        {
+            queryBuffer[queryLength++] = '&';
+        }
+
+        path.CopyTo(partStart, queryBuffer, queryLength, partLength);
+        queryLength += partLength;
+    }
+
+    /// <summary>Determines whether a string slice is empty or all whitespace.</summary>
+    /// <param name="value">The string containing the slice.</param>
+    /// <param name="start">The slice start index.</param>
+    /// <param name="length">The slice length.</param>
+    /// <returns><see langword="true"/> if the slice is empty or all whitespace.</returns>
+    private static bool IsWhiteSpace(string value, int start, int length)
+    {
+        if (length <= 0)
+        {
+            return true;
+        }
+
+        var end = start + length;
+        for (var i = start; i < end; i++)
+        {
+            if (!char.IsWhiteSpace(value[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>Determines whether a method carries request metadata the initial inline emitter does not handle.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>

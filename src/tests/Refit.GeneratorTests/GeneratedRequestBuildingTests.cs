@@ -129,6 +129,60 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).Contains(GeneratedRequestRunnerSendAsync);
     }
 
+    /// <summary>Verifies constant inline paths strip URI fragments before request construction.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnStripsFragmentsFromInlineConstantPaths()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Get("/foo?key=value#name")]
+            Task<string> Get();
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("______basePath + \"/foo?key=value\"");
+        await Assert.That(generated).DoesNotContain("#name");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies constant inline paths discard query text after a fragment marker.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnStripsQueryAfterFragmentFromInlineConstantPaths()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Get("/foo#?key=value")]
+            Task<string> Get();
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("______basePath + \"/foo\"");
+        await Assert.That(generated).DoesNotContain("?key=value");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies constant inline paths remove empty query keys to match runtime builder semantics.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnRemovesEmptyQueryKeysFromInlineConstantPaths()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Get("/foo?=drop&key=&two=2")]
+            Task<string> Get();
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("______basePath + \"/foo?key=&two=2\"");
+        await Assert.That(generated).DoesNotContain("=drop");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
     /// <summary>Verifies legacy JSON body metadata emits the non-obsolete equivalent enum member.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

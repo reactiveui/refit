@@ -572,7 +572,7 @@ internal static class Emitter
             return "global::System.Threading.CancellationToken.None";
         }
 
-        return cancellationToken.Type.StartsWith("global::System.Nullable<", StringComparison.Ordinal)
+        return cancellationToken.CanBeNull
             ? $"@{cancellationToken.Name}.GetValueOrDefault()"
             : $"@{cancellationToken.Name}";
     }
