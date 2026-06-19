@@ -23,7 +23,8 @@ internal class RestMethodInfoInternal
     /// <summary>The compiled regular expression that matches URL path parameters.</summary>
     private static readonly Regex _parameterRegexValue = new(
         "{(([^/?\\r\\n])*?)}",
-        RegexOptions.Compiled);
+        RegexOptions.Compiled,
+        TimeSpan.FromSeconds(1));
 #endif
 
     /// <summary>The index of the header collection parameter, or a negative value when none is present.</summary>

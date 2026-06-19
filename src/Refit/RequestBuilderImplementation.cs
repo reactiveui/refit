@@ -25,8 +25,10 @@ namespace Refit
         /// <summary>The default query attribute applied when a parameter has none.</summary>
         private static readonly QueryAttribute DefaultQueryAttribute = new();
 
-        /// <summary>A placeholder base URI used while building relative request URIs.</summary>
-        private static readonly Uri BaseUri = new("http://api");
+        /// <summary>A placeholder base URI used while building relative request URIs. Its scheme and host are
+        /// discarded — only the combined path and query are kept (see <c>AssignRequestUri</c>), so it never
+        /// reaches the network.</summary>
+        private static readonly Uri BaseUri = new("https://api");
 
         /// <summary>Lookup of HTTP methods keyed by method name.</summary>
         private readonly Dictionary<string, List<RestMethodInfoInternal>> _interfaceHttpMethods;
