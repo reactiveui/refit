@@ -1,4 +1,4 @@
-//HintName: INestedGitHubApi.g.cs
+﻿//HintName: INestedGitHubApi.g.cs
 #nullable disable
 // This file is generated into consumer projects; suppress all analyzers so
 // consumer analyzer policy does not report Refit implementation details.
@@ -86,12 +86,26 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public async global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
+        public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
         {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("GetIndex", global::System.Array.Empty<global::System.Type>() );
-
-            return await ((global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage>)______func(this.Client, ______arguments)).ConfigureAwait(false);
+            var ______settings = requestBuilder.Settings;
+            var ______basePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+            ______basePath = ______basePath == "/" ? string.Empty : ______basePath.TrimEnd('/');
+            var ______rq = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(______basePath + "/", global::System.UriKind.Relative));
+            #if NET6_0_OR_GREATER
+            ______rq.Version = ______settings.Version;
+            ______rq.VersionPolicy = ______settings.VersionPolicy;
+            #endif
+            global::Refit.GeneratedRequestRunner.SetHeader(______rq, "User-Agent", "Refit Integration Tests");
+            global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(______rq, ______settings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
+            return global::Refit.GeneratedRequestRunner.SendAsync<global::System.Net.Http.HttpResponseMessage, global::System.Net.Http.HttpResponseMessage>(
+                this.Client,
+                ______rq,
+                ______settings,
+                false,
+                false,
+                false,
+                global::System.Threading.CancellationToken.None);
         }
 
         /// <inheritdoc />
@@ -104,12 +118,24 @@ namespace Refit.Implementation
         }
 
         /// <inheritdoc />
-        public async global::System.Threading.Tasks.Task NothingToSeeHere()
+        public global::System.Threading.Tasks.Task NothingToSeeHere()
         {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("NothingToSeeHere", global::System.Array.Empty<global::System.Type>() );
-
-            await ((global::System.Threading.Tasks.Task)______func(this.Client, ______arguments)).ConfigureAwait(false);
+            var ______settings = requestBuilder.Settings;
+            var ______basePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+            ______basePath = ______basePath == "/" ? string.Empty : ______basePath.TrimEnd('/');
+            var ______rq = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(______basePath + "/give-me-some-404-action", global::System.UriKind.Relative));
+            #if NET6_0_OR_GREATER
+            ______rq.Version = ______settings.Version;
+            ______rq.VersionPolicy = ______settings.VersionPolicy;
+            #endif
+            global::Refit.GeneratedRequestRunner.SetHeader(______rq, "User-Agent", "Refit Integration Tests");
+            global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(______rq, ______settings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
+            return global::Refit.GeneratedRequestRunner.SendVoidAsync(
+                this.Client,
+                ______rq,
+                ______settings,
+                false,
+                global::System.Threading.CancellationToken.None);
         }
     }
     }

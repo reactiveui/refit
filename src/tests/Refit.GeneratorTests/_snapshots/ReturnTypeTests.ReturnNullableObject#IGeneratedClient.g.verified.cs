@@ -1,4 +1,4 @@
-//HintName: IGeneratedClient.g.cs
+﻿//HintName: IGeneratedClient.g.cs
 #nullable disable
 // This file is generated into consumer projects; suppress all analyzers so
 // consumer analyzer policy does not report Refit implementation details.
@@ -31,12 +31,25 @@ namespace Refit.Implementation
 
 
         /// <inheritdoc />
-        public async global::System.Threading.Tasks.Task<string> Get()
+        public global::System.Threading.Tasks.Task<string> Get()
         {
-            var ______arguments = global::System.Array.Empty<object>();
-            var ______func = requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>() );
-
-            return await ((global::System.Threading.Tasks.Task<string>)______func(this.Client, ______arguments)).ConfigureAwait(false);
+            var ______settings = requestBuilder.Settings;
+            var ______basePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+            ______basePath = ______basePath == "/" ? string.Empty : ______basePath.TrimEnd('/');
+            var ______rq = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(______basePath + "/users", global::System.UriKind.Relative));
+            #if NET6_0_OR_GREATER
+            ______rq.Version = ______settings.Version;
+            ______rq.VersionPolicy = ______settings.VersionPolicy;
+            #endif
+            global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(______rq, ______settings, typeof(global::RefitGeneratorTest.IGeneratedClient));
+            return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
+                this.Client,
+                ______rq,
+                ______settings,
+                false,
+                true,
+                false,
+                global::System.Threading.CancellationToken.None);
         }
     }
     }

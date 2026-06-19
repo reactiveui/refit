@@ -55,11 +55,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Package">
-    <None Include="targets\refit.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true"/>
     <None Include="targets\refit.props" PackagePath="buildTransitive\netstandard2.0" Pack="true"/>
-
-    <!-- We need this one to catch older clients -->
-    <None Include="targets\refit.targets" PackagePath="build\netstandard2.0" Pack="true"/>
 
     <None Include="..\InterfaceStubGenerator.Roslyn48\bin\$(Configuration)\netstandard2.0\InterfaceStubGeneratorV2.dll" PackagePath="analyzers\dotnet\roslyn4.8\cs" Pack="true" Visible="false"/>
 

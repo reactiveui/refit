@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Refit.Generator;
 
@@ -12,6 +13,18 @@ namespace Refit.Generator;
 [Generator]
 public class InterfaceStubGeneratorV2 : IIncrementalGenerator
 {
+    /// <summary>The MSBuild property prefix used by analyzer config options.</summary>
+    private const string BuildPropertyPrefix = "build_property.";
+
+    /// <summary>The option that disables all Refit source generation.</summary>
+    private const string DisableRefitSourceGeneratorOption = "DisableRefitSourceGenerator";
+
+    /// <summary>The option that enables direct generated request construction.</summary>
+    private const string RefitGeneratedRequestBuildingOption = "RefitGeneratedRequestBuilding";
+
+    /// <summary>The option that overrides the generated internal namespace prefix.</summary>
+    private const string RefitInternalNamespaceOption = "RefitInternalNamespace";
+
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -30,30 +43,15 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
                 syntax is InterfaceDeclarationSyntax { BaseList: not null },
             (generatorContext, _) => (InterfaceDeclarationSyntax)generatorContext.Node);
 
-        var refitInternalNamespace =
-            context.AnalyzerConfigOptionsProvider.Select((analyzerConfigOptionsProvider, _) =>
-                analyzerConfigOptionsProvider.GlobalOptions.TryGetValue(
-                    "build_property.RefitInternalNamespace",
-                    out var refitInternalNamespace)
-                    ? refitInternalNamespace
-                    : null);
-
-        var generatedRequestBuilding =
-            context.AnalyzerConfigOptionsProvider.Select((analyzerConfigOptionsProvider, _) =>
-                analyzerConfigOptionsProvider.GlobalOptions.TryGetValue(
-                    "build_property.RefitGeneratedRequestBuilding",
-                    out var propertyValue)
-                && bool.TryParse(propertyValue, out var parsed)
-                && parsed);
+        var generatorOptions =
+            context.AnalyzerConfigOptionsProvider.Select(
+                static (analyzerConfigOptionsProvider, _) =>
+                    CreateGeneratorOptions(analyzerConfigOptionsProvider.GlobalOptions));
 
         var candidateSyntax = candidateMethodsProvider
             .Collect()
             .Combine(candidateInterfacesProvider.Collect())
             .Select(static (combined, _) => CreateCandidateSyntax(combined));
-
-        var generatorOptions = refitInternalNamespace
-            .Combine(generatedRequestBuilding)
-            .Select(static (combined, _) => CreateGeneratorOptions(combined));
 
         var syntaxAndOptions = candidateSyntax
             .Combine(generatorOptions)
@@ -63,14 +61,17 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             .Combine(context.CompilationProvider)
             .Select(static (combined, _) => CreateGeneratorInputs(combined));
 
-        var parseStep = inputs.Select((collectedValues, cancellationToken) =>
-            Parser.GenerateInterfaceStubs(
-                (CSharpCompilation)collectedValues.Compilation,
-                collectedValues.RefitInternalNamespace,
-                collectedValues.GeneratedRequestBuilding,
-                collectedValues.CandidateMethods,
-                collectedValues.CandidateInterfaces,
-                cancellationToken));
+        var parseStep = inputs.Select(
+            static (collectedValues, cancellationToken) =>
+                collectedValues.DisableSourceGenerator
+                    ? CreateDisabledGenerationResult()
+                    : Parser.GenerateInterfaceStubs(
+                        (CSharpCompilation)collectedValues.Compilation,
+                        collectedValues.RefitInternalNamespace,
+                        collectedValues.GeneratedRequestBuilding,
+                        collectedValues.CandidateMethods,
+                        collectedValues.CandidateInterfaces,
+                        cancellationToken));
 
         var diagnostics = parseStep
             .Select(static (x, _) => x.diagnostics.ToImmutableEquatableArray())
@@ -96,11 +97,17 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         new(combined.Methods, combined.Interfaces);
 
     /// <summary>Creates the generator options input.</summary>
-    /// <param name="combined">The combined analyzer-config options.</param>
+    /// <param name="options">The global analyzer-config options.</param>
     /// <returns>The named generator options input.</returns>
-    private static GeneratorOptions CreateGeneratorOptions(
-        (string? RefitInternalNamespace, bool GeneratedRequestBuilding) combined) =>
-        new(combined.RefitInternalNamespace, combined.GeneratedRequestBuilding);
+    private static GeneratorOptions CreateGeneratorOptions(AnalyzerConfigOptions options)
+    {
+        TryGetGlobalOption(options, RefitInternalNamespaceOption, out var refitInternalNamespace);
+
+        return new(
+            refitInternalNamespace,
+            GetBooleanOption(options, RefitGeneratedRequestBuildingOption, defaultValue: true),
+            GetBooleanOption(options, DisableRefitSourceGeneratorOption, defaultValue: false));
+    }
 
     /// <summary>Creates the combined syntax and options input.</summary>
     /// <param name="combined">The combined candidate syntax and generator options.</param>
@@ -119,7 +126,59 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             combined.SyntaxAndOptions.CandidateSyntax.CandidateInterfaces,
             combined.SyntaxAndOptions.Options.RefitInternalNamespace,
             combined.SyntaxAndOptions.Options.GeneratedRequestBuilding,
+            combined.SyntaxAndOptions.Options.DisableSourceGenerator,
             combined.Compilation);
+
+    /// <summary>Creates an empty result when generation is explicitly disabled.</summary>
+    /// <returns>The disabled generation result.</returns>
+    private static (List<Diagnostic> diagnostics, ContextGenerationModel contextGenerationSpec)
+        CreateDisabledGenerationResult() =>
+        new(
+            [],
+            new(
+                string.Empty,
+                string.Empty,
+                false,
+                ImmutableEquatableArrayFactory.Empty<InterfaceModel>()));
+
+    /// <summary>Reads a boolean analyzer-config option.</summary>
+    /// <param name="options">The analyzer-config options.</param>
+    /// <param name="name">The option name without the build-property prefix.</param>
+    /// <param name="defaultValue">The value to use when the option is not present or cannot be parsed.</param>
+    /// <returns>The parsed option value.</returns>
+    private static bool GetBooleanOption(
+        AnalyzerConfigOptions options,
+        string name,
+        bool defaultValue) =>
+        TryGetGlobalOption(options, name, out var value) && bool.TryParse(value, out var parsed)
+            ? parsed
+            : defaultValue;
+
+    /// <summary>Reads a global analyzer-config option by bare name or MSBuild build-property name.</summary>
+    /// <param name="options">The analyzer-config options.</param>
+    /// <param name="name">The option name without the build-property prefix.</param>
+    /// <param name="value">The option value when found.</param>
+    /// <returns><see langword="true"/> when an option value was found.</returns>
+    private static bool TryGetGlobalOption(
+        AnalyzerConfigOptions options,
+        string name,
+        out string? value)
+    {
+        if (options.TryGetValue(BuildPropertyPrefix + name, out var buildPropertyValue))
+        {
+            value = buildPropertyValue;
+            return true;
+        }
+
+        if (options.TryGetValue(name, out var analyzerConfigValue))
+        {
+            value = analyzerConfigValue;
+            return true;
+        }
+
+        value = null;
+        return false;
+    }
 
     /// <summary>The collected syntax candidates for one generator pass.</summary>
     /// <param name="CandidateMethods">The candidate method declarations.</param>
@@ -131,9 +190,11 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The generator options visible through analyzer config.</summary>
     /// <param name="RefitInternalNamespace">The optional Refit internal namespace prefix.</param>
     /// <param name="GeneratedRequestBuilding">Whether inline request construction is enabled.</param>
+    /// <param name="DisableSourceGenerator">Whether source generation is disabled.</param>
     private readonly record struct GeneratorOptions(
         string? RefitInternalNamespace,
-        bool GeneratedRequestBuilding);
+        bool GeneratedRequestBuilding,
+        bool DisableSourceGenerator);
 
     /// <summary>The collected syntax candidates plus generator options.</summary>
     /// <param name="CandidateSyntax">The candidate syntax input.</param>
@@ -147,11 +208,13 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="CandidateInterfaces">The candidate interface declarations.</param>
     /// <param name="RefitInternalNamespace">The optional Refit internal namespace prefix.</param>
     /// <param name="GeneratedRequestBuilding">Whether inline request construction is enabled.</param>
+    /// <param name="DisableSourceGenerator">Whether source generation is disabled.</param>
     /// <param name="Compilation">The current compilation.</param>
     private readonly record struct GeneratorInputs(
         ImmutableArray<MethodDeclarationSyntax> CandidateMethods,
         ImmutableArray<InterfaceDeclarationSyntax> CandidateInterfaces,
         string? RefitInternalNamespace,
         bool GeneratedRequestBuilding,
+        bool DisableSourceGenerator,
         Compilation Compilation);
 }

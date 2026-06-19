@@ -42,6 +42,8 @@ services
 * [Where does this work?](#where-does-this-work)
     * [Breaking changes in 6.x](#breaking-changes-in-6x)
     * [Breaking changes in 11.x](#breaking-changes-in-11x)
+* [Source generation](#source-generation)
+    * [Generated request building](#generated-request-building)
 * [API Attributes](#api-attributes)
 * [Querystrings](#querystrings)
     * [Dynamic Querystring Parameters](#dynamic-querystring-parameters)
@@ -158,6 +160,81 @@ The new `IApiResponse.IsReceived` property can be used to check if a response wa
 mark those properties as non-null.
 The original `IApiResponse.IsSuccessful` and `IApiResponse.IsSuccessStatusCode` properties can still be used to check if
 the response was received and is successful.
+
+### Source generation
+
+Refit ships Roslyn source generators with the main `Refit` package. Projects that reference Refit through
+`PackageReference` get generated client implementations at build time without adding another package.
+
+The generated clients are still created with the normal APIs:
+
+```csharp
+var api = RestService.For<IGitHubApi>("https://api.github.com");
+```
+
+or through `Refit.HttpClientFactory`:
+
+```csharp
+services
+    .AddRefitClient<IGitHubApi>()
+    .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
+```
+
+The generator uses the same `RefitSettings` you pass to `RestService.For<T>` or `AddRefitClient<T>`. That means generated
+clients continue to honor settings such as:
+
+* `ContentSerializer`
+* `UrlParameterFormatter`
+* `UrlParameterKeyFormatter`
+* `CollectionFormat`
+* `AuthorizationHeaderValueGetter`
+* `ExceptionFactory`
+* `DeserializationExceptionFactory`
+* `HttpRequestMessageOptions`
+* `Version` and `VersionPolicy`
+
+#### Generated request building
+
+Refit's source generator now emits request construction directly for supported methods by default. Instead of generating
+a method body that calls the reflective runtime request-building pipeline through `BuildRestResultFuncForMethod`, the
+generated client can create the `HttpRequestMessage`, apply headers/properties/body content, and dispatch it through
+Refit's generated-request runtime helpers.
+
+This default path reduces runtime reflection, method metadata lookup, object-array argument packing, and delegate
+construction for request shapes the generator can safely model. It currently covers common request features including:
+
+* static `[Headers]`
+* dynamic `[Header]` parameters
+* `[HeaderCollection]` dictionaries
+* `[Body]` content
+* `[Property]` parameters
+* `[Property]` interface properties
+* cancellation tokens
+* `Task`, `Task<T>`, `Task<ApiResponse<T>>`, and related response wrappers
+
+If a method uses a shape the generator cannot safely emit yet, Refit falls back to the existing runtime request-builder
+path for that method.
+
+You can explicitly turn generated request building off in a project file:
+
+```xml
+<PropertyGroup>
+  <RefitGeneratedRequestBuilding>false</RefitGeneratedRequestBuilding>
+</PropertyGroup>
+```
+
+That keeps the source-generated interface implementation but uses the legacy reflective request-building call path
+inside generated methods.
+
+If you need to disable Refit source generation entirely, set:
+
+```xml
+<PropertyGroup>
+  <DisableRefitSourceGenerator>true</DisableRefitSourceGenerator>
+</PropertyGroup>
+```
+
+Most applications should leave both settings unset.
 
 ### API Attributes
 

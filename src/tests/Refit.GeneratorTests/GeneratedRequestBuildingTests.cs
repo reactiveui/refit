@@ -12,37 +12,72 @@ public class GeneratedRequestBuildingTests
     /// <summary>The reflective request-builder call emitted by fallback paths.</summary>
     private const string ReflectiveRequestBuilderCall = "BuildRestResultFuncForMethod";
 
-    /// <summary>Verifies the default switch-off output keeps using the reflective request builder.</summary>
+    /// <summary>The generated request-runner send call emitted by inline request construction.</summary>
+    private const string GeneratedRequestRunnerSendAsync = "GeneratedRequestRunner.SendAsync";
+
+    /// <summary>The generated request-message construction emitted by inline request construction.</summary>
+    private const string NewHttpRequestMessage = "new global::System.Net.Http.HttpRequestMessage";
+
+    /// <summary>A simple eligible GET method used by switch tests.</summary>
+    private const string SimpleGetMethod =
+        """
+        [Get("/users")]
+        Task<string> Get(CancellationToken cancellationToken);
+        """;
+
+    /// <summary>Verifies the default output uses generated request construction for eligible methods.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task SwitchOffUsesReflectiveRequestBuilder()
+    public async Task DefaultUsesGeneratedRequestConstruction()
     {
         var generated = Fixture.GenerateForBody(
-            """
-            [Get("/users")]
-            Task<string> Get(CancellationToken cancellationToken);
-            """,
+            SimpleGetMethod,
             GeneratedClientHintName);
 
-        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
-        await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.SendAsync");
+        await Assert.That(generated).Contains(GeneratedRequestRunnerSendAsync);
+        await Assert.That(generated).Contains(NewHttpRequestMessage);
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
-    /// <summary>Verifies the opt-in switch emits inline request construction for a simple eligible method.</summary>
+    /// <summary>Verifies an explicit switch-off keeps using the reflective request builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ExplicitSwitchOffUsesReflectiveRequestBuilder()
+    {
+        var generated = Fixture.GenerateForBody(
+            SimpleGetMethod,
+            GeneratedClientHintName,
+            generatedRequestBuilding: false);
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).DoesNotContain(GeneratedRequestRunnerSendAsync);
+    }
+
+    /// <summary>Verifies the legacy source-generator disable switch prevents all generated output.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DisableSourceGeneratorProducesNoSources()
+    {
+        var result = Fixture.RunGeneratorForBody(
+            SimpleGetMethod,
+            generatedRequestBuilding: null,
+            disableSourceGenerator: true);
+
+        await Assert.That(result.GeneratedSources).IsEmpty();
+    }
+
+    /// <summary>Verifies the explicit switch-on emits inline request construction for a simple eligible method.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task SwitchOnEmitsInlineRequestConstructionForSimpleMethod()
     {
         var generated = Fixture.GenerateForBody(
-            """
-            [Get("/users")]
-            Task<string> Get(CancellationToken cancellationToken);
-            """,
+            SimpleGetMethod,
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SendAsync");
-        await Assert.That(generated).Contains("new global::System.Net.Http.HttpRequestMessage");
+        await Assert.That(generated).Contains(GeneratedRequestRunnerSendAsync);
+        await Assert.That(generated).Contains(NewHttpRequestMessage);
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
@@ -91,7 +126,7 @@ public class GeneratedRequestBuildingTests
             generatedRequestBuilding: true);
 
         await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(______rq, \"X-Test\", \"test\")");
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SendAsync");
+        await Assert.That(generated).Contains(GeneratedRequestRunnerSendAsync);
     }
 
     /// <summary>Verifies legacy JSON body metadata emits the non-obsolete equivalent enum member.</summary>

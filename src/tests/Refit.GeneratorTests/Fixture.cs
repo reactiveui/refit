@@ -78,14 +78,14 @@ public static class Fixture
     /// <param name="hintName">The generated source hint name.</param>
     /// <returns>The generated source text.</returns>
     public static string GenerateForBody(string body, string hintName) =>
-        GenerateForBody(body, hintName, false);
+        GenerateForBody(body, hintName, null);
 
     /// <summary>Generates output for an interface body snippet and returns the requested generated file.</summary>
     /// <param name="body">The interface member body source.</param>
     /// <param name="hintName">The generated source hint name.</param>
-    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
     /// <returns>The generated source text.</returns>
-    public static string GenerateForBody(string body, string hintName, bool generatedRequestBuilding)
+    public static string GenerateForBody(string body, string hintName, bool? generatedRequestBuilding)
     {
         var source = BuildBodySource(body);
 
@@ -94,11 +94,11 @@ public static class Fixture
 
     /// <summary>Generates output for an interface body snippet, compiles it, and returns error diagnostics.</summary>
     /// <param name="body">The interface member body source.</param>
-    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
     /// <returns>The compiler and generator errors produced by the generated output.</returns>
     public static ImmutableArray<Diagnostic> GenerateErrorsForBody(
         string body,
-        bool generatedRequestBuilding)
+        bool? generatedRequestBuilding)
     {
         var result = RunGenerator(BuildBodySource(body), generatedRequestBuilding);
 
@@ -112,22 +112,50 @@ public static class Fixture
 
     /// <summary>Runs the generator over an interface body snippet and returns the output compilation.</summary>
     /// <param name="body">The interface member body source.</param>
-    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
     /// <returns>The generator result.</returns>
-    public static GeneratorTestResult RunGeneratorForBody(string body, bool generatedRequestBuilding) =>
-        RunGenerator(BuildBodySource(body), generatedRequestBuilding);
+    public static GeneratorTestResult RunGeneratorForBody(
+        string body,
+        bool? generatedRequestBuilding) =>
+        RunGeneratorForBody(body, generatedRequestBuilding, false);
+
+    /// <summary>Runs the generator over an interface body snippet and returns the output compilation.</summary>
+    /// <param name="body">The interface member body source.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
+    /// <param name="disableSourceGenerator">Whether source generation is disabled.</param>
+    /// <returns>The generator result.</returns>
+    public static GeneratorTestResult RunGeneratorForBody(
+        string body,
+        bool? generatedRequestBuilding,
+        bool disableSourceGenerator) =>
+        RunGenerator(BuildBodySource(body), generatedRequestBuilding, disableSourceGenerator);
 
     /// <summary>Runs the generator over the source and returns the output compilation.</summary>
     /// <param name="source">The source to compile and generate from.</param>
-    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
     /// <returns>The generator result.</returns>
-    public static GeneratorTestResult RunGenerator(string source, bool generatedRequestBuilding)
+    public static GeneratorTestResult RunGenerator(
+        string source,
+        bool? generatedRequestBuilding) =>
+        RunGenerator(source, generatedRequestBuilding, false);
+
+    /// <summary>Runs the generator over the source and returns the output compilation.</summary>
+    /// <param name="source">The source to compile and generate from.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
+    /// <param name="disableSourceGenerator">Whether source generation is disabled.</param>
+    /// <returns>The generator result.</returns>
+    public static GeneratorTestResult RunGenerator(
+        string source,
+        bool? generatedRequestBuilding,
+        bool disableSourceGenerator)
     {
         var compilation = CreateLibrary(source);
         var generator = new InterfaceStubGeneratorV2();
         var driver = CSharpGeneratorDriver.Create(
             [generator.AsSourceGenerator()],
-            optionsProvider: new TestAnalyzerConfigOptionsProvider(generatedRequestBuilding));
+            optionsProvider: new TestAnalyzerConfigOptionsProvider(
+                generatedRequestBuilding,
+                disableSourceGenerator));
 
         driver.RunGeneratorsAndUpdateCompilation(
             compilation,
@@ -214,12 +242,12 @@ public static class Fixture
     /// <summary>Generates output for top-level declarations and returns the requested generated file.</summary>
     /// <param name="declarations">The declarations source.</param>
     /// <param name="hintName">The generated source hint name.</param>
-    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
     /// <returns>The generated source text.</returns>
     public static string GenerateForDeclaration(
         string declarations,
         string hintName,
-        bool generatedRequestBuilding)
+        bool? generatedRequestBuilding)
     {
         var source =
             $$"""
@@ -363,12 +391,12 @@ public static class Fixture
     /// <summary>Runs the generator and returns a generated source by hint name.</summary>
     /// <param name="source">The source to compile and generate from.</param>
     /// <param name="hintName">The generated source hint name.</param>
-    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
     /// <returns>The generated source text.</returns>
     private static string Generate(
         string source,
         string hintName,
-        bool generatedRequestBuilding)
+        bool? generatedRequestBuilding)
     {
         var compilation = CreateLibrary(source);
         var generator = new InterfaceStubGeneratorV2();
@@ -389,13 +417,16 @@ public static class Fixture
     }
 
     /// <summary>Analyzer-config options used by source-generator tests.</summary>
-    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
-    private sealed class TestAnalyzerConfigOptionsProvider(bool generatedRequestBuilding)
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
+    /// <param name="disableSourceGenerator">Whether source generation is disabled.</param>
+    private sealed class TestAnalyzerConfigOptionsProvider(
+        bool? generatedRequestBuilding,
+        bool disableSourceGenerator = false)
         : AnalyzerConfigOptionsProvider
     {
         /// <inheritdoc/>
         public override AnalyzerConfigOptions GlobalOptions { get; } =
-            new TestAnalyzerConfigOptions(generatedRequestBuilding);
+            new TestAnalyzerConfigOptions(generatedRequestBuilding, disableSourceGenerator);
 
         /// <inheritdoc/>
         public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) =>
@@ -407,18 +438,27 @@ public static class Fixture
     }
 
     /// <summary>Analyzer-config options used by source-generator tests.</summary>
-    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
-    private sealed class TestAnalyzerConfigOptions(bool generatedRequestBuilding) : AnalyzerConfigOptions
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
+    /// <param name="disableSourceGenerator">Whether source generation is disabled.</param>
+    private sealed class TestAnalyzerConfigOptions(
+        bool? generatedRequestBuilding,
+        bool disableSourceGenerator) : AnalyzerConfigOptions
     {
         /// <summary>Gets empty analyzer-config options.</summary>
-        public static TestAnalyzerConfigOptions Empty { get; } = new(false);
+        public static TestAnalyzerConfigOptions Empty { get; } = new(null, false);
 
         /// <inheritdoc/>
         public override bool TryGetValue(string key, out string value)
         {
-            if (key == "build_property.RefitGeneratedRequestBuilding")
+            if (key == "build_property.RefitGeneratedRequestBuilding" && generatedRequestBuilding.HasValue)
             {
-                value = generatedRequestBuilding ? "true" : "false";
+                value = generatedRequestBuilding.Value ? "true" : "false";
+                return true;
+            }
+
+            if (key == "build_property.DisableRefitSourceGenerator" && disableSourceGenerator)
+            {
+                value = "true";
                 return true;
             }
 
