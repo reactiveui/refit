@@ -1,0 +1,27 @@
+name: SonarCloud
+
+on:
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
+
+permissions:
+    contents: read
+
+jobs:
+    sonarcloud:
+        uses: reactiveui/actions-common/.github/workflows/workflow-common-sonarcloud.yml@main
+        with:
+            srcFolder: src
+            solutionFile: Refit.slnx
+            minverMinimumMajorMinor: '10.2'
+            sonarProjectKey: reactiveui_refit
+            sonarOrganization: reactiveui
+            sonarExclusions: '**/tests/**,**/benchmarks/**,**/examples/**,**/TestResults/**'
+            sonarCoverageExclusions: '**/tests/**,**/benchmarks/**,**/examples/**,**/*Tests/**,**/*Tests.cs,**/Generated/**,**/*.g.cs'
+            sonarCpdExclusions: '**/tests/**,**/benchmarks/**,**/examples/**'
+            sonarTestExclusions: '**/tests/**,**/benchmarks/**,**/examples/**'
+            testTimeout: '15m'
+        secrets:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
