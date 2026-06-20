@@ -149,14 +149,26 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         var postMethods = CreateHttpMethodCandidateProvider(context, PostAttributeMetadataName).Collect();
         var putMethods = CreateHttpMethodCandidateProvider(context, PutAttributeMetadataName).Collect();
 
-        return deleteMethods
+        var standardMethods = deleteMethods
             .Combine(getMethods)
+            .Select(static (combined, _) => new StandardHttpMethodCandidates
+            {
+                DeleteMethods = combined.Left,
+                GetMethods = combined.Right
+            });
+
+        return standardMethods
             .Combine(headMethods)
+            .Select(static (combined, _) => combined.Left with { HeadMethods = combined.Right })
             .Combine(optionsMethods)
+            .Select(static (combined, _) => combined.Left with { OptionsMethods = combined.Right })
             .Combine(patchMethods)
+            .Select(static (combined, _) => combined.Left with { PatchMethods = combined.Right })
             .Combine(postMethods)
+            .Select(static (combined, _) => combined.Left with { PostMethods = combined.Right })
             .Combine(putMethods)
-            .Select(static (combined, _) => CombineStandardHttpMethodCandidates(combined));
+            .Select(static (combined, _) => CombineStandardHttpMethodCandidates(
+                combined.Left with { PutMethods = combined.Right }));
     }
 
     /// <summary>Creates a provider for a single Refit HTTP method attribute metadata name.</summary>
@@ -172,44 +184,39 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             static (generatorContext, _) => (MethodDeclarationSyntax)generatorContext.TargetNode);
 
     /// <summary>Combines standard HTTP method candidate arrays into one array.</summary>
-    /// <param name="combined">The nested combined candidate arrays.</param>
+    /// <param name="candidates">The candidate arrays.</param>
     /// <returns>The combined candidates.</returns>
     private static ImmutableArray<MethodDeclarationSyntax> CombineStandardHttpMethodCandidates(
-        ((((((ImmutableArray<MethodDeclarationSyntax> DeleteMethods, ImmutableArray<MethodDeclarationSyntax> GetMethods) First,
-        ImmutableArray<MethodDeclarationSyntax> HeadMethods) Second,
-        ImmutableArray<MethodDeclarationSyntax> OptionsMethods) Third,
-        ImmutableArray<MethodDeclarationSyntax> PatchMethods) Fourth,
-        ImmutableArray<MethodDeclarationSyntax> PostMethods) Fifth,
-        ImmutableArray<MethodDeclarationSyntax> PutMethods) combined)
+        StandardHttpMethodCandidates candidates)
     {
 #if ROSLYN_5
         return
         [
-            ..combined.Fifth.Fourth.Third.Second.First.DeleteMethods,
-            ..combined.Fifth.Fourth.Third.Second.First.GetMethods,
-            ..combined.Fifth.Fourth.Third.Second.HeadMethods,
-            ..combined.Fifth.Fourth.Third.OptionsMethods,
-            ..combined.Fifth.Fourth.PatchMethods,
-            ..combined.Fifth.PostMethods,
-            ..combined.PutMethods
+            ..candidates.DeleteMethods,
+            ..candidates.GetMethods,
+            ..candidates.HeadMethods,
+            ..candidates.OptionsMethods,
+            ..candidates.PatchMethods,
+            ..candidates.PostMethods,
+            ..candidates.PutMethods
         ];
 #else
         var count =
-            combined.Fifth.Fourth.Third.Second.First.DeleteMethods.Length
-            + combined.Fifth.Fourth.Third.Second.First.GetMethods.Length
-            + combined.Fifth.Fourth.Third.Second.HeadMethods.Length
-            + combined.Fifth.Fourth.Third.OptionsMethods.Length
-            + combined.Fifth.Fourth.PatchMethods.Length
-            + combined.Fifth.PostMethods.Length
-            + combined.PutMethods.Length;
+            candidates.DeleteMethods.Length
+            + candidates.GetMethods.Length
+            + candidates.HeadMethods.Length
+            + candidates.OptionsMethods.Length
+            + candidates.PatchMethods.Length
+            + candidates.PostMethods.Length
+            + candidates.PutMethods.Length;
         var builder = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(count);
-        builder.AddRange(combined.Fifth.Fourth.Third.Second.First.DeleteMethods);
-        builder.AddRange(combined.Fifth.Fourth.Third.Second.First.GetMethods);
-        builder.AddRange(combined.Fifth.Fourth.Third.Second.HeadMethods);
-        builder.AddRange(combined.Fifth.Fourth.Third.OptionsMethods);
-        builder.AddRange(combined.Fifth.Fourth.PatchMethods);
-        builder.AddRange(combined.Fifth.PostMethods);
-        builder.AddRange(combined.PutMethods);
+        builder.AddRange(candidates.DeleteMethods);
+        builder.AddRange(candidates.GetMethods);
+        builder.AddRange(candidates.HeadMethods);
+        builder.AddRange(candidates.OptionsMethods);
+        builder.AddRange(candidates.PatchMethods);
+        builder.AddRange(candidates.PostMethods);
+        builder.AddRange(candidates.PutMethods);
         return builder.MoveToImmutable();
 #endif
     }
@@ -368,6 +375,31 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     private readonly record struct CandidateSyntax(
         ImmutableArray<MethodDeclarationSyntax> CandidateMethods,
         ImmutableArray<InterfaceDeclarationSyntax> CandidateInterfaces);
+
+    /// <summary>The method declarations found through Refit's built-in HTTP method attributes.</summary>
+    private readonly record struct StandardHttpMethodCandidates
+    {
+        /// <summary>Gets the methods decorated with <c>DeleteAttribute</c>.</summary>
+        public ImmutableArray<MethodDeclarationSyntax> DeleteMethods { get; init; }
+
+        /// <summary>Gets the methods decorated with <c>GetAttribute</c>.</summary>
+        public ImmutableArray<MethodDeclarationSyntax> GetMethods { get; init; }
+
+        /// <summary>Gets the methods decorated with <c>HeadAttribute</c>.</summary>
+        public ImmutableArray<MethodDeclarationSyntax> HeadMethods { get; init; }
+
+        /// <summary>Gets the methods decorated with <c>OptionsAttribute</c>.</summary>
+        public ImmutableArray<MethodDeclarationSyntax> OptionsMethods { get; init; }
+
+        /// <summary>Gets the methods decorated with <c>PatchAttribute</c>.</summary>
+        public ImmutableArray<MethodDeclarationSyntax> PatchMethods { get; init; }
+
+        /// <summary>Gets the methods decorated with <c>PostAttribute</c>.</summary>
+        public ImmutableArray<MethodDeclarationSyntax> PostMethods { get; init; }
+
+        /// <summary>Gets the methods decorated with <c>PutAttribute</c>.</summary>
+        public ImmutableArray<MethodDeclarationSyntax> PutMethods { get; init; }
+    }
 
     /// <summary>The generator options visible through analyzer config.</summary>
     /// <param name="RefitInternalNamespace">The optional Refit internal namespace prefix.</param>

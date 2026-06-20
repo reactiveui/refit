@@ -271,6 +271,39 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
+    /// <summary>Verifies built-in HTTP method attributes are discovered when written with qualified names.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnDiscoversQualifiedBuiltInHttpMethodAttributes()
+    {
+        var generated = Fixture.GenerateForDeclaration(
+            """
+            using R = Refit;
+
+            public interface IGeneratedClient
+            {
+                [global::Refit.GetAttribute("/global")]
+                Task<string> Global();
+
+                [R.PostAttribute("/alias")]
+                Task<string> Alias();
+
+                [Refit.Put("/qualified")]
+                Task<string> Qualified();
+            }
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("______basePath + \"/global\"");
+        await Assert.That(generated).Contains("______basePath + \"/alias\"");
+        await Assert.That(generated).Contains("______basePath + \"/qualified\"");
+        await Assert.That(generated).Contains("HttpMethod.Get");
+        await Assert.That(generated).Contains("HttpMethod.Post");
+        await Assert.That(generated).Contains("HttpMethod.Put");
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
     /// <summary>Verifies string literal escaping in inline request paths and header values.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

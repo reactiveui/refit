@@ -236,6 +236,18 @@ If you need to disable Refit source generation entirely, set:
 
 Most applications should leave both settings unset.
 
+#### Analyzer diagnostics and code fixes
+
+Refit also ships analyzers with the main package. They report common interface issues at compile time, including:
+
+* methods or properties on Refit interfaces that cannot be generated or called by Refit
+* route templates that use backslashes instead of forward slashes
+* methods with more than one `CancellationToken` parameter
+* `[HeaderCollection]` parameters that are not `IDictionary<string, string>`
+
+Where the fix is mechanical, Refit includes a code fix. Current fixes can replace route backslashes with forward
+slashes and change invalid `[HeaderCollection]` parameter types to `IDictionary<string, string>`.
+
 ### API Attributes
 
 Every method must have an HTTP attribute that provides the request method and
