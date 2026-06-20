@@ -40,6 +40,10 @@ internal static class StringHelpers
     /// <param name="start">The slice start index.</param>
     /// <param name="length">The slice length.</param>
     /// <returns>The escaped value.</returns>
+    [SuppressMessage(
+        "Performance",
+        "CA1846:Prefer AsSpan over Substring",
+        Justification = "The span overload is only available on targets newer than net9.0.")]
     internal static string EscapeDataString(string value, int start, int length) =>
 #if NET10_0_OR_GREATER
         Uri.EscapeDataString(value.AsSpan(start, length));
