@@ -1,6 +1,6 @@
 ![Refit](images/logo.png)
 
-## Refit: The automatic type-safe REST library for .NET Core, Xamarin and .NET
+## Refit: The automatic type-safe REST library for modern .NET
 
 [![Build](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml/badge.svg)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml) [![codecov](https://codecov.io/github/reactiveui/refit/branch/main/graph/badge.svg?token=2guEgHsDU2)](https://codecov.io/github/reactiveui/refit)
 
@@ -28,7 +28,7 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com");
 var octocat = await gitHubApi.GetUser("octocat");
 ```
 
-.NET Core supports registering via HttpClientFactory
+.NET supports registering Refit clients via HttpClientFactory:
 
 ```csharp
 services
@@ -88,11 +88,11 @@ Refit is sponsored by the following:
 
 ### Where does this work?
 
-Refit currently supports the following platforms and any .NET Standard 2.0 target:
+Refit currently supports the following platforms and modern .NET targets:
 
 * WinUI
 * Desktop .NET Framework 4.6.2+
-* .NET 8 / 9 / 10
+* .NET 8 / 9 / 10 / 11
 * Blazor
 * Uno Platform
 
@@ -1502,7 +1502,7 @@ internal class ApiClient : IApiClient
 
 ### Using HttpClientFactory
 
-Refit has first class support for the ASP.Net Core 2.1 HttpClientFactory. Add a reference to `Refit.HttpClientFactory`
+Refit has first class support for `IHttpClientFactory`. Add a reference to `Refit.HttpClientFactory`
 and call
 the provided extension method in your `ConfigureServices` method to configure your Refit interface:
 

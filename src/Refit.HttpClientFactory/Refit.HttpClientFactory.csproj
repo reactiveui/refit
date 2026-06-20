@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Product>Refit HTTP Client Factory Extensions</Product>
-    <Description>Refit HTTP Client Factory Extensions</Description>
+    <PackageDescription>Microsoft.Extensions.Http integration for Refit, adding AddRefitClient support for typed HttpClientFactory clients, dependency injection, handlers, and Polly-style HTTP pipelines.</PackageDescription>
+    <PackageTags>refit;rest;http;httpclient;httpclientfactory;ihttpclientfactory;dependency-injection;microsoft-extensions-http;typed-client;api-client</PackageTags>
     <TargetFrameworks>$(RefitTargets)</TargetFrameworks>
     <Nullable>enable</Nullable>
     <IsTrimmable>true</IsTrimmable>

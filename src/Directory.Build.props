@@ -6,33 +6,48 @@
     <IsTestProject>$(MSBuildProjectName.EndsWith('Tests'))</IsTestProject>
     <DebugType>embedded</DebugType>
     <Authors>ReactiveUI and Contributors</Authors>
+    <Company>ReactiveUI and Contributors</Company>
     <Copyright>Copyright (c) ReactiveUI and Contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/reactiveui/refit</PackageProjectUrl>
     <PackageIcon>logo.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/reactiveui/refit</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <Description>The automatic type-safe REST library for Xamarin and .NET</Description>
+    <PackageDescription>Type-safe REST API clients for .NET, generated from annotated interfaces and optimized for modern HttpClient, System.Text.Json, source generation, trimming, and AOT scenarios.</PackageDescription>
+    <PackageTags>refit;rest;http;httpclient;api-client;typed-client;source-generator;roslyn;system-text-json;json;aot;trimming</PackageTags>
+    <PackageReleaseNotes>https://github.com/reactiveui/refit/releases</PackageReleaseNotes>
     <NoPackageAnalysis>true</NoPackageAnalysis>
-    <LangVersion>preview</LangVersion>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <LangVersion>latest</LangVersion>
+    <Platform>AnyCPU</Platform>
 
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <RunAnalyzers>true</RunAnalyzers>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <ReportAnalyzer>true</ReportAnalyzer>
     <Nullable>enable</Nullable>
 
     <WarningsAsErrors>nullable;CS4014</WarningsAsErrors>
 
-    <ImplicitUsings>true</ImplicitUsings>
+    <ImplicitUsings>enable</ImplicitUsings>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
     <!-- Emit source-generator output to obj/Generated so generated code is inspectable/diffable. -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(MSBuildProjectDirectory)/obj/Generated</CompilerGeneratedFilesOutputPath>
+
+    <!-- Enable building Windows-specific targets on non-Windows platforms. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+
+  <!-- Target Framework Monikers. EnableWindowsTargeting lets the netfx/Windows legs build anywhere. -->
+  <PropertyGroup>
     <RefitGeneratorTargets>netstandard2.0</RefitGeneratorTargets>
     <RefitFrameworkTargets>net462;net470;net471;net472;net48;net481</RefitFrameworkTargets>
     <RefitModernTargets>net8.0;net9.0;net10.0;net11.0</RefitModernTargets>
@@ -40,13 +55,12 @@
     <RefitTestTargets>$(RefitModernTargets)</RefitTestTargets>
     <RefitBenchmarkTargets>$(RefitModernTargets)</RefitBenchmarkTargets>
     <RefitTargets>$(RefitShippingTargets)</RefitTargets>
-
-    <!-- Enable building Windows-specific targets on non-Windows platforms -->
-    <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <TUnitImplicitUsings>true</TUnitImplicitUsings>
+    <TUnitAssertionsImplicitUsings>true</TUnitAssertionsImplicitUsings>
   </PropertyGroup>
 
   <!-- AOT/trim analyzers on net8.0+ (netfx doesn't support them). -->
@@ -70,6 +84,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsTestProject)' != 'true'">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="All"/>
   </ItemGroup>
 
@@ -104,6 +119,10 @@
        so untagged builds produce 10.2.x-alpha.0.<height> until a v10.2.x
        (or later) tag is reachable. -->
   <PropertyGroup>
+    <SolutionDir Condition="'$(SolutionDir)' == ''">$(MSBuildThisFileDirectory)</SolutionDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <MinVerAutoIncrement>minor</MinVerAutoIncrement>
     <MinVerDefaultPreReleaseIdentifiers>alpha.0</MinVerDefaultPreReleaseIdentifiers>
     <MinVerTagPrefix>v</MinVerTagPrefix>
@@ -111,7 +130,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
     <PackageReference Include="MinVer" PrivateAssets="all"/>
     <PackageReference Include="StyleSharp.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="Roslynator.Analyzers" PrivateAssets="All"/>

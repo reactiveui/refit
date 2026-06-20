@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <Product>Refit Serializer for Newtonsoft.Json ($(TargetFramework))</Product>
-    <Description>Refit Serializers for Newtonsoft.Json</Description>
+    <PackageDescription>Newtonsoft.Json content serializer for Refit clients that need Json.NET converters, settings, or compatibility behavior instead of the default System.Text.Json serializer.</PackageDescription>
+    <PackageTags>refit;rest;http;api-client;json;newtonsoft-json;json-net;serializer;content-serializer</PackageTags>
     <TargetFrameworks>$(RefitShippingTargets)</TargetFrameworks>
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>

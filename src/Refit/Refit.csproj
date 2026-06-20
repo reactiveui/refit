@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <Product>Refit ($(TargetFramework))</Product>
+    <PackageDescription>Type-safe REST API clients for .NET, generated from annotated interfaces with build-time source generation, direct request construction, System.Text.Json defaults, and support for trimming and AOT.</PackageDescription>
+    <PackageTags>refit;rest;http;httpclient;api-client;typed-client;source-generator;roslyn;system-text-json;json;aot;trimming</PackageTags>
     <TargetFrameworks>$(RefitTargets)</TargetFrameworks>
 
     <Nullable>enable</Nullable>
