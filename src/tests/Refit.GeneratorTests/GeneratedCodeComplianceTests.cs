@@ -180,6 +180,56 @@ public class GeneratedCodeComplianceTests
         await Assert.That(string.Join(Environment.NewLine, diagnostics)).IsEqualTo(string.Empty);
     }
 
+    /// <summary>Verifies generated infrastructure fields do not collide with user interface members.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GeneratedInfrastructureFieldsAvoidInterfaceMemberNames()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            /// <summary>Generated client test interface.</summary>
+            public interface IGeneratedClient
+            {
+                /// <summary>Gets the member that collides with the generated request-builder field name.</summary>
+                string _requestBuilder { get; }
+
+                /// <summary>Gets the member that collides with the first generated request-builder fallback field name.</summary>
+                string _requestBuilder0 { get; }
+
+                /// <summary>Gets the member that collides with the generated settings field name.</summary>
+                string _settings { get; }
+
+                /// <summary>Gets the member that collides with the first generated settings fallback field name.</summary>
+                string _settings0 { get; }
+
+                /// <summary>Gets the member that collides with the generated type-parameter cache field name.</summary>
+                string ______typeParameters { get; }
+
+                /// <summary>Gets the member that collides with the first generated type-parameter fallback field name.</summary>
+                string ______typeParameters0 { get; }
+
+                /// <summary>Gets a generated value.</summary>
+                /// <param name="id">The route identifier.</param>
+                /// <returns>The generated value.</returns>
+                [Get("/users/{id}")]
+                Task<string> Get(string id);
+            }
+            """;
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: false);
+
+        await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
+
+        var generatedClientSource = result.GeneratedSources[GeneratedClientHintName];
+        await Assert.That(generatedClientSource).Contains("private readonly global::Refit.IRequestBuilder? _requestBuilder1;");
+        await Assert.That(generatedClientSource).Contains("private readonly global::Refit.RefitSettings _settings1;");
+        await Assert.That(generatedClientSource).Contains("private static readonly global::System.Type[] ______typeParameters1");
+    }
+
     /// <summary>Parses source with documentation diagnostics enabled.</summary>
     /// <param name="source">The source to parse.</param>
     /// <param name="path">The syntax tree path.</param>

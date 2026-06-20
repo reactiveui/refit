@@ -148,15 +148,29 @@ internal static partial class Emitter
     {
         var uniqueNames = new UniqueNameBuilder();
         uniqueNames.Reserve(model.MemberNames);
+        var requestBuilderFieldName = uniqueNames.New("_requestBuilder");
+        var settingsFieldName = uniqueNames.New("_settings");
         var propertySource = BuildInterfaceProperties(model.Properties, model.SupportsNullable);
-        var refitMethodSource = BuildRefitMethods(model.RefitMethods, true, model, uniqueNames);
-        var derivedRefitMethodSource = BuildRefitMethods(model.DerivedRefitMethods, false, model, uniqueNames);
+        var refitMethodSource = BuildRefitMethods(
+            model.RefitMethods,
+            true,
+            model,
+            uniqueNames,
+            requestBuilderFieldName,
+            settingsFieldName);
+        var derivedRefitMethodSource = BuildRefitMethods(
+            model.DerivedRefitMethods,
+            false,
+            model,
+            uniqueNames,
+            requestBuilderFieldName,
+            settingsFieldName);
         var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods, model.SupportsNullable);
         var disposableSource = BuildDisposableMethod(model.DisposeMethod);
         var memberSource = propertySource + refitMethodSource + derivedRefitMethodSource + nonRefitMethodSource + disposableSource;
         var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
         var generatedCodeAttribute = GeneratedCodeAttribute;
-        var settingsConstructorSource = BuildSettingsConstructor(model);
+        var settingsConstructorSource = BuildSettingsConstructor(model, settingsFieldName);
         var requestBuilderFieldType = model.SupportsNullable
             ? "global::Refit.IRequestBuilder?"
             : "global::Refit.IRequestBuilder";
@@ -178,10 +192,10 @@ internal static partial class Emitter
                         : {{model.InterfaceDisplayName}}
             {{BuildConstraints(model.Constraints, false, ClassMemberIndentation)}}        {
                         /// <summary>The request builder used to create Refit method delegates.</summary>
-                        private readonly {{requestBuilderFieldType}} _requestBuilder;
+                        private readonly {{requestBuilderFieldType}} {{requestBuilderFieldName}};
 
                         /// <summary>The settings used by this generated Refit implementation.</summary>
-                        private readonly global::Refit.RefitSettings _settings;
+                        private readonly global::Refit.RefitSettings {{settingsFieldName}};
 
                         /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
                         public global::System.Net.Http.HttpClient Client { get; }
@@ -192,8 +206,8 @@ internal static partial class Emitter
                         public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
                         {
                             Client = client;
-                            _requestBuilder = requestBuilder;
-                            _settings = requestBuilder.Settings;
+                            {{requestBuilderFieldName}} = requestBuilder;
+                            {{settingsFieldName}} = requestBuilder.Settings;
                         }
             {{settingsConstructorSource}}{{memberSource}}        }
                 }
@@ -353,8 +367,9 @@ internal static partial class Emitter
 
     /// <summary>Builds the settings-only constructor when the generated implementation can avoid request-builder reflection.</summary>
     /// <param name="model">The interface model being emitted.</param>
+    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <returns>The generated constructor source, or an empty string.</returns>
-    private static string BuildSettingsConstructor(InterfaceModel model)
+    private static string BuildSettingsConstructor(InterfaceModel model, string settingsFieldName)
     {
         if (!CanUseGeneratedSettingsFactory(model))
         {
@@ -369,7 +384,7 @@ internal static partial class Emitter
                         public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
                         {
                             Client = client;
-                            _settings = settings;
+                            {{settingsFieldName}} = settings;
                         }
             """;
     }
@@ -454,12 +469,16 @@ internal static partial class Emitter
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
+    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <returns>The generated method implementations.</returns>
     private static string BuildRefitMethods(
         ImmutableEquatableArray<MethodModel> methods,
         bool isTopLevel,
         InterfaceModel interfaceModel,
-        UniqueNameBuilder uniqueNames)
+        UniqueNameBuilder uniqueNames,
+        string requestBuilderFieldName,
+        string settingsFieldName)
     {
         if (methods.Count == 0)
         {
@@ -469,7 +488,13 @@ internal static partial class Emitter
         var parts = new string[methods.Count];
         for (var i = 0; i < methods.Count; i++)
         {
-            parts[i] = BuildRefitMethod(methods[i], isTopLevel, interfaceModel, uniqueNames);
+            parts[i] = BuildRefitMethod(
+                methods[i],
+                isTopLevel,
+                interfaceModel,
+                uniqueNames,
+                requestBuilderFieldName,
+                settingsFieldName);
         }
 
         return ConcatParts(parts, parts.Length);
@@ -502,6 +527,8 @@ internal static partial class Emitter
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
+    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <returns>The generated method implementation.</returns>
     [SuppressMessage(
         "Usage",
@@ -512,11 +539,13 @@ internal static partial class Emitter
         MethodModel methodModel,
         bool isTopLevel,
         InterfaceModel interfaceModel,
-        UniqueNameBuilder uniqueNames)
+        UniqueNameBuilder uniqueNames,
+        string requestBuilderFieldName,
+        string settingsFieldName)
     {
         if (interfaceModel.GeneratedRequestBuilding && methodModel.Request.CanGenerateInline)
         {
-            return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel);
+            return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel, settingsFieldName);
         }
 
         var (typeParameterFieldSource, cachedTypeParameterFieldName) = BuildTypeParameterField(
@@ -536,7 +565,7 @@ internal static partial class Emitter
             + BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable, isAsync)
             + $$"""
                 {{bodyIndent}}var refitArguments = {{BuildArgumentsArrayLiteral(methodModel)}};
-                {{bodyIndent}}var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                {{bodyIndent}}var refitRequestBuilder = {{requestBuilderFieldName}} ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
                 {{bodyIndent}}var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("{{lookupName}}", {{typeParameterExpression}}{{genericTypesArgument}} );
 
                 {{returnStatement}}{{methodIndent}}}
@@ -548,11 +577,13 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
+    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <returns>The generated inline method implementation.</returns>
     private static string BuildInlineRefitMethod(
         MethodModel methodModel,
         InterfaceModel interfaceModel,
-        bool isTopLevel)
+        bool isTopLevel,
+        string settingsFieldName)
     {
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         var request = methodModel.Request;
@@ -569,7 +600,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var refitSettings = _settings;
+            {{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var refitSettings = {{settingsFieldName}};
             {{bodyIndent}}var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
             {{bodyIndent}}refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
             {{bodyIndent}}var refitRequest = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
