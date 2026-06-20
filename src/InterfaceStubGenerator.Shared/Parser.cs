@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -12,6 +13,9 @@ namespace Refit.Generator;
 /// <summary>Parses candidate interfaces and methods into the models used to generate Refit stubs.</summary>
 internal static partial class Parser
 {
+    /// <summary>The suffix used for generator-private Refit helper types.</summary>
+    private const string RefitInternalGeneratedSuffix = "RefitInternalGenerated";
+
     /// <summary>The underlying value for <c>BodySerializationMethod.UrlEncoded</c>.</summary>
     private const int BodySerializationUrlEncoded = 2;
 
@@ -38,10 +42,7 @@ internal static partial class Parser
     {
         ArgumentExceptionHelper.ThrowIfNull(compilation);
 
-        refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
-
-        // Normalize project-name characters that are invalid in a namespace identifier.
-        refitInternalNamespace = refitInternalNamespace.Replace('-', '_').Replace('@', '_');
+        refitInternalNamespace = BuildRefitInternalNamespace(refitInternalNamespace);
 
         var options = (CSharpParseOptions)compilation.SyntaxTrees[0].Options;
 
@@ -119,6 +120,77 @@ internal static partial class Parser
             generatedRequestBuilding,
             interfaceModels);
         return (diagnostics, contextGenerationSpec);
+    }
+
+    /// <summary>Builds the internal generated namespace from a consumer-provided namespace prefix.</summary>
+    /// <param name="refitInternalNamespace">The optional user or MSBuild-supplied namespace prefix.</param>
+    /// <returns>A valid C# namespace for generated Refit internals.</returns>
+    private static string BuildRefitInternalNamespace(string? refitInternalNamespace)
+    {
+        var rawNamespace = string.IsNullOrWhiteSpace(refitInternalNamespace)
+            ? RefitInternalGeneratedSuffix
+            : refitInternalNamespace + RefitInternalGeneratedSuffix;
+        var parts = rawNamespace.Split('.');
+        var builder = new StringBuilder(rawNamespace.Length);
+
+        foreach (var part in parts)
+        {
+            var normalized = NormalizeNamespacePart(part);
+            if (normalized.Length == 0)
+            {
+                continue;
+            }
+
+            if (builder.Length > 0)
+            {
+                builder.Append('.');
+            }
+
+            builder.Append(normalized);
+        }
+
+        return builder.Length == 0 ? RefitInternalGeneratedSuffix : builder.ToString();
+    }
+
+    /// <summary>Normalizes one namespace segment into a valid identifier.</summary>
+    /// <param name="part">The namespace segment.</param>
+    /// <returns>The normalized segment, or an empty string when the segment is blank.</returns>
+    private static string NormalizeNamespacePart(string part)
+    {
+        if (string.IsNullOrWhiteSpace(part))
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder(part.Length + 1);
+        foreach (var character in part)
+        {
+            if (builder.Length == 0)
+            {
+                if (SyntaxFacts.IsIdentifierStartCharacter(character))
+                {
+                    builder.Append(character);
+                }
+                else if (SyntaxFacts.IsIdentifierPartCharacter(character))
+                {
+                    builder.Append('_').Append(character);
+                }
+                else
+                {
+                    builder.Append('_');
+                }
+
+                continue;
+            }
+
+            builder.Append(SyntaxFacts.IsIdentifierPartCharacter(character) ? character : '_');
+        }
+
+        var normalized = builder.ToString();
+        return SyntaxFacts.GetKeywordKind(normalized) != SyntaxKind.None
+            || SyntaxFacts.GetContextualKeywordKind(normalized) != SyntaxKind.None
+            ? "_" + normalized
+            : normalized;
     }
 
     /// <summary>Collects the interfaces with Refit methods, declared or inherited, into a single map.</summary>

@@ -35,9 +35,9 @@ internal class RestMethodInfoInternal
     /// <param name="targetInterface">The interface type that declares the method.</param>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <param name="refitSettings">The optional Refit settings to use.</param>
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
-        "Refit reflects over interface and parameter metadata when building REST method maps.")]
+    [RequiresUnreferencedCode("Building request metadata from reflected interface methods requires request object property metadata to be available at runtime.")]
     public RestMethodInfoInternal(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)]
         Type targetInterface,
         MethodInfo methodInfo,
         RefitSettings? refitSettings = null)
@@ -72,7 +72,7 @@ internal class RestMethodInfoInternal
         BodyParameterInfo = FindBodyParameter(ParameterInfoArray, IsMultipart, hma.Method);
         AuthorizeParameterInfo = FindAuthorizationParameter(ParameterInfoArray);
 
-        Headers = ParseHeaders(methodInfo);
+        Headers = ParseHeaders(targetInterface, methodInfo);
         HeaderParameterMap = BuildHeaderParameterMap(ParameterInfoArray);
         _headerCollectionParameterIndex = GetHeaderCollectionParameterIndex(ParameterInfoArray);
         PropertyParameterMap = BuildRequestPropertyMap(ParameterInfoArray);
@@ -317,8 +317,7 @@ internal class RestMethodInfoInternal
     /// <summary>Gets the readable public instance properties of a parameter type.</summary>
     /// <param name="parameter">The parameter whose properties are enumerated.</param>
     /// <returns>The readable public instance properties.</returns>
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
-        "Refit reflects over complex parameter types when expanding route-bound properties.")]
+    [RequiresUnreferencedCode("Reading request object properties requires public property metadata to be available at runtime.")]
     private static PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
     {
         var properties = parameter.ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -378,8 +377,6 @@ internal class RestMethodInfoInternal
     /// <param name="relativePath">The relative URL path template.</param>
     /// <param name="parameterInfo">The array of method parameters.</param>
     /// <returns>A tuple containing the parameter map and the ordered list of URL fragments.</returns>
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
-        "Refit reflects over complex parameter types when building route parameter maps.")]
     [SuppressMessage(
         "Major Code Smell",
         "S3776:Cognitive Complexity of methods should not be too high",
@@ -388,6 +385,7 @@ internal class RestMethodInfoInternal
         "Major Code Smell",
         "S1541:Methods and properties should not be too complex",
         Justification = "Request route parsing has several validation branches that are clearer kept together.")]
+    [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
     private static (Dictionary<int, RestMethodParameterInfo> Map, List<ParameterFragment> Fragments)
         BuildParameterMap(
             string relativePath,
@@ -690,21 +688,22 @@ internal class RestMethodInfoInternal
     }
 
     /// <summary>Parses the static headers declared on the method and its declaring type.</summary>
+    /// <param name="targetInterface">The interface type that declares the method.</param>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <returns>A map of header names to header values.</returns>
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
-        "Refit reflects over inherited interface metadata when composing header maps.")]
     [SuppressMessage(
         "Major Code Smell",
         "S3776:Cognitive Complexity of methods should not be too high",
         Justification = "Header precedence is order-sensitive and easier to audit in one method.")]
-    private static Dictionary<string, string?> ParseHeaders(MethodInfo methodInfo)
+    private static Dictionary<string, string?> ParseHeaders(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type targetInterface,
+        MethodInfo methodInfo)
     {
         Dictionary<string, string?>? ret = null;
 
-        if (methodInfo.DeclaringType is not null)
+        if (targetInterface is not null)
         {
-            var interfaces = methodInfo.DeclaringType.GetInterfaces();
+            var interfaces = targetInterface.GetInterfaces();
             for (var i = interfaces.Length - 1; i >= 0; i--)
             {
                 var attributes = interfaces[i].GetTypeInfo().GetCustomAttributes(true);
@@ -717,7 +716,7 @@ internal class RestMethodInfoInternal
                 }
             }
 
-            var declaringAttributes = methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true);
+            var declaringAttributes = targetInterface.GetTypeInfo().GetCustomAttributes(true);
             for (var i = 0; i < declaringAttributes.Length; i++)
             {
                 if (declaringAttributes[i] is HeadersAttribute headersAttribute)
@@ -844,8 +843,6 @@ internal class RestMethodInfoInternal
 
     /// <summary>Builds the map of parameter indexes to multipart attachment names.</summary>
     /// <returns>A map of parameter indexes to attachment name pairs.</returns>
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
-        "Refit reflects over parameter metadata when building multipart attachment maps.")]
     private Dictionary<int, Tuple<string, string>> BuildAttachmentNameMap()
     {
         if (!IsMultipart)

@@ -12,8 +12,6 @@ using Newtonsoft.Json;
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="FormValueMultimap"/> source loading and serialization behavior.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class FormValueMultimapTests
 {
     /// <summary>The default settings used to construct the multimap under test.</summary>

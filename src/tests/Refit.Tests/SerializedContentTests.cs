@@ -19,8 +19,6 @@ using SystemTextJsonSerializer = System.Text.Json.JsonSerializer;
 namespace Refit.Tests;
 
 /// <summary>Tests that verify how Refit serializes request bodies and deserializes responses across content serializers.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public partial class SerializedContentTests
 {
     /// <summary>The base address used when creating Refit clients for these tests.</summary>

@@ -32,8 +32,8 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
     > MethodDictionary { get; } = new();
 
     /// <inheritdoc/>
-    [RequiresUnreferencedCode("Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-    [RequiresDynamicCode("Refit may generate or invoke code dynamically for this path.")]
+    [RequiresUnreferencedCode("Building request delegates from reflected method metadata requires generic method metadata to be available at runtime.")]
+    [RequiresDynamicCode("Building request delegates from reflected method metadata requires runtime generic method instantiation.")]
     public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
         string methodName,
         Type[]? parameterTypes = null,

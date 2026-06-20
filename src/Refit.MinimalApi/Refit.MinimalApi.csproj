@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Product>Refit Minimal API ($(TargetFramework))</Product>
+    <PackageDescription>ASP.NET Core Minimal API endpoint mapping for Refit interfaces.</PackageDescription>
+    <PackageTags>refit;minimal-api;aspnetcore;rest;api-server</PackageTags>
+    <TargetFrameworks>$(RefitModernTargets)</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Refit\Refit.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TrackPublicApi>false</TrackPublicApi>
+  </PropertyGroup>
+
+</Project>

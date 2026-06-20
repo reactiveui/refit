@@ -19,14 +19,11 @@ namespace Refit.Implementation
         [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
         public static void Initialize()
         {
-                        global::Refit.RestService.RegisterGeneratedFactory(
-                            typeof(global::Refit.Tests.IGitHubApi),
+                        global::Refit.RestService.RegisterGeneratedFactory<global::Refit.Tests.IGitHubApi>(
                             static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitTestsIGitHubApi(client, requestBuilder));
-                        global::Refit.RestService.RegisterGeneratedFactory(
-                            typeof(global::Refit.Tests.IGitHubApiDisposable),
+                        global::Refit.RestService.RegisterGeneratedFactory<global::Refit.Tests.IGitHubApiDisposable>(
                             static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitTestsIGitHubApiDisposable(client, requestBuilder));
-                        global::Refit.RestService.RegisterGeneratedFactory(
-                            typeof(global::Refit.Tests.TestNested.INestedGitHubApi),
+                        global::Refit.RestService.RegisterGeneratedFactory<global::Refit.Tests.TestNested.INestedGitHubApi>(
                             static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitTestsTestNestedINestedGitHubApi(client, requestBuilder));
         }
 #endif

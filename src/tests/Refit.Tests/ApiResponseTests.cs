@@ -2,14 +2,11 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for direct <see cref="ApiResponse{T}"/> construction and error handling.</summary>
-[RequiresUnreferencedCode("RefitSettings default serializer is exercised by these direct wrapper tests.")]
-[RequiresDynamicCode("RefitSettings default serializer is exercised by these direct wrapper tests.")]
 public sealed class ApiResponseTests
 {
     /// <summary>Verifies public constructors reject missing response data needed by the wrapper.</summary>

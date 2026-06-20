@@ -8,8 +8,6 @@ using System.Reflection;
 namespace Refit.Tests;
 
 /// <summary>Tests for the cached request builder implementation.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class CachedRequestBuilderTests
 {
     /// <summary>Verifies the cached builder throws when constructed with a null inner builder.</summary>
@@ -102,8 +100,6 @@ public class CachedRequestBuilderTests
         public RefitSettings Settings { get; } = new(new NullContentSerializer());
 
         /// <inheritdoc />
-        [RequiresUnreferencedCode("Test double matches the IRequestBuilder contract.")]
-        [RequiresDynamicCode("Test double matches the IRequestBuilder contract.")]
         public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
             string methodName,
             Type[]? parameterTypes = null,

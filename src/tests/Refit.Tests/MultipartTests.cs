@@ -18,8 +18,6 @@ using Newtonsoft.Json;
 namespace Refit.Tests;
 
 /// <summary>Tests covering Refit's multipart form upload support.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class MultipartTests
 {
     /// <summary>The base address used by the multipart test clients.</summary>

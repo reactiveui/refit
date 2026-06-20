@@ -32,8 +32,9 @@ internal static partial class Parser
 
         var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass);
         var path = GetHttpPath(httpMethodAttribute);
+        ReportInvalidRouteDiagnostics(methodSymbol, httpMethodAttribute, path, context.Diagnostics);
         var returnTypes = GetRequestReturnTypes(methodSymbol);
-        var parameters = ParseRequestParameters(methodSymbol.Parameters, out var parameterEligibility);
+        var parameters = ParseRequestParameters(methodSymbol.Parameters, context.Diagnostics, out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
         var canGenerateInline =
@@ -83,6 +84,31 @@ internal static partial class Parser
         return arguments.Length > 0 && arguments[0].Value is string path
             ? path
             : string.Empty;
+    }
+
+    /// <summary>Reports diagnostics for route shapes that Refit rejects at runtime.</summary>
+    /// <param name="methodSymbol">The Refit method.</param>
+    /// <param name="httpMethodAttribute">The HTTP method attribute.</param>
+    /// <param name="path">The route path.</param>
+    /// <param name="diagnostics">The diagnostics list to update.</param>
+    private static void ReportInvalidRouteDiagnostics(
+        IMethodSymbol methodSymbol,
+        AttributeData httpMethodAttribute,
+        string path,
+        List<Diagnostic> diagnostics)
+    {
+        if (path.IndexOf('\\') < 0)
+        {
+            return;
+        }
+
+        var location = httpMethodAttribute.ApplicationSyntaxReference?.GetSyntax().GetLocation()
+                       ?? FirstLocation(methodSymbol);
+        diagnostics.Add(Diagnostic.Create(
+            DiagnosticDescriptors.InvalidRouteBackslash,
+            location,
+            methodSymbol.ContainingType.Name,
+            methodSymbol.Name));
     }
 
     /// <summary>Appends a query segment unless its key is empty or whitespace.</summary>
@@ -211,10 +237,12 @@ internal static partial class Parser
 
     /// <summary>Parses request parameter bindings for the conservative initial inline path.</summary>
     /// <param name="parameters">The method parameters.</param>
+    /// <param name="diagnostics">The diagnostics list to update.</param>
     /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
     /// <returns>The parsed request parameter models.</returns>
     private static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
         in ImmutableArray<IParameterSymbol> parameters,
+        List<Diagnostic> diagnostics,
         out bool canGenerateInline)
     {
         if (parameters.Length == 0)
@@ -231,7 +259,15 @@ internal static partial class Parser
 
         for (var i = 0; i < parameters.Length; i++)
         {
-            var parsedParameter = ParseRequestParameter(parameters[i]);
+            var parsedParameter = ParseRequestParameter(parameters[i], diagnostics);
+            if (parsedParameter.CancellationTokenCount > 0 && cancellationTokenCount > 0)
+            {
+                ReportParameterDiagnostic(
+                    parameters[i],
+                    diagnostics,
+                    DiagnosticDescriptors.MultipleCancellationTokens);
+            }
+
             requestParameters[i] = parsedParameter.Parameter;
             bodyCount += parsedParameter.BodyCount;
             cancellationTokenCount += parsedParameter.CancellationTokenCount;
@@ -249,8 +285,11 @@ internal static partial class Parser
 
     /// <summary>Parses one request parameter binding.</summary>
     /// <param name="parameter">The parameter to parse.</param>
+    /// <param name="diagnostics">The diagnostics list to update.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter)
+    private static ParsedRequestParameter ParseRequestParameter(
+        IParameterSymbol parameter,
+        List<Diagnostic> diagnostics)
     {
         var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var canBeNull = CanBeNull(parameter.Type, parameter.NullableAnnotation);
@@ -282,7 +321,7 @@ internal static partial class Parser
             return new(headerParameter, true, 0, 0, 0);
         }
 
-        if (TryParseHeaderCollectionParameter(parameter, parameterType, out var headerCollectionParameter))
+        if (TryParseHeaderCollectionParameter(parameter, parameterType, diagnostics, out var headerCollectionParameter))
         {
             return new(
                 headerCollectionParameter,
@@ -395,11 +434,13 @@ internal static partial class Parser
     /// <summary>Tries to parse a dynamic header collection parameter.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
     /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="diagnostics">The diagnostics list to update.</param>
     /// <param name="headerCollectionParameter">Receives the header collection parameter model.</param>
     /// <returns><see langword="true"/> when the parameter has a supported header collection attribute.</returns>
     private static bool TryParseHeaderCollectionParameter(
         IParameterSymbol parameter,
         string parameterType,
+        List<Diagnostic> diagnostics,
         out RequestParameterModel headerCollectionParameter)
     {
         foreach (var attribute in parameter.GetAttributes())
@@ -423,6 +464,10 @@ internal static partial class Parser
                 return true;
             }
 
+            ReportParameterDiagnostic(
+                parameter,
+                diagnostics,
+                DiagnosticDescriptors.InvalidHeaderCollectionParameter);
             headerCollectionParameter = UnsupportedRequestParameter(parameter, parameterType);
             return false;
         }
@@ -503,6 +548,42 @@ internal static partial class Parser
     private static bool IsSupportedHeaderCollectionType(ITypeSymbol type) =>
         type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
         == "global::System.Collections.Generic.IDictionary<string, string>";
+
+    /// <summary>Reports a parameter-scoped diagnostic.</summary>
+    /// <param name="parameter">The parameter the diagnostic is for.</param>
+    /// <param name="diagnostics">The diagnostics list to update.</param>
+    /// <param name="descriptor">The diagnostic descriptor.</param>
+    private static void ReportParameterDiagnostic(
+        IParameterSymbol parameter,
+        List<Diagnostic> diagnostics,
+        DiagnosticDescriptor descriptor)
+    {
+        var method = (IMethodSymbol)parameter.ContainingSymbol;
+        var location = FirstLocation(parameter);
+
+        if (descriptor.Equals(DiagnosticDescriptors.InvalidHeaderCollectionParameter))
+        {
+            diagnostics.Add(Diagnostic.Create(
+                descriptor,
+                location,
+                parameter.Name,
+                method.ContainingType.Name,
+                method.Name));
+            return;
+        }
+
+        diagnostics.Add(Diagnostic.Create(
+            descriptor,
+            location,
+            method.ContainingType.Name,
+            method.Name));
+    }
+
+    /// <summary>Gets the first source location for a symbol.</summary>
+    /// <param name="symbol">The symbol.</param>
+    /// <returns>The first available location, or <see langword="null"/>.</returns>
+    private static Location? FirstLocation(ISymbol symbol) =>
+        symbol.Locations.Length > 0 ? symbol.Locations[0] : null;
 
     /// <summary>Parses the constructor-supplied data from a body attribute.</summary>
     /// <param name="attribute">The attribute data.</param>

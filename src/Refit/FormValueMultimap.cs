@@ -35,8 +35,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Initializes a new instance of the <see cref="FormValueMultimap"/> class from a source object.</summary>
     /// <param name="source">The source object or dictionary to convert into form entries.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    [RequiresUnreferencedCode(
-        "Form URL encoded bodies reflect over runtime object properties and serializer metadata.")]
     public FormValueMultimap(object source, RefitSettings settings)
     {
         ArgumentExceptionHelper.ThrowIfNull(settings);
@@ -105,8 +103,10 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Resolves the cached readable public properties for the given source type.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns>The cached readable public properties.</returns>
-    [RequiresUnreferencedCode(
-        "Form URL encoded bodies reflect over runtime object properties and serializer metadata.")]
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2111:Method with DynamicallyAccessedMembersAttribute is accessed via reflection",
+        Justification = "The cache callback receives the same Type key that carries the public property metadata requirement.")]
     private static PropertyInfo[] GetCachedProperties(Type type)
         => _propertyCache.GetValue(type, GetProperties);
 
@@ -134,8 +134,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <param name="attrib">The query attribute, if any.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
     /// <returns>The joined formatted value.</returns>
-    [RequiresUnreferencedCode(
-        "Form URL encoded value formatting may reflect over runtime enum metadata; use the Refit source generator for trimmed/AOT apps.")]
     [SuppressMessage(
         "Major Code Smell",
         "S2930:\"IDisposables\" should be disposed",
@@ -173,8 +171,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Adds the entries from an <see cref="IDictionary"/> source.</summary>
     /// <param name="dictionary">The dictionary source.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    [RequiresUnreferencedCode(
-        "Form URL encoded value formatting may reflect over runtime enum metadata; use the Refit source generator for trimmed/AOT apps.")]
     private void AddDictionary(IDictionary dictionary, RefitSettings settings)
     {
         foreach (var key in dictionary.Keys)
@@ -192,8 +188,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Adds the entries reflected from an object source.</summary>
     /// <param name="source">The object source.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    [RequiresUnreferencedCode(
-        "Form URL encoded bodies reflect over runtime object properties and serializer metadata.")]
     private void AddObject(object source, RefitSettings settings)
     {
         var properties = GetCachedProperties(source.GetType());
@@ -236,8 +230,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <param name="attrib">The query attribute, if any.</param>
     /// <param name="collectionFormat">The resolved collection format.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    [RequiresUnreferencedCode(
-        "Form URL encoded value formatting may reflect over runtime enum metadata; use the Refit source generator for trimmed/AOT apps.")]
     private void AddCollection(
         string fieldName,
         IEnumerable enumerable,

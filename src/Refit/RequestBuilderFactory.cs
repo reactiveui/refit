@@ -13,11 +13,10 @@ internal class RequestBuilderFactory : IRequestBuilderFactory
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [RequiresUnreferencedCode(
-        "Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-    [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+    [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public IRequestBuilder<T> Create<
         [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(RefitSettings? settings) =>
@@ -25,11 +24,10 @@ internal class RequestBuilderFactory : IRequestBuilderFactory
             new RequestBuilderImplementation<T>(settings));
 
     /// <inheritdoc/>
-    [RequiresUnreferencedCode(
-        "Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-    [RequiresDynamicCode("Refit may generate or invoke code dynamically for this path.")]
+    [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public IRequestBuilder Create(
         [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,

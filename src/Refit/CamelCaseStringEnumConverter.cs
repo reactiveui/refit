@@ -22,27 +22,20 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         "AssemblyLoadTrimming",
         "IL2026:RequiresUnreferencedCode",
         Justification =
-            "The base virtual cannot be annotated. This factory is only registered by " +
-            "SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions, which carries " +
-            "RequiresUnreferencedCode; trimmed/AOT apps should use the Refit source generator.")]
+            "JsonConverterFactory.CreateConverter cannot carry trim annotations, but this implementation creates a converter from a runtime enum Type.")]
     [UnconditionalSuppressMessage(
         "AssemblyLoadTrimming",
         "IL3050:RequiresDynamicCode",
         Justification =
-            "MakeGenericType over the enum type is only reached from the reflection-based default " +
-            "serializer options; trimmed/AOT apps should use the Refit source generator. Nullable enums " +
-            "are handled by System.Text.Json's built-in nullable converter around this converter.")]
+            "JsonConverterFactory.CreateConverter cannot carry AOT annotations, but this implementation closes a converter over a runtime enum Type.")]
     [UnconditionalSuppressMessage(
         "AssemblyLoadTrimming",
         "IL2070:DynamicallyAccessedMembers",
-        Justification =
-            "MakeGenericType over the enum type is reflection-only; trimmed/AOT apps use the Refit source generator instead.")]
+        Justification = "The converter is created from a runtime enum Type and preserves enum fields on the closed converter.")]
     [UnconditionalSuppressMessage(
         "AssemblyLoadTrimming",
         "IL2071:DynamicallyAccessedMembers",
-        Justification =
-            "The enum value type's parameterless constructor is intrinsically preserved; this path is " +
-            "reflection-only and trimmed/AOT apps use the Refit source generator instead.")]
+        Justification = "The converter is created from a runtime enum Type and preserves enum fields on the closed converter.")]
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var underlyingType = Nullable.GetUnderlyingType(typeToConvert);
@@ -55,12 +48,12 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
 
     /// <summary>A strongly-typed JSON converter that maps enum values to and from their camelCase names.</summary>
     /// <typeparam name="TEnum">The enum type whose fields are inspected.</typeparam>
-    [RequiresUnreferencedCode("Enum serialization reflects over enum fields to resolve serialized names. Use the Refit source generator for trimmed/AOT apps.")]
     [SuppressMessage(
         "Usage",
         "CA2263:Prefer the generic overload",
         Justification = "The non-generic Enum.Parse(Type, ...) is retained because the generic overload is unavailable on the .NET Framework targets.")]
-    private sealed class EnumConverter<TEnum> : JsonConverter<TEnum>
+    private sealed class EnumConverter<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] TEnum> : JsonConverter<TEnum>
         where TEnum : struct, Enum
     {
         /// <summary>Maps serialized names to enum values using ordinal comparison.</summary>
@@ -226,8 +219,8 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
 
     /// <summary>A strongly-typed JSON converter for nullable enums that maps values to and from camelCase names.</summary>
     /// <typeparam name="TEnum">The underlying enum type.</typeparam>
-    [RequiresUnreferencedCode("Enum serialization reflects over enum fields to resolve serialized names. Use the Refit source generator for trimmed/AOT apps.")]
-    private sealed class NullableEnumConverter<TEnum> : JsonConverter<TEnum?>
+    private sealed class NullableEnumConverter<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] TEnum> : JsonConverter<TEnum?>
         where TEnum : struct, Enum
     {
         /// <summary>The underlying non-nullable enum converter that performs the name/value mapping.</summary>

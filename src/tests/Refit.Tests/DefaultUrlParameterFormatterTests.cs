@@ -11,8 +11,6 @@ namespace Refit.Tests;
     "Major Code Smell",
     "S6566:Prefer using \"DateTimeOffset\" instead of \"DateTime\"",
     Justification = "These tests intentionally exercise DateTime formatting; the asserted output and DTO property types are DateTime-specific.")]
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class DefaultUrlParameterFormatterTests
 {
     /// <summary>Flags enum used to exercise combined and undefined enum formatting.</summary>

@@ -19,8 +19,7 @@ namespace Refit.Implementation
         [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
         public static void Initialize()
         {
-                        global::Refit.RestService.RegisterGeneratedFactory(
-                            typeof(global::RefitGeneratorTest.IGeneratedClient),
+                        global::Refit.RestService.RegisterGeneratedFactory<global::RefitGeneratorTest.IGeneratedClient>(
                             static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitGeneratorTestIGeneratedClient(client, requestBuilder));
         }
 #endif

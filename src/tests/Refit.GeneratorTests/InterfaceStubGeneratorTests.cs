@@ -1,8 +1,6 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Diagnostics.CodeAnalysis;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -13,8 +11,6 @@ using Task = System.Threading.Tasks.Task;
 namespace Refit.GeneratorTests;
 
 /// <summary>Verifies the Refit interface stub source generator against known fixture interfaces.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class InterfaceStubGeneratorTests
 {
     /// <summary>Runs the interface stub generator over the supplied source file and verifies the output.</summary>

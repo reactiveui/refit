@@ -31,11 +31,10 @@ public static class RequestBuilder
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [RequiresUnreferencedCode(
-        "Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-    [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+    [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder<T> ForType<
         [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(RefitSettings? settings) =>
@@ -49,11 +48,10 @@ public static class RequestBuilder
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    [RequiresUnreferencedCode(
-        "Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-    [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+    [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder<T> ForType<
         [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>() =>
@@ -68,11 +66,10 @@ public static class RequestBuilder
     /// <param name="settings">Optional settings to customize the behavior of the generated request builder. If null, default settings are
     /// used.</param>
     /// <returns>An IRequestBuilder instance that can be used to construct HTTP requests for the specified interface.</returns>
-    [RequiresUnreferencedCode(
-        "Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-    [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+    [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder ForType(
         [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
@@ -87,11 +84,10 @@ public static class RequestBuilder
     /// <param name="refitInterfaceType">The interface type that defines the Refit API contract. Must be a non-generic interface decorated with Refit
     /// attributes.</param>
     /// <returns>An IRequestBuilder instance that can be used to construct HTTP requests for the specified interface type.</returns>
-    [RequiresUnreferencedCode(
-        "Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-    [RequiresDynamicCode("Refit may generate or invoke code dynamically for this path.")]
+    [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
     public static IRequestBuilder ForType(
         [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType) =>

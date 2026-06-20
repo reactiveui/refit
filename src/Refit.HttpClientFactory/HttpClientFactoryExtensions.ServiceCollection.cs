@@ -11,11 +11,11 @@ public static partial class HttpClientFactoryExtensions
 {
     /// <summary>Diagnostic message explaining why the reflection-based registration path is not trim-safe.</summary>
     private const string RequiresUnreferencedCodeMessage =
-        "Refit's HttpClientFactory integration uses reflection to build clients and is not trim-safe; use the Refit source generator for trimmed/AOT apps.";
+        "Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.";
 
     /// <summary>Diagnostic message explaining why the reflection-based registration path is not AOT-safe.</summary>
     private const string RequiresDynamicCodeMessage =
-        "Refit's HttpClientFactory integration builds generic types at runtime; use the Refit source generator for AOT apps.";
+        "Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.";
 
     /// <summary>Registers Refit clients directly on an <see cref="IServiceCollection"/>.</summary>
     /// <param name="services">The service collection the Refit client is registered with.</param>
@@ -136,10 +136,14 @@ public static partial class HttpClientFactoryExtensions
         /// <summary>Adds a Refit client to the dependency injection container.</summary>
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddRefitClient<T>()
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>()
             where T : class
         {
             ArgumentExceptionHelper.ThrowIfNull(services);
@@ -154,10 +158,14 @@ public static partial class HttpClientFactoryExtensions
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddRefitClient<T>(RefitSettings? settings)
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(RefitSettings? settings)
             where T : class
         {
             ArgumentExceptionHelper.ThrowIfNull(services);
@@ -173,10 +181,14 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddRefitClient<T>(
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(
             RefitSettings? settings,
             string? httpClientName)
             where T : class
@@ -196,10 +208,14 @@ public static partial class HttpClientFactoryExtensions
 #if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 #endif
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddRefitClient<T>(Func<IServiceProvider, RefitSettings?>? settingsAction)
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(Func<IServiceProvider, RefitSettings?>? settingsAction)
             where T : class
         {
             ArgumentExceptionHelper.ThrowIfNull(services);
@@ -218,10 +234,14 @@ public static partial class HttpClientFactoryExtensions
 #if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 #endif
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddRefitClient<T>(
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(
             Func<IServiceProvider, RefitSettings?>? settingsAction,
             string? httpClientName)
             where T : class
@@ -376,10 +396,14 @@ public static partial class HttpClientFactoryExtensions
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <param name="serviceKey">A key used to associate with the specific Refit client instance.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey)
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddKeyedRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(object? serviceKey)
             where T : class
         {
             ArgumentExceptionHelper.ThrowIfNull(services);
@@ -398,10 +422,14 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="serviceKey">A key used to associate with the specific Refit client instance.</param>
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddKeyedRefitClient<T>(
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddKeyedRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(
             object? serviceKey,
             RefitSettings? settings)
             where T : class
@@ -423,10 +451,14 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settings">The settings used to configure the instance.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddKeyedRefitClient<T>(
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddKeyedRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(
             object? serviceKey,
             RefitSettings? settings,
             string? httpClientName)
@@ -451,10 +483,14 @@ public static partial class HttpClientFactoryExtensions
 #if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 #endif
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddKeyedRefitClient<T>(
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddKeyedRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(
             object? serviceKey,
             Func<IServiceProvider, RefitSettings?>? settingsAction)
             where T : class
@@ -479,10 +515,14 @@ public static partial class HttpClientFactoryExtensions
 #if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
 #endif
-        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-        [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-        public IHttpClientBuilder AddKeyedRefitClient<T>(
+        [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+        public IHttpClientBuilder AddKeyedRefitClient<
+            [DynamicallyAccessedMembers(
+                DynamicallyAccessedMemberTypes.Interfaces |
+                DynamicallyAccessedMemberTypes.PublicMethods |
+                DynamicallyAccessedMemberTypes.NonPublicMethods)]
+            T>(
             object? serviceKey,
             Func<IServiceProvider, RefitSettings?>? settingsAction,
             string? httpClientName)

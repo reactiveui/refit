@@ -19,22 +19,9 @@ namespace Refit;
     Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
 public class ValidationApiException : ApiException
 {
-    /// <summary>The serializer options used to deserialize problem details.</summary>
-    private static readonly JsonSerializerOptions _serializerOptions = new();
-
-    /// <summary>Initializes static members of the <see cref="ValidationApiException"/> class.</summary>
-    static ValidationApiException()
-    {
-        _serializerOptions.PropertyNameCaseInsensitive = true;
-        _serializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-        _serializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
-    }
-
     /// <summary>Initializes a new instance of the <see cref="ValidationApiException"/> class.</summary>
     /// <param name="message">The exception message.</param>
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(
-        "Default System.Text.Json serializer options include enum name reflection that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.")]
 #endif
     public ValidationApiException(string message)
         : base(
@@ -53,8 +40,6 @@ public class ValidationApiException : ApiException
     /// <param name="message">The exception message.</param>
     /// <param name="innerException">The exception that is the cause of the current exception.</param>
 #if NET8_0_OR_GREATER
-    [RequiresUnreferencedCode(
-        "Default System.Text.Json serializer options include enum name reflection that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.")]
 #endif
     public ValidationApiException(string message, Exception innerException)
         : base(
@@ -92,16 +77,12 @@ public class ValidationApiException : ApiException
     /// <summary>Creates a new instance of a ValidationException from an existing ApiException.</summary>
     /// <param name="exception">An instance of an ApiException to use to build a ValidationException.</param>
     /// <returns>ValidationApiException.</returns>
-    [RequiresUnreferencedCode(
-        "System.Text.Json deserialization may require metadata that trimming cannot statically preserve.")]
-    [RequiresDynamicCode(
-        "System.Text.Json deserialization may generate code dynamically for runtime types.")]
     public static ValidationApiException Create(ApiException exception)
     {
         var ex = CreateCore(exception);
         ex.Content = JsonSerializer.Deserialize<ProblemDetails>(
             exception.Content!,
-            _serializerOptions);
+            ProblemDetailsJsonContext.Default.ProblemDetails);
         return ex;
     }
 

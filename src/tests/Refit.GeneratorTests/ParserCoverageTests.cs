@@ -52,6 +52,33 @@ public sealed class ParserCoverageTests
         await Assert.That(model.Interfaces).IsEmpty();
     }
 
+    /// <summary>Verifies namespace normalization handles blank segments from MSBuild properties.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GenerateInterfaceStubsSanitizesInternalNamespaceSegments()
+    {
+        var syntaxTree = CSharpSyntaxTree.ParseText("public interface IUnused { }");
+        var compilation = CSharpCompilation.Create("no-refit", [syntaxTree]);
+
+        var (_, leadingDotModel) = Parser.GenerateInterfaceStubs(
+            compilation,
+            ".Application",
+            generatedRequestBuilding: true,
+            [],
+            [],
+            CancellationToken.None);
+        var (_, digitModel) = Parser.GenerateInterfaceStubs(
+            compilation,
+            "123-App",
+            generatedRequestBuilding: true,
+            [],
+            [],
+            CancellationToken.None);
+
+        await Assert.That(leadingDotModel.RefitInternalNamespace).IsEqualTo("ApplicationRefitInternalGenerated");
+        await Assert.That(digitModel.RefitInternalNamespace).IsEqualTo("_123_AppRefitInternalGenerated");
+    }
+
     /// <summary>Verifies well-known type lookup caching and failure paths.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

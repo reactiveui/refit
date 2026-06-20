@@ -48,8 +48,6 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <param name="type">Container class type.</param>
     /// <returns>The formatted value, or null when <paramref name="value"/> is null.</returns>
     /// <exception cref="ArgumentNullException">attributeProvider.</exception>
-    [RequiresUnreferencedCode(
-        "Formatting enum values may reflect over runtime enum fields to read EnumMember metadata. Use the Refit source generator for trimmed/AOT apps.")]
     public virtual string? Format(
         object? value,
         ICustomAttributeProvider attributeProvider,
@@ -80,8 +78,6 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <param name="parameterType">The runtime type of the value.</param>
     /// <param name="value">The value to inspect.</param>
     /// <returns>The matching <see cref="EnumMemberAttribute"/>, or null when not an enum or no attribute is present.</returns>
-    [RequiresUnreferencedCode(
-        "Formatting enum values may reflect over runtime enum fields to read EnumMember metadata. Use the Refit source generator for trimmed/AOT apps.")]
     private static EnumMemberAttribute? ResolveEnumMember(Type parameterType, object value)
     {
         if (!parameterType.IsEnum)
@@ -120,7 +116,7 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     [UnconditionalSuppressMessage(
         "Trimming",
         "IL2070:DynamicallyAccessedMembers",
-        Justification = "The caller is already annotated with RequiresUnreferencedCode because enum metadata may be trimmed.")]
+        Justification = "Enum member names are read from a runtime Type to support EnumMemberAttribute formatting.")]
     private static FieldInfo? GetEnumField(Type enumType, string name)
     {
         foreach (var field in enumType.GetTypeInfo().DeclaredFields)

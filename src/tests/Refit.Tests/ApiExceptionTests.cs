@@ -8,8 +8,6 @@ using System.Net;
 namespace Refit.Tests;
 
 /// <summary>Tests for API exception factory and validation exception edge cases.</summary>
-[RequiresUnreferencedCode("ValidationApiException.Create uses System.Text.Json reflection-based deserialization.")]
-[RequiresDynamicCode("ValidationApiException.Create uses System.Text.Json reflection-based deserialization.")]
 public sealed class ApiExceptionTests
 {
     /// <summary>Verifies ApiException factory guard clauses.</summary>

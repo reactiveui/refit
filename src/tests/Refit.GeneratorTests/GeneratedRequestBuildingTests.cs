@@ -519,6 +519,31 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).DoesNotContain("MultipleBodies(" + Environment.NewLine + "var ______settings");
     }
 
+    /// <summary>Verifies invalid request shapes produce generator diagnostics.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReportsInvalidRequestShapeDiagnostics()
+    {
+        var result = Fixture.RunGeneratorForBody(
+            """
+            [Get("/bad\\route")]
+            Task<string> BadRoute();
+
+            [Get("/tokens")]
+            Task<string> MultipleTokens(CancellationToken first, CancellationToken second);
+
+            [Get("/headers")]
+            Task<string> InvalidHeaders([HeaderCollection] IDictionary<string, object> headers);
+            """,
+            generatedRequestBuilding: true);
+
+        var diagnosticIds = result.GeneratorDiagnostics.Select(diagnostic => diagnostic.Id).ToArray();
+
+        await Assert.That(diagnosticIds.Contains("RF003")).IsTrue();
+        await Assert.That(diagnosticIds.Contains("RF004")).IsTrue();
+        await Assert.That(diagnosticIds.Contains("RF005")).IsTrue();
+    }
+
     /// <summary>Verifies body buffering and serialization modes are emitted for supported inline bodies.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

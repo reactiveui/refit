@@ -35,9 +35,8 @@ public interface IRequestBuilder
         "Major Code Smell",
         "S2360:Optional parameters should not be used",
         Justification = "The optional parameters are part of Refit's public request-builder contract and are relied on by the Refit source generator and existing callers.")]
-    [RequiresUnreferencedCode(
-        "Refit uses reflection to analyze interface methods. Ensure referenced interfaces and DTOs are preserved when trimming.")]
-    [RequiresDynamicCode("Refit may generate or invoke code dynamically for this path.")]
+    [RequiresUnreferencedCode("Building request delegates from reflected method metadata requires generic method metadata to be available at runtime.")]
+    [RequiresDynamicCode("Building request delegates from reflected method metadata requires runtime generic method instantiation.")]
     Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
         string methodName,
         Type[]? parameterTypes = null,

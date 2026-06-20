@@ -260,10 +260,9 @@ internal static partial class Emitter
                 continue;
             }
 
-            source.WriteLine("                        global::Refit.RestService.RegisterGeneratedFactory(");
-            source.Append("                            typeof(");
+            source.WriteLine("                        global::Refit.RestService.RegisterGeneratedFactory<");
             source.Append(interfaceModel.InterfaceDisplayName);
-            source.WriteLine("),");
+            source.WriteLine(">(");
             source.Append(
                 "                            static (client, requestBuilder) => new global::Refit.Implementation.Generated.");
             source.Append(interfaceModel.Ns);

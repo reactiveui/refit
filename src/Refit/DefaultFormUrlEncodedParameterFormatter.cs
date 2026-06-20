@@ -23,8 +23,6 @@ public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterF
     /// <param name="value">The parameter value.</param>
     /// <param name="formatString">The format string.</param>
     /// <returns>The formatted value, or null when <paramref name="value"/> is null.</returns>
-    [RequiresUnreferencedCode(
-        "Formatting enum values may reflect over runtime enum fields to read EnumMember metadata. Use the Refit source generator for trimmed/AOT apps.")]
     public virtual string? Format(object? value, string? formatString)
     {
         if (value is null)
@@ -59,7 +57,7 @@ public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterF
     [UnconditionalSuppressMessage(
         "Trimming",
         "IL2070:DynamicallyAccessedMembers",
-        Justification = "The caller is already annotated with RequiresUnreferencedCode because enum metadata may be trimmed.")]
+        Justification = "Enum member names are read from a runtime Type to support EnumMemberAttribute formatting.")]
     private static FieldInfo? GetEnumField(Type enumType, string name)
     {
         foreach (var field in enumType.GetTypeInfo().DeclaredFields)

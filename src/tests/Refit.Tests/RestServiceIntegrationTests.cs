@@ -16,13 +16,18 @@ using RichardSzalay.MockHttp;
 namespace Refit.Tests;
 
 /// <summary>Integration tests that exercise <see cref="RestService"/> end to end against a mock HTTP handler.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public partial class RestServiceIntegrationTests
 {
     /// <summary>JSON serializer options that apply the camelCase property naming policy.</summary>
     private static readonly JsonSerializerOptions _camelCaseJsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    /// <summary>Interface intentionally excluded from source generation.</summary>
+    [SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST1437:Add members to type or remove it",
+        Justification = "Empty fixture interface verifies missing generated factory behavior.")]
+    private interface INotGeneratedApi;
 
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>Verifies an instance can be created via the interface's static factory method.</summary>
@@ -52,6 +57,43 @@ public partial class RestServiceIntegrationTests
 
         await Assert.That(generated!.Client).IsSameReferenceAs(client);
         await Assert.That(generated.Builder).IsNotNull();
+    }
+
+    /// <summary>Verifies the generated-only API creates clients without a reflection request builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedUsesRegisteredFactoryWithoutReflectionBuilder()
+    {
+        RestService.RegisterGeneratedFactory(
+            typeof(IGeneratedFactoryApi),
+            static (client, builder) => new GeneratedFactoryApiClient(client, builder));
+
+        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var instance = RestService.ForGenerated<IGeneratedFactoryApi>(client, settings);
+        var generated = await Assert.That(instance).IsTypeOf<GeneratedFactoryApiClient>();
+
+        await Assert.That(generated!.Client).IsSameReferenceAs(client);
+        await Assert.That(generated.Builder.Settings).IsSameReferenceAs(settings);
+        await Assert.That(
+                () => generated.Builder.BuildRestResultFuncForMethod(nameof(IGeneratedFactoryApi.Get)))
+            .ThrowsExactly<NotSupportedException>();
+    }
+
+    /// <summary>Verifies the generated-only API fails clearly when no generated factory is available.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedRequiresRegisteredFactory()
+    {
+        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var exception = await Assert
+            .That(() => RestService.ForGenerated<INotGeneratedApi>(client, settings))
+            .ThrowsExactly<InvalidOperationException>();
+
+        await Assert.That(exception!.Message).Contains("source generator is installed");
     }
 
     /// <summary>Verifies methods returning a <see cref="ValueTask{TResult}"/> work as expected.</summary>

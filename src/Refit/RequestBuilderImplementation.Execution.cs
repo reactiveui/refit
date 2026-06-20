@@ -25,8 +25,7 @@ namespace Refit
         /// <param name="paramsContainsCancellationToken">Whether the argument list contains a cancellation token.</param>
         /// <param name="cancellationToken">A token to cancel the request.</param>
         /// <returns>A task that completes when the request finishes.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private async Task ExecuteVoidRequestAsync(
             HttpClient client,
             RestMethodInfoInternal restMethod,
@@ -62,12 +61,11 @@ namespace Refit
         /// <param name="paramsContainsCancellationToken">Whether the argument list contains a cancellation token.</param>
         /// <param name="cancellationToken">A token to cancel the request.</param>
         /// <returns>The deserialized result, or default when there is no content.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private async Task<T?> ExecuteRequestAsync<T, TBody>(
             HttpClient client,
             RestMethodInfoInternal restMethod,
@@ -93,12 +91,11 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that sends the request with a cancellation token.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, CancellationToken, object[], Task<T?>> BuildCancellableTaskFuncForMethod<T, TBody>(
             RestMethodInfoInternal restMethod)
         {

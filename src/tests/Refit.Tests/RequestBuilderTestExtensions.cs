@@ -1,14 +1,9 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-
-using System.Diagnostics.CodeAnalysis;
-
 namespace Refit.Tests;
 
 /// <summary>Test helpers for building and running requests through an <see cref="IRequestBuilder"/>.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 internal static class RequestBuilderTestExtensions
 {
     /// <summary>Request-building helpers on <see cref="IRequestBuilder"/> for tests.</summary>
@@ -19,8 +14,6 @@ internal static class RequestBuilderTestExtensions
         /// <param name="methodName">The name of the interface method to build a request for.</param>
         /// <param name="baseAddress">The base address used by the test HTTP client.</param>
         /// <returns>A factory that maps a parameter array to the produced request message.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-        [RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
         public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(
             string methodName,
             string baseAddress = "http://api/")
@@ -43,8 +36,6 @@ internal static class RequestBuilderTestExtensions
         /// <param name="returnContent">Optional response content the handler returns.</param>
         /// <param name="baseAddress">The base address used by the test HTTP client.</param>
         /// <returns>A factory that maps a parameter array to the handler that observed the request.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-        [RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
         public Func<object[], TestHttpMessageHandler> RunRequest(
             string methodName,
             string? returnContent = null,

@@ -10,8 +10,6 @@ using System.Text;
 namespace Refit.Tests;
 
 /// <summary>Tests for the generated request runtime helper.</summary>
-[RequiresUnreferencedCode("RefitSettings creates the default reflection-capable System.Text.Json serializer.")]
-[RequiresDynamicCode("RefitSettings creates the default reflection-capable System.Text.Json serializer.")]
 public class GeneratedRequestRunnerTests
 {
     /// <summary>Verifies that already-created HTTP content is reused directly.</summary>

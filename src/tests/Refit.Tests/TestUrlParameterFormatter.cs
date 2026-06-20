@@ -2,14 +2,11 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Refit.Tests;
 
 /// <summary>A URL parameter formatter that always returns a constant value.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class TestUrlParameterFormatter : IUrlParameterFormatter
 {
     /// <summary>The constant value returned for every parameter.</summary>

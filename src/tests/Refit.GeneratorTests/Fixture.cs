@@ -168,7 +168,7 @@ public static class Fixture
     /// <summary>Emits a generated output compilation and loads it into a collectible assembly context.</summary>
     /// <param name="result">The generator result to emit.</param>
     /// <returns>The loaded assembly and load context.</returns>
-    [RequiresUnreferencedCode("Live-compilation tests intentionally load generated assemblies from memory.")]
+    [RequiresUnreferencedCode("Loading an emitted test assembly from a stream requires runtime metadata for referenced types.")]
     public static (Assembly Assembly, CollectibleAssemblyLoadContext Context) EmitAndLoad(
         GeneratorTestResult result)
     {
