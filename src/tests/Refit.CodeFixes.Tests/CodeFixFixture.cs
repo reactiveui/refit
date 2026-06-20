@@ -38,11 +38,8 @@ internal static class CodeFixFixture
             .AddMetadataReferences(GetMetadataReferences());
         var document = project.AddDocument("Test.cs", SourceText.From(source));
 
-        var compilation = await document.Project.GetCompilationAsync();
-        if (compilation is null)
-        {
-            throw new InvalidOperationException("Could not create compilation for code fix test.");
-        }
+        var compilation = await document.Project.GetCompilationAsync()
+                          ?? throw new InvalidOperationException("Could not create compilation for code fix test.");
 
         var diagnostics = await compilation
             .WithAnalyzers([new RefitInterfaceAnalyzer()])
