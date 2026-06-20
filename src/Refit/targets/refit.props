@@ -7,11 +7,13 @@
     -->
     <RefitInternalNamespace Condition=" '$(RefitInternalNamespace)' == '' ">$(RootNamespace)</RefitInternalNamespace>
     <RefitGeneratedRequestBuilding Condition=" '$(RefitGeneratedRequestBuilding)' == '' ">true</RefitGeneratedRequestBuilding>
+    <RefitEmitGeneratedCodeMarkers Condition=" '$(RefitEmitGeneratedCodeMarkers)' == '' ">true</RefitEmitGeneratedCodeMarkers>
   </PropertyGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="RefitInternalNamespace"/>
     <CompilerVisibleProperty Include="RefitGeneratedRequestBuilding"/>
+    <CompilerVisibleProperty Include="RefitEmitGeneratedCodeMarkers"/>
     <CompilerVisibleProperty Include="DisableRefitSourceGenerator"/>
   </ItemGroup>
 

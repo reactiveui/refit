@@ -7,9 +7,11 @@ namespace Refit.Generator;
 /// <param name="RefitInternalNamespace">The namespace used for Refit internal generated types.</param>
 /// <param name="PreserveAttributeDisplayName">The display name of the preserve attribute.</param>
 /// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled.</param>
+/// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="Interfaces">The interfaces to generate implementations for.</param>
 internal sealed record ContextGenerationModel(
     string RefitInternalNamespace,
     string PreserveAttributeDisplayName,
     bool GeneratedRequestBuilding,
+    bool EmitGeneratedCodeMarkers,
     ImmutableEquatableArray<InterfaceModel> Interfaces);

@@ -151,13 +151,13 @@ public static class Fixture
     {
         var compilation = CreateLibrary(source);
         var generator = new InterfaceStubGeneratorV2();
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [generator.AsSourceGenerator()],
             optionsProvider: new TestAnalyzerConfigOptionsProvider(
                 generatedRequestBuilding,
                 disableSourceGenerator));
 
-        driver.RunGeneratorsAndUpdateCompilation(
+        driver = driver.RunGeneratorsAndUpdateCompilation(
             compilation,
             out var outputCompilation,
             out var generatorDiagnostics);

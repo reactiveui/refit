@@ -26,6 +26,7 @@ internal static partial class Parser
     /// <param name="compilation">The compilation.</param>
     /// <param name="refitInternalNamespace">The refit internal namespace.</param>
     /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="emitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <param name="candidateMethods">The candidate methods.</param>
     /// <param name="candidateInterfaces">The candidate interfaces.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -36,6 +37,7 @@ internal static partial class Parser
         CSharpCompilation compilation,
         string? refitInternalNamespace,
         bool generatedRequestBuilding,
+        bool emitGeneratedCodeMarkers,
         in ImmutableArray<MethodDeclarationSyntax> candidateMethods,
         in ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
         CancellationToken cancellationToken)
@@ -62,6 +64,7 @@ internal static partial class Parser
                     refitInternalNamespace,
                     string.Empty,
                     generatedRequestBuilding,
+                    emitGeneratedCodeMarkers,
                     ImmutableEquatableArrayFactory.Empty<InterfaceModel>())
             );
         }
@@ -87,6 +90,7 @@ internal static partial class Parser
                     refitInternalNamespace,
                     string.Empty,
                     generatedRequestBuilding,
+                    emitGeneratedCodeMarkers,
                     ImmutableEquatableArrayFactory.Empty<InterfaceModel>())
             );
         }
@@ -106,6 +110,7 @@ internal static partial class Parser
             disposableInterfaceSymbol,
             httpMethodBaseAttributeSymbol,
             generatedRequestBuilding,
+            emitGeneratedCodeMarkers,
             supportsNullable);
 
         var interfaceModels = BuildInterfaceModels(
@@ -118,6 +123,7 @@ internal static partial class Parser
             refitInternalNamespace,
             preserveAttributeDisplayName,
             generatedRequestBuilding,
+            emitGeneratedCodeMarkers,
             interfaceModels);
         return (diagnostics, contextGenerationSpec);
     }
@@ -368,6 +374,7 @@ internal static partial class Parser
             names.InterfaceDisplayName,
             names.ClassSuffix,
             context.GeneratedRequestBuilding,
+            context.EmitGeneratedCodeMarkers,
             constraints,
             memberNames,
             properties,

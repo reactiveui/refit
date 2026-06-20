@@ -22,6 +22,9 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The option that enables direct generated request construction.</summary>
     private const string RefitGeneratedRequestBuildingOption = "RefitGeneratedRequestBuilding";
 
+    /// <summary>The option that controls generated-code analyzer skip markers.</summary>
+    private const string RefitEmitGeneratedCodeMarkersOption = "RefitEmitGeneratedCodeMarkers";
+
     /// <summary>The option that overrides the generated internal namespace prefix.</summary>
     private const string RefitInternalNamespaceOption = "RefitInternalNamespace";
 
@@ -89,6 +92,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
                         (CSharpCompilation)collectedValues.Compilation,
                         collectedValues.RefitInternalNamespace,
                         collectedValues.GeneratedRequestBuilding,
+                        collectedValues.EmitGeneratedCodeMarkers,
                         collectedValues.CandidateMethods,
                         collectedValues.CandidateInterfaces,
                         cancellationToken));
@@ -321,6 +325,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         return new(
             refitInternalNamespace,
             GetBooleanOption(options, RefitGeneratedRequestBuildingOption, defaultValue: true),
+            GetBooleanOption(options, RefitEmitGeneratedCodeMarkersOption, defaultValue: true),
             GetBooleanOption(options, DisableRefitSourceGeneratorOption, defaultValue: false));
     }
 
@@ -341,6 +346,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             combined.SyntaxAndOptions.CandidateSyntax.CandidateInterfaces,
             combined.SyntaxAndOptions.Options.RefitInternalNamespace,
             combined.SyntaxAndOptions.Options.GeneratedRequestBuilding,
+            combined.SyntaxAndOptions.Options.EmitGeneratedCodeMarkers,
             combined.SyntaxAndOptions.Options.DisableSourceGenerator,
             combined.Compilation);
 
@@ -354,6 +360,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
                 string.Empty,
                 string.Empty,
                 false,
+                true,
                 ImmutableEquatableArrayFactory.Empty<InterfaceModel>()));
 
     /// <summary>Reads a boolean analyzer-config option.</summary>
@@ -404,10 +411,12 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The generator options visible through analyzer config.</summary>
     /// <param name="RefitInternalNamespace">The optional Refit internal namespace prefix.</param>
     /// <param name="GeneratedRequestBuilding">Whether inline request construction is enabled.</param>
+    /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <param name="DisableSourceGenerator">Whether source generation is disabled.</param>
     private readonly record struct GeneratorOptions(
         string? RefitInternalNamespace,
         bool GeneratedRequestBuilding,
+        bool EmitGeneratedCodeMarkers,
         bool DisableSourceGenerator);
 
     /// <summary>The collected syntax candidates plus generator options.</summary>
@@ -422,6 +431,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="CandidateInterfaces">The candidate interface declarations.</param>
     /// <param name="RefitInternalNamespace">The optional Refit internal namespace prefix.</param>
     /// <param name="GeneratedRequestBuilding">Whether inline request construction is enabled.</param>
+    /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
     /// <param name="DisableSourceGenerator">Whether source generation is disabled.</param>
     /// <param name="Compilation">The current compilation.</param>
     private readonly record struct GeneratorInputs(
@@ -429,6 +439,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         ImmutableArray<InterfaceDeclarationSyntax> CandidateInterfaces,
         string? RefitInternalNamespace,
         bool GeneratedRequestBuilding,
+        bool EmitGeneratedCodeMarkers,
         bool DisableSourceGenerator,
         Compilation Compilation);
 }

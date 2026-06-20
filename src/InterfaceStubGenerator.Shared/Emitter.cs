@@ -22,23 +22,41 @@ internal static partial class Emitter
     /// <summary>The variable name used for the cached type parameter array field.</summary>
     private const string TypeParameterVariableName = "______typeParameters";
 
-    /// <summary>Indentation levels spanned by the generated namespace and class nesting.</summary>
-    private const int NamespaceAndClassIndentation = 2;
+    /// <summary>The exception message emitted for interface methods without usable Refit metadata.</summary>
+    private const string NonRefitMethodExceptionMessage =
+        "Either this method has no Refit HTTP method attribute or you've used something other than a string literal for the 'path' argument.";
 
-    /// <summary>Initial buffer size for shared generated infrastructure source.</summary>
-    private const int SharedGeneratedSourceBaseCapacity = 2048;
+    /// <summary>The generated prefix for type expressions.</summary>
+    private const string TypeOfPrefix = "typeof(";
 
-    /// <summary>Estimated characters needed for one generated factory registration.</summary>
-    private const int EstimatedFactoryRegistrationCapacity = 256;
+    /// <summary>The number of spaces in one generated indentation level.</summary>
+    private const int CharsPerIndentation = 4;
 
-    /// <summary>Initial buffer size for a typical generated interface implementation.</summary>
-    private const int InterfaceSourceBaseCapacity = 4096;
+    /// <summary>Indentation level for generated nested implementation classes.</summary>
+    private const int ClassMemberIndentation = 2;
 
-    /// <summary>Estimated characters needed for one generated method body.</summary>
-    private const int EstimatedMethodSourceCapacity = 768;
+    /// <summary>Indentation level for generated method members.</summary>
+    private const int MethodMemberIndentation = 3;
 
-    /// <summary>Estimated characters needed for one generated property.</summary>
-    private const int EstimatedPropertySourceCapacity = 128;
+    /// <summary>Indentation level for generated method constraints and statements.</summary>
+    private const int MethodBodyIndentation = 4;
+
+    /// <summary>The generated attribute that identifies source produced by this generator.</summary>
+    private static readonly string GeneratedCodeAttribute = BuildGeneratedCodeAttribute();
+
+#if NETSTANDARD2_0
+    /// <summary>Delegate used to fill a generated string buffer.</summary>
+    /// <typeparam name="TState">The state type.</typeparam>
+    /// <param name="destination">The target character buffer.</param>
+    /// <param name="state">The caller supplied state.</param>
+    private delegate void GeneratedStringAction<in TState>(char[] destination, TState state);
+#else
+    /// <summary>Delegate used to fill a generated string buffer.</summary>
+    /// <typeparam name="TState">The state type.</typeparam>
+    /// <param name="destination">The target character buffer.</param>
+    /// <param name="state">The caller supplied state.</param>
+    private delegate void GeneratedStringAction<in TState>(Span<char> destination, TState state);
+#endif
 
     /// <summary>Emits the shared preserve attribute and factory registration code.</summary>
     /// <param name="model">The context generation model describing the interfaces.</param>
@@ -60,29 +78,28 @@ internal static partial class Emitter
             + "global::System.AttributeTargets.Event | global::System.AttributeTargets.Interface | "
             + "global::System.AttributeTargets.Delegate)]";
 
+        var generatedFileHeader = BuildSharedGeneratedFileHeader(model.Interfaces, model.EmitGeneratedCodeMarkers);
+        var generatedCodeAttribute = GeneratedCodeAttribute;
         var attributeText = $$"""
+            {{generatedFileHeader}}
+            namespace {{model.RefitInternalNamespace}}
+            {
+                /// <summary>Identifies generated members that should be preserved by tools that honor this attribute.</summary>
+                {{generatedCodeAttribute}}
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                {{attributeUsageLine}}
+                internal sealed class PreserveAttribute : global::System.Attribute
+                {
+                    /// <summary>Gets or sets a value indicating whether all members should be preserved.</summary>
+                    public bool AllMembers { get; set; }
 
-                              // This file is generated into consumer projects; suppress all analyzers so
-                              // consumer analyzer policy does not report Refit implementation details.
-                              #pragma warning disable
-                              namespace {{model.RefitInternalNamespace}}
-                              {
-                                  [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                                  [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                                  {{attributeUsageLine}}
-                                  sealed class PreserveAttribute : global::System.Attribute
-                                  {
-                                      //
-                                      // Fields
-                                      //
-                                      public bool AllMembers;
+                    /// <summary>Gets or sets a value indicating whether preservation should be conditional.</summary>
+                    public bool Conditional { get; set; }
+                }
+            }
 
-                                      public bool Conditional;
-                                  }
-                              }
-                              #pragma warning restore
-
-                              """;
+            """;
 
         // add the attribute text
         addSource("PreserveAttribute.g.cs", SourceText.From(attributeText, Encoding.UTF8));
@@ -92,40 +109,36 @@ internal static partial class Emitter
             + "System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, "
             + "typeof(global::Refit.Implementation.Generated))]";
 
-        var generatedSource = new SourceWriter(EstimateSharedSourceCapacity(model));
-        generatedSource.WriteLine(
-            $$"""
-
-              // This file is generated into consumer projects; suppress all analyzers so
-              // consumer analyzer policy does not report Refit implementation details.
-              #pragma warning disable
-              namespace Refit.Implementation
-              {
-
-                  /// <inheritdoc />
-                  [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                  [global::System.Diagnostics.DebuggerNonUserCode]
-                  [{{model.PreserveAttributeDisplayName}}]
-                  [global::System.Reflection.Obfuscation(Exclude=true)]
-                  [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                  internal static partial class Generated
-                  {
-              #if NET5_0_OR_GREATER
-                      [System.Runtime.CompilerServices.ModuleInitializer]
-                      {{dynamicDependencyLine}}
-                      public static void Initialize()
-                      {
-              """);
-        WriteGeneratedFactoryRegistrations(generatedSource, model.Interfaces);
-        generatedSource.WriteLine(
-            """
-                    }
+        var generatedSource = $$"""
+            {{generatedFileHeader}}
+            namespace Refit.Implementation
+            {
+                /// <summary>Registers generated Refit factories for interfaces discovered at compile time.</summary>
+                {{generatedCodeAttribute}}
+                [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                [global::System.Diagnostics.DebuggerNonUserCode]
+                [{{model.PreserveAttributeDisplayName}}]
+                [global::System.Reflection.Obfuscation(Exclude=true)]
+                [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                internal static partial class Generated
+                {
+            #if NET5_0_OR_GREATER
+                    /// <summary>Registers generated Refit factories when the assembly is loaded.</summary>
+                    [global::System.Diagnostics.CodeAnalysis.SuppressMessage(
+                        "Usage",
+                        "CA2255:The ModuleInitializer attribute should not be used in libraries",
+                        Justification = "ModuleInitializer is used intentionally so generated Refit factories are registered when the assembly loads.")]
+                    [System.Runtime.CompilerServices.ModuleInitializer]
+                    {{dynamicDependencyLine}}
+                    internal static void Initialize()
+                    {
+            {{BuildGeneratedFactoryRegistrations(model.Interfaces)}}        }
             #endif
                 }
             }
-            #pragma warning restore
-            """);
-        addSource("Generated.g.cs", generatedSource.ToSourceText());
+
+            """;
+        addSource("Generated.g.cs", ToSourceText(generatedSource));
     }
 
     /// <summary>Emits the generated implementation source for a single interface.</summary>
@@ -133,125 +146,175 @@ internal static partial class Emitter
     /// <returns>The generated source text for the interface implementation.</returns>
     public static SourceText EmitInterface(InterfaceModel model)
     {
-        var source = new SourceWriter(EstimateInterfaceSourceCapacity(model));
-
-        // if nullability is supported emit the nullable directive
-        if (model.Nullability != Nullability.None)
-        {
-            source.WriteLine(
-                "#nullable " + (model.Nullability == Nullability.Enabled ? "enable" : "disable"));
-        }
-
-        source.WriteLine(
-            $$"""
-              // This file is generated into consumer projects; suppress all analyzers so
-              // consumer analyzer policy does not report Refit implementation details.
-              #pragma warning disable
-              namespace Refit.Implementation
-              {
-
-                  partial class Generated
-                  {
-
-                  /// <inheritdoc />
-                  [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                  [global::System.Diagnostics.DebuggerNonUserCode]
-                  [{{model.PreserveAttributeDisplayName}}]
-                  [global::System.Reflection.Obfuscation(Exclude=true)]
-                  [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                  partial class {{model.Ns}}{{model.ClassDeclaration}}
-                      : {{model.InterfaceDisplayName}}
-              """);
-
-        source.Indentation += NamespaceAndClassIndentation;
-        GenerateConstraints(source, model.Constraints, false);
-        source.Indentation--;
-
-        source.WriteLine(
-            $$"""
-              {
-                  /// <inheritdoc />
-                  public global::System.Net.Http.HttpClient Client { get; }
-                  readonly global::Refit.IRequestBuilder requestBuilder;
-
-                  /// <inheritdoc />
-                  public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
-                  {
-                      Client = client;
-                      this.requestBuilder = requestBuilder;
-                  }
-
-              """);
-
-        source.Indentation++;
         var uniqueNames = new UniqueNameBuilder();
         uniqueNames.Reserve(model.MemberNames);
+        var propertySource = BuildInterfaceProperties(model.Properties);
+        var refitMethodSource = BuildRefitMethods(model.RefitMethods, true, model, uniqueNames);
+        var derivedRefitMethodSource = BuildRefitMethods(model.DerivedRefitMethods, false, model, uniqueNames);
+        var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods);
+        var disposableSource = BuildDisposableMethod(model.DisposeMethod);
+        var memberSource = propertySource + refitMethodSource + derivedRefitMethodSource + nonRefitMethodSource + disposableSource;
+        var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
+        var generatedCodeAttribute = GeneratedCodeAttribute;
+        var source = $$"""
+            {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}
+            namespace Refit.Implementation
+            {
+                /// <summary>Contains generated Refit implementation types.</summary>
+                internal partial class Generated
+                {
+                    /// <summary>Generated Refit implementation for {{ToXmlDocumentationText(model.InterfaceDisplayName)}}.</summary>
+            {{typeParameterDocs}}        {{generatedCodeAttribute}}
+                    [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+                    [global::System.Diagnostics.DebuggerNonUserCode]
+                    [{{model.PreserveAttributeDisplayName}}]
+                    [global::System.Reflection.Obfuscation(Exclude=true)]
+                    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+                    private sealed class {{model.Ns}}{{model.ClassDeclaration}}
+                        : {{model.InterfaceDisplayName}}
+            {{BuildConstraints(model.Constraints, false, ClassMemberIndentation)}}        {
+                        /// <summary>The request builder used to create Refit method delegates.</summary>
+                        private readonly global::Refit.IRequestBuilder _requestBuilder;
 
-        foreach (var property in model.Properties)
-        {
-            WriteInterfaceProperty(source, property);
-        }
+                        /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
+                        public global::System.Net.Http.HttpClient Client { get; }
 
-        // Handle Refit Methods
-        foreach (var method in model.RefitMethods)
-        {
-            WriteRefitMethod(source, method, true, model, uniqueNames);
-        }
-
-        foreach (var method in model.DerivedRefitMethods)
-        {
-            WriteRefitMethod(source, method, false, model, uniqueNames);
-        }
-
-        // Handle non-refit Methods that aren't static or properties or have a method body
-        foreach (var method in model.NonRefitMethods)
-        {
-            WriteNonRefitMethod(source, method);
-        }
-
-        // Handle Dispose
-        if (model.DisposeMethod)
-        {
-            WriteDisposableMethod(source);
-        }
-
-        source.Indentation -= NamespaceAndClassIndentation;
-        source.WriteLine(
-            """
-                }
+                        /// <summary>Initializes a new instance of the {{model.Ns}}{{model.ClassSuffix}} class.</summary>
+                        /// <param name="client">The HTTP client used by the generated implementation.</param>
+                        /// <param name="requestBuilder">The request builder used to create Refit method delegates.</param>
+                        public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.IRequestBuilder requestBuilder)
+                        {
+                            Client = client;
+                            _requestBuilder = requestBuilder;
+                        }
+            {{memberSource}}        }
                 }
             }
 
-            #pragma warning restore
-            """);
-        return source.ToSourceText();
+            """;
+        return ToSourceText(source);
     }
 
-    /// <summary>Estimates the initial buffer size for shared generated infrastructure source.</summary>
-    /// <param name="model">The context generation model describing the interfaces.</param>
-    /// <returns>The estimated source buffer capacity.</returns>
-    private static int EstimateSharedSourceCapacity(ContextGenerationModel model) =>
-        SharedGeneratedSourceBaseCapacity + (model.Interfaces.Count * EstimatedFactoryRegistrationCapacity);
+    /// <summary>Creates source text from generated source.</summary>
+    /// <param name="source">The generated source.</param>
+    /// <returns>The generated source text.</returns>
+    private static SourceText ToSourceText(string source) => SourceText.From(source, Encoding.UTF8);
 
-    /// <summary>Estimates the initial buffer size for one generated interface implementation.</summary>
-    /// <param name="model">The interface model being emitted.</param>
-    /// <returns>The estimated source buffer capacity.</returns>
-    private static int EstimateInterfaceSourceCapacity(InterfaceModel model)
+    /// <summary>Builds the generated code attribute using this generator assembly identity.</summary>
+    /// <returns>The generated attribute source.</returns>
+    private static string BuildGeneratedCodeAttribute()
     {
-        var methodCount =
-            model.RefitMethods.Count + model.DerivedRefitMethods.Count + model.NonRefitMethods.Count;
-        return InterfaceSourceBaseCapacity
-            + (methodCount * EstimatedMethodSourceCapacity)
-            + (model.Properties.Count * EstimatedPropertySourceCapacity);
+        var assemblyName = typeof(Emitter).Assembly.GetName();
+        return
+            "[global::System.CodeDom.Compiler.GeneratedCodeAttribute("
+            + ToCSharpStringLiteral(assemblyName.Name ?? "Refit.Generator")
+            + ", "
+            + ToCSharpStringLiteral(assemblyName.Version?.ToString() ?? "0.0.0.0")
+            + ")]";
     }
 
-    /// <summary>Writes the generated factory registrations for non-generic interfaces.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Escapes text for generated XML documentation comments.</summary>
+    /// <param name="value">The text to escape.</param>
+    /// <returns>The escaped XML documentation text.</returns>
+    private static string ToXmlDocumentationText(string value)
+    {
+        var builder = new StringBuilder(value.Length);
+        foreach (var c in value)
+        {
+            switch (c)
+            {
+                case '&':
+                    {
+                        builder.Append("&amp;");
+                        break;
+                    }
+
+                case '<':
+                    {
+                        builder.Append("&lt;");
+                        break;
+                    }
+
+                case '>':
+                    {
+                        builder.Append("&gt;");
+                        break;
+                    }
+
+                default:
+                    {
+                        builder.Append(c);
+                        break;
+                    }
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>Builds the generated file header for an interface implementation.</summary>
+    /// <param name="nullability">The nullable context for the generated source.</param>
+    /// <param name="emitGeneratedCodeMarkers">Whether generated-code markers should be emitted.</param>
+    /// <returns>The generated file header.</returns>
+    private static string BuildGeneratedFileHeader(Nullability nullability, bool emitGeneratedCodeMarkers)
+    {
+        if (!emitGeneratedCodeMarkers)
+        {
+            return nullability == Nullability.None
+                ? """
+                  // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+                  // ReactiveUI and Contributors licenses this file to you under the MIT license.
+                  // See the LICENSE file in the project root for full license information.
+
+                  """
+                : """
+                  // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+                  // ReactiveUI and Contributors licenses this file to you under the MIT license.
+                  // See the LICENSE file in the project root for full license information.
+
+                  #nullable enable annotations
+                  #nullable disable warnings
+
+                  """;
+        }
+
+        return nullability == Nullability.None
+            ? "// <auto-generated/>\n"
+            : """
+              // <auto-generated/>
+
+              #nullable enable annotations
+              #nullable disable warnings
+
+              """;
+    }
+
+    /// <summary>Builds the generated file header for shared generated files.</summary>
     /// <param name="interfaces">The parsed interface models.</param>
-    private static void WriteGeneratedFactoryRegistrations(
-        SourceWriter source,
-        ImmutableEquatableArray<InterfaceModel> interfaces)
+    /// <param name="emitGeneratedCodeMarkers">Whether generated-code markers should be emitted.</param>
+    /// <returns>The generated file header.</returns>
+    private static string BuildSharedGeneratedFileHeader(
+        ImmutableEquatableArray<InterfaceModel> interfaces,
+        bool emitGeneratedCodeMarkers)
     {
+        for (var i = 0; i < interfaces.Count; i++)
+        {
+            if (interfaces[i].Nullability != Nullability.None)
+            {
+                return BuildGeneratedFileHeader(interfaces[i].Nullability, emitGeneratedCodeMarkers);
+            }
+        }
+
+        return BuildGeneratedFileHeader(Nullability.None, emitGeneratedCodeMarkers);
+    }
+
+    /// <summary>Builds the generated factory registrations for non-generic interfaces.</summary>
+    /// <param name="interfaces">The parsed interface models.</param>
+    /// <returns>The generated factory registrations.</returns>
+    private static string BuildGeneratedFactoryRegistrations(ImmutableEquatableArray<InterfaceModel> interfaces)
+    {
+        var registrations = new string[interfaces.Count];
+        var count = 0;
         for (var i = 0; i < interfaces.Count; i++)
         {
             var interfaceModel = interfaces[i];
@@ -260,30 +323,106 @@ internal static partial class Emitter
                 continue;
             }
 
-            source.Append("                        global::Refit.RestService.RegisterGeneratedFactory<");
-            source.Append(interfaceModel.InterfaceDisplayName);
-            source.WriteLine(">(");
-            source.Append(
-                "                            static (client, requestBuilder) => new global::Refit.Implementation.Generated.");
-            source.Append(interfaceModel.Ns);
-            source.Append(interfaceModel.ClassSuffix);
-            source.WriteLine("(client, requestBuilder));");
+            var generatedType = $"global::Refit.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}";
+            registrations[count++] = $$"""
+                                    global::Refit.RestService.RegisterGeneratedFactory<{{interfaceModel.InterfaceDisplayName}}>(
+                                        static (client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
+
+                        """;
         }
+
+        return count == 0 ? string.Empty : ConcatParts(registrations, count);
     }
 
-    /// <summary>Generates the body of the Refit method.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds documentation for generated type parameters.</summary>
+    /// <param name="typeParameters">The parsed type parameter constraints.</param>
+    /// <param name="indentationLevel">The generated indentation level.</param>
+    /// <returns>The generated type parameter documentation.</returns>
+    private static string BuildTypeParameterDocumentation(
+        ImmutableEquatableArray<TypeConstraint> typeParameters,
+        int indentationLevel)
+    {
+        if (typeParameters.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var parts = new string[typeParameters.Count];
+        var indentation = Indent(indentationLevel);
+        for (var i = 0; i < typeParameters.Count; i++)
+        {
+            parts[i] = $"{indentation}/// <typeparam name=\"{typeParameters[i].DeclaredName}\">The generated interface type parameter.</typeparam>\n";
+        }
+
+        return ConcatParts(parts, parts.Length);
+    }
+
+    /// <summary>Builds generated interface property implementations.</summary>
+    /// <param name="properties">The property models to emit.</param>
+    /// <returns>The generated property implementations.</returns>
+    private static string BuildInterfaceProperties(ImmutableEquatableArray<InterfacePropertyModel> properties)
+    {
+        var parts = new string[properties.Count];
+        var count = 0;
+        for (var i = 0; i < properties.Count; i++)
+        {
+            var source = BuildInterfaceProperty(properties[i]);
+            if (source.Length != 0)
+            {
+                parts[count++] = source;
+            }
+        }
+
+        return count == 0 ? string.Empty : ConcatParts(parts, count);
+    }
+
+    /// <summary>Builds generated Refit method implementations.</summary>
+    /// <param name="methods">The method models to emit.</param>
+    /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
+    /// <param name="interfaceModel">The interface model being emitted.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <returns>The generated method implementations.</returns>
+    private static string BuildRefitMethods(
+        ImmutableEquatableArray<MethodModel> methods,
+        bool isTopLevel,
+        InterfaceModel interfaceModel,
+        UniqueNameBuilder uniqueNames)
+    {
+        var parts = new string[methods.Count];
+        for (var i = 0; i < methods.Count; i++)
+        {
+            parts[i] = BuildRefitMethod(methods[i], isTopLevel, interfaceModel, uniqueNames);
+        }
+
+        return parts.Length == 0 ? string.Empty : ConcatParts(parts, parts.Length);
+    }
+
+    /// <summary>Builds generated non-Refit method stubs.</summary>
+    /// <param name="methods">The non-Refit method models to emit.</param>
+    /// <returns>The generated method stubs.</returns>
+    private static string BuildNonRefitMethods(ImmutableEquatableArray<MethodModel> methods)
+    {
+        var parts = new string[methods.Count];
+        for (var i = 0; i < methods.Count; i++)
+        {
+            parts[i] = BuildNonRefitMethod(methods[i]);
+        }
+
+        return parts.Length == 0 ? string.Empty : ConcatParts(parts, parts.Length);
+    }
+
+    /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <returns>The generated method implementation.</returns>
     [SuppressMessage(
         "Usage",
         "CA2208:Instantiate argument exceptions correctly",
         Justification =
             "The ArgumentOutOfRangeException intentionally reports the offending model property (ReturnTypeMetadata) rather than a method parameter.")]
-    private static void WriteRefitMethod(
-        SourceWriter source,
+    private static string BuildRefitMethod(
         MethodModel methodModel,
         bool isTopLevel,
         InterfaceModel interfaceModel,
@@ -291,176 +430,156 @@ internal static partial class Emitter
     {
         if (interfaceModel.GeneratedRequestBuilding && methodModel.Request.CanGenerateInline)
         {
-            WriteInlineRefitMethod(source, methodModel, interfaceModel, isTopLevel);
-            return;
+            return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel);
         }
 
-        var cachedTypeParameterFieldName = GenerateTypeParameterField(
-            source,
+        var (typeParameterFieldSource, cachedTypeParameterFieldName) = BuildTypeParameterField(
             methodModel,
             uniqueNames);
-
         var returnType = methodModel.ReturnType;
         var (isAsync, @return, configureAwait) = GetReturnInvocationParts(methodModel.ReturnTypeMetadata);
-
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
-        WriteMethodOpening(source, methodModel, isExplicit, isExplicit, isAsync);
-
         var lookupName = StripExplicitInterfacePrefix(methodModel.Name);
+        var typeParameterExpression = BuildTypeParameterExpression(methodModel.Parameters, cachedTypeParameterFieldName);
+        var genericTypesArgument = BuildGenericTypesArgument(methodModel);
+        var returnStatement = BuildRefitReturnStatement(methodModel, @return, returnType, configureAwait);
+        var methodIndent = Indent(MethodMemberIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation);
 
-        source.WriteIndentation();
-        source.Append("var ______arguments = ");
-        AppendArgumentsArrayLiteral(source, methodModel);
-        source.Append(';');
-        source.WriteLine();
+        return typeParameterFieldSource
+            + BuildMethodOpening(methodModel, isExplicit, isExplicit, isAsync)
+            + $$"""
+                {{bodyIndent}}var refitArguments = {{BuildArgumentsArrayLiteral(methodModel)}};
+                {{bodyIndent}}var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("{{lookupName}}", {{typeParameterExpression}}{{genericTypesArgument}} );
 
-        source.WriteIndentation();
-        source.Append("var ______func = requestBuilder.BuildRestResultFuncForMethod(\"");
-        source.Append(lookupName);
-        source.Append("\", ");
-        AppendTypeParameterExpression(source, methodModel.Parameters, cachedTypeParameterFieldName);
-        AppendGenericTypesArgument(source, methodModel);
-        source.Append(" );");
-        source.WriteLine();
+                {{returnStatement}}{{methodIndent}}}
 
-        source.WriteLine();
-        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid)
-        {
-            source.WriteLine("______func(this.Client, ______arguments);");
-        }
-        else
-        {
-            source.WriteIndentation();
-            source.Append(@return);
-            source.Append('(');
-            source.Append(returnType);
-            source.Append(")______func(this.Client, ______arguments)");
-            source.Append(configureAwait);
-            source.Append(';');
-            source.WriteLine();
-        }
-
-        WriteMethodClosing(source);
+                """;
     }
 
-    /// <summary>Generates a Refit method that constructs the request directly in generated code.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds a Refit method that constructs the request directly in generated code.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
-    private static void WriteInlineRefitMethod(
-        SourceWriter source,
+    /// <returns>The generated inline method implementation.</returns>
+    private static string BuildInlineRefitMethod(
         MethodModel methodModel,
         InterfaceModel interfaceModel,
         bool isTopLevel)
     {
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
-        WriteMethodOpening(source, methodModel, isExplicit, isExplicit);
-
         var request = methodModel.Request;
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter);
-
-        source.WriteLine("var ______settings = requestBuilder.Settings;");
-        source.WriteLine(
-            """var ______basePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");""");
-        source.WriteLine(
-            "______basePath = ______basePath == \"/\" ? string.Empty : ______basePath.TrimEnd('/');");
         var requestUriExpression =
-            $"new global::System.Uri(______basePath + {ToCSharpStringLiteral(request.Path)}, global::System.UriKind.Relative)";
-        source.WriteLine(
-            $"var ______rq = new global::System.Net.Http.HttpRequestMessage({ToHttpMethodExpression(request.HttpMethod)}, {requestUriExpression});");
-        source.WriteLine(
-            """
-            #if NET6_0_OR_GREATER
-            ______rq.Version = ______settings.Version;
-            ______rq.VersionPolicy = ______settings.VersionPolicy;
-            #endif
-            """);
+            $"new global::System.Uri(refitBasePath + {ToCSharpStringLiteral(request.Path)}, global::System.UriKind.Relative)";
+        var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter);
+        var headerSource = BuildInlineHeaders(request);
+        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel);
+        var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression);
+        var methodIndent = Indent(MethodMemberIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation);
 
-        if (bodyParameter is not null)
-        {
-            var streamBodyExpression = BuildStreamBodyExpression(bodyParameter);
-            var serializationMethodExpression = BuildBodySerializationMethodExpression(bodyParameter);
-            var contentExpression =
-                $"""
-                 global::Refit.GeneratedRequestRunner.CreateBodyContent<{bodyParameter.Type}>(
-                     ______settings,
-                     @{bodyParameter.Name},
-                     {serializationMethodExpression},
-                     {streamBodyExpression})
-                 """;
-            source.WriteLine(
-                $"______rq.Content = {contentExpression};");
-        }
+        return $$"""
+            {{BuildMethodOpening(methodModel, isExplicit, isExplicit)}}{{bodyIndent}}var refitSettings = _requestBuilder.Settings;
+            {{bodyIndent}}var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+            {{bodyIndent}}refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
+            {{bodyIndent}}var refitRequest = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
+            {{bodyIndent}}#if NET6_0_OR_GREATER
+            {{bodyIndent}}refitRequest.Version = refitSettings.Version;
+            {{bodyIndent}}refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+            {{bodyIndent}}#endif
+            {{contentSource}}{{headerSource}}{{requestPropertySource}}{{returnSource}}{{methodIndent}}}
 
-        WriteInlineHeaders(source, request);
-        WriteInlineRequestProperties(source, request, interfaceModel);
-        WriteInlineReturn(source, methodModel, request, bufferBodyExpression, cancellationTokenExpression);
-        WriteMethodClosing(source);
+            """;
     }
 
-    /// <summary>Emits the return statement for an inline generated Refit method.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds request content assignment for an inline generated method.</summary>
+    /// <param name="bodyParameter">The body parameter model.</param>
+    /// <returns>The generated content assignment.</returns>
+    private static string BuildInlineContent(RequestParameterModel bodyParameter)
+    {
+        var streamBodyExpression = BuildStreamBodyExpression(bodyParameter);
+        var serializationMethodExpression = BuildBodySerializationMethodExpression(bodyParameter);
+        var bodyIndent = Indent(MethodBodyIndentation);
+
+        return $$"""
+            {{bodyIndent}}refitRequest.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<{{bodyParameter.Type}}>(
+            {{bodyIndent}}    refitSettings,
+            {{bodyIndent}}    @{{bodyParameter.Name}},
+            {{bodyIndent}}    {{serializationMethodExpression}},
+            {{bodyIndent}}    {{streamBodyExpression}});
+
+            """;
+    }
+
+    /// <summary>Builds the return statement for an inline generated Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="request">The parsed request model.</param>
     /// <param name="bufferBodyExpression">The expression indicating whether request content should be buffered.</param>
     /// <param name="cancellationTokenExpression">The cancellation token expression.</param>
-    private static void WriteInlineReturn(
-        SourceWriter source,
+    /// <returns>The generated return statement.</returns>
+    private static string BuildInlineReturn(
         MethodModel methodModel,
         RequestModel request,
         string bufferBodyExpression,
         string cancellationTokenExpression)
     {
+        var bodyIndent = Indent(MethodBodyIndentation);
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
         {
-            var sendVoidExpression =
-                $"""
-                 global::Refit.GeneratedRequestRunner.SendVoidAsync(
-                     this.Client,
-                     ______rq,
-                     ______settings,
-                     {bufferBodyExpression},
-                     {cancellationTokenExpression})
-                 """;
-            source.WriteLine(
-                $"return {sendVoidExpression};");
-            return;
-        }
+            return $$"""
+                {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendVoidAsync(
+                {{bodyIndent}}    this.Client,
+                {{bodyIndent}}    refitRequest,
+                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    {{bufferBodyExpression}},
+                {{bodyIndent}}    {{cancellationTokenExpression}});
 
-        var sendExpression =
-            $"""
-             global::Refit.GeneratedRequestRunner.SendAsync<{request.ResultType}, {request.DeserializedResultType}>(
-                 this.Client,
-                 ______rq,
-                 ______settings,
-                 {ToLowerInvariantString(request.IsApiResponse)},
-                 {ToLowerInvariantString(request.ShouldDisposeResponse)},
-                 {bufferBodyExpression},
-                 {cancellationTokenExpression})
-             """;
+                """;
+        }
 
         if (methodModel.ReturnType.StartsWith("global::System.Threading.Tasks.ValueTask<", StringComparison.Ordinal))
         {
-            source.WriteLine($"return new {methodModel.ReturnType}({sendExpression});");
-            return;
+            return $$"""
+                {{bodyIndent}}return new {{methodModel.ReturnType}}(global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
+                {{bodyIndent}}    this.Client,
+                {{bodyIndent}}    refitRequest,
+                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
+                {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
+                {{bodyIndent}}    {{bufferBodyExpression}},
+                {{bodyIndent}}    {{cancellationTokenExpression}}));
+
+                """;
         }
 
-        source.WriteLine($"return {sendExpression};");
+        return $$"""
+            {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
+            {{bodyIndent}}    this.Client,
+            {{bodyIndent}}    refitRequest,
+            {{bodyIndent}}    refitSettings,
+            {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
+            {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
+            {{bodyIndent}}    {{bufferBodyExpression}},
+            {{bodyIndent}}    {{cancellationTokenExpression}});
+
+            """;
     }
 
-    /// <summary>Emits static and dynamic header application for an inline generated method.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds static and dynamic header application for an inline generated method.</summary>
     /// <param name="request">The parsed request model.</param>
-    private static void WriteInlineHeaders(SourceWriter source, RequestModel request)
+    /// <returns>The generated header statements.</returns>
+    private static string BuildInlineHeaders(RequestModel request)
     {
+        var parts = new string[request.StaticHeaders.Count + request.Parameters.Count];
+        var count = 0;
+        var bodyIndent = Indent(MethodBodyIndentation);
         foreach (var header in request.StaticHeaders)
         {
-            source.WriteLine(
-                $"global::Refit.GeneratedRequestRunner.SetHeader(______rq, {ToCSharpStringLiteral(header.Name)}, "
-                + $"{ToNullableCSharpStringLiteral(header.Value)});");
+            parts[count++] =
+                $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, {ToCSharpStringLiteral(header.Name)}, {ToNullableCSharpStringLiteral(header.Value)});\n";
         }
 
         foreach (var parameter in request.Parameters)
@@ -469,20 +588,21 @@ internal static partial class Emitter
             {
                 case RequestParameterKind.Header:
                     {
-                        source.WriteLine(
-                                            $"global::Refit.GeneratedRequestRunner.SetHeader(______rq, {ToCSharpStringLiteral(parameter.HeaderName)}, "
-                                            + $"{BuildHeaderValueExpression(parameter)});");
+                        parts[count++] =
+                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, {ToCSharpStringLiteral(parameter.HeaderName)}, {BuildHeaderValueExpression(parameter)});\n";
                         continue;
                     }
 
                 case RequestParameterKind.HeaderCollection:
                     {
-                        source.WriteLine(
-                                            $"global::Refit.GeneratedRequestRunner.AddHeaderCollection(______rq, @{parameter.Name});");
+                        parts[count++] =
+                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddHeaderCollection(refitRequest, @{parameter.Name});\n";
                         break;
                     }
             }
         }
+
+        return count == 0 ? string.Empty : ConcatParts(parts, count);
     }
 
     /// <summary>Builds a header value expression without null-conditionals on non-nullable value types.</summary>
@@ -496,18 +616,19 @@ internal static partial class Emitter
             : $"{parameterExpression}.ToString()";
     }
 
-    /// <summary>Emits request-option/property application for an inline generated method.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds request-option/property application for an inline generated method.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
-    private static void WriteInlineRequestProperties(
-        SourceWriter source,
+    /// <returns>The generated request option/property statements.</returns>
+    private static string BuildInlineRequestProperties(
         RequestModel request,
         InterfaceModel interfaceModel)
     {
-        source.WriteLine(
-            "global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(______rq, ______settings, "
-            + $"typeof({interfaceModel.InterfaceDisplayName}));");
+        var parts = new string[1 + interfaceModel.Properties.Count + request.Parameters.Count];
+        var count = 0;
+        var bodyIndent = Indent(MethodBodyIndentation);
+        parts[count++] =
+            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof({interfaceModel.InterfaceDisplayName}));\n";
 
         foreach (var property in interfaceModel.Properties)
         {
@@ -516,21 +637,22 @@ internal static partial class Emitter
                 continue;
             }
 
-            source.WriteLine(
-                $"global::Refit.GeneratedRequestRunner.AddRequestProperty<{property.Type}>"
-                + $"(______rq, {ToCSharpStringLiteral(property.RequestPropertyKey)}, "
-                + $"{BuildPropertyAccessExpression(property)});");
+            parts[count++] =
+                $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{property.Type}>"
+                + $"(refitRequest, {ToCSharpStringLiteral(property.RequestPropertyKey)}, "
+                + $"{BuildPropertyAccessExpression(property)});\n";
         }
 
         foreach (var parameter in request.Parameters)
         {
             if (parameter.Kind == RequestParameterKind.Property)
             {
-                source.WriteLine(
-                    $"global::Refit.GeneratedRequestRunner.AddRequestProperty<{parameter.Type}>"
-                    + $"(______rq, {ToCSharpStringLiteral(parameter.PropertyKey)}, @{parameter.Name});");
+                parts[count++] =
+                    $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{parameter.Type}>(refitRequest, {ToCSharpStringLiteral(parameter.PropertyKey)}, @{parameter.Name});\n";
             }
         }
+
+        return ConcatParts(parts, count);
     }
 
     /// <summary>Finds the first request parameter of the given kind.</summary>
@@ -598,88 +720,117 @@ internal static partial class Emitter
         return builder.ToString();
     }
 
-    /// <summary>Appends the <c>object[]</c> literal that holds the method's argument values.</summary>
-    /// <param name="source">The source writer to append to.</param>
+    /// <summary>Builds the <c>object[]</c> literal that holds the method's argument values.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
-    private static void AppendArgumentsArrayLiteral(SourceWriter source, MethodModel methodModel)
+    /// <returns>The generated argument array literal.</returns>
+    private static string BuildArgumentsArrayLiteral(MethodModel methodModel)
     {
-        // Build the arguments array literal directly. This runs for every Refit method, so we
-        // avoid LINQ Select/ToArray + string.Join and their intermediate array/iterator allocations.
         var parameters = methodModel.Parameters.AsArray();
         if (parameters.Length == 0)
         {
-            source.Append("global::System.Array.Empty<object>()");
-            return;
+            return "global::System.Array.Empty<object>()";
         }
 
-        source.Append("new object[] { ");
+        const string prefix = "new object[] { ";
+        const string suffix = " }";
+        var length = prefix.Length + suffix.Length + ((parameters.Length - 1) * 2);
         for (var i = 0; i < parameters.Length; i++)
         {
-            if (i > 0)
-            {
-                source.Append(", ");
-            }
-
-            source.Append('@');
-            source.Append(parameters[i].MetadataName);
+            length += 1 + parameters[i].MetadataName.Length;
         }
 
-        source.Append(" }");
+        return CreateGeneratedString(
+            length,
+            parameters,
+            static (destination, values) =>
+            {
+                var position = 0;
+                AppendText(destination, prefix, ref position);
+                for (var i = 0; i < values.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        AppendText(destination, ", ", ref position);
+                    }
+
+                    destination[position++] = '@';
+                    AppendText(destination, values[i].MetadataName, ref position);
+                }
+
+                AppendText(destination, suffix, ref position);
+            });
     }
 
-    /// <summary>Appends the optional generic <c>Type[]</c> argument for the request builder call.</summary>
-    /// <param name="source">The source writer to append to.</param>
+    /// <summary>Builds the optional generic <c>Type[]</c> argument for the request builder call.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
-    private static void AppendGenericTypesArgument(SourceWriter source, MethodModel methodModel)
+    /// <returns>The generated generic type argument, or an empty string.</returns>
+    private static string BuildGenericTypesArgument(MethodModel methodModel)
     {
         var constraints = methodModel.Constraints.AsArray();
         if (constraints.Length == 0)
         {
-            return;
+            return string.Empty;
         }
 
-        source.Append(", new global::System.Type[] { ");
+        const string prefix = ", new global::System.Type[] { ";
+        const string suffix = " }";
+        var length = prefix.Length + suffix.Length + ((constraints.Length - 1) * 2);
         for (var i = 0; i < constraints.Length; i++)
         {
-            if (i > 0)
-            {
-                source.Append(", ");
-            }
-
-            source.Append("typeof(");
-            source.Append(constraints[i].DeclaredName);
-            source.Append(')');
+            length += TypeOfPrefix.Length + constraints[i].DeclaredName.Length + 1;
         }
 
-        source.Append(" }");
+        return CreateGeneratedString(
+            length,
+            constraints,
+            static (destination, values) =>
+            {
+                var position = 0;
+                AppendText(destination, prefix, ref position);
+                for (var i = 0; i < values.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        AppendText(destination, ", ", ref position);
+                    }
+
+                    AppendText(destination, TypeOfPrefix, ref position);
+                    AppendText(destination, values[i].DeclaredName, ref position);
+                    destination[position++] = ')';
+                }
+
+                AppendText(destination, suffix, ref position);
+            });
     }
 
-    /// <summary>Emits a stub body for a non-Refit method that throws at runtime.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds a stub body for a non-Refit method that throws at runtime.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
-    private static void WriteNonRefitMethod(SourceWriter source, MethodModel methodModel)
+    /// <returns>The generated method stub.</returns>
+    private static string BuildNonRefitMethod(MethodModel methodModel)
     {
         var isExplicit = methodModel.IsExplicitInterface;
-        WriteMethodOpening(source, methodModel, isExplicit, isExplicit);
+        var messageLiteral = ToCSharpStringLiteral(NonRefitMethodExceptionMessage);
+        var methodIndent = Indent(MethodMemberIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation);
 
-        source.WriteLine(
-            "throw new global::System.NotImplementedException(\"Either this method has no Refit "
-            + "HTTP method attribute or you've used something other than a string literal for the "
-            + "'path' argument.\");");
+        return $$"""
+            {{BuildMethodOpening(methodModel, isExplicit, isExplicit)}}{{bodyIndent}}throw new global::System.NotImplementedException({{messageLiteral}});
+            {{methodIndent}}}
 
-        WriteMethodClosing(source);
+            """;
     }
 
-    /// <summary>Emits an interface property implementation.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds an interface property implementation.</summary>
     /// <param name="property">The property model being emitted.</param>
-    private static void WriteInterfaceProperty(SourceWriter source, InterfacePropertyModel property)
+    /// <returns>The generated property implementation, or an empty string.</returns>
+    private static string BuildInterfaceProperty(InterfacePropertyModel property)
     {
         if (property.IsSatisfiedByGeneratedMember)
         {
-            return;
+            return string.Empty;
         }
 
+        var methodIndent = Indent(MethodMemberIndentation);
         var visibility = property.IsExplicitInterface ? string.Empty : "public ";
         var annotation = property.Annotation ? "?" : string.Empty;
         var explicitInterface = property.IsExplicitInterface
@@ -688,56 +839,60 @@ internal static partial class Emitter
         var getter = property.HasGetter ? " get;" : string.Empty;
         var setter = property.HasSetter ? " set;" : string.Empty;
 
-        source.WriteLine(
-            $$"""
+        return $$"""
 
-              /// <inheritdoc />
-              {{visibility}}{{property.Type}}{{annotation}} {{explicitInterface}}{{property.Name}} { {{getter}}{{setter}} }
-              """);
+            {{methodIndent}}/// <inheritdoc />
+            {{methodIndent}}{{visibility}}{{property.Type}}{{annotation}} {{explicitInterface}}{{property.Name}} { {{getter}}{{setter}} }
+
+            """;
     }
 
-    /// <summary>Emits the explicit IDisposable.Dispose implementation.</summary>
-    /// <param name="source">The source writer to emit to.</param>
-    private static void WriteDisposableMethod(SourceWriter source) =>
-        source.WriteLine(
-            """
+    /// <summary>Builds the explicit IDisposable.Dispose implementation.</summary>
+    /// <param name="shouldEmit">True when the dispose method should be emitted.</param>
+    /// <returns>The generated dispose method, or an empty string.</returns>
+    private static string BuildDisposableMethod(bool shouldEmit)
+    {
+        if (!shouldEmit)
+        {
+            return string.Empty;
+        }
 
-            /// <inheritdoc />
-            void global::System.IDisposable.Dispose()
-            {
-                    Client?.Dispose();
-            }
-            """);
+        var methodIndent = Indent(MethodMemberIndentation);
+        var bodyIndent = Indent(MethodBodyIndentation);
+        return $$"""
 
-    /// <summary>Generates a cached field for non-generic method parameter types, when possible.</summary>
-    /// <param name="source">The source writer to emit any backing field to.</param>
+            {{methodIndent}}/// <inheritdoc />
+            {{methodIndent}}void global::System.IDisposable.Dispose()
+            {{methodIndent}}{
+            {{bodyIndent}}Client?.Dispose();
+            {{methodIndent}}}
+
+            """;
+    }
+
+    /// <summary>Builds a cached field for non-generic method parameter types, when possible.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
-    /// <returns>The generated field name, or <see langword="null"/> when the type array must be emitted inline.</returns>
-    private static string? GenerateTypeParameterField(
-        SourceWriter source,
+    /// <returns>The generated field source and field name, if one was generated.</returns>
+    private static (string Source, string? FieldName) BuildTypeParameterField(
         MethodModel methodModel,
         UniqueNameBuilder uniqueNames)
     {
-        // Use Array.Empty when there are no parameters and inline arrays when method type parameters are involved.
         if (methodModel.Parameters.Count == 0 || ContainsGenericParameter(methodModel.Parameters))
         {
-            return null;
+            return (string.Empty, null);
         }
 
-        // find a name and generate field declaration.
         var typeParameterFieldName = uniqueNames.New(TypeParameterVariableName);
+        var typeList = BuildParameterTypeList(methodModel.Parameters);
+        var memberIndent = Indent(MethodMemberIndentation);
+        var source = $$"""
 
-        source.WriteLine();
-        source.WriteIndentation();
-        source.Append("private static readonly global::System.Type[] ");
-        source.Append(typeParameterFieldName);
-        source.Append(" = new global::System.Type[] {");
-        AppendParameterTypeList(source, methodModel.Parameters);
-        source.Append(" };");
-        source.WriteLine();
 
-        return typeParameterFieldName;
+            {{memberIndent}}/// <summary>Cached parameter type array for the generated {{ToXmlDocumentationText(methodModel.DeclaredMethod)}} method.</summary>
+            {{memberIndent}}private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] { {{typeList}} };
+            """;
+        return (source, typeParameterFieldName);
     }
 
     /// <summary>Determines whether any parameter type depends on a method type parameter.</summary>
@@ -756,127 +911,106 @@ internal static partial class Emitter
         return false;
     }
 
-    /// <summary>Appends the expression used to pass the method's parameter types to the request builder.</summary>
-    /// <param name="source">The source writer to append to.</param>
+    /// <summary>Builds the expression used to pass the method's parameter types to the request builder.</summary>
     /// <param name="parameters">The parameter models to emit.</param>
     /// <param name="cachedTypeParameterFieldName">The cached field name, if one was generated.</param>
-    private static void AppendTypeParameterExpression(
-        SourceWriter source,
+    /// <returns>The generated type parameter expression.</returns>
+    private static string BuildTypeParameterExpression(
         ImmutableEquatableArray<ParameterModel> parameters,
         string? cachedTypeParameterFieldName)
     {
         if (parameters.Count == 0)
         {
-            source.Append("global::System.Array.Empty<global::System.Type>()");
-            return;
+            return "global::System.Array.Empty<global::System.Type>()";
         }
 
-        if (cachedTypeParameterFieldName is not null)
-        {
-            source.Append(cachedTypeParameterFieldName);
-            return;
-        }
-
-        source.Append("new global::System.Type[] { ");
-        AppendParameterTypeList(source, parameters);
-        source.Append(" }");
+        return cachedTypeParameterFieldName ?? $"new global::System.Type[] {{ {BuildParameterTypeList(parameters)} }}";
     }
 
-    /// <summary>Appends the generated <c>typeof(...)</c> argument list for method parameters.</summary>
-    /// <param name="source">The source writer to append to.</param>
+    /// <summary>Builds the generated <c>typeof(...)</c> argument list for method parameters.</summary>
     /// <param name="parameters">The parameter models to emit.</param>
-    private static void AppendParameterTypeList(
-        SourceWriter source,
-        ImmutableEquatableArray<ParameterModel> parameters)
+    /// <returns>The generated parameter type list.</returns>
+    private static string BuildParameterTypeList(ImmutableEquatableArray<ParameterModel> parameters)
     {
+        if (parameters.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var length = (parameters.Count - 1) * 2;
         for (var i = 0; i < parameters.Count; i++)
         {
-            if (i > 0)
-            {
-                source.Append(", ");
-            }
-
-            source.Append("typeof(");
-            source.Append(parameters[i].Type);
-            source.Append(')');
+            length += TypeOfPrefix.Length + parameters[i].Type.Length + 1;
         }
+
+        return CreateGeneratedString(
+            length,
+            parameters.AsArray(),
+            static (destination, values) =>
+            {
+                var position = 0;
+                for (var i = 0; i < values.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        AppendText(destination, ", ", ref position);
+                    }
+
+                    AppendText(destination, TypeOfPrefix, ref position);
+                    AppendText(destination, values[i].Type, ref position);
+                    destination[position++] = ')';
+                }
+            });
     }
 
-    /// <summary>Emits the closing brace for a method body.</summary>
-    /// <param name="source">The source writer to emit to.</param>
-    private static void WriteMethodClosing(SourceWriter source)
-    {
-        source.Indentation--;
-        source.WriteLine("}");
-    }
-
-    /// <summary>Emits the generic type constraint clauses for the given type parameters.</summary>
-    /// <param name="writer">The source writer to emit to.</param>
+    /// <summary>Builds the generic type constraint clauses for the given type parameters.</summary>
     /// <param name="typeParameters">The type parameter constraints to emit.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
-    private static void GenerateConstraints(
-        SourceWriter writer,
+    /// <param name="indentationLevel">The generated indentation level.</param>
+    /// <returns>The generated type constraint clauses.</returns>
+    private static string BuildConstraints(
         ImmutableEquatableArray<TypeConstraint> typeParameters,
-        bool isOverrideOrExplicitImplementation)
+        bool isOverrideOrExplicitImplementation,
+        int indentationLevel)
     {
-        // Need to loop over the constraints and create them
-        foreach (var typeParameter in typeParameters)
+        var parts = new string[typeParameters.Count];
+        var count = 0;
+        for (var i = 0; i < typeParameters.Count; i++)
         {
-            WriteConstraintsForTypeParameter(
-                writer,
-                typeParameter,
-                isOverrideOrExplicitImplementation);
+            var source = BuildConstraintsForTypeParameter(
+                typeParameters[i],
+                isOverrideOrExplicitImplementation,
+                indentationLevel);
+            if (source.Length != 0)
+            {
+                parts[count++] = source;
+            }
         }
+
+        return count == 0 ? string.Empty : ConcatParts(parts, count);
     }
 
-    /// <summary>Emits the constraint clause for a single type parameter.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds the constraint clause for a single type parameter.</summary>
     /// <param name="typeParameter">The type parameter constraint to emit.</param>
     /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
-    private static void WriteConstraintsForTypeParameter(
-        SourceWriter source,
+    /// <param name="indentationLevel">The generated indentation level.</param>
+    /// <returns>The generated type constraint clause, or an empty string.</returns>
+    private static string BuildConstraintsForTypeParameter(
         in TypeConstraint typeParameter,
-        bool isOverrideOrExplicitImplementation)
+        bool isOverrideOrExplicitImplementation,
+        int indentationLevel)
     {
         if (!HasConstraintKeywords(typeParameter, isOverrideOrExplicitImplementation))
         {
-            return;
+            return string.Empty;
         }
 
-        var wroteConstraint = false;
-        source.WriteIndentation();
-        source.Append("where ");
-        source.Append(typeParameter.TypeName);
-        source.Append(" : ");
-
-        var knownConstraints = typeParameter.KnownTypeConstraint;
-        AppendConstraintKeywordIf(source, "class", knownConstraints.HasFlag(KnownTypeConstraint.Class), ref wroteConstraint);
-        AppendConstraintKeywordIf(
-            source,
-            "unmanaged",
-            knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation,
-            ref wroteConstraint);
-        AppendConstraintKeywordIf(source, "struct", knownConstraints.HasFlag(KnownTypeConstraint.Struct), ref wroteConstraint);
-        AppendConstraintKeywordIf(
-            source,
-            "notnull",
-            knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation,
-            ref wroteConstraint);
-
-        if (!isOverrideOrExplicitImplementation)
-        {
-            foreach (var constraint in typeParameter.Constraints)
-            {
-                AppendConstraintKeyword(source, constraint, ref wroteConstraint);
-            }
-        }
-
-        AppendConstraintKeywordIf(
-            source,
-            "new()",
-            knownConstraints.HasFlag(KnownTypeConstraint.New) && !isOverrideOrExplicitImplementation,
-            ref wroteConstraint);
-        source.WriteLine();
+        return Indent(indentationLevel)
+            + "where "
+            + typeParameter.TypeName
+            + " : "
+            + BuildConstraintList(typeParameter, isOverrideOrExplicitImplementation)
+            + "\n";
     }
 
     /// <summary>Determines whether a type parameter has constraints that should be emitted.</summary>
@@ -907,40 +1041,199 @@ internal static partial class Emitter
                || (!isOverrideOrExplicitImplementation && (typeParameter.Constraints.Count > 0 || knownConstraints.HasFlag(KnownTypeConstraint.New)));
     }
 
-    /// <summary>Appends a constraint keyword when the condition is true.</summary>
-    /// <param name="source">The source writer to append to.</param>
+    /// <summary>Builds the comma-separated constraint list for a type parameter.</summary>
+    /// <param name="typeParameter">The type parameter constraint to inspect.</param>
+    /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
+    /// <returns>The generated constraint list.</returns>
+    private static string BuildConstraintList(
+        in TypeConstraint typeParameter,
+        bool isOverrideOrExplicitImplementation)
+    {
+        var parts = new string[typeParameter.Constraints.Count + 5];
+        var count = 0;
+        var knownConstraints = typeParameter.KnownTypeConstraint;
+        AddConstraint(parts, "class", knownConstraints.HasFlag(KnownTypeConstraint.Class), ref count);
+        AddConstraint(
+            parts,
+            "unmanaged",
+            knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation,
+            ref count);
+        AddConstraint(parts, "struct", knownConstraints.HasFlag(KnownTypeConstraint.Struct), ref count);
+        AddConstraint(
+            parts,
+            "notnull",
+            knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation,
+            ref count);
+
+        if (!isOverrideOrExplicitImplementation)
+        {
+            foreach (var constraint in typeParameter.Constraints)
+            {
+                AddConstraint(parts, constraint, true, ref count);
+            }
+        }
+
+        AddConstraint(
+            parts,
+            "new()",
+            knownConstraints.HasFlag(KnownTypeConstraint.New) && !isOverrideOrExplicitImplementation,
+            ref count);
+        return JoinParts(parts, count, ", ");
+    }
+
+    /// <summary>Adds one constraint keyword when the condition is true.</summary>
+    /// <param name="parts">The target constraint buffer.</param>
     /// <param name="keyword">The constraint keyword.</param>
     /// <param name="condition">Whether the keyword should be emitted.</param>
-    /// <param name="wroteConstraint">Tracks whether a previous keyword has been emitted.</param>
-    private static void AppendConstraintKeywordIf(
-        SourceWriter source,
+    /// <param name="count">The populated part count.</param>
+    private static void AddConstraint(
+        string[] parts,
         string keyword,
         bool condition,
-        ref bool wroteConstraint)
+        ref int count)
     {
         if (!condition)
         {
             return;
         }
 
-        AppendConstraintKeyword(source, keyword, ref wroteConstraint);
+        parts[count++] = keyword;
     }
 
-    /// <summary>Appends one constraint keyword, including any required separator.</summary>
-    /// <param name="source">The source writer to append to.</param>
-    /// <param name="keyword">The constraint keyword.</param>
-    /// <param name="wroteConstraint">Tracks whether a previous keyword has been emitted.</param>
-    private static void AppendConstraintKeyword(
-        SourceWriter source,
-        string keyword,
-        ref bool wroteConstraint)
+    /// <summary>Builds the generated return statement for the reflection-backed Refit method path.</summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="returnPrefix">The return statement prefix.</param>
+    /// <param name="returnType">The generated return type.</param>
+    /// <param name="configureAwait">The generated configure-await suffix.</param>
+    /// <returns>The generated return statement.</returns>
+    private static string BuildRefitReturnStatement(
+        MethodModel methodModel,
+        string returnPrefix,
+        string returnType,
+        string configureAwait)
     {
-        if (wroteConstraint)
+        var bodyIndent = Indent(MethodBodyIndentation);
+        return methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid
+            ? $"{bodyIndent}refitFunc(this.Client, refitArguments);\n"
+            : $"{bodyIndent}{returnPrefix}({returnType})refitFunc(this.Client, refitArguments){configureAwait};\n";
+    }
+
+    /// <summary>Concatenates populated source fragments without allocating a trimmed array.</summary>
+    /// <param name="parts">The source fragments.</param>
+    /// <param name="count">The populated fragment count.</param>
+    /// <returns>The concatenated source.</returns>
+    private static string ConcatParts(string[] parts, int count)
+    {
+        var length = 0;
+        for (var i = 0; i < count; i++)
         {
-            source.Append(", ");
+            length += parts[i].Length;
         }
 
-        source.Append(keyword);
-        wroteConstraint = true;
+        return CreateGeneratedString(
+            length,
+            (Parts: parts, Count: count),
+            static (destination, state) =>
+            {
+                var position = 0;
+                for (var i = 0; i < state.Count; i++)
+                {
+                    AppendText(destination, state.Parts[i], ref position);
+                }
+            });
     }
+
+    /// <summary>Joins populated source fragments without allocating a trimmed array.</summary>
+    /// <param name="parts">The source fragments.</param>
+    /// <param name="count">The populated fragment count.</param>
+    /// <param name="separator">The separator text.</param>
+    /// <returns>The joined source.</returns>
+    private static string JoinParts(string[] parts, int count, string separator)
+    {
+        if (count == 0)
+        {
+            return string.Empty;
+        }
+
+        var length = separator.Length * (count - 1);
+        for (var i = 0; i < count; i++)
+        {
+            length += parts[i].Length;
+        }
+
+        return CreateGeneratedString(
+            length,
+            (Parts: parts, Count: count, Separator: separator),
+            static (destination, state) =>
+            {
+                var position = 0;
+                for (var i = 0; i < state.Count; i++)
+                {
+                    if (i > 0)
+                    {
+                        AppendText(destination, state.Separator, ref position);
+                    }
+
+                    AppendText(destination, state.Parts[i], ref position);
+                }
+            });
+    }
+
+    /// <summary>Builds a generated indentation string.</summary>
+    /// <param name="level">The indentation level.</param>
+    /// <returns>The generated indentation.</returns>
+    private static string Indent(int level) => new(' ', level * CharsPerIndentation);
+
+#if NETSTANDARD2_0
+    /// <summary>Creates a generated string using a pre-sized buffer.</summary>
+    /// <typeparam name="TState">The state type.</typeparam>
+    /// <param name="length">The string length.</param>
+    /// <param name="state">The caller supplied state.</param>
+    /// <param name="action">The buffer fill callback.</param>
+    /// <returns>The generated string.</returns>
+    private static string CreateGeneratedString<TState>(
+        int length,
+        TState state,
+        GeneratedStringAction<TState> action)
+    {
+        var destination = new char[length];
+        action(destination, state);
+        return new(destination);
+    }
+
+    /// <summary>Appends text into a generated string buffer.</summary>
+    /// <param name="destination">The target character buffer.</param>
+    /// <param name="text">The text to append.</param>
+    /// <param name="position">The current write position.</param>
+    private static void AppendText(char[] destination, string text, ref int position)
+    {
+        text.CopyTo(0, destination, position, text.Length);
+        position += text.Length;
+    }
+#else
+    /// <summary>Creates a generated string using <see cref="string.Create{TState}(int, TState, System.Buffers.SpanAction{char, TState})"/>.</summary>
+    /// <typeparam name="TState">The state type.</typeparam>
+    /// <param name="length">The string length.</param>
+    /// <param name="state">The caller supplied state.</param>
+    /// <param name="action">The buffer fill callback.</param>
+    /// <returns>The generated string.</returns>
+    private static string CreateGeneratedString<TState>(
+        int length,
+        TState state,
+        GeneratedStringAction<TState> action) =>
+        string.Create(
+            length,
+            (State: state, Action: action),
+            static (destination, context) => context.Action(destination, context.State));
+
+    /// <summary>Appends text into a generated string buffer.</summary>
+    /// <param name="destination">The target character buffer.</param>
+    /// <param name="text">The text to append.</param>
+    /// <param name="position">The current write position.</param>
+    private static void AppendText(Span<char> destination, string text, ref int position)
+    {
+        text.AsSpan().CopyTo(destination[position..]);
+        position += text.Length;
+    }
+#endif
 }

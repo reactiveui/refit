@@ -35,6 +35,7 @@
     <Folder Name="/Tests/">
         <Project Path="tests/Refit.Analyzers.Tests/Refit.Analyzers.Tests.csproj" />
         <Project Path="tests/Refit.CodeFixes.Tests/Refit.CodeFixes.Tests.csproj" />
+        <Project Path="tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" />
         <Project Path="tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" />
         <Project Path="tests/Refit.Tests/Refit.Tests.csproj" />
     </Folder>

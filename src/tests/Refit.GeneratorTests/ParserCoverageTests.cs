@@ -25,6 +25,7 @@ public sealed class ParserCoverageTests
                     null!,
                     null,
                     generatedRequestBuilding: true,
+                    emitGeneratedCodeMarkers: true,
                     [],
                     [],
                     CancellationToken.None))
@@ -43,6 +44,7 @@ public sealed class ParserCoverageTests
             compilation,
             "bad-name@thing-",
             generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
             [],
             [],
             CancellationToken.None);
@@ -64,6 +66,7 @@ public sealed class ParserCoverageTests
             compilation,
             ".Application",
             generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
             [],
             [],
             CancellationToken.None);
@@ -71,6 +74,7 @@ public sealed class ParserCoverageTests
             compilation,
             "123-App",
             generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
             [],
             [],
             CancellationToken.None);
@@ -197,6 +201,7 @@ public sealed class ParserCoverageTests
             compilation,
             "mixed",
             generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
             candidateMethods,
             candidateInterfaces,
             CancellationToken.None);
@@ -239,6 +244,7 @@ public sealed class ParserCoverageTests
             compilation,
             "legacy",
             generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
             candidateMethods,
             candidateInterfaces,
             CancellationToken.None);

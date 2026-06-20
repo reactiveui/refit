@@ -125,7 +125,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(______rq, \"X-Test\", \"test\")");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Test\", \"test\")");
         await Assert.That(generated).Contains(GeneratedRequestRunnerSendAsync);
     }
 
@@ -142,7 +142,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("______basePath + \"/foo?key=value\"");
+        await Assert.That(generated).Contains("refitBasePath + \"/foo?key=value\"");
         await Assert.That(generated).DoesNotContain("#name");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -160,7 +160,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("______basePath + \"/foo\"");
+        await Assert.That(generated).Contains("refitBasePath + \"/foo\"");
         await Assert.That(generated).DoesNotContain("?key=value");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -178,7 +178,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("______basePath + \"/foo?key=&two=2\"");
+        await Assert.That(generated).Contains("refitBasePath + \"/foo?key=&two=2\"");
         await Assert.That(generated).DoesNotContain("=drop");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -213,7 +213,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(______rq, \"X-Test\", @id.ToString())");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Test\", @id.ToString())");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
@@ -230,7 +230,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.AddHeaderCollection(______rq, @headers)");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.AddHeaderCollection(refitRequest, @headers)");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
@@ -295,9 +295,9 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("______basePath + \"/global\"");
-        await Assert.That(generated).Contains("______basePath + \"/alias\"");
-        await Assert.That(generated).Contains("______basePath + \"/qualified\"");
+        await Assert.That(generated).Contains("refitBasePath + \"/global\"");
+        await Assert.That(generated).Contains("refitBasePath + \"/alias\"");
+        await Assert.That(generated).Contains("refitBasePath + \"/qualified\"");
         await Assert.That(generated).Contains("HttpMethod.Get");
         await Assert.That(generated).Contains("HttpMethod.Post");
         await Assert.That(generated).Contains("HttpMethod.Put");
@@ -368,9 +368,9 @@ public class GeneratedRequestBuildingTests
             generatedRequestBuilding: true);
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
-        await Assert.That(generated).DoesNotContain("______basePath + \"relative\"");
-        await Assert.That(generated).DoesNotContain("______basePath + \"/users/{id}\"");
-        await Assert.That(generated).DoesNotContain("______basePath + \"/bad");
+        await Assert.That(generated).DoesNotContain("refitBasePath + \"relative\"");
+        await Assert.That(generated).DoesNotContain("refitBasePath + \"/users/{id}\"");
+        await Assert.That(generated).DoesNotContain("refitBasePath + \"/bad");
     }
 
     /// <summary>Verifies custom HTTP method attributes are discovered but fall back to the runtime builder.</summary>
@@ -411,8 +411,8 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("return (string)______func(this.Client, ______arguments);");
-        await Assert.That(generated).Contains("______func(this.Client, ______arguments);");
+        await Assert.That(generated).Contains("return (string)refitFunc(this.Client, refitArguments);");
+        await Assert.That(generated).Contains("refitFunc(this.Client, refitArguments);");
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
     }
 
@@ -466,7 +466,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("______basePath + \"/foo?one=1&two\"");
+        await Assert.That(generated).Contains("refitBasePath + \"/foo?one=1&two\"");
         await Assert.That(generated).DoesNotContain("drop");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -484,7 +484,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.AddRequestProperty<int>(______rq, \"tenant\", @tenantId)");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.AddRequestProperty<int>(refitRequest, \"tenant\", @tenantId)");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
@@ -501,7 +501,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.AddRequestProperty<int>(______rq, \"tenantId\", @tenantId)");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.AddRequestProperty<int>(refitRequest, \"tenantId\", @tenantId)");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
@@ -518,8 +518,8 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(______rq, \"X-Value\", @value?.ToString())");
-        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(______rq, \"X-Name\", @name?.ToString())");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Value\", @value?.ToString())");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.SetHeader(refitRequest, \"X-Name\", @name?.ToString())");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
@@ -548,8 +548,8 @@ public class GeneratedRequestBuildingTests
             generatedRequestBuilding: true);
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
-        await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.SetHeader(______rq, \" \",");
-        await Assert.That(generated).DoesNotContain("MultipleBodies(" + Environment.NewLine + "var ______settings");
+        await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.SetHeader(refitRequest, \" \",");
+        await Assert.That(generated).DoesNotContain("var refitSettings = _requestBuilder.Settings;");
     }
 
     /// <summary>Verifies body buffering and serialization modes are emitted for supported inline bodies.</summary>
@@ -575,9 +575,9 @@ public class GeneratedRequestBuildingTests
             generatedRequestBuilding: true);
 
         await Assert.That(generated).Contains("BodySerializationMethod.Default");
-        await Assert.That(generated).Contains("______settings.Buffered");
+        await Assert.That(generated).Contains("refitSettings.Buffered");
         await Assert.That(generated).Contains("BodySerializationMethod.Serialized");
-        await Assert.That(generated).Contains("!______settings.Buffered");
+        await Assert.That(generated).Contains("!refitSettings.Buffered");
         await Assert.That(generated).Contains("true,");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -677,7 +677,7 @@ public class GeneratedRequestBuildingTests
             generatedRequestBuilding: true);
 
         await Assert.That(generated).Contains("public int TenantId {  get; set; }");
-        await Assert.That(generated).Contains("GeneratedRequestRunner.AddRequestProperty<int>(______rq, \"tenant\", this.TenantId)");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.AddRequestProperty<int>(refitRequest, \"tenant\", this.TenantId)");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 

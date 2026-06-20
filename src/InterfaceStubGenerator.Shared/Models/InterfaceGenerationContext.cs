@@ -11,6 +11,7 @@ namespace Refit.Generator;
 /// <param name="DisposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
 /// <param name="HttpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
 /// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled.</param>
+/// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="SupportsNullable">Whether the compilation supports nullable reference types.</param>
 internal readonly record struct InterfaceGenerationContext(
     List<Diagnostic> Diagnostics,
@@ -18,4 +19,5 @@ internal readonly record struct InterfaceGenerationContext(
     ISymbol? DisposableInterfaceSymbol,
     INamedTypeSymbol HttpMethodBaseAttributeSymbol,
     bool GeneratedRequestBuilding,
+    bool EmitGeneratedCodeMarkers,
     bool SupportsNullable);

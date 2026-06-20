@@ -113,77 +113,6 @@ public static class GeneratorComponentTests
         }
     }
 
-    /// <summary>Tests for <see cref="SourceWriter"/>.</summary>
-    public class SourceWriterTests
-    {
-        /// <summary>Verifies that the configured indentation is applied to written lines.</summary>
-        /// <returns>A task representing the asynchronous test.</returns>
-        [Test]
-        public async Task WriteLine_AppliesIndentation()
-        {
-            var writer = new SourceWriter { Indentation = 1 };
-            writer.WriteLine("body");
-            writer.Indentation = 0;
-
-            await Assert.That(writer.ToSourceText().ToString()).StartsWith("    body");
-        }
-
-        /// <summary>Verifies that zero indentation produces no leading whitespace.</summary>
-        /// <returns>A task representing the asynchronous test.</returns>
-        [Test]
-        public async Task WriteLine_ZeroIndentation_HasNoLeadingWhitespace()
-        {
-            var writer = new SourceWriter();
-            writer.WriteLine("body");
-
-            await Assert.That(writer.ToSourceText().ToString()).StartsWith("body");
-        }
-
-        /// <summary>Verifies that a negative indentation value throws.</summary>
-        /// <returns>A task representing the asynchronous test.</returns>
-        [Test]
-        public async Task Indentation_Negative_Throws()
-        {
-            var writer = new SourceWriter();
-
-            await Assert.That(() => writer.Indentation = -1).ThrowsExactly<ArgumentOutOfRangeException>();
-        }
-
-        /// <summary>Verifies that resetting clears both buffered content and indentation.</summary>
-        /// <returns>A task representing the asynchronous test.</returns>
-        [Test]
-        public async Task Reset_ClearsContentAndIndentation()
-        {
-            var writer = new SourceWriter { Indentation = 2 };
-            writer.WriteLine("first");
-
-            writer.Reset();
-            await Assert.That(writer.Indentation).IsEqualTo(0);
-
-            writer.WriteLine("second");
-            var text = writer.ToSourceText().ToString();
-
-            await Assert.That(text).StartsWith("second");
-            await Assert.That(text.Split('\n')).DoesNotContain("first");
-        }
-
-        /// <summary>Verifies CRLF line endings are normalized without preserving carriage returns.</summary>
-        /// <returns>A task representing the asynchronous test.</returns>
-        [Test]
-        public async Task Append_MultilineCrLf_TrimsCarriageReturn()
-        {
-            var writer = new SourceWriter { Indentation = 1 };
-
-            writer.WriteLine("first\r\nsecond");
-            writer.Indentation = 0;
-
-            var text = writer.ToSourceText().ToString();
-
-            await Assert.That(text).IsEqualTo($"    first{Environment.NewLine}    second{Environment.NewLine}");
-            await Assert.That(text).DoesNotContain($"\r{Environment.NewLine}");
-        }
-    }
-
     /// <summary>Tests for <see cref="ImmutableEquatableArray{T}"/>.</summary>
     public class ImmutableEquatableArrayTests
     {
@@ -290,11 +219,11 @@ public static class GeneratorComponentTests
             var urlEncodedBody = CreateBody("UrlEncoded", BodyBufferMode.Streaming);
 
             await Assert.That(Emitter.BuildBufferBodyExpression(null)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody)).IsEqualTo("______settings.Buffered");
+            await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody)).IsEqualTo("refitSettings.Buffered");
             await Assert.That(Emitter.BuildBufferBodyExpression(bufferedBody)).IsEqualTo(TrueLiteral);
             await Assert.That(Emitter.BuildBufferBodyExpression(streamingBody)).IsEqualTo(FalseLiteral);
             await Assert.That(Emitter.BuildBufferBodyExpression(noneBody)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(settingsBody)).IsEqualTo("!______settings.Buffered");
+            await Assert.That(Emitter.BuildStreamBodyExpression(settingsBody)).IsEqualTo("!refitSettings.Buffered");
             await Assert.That(Emitter.BuildStreamBodyExpression(bufferedBody)).IsEqualTo(FalseLiteral);
             await Assert.That(Emitter.BuildStreamBodyExpression(streamingBody)).IsEqualTo(TrueLiteral);
             await Assert.That(Emitter.BuildStreamBodyExpression(noneBody)).IsEqualTo(FalseLiteral);
@@ -364,9 +293,8 @@ public static class GeneratorComponentTests
         /// <summary>Verifies explicit method openings receive a global interface qualifier.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
-        public async Task WriteMethodOpening_QualifiesExplicitInterfaceMethods()
+        public async Task BuildMethodOpening_QualifiesExplicitInterfaceMethods()
         {
-            var writer = new SourceWriter();
             var method = new MethodModel(
                 "Ping",
                 "global::System.Threading.Tasks.Task",
@@ -378,9 +306,9 @@ public static class GeneratorComponentTests
                 ImmutableEquatableArray<TypeConstraint>.Empty,
                 false);
 
-            Emitter.WriteMethodOpening(writer, method, true, true, true);
+            var source = Emitter.BuildMethodOpening(method, true, true, true);
 
-            await Assert.That(writer.ToSourceText().ToString())
+            await Assert.That(source)
                 .Contains("async global::System.Threading.Tasks.Task global::RefitGeneratorTest.IBase.Ping(");
         }
 

@@ -10,6 +10,12 @@ namespace Refit.Generator;
 /// <summary>Internal emitter helpers that are directly covered by focused tests.</summary>
 internal static partial class Emitter
 {
+    /// <summary>The text length added to a nullable generated parameter around its type and name.</summary>
+    private const int NullableParameterExtraLength = 3;
+
+    /// <summary>The text length added to a non-nullable generated parameter around its type and name.</summary>
+    private const int ParameterExtraLength = 2;
+
     /// <summary>Builds the request-body buffering expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter, if any.</param>
     /// <returns>The buffering expression.</returns>
@@ -18,7 +24,7 @@ internal static partial class Emitter
             ? FalseLiteral
             : bodyParameter.BodyBufferMode switch
             {
-                BodyBufferMode.Settings => "______settings.Buffered",
+                BodyBufferMode.Settings => "refitSettings.Buffered",
                 BodyBufferMode.Buffered => TrueLiteral,
                 _ => FalseLiteral
             };
@@ -31,7 +37,7 @@ internal static partial class Emitter
             ? FalseLiteral
             : bodyParameter.BodyBufferMode switch
             {
-                BodyBufferMode.Settings => "!______settings.Buffered",
+                BodyBufferMode.Settings => "!refitSettings.Buffered",
                 BodyBufferMode.Buffered => FalseLiteral,
                 BodyBufferMode.Streaming => TrueLiteral,
                 _ => FalseLiteral
@@ -135,14 +141,13 @@ internal static partial class Emitter
             : name;
     }
 
-    /// <summary>Emits the method signature, constraints, and opening brace.</summary>
-    /// <param name="source">The source writer to emit to.</param>
+    /// <summary>Builds the method signature, constraints, and opening brace.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isDerivedExplicitImpl">True if the method is a derived explicit implementation.</param>
     /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
     /// <param name="isAsync">True if the method should be emitted as async.</param>
-    internal static void WriteMethodOpening(
-        SourceWriter source,
+    /// <returns>The generated method opening.</returns>
+    internal static string BuildMethodOpening(
         MethodModel methodModel,
         bool isDerivedExplicitImpl,
         bool isExplicitInterface,
@@ -150,58 +155,82 @@ internal static partial class Emitter
     {
         var visibility = !isExplicitInterface ? "public " : string.Empty;
         var asyncKeyword = isAsync ? "async " : string.Empty;
+        var explicitInterface = BuildExplicitInterfacePrefix(methodModel, isExplicitInterface);
+        var parameters = BuildParameterList(methodModel.Parameters);
+        var methodIndent = Indent(MethodMemberIndentation);
+        var constraints = BuildConstraints(methodModel.Constraints, isDerivedExplicitImpl || isExplicitInterface, MethodBodyIndentation);
 
-        source.WriteLine();
-        source.WriteLine("/// <inheritdoc />");
-        source.WriteIndentation();
-        source.Append(visibility);
-        source.Append(asyncKeyword);
-        source.Append(methodModel.ReturnType);
-        source.Append(' ');
+        return $$"""
 
-        if (isExplicitInterface)
+            {{methodIndent}}/// <inheritdoc />
+            {{methodIndent}}{{visibility}}{{asyncKeyword}}{{methodModel.ReturnType}} {{explicitInterface}}{{methodModel.DeclaredMethod}}({{parameters}})
+
+            """
+            + constraints
+            + methodIndent
+            + "{\n";
+    }
+
+    /// <summary>Builds the explicit interface qualifier for a method signature.</summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="isExplicitInterface">Whether the method is emitted explicitly.</param>
+    /// <returns>The explicit interface prefix, or an empty string.</returns>
+    private static string BuildExplicitInterfacePrefix(MethodModel methodModel, bool isExplicitInterface)
+    {
+        if (!isExplicitInterface)
         {
-            var ct = methodModel.ContainingType;
-            if (!ct.StartsWith(GlobalPrefix, StringComparison.Ordinal))
-            {
-                source.Append(GlobalPrefix);
-            }
-
-            source.Append(ct);
-            source.Append('.');
+            return string.Empty;
         }
 
-        source.Append(methodModel.DeclaredMethod);
-        source.Append('(');
+        var containingType = methodModel.ContainingType;
+        return containingType.StartsWith(GlobalPrefix, StringComparison.Ordinal)
+            ? containingType + "."
+            : GlobalPrefix + containingType + ".";
+    }
 
-        var parameters = methodModel.Parameters.AsArray();
-        if (parameters.Length > 0)
+    /// <summary>Builds the generated method parameter list.</summary>
+    /// <param name="parameters">The parameter models.</param>
+    /// <returns>The generated method parameter list.</returns>
+    private static string BuildParameterList(ImmutableEquatableArray<ParameterModel> parameters)
+    {
+        var parameterModels = parameters.AsArray();
+        if (parameterModels.Length == 0)
         {
-            for (var i = 0; i < parameters.Length; i++)
-            {
-                if (i > 0)
-                {
-                    source.Append(", ");
-                }
-
-                var (metadataName, type, annotation, _) = parameters[i];
-                source.Append(type);
-                if (annotation)
-                {
-                    source.Append('?');
-                }
-
-                source.Append(" @");
-                source.Append(metadataName);
-            }
+            return string.Empty;
         }
 
-        source.Append(')');
-        source.WriteLine();
-        source.Indentation++;
-        GenerateConstraints(source, methodModel.Constraints, isDerivedExplicitImpl || isExplicitInterface);
-        source.Indentation--;
-        source.WriteLine("{");
-        source.Indentation++;
+        var length = (parameterModels.Length - 1) * 2;
+        for (var i = 0; i < parameterModels.Length; i++)
+        {
+            var (metadataName, type, annotation, _) = parameterModels[i];
+            length += type.Length
+                + (annotation ? NullableParameterExtraLength : ParameterExtraLength)
+                + metadataName.Length;
+        }
+
+        return CreateGeneratedString(
+            length,
+            parameterModels,
+            static (destination, values) =>
+            {
+                var position = 0;
+                for (var i = 0; i < values.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        AppendText(destination, ", ", ref position);
+                    }
+
+                    var (metadataName, type, annotation, _) = values[i];
+                    AppendText(destination, type, ref position);
+                    if (annotation)
+                    {
+                        destination[position++] = '?';
+                    }
+
+                    AppendText(destination, " @", ref position);
+                    AppendText(destination, metadataName, ref position);
+                }
+            });
     }
 }
