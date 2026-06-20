@@ -17,6 +17,10 @@ public static class RestService
     private static readonly ConcurrentDictionary<Type, Func<HttpClient, IRequestBuilder, object>> _generatedFactories =
         new();
 
+    /// <summary>Holds source-generated factories that only need settings and avoid request-builder reflection.</summary>
+    private static readonly ConcurrentDictionary<Type, Func<HttpClient, RefitSettings, object>> _generatedSettingsFactories =
+        new();
+
     /// <summary>Registers a source-generated Refit implementation factory.</summary>
     /// <param name="refitInterfaceType">The Refit interface type.</param>
     /// <param name="factory">The generated implementation factory.</param>
@@ -42,6 +46,18 @@ public static class RestService
 
         GeneratedFactory<T>.Factory = factory;
         _generatedFactories[typeof(T)] = (client, requestBuilder) => factory(client, requestBuilder)!;
+    }
+
+    /// <summary>Registers a source-generated Refit implementation factory that does not need the reflection request builder.</summary>
+    /// <typeparam name="T">The Refit interface type.</typeparam>
+    /// <param name="factory">The generated implementation factory.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void RegisterGeneratedSettingsFactory<T>(Func<HttpClient, RefitSettings, T> factory)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(factory);
+
+        GeneratedSettingsFactory<T>.Factory = factory;
+        _generatedSettingsFactories[typeof(T)] = (client, settings) => factory(client, settings)!;
     }
 
     /// <summary>Create a source-generated Refit implementation without falling back to reflection.</summary>
@@ -70,15 +86,24 @@ public static class RestService
         ArgumentExceptionHelper.ThrowIfNull(client);
         ArgumentExceptionHelper.ThrowIfNull(settings);
 
-        var requestBuilder = new GeneratedOnlyRequestBuilder(settings);
+        if (GeneratedSettingsFactory<T>.Factory is { } settingsFactory)
+        {
+            return settingsFactory(client, settings);
+        }
+
+        if (_generatedSettingsFactories.TryGetValue(typeof(T), out var untypedSettingsFactory))
+        {
+            return (T)untypedSettingsFactory(client, settings);
+        }
+
         if (_generatedFactories.TryGetValue(typeof(T), out var untypedFactory))
         {
-            return (T)untypedFactory(client, requestBuilder);
+            return (T)untypedFactory(client, new GeneratedOnlyRequestBuilder(settings));
         }
 
         if (GeneratedFactory<T>.Factory is { } factory)
         {
-            return factory(client, requestBuilder);
+            return factory(client, new GeneratedOnlyRequestBuilder(settings));
         }
 
         throw CreateMissingGeneratedFactoryException(typeof(T));
@@ -127,6 +152,11 @@ public static class RestService
         ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
         ArgumentExceptionHelper.ThrowIfNull(client);
         ArgumentExceptionHelper.ThrowIfNull(settings);
+
+        if (_generatedSettingsFactories.TryGetValue(refitInterfaceType, out var settingsFactory))
+        {
+            return settingsFactory(client, settings);
+        }
 
         if (_generatedFactories.TryGetValue(refitInterfaceType, out var factory))
         {
@@ -410,5 +440,13 @@ public static class RestService
     {
         /// <summary>Gets or sets the generated implementation factory.</summary>
         internal static Func<HttpClient, IRequestBuilder, T>? Factory { get; set; }
+    }
+
+    /// <summary>Holds the typed generated settings factory for a single Refit interface.</summary>
+    /// <typeparam name="T">The Refit interface type.</typeparam>
+    private static class GeneratedSettingsFactory<T>
+    {
+        /// <summary>Gets or sets the generated implementation factory.</summary>
+        internal static Func<HttpClient, RefitSettings, T>? Factory { get; set; }
     }
 }

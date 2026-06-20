@@ -156,6 +156,7 @@ internal static partial class Emitter
         var memberSource = propertySource + refitMethodSource + derivedRefitMethodSource + nonRefitMethodSource + disposableSource;
         var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
         var generatedCodeAttribute = GeneratedCodeAttribute;
+        var settingsConstructorSource = BuildSettingsConstructor(model);
         var source = $$"""
             {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}
             namespace Refit.Implementation
@@ -174,7 +175,10 @@ internal static partial class Emitter
                         : {{model.InterfaceDisplayName}}
             {{BuildConstraints(model.Constraints, false, ClassMemberIndentation)}}        {
                         /// <summary>The request builder used to create Refit method delegates.</summary>
-                        private readonly global::Refit.IRequestBuilder _requestBuilder;
+                        private readonly global::Refit.IRequestBuilder? _requestBuilder;
+
+                        /// <summary>The settings used by this generated Refit implementation.</summary>
+                        private readonly global::Refit.RefitSettings _settings;
 
                         /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
                         public global::System.Net.Http.HttpClient Client { get; }
@@ -186,8 +190,9 @@ internal static partial class Emitter
                         {
                             Client = client;
                             _requestBuilder = requestBuilder;
+                            _settings = requestBuilder.Settings;
                         }
-            {{memberSource}}        }
+            {{settingsConstructorSource}}{{memberSource}}        }
                 }
             }
 
@@ -313,7 +318,7 @@ internal static partial class Emitter
     /// <returns>The generated factory registrations.</returns>
     private static string BuildGeneratedFactoryRegistrations(ImmutableEquatableArray<InterfaceModel> interfaces)
     {
-        var registrations = new string[interfaces.Count];
+        var registrations = new string[interfaces.Count * 2];
         var count = 0;
         for (var i = 0; i < interfaces.Count; i++)
         {
@@ -329,9 +334,71 @@ internal static partial class Emitter
                                         static (client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
 
                         """;
+
+            if (CanUseGeneratedSettingsFactory(interfaceModel))
+            {
+                registrations[count++] = $$"""
+                                        global::Refit.RestService.RegisterGeneratedSettingsFactory<{{interfaceModel.InterfaceDisplayName}}>(
+                                            static (client, settings) => new {{generatedType}}(client, settings));
+
+                            """;
+            }
         }
 
         return count == 0 ? string.Empty : ConcatParts(registrations, count);
+    }
+
+    /// <summary>Builds the settings-only constructor when the generated implementation can avoid request-builder reflection.</summary>
+    /// <param name="model">The interface model being emitted.</param>
+    /// <returns>The generated constructor source, or an empty string.</returns>
+    private static string BuildSettingsConstructor(InterfaceModel model)
+    {
+        if (!CanUseGeneratedSettingsFactory(model))
+        {
+            return string.Empty;
+        }
+
+        return $$"""
+
+                        /// <summary>Initializes a new instance of the {{model.Ns}}{{model.ClassSuffix}} class for generated-only execution.</summary>
+                        /// <param name="client">The HTTP client used by the generated implementation.</param>
+                        /// <param name="settings">The settings used by the generated implementation.</param>
+                        public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
+                        {
+                            Client = client;
+                            _settings = settings;
+                        }
+            """;
+    }
+
+    /// <summary>Determines whether an interface can be constructed without a reflection request builder.</summary>
+    /// <param name="model">The interface model being emitted.</param>
+    /// <returns><see langword="true"/> when all Refit methods use generated request construction.</returns>
+    private static bool CanUseGeneratedSettingsFactory(InterfaceModel model)
+    {
+        if (model.RefitMethods.Count == 0 && model.DerivedRefitMethods.Count == 0)
+        {
+            return false;
+        }
+
+        return AllRequestsCanGenerateInline(model.RefitMethods)
+               && AllRequestsCanGenerateInline(model.DerivedRefitMethods);
+    }
+
+    /// <summary>Determines whether all methods in a collection use generated request construction.</summary>
+    /// <param name="methods">The methods to inspect.</param>
+    /// <returns><see langword="true"/> when each method can be emitted inline.</returns>
+    private static bool AllRequestsCanGenerateInline(ImmutableEquatableArray<MethodModel> methods)
+    {
+        for (var i = 0; i < methods.Count; i++)
+        {
+            if (!methods[i].Request.CanGenerateInline)
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>Builds documentation for generated type parameters.</summary>
@@ -450,7 +517,8 @@ internal static partial class Emitter
             + BuildMethodOpening(methodModel, isExplicit, isExplicit, isAsync)
             + $$"""
                 {{bodyIndent}}var refitArguments = {{BuildArgumentsArrayLiteral(methodModel)}};
-                {{bodyIndent}}var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("{{lookupName}}", {{typeParameterExpression}}{{genericTypesArgument}} );
+                {{bodyIndent}}var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                {{bodyIndent}}var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("{{lookupName}}", {{typeParameterExpression}}{{genericTypesArgument}} );
 
                 {{returnStatement}}{{methodIndent}}}
 
@@ -482,7 +550,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{BuildMethodOpening(methodModel, isExplicit, isExplicit)}}{{bodyIndent}}var refitSettings = _requestBuilder.Settings;
+            {{BuildMethodOpening(methodModel, isExplicit, isExplicit)}}{{bodyIndent}}var refitSettings = _settings;
             {{bodyIndent}}var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
             {{bodyIndent}}refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
             {{bodyIndent}}var refitRequest = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});

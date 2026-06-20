@@ -21,7 +21,10 @@ namespace Refit.Implementation
             : global::RefitGeneratorTest.IApi<T>
         {
             /// <summary>The request builder used to create Refit method delegates.</summary>
-            private readonly global::Refit.IRequestBuilder _requestBuilder;
+            private readonly global::Refit.IRequestBuilder? _requestBuilder;
+
+            /// <summary>The settings used by this generated Refit implementation.</summary>
+            private readonly global::Refit.RefitSettings _settings;
 
             /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
             public global::System.Net.Http.HttpClient Client { get; }
@@ -33,12 +36,21 @@ namespace Refit.Implementation
             {
                 Client = client;
                 _requestBuilder = requestBuilder;
+                _settings = requestBuilder.Settings;
             }
 
+            /// <summary>Initializes a new instance of the RefitGeneratorTestIApi class for generated-only execution.</summary>
+            /// <param name="client">The HTTP client used by the generated implementation.</param>
+            /// <param name="settings">The settings used by the generated implementation.</param>
+            public RefitGeneratorTestIApi(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
+            {
+                Client = client;
+                _settings = settings;
+            }
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<string> Get()
             {
-                var refitSettings = _requestBuilder.Settings;
+                var refitSettings = _settings;
                 var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
                 refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/users", global::System.UriKind.Relative));

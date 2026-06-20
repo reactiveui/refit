@@ -81,6 +81,31 @@ public partial class RestServiceIntegrationTests
             .ThrowsExactly<NotSupportedException>();
     }
 
+    /// <summary>Verifies the generated-only API prefers settings factories when they are registered.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedUsesRegisteredSettingsFactory()
+    {
+        RestService.RegisterGeneratedSettingsFactory<IGeneratedSettingsFactoryApi>(
+            static (client, settings) => new GeneratedSettingsFactoryApiClient(client, settings));
+
+        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var instance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>(client, settings);
+        var generated = await Assert.That(instance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+
+        await Assert.That(generated!.Client).IsSameReferenceAs(client);
+        await Assert.That(generated.Settings).IsSameReferenceAs(settings);
+
+        var generatedApiType = typeof(IGeneratedSettingsFactoryApi);
+        var typedInstance = RestService.ForGenerated(generatedApiType, client, settings);
+        var typedGenerated = await Assert.That(typedInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+
+        await Assert.That(typedGenerated!.Client).IsSameReferenceAs(client);
+        await Assert.That(typedGenerated.Settings).IsSameReferenceAs(settings);
+    }
+
     /// <summary>Verifies the generated-only API fails clearly when no generated factory is available.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

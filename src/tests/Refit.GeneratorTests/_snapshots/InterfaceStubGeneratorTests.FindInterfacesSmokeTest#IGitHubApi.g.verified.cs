@@ -20,7 +20,10 @@ namespace Refit.Implementation
             : global::Refit.Tests.IGitHubApi
         {
             /// <summary>The request builder used to create Refit method delegates.</summary>
-            private readonly global::Refit.IRequestBuilder _requestBuilder;
+            private readonly global::Refit.IRequestBuilder? _requestBuilder;
+
+            /// <summary>The settings used by this generated Refit implementation.</summary>
+            private readonly global::Refit.RefitSettings _settings;
 
             /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
             public global::System.Net.Http.HttpClient Client { get; }
@@ -32,6 +35,7 @@ namespace Refit.Implementation
             {
                 Client = client;
                 _requestBuilder = requestBuilder;
+                _settings = requestBuilder.Settings;
             }
 
 
@@ -41,7 +45,8 @@ namespace Refit.Implementation
             public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
             {
                 var refitArguments = new object[] { @userName };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
 
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }
@@ -53,7 +58,8 @@ namespace Refit.Implementation
             public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
             {
                 var refitArguments = new object[] { @userName };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters0 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters0 );
 
                 return (global::System.IObservable<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments);
             }
@@ -65,7 +71,8 @@ namespace Refit.Implementation
             public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
             {
                 var refitArguments = new object[] { @userName };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters1 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters1 );
 
                 return (global::System.IObservable<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments);
             }
@@ -77,7 +84,8 @@ namespace Refit.Implementation
             public async global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
             {
                 var refitArguments = new object[] { @orgName, @cancellationToken };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters2 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetOrgMembers", ______typeParameters2 );
 
                 return await ((global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }
@@ -89,7 +97,8 @@ namespace Refit.Implementation
             public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
             {
                 var refitArguments = new object[] { @q };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters3 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters3 );
 
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }
@@ -97,7 +106,7 @@ namespace Refit.Implementation
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
             {
-                var refitSettings = _requestBuilder.Settings;
+                var refitSettings = _settings;
                 var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
                 refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/", global::System.UriKind.Relative));
@@ -121,7 +130,8 @@ namespace Refit.Implementation
             public global::System.IObservable<string> GetIndexObservable()
             {
                 var refitArguments = global::System.Array.Empty<object>();
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", global::System.Array.Empty<global::System.Type>() );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", global::System.Array.Empty<global::System.Type>() );
 
                 return (global::System.IObservable<string>)refitFunc(this.Client, refitArguments);
             }
@@ -129,7 +139,7 @@ namespace Refit.Implementation
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::Refit.Tests.User> NothingToSeeHere()
             {
-                var refitSettings = _requestBuilder.Settings;
+                var refitSettings = _settings;
                 var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
                 refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/give-me-some-404-action", global::System.UriKind.Relative));
@@ -152,7 +162,7 @@ namespace Refit.Implementation
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> NothingToSeeHereWithMetadata()
             {
-                var refitSettings = _requestBuilder.Settings;
+                var refitSettings = _settings;
                 var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
                 refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/give-me-some-404-action", global::System.UriKind.Relative));
@@ -179,7 +189,8 @@ namespace Refit.Implementation
             public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName, global::System.Threading.CancellationToken @cancellationToken)
             {
                 var refitArguments = new object[] { @userName, @cancellationToken };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ______typeParameters4 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserWithMetadata", ______typeParameters4 );
 
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }
@@ -191,7 +202,8 @@ namespace Refit.Implementation
             public global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserObservableWithMetadata(string @userName)
             {
                 var refitArguments = new object[] { @userName };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters5 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters5 );
 
                 return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments);
             }
@@ -203,7 +215,8 @@ namespace Refit.Implementation
             public global::System.IObservable<global::Refit.IApiResponse<global::Refit.Tests.User>> GetUserIApiResponseObservableWithMetadata(string @userName)
             {
                 var refitArguments = new object[] { @userName };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetUserIApiResponseObservableWithMetadata", ______typeParameters6 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserIApiResponseObservableWithMetadata", ______typeParameters6 );
 
                 return (global::System.IObservable<global::Refit.IApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments);
             }
@@ -215,7 +228,8 @@ namespace Refit.Implementation
             public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> CreateUser(global::Refit.Tests.User @user)
             {
                 var refitArguments = new object[] { @user };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("CreateUser", ______typeParameters7 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("CreateUser", ______typeParameters7 );
 
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }
@@ -227,7 +241,8 @@ namespace Refit.Implementation
             public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> CreateUserWithMetadata(global::Refit.Tests.User @user)
             {
                 var refitArguments = new object[] { @user };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ______typeParameters8 );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ______typeParameters8 );
 
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }

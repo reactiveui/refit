@@ -20,7 +20,10 @@ namespace Refit.Implementation
             : global::RefitGeneratorTest.IGeneratedClient
         {
             /// <summary>The request builder used to create Refit method delegates.</summary>
-            private readonly global::Refit.IRequestBuilder _requestBuilder;
+            private readonly global::Refit.IRequestBuilder? _requestBuilder;
+
+            /// <summary>The settings used by this generated Refit implementation.</summary>
+            private readonly global::Refit.RefitSettings _settings;
 
             /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
             public global::System.Net.Http.HttpClient Client { get; }
@@ -32,6 +35,7 @@ namespace Refit.Implementation
             {
                 Client = client;
                 _requestBuilder = requestBuilder;
+                _settings = requestBuilder.Settings;
             }
 
             /// <inheritdoc />
@@ -43,7 +47,8 @@ namespace Refit.Implementation
                 where T5 : class, global::System.IDisposable, new()
             {
                 var refitArguments = global::System.Array.Empty<object>();
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>(), new global::System.Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) } );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("Get", global::System.Array.Empty<global::System.Type>(), new global::System.Type[] { typeof(T1), typeof(T2), typeof(T3), typeof(T4), typeof(T5) } );
 
                 return await ((global::System.Threading.Tasks.Task<string>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }

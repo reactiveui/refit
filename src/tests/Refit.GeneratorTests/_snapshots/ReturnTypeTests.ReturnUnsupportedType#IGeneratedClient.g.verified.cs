@@ -20,7 +20,10 @@ namespace Refit.Implementation
             : global::RefitGeneratorTest.IGeneratedClient
         {
             /// <summary>The request builder used to create Refit method delegates.</summary>
-            private readonly global::Refit.IRequestBuilder _requestBuilder;
+            private readonly global::Refit.IRequestBuilder? _requestBuilder;
+
+            /// <summary>The settings used by this generated Refit implementation.</summary>
+            private readonly global::Refit.RefitSettings _settings;
 
             /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
             public global::System.Net.Http.HttpClient Client { get; }
@@ -32,6 +35,7 @@ namespace Refit.Implementation
             {
                 Client = client;
                 _requestBuilder = requestBuilder;
+                _settings = requestBuilder.Settings;
             }
 
 
@@ -41,7 +45,8 @@ namespace Refit.Implementation
             public string GetUser(string @user)
             {
                 var refitArguments = new object[] { @user };
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
 
                 return (string)refitFunc(this.Client, refitArguments);
             }

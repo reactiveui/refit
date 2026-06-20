@@ -20,7 +20,10 @@ namespace Refit.Implementation
             : global::Refit.Tests.IGitHubApiDisposable
         {
             /// <summary>The request builder used to create Refit method delegates.</summary>
-            private readonly global::Refit.IRequestBuilder _requestBuilder;
+            private readonly global::Refit.IRequestBuilder? _requestBuilder;
+
+            /// <summary>The settings used by this generated Refit implementation.</summary>
+            private readonly global::Refit.RefitSettings _settings;
 
             /// <summary>Gets the HTTP client used by this generated Refit implementation.</summary>
             public global::System.Net.Http.HttpClient Client { get; }
@@ -32,13 +35,15 @@ namespace Refit.Implementation
             {
                 Client = client;
                 _requestBuilder = requestBuilder;
+                _settings = requestBuilder.Settings;
             }
 
             /// <inheritdoc />
             public async global::System.Threading.Tasks.Task RefitMethod()
             {
                 var refitArguments = global::System.Array.Empty<object>();
-                var refitFunc = _requestBuilder.BuildRestResultFuncForMethod("RefitMethod", global::System.Array.Empty<global::System.Type>() );
+                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("RefitMethod", global::System.Array.Empty<global::System.Type>() );
 
                 await ((global::System.Threading.Tasks.Task)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }
