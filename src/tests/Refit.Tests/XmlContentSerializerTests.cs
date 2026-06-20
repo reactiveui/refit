@@ -60,7 +60,7 @@ public class XmlContentSerializerTests
         var serializerSettings = new XmlContentSerializerSettings();
         var attributes = new XmlAttributes
         {
-            XmlRoot = new XmlRootAttribute(overridenRootElementName)
+            XmlRoot = new(overridenRootElementName)
         };
         serializerSettings.XmlAttributeOverrides.Add(dto.GetType(), attributes);
         var sut = new XmlContentSerializer(serializerSettings);
@@ -82,7 +82,7 @@ public class XmlContentSerializerTests
         var dto = BuildDto();
         var serializerSettings = new XmlContentSerializerSettings
         {
-            XmlNamespaces = new XmlSerializerNamespaces()
+            XmlNamespaces = new()
         };
         serializerSettings.XmlNamespaces.Add(prefix, "https://google.com");
         var sut = new XmlContentSerializer(serializerSettings);
@@ -101,7 +101,7 @@ public class XmlContentSerializerTests
     {
         var serializerSettings = new XmlContentSerializerSettings
         {
-            XmlNamespaces = new XmlSerializerNamespaces()
+            XmlNamespaces = new()
         };
         var sut = new XmlContentSerializer(serializerSettings);
 
@@ -119,9 +119,9 @@ public class XmlContentSerializerTests
         var encoding = Encoding.UTF32;
         var serializerSettings = new XmlContentSerializerSettings
         {
-            XmlReaderWriterSettings = new XmlReaderWriterSettings
+            XmlReaderWriterSettings = new()
             {
-                WriterSettings = new XmlWriterSettings { Encoding = encoding }
+                WriterSettings = new() { Encoding = encoding }
             }
         };
         var sut = new XmlContentSerializer(serializerSettings);
@@ -133,21 +133,59 @@ public class XmlContentSerializerTests
         await Assert.That(documentEncoding).IsEqualTo(encoding.WebName);
     }
 
+    /// <summary>Verifies constructor, serialization, and field-name guard branches.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GuardsAndXmlFieldNamesShouldWork()
+    {
+        var sut = new XmlContentSerializer();
+
+        await Assert.That(() => new XmlContentSerializer(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => sut.ToHttpContent<Dto>(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => sut.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Element))!))
+            .IsEqualTo("element-name");
+        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Attribute))!))
+            .IsEqualTo("attribute-name");
+        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Unannotated))!))
+            .IsNull();
+    }
+
+    /// <summary>Verifies XML reader/writer settings constructors apply async overrides and null guards.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task XmlReaderWriterSettingsConstructorsAndGuardsShouldWork()
+    {
+        var readerSettings = new XmlReaderSettings();
+        var writerSettings = new XmlWriterSettings();
+
+        var readerOnly = new XmlReaderWriterSettings(readerSettings);
+        var writerOnly = new XmlReaderWriterSettings(writerSettings);
+        var both = new XmlReaderWriterSettings(new XmlReaderSettings(), new XmlWriterSettings());
+
+        await Assert.That(readerOnly.ReaderSettings).IsSameReferenceAs(readerSettings);
+        await Assert.That(readerOnly.ReaderSettings.Async).IsTrue();
+        await Assert.That(writerOnly.WriterSettings).IsSameReferenceAs(writerSettings);
+        await Assert.That(writerOnly.WriterSettings.Async).IsTrue();
+        await Assert.That(both.ReaderSettings.Async).IsTrue();
+        await Assert.That(both.WriterSettings.Async).IsTrue();
+        await Assert.That(() => both.ReaderSettings = null!).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => both.WriterSettings = null!).ThrowsExactly<ArgumentNullException>();
+    }
+
     /// <summary>Builds a populated <see cref="Dto"/> instance for the tests.</summary>
     /// <returns>A new <see cref="Dto"/>.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
         "Major Code Smell",
         "S6566:Prefer using \"DateTimeOffset\" instead of \"DateTime\"",
         Justification = "Test intentionally exercises DateTime XML round-trip via XmlConvert.ToDateTime.")]
-    private static Dto BuildDto()
-    {
-        return new Dto
+    private static Dto BuildDto() =>
+        new()
         {
             CreatedOn = DateTime.UtcNow,
             Identifier = Guid.NewGuid().ToString(),
             Name = "Test Dto Object"
         };
-    }
 
     /// <summary>A simple data transfer object used to exercise XML serialization.</summary>
     public class Dto
@@ -161,5 +199,20 @@ public class XmlContentSerializerTests
         /// <summary>Gets or sets the name, serialized into the Google namespace.</summary>
         [XmlElement(Namespace = "https://google.com")]
         public string? Name { get; set; }
+    }
+
+    /// <summary>DTO used to verify XML field-name lookup.</summary>
+    public class XmlFieldNameDto
+    {
+        /// <summary>Gets or sets an XML element-backed value.</summary>
+        [XmlElement("element-name")]
+        public string? Element { get; set; }
+
+        /// <summary>Gets or sets an XML attribute-backed value.</summary>
+        [XmlAttribute("attribute-name")]
+        public string? Attribute { get; set; }
+
+        /// <summary>Gets or sets an unannotated value.</summary>
+        public string? Unannotated { get; set; }
     }
 }

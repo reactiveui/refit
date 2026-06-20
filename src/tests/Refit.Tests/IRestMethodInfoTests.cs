@@ -10,6 +10,30 @@ namespace Refit.Tests;
 [Headers("User-Agent: RefitTestClient", "Api-Version: 1")]
 public interface IRestMethodInfoTests
 {
+    /// <summary>Defines a GET route with an invalid CR/LF path.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo\nbar")]
+    Task NewlinePath();
+
+    /// <summary>Defines a route using a readable property from a complex parameter.</summary>
+    /// <param name="route">The complex route parameter.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo/{route.Visible}")]
+    Task ObjectRouteWithUnreadableProperty(RouteObjectWithUnreadableProperty route);
+
+    /// <summary>Defines a route that binds a complex parameter directly and through a property.</summary>
+    /// <param name="route">The conflicting complex route parameter.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo/{route}/{route.Visible}")]
+    Task ConflictingObjectRoute(RouteObjectWithUnreadableProperty route);
+
+    /// <summary>Defines a route with duplicate authorize parameters.</summary>
+    /// <param name="first">The first authorization value.</param>
+    /// <param name="second">The second authorization value.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo")]
+    Task DuplicateAuthorize([Authorize] string first, [Authorize] string second);
+
     /// <summary>Defines a GET route with a deliberately malformed path to test error handling.</summary>
     /// <returns>A task that returns the response body.</returns>
     [Get("@)!@_!($_!@($\\\\|||::::")]

@@ -11,6 +11,7 @@ namespace Refit;
 [Obsolete(
     "Use NewtonsoftJsonContentSerializer in the Refit.Newtonsoft.Json package instead",
     true)]
+[ExcludeFromCodeCoverage]
 [SuppressMessage(
     "Major Code Smell",
     "S1133:Deprecated code should be removed",

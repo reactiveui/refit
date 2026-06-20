@@ -229,7 +229,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -309,7 +309,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -325,7 +325,7 @@ public partial class RestServiceIntegrationTests
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
         var result = await Assert.That(
-            () => (Task)fixture.CreateUser(new User { Name = "foo" })).ThrowsExactly<ApiException>();
+            () => (Task)fixture.CreateUser(new() { Name = "foo" })).ThrowsExactly<ApiException>();
 
         await AssertStackTraceContains(nameof(IGitHubApi.CreateUser), result!.StackTrace);
 
@@ -348,7 +348,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -363,7 +363,7 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        using var response = await fixture.CreateUserWithMetadata(new User { Name = "foo" });
+        using var response = await fixture.CreateUserWithMetadata(new() { Name = "foo" });
         await Assert.That(response.IsSuccessStatusCode).IsFalse();
         await Assert.That(response.Error).IsNotNull();
 
@@ -448,7 +448,7 @@ public partial class RestServiceIntegrationTests
         var handler = new TestHttpMessageHandler("true");
 
         var fixture = RestService.For<IBrokenWebApi>(
-            new HttpClient(handler) { BaseAddress = new Uri("http://nowhere.com") });
+            new HttpClient(handler) { BaseAddress = new("http://nowhere.com") });
 
         var result = await fixture.PostAValue("Does this work?");
 
@@ -522,9 +522,12 @@ public partial class RestServiceIntegrationTests
                     + "\"Other\": [\"12345\",\"10/31/2017 4:32:59 PM\",\"60282dd2-f79a-4400-be01-bcb0e86e7bc6\"], "
                     + "\"hardcoded\": \"true\"}}");
 
-        var myParams = new MyComplexQueryParams { FirstName = "John", LastName = "Rambo" };
-        myParams.Address.Postcode = 9999;
-        myParams.Address.Street = "HomeStreet 99";
+        var myParams = new MyComplexQueryParams
+        {
+            FirstName = "John",
+            LastName = "Rambo",
+            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+        };
 
         myParams.MetaData.Add("Age", 99);
         myParams.MetaData.Add("Initials", "JR");
@@ -568,9 +571,12 @@ public partial class RestServiceIntegrationTests
                     + "\"Other\": [\"12345\",\"10/31/2017 4:32:59 PM\",\"60282dd2-f79a-4400-be01-bcb0e86e7bc6\"], "
                     + "\"hardcoded\": \"true\"}}");
 
-        var myParams = new MyComplexQueryParams { FirstName = "John", LastName = "Rambo" };
-        myParams.Address.Postcode = 9999;
-        myParams.Address.Street = "HomeStreet 99";
+        var myParams = new MyComplexQueryParams
+        {
+            FirstName = "John",
+            LastName = "Rambo",
+            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+        };
 
         myParams.MetaData.Add("Age", 99);
         myParams.MetaData.Add("Initials", "JR");

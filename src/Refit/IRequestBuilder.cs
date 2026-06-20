@@ -16,6 +16,9 @@ namespace Refit;
 /// be preserved when trimming assemblies.</remarks>
 public interface IRequestBuilder
 {
+    /// <summary>Gets the settings used by this request builder.</summary>
+    RefitSettings Settings { get; }
+
     /// <summary>Builds a delegate that executes the specified REST method using the provided HTTP client and arguments.</summary>
     /// <remarks>The returned delegate uses reflection to invoke the specified method and may require
     /// referenced interfaces and data transfer objects (DTOs) to be preserved when trimming assemblies. This method

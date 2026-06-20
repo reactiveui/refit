@@ -9,7 +9,7 @@ namespace Refit;
 /// If a string is supplied to the constructor then it will be used as the key in the HttpRequestMessage.Properties dictionary.
 /// If no key is specified then the key will be defaulted to the name of the parameter.
 /// </summary>
-[AttributeUsage(AttributeTargets.Parameter)]
+[AttributeUsage(AttributeTargets.Parameter | AttributeTargets.Property)]
 public sealed class PropertyAttribute : Attribute
 {
     /// <summary>Initializes a new instance of the <see cref="PropertyAttribute"/> class.</summary>

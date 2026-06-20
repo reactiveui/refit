@@ -13,8 +13,5 @@ public static class NamespaceOverlapApi
 {
     /// <summary>Creates a Refit client for <see cref="INamespaceOverlapApi"/>.</summary>
     /// <returns>A configured <see cref="INamespaceOverlapApi"/> instance.</returns>
-    public static INamespaceOverlapApi Create()
-    {
-        return RestService.For<INamespaceOverlapApi>("http://somewhere.com");
-    }
+    public static INamespaceOverlapApi Create() => RestService.For<INamespaceOverlapApi>("http://somewhere.com");
 }

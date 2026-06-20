@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -18,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Generator-input fixture read as text by InterfaceStubGeneratorTests.FindInterfacesSmokeTest.
+    <!-- Generator-input fixture read as text by Refit.GeneratorTests.InterfaceStubGeneratorTests.
          Its types are compiled from the split files (IGitHubApi.cs, User.cs, etc.), so this
          multi-type fixture copy is excluded from compilation to avoid duplicate definitions. -->
     <Compile Remove="GitHubApi.cs" />
@@ -33,27 +33,11 @@
     <PackageReference Include="Moq" />
     <PackageReference Include="TUnit" />
     <PackageReference Include="System.Reactive" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
     <PackageReference Include="RichardSzalay.MockHttp" />
-    <PackageReference Include="Verify.DiffPlex" />
-    <PackageReference Include="Verify.SourceGenerators" />
-    <PackageReference Include="Verify.TUnit" />
     <ProjectReference Include="..\..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
     <ProjectReference Include="..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\..\Refit.Xml\Refit.Xml.csproj" />
-    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\Refit.Tests\_snapshots\**">
-      <Link>%(RecursiveDir)\resources\%(Filename)%(Extension)</Link>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="_snapshots\" />
   </ItemGroup>
 </Project>

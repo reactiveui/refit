@@ -3,10 +3,8 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections.Concurrent;
-using System.Reflection;
-#if NET5_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
-#endif
+using System.Reflection;
 
 namespace Refit
 {
@@ -15,12 +13,6 @@ namespace Refit
     {
         /// <summary>Maximum stack-allocated buffer size, in characters, used when building paths and query strings.</summary>
         private const int StackallocThreshold = 512;
-
-        /// <summary>The message used when content cannot be deserialized into the requested type.</summary>
-        private const string DeserializationErrorMessage = "An error occured deserializing the response.";
-
-        /// <summary>The error message used when the HTTP client has no base address configured.</summary>
-        private const string BaseAddressRequiredMessage = "BaseAddress must be set on the HttpClient instance";
 
         /// <summary>The default query attribute applied when a parameter has none.</summary>
         private static readonly QueryAttribute DefaultQueryAttribute = new();
@@ -45,23 +37,11 @@ namespace Refit
         /// <summary>Initializes a new instance of the <see cref="RequestBuilderImplementation"/> class for the given interface type.</summary>
         /// <param name="refitInterfaceType">The Refit interface type to build requests for.</param>
         /// <param name="refitSettings">The settings to use, or null for defaults.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Minor Code Smell",
-            "SST1114:Remove the blank line between the declaration and the first parameter",
-            Justification = "False positive: the #if-guarded parameter attribute is required for trim annotations but is unavailable on non-net5 targets.")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Minor Code Smell",
-            "SST1115:Remove the blank line before this parameter",
-            Justification = "False positive: the #if-guarded parameter attribute is required for trim annotations but is unavailable on non-net5 targets.")]
         public RequestBuilderImplementation(
-#if NET5_0_OR_GREATER
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
             Type refitInterfaceType,
             RefitSettings? refitSettings = null)
         {
@@ -75,7 +55,7 @@ namespace Refit
             _settings = refitSettings ?? new RefitSettings();
             _serializer = _settings.ContentSerializer;
             _interfaceGenericHttpMethods =
-                new ConcurrentDictionary<CloseGenericMethodKey, RestMethodInfoInternal>();
+                new();
 
             TargetType = refitInterfaceType;
 
@@ -94,21 +74,16 @@ namespace Refit
         public Type TargetType { get; }
 
         /// <inheritdoc/>
-#if NET5_0_OR_GREATER
+        public RefitSettings Settings => _settings;
+
+        /// <inheritdoc/>
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
             string methodName,
             Type[]? parameterTypes = null,
             Type[]? genericArgumentTypes = null)
         {
-            if (!_interfaceHttpMethods.ContainsKey(methodName))
-            {
-                throw new ArgumentException(
-                    "Method must be defined and have an HTTP Method attribute");
-            }
-
             var restMethod = FindMatchingRestMethodInfo(
                 methodName,
                 parameterTypes,
@@ -138,15 +113,31 @@ namespace Refit
                 return BuildResultFuncForMethod(restMethod, nameof(BuildRxFuncForMethod));
             }
 
-            var isExplicitInterfaceMember = restMethod.MethodInfo.Name.Contains('.');
-            var isNonPublic = !restMethod.MethodInfo.IsPublic;
-            if (isExplicitInterfaceMember || isNonPublic)
+            return BuildGeneratedSyncFuncForMethod(restMethod);
+        }
+
+        /// <summary>Finds a method declared on this implementation type by name.</summary>
+        /// <param name="name">The method name.</param>
+        /// <returns>The declared method.</returns>
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
+            Justification = "This only resolves Refit's own generic delegate factories for the reflection-based request builder path, which is already annotated as not trim-safe.")]
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2111:Reflection access to methods with DynamicallyAccessedMembersAttribute",
+            Justification = "This helper filters by known method names and does not invoke methods with dynamic-access requirements.")]
+        internal static MethodInfo FindDeclaredMethod(string name)
+        {
+            foreach (var method in typeof(RequestBuilderImplementation).GetTypeInfo().DeclaredMethods)
             {
-                return BuildGeneratedSyncFuncForMethod(restMethod);
+                if (method.Name == name)
+                {
+                    return method;
+                }
             }
 
-            throw new ArgumentException(
-                $"Method \"{restMethod.MethodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>");
+            throw new MissingMethodException(typeof(RequestBuilderImplementation).FullName, name);
         }
 
         /// <summary>Gets the lookup key for a method, stripping any explicit-interface prefix from the name.</summary>
@@ -156,7 +147,7 @@ namespace Refit
         {
             var name = methodInfo.Name;
             var lastDot = name.LastIndexOf('.');
-            return lastDot >= 0 ? name.Substring(lastDot + 1) : name;
+            return lastDot >= 0 ? name[(lastDot + 1)..] : name;
         }
 
         /// <summary>Determines whether the method's return type is a closed generic of the supplied open generic type.</summary>
@@ -178,25 +169,39 @@ namespace Refit
             Type[]? genericArgumentTypes)
         {
             var isGeneric = genericArgumentTypes?.Length > 0;
+            List<RestMethodInfoInternal>? possibleMethods = null;
 
-            var possibleMethodsCollection = httpMethods.Where(
-                method => method.MethodInfo.GetParameters().Length == parameterTypes.Length);
+            for (var i = 0; i < httpMethods.Count; i++)
+            {
+                var method = httpMethods[i];
+                if (method.MethodInfo.GetParameters().Length != parameterTypes.Length)
+                {
+                    continue;
+                }
 
-            possibleMethodsCollection = isGeneric
-                ? possibleMethodsCollection.Where(
-                    method =>
-                        method.MethodInfo.IsGenericMethod
-                        && method.MethodInfo.GetGenericArguments().Length
-                            == genericArgumentTypes!.Length)
-                : possibleMethodsCollection.Where(
-                    method => !method.MethodInfo.IsGenericMethod);
+                if (isGeneric)
+                {
+                    if (!method.MethodInfo.IsGenericMethod
+                        || method.MethodInfo.GetGenericArguments().Length != genericArgumentTypes!.Length)
+                    {
+                        continue;
+                    }
+                }
+                else if (method.MethodInfo.IsGenericMethod)
+                {
+                    continue;
+                }
 
-            return [.. possibleMethodsCollection];
+                possibleMethods ??= [];
+                possibleMethods.Add(method);
+            }
+
+            return possibleMethods is null ? [] : [.. possibleMethods];
         }
 
         /// <summary>Runs an asynchronous task factory synchronously and waits for completion.</summary>
         /// <param name="taskFactory">The task factory to run.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Usage",
             "VSTHRD002:Avoid problematic synchronous waits",
             Justification = "Deliberate sync-over-async bridge for synchronous (void/non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
@@ -207,7 +212,7 @@ namespace Refit
         /// <typeparam name="T">The result type.</typeparam>
         /// <param name="taskFactory">The task factory to run.</param>
         /// <returns>The result produced by the task.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Usage",
             "VSTHRD002:Avoid problematic synchronous waits",
             Justification = "Deliberate sync-over-async bridge for synchronous (non-Task) interface methods that have no async caller; the work is offloaded via Task.Run to avoid deadlocks.")]
@@ -219,7 +224,7 @@ namespace Refit
         /// <param name="task">The in-flight request task.</param>
         /// <param name="cts">The linked cancellation source to dispose when the task finishes.</param>
         /// <returns>The result produced by <paramref name="task"/>.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Usage",
             "VSTHRD003:Avoid awaiting foreign Tasks",
             Justification = "The task is the request just launched by the caller; awaiting it here only scopes disposal of the linked cancellation source.")]
@@ -235,52 +240,66 @@ namespace Refit
             }
         }
 
+        /// <summary>Determines whether reflected parameters exactly match the requested parameter types.</summary>
+        /// <param name="parameters">The reflected method parameters.</param>
+        /// <param name="parameterTypes">The requested parameter types.</param>
+        /// <returns><see langword="true"/> when the parameter types match.</returns>
+        private static bool ParametersMatch(ParameterInfo[] parameters, Type[] parameterTypes)
+        {
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].ParameterType != parameterTypes[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>Finds the first cancellation token in an argument array.</summary>
+        /// <param name="paramList">The argument values.</param>
+        /// <returns>The first cancellation token, or <see cref="CancellationToken.None"/>.</returns>
+        private static CancellationToken GetCancellationToken(object[] paramList)
+        {
+            for (var i = 0; i < paramList.Length; i++)
+            {
+                if (paramList[i] is CancellationToken cancellationToken)
+                {
+                    return cancellationToken;
+                }
+            }
+
+            return CancellationToken.None;
+        }
+
         /// <summary>Discovers the Refit HTTP methods on an interface and adds them to the lookup dictionary.</summary>
         /// <param name="interfaceType">The interface to scan for HTTP methods.</param>
         /// <param name="methods">The dictionary to populate with discovered methods.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-#endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Major Code Smell",
-            "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
-            Justification = "Refit must bind to non-public interface members to resolve explicit interface implementations.")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Minor Code Smell",
-            "SST1114:Remove the blank line between the declaration and the first parameter",
-            Justification = "False positive: the #if-guarded parameter attribute is required for trim annotations but is unavailable on non-net5 targets.")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Minor Code Smell",
-            "SST1115:Remove the blank line before this parameter",
-            Justification = "False positive: the #if-guarded parameter attribute is required for trim annotations but is unavailable on non-net5 targets.")]
         private void AddInterfaceHttpMethods(
-#if NET5_0_OR_GREATER
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
-#endif
             Type interfaceType,
             Dictionary<string, List<RestMethodInfoInternal>> methods)
         {
-            var methodInfos = interfaceType
-                .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
-                .Where(i => i.IsAbstract);
-
-            foreach (var methodInfo in methodInfos)
+            foreach (var methodInfo in interfaceType.GetTypeInfo().DeclaredMethods)
             {
-                var attrs = methodInfo.GetCustomAttributes(true);
-                var hasHttpMethod = attrs.OfType<HttpMethodAttribute>().Any();
-                if (hasHttpMethod)
+                if (!methodInfo.IsAbstract
+                    || methodInfo.GetCustomAttribute<HttpMethodAttribute>(true) is null)
                 {
-                    var key = GetLookupKeyForMethod(methodInfo);
-                    if (!methods.TryGetValue(key, out var value))
-                    {
-                        value = [];
-                        methods.Add(key, value);
-                    }
-
-                    var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, _settings);
-                    value.Add(restinfo);
+                    continue;
                 }
+
+                var key = GetLookupKeyForMethod(methodInfo);
+                if (!methods.TryGetValue(key, out var value))
+                {
+                    value = [];
+                    methods.Add(key, value);
+                }
+
+                var restinfo = new RestMethodInfoInternal(interfaceType, methodInfo, _settings);
+                value.Add(restinfo);
             }
         }
 
@@ -289,10 +308,8 @@ namespace Refit
         /// <param name="parameterTypes">The parameter types to match, or null to match a single overload.</param>
         /// <param name="genericArgumentTypes">The generic argument types to close over, or null.</param>
         /// <returns>The matching rest method info.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private RestMethodInfoInternal FindMatchingRestMethodInfo(
             string key,
             Type[]? parameterTypes,
@@ -324,11 +341,7 @@ namespace Refit
 
             foreach (var method in possibleMethods)
             {
-                var match = method
-                    .MethodInfo.GetParameters()
-                    .Select(p => p.ParameterType)
-                    .SequenceEqual(parameterTypes);
-                if (match)
+                if (ParametersMatch(method.MethodInfo.GetParameters(), parameterTypes))
                 {
                     return CloseGenericMethodIfNeeded(method, genericArgumentTypes);
                 }
@@ -341,10 +354,8 @@ namespace Refit
         /// <param name="restMethodInfo">The (possibly generic) rest method.</param>
         /// <param name="genericArgumentTypes">The generic argument types, or null if not generic.</param>
         /// <returns>The closed rest method info, or the original when no generic arguments are supplied.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private RestMethodInfoInternal CloseGenericMethodIfNeeded(
             RestMethodInfoInternal restMethodInfo,
             Type[]? genericArgumentTypes)
@@ -352,9 +363,9 @@ namespace Refit
             if (genericArgumentTypes is not null)
             {
                 return _interfaceGenericHttpMethods.GetOrAdd(
-                    new CloseGenericMethodKey(restMethodInfo.MethodInfo, genericArgumentTypes),
+                    new(restMethodInfo.MethodInfo, genericArgumentTypes),
                     _ =>
-                        new RestMethodInfoInternal(
+                        new(
                             restMethodInfo.Type,
                             restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes),
                             restMethodInfo.RefitSettings));
@@ -367,21 +378,13 @@ namespace Refit
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <param name="builderMethodName">The name of the private generic builder method.</param>
         /// <returns>A delegate that invokes the method.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Major Code Smell",
-            "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
-            Justification = "Refit must invoke its own non-public generic builder methods by reflection.")]
         private Func<HttpClient, object[], object?> BuildResultFuncForMethod(
             RestMethodInfoInternal restMethod,
             string builderMethodName)
         {
-            var builderMethodInfo = typeof(RequestBuilderImplementation).GetMethod(
-                builderMethodName,
-                BindingFlags.NonPublic | BindingFlags.Instance);
+            var builderMethodInfo = FindDeclaredMethod(builderMethodName);
             var resultFunc = (MulticastDelegate?)
                 builderMethodInfo!.MakeGenericMethod(
                         restMethod.ReturnResultType,
@@ -394,14 +397,8 @@ namespace Refit
         /// <summary>Builds a synchronous invocation delegate for a generated (sync) interface method.</summary>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that invokes the method synchronously.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
-            "Major Code Smell",
-            "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
-            Justification = "Refit must invoke its own non-public generic builder methods by reflection.")]
         private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethod(
             RestMethodInfoInternal restMethod)
         {
@@ -420,9 +417,7 @@ namespace Refit
                 };
             }
 
-            var syncFuncMi = typeof(RequestBuilderImplementation).GetMethod(
-                nameof(BuildGeneratedSyncFuncForMethodGeneric),
-                BindingFlags.NonPublic | BindingFlags.Instance);
+            var syncFuncMi = FindDeclaredMethod(nameof(BuildGeneratedSyncFuncForMethodGeneric));
             var func =
                 syncFuncMi!
                     .MakeGenericMethod(
@@ -437,11 +432,9 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that invokes the method synchronously.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
@@ -463,11 +456,9 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that returns an observable of the result.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
@@ -482,7 +473,7 @@ namespace Refit
                     var methodCt = CancellationToken.None;
                     if (restMethod.CancellationToken is not null)
                     {
-                        methodCt = paramList.OfType<CancellationToken>().FirstOrDefault();
+                        methodCt = GetCancellationToken(paramList);
                     }
 
                     // link the two
@@ -500,11 +491,9 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that returns a task of the result.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
@@ -519,7 +508,7 @@ namespace Refit
                 {
                     return ret(
                         client,
-                        paramList.OfType<CancellationToken>().FirstOrDefault(),
+                        GetCancellationToken(paramList),
                         paramList);
                 }
 
@@ -532,11 +521,9 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that returns a value task of the result.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
@@ -545,16 +532,14 @@ namespace Refit
         {
             var ret = BuildTaskFuncForMethod<T, TBody>(restMethod);
 
-            return (client, paramList) => new ValueTask<T?>(ret(client, paramList));
+            return (client, paramList) => new(ret(client, paramList));
         }
 
         /// <summary>Builds a task invocation delegate for a method with no response body.</summary>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that returns a task with no result.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(
             RestMethodInfoInternal restMethod)
         {
@@ -564,7 +549,7 @@ namespace Refit
 
                 if (restMethod.CancellationToken is not null)
                 {
-                    ct = paramList.OfType<CancellationToken>().FirstOrDefault();
+                    ct = GetCancellationToken(paramList);
                 }
 
                 return ExecuteVoidRequestAsync(

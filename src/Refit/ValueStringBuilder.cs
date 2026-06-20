@@ -111,7 +111,7 @@ internal ref struct ValueStringBuilder
     /// <inheritdoc/>
     public override string ToString()
     {
-        var s = _chars.Slice(0, _pos).ToString();
+        var s = _chars[.._pos].ToString();
         Dispose();
         return s;
     }
@@ -127,12 +127,12 @@ internal ref struct ValueStringBuilder
             _chars[Length] = '\0';
         }
 
-        return _chars.Slice(0, _pos);
+        return _chars[.._pos];
     }
 
     /// <summary>Returns a span over the current contents of the builder.</summary>
     /// <returns>A span over the contents of the builder.</returns>
-    public readonly ReadOnlySpan<char> AsSpan() => _chars.Slice(0, _pos);
+    public readonly ReadOnlySpan<char> AsSpan() => _chars[.._pos];
 
     /// <summary>Returns a span over the contents from the given start index to the end.</summary>
     /// <param name="start">The start index.</param>
@@ -151,7 +151,7 @@ internal ref struct ValueStringBuilder
     /// <returns><see langword="true"/> if the contents were copied; otherwise, <see langword="false"/>.</returns>
     public bool TryCopyTo(Span<char> destination, out int charsWritten)
     {
-        if (_chars.Slice(0, _pos).TryCopyTo(destination))
+        if (_chars[.._pos].TryCopyTo(destination))
         {
             charsWritten = _pos;
             Dispose();
@@ -175,7 +175,7 @@ internal ref struct ValueStringBuilder
         }
 
         var remaining = _pos - index;
-        _chars.Slice(index, remaining).CopyTo(_chars.Slice(index + count));
+        _chars.Slice(index, remaining).CopyTo(_chars[(index + count)..]);
         _chars.Slice(index, count).Fill(value);
         _pos += count;
     }
@@ -198,12 +198,12 @@ internal ref struct ValueStringBuilder
         }
 
         var remaining = _pos - index;
-        _chars.Slice(index, remaining).CopyTo(_chars.Slice(index + count));
+        _chars.Slice(index, remaining).CopyTo(_chars[(index + count)..]);
         s
 #if !NETCOREAPP
             .AsSpan()
 #endif
-            .CopyTo(_chars.Slice(index));
+            .CopyTo(_chars[index..]);
         _pos += count;
     }
 
@@ -278,7 +278,7 @@ internal ref struct ValueStringBuilder
             Grow(value.Length);
         }
 
-        value.CopyTo(_chars.Slice(_pos));
+        value.CopyTo(_chars[_pos..]);
         _pos += value.Length;
     }
 
@@ -326,7 +326,7 @@ internal ref struct ValueStringBuilder
 #if !NETCOREAPP
             .AsSpan()
 #endif
-            .CopyTo(_chars.Slice(pos));
+            .CopyTo(_chars[pos..]);
         _pos += s.Length;
     }
 
@@ -363,7 +363,7 @@ internal ref struct ValueStringBuilder
         // This could also go negative if the actual required length wraps around.
         var poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
 
-        _chars.Slice(0, _pos).CopyTo(poolArray);
+        _chars[.._pos].CopyTo(poolArray);
 
         var toReturn = _arrayToReturnToPool;
         _arrayToReturnToPool = poolArray;

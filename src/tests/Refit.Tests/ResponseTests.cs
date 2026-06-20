@@ -41,7 +41,7 @@ public sealed class ResponseTests : IDisposable
     /// <summary>Initializes a new instance of the <see cref="ResponseTests"/> class.</summary>
     public ResponseTests()
     {
-        _mockHandler = new MockHttpMessageHandler();
+        _mockHandler = new();
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => _mockHandler };
 
@@ -130,7 +130,7 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
         };
         expectedResponse.Content.Headers.ContentType =
-            new MediaTypeHeaderValue("application/problem+json");
+            new("application/problem+json");
         _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
         var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
@@ -157,7 +157,7 @@ public sealed class ResponseTests : IDisposable
         {
             Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
         };
-        expectedResponse.Content.Headers.ContentType = new MediaTypeHeaderValue(
+        expectedResponse.Content.Headers.ContentType = new(
             "application/problem+json");
         _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
@@ -182,7 +182,7 @@ public sealed class ResponseTests : IDisposable
         var localHandler = new MockHttpMessageHandler();
         var settings = new RefitSettings(
             new SystemTextJsonContentSerializer(
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = false }))
+                new() { PropertyNameCaseInsensitive = false }))
         {
             HttpMessageHandlerFactory = () => localHandler
         };
@@ -191,7 +191,7 @@ public sealed class ResponseTests : IDisposable
         {
             Content = new StringContent("{\"Title\":\"mapped\",\"detail\":\"unmapped\"}")
         };
-        expectedResponse.Content.Headers.ContentType = new MediaTypeHeaderValue(
+        expectedResponse.Content.Headers.ContentType = new(
             "application/problem+json");
         localHandler
             .Expect(HttpMethod.Get, "http://api/aliasTest")
@@ -231,7 +231,7 @@ public sealed class ResponseTests : IDisposable
         };
 
         expectedResponse.Content.Headers.ContentType =
-            new MediaTypeHeaderValue("application/problem+json");
+            new("application/problem+json");
         _mockHandler
             .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
             .Respond(req => expectedResponse);
@@ -340,7 +340,7 @@ public sealed class ResponseTests : IDisposable
         };
 
         expectedResponse.Content.Headers.ContentType =
-            new MediaTypeHeaderValue("application/problem+json");
+            new("application/problem+json");
         _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
         _mockHandler.Expect(HttpMethod.Get, "http://api/soloyolo").Respond(req => expectedResponse);
@@ -356,9 +356,9 @@ public sealed class ResponseTests : IDisposable
         await Assert.That(actualException.Content.Extensions).Count().IsEqualTo(2);
         var items = actualException.Content.Extensions.ToList();
         await Assert.That(items[0]).IsEqualTo(
-            new KeyValuePair<string, object>(nameof(expectedContent.Foo), expectedContent.Foo));
+            new(nameof(expectedContent.Foo), expectedContent.Foo));
         await Assert.That(items[1]).IsEqualTo(
-            new KeyValuePair<string, object>(nameof(expectedContent.Baz), expectedContent.Baz));
+            new(nameof(expectedContent.Baz), expectedContent.Baz));
     }
 
     /// <summary>Verifies that a non-seekable stream is handled by the System.Text.Json content serializer.</summary>
@@ -399,7 +399,7 @@ public sealed class ResponseTests : IDisposable
         {
             Headers =
             {
-                ContentType = new MediaTypeHeaderValue("application/json")
+                ContentType = new("application/json")
                 {
                     CharSet = Encoding.UTF8.WebName
                 }
@@ -408,7 +408,7 @@ public sealed class ResponseTests : IDisposable
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
-        expectedResponse.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        expectedResponse.Content.Headers.ContentType = new("application/json");
         expectedResponse.StatusCode = HttpStatusCode.OK;
 
         localHandler
@@ -449,7 +449,7 @@ public sealed class ResponseTests : IDisposable
         contentStream.CanGetLength = false;
 
         var httpContent = new StreamContent(contentStream);
-        httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        httpContent.Headers.ContentType = new("application/json");
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
@@ -479,7 +479,7 @@ public sealed class ResponseTests : IDisposable
             "<XmlResponse><Identifier>abc-123</Identifier></XmlResponse>";
 
         var localHandler = new MockHttpMessageHandler();
-        var settings = new RefitSettings(new Refit.XmlContentSerializer())
+        var settings = new RefitSettings(new XmlContentSerializer())
         {
             HttpMessageHandlerFactory = () => localHandler
         };
@@ -491,7 +491,7 @@ public sealed class ResponseTests : IDisposable
         contentStream.CanGetLength = false;
 
         var httpContent = new StreamContent(contentStream);
-        httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/xml");
+        httpContent.Headers.ContentType = new("application/xml");
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
@@ -616,7 +616,7 @@ public sealed class ResponseTests : IDisposable
         {
             Content = new StringContent(expectedContent)
         };
-        expectedResponse.Content.Headers.ContentType = new MediaTypeHeaderValue(
+        expectedResponse.Content.Headers.ContentType = new(
             "application/problem+json");
         _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 

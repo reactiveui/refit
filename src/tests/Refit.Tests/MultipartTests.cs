@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -179,8 +180,8 @@ public class MultipartTests
 
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             await fixture.UploadFileInfo(
-                [new FileInfo(fileName), new FileInfo(fileName)],
-                new FileInfo(fileName));
+                [new(fileName), new(fileName)],
+                new(fileName));
         }
         finally
         {
@@ -297,7 +298,7 @@ public class MultipartTests
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
-            new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
+            new(stream, "test-streampart.pdf", "application/pdf"));
     }
 
     /// <summary>Verifies a stream part with a named multipart uses the supplied name.</summary>
@@ -328,7 +329,7 @@ public class MultipartTests
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
-            new StreamPart(stream, "test-streampart.pdf", "application/pdf", "test-stream"));
+            new(stream, "test-streampart.pdf", "application/pdf", "test-stream"));
     }
 
     /// <summary>Verifies a stream part can be combined with query parameters.</summary>
@@ -360,8 +361,8 @@ public class MultipartTests
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
-            new ModelObject { Property1 = "test", Property2 = "test2" },
-            new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
+            new() { Property1 = "test", Property2 = "test2" },
+            new(stream, "test-streampart.pdf", "application/pdf"));
     }
 
     /// <summary>Verifies a byte array part keeps its supplied alias, file name and content type.</summary>
@@ -397,7 +398,7 @@ public class MultipartTests
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadBytesPart(
-            new ByteArrayPart(bytes, "test-bytearraypart.pdf", "application/pdf"));
+            new(bytes, "test-bytearraypart.pdf", "application/pdf"));
     }
 
     /// <summary>Verifies a collection of file parts plus an extra part keep their names and content types.</summary>
@@ -459,17 +460,17 @@ public class MultipartTests
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             await fixture.UploadFileInfoPart(
                 [
-                    new FileInfoPart(
-                        new FileInfo(fileName),
+                    new(
+                        new(fileName),
                         "test-fileinfopart.pdf",
                         "application/pdf"),
-                    new FileInfoPart(
-                        new FileInfo(fileName),
+                    new(
+                        new(fileName),
                         "test-fileinfopart2.pdf",
                         contentType: null)
                 ],
-                new FileInfoPart(
-                    new FileInfo(fileName),
+                new(
+                    new(fileName),
                     fileName: "additionalfile.pdf",
                     contentType: "application/pdf"));
         }
@@ -526,6 +527,28 @@ public class MultipartTests
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadJsonObject(model1);
+    }
+
+    /// <summary>Verifies multipart object serialization failures are wrapped with a descriptive argument exception.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartUploadWithUnserializableObjectThrowsArgumentException()
+    {
+        var fixture = RestService.For<IRunscopeApi>(
+            BaseAddress,
+            new()
+            {
+                ContentSerializer = new ThrowingContentSerializer()
+            });
+
+        Task UploadJsonObject() => fixture.UploadJsonObject(new ModelObject());
+
+        var exception = await Assert
+            .That(UploadJsonObject)
+            .ThrowsExactly<ArgumentException>();
+
+        await Assert.That(exception!.Message).Contains("Unexpected parameter type", StringComparison.Ordinal);
+        await Assert.That(exception.InnerException).IsTypeOf<InvalidOperationException>();
     }
 
     /// <summary>Verifies multiple objects are serialized to separate multipart parts by each serializer.</summary>
@@ -680,7 +703,7 @@ public class MultipartTests
             await fixture.UploadMixedObjects(
                 [model1, model2],
                 anotherModel,
-                new FileInfo(fileName),
+                new(fileName),
                 AnEnum.Val2,
                 "frob",
                 42);
@@ -697,7 +720,7 @@ public class MultipartTests
     public async Task MultipartUploadShouldWorkWithHttpContent()
     {
         var httpContent = new StringContent("some text", Encoding.ASCII, "application/custom");
-        httpContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+        httpContent.Headers.ContentDisposition = new("attachment")
         {
             Name = "myName",
             FileName = "myFileName",
@@ -728,22 +751,18 @@ public class MultipartTests
     /// <summary>Verifies the <see cref="ByteArrayPart"/> constructor rejects a null file name.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName()
-    {
+    public async Task MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName() =>
         await Assert
             .That(() => _ = new ByteArrayPart([], null!, "application/pdf"))
             .ThrowsExactly<ArgumentNullException>();
-    }
 
     /// <summary>Verifies the <see cref="FileInfoPart"/> constructor rejects a null file info.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo()
-    {
+    public async Task FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo() =>
         await Assert
             .That(() => _ = new FileInfoPart(null!, "file.pdf", "application/pdf"))
             .ThrowsExactly<ArgumentNullException>();
-    }
 
     /// <summary>Loads an embedded test resource as a stream.</summary>
     /// <param name="relativeFilePath">The relative path of the embedded resource.</param>
@@ -838,7 +857,29 @@ public class MultipartTests
 
             await Asserts!(content!);
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            return new(HttpStatusCode.OK);
         }
+    }
+
+    /// <summary>An <see cref="IHttpContentSerializer"/> that rejects all serialization calls.</summary>
+    private sealed class ThrowingContentSerializer : IHttpContentSerializer
+    {
+        /// <inheritdoc />
+        public HttpContent ToHttpContent<T>(T item) =>
+            throw new InvalidOperationException("serialization failed");
+
+        /// <inheritdoc />
+        [SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "The method implements Refit's published serializer interface.")]
+        public Task<T?> FromHttpContentAsync<T>(
+            HttpContent content,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(default(T));
+
+        /// <inheritdoc />
+        public string? GetFieldNameForProperty(PropertyInfo propertyInfo) =>
+            null;
     }
 }

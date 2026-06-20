@@ -147,10 +147,6 @@ namespace System.Net.Http
         /// <remarks>
         /// https://github.com/ASP-NET-MVC/aspnetwebstack/blob/5118a14040b13f95bf778d1fc4522eb4ea2eef18/src/Common/TaskHelpers.cs#L65.
         /// </remarks>
-        [SuppressMessage(
-            "Design",
-            "SST1436:Add members to the type or remove it",
-            Justification = "Intentional empty placeholder struct for the void TaskCompletionSource pattern.")]
         private readonly struct AsyncVoid : IEquatable<AsyncVoid>
         {
             /// <inheritdoc/>
@@ -175,12 +171,10 @@ namespace System.Net.Http
             public CompleteTaskOnCloseStream(
                 Stream innerStream,
                 TaskCompletionSource<bool> serializeToStreamTask)
-                : base(innerStream, ownsInnerStream: false)
-            {
+                : base(innerStream, ownsInnerStream: false) =>
                 _serializeToStreamTask =
                     serializeToStreamTask
                     ?? throw new ArgumentNullException(nameof(serializeToStreamTask));
-            }
 
             /// <inheritdoc/>
             protected override void Dispose(bool disposing)

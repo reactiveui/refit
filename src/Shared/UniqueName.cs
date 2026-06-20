@@ -45,7 +45,7 @@ internal static class UniqueName
         var lastDot = interfaceTypeName.LastIndexOf('.', searchEnd - 1);
         if (lastDot > 0)
         {
-            interfaceTypeName = interfaceTypeName.Substring(lastDot + 1);
+            interfaceTypeName = interfaceTypeName[(lastDot + 1)..];
         }
 
         // Now we have the interface name like IFooBar`1[[Some Generic Args]]
@@ -55,10 +55,8 @@ internal static class UniqueName
         // if there's any generics, split that
         if (refitInterfaceType.IsGenericType)
         {
-            genericArgs = interfaceTypeName.Substring(interfaceTypeName.IndexOf('['));
-            interfaceTypeName = interfaceTypeName.Substring(
-                0,
-                interfaceTypeName.Length - genericArgs.Length);
+            genericArgs = interfaceTypeName[interfaceTypeName.IndexOf('[')..];
+            interfaceTypeName = interfaceTypeName[..^genericArgs.Length];
         }
 
         // Remove any + from the type name portion

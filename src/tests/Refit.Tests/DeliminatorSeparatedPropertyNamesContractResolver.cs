@@ -20,10 +20,7 @@ public class DeliminatorSeparatedPropertyNamesContractResolver : DefaultContract
 
     /// <summary>Initializes a new instance of the <see cref="DeliminatorSeparatedPropertyNamesContractResolver"/> class.</summary>
     /// <param name="separator">The character placed between property name words.</param>
-    protected DeliminatorSeparatedPropertyNamesContractResolver(char separator)
-    {
-        _separator = separator.ToString(CultureInfo.InvariantCulture);
-    }
+    protected DeliminatorSeparatedPropertyNamesContractResolver(char separator) => _separator = separator.ToString(CultureInfo.InvariantCulture);
 
     /// <inheritdoc/>
     protected override string ResolvePropertyName(string propertyName)

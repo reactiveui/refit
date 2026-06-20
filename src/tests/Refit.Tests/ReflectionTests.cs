@@ -82,7 +82,7 @@ public sealed class ReflectionTests : IDisposable
         };
         var service = RestService.For<IBasicApi>("https://foo", settings);
 
-        await service.GetPropertyParam(new MyParams("propVal"));
+        await service.GetPropertyParam(new("propVal"));
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -119,7 +119,7 @@ public sealed class ReflectionTests : IDisposable
         _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString(
-                [new KeyValuePair<string, string>("queryKey", "queryValue")])
+                [new("queryKey", "queryValue")])
             .Respond("application/json", nameof(IBasicApi.GetQuery));
 
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetQuery))!;
@@ -144,7 +144,7 @@ public sealed class ReflectionTests : IDisposable
     {
         _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
-            .WithExactQueryString([new KeyValuePair<string, string>("Value", "queryVal")])
+            .WithExactQueryString([new("Value", "queryVal")])
             .Respond("application/json", nameof(IBasicApi.GetPropertyQuery));
 
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetPropertyQuery))!;
@@ -158,7 +158,7 @@ public sealed class ReflectionTests : IDisposable
         };
         var service = RestService.For<IBasicApi>("https://foo", settings);
 
-        await service.GetPropertyQuery(new BaseRecord("queryVal"));
+        await service.GetPropertyQuery(new("queryVal"));
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -171,8 +171,8 @@ public sealed class ReflectionTests : IDisposable
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString(
                 [
-                    new KeyValuePair<string, string>("Name", "queryName"),
-                    new KeyValuePair<string, string>("Value", "value"),
+                    new("Name", "queryName"),
+                    new("Value", "value"),
                 ])
             .Respond("application/json", nameof(IBasicApi.GetPropertyQuery));
 
@@ -201,7 +201,7 @@ public sealed class ReflectionTests : IDisposable
         _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString(
-                [new KeyValuePair<string, string>("queryKey", "queryValue")])
+                [new("queryKey", "queryValue")])
             .Respond("application/json", nameof(IBasicApi.GetGenericQuery));
 
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetGenericQuery))!;
@@ -227,7 +227,7 @@ public sealed class ReflectionTests : IDisposable
     {
         _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
-            .WithExactQueryString([new KeyValuePair<string, string>("enums", "k0,k1")])
+            .WithExactQueryString([new("enums", "k0,k1")])
             .Respond("application/json", nameof(IBasicApi.GetEnumerableQuery));
 
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetEnumerableQuery))!;
@@ -254,7 +254,7 @@ public sealed class ReflectionTests : IDisposable
     {
         _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
-            .WithExactQueryString([new KeyValuePair<string, string>("Enumerable", "0,1")])
+            .WithExactQueryString([new("Enumerable", "0,1")])
             .Respond("application/json", nameof(IBasicApi.GetEnumerablePropertyQuery));
 
         var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetEnumerablePropertyQuery))!;
@@ -271,7 +271,7 @@ public sealed class ReflectionTests : IDisposable
         };
         var service = RestService.For<IBasicApi>("https://foo", settings);
 
-        await service.GetEnumerablePropertyQuery(new MyEnumerableParams([0, 1]));
+        await service.GetEnumerablePropertyQuery(new([0, 1]));
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -284,8 +284,8 @@ public sealed class ReflectionTests : IDisposable
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString(
                 [
-                    new KeyValuePair<string, string>("key0", "1"),
-                    new KeyValuePair<string, string>("key1", "2"),
+                    new("key0", "1"),
+                    new("key1", "2"),
                 ])
             .Respond("application/json", nameof(IBasicApi.GetDictionaryQuery));
 

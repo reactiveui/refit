@@ -13,7 +13,7 @@ public interface IAmARefitInterfaceButNobodyUsesMe
 
     /// <summary>A GET method declared with the fully qualified attribute name.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    [Refit.GetAttribute("something-else")]
+    [GetAttribute("something-else")]
     Task AnotherRefitMethod();
 
     /// <summary>A GET method whose route comes from a referenced constant.</summary>

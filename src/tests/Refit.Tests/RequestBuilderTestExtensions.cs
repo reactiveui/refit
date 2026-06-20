@@ -31,7 +31,7 @@ internal static class RequestBuilderTestExtensions
             return paramList =>
             {
                 var task = (Task)factory(
-                    new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri(baseAddress) },
+                    new(testHttpMessageHandler) { BaseAddress = new(baseAddress) },
                     paramList)!;
                 task.Wait();
                 return testHttpMessageHandler.RequestMessage!;
@@ -60,7 +60,7 @@ internal static class RequestBuilderTestExtensions
             return paramList =>
             {
                 var task = (Task)factory(
-                    new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri(baseAddress) },
+                    new(testHttpMessageHandler) { BaseAddress = new(baseAddress) },
                     paramList)!;
                 try
                 {

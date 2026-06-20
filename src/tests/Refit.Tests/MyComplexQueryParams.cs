@@ -14,9 +14,9 @@ public class MyComplexQueryParams
     /// <summary>Gets or sets the last name query value.</summary>
     public required string LastName { get; init; }
 
-    /// <summary>Gets the nested address query object, aliased to <c>Addr</c>.</summary>
+    /// <summary>Gets or initializes the nested address query object, aliased to <c>Addr</c>.</summary>
     [AliasAs("Addr")]
-    public Address Address { get; } = new Address();
+    public Address Address { get; init; } = new();
 
     /// <summary>Gets the arbitrary metadata expanded into prefixed query values.</summary>
     public Dictionary<string, object> MetaData { get; } = [];

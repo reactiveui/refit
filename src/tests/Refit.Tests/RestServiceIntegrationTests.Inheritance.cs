@@ -243,9 +243,12 @@ public partial class RestServiceIntegrationTests
                  "args": {"search.Addr.Street": "HomeStreet 99","search.Addr.Zip": "9999","search.FirstName": "John","search.LastName": "Rambo"}}
                 """);
 
-        var myParams = new MyComplexQueryParams { FirstName = "John", LastName = "Rambo" };
-        myParams.Address.Postcode = 9999;
-        myParams.Address.Street = "HomeStreet 99";
+        var myParams = new MyComplexQueryParams
+        {
+            FirstName = "John",
+            LastName = "Rambo",
+            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+        };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>(
             "https://httpbin.org/get",
@@ -317,7 +320,7 @@ public partial class RestServiceIntegrationTests
             .WithHeaders("Content-Type:application/xml; charset=utf-8")
             .Respond(
                 req =>
-                    new HttpResponseMessage(HttpStatusCode.OK)
+                    new(HttpStatusCode.OK)
                     {
                         Content = new StringContent(
                             "<User><Name>Created</Name></User>",
@@ -327,7 +330,7 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var result = await fixture.CreateUser(new User()).ConfigureAwait(false);
+        var result = await fixture.CreateUser(new()).ConfigureAwait(false);
 
         await Assert.That(result.Name).IsEqualTo("Created");
 

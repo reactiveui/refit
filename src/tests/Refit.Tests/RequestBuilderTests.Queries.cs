@@ -69,9 +69,9 @@ public partial class RequestBuilderTests
         var task =
             (Task<ApiResponse<string>>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     [42])!;
         var result = await task;
@@ -122,7 +122,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithPropertyAndQuery");
         var output = factory([6, "value1"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?someValue=value1");
     }
 
@@ -262,7 +262,7 @@ public partial class RequestBuilderTests
         await Assert.That(output.Headers.Contains("Authorization")).IsTrue().Because("Headers include Authorization header");
         await Assert.That(output.Headers.GetValues("Authorization").First()).IsEqualTo("OpenSesame");
 
-        fixture = new RequestBuilderImplementation<IDummyHttpApi>();
+        fixture = new();
         factory = fixture.BuildRequestFactoryForMethod(
             nameof(
                 IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped));
@@ -357,9 +357,9 @@ public partial class RequestBuilderTests
         const string nameProp2 = "UnitTest.Property2";
         object valueProp2 = new List<string> { "123", "345" };
         var fixture = new RequestBuilderImplementation<IContainAandB>(
-            new RefitSettings
+            new()
             {
-                HttpRequestMessageOptions = new Dictionary<string, object>
+                HttpRequestMessageOptions = new()
                 {
                     [nameProp1] = valueProp1,
                     [nameProp2] = valueProp2,
@@ -494,9 +494,9 @@ public partial class RequestBuilderTests
         var testHttpMessageHandler = new TestHttpMessageHandler();
 
         var task = (Task)factory(
-            new HttpClient(testHttpMessageHandler)
+            new(testHttpMessageHandler)
             {
-                BaseAddress = new Uri("http://api/foo/bar")
+                BaseAddress = new("http://api/foo/bar")
             },
             [])!;
         await task;
@@ -514,9 +514,9 @@ public partial class RequestBuilderTests
         var testHttpMessageHandler = new TestHttpMessageHandler();
 
         var task = (Task)factory(
-            new HttpClient(testHttpMessageHandler)
+            new(testHttpMessageHandler)
             {
-                BaseAddress = new Uri("http://api/foo/bar")
+                BaseAddress = new("http://api/foo/bar")
             },
             [])!;
         await task;
@@ -534,7 +534,7 @@ public partial class RequestBuilderTests
         var testHttpMessageHandler = new TestHttpMessageHandler();
 
         var task = (Task)factory(
-            new HttpClient(testHttpMessageHandler) { BaseAddress = new Uri("http://api/") },
+            new(testHttpMessageHandler) { BaseAddress = new("http://api/") },
             [42])!;
         await task;
 
@@ -645,7 +645,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
         var output = factory([5]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/custom-parameter");
     }
 
@@ -663,7 +663,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
         var output = factory([_intArray123]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?numbers=1%2C2%2C3");
     }
 
@@ -681,7 +681,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithArray");
         var output = factory([_intArray123]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?numbers=1%2C2%2C3");
     }
 }

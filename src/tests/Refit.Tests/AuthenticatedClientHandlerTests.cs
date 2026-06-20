@@ -113,16 +113,25 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(handler.InnerHandler).IsNull();
     }
 
+    /// <summary>Verifies the constructor that takes an inner handler stores it when provided.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task ExplicitInnerHandlerIsAssigned()
+    {
+        using var innerHandler = new TestHttpMessageHandler();
+        var handler = new AuthenticatedHttpClientHandler(innerHandler, (_, _) => Task.FromResult(string.Empty));
+
+        await Assert.That(handler.InnerHandler).IsSameReferenceAs(innerHandler);
+    }
+
     /// <summary>Verifies a null token getter throws an <see cref="ArgumentNullException"/>.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    public async Task NullTokenGetterThrows()
-    {
+    public async Task NullTokenGetterThrows() =>
         await Assert
             .That(() => new AuthenticatedHttpClientHandler(
                 (Func<HttpRequestMessage, CancellationToken, Task<string>>)null!))
             .ThrowsExactly<ArgumentNullException>();
-    }
 
     /// <summary>Verifies unauthenticated calls do not send an authorization header.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
@@ -424,7 +433,7 @@ public class AuthenticatedClientHandlerTests
     public async Task AuthorizationHeaderValueGetterIsUsedWhenSupplyingHttpClient()
     {
         var handler = new MockHttpMessageHandler();
-        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://api") };
+        var httpClient = new HttpClient(handler) { BaseAddress = new("http://api") };
 
         var settings = new RefitSettings
         {
@@ -450,7 +459,7 @@ public class AuthenticatedClientHandlerTests
     public async Task AuthorizationHeaderValueGetterCanAwaitWhenSupplyingHttpClient()
     {
         var handler = new MockHttpMessageHandler();
-        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://api") };
+        var httpClient = new HttpClient(handler) { BaseAddress = new("http://api") };
 
         var settings = new RefitSettings
         {
@@ -480,7 +489,7 @@ public class AuthenticatedClientHandlerTests
     public async Task AuthorizationHeaderValueGetterDoesNotOverrideExplicitTokenWhenSupplyingHttpClient()
     {
         var handler = new MockHttpMessageHandler();
-        var httpClient = new HttpClient(handler) { BaseAddress = new Uri("http://api") };
+        var httpClient = new HttpClient(handler) { BaseAddress = new("http://api") };
 
         var settings = new RefitSettings
         {

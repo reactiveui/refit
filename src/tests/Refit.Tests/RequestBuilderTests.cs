@@ -4,8 +4,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reactive.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace Refit.Tests;
 
@@ -23,6 +21,50 @@ public partial class RequestBuilderTests
     /// <summary>The string array {"A", "B"} used as query test data.</summary>
     private static readonly string[] _stringArrayAb = ["A", "B"];
 
+    /// <summary>Rejects non-interface request-builder targets.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ConstructorRejectsNonInterfaceTargets()
+    {
+        await Assert.That(() => new RequestBuilderImplementation(typeof(string)))
+            .ThrowsExactly<ArgumentException>();
+    }
+
+    /// <summary>Verifies the public request-builder factory entry points create usable builders.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA2263:Prefer generic overloads", Justification = "This test intentionally covers the Type-based overloads.")]
+    public async Task RequestBuilderFactoryEntryPointsCreateBuilders()
+    {
+        var genericBuilder = RequestBuilder.ForType<IDummyHttpApi>();
+        var genericBuilderWithSettings = RequestBuilder.ForType<IDummyHttpApi>(new());
+        var typeBuilder = RequestBuilder.ForType(typeof(IDummyHttpApi));
+        var typeBuilderWithSettings = RequestBuilder.ForType(typeof(IDummyHttpApi), new());
+        var factory = new RequestBuilderFactory();
+        var factoryGenericBuilder = factory.Create<IDummyHttpApi>(new());
+        var factoryTypeBuilder = factory.Create(typeof(IDummyHttpApi), new());
+
+        await Assert.That(genericBuilder).IsNotNull();
+        await Assert.That(genericBuilderWithSettings).IsNotNull();
+        await Assert.That(typeBuilder).IsNotNull();
+        await Assert.That(typeBuilderWithSettings).IsNotNull();
+        await Assert.That(factoryGenericBuilder).IsNotNull();
+        await Assert.That(factoryTypeBuilder).IsNotNull();
+    }
+
+    /// <summary>Rejects methods that are missing or ambiguous without parameter metadata.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRestResultFuncRejectsMissingAndAmbiguousMethods()
+    {
+        var fixture = new RequestBuilderImplementation<IOverloadedApi>();
+
+        await Assert.That(() => fixture.BuildRestResultFuncForMethod("Missing"))
+            .ThrowsExactly<ArgumentException>();
+        await Assert.That(() => fixture.BuildRestResultFuncForMethod(nameof(IOverloadedApi.Overloaded)))
+            .ThrowsExactly<ArgumentException>();
+    }
+
     /// <summary>Builds a request when no cancellation token is supplied.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -32,7 +74,7 @@ public partial class RequestBuilderTests
         var factory = fixture.RunRequest("GetWithCancellation");
         var output = factory([]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -48,7 +90,7 @@ public partial class RequestBuilderTests
         using var cts = new CancellationTokenSource();
         var output = factory([42, cts.Token]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/42");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -81,7 +123,7 @@ public partial class RequestBuilderTests
 
         var output = factory([cts.Token]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -142,9 +184,9 @@ public partial class RequestBuilderTests
         var task =
             (Task<ApiResponse<HttpContent>>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     [mpc])!;
         var result = await task;
@@ -175,15 +217,29 @@ public partial class RequestBuilderTests
         var task =
             (Task<HttpContent>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     [mpc])!;
         var result = await task;
 
         await Assert.That(testHttpMessageHandler.RequestMessage!.Content).IsEqualTo(mpc);
         await Assert.That(result).IsEqualTo(retContent);
+    }
+
+    /// <summary>A stream body is wrapped directly in stream content.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task StreamRequestBodyUsesStreamContent()
+    {
+        var fixture = new RequestBuilderImplementation<IStreamApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IStreamApi.PostStream));
+
+        await using var stream = new MemoryStream([1, 2, 3]);
+        var request = factory([stream]);
+
+        await Assert.That(request.Content).IsTypeOf<StreamContent>();
     }
 
     /// <summary>A stream response is wrapped in an ApiResponse.</summary>
@@ -206,9 +262,9 @@ public partial class RequestBuilderTests
         var task =
             (Task<ApiResponse<Stream>>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     ["test-file"])!;
         var result = await task;
@@ -228,26 +284,17 @@ public partial class RequestBuilderTests
     [Test]
     public async Task GeneratedSyncApiResponseShouldPreserveRequestMessage()
     {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var restMethod = new RestMethodInfoInternal(
-            typeof(IDummyHttpApi),
-            typeof(IDummyHttpApi)
-                .GetMethods()
-                .First(x => x.Name == nameof(IDummyHttpApi.FetchSomeStringWithMetadata)));
-        var buildGeneratedSyncFuncForMethod = typeof(RequestBuilderImplementation).GetMethod(
-            "BuildGeneratedSyncFuncForMethod",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        var factory = (Func<HttpClient, object[], object?>)
-            buildGeneratedSyncFuncForMethod!.Invoke(fixture, [restMethod])!;
+        var fixture = new RequestBuilderImplementation<ExplicitInterfaceRefitTests.ISyncPipelineApi>();
+        var factory = fixture.BuildRestResultFuncForMethod("GetApiResponse");
         var testHttpMessageHandler = new TestHttpMessageHandler();
 
-        var response = (ApiResponse<string>)
+        var response = (IApiResponse<string>)
             factory(
-                new HttpClient(testHttpMessageHandler)
+                new(testHttpMessageHandler)
                 {
-                    BaseAddress = new Uri("http://api/")
+                    BaseAddress = new("http://api/")
                 },
-                [42])!;
+                [])!;
 
         await Assert.That(response.RequestMessage).IsSameReferenceAs(testHttpMessageHandler.RequestMessage);
         await Assert.That(response.RequestMessage!.RequestUri).IsEqualTo(testHttpMessageHandler.RequestMessage!.RequestUri);
@@ -273,9 +320,9 @@ public partial class RequestBuilderTests
         var task =
             (Task<Stream>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     ["test-file"])!;
         var result = await task;
@@ -295,9 +342,9 @@ public partial class RequestBuilderTests
 
         var valueTask = (ValueTask<string>)
             factory(
-                new HttpClient(testHttpMessageHandler)
+                new(testHttpMessageHandler)
                 {
-                    BaseAddress = new Uri("http://api/")
+                    BaseAddress = new("http://api/")
                 },
                 ["value"])!;
 
@@ -318,9 +365,9 @@ public partial class RequestBuilderTests
 
         var valueTask = (ValueTask<ApiResponse<string>>)
             factory(
-                new HttpClient(testHttpMessageHandler)
+                new(testHttpMessageHandler)
                 {
-                    BaseAddress = new Uri("http://api/")
+                    BaseAddress = new("http://api/")
                 },
                 ["value"])!;
 
@@ -346,9 +393,9 @@ public partial class RequestBuilderTests
 
         var observable = (IObservable<string>)
             factory(
-                new HttpClient(testHttpMessageHandler)
+                new(testHttpMessageHandler)
                 {
-                    BaseAddress = new Uri("http://api/")
+                    BaseAddress = new("http://api/")
                 },
                 ["value", cts.Token])!;
 
@@ -357,42 +404,13 @@ public partial class RequestBuilderTests
         await Assert.That(testHttpMessageHandler.CancellationToken.IsCancellationRequested).IsTrue();
     }
 
-    /// <summary>Throws for an invalid public sync method built from injected metadata.</summary>
+    /// <summary>Throws while analyzing an invalid public synchronous method.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    [SuppressMessage("Interoperability", "SYSLIB0050", Justification = "Test intentionally exercises the obsolete API.")]
-    public async Task BuildRestResultFuncForMethodThrowsForInvalidPublicSyncMethodFromInjectedMetadata()
+    public async Task ConstructorThrowsForInvalidPublicSyncMethod()
     {
-        var fixture = new RequestBuilderImplementation<ICancellableMethods>();
-        var interfaceHttpMethodsField = typeof(RequestBuilderImplementation).GetField(
-            "_interfaceHttpMethods",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        var interfaceHttpMethods =
-            (Dictionary<string, List<RestMethodInfoInternal>>)interfaceHttpMethodsField!.GetValue(fixture)!;
-
-        var restMethod = (RestMethodInfoInternal)RuntimeHelpers.GetUninitializedObject(
-            typeof(RestMethodInfoInternal));
-        typeof(RestMethodInfoInternal)
-            .GetField("<MethodInfo>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(
-                restMethod,
-                typeof(IInvalidReturnTypeIApiResponse).GetMethod(nameof(IInvalidReturnTypeIApiResponse.GetValue)));
-        typeof(RestMethodInfoInternal)
-            .GetField("<ReturnType>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(restMethod, typeof(IApiResponse));
-        typeof(RestMethodInfoInternal)
-            .GetField("<ReturnResultType>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(restMethod, typeof(IApiResponse));
-        typeof(RestMethodInfoInternal)
-            .GetField(
-                "<DeserializedResultType>k__BackingField",
-                BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(restMethod, typeof(HttpContent));
-
-        interfaceHttpMethods["GetValue"] = [restMethod];
-
         var exception = await Assert.That(
-            () => fixture.BuildRestResultFuncForMethod("GetValue")).ThrowsExactly<ArgumentException>();
+            () => new RequestBuilderImplementation<IInvalidReturnTypeIApiResponse>()).ThrowsExactly<ArgumentException>();
 
         await Assert.That(exception!.Message).Contains(
             "All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>");
@@ -452,7 +470,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithHardcodedQueryParameter");
         var output = factory([6]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf");
     }
 
@@ -466,7 +484,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithHardcodedAndOtherQueryParameters");
         var output = factory([6, "foo"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf&search_for=foo");
     }
 
@@ -480,7 +498,7 @@ public partial class RequestBuilderTests
             nameof(IDummyHttpApi.SomeApiThatUsesParameterMoreThanOnceInTheUrl));
         var output = factory([6]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/api/foo/6/file_6?query=6");
     }
 
@@ -503,7 +521,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithRoundTrippingParam");
         var output = factory([path, 1]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -521,7 +539,7 @@ public partial class RequestBuilderTests
         var output = factory(
             [new FileInfo(typeof(RequestBuilderTests).Assembly.Location), null!]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?name=");
     }
 
@@ -535,7 +553,7 @@ public partial class RequestBuilderTests
             nameof(IDummyHttpApi.QueryWithExplicitParameters));
         var output = factory(["value1", "value2"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?q1=value1&q2=value2");
     }
@@ -549,7 +567,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithQueryFormat");
         var output = factory([6]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6.0");
     }
 
@@ -563,7 +581,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithHardcodedAndOtherQueryParameters");
         var output = factory([6, "push!=pull&push"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf&search_for=push%21%3Dpull%26push");
     }
@@ -578,7 +596,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithVoidAndQueryAlias");
         var output = factory(["6 & 7/8", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6%20%26%207%2F8/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -593,7 +611,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithVoidAndQueryAlias");
         var output = factory(["6/6", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6%2F6/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -608,7 +626,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithDoubleQuotesInUrl");
         var output = factory([42]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?q=app_metadata.id%3A%2242%22");
     }
@@ -628,7 +646,7 @@ public partial class RequestBuilderTests
             methodToTest);
         var output = factory(["1"]);
 
-        var uri = new Uri(new Uri("http://api/"), output.RequestUri!);
+        var uri = new Uri(new("http://api/"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).EndsWith(constantChar);
         await Assert.That(uri.PathAndQuery).Contains(contains);
@@ -644,7 +662,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithVoidAndQueryAlias");
         var output = factory(["6", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -659,7 +677,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithNonFormattableQueryParams");
         var output = factory([true, 'x']);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?b=True&c=x");
     }
@@ -674,7 +692,7 @@ public partial class RequestBuilderTests
             "FetchSomethingWithMultipleParametersPerSegment");
         var output = factory([6, 1024, 768]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/6/1024x768/foo");
     }
 }

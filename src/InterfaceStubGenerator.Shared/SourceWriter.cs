@@ -23,10 +23,20 @@ internal sealed class SourceWriter
     private const int DefaultCapacity = 4096;
 
     /// <summary>The underlying buffer that accumulates the written text.</summary>
-    private readonly StringBuilder _sb = new(DefaultCapacity);
+    private readonly StringBuilder _sb;
 
     /// <summary>The current indentation level.</summary>
     private int _indentation;
+
+    /// <summary>Initializes a new instance of the <see cref="SourceWriter"/> class.</summary>
+    public SourceWriter()
+        : this(DefaultCapacity)
+    {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="SourceWriter"/> class.</summary>
+    /// <param name="capacity">The initial backing buffer capacity.</param>
+    public SourceWriter(int capacity) => _sb = new(capacity);
 
     /// <summary>Gets or sets the current indentation level.</summary>
     public int Indentation
@@ -34,12 +44,7 @@ internal sealed class SourceWriter
         get => _indentation;
         set
         {
-            if (value < 0)
-            {
-                Throw();
-                static void Throw() => throw new ArgumentOutOfRangeException(nameof(value));
-            }
-
+            ArgumentOutOfRangeExceptionHelper.ThrowIfNegative(value);
             _indentation = value;
         }
     }
@@ -48,14 +53,12 @@ internal sealed class SourceWriter
     /// <param name="text">The text to append.</param>
     public void Append(string text) => _sb.Append(text);
 
-    /// <summary>Writes a single character on its own indented line.</summary>
-    /// <param name="value">The character to write.</param>
-    public void WriteLine(char value)
-    {
-        AddIndentation();
-        _sb.Append(value)
-            .AppendLine();
-    }
+    /// <summary>Appends a single character without any indentation or line break.</summary>
+    /// <param name="value">The character to append.</param>
+    public void Append(char value) => _sb.Append(value);
+
+    /// <summary>Appends indentation for the current indentation level.</summary>
+    public void WriteIndentation() => AddIndentation();
 
     /// <summary>Writes the given text, applying the current indentation to each line.</summary>
     /// <param name="text">The text to write.</param>
@@ -68,18 +71,22 @@ internal sealed class SourceWriter
         }
 
         bool isFinalLine;
-        var remainingText = text.AsSpan();
+        var lineStart = 0;
         do
         {
-            var nextLine = GetNextLine(ref remainingText, out isFinalLine);
+            var lineLength = GetNextLineLength(
+                text,
+                lineStart,
+                out var nextLineStart,
+                out isFinalLine);
 
-            if (!nextLine.IsEmpty)
+            if (lineLength > 0)
             {
                 AddIndentation();
             }
 
-            AppendSpan(_sb, nextLine);
-            _sb.AppendLine();
+            _sb.Append(text, lineStart, lineLength).AppendLine();
+            lineStart = nextLineStart;
         } while (!isFinalLine);
     }
 
@@ -101,55 +108,46 @@ internal sealed class SourceWriter
         _indentation = 0;
     }
 
-    /// <summary>Extracts the next line from the remaining text.</summary>
-    /// <param name="remainingText">The remaining text, advanced past the returned line.</param>
+    /// <summary>Gets the length of the next line in the supplied text.</summary>
+    /// <param name="text">The text to inspect.</param>
+    /// <param name="lineStart">The start index of the next line.</param>
+    /// <param name="nextLineStart">Set to the index where the following line starts.</param>
     /// <param name="isFinalLine">Set to <c>true</c> when the returned line is the last one.</param>
-    /// <returns>The next line of text.</returns>
-    private static ReadOnlySpan<char> GetNextLine(
-        ref ReadOnlySpan<char> remainingText,
+    /// <returns>The next line length, excluding a trailing carriage return before a newline.</returns>
+    private static int GetNextLineLength(
+        string text,
+        int lineStart,
+        out int nextLineStart,
         out bool isFinalLine)
     {
-        if (remainingText.IsEmpty)
+        if ((uint)lineStart >= (uint)text.Length)
         {
+            nextLineStart = text.Length;
             isFinalLine = true;
-            return default;
+            return 0;
         }
 
-        ReadOnlySpan<char> next;
-        ReadOnlySpan<char> rest;
-
-        var lineLength = remainingText.IndexOf('\n');
-        if (lineLength == -1)
+        var newLineIndex = text.IndexOf('\n', lineStart);
+        int lineLength;
+        if (newLineIndex == -1)
         {
-            lineLength = remainingText.Length;
+            lineLength = text.Length - lineStart;
+            nextLineStart = text.Length;
             isFinalLine = true;
-            rest = default;
         }
         else
         {
-            rest = remainingText.Slice(lineLength + 1);
+            lineLength = newLineIndex - lineStart;
+            nextLineStart = newLineIndex + 1;
             isFinalLine = false;
         }
 
-        if ((uint)lineLength > 0 && remainingText[lineLength - 1] == '\r')
+        if (lineLength > 0 && text[lineStart + lineLength - 1] == '\r')
         {
             lineLength--;
         }
 
-        next = remainingText.Slice(0, lineLength);
-        remainingText = rest;
-        return next;
-    }
-
-    /// <summary>Appends a span of characters to the given builder.</summary>
-    /// <param name="builder">The builder to append to.</param>
-    /// <param name="span">The characters to append.</param>
-    private static unsafe void AppendSpan(StringBuilder builder, ReadOnlySpan<char> span)
-    {
-        fixed (char* ptr = span)
-        {
-            builder.Append(ptr, span.Length);
-        }
+        return lineLength;
     }
 
     /// <summary>Appends the indentation characters for the current indentation level.</summary>

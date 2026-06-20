@@ -4,6 +4,7 @@
 namespace System.Collections.Specialized;
 
 /// <summary>A minimal string-keyed collection that mirrors the shape of the framework name/value collection.</summary>
+[Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal class NameValueCollection : Dictionary<string, string>
 {
     /// <summary>Gets all of the keys currently stored in the collection.</summary>

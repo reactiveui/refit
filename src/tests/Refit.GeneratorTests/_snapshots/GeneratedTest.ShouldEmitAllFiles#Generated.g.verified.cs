@@ -1,5 +1,7 @@
 //HintName: Generated.g.cs
 
+// This file is generated into consumer projects; suppress all analyzers so
+// consumer analyzer policy does not report Refit implementation details.
 #pragma warning disable
 namespace Refit.Implementation
 {
@@ -17,7 +19,9 @@ namespace Refit.Implementation
         [System.Diagnostics.CodeAnalysis.DynamicDependency(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All, typeof(global::Refit.Implementation.Generated))]
         public static void Initialize()
         {
-                        global::Refit.RestService.RegisterGeneratedFactory(typeof(global::RefitGeneratorTest.IGeneratedClient), static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitGeneratorTestIGeneratedClient(client, requestBuilder));
+                        global::Refit.RestService.RegisterGeneratedFactory(
+                            typeof(global::RefitGeneratorTest.IGeneratedClient),
+                            static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitGeneratorTestIGeneratedClient(client, requestBuilder));
         }
 #endif
     }

@@ -14,13 +14,14 @@
 #if REFIT_REQUIRES_ISEXTERNALINIT
 
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 
 // ReSharper disable once CheckNamespace
 namespace System.Runtime.CompilerServices;
 
 /// <summary>Reserved to be used by the compiler for tracking metadata. This class should not be used by developers in source code.</summary>
 [EditorBrowsable(EditorBrowsableState.Never)]
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
+[SuppressMessage(
     "Maintainability",
     "SST1436:Empty types should not be declared",
     Justification = "Compiler-required init-only marker type; intentionally empty.")]

@@ -35,15 +35,9 @@ internal static class HttpClientFactoryCore
         Func<IServiceProvider, RefitSettings?>? settings,
         string? httpClientName)
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(services);
 
-        if (refitInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(refitInterfaceType));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
         // register settings
         var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
@@ -103,10 +97,7 @@ internal static class HttpClientFactoryCore
         string? httpClientName)
         where T : class
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(services);
 
         // register settings
         services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
@@ -147,20 +138,11 @@ internal static class HttpClientFactoryCore
         Func<IServiceProvider, RefitSettings?>? settings,
         string? httpClientName)
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(services);
 
-        if (refitInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(refitInterfaceType));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
-        if (serviceKey is null)
-        {
-            throw new ArgumentNullException(nameof(serviceKey));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
         // register settings
         var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
@@ -224,15 +206,9 @@ internal static class HttpClientFactoryCore
         string? httpClientName)
         where T : class
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(services);
 
-        if (serviceKey is null)
-        {
-            throw new ArgumentNullException(nameof(serviceKey));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
         // register settings
         services.AddKeyedSingleton(
@@ -274,9 +250,34 @@ internal static class HttpClientFactoryCore
     [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
     [RequiresDynamicCode(RequiresDynamicCodeMessage)]
     private static MethodInfo GetRequestBuilderGenericForTypeMethod() =>
-        _requestBuilderGenericForTypeMethod ??= typeof(RequestBuilder)
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .Single(z => z.IsGenericMethodDefinition && z.GetParameters().Length == 1);
+        _requestBuilderGenericForTypeMethod ??= FindRequestBuilderGenericForTypeMethod();
+
+    /// <summary>Finds the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
+    /// <returns>The matching method definition.</returns>
+    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
+    private static MethodInfo FindRequestBuilderGenericForTypeMethod()
+    {
+        var methods = typeof(RequestBuilder).GetMethods(BindingFlags.Public | BindingFlags.Static);
+        MethodInfo? match = null;
+        for (var i = 0; i < methods.Length; i++)
+        {
+            var method = methods[i];
+            if (!method.IsGenericMethodDefinition || method.GetParameters().Length != 1)
+            {
+                continue;
+            }
+
+            if (match is not null)
+            {
+                throw new InvalidOperationException("Sequence contains more than one matching element");
+            }
+
+            match = method;
+        }
+
+        return match ?? throw new InvalidOperationException("Sequence contains no matching element");
+    }
 
     /// <summary>Configures the primary and authorization handlers for a keyed Refit client from its settings.</summary>
     /// <param name="builder">The HTTP client builder to configure.</param>

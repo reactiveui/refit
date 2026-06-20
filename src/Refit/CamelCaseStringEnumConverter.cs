@@ -18,7 +18,6 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         (Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert).IsEnum;
 
     /// <inheritdoc/>
-#if NET6_0_OR_GREATER
     [UnconditionalSuppressMessage(
         "AssemblyLoadTrimming",
         "IL2026:RequiresUnreferencedCode",
@@ -44,7 +43,6 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         Justification =
             "The enum value type's parameterless constructor is intrinsically preserved; this path is " +
             "reflection-only and trimmed/AOT apps use the Refit source generator instead.")]
-#endif
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var underlyingType = Nullable.GetUnderlyingType(typeToConvert);
@@ -188,7 +186,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         private static string ToCamelCase(string value) =>
             string.IsNullOrEmpty(value) || !char.IsUpper(value[0])
                 ? value
-                : char.ToLowerInvariant(value[0]) + value.Substring(1);
+                : char.ToLowerInvariant(value[0]) + value[1..];
 
         /// <summary>Reads an enum value from either a string name or a numeric value.</summary>
         /// <param name="reader">The reader positioned on the value to read.</param>

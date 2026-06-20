@@ -29,7 +29,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -76,7 +76,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -110,7 +110,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -145,7 +145,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -194,7 +194,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -243,7 +243,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -274,7 +274,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -305,7 +305,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -338,7 +338,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -385,7 +385,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -400,7 +400,7 @@ public partial class RestServiceIntegrationTests
                 // Cancel the request
                 cts.Cancel();
 
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                return new(HttpStatusCode.OK)
                 {
                     Content = new StringContent(
                         "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]",
@@ -440,7 +440,7 @@ public partial class RestServiceIntegrationTests
                 // Cancel the request
                 cts.Cancel();
 
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                return new(HttpStatusCode.OK)
                 {
                     Content = new StringContent(
                         "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]",
@@ -471,7 +471,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -504,7 +504,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -535,7 +535,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -568,7 +568,7 @@ public partial class RestServiceIntegrationTests
             ContentFactory = () => new StringContent("test")
         };
 
-        var client = new HttpClient(input) { BaseAddress = new Uri("http://foo") };
+        var client = new HttpClient(input) { BaseAddress = new("http://foo") };
         var fixture = RestService.For<IGitHubApi>(client);
 
         await Assert.That(input.MessagesSent).IsEqualTo(0);
@@ -597,7 +597,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
@@ -623,7 +623,7 @@ public partial class RestServiceIntegrationTests
         {
             HttpMessageHandlerFactory = () => mockHttp,
             ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new JsonSerializerSettings
+                new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })

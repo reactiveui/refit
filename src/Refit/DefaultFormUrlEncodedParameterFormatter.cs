@@ -43,15 +43,33 @@ public class DefaultFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterF
             enumMember = cached.GetOrAdd(
                 value.ToString()!,
                 val =>
-                    parameterType
-                        .GetTypeInfo()
-                        .DeclaredFields.FirstOrDefault(field => field.Name == val)
-                        ?.GetCustomAttribute<EnumMemberAttribute>());
+                    GetEnumField(parameterType, val)?.GetCustomAttribute<EnumMemberAttribute>());
         }
 
         return string.Format(
             CultureInfo.InvariantCulture,
             string.IsNullOrWhiteSpace(formatString) ? "{0}" : $"{{0:{formatString}}}",
             enumMember?.Value ?? value);
+    }
+
+    /// <summary>Finds an enum field by name.</summary>
+    /// <param name="enumType">The enum type to inspect.</param>
+    /// <param name="name">The field name.</param>
+    /// <returns>The matching field, or null when absent.</returns>
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2070:DynamicallyAccessedMembers",
+        Justification = "The caller is already annotated with RequiresUnreferencedCode because enum metadata may be trimmed.")]
+    private static FieldInfo? GetEnumField(Type enumType, string name)
+    {
+        foreach (var field in enumType.GetTypeInfo().DeclaredFields)
+        {
+            if (field.Name == name)
+            {
+                return field;
+            }
+        }
+
+        return null;
     }
 }

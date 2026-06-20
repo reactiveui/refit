@@ -1,7 +1,18 @@
 <Project>
 
+  <PropertyGroup>
+    <!--
+    Refit internal namespace to be added to internally generated Refit code.
+    Can be overridden by user in case of namespace clashes.
+    -->
+    <RefitInternalNamespace Condition=" '$(RefitInternalNamespace)' == '' ">$(RootNamespace)</RefitInternalNamespace>
+    <RefitGeneratedRequestBuilding Condition=" '$(RefitGeneratedRequestBuilding)' == '' ">true</RefitGeneratedRequestBuilding>
+  </PropertyGroup>
+
   <ItemGroup>
     <CompilerVisibleProperty Include="RefitInternalNamespace"/>
+    <CompilerVisibleProperty Include="RefitGeneratedRequestBuilding"/>
+    <CompilerVisibleProperty Include="DisableRefitSourceGenerator"/>
   </ItemGroup>
 
 </Project>

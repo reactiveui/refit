@@ -62,10 +62,6 @@ namespace Refit.Buffers
 
                     return new(result);
                 }
-                catch (OperationCanceledException e)
-                {
-                    return new(Task.FromCanceled<int>(e.CancellationToken));
-                }
                 catch (Exception e)
                 {
                     return new(Task.FromException<int>(e));
@@ -91,9 +87,9 @@ namespace Refit.Buffers
 
                 var bytesCopied = Math.Min(source.Length, buffer.Length);
 
-                var destination = buffer.Slice(0, bytesCopied);
+                var destination = buffer[..bytesCopied];
 
-                source.CopyTo(destination);
+                source[..bytesCopied].CopyTo(destination);
 
                 _position += bytesCopied;
 

@@ -169,8 +169,5 @@ public class RestServiceExceptions
     /// <param name="expectedSubstring">The substring expected within the exception message.</param>
     /// <param name="exception">The exception whose message is inspected.</param>
     /// <returns>A task that completes when the assertion has run.</returns>
-    private static async Task AssertExceptionContains(string expectedSubstring, Exception exception)
-    {
-        await Assert.That(exception.Message!).Contains(expectedSubstring, StringComparison.Ordinal);
-    }
+    private static async Task AssertExceptionContains(string expectedSubstring, Exception exception) => await Assert.That(exception.Message!).Contains(expectedSubstring, StringComparison.Ordinal);
 }

@@ -1,7 +1,6 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.CodeAnalysis;
 
@@ -14,26 +13,13 @@ public class WellKnownTypes(Compilation compilation)
     /// <summary>Caches resolved type symbols by their full metadata name.</summary>
     private readonly Dictionary<string, INamedTypeSymbol?> _cachedTypes = [];
 
-    /// <summary>Gets the named type symbol for the given type.</summary>
-    /// <typeparam name="T">The type to resolve.</typeparam>
-    /// <returns>The resolved named type symbol.</returns>
-    [SuppressMessage(
-        "Major Code Smell",
-        "S4018:Generic methods should provide type parameters",
-        Justification = "Type parameter intentionally specified explicitly by callers.")]
-    public INamedTypeSymbol Get<T>() => Get(typeof(T));
-
     /// <summary>Gets the named type symbol for the specified type.</summary>
     /// <param name="type">The type.</param>
     /// <returns>The resolved named type symbol.</returns>
     /// <exception cref="InvalidOperationException">Could not get name of type " + type</exception>
     public INamedTypeSymbol Get(Type type)
     {
-        if (type is null)
-        {
-            throw new ArgumentNullException(nameof(type));
-        }
-
+        ArgumentExceptionHelper.ThrowIfNull(type);
         return Get(type.FullName ?? throw new InvalidOperationException("Could not get name of type " + type));
     }
 

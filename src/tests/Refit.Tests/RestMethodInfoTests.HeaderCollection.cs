@@ -170,7 +170,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.HeaderCollectionAt(2)).IsTrue();
 
         input = typeof(IRestMethodInfoTests);
-        fixture = new RestMethodInfoInternal(
+        fixture = new(
             input,
             input
                 .GetMethods()
@@ -680,7 +680,8 @@ public partial class RestMethodInfoTests
         var fixture = new RestMethodInfoInternal(
             input,
             input
-                .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                .GetTypeInfo()
+                .DeclaredMethods
                 .First(x => x.Name == nameof(IInternalSyncGenericReturnTypeApi.GetValues)));
 
         await Assert.That(fixture.ReturnType).IsEqualTo(typeof(List<string>));
@@ -697,7 +698,8 @@ public partial class RestMethodInfoTests
         var fixture = new RestMethodInfoInternal(
             input,
             input
-                .GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                .GetTypeInfo()
+                .DeclaredMethods
                 .First(x => x.Name == nameof(IInternalSyncGenericApiResponseReturnTypeApi.GetResponse)));
 
         await Assert.That(fixture.ReturnType).IsEqualTo(typeof(IApiResponse<string>));

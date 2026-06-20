@@ -23,8 +23,11 @@ internal sealed class AuthenticatedHttpClientHandler : DelegatingHandler
     public AuthenticatedHttpClientHandler(
         Func<HttpRequestMessage, CancellationToken, Task<string>> getToken,
         HttpMessageHandler? innerHandler = null)
-        : base(innerHandler ?? new HttpClientHandler()) =>
-        _getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
+        : base(innerHandler ?? new HttpClientHandler())
+    {
+        ArgumentExceptionHelper.ThrowIfNull(getToken);
+        _getToken = getToken;
+    }
 
     /// <summary>Initializes a new instance of the <see cref="AuthenticatedHttpClientHandler"/> class.</summary>
     /// <param name="innerHandler">The optional inner handler.</param>
@@ -40,7 +43,8 @@ internal sealed class AuthenticatedHttpClientHandler : DelegatingHandler
         HttpMessageHandler? innerHandler,
         Func<HttpRequestMessage, CancellationToken, Task<string>> getToken)
     {
-        _getToken = getToken ?? throw new ArgumentNullException(nameof(getToken));
+        ArgumentExceptionHelper.ThrowIfNull(getToken);
+        _getToken = getToken;
         if (innerHandler is null)
         {
             return;

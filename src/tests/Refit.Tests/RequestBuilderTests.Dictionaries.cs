@@ -21,7 +21,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("UnescapedQueryParams");
         var output = factory(["Select+Id,Name+From+Account"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?q=Select+Id,Name+From+Account");
     }
 
@@ -35,7 +35,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("UnescapedQueryParamsWithFilter");
         var output = factory(["Select+Id+From+Account", "*"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?q=Select+Id+From+Account&filter=*");
     }
 
@@ -45,7 +45,7 @@ public partial class RequestBuilderTests
     public async Task QueryStringWithArrayCanBeFormattedByDefaultSetting()
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(
-            new RefitSettings { CollectionFormat = CollectionFormat.Multi });
+            new() { CollectionFormat = CollectionFormat.Multi });
 
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithArray");
         var output = factory([_intArray123]);
@@ -59,7 +59,7 @@ public partial class RequestBuilderTests
     public async Task DefaultCollectionFormatCanBeOverridenByQueryAttribute()
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(
-            new RefitSettings { CollectionFormat = CollectionFormat.Multi });
+            new() { CollectionFormat = CollectionFormat.Multi });
 
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsCsv");
         var output = factory([_intArray123]);
@@ -78,7 +78,7 @@ public partial class RequestBuilderTests
             nameof(IDummyHttpApi.FetchSomeStuffWithTheSameId));
         var output = factory(["theId"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         var builder = new UriBuilder(uri);
         var qs = QueryHelpers.ParseQuery(uri.Query);
@@ -98,7 +98,7 @@ public partial class RequestBuilderTests
             nameof(IDummyHttpApi.FetchSomeStuffWithTheIdInAParameterMultipleTimes));
         var output = factory(["theId"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar?param=first%20theId%20and%20second%20theId");
     }
 
@@ -119,7 +119,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(apiMethodName);
         var output = factory([_intArray123]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -137,7 +137,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithArrayFormattedAsSsv");
         var output = factory([_intArray123]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?numbers=custom-parameter%20custom-parameter%20custom-parameter");
     }
 
@@ -158,7 +158,7 @@ public partial class RequestBuilderTests
 
         var output = factory([list]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?numbers=1%2C2%2C3");
     }
 
@@ -184,7 +184,7 @@ public partial class RequestBuilderTests
 
         var output = factory([lines]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -201,7 +201,7 @@ public partial class RequestBuilderTests
 
         var output = factory([person]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?FullName=Mickey%20Mouse");
     }
 
@@ -221,7 +221,7 @@ public partial class RequestBuilderTests
 
         var output = factory([queryParameter]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -242,7 +242,7 @@ public partial class RequestBuilderTests
         var output = factory(
             [new TypeFooWithEnumMember { Foo = queryParameter }]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -257,7 +257,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
         var output = factory([123, "title", 999, new Foo(), _stringArrayAb]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -272,7 +272,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
         var output = factory([123, "title", null!, null!, _stringArrayAb]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -294,7 +294,7 @@ public partial class RequestBuilderTests
                 _stringArrayAb
             ]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -319,7 +319,7 @@ public partial class RequestBuilderTests
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
             var output = factory([5.4]);
 
-            var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+            var uri = new Uri(new("http://api"), output.RequestUri!);
             await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/5.4");
         }
         finally
@@ -353,7 +353,7 @@ public partial class RequestBuilderTests
 
         var output = factory([1]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/api/v1/video?playerIndex=1");
     }
@@ -368,7 +368,7 @@ public partial class RequestBuilderTests
 
         var output = factory([FooWithEnumMember.B]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/api/bar?foo=b");
     }
@@ -387,7 +387,7 @@ public partial class RequestBuilderTests
 
         var output = factory([42, "aPath", sp, "theAuth", false, "theMeta"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/companies/42/aPath");
         await Assert.That(output.RequestMessage.Headers.Authorization!.ToString()).IsEqualTo("theAuth");
@@ -408,7 +408,7 @@ public partial class RequestBuilderTests
 
         var output = factory(["the/path", bap]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/blobstorage/the/path");
     }
@@ -431,7 +431,7 @@ public partial class RequestBuilderTests
         var output = factory(
             [authHeader, langHeader, searchParam, controlIdParam, secretValue]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo(
             $"/api/someModule/deviceList?controlId={controlIdParam}&search={searchParam}&secret={secretValue}");
@@ -481,7 +481,7 @@ public partial class RequestBuilderTests
         };
 
         var output = factory([dict]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?A=value1&B=value2");
     }
@@ -502,7 +502,7 @@ public partial class RequestBuilderTests
         };
 
         var output = factory([dict]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?dictionary.A=value1&dictionary.B=value2");
     }
@@ -519,7 +519,7 @@ public partial class RequestBuilderTests
         var dict = new Dictionary<int, string> { { 1, "value1" }, { 2, "value2" }, };
 
         var output = factory([dict]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?1=value1&2=value2");
     }
@@ -543,7 +543,7 @@ public partial class RequestBuilderTests
         };
 
         var output = factory([dict]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo(
             $"/foo?{(int)TestEnum.A}=value1{TestEnumUrlParameterFormatter.StringParameterSuffix}&{(int)TestEnum.B}=value2{TestEnumUrlParameterFormatter.StringParameterSuffix}");
@@ -561,7 +561,7 @@ public partial class RequestBuilderTests
         var complexQuery = new ComplexQueryObject { TestAlias2 = "value1" };
 
         var output = factory([complexQuery]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?TestAlias2=value1");
     }
@@ -584,7 +584,7 @@ public partial class RequestBuilderTests
         var complexQuery = new ComplexQueryObject { TestAlias2 = "value1" };
 
         var output = factory([complexQuery]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?testAlias2=value1");
     }
@@ -600,7 +600,7 @@ public partial class RequestBuilderTests
 
         var complexQuery = new ComplexQueryObject
         {
-            TestAliasedDictionary = new Dictionary<TestEnum, string>
+            TestAliasedDictionary = new()
             {
                 { TestEnum.A, "value1" },
                 { TestEnum.B, "value2" },
@@ -608,7 +608,7 @@ public partial class RequestBuilderTests
         };
 
         var output = factory([complexQuery]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo(
             "/foo?test-dictionary-alias.A=value1&test-dictionary-alias.B=value2");
@@ -625,7 +625,7 @@ public partial class RequestBuilderTests
 
         var complexQuery = new ComplexQueryObject
         {
-            TestDictionary = new Dictionary<TestEnum, string>
+            TestDictionary = new()
             {
                 { TestEnum.A, "value1" },
                 { TestEnum.B, "value2" },
@@ -633,7 +633,7 @@ public partial class RequestBuilderTests
         };
 
         var output = factory([complexQuery]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?TestDictionary.A=value1&TestDictionary.B=value2");
     }
@@ -651,7 +651,7 @@ public partial class RequestBuilderTests
 
         var complexQuery = new ComplexQueryObject
         {
-            TestDictionary = new Dictionary<TestEnum, string>
+            TestDictionary = new()
             {
                 { TestEnum.A, "value1" },
                 { TestEnum.B, "value2" },
@@ -659,7 +659,7 @@ public partial class RequestBuilderTests
         };
 
         var output = factory([complexQuery]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         var suffix = TestEnumUrlParameterFormatter.StringParameterSuffix;
         var expectedQuery =
@@ -674,6 +674,9 @@ public partial class RequestBuilderTests
     {
         /// <summary>Gets the number of times the builder was invoked.</summary>
         public int CallCount { get; private set; }
+
+        /// <inheritdoc/>
+        public RefitSettings Settings { get; } = new();
 
         /// <summary>Records the invocation and returns null.</summary>
         /// <param name="methodName">The name of the method being built.</param>

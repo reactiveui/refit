@@ -22,14 +22,12 @@ namespace Refit;
 public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
     : IHttpContentSerializer
 {
-#if NET8_0_OR_GREATER
     /// <summary>Justification shared by the reflection-fallback trim/AOT suppressions.</summary>
     private const string ReflectionFallbackJustification =
         "The reflection-based serialization fallback runs only when the supplied JsonSerializerOptions has no "
         + "TypeInfoResolver. Such options originate from the [RequiresUnreferencedCode] default options, so the "
         + "reflection requirement is already surfaced to callers; source-generated/AOT callers supply a resolver "
         + "and take the metadata path instead.";
-#endif
 
     /// <summary>Initializes a new instance of the <see cref="SystemTextJsonContentSerializer"/> class.</summary>
     [RequiresUnreferencedCode("Default System.Text.Json serializer options include enum name reflection that trimming cannot statically preserve.")]
@@ -101,14 +99,11 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// The calculated field name.
     /// </returns>
     /// <exception cref="System.ArgumentNullException">propertyInfo.</exception>
-    public string? GetFieldNameForProperty(PropertyInfo propertyInfo) => propertyInfo switch
+    public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
     {
-        null => throw new ArgumentNullException(nameof(propertyInfo)),
-        _ => propertyInfo
-            .GetCustomAttributes<JsonPropertyNameAttribute>(true)
-            .Select(a => a.Name)
-            .FirstOrDefault()
-    };
+        ArgumentExceptionHelper.ThrowIfNull(propertyInfo);
+        return propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>(true)?.Name;
+    }
 
     /// <summary>Determines whether the declared type is configured for polymorphic serialization.</summary>
     /// <param name="type">The declared type to inspect.</param>
@@ -202,10 +197,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <param name="item">The item to serialize.</param>
     /// <param name="runtimeType">The runtime type to serialize the item as.</param>
     /// <returns>The serialized HTTP content.</returns>
-#if NET8_0_OR_GREATER
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-#endif
     private JsonContent ToHttpContentRuntimeReflection(object item, Type runtimeType) =>
         JsonContent.Create(item, runtimeType, options: jsonSerializerOptions);
 
@@ -213,10 +206,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <typeparam name="T">The type of the item being serialized.</typeparam>
     /// <param name="item">The item to serialize.</param>
     /// <returns>The serialized HTTP content.</returns>
-#if NET8_0_OR_GREATER
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-#endif
     private JsonContent ToHttpContentReflection<T>(T item) =>
         JsonContent.Create(item, options: jsonSerializerOptions);
 
@@ -229,10 +220,8 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Major Code Smell",
         "S4018:Generic methods should provide type parameter for inference",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-#if NET8_0_OR_GREATER
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
-#endif
     private Task<T?> FromHttpContentReflectionAsync<T>(HttpContent content, CancellationToken cancellationToken) =>
         content.ReadFromJsonAsync<T>(jsonSerializerOptions, cancellationToken);
 }

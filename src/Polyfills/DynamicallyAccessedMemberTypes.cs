@@ -7,8 +7,8 @@ namespace System.Diagnostics.CodeAnalysis;
 
 /// <summary>Specifies the member types that are dynamically accessed and must be preserved.</summary>
 [Flags]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S4070", Justification = "Mirrors the BCL flags enum shape.")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Roslynator", "RCS1157", Justification = "Mirrors the BCL enum; PublicConstructors combines bits 1 and 2.")]
+[SuppressMessage("Minor Code Smell", "S4070", Justification = "Mirrors the BCL flags enum shape.")]
+[SuppressMessage("Roslynator", "RCS1157", Justification = "Mirrors the BCL enum; PublicConstructors combines bits 1 and 2.")]
 internal enum DynamicallyAccessedMemberTypes
 {
     /// <summary>No members are dynamically accessed.</summary>

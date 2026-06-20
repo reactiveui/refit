@@ -18,9 +18,12 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
     /// <param name="innerBuilder">The request builder whose results are cached.</param>
     public CachedRequestBuilderImplementation(IRequestBuilder innerBuilder)
     {
-        _innerBuilder =
-            innerBuilder ?? throw new ArgumentNullException(nameof(innerBuilder));
+        ArgumentExceptionHelper.ThrowIfNull(innerBuilder);
+        _innerBuilder = innerBuilder;
     }
+
+    /// <inheritdoc/>
+    public RefitSettings Settings => _innerBuilder.Settings;
 
     /// <summary>Gets the cache of method keys to their built result functions.</summary>
     internal ConcurrentDictionary<
@@ -48,10 +51,10 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
 
         // use GetOrAdd with cloned array method table key. This prevents the array from being modified, breaking the dictionary.
         return MethodDictionary.GetOrAdd(
-            new MethodTableKey(
+            new(
                 methodName,
-                parameterTypes?.ToArray() ?? [],
-                genericArgumentTypes?.ToArray() ?? []),
+                parameterTypes is not null ? (Type[])parameterTypes.Clone() : [],
+                genericArgumentTypes is not null ? (Type[])genericArgumentTypes.Clone() : []),
             _ =>
                 _innerBuilder.BuildRestResultFuncForMethod(
                     methodName,

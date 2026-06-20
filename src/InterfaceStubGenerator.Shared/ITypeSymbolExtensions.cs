@@ -18,38 +18,45 @@ internal static class ITypeSymbolExtensions
         /// <returns>True if the type inherits from or equals the base type.</returns>
         public bool InheritsFromOrEquals(ITypeSymbol baseType, bool includeInterfaces)
         {
-            if (!includeInterfaces)
+            if (type.InheritsFromOrEquals(baseType))
             {
-                return type.InheritsFromOrEquals(baseType);
+                return true;
             }
 
-            return type.GetBaseTypesAndThis()
-                .Concat(type.AllInterfaces)
-                .Any(t => t.Equals(baseType, SymbolEqualityComparer.Default));
+            if (!includeInterfaces)
+            {
+                return false;
+            }
+
+            var interfaces = type.AllInterfaces;
+            for (var i = 0; i < interfaces.Length; i++)
+            {
+                if (interfaces[i].Equals(baseType, SymbolEqualityComparer.Default))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>Determines whether the type inherits from or equals the base type, ignoring interfaces.</summary>
         /// <param name="baseType">The base type to look for.</param>
         /// <returns>True if the type inherits from or equals the base type.</returns>
-        public bool InheritsFromOrEquals(ITypeSymbol baseType) =>
-            type.GetBaseTypesAndThis()
-                .Any(t => t.Equals(baseType, SymbolEqualityComparer.Default));
-    }
-
-    /// <summary>Extensions for a nullable <see cref="ITypeSymbol"/> receiver.</summary>
-    /// <param name="type">The nullable type symbol to operate on.</param>
-    extension(ITypeSymbol? type)
-    {
-        /// <summary>Enumerates the type itself followed by each of its base types.</summary>
-        /// <returns>The type and its base types.</returns>
-        public IEnumerable<ITypeSymbol> GetBaseTypesAndThis()
+        public bool InheritsFromOrEquals(ITypeSymbol baseType)
         {
             var current = type;
             while (current is not null)
             {
-                yield return current;
+                if (current.Equals(baseType, SymbolEqualityComparer.Default))
+                {
+                    return true;
+                }
+
                 current = current.BaseType;
             }
+
+            return false;
         }
     }
 }

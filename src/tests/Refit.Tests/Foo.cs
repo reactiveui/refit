@@ -8,8 +8,5 @@ namespace Refit.Tests;
 public sealed record Foo
 {
     /// <inheritdoc/>
-    public override string ToString()
-    {
-        return "foo";
-    }
+    public override string ToString() => "foo";
 }

@@ -13,8 +13,5 @@ public static class TypeCollisionApiA
 {
     /// <summary>Creates a Refit client for <see cref="ITypeCollisionApiA"/>.</summary>
     /// <returns>A configured <see cref="ITypeCollisionApiA"/> instance.</returns>
-    public static ITypeCollisionApiA Create()
-    {
-        return RestService.For<ITypeCollisionApiA>("http://somewhere.com");
-    }
+    public static ITypeCollisionApiA Create() => RestService.For<ITypeCollisionApiA>("http://somewhere.com");
 }

@@ -12,8 +12,5 @@ public static class TypeCollisionApiB
 {
     /// <summary>Creates a Refit client for <see cref="ITypeCollisionApiB"/>.</summary>
     /// <returns>A configured <see cref="ITypeCollisionApiB"/> instance.</returns>
-    public static ITypeCollisionApiB Create()
-    {
-        return RestService.For<ITypeCollisionApiB>("http://somewhere.com");
-    }
+    public static ITypeCollisionApiB Create() => RestService.For<ITypeCollisionApiB>("http://somewhere.com");
 }

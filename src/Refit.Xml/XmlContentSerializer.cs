@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Xml;
@@ -14,11 +15,8 @@ namespace Refit;
 /// <remarks>
 /// Initializes a new instance of the <see cref="XmlContentSerializer"/> class.
 /// </remarks>
-/// <param name="settings">The settings.</param>
-/// <exception cref="System.ArgumentNullException">settings</exception>
-public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttpContentSerializer
+public class XmlContentSerializer : IHttpContentSerializer
 {
-#if NET8_0_OR_GREATER
     /// <summary>Explains why the trimming warning is suppressed for XML reflection.</summary>
     private const string XmlReflectionTrimmingJustification =
         "Refit's XML serialization uses System.Xml.Serialization reflection that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.";
@@ -26,14 +24,21 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     /// <summary>Explains why the AOT warning is suppressed for XML reflection.</summary>
     private const string XmlReflectionAotJustification =
         "Refit's XML serialization may generate serialization assemblies at runtime. Use the Refit source generator for AOT apps.";
-#endif
 
     /// <summary>The settings controlling XML serialization.</summary>
-    private readonly XmlContentSerializerSettings _settings =
-        settings ?? throw new ArgumentNullException(nameof(settings));
+    private readonly XmlContentSerializerSettings _settings;
 
     /// <summary>Caches XML serializers keyed by the serialized type.</summary>
     private readonly ConcurrentDictionary<Type, XmlSerializer> _serializerCache = new();
+
+    /// <summary>Initializes a new instance of the <see cref="XmlContentSerializer"/> class.</summary>
+    /// <param name="settings">The settings.</param>
+    /// <exception cref="System.ArgumentNullException">settings</exception>
+    public XmlContentSerializer(XmlContentSerializerSettings settings)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(settings);
+        _settings = settings;
+    }
 
     /// <summary>Initializes a new instance of the <see cref="XmlContentSerializer"/> class.</summary>
     public XmlContentSerializer()
@@ -46,20 +51,15 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     /// <param name="item">Object to serialize.</param>
     /// <returns><see cref="HttpContent"/> that contains the serialized <typeparamref name="T"/> object in Xml.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
-#if NET8_0_OR_GREATER
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
-#endif
     public HttpContent ToHttpContent<T>(T item)
     {
-        if (item is null)
-        {
-            throw new ArgumentNullException(nameof(item));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(item);
 
         var xmlSerializer = _serializerCache.GetOrAdd(
             item.GetType(),
-            t => new XmlSerializer(t, _settings.XmlAttributeOverrides));
+            t => new(t, _settings.XmlAttributeOverrides));
 
         using var stream = new MemoryStream();
         using var writer = XmlWriter.Create(
@@ -68,8 +68,11 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
         var encoding =
             _settings.XmlReaderWriterSettings.WriterSettings?.Encoding ?? Encoding.Unicode;
         xmlSerializer.Serialize(writer, item, _settings.XmlNamespaces);
-        var str = encoding.GetString(stream.ToArray());
-        return new StringContent(str, encoding, "application/xml");
+        writer.Flush();
+
+        var content = new ByteArrayContent(stream.GetBuffer(), 0, (int)stream.Length);
+        content.Headers.ContentType = new("application/xml") { CharSet = encoding.WebName };
+        return content;
     }
 
     /// <summary>Deserializes an object of type <typeparamref name="T"/> from a <see cref="HttpContent"/> object that contains Xml content.</summary>
@@ -77,10 +80,8 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     /// <param name="content">HttpContent object with Xml content to deserialize.</param>
     /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
     /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
-#if NET8_0_OR_GREATER
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
-#endif
     [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter selected explicitly by callers.")]
     public async Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
@@ -89,7 +90,7 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
         var xmlSerializer = _serializerCache.GetOrAdd(
             typeof(T),
             t =>
-                new XmlSerializer(
+                new(
                     t,
                     _settings.XmlAttributeOverrides,
                     [],
@@ -108,18 +109,9 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     /// <inheritdoc/>
     public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
     {
-        if (propertyInfo is null)
-        {
-            throw new ArgumentNullException(nameof(propertyInfo));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(propertyInfo);
 
-        return propertyInfo
-                   .GetCustomAttributes<XmlElementAttribute>(true)
-                   .Select(a => a.ElementName)
-                   .FirstOrDefault()
-               ?? propertyInfo
-                   .GetCustomAttributes<XmlAttributeAttribute>(true)
-                   .Select(a => a.AttributeName)
-                   .FirstOrDefault();
+        return propertyInfo.GetCustomAttribute<XmlElementAttribute>(true)?.ElementName
+               ?? propertyInfo.GetCustomAttribute<XmlAttributeAttribute>(true)?.AttributeName;
     }
 }

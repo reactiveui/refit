@@ -3,19 +3,28 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections;
-using System.Globalization;
-using System.Net.Http.Headers;
-using System.Reflection;
-using System.Web;
-#if NET5_0_OR_GREATER
 using System.Diagnostics.CodeAnalysis;
-#endif
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Web;
 
 namespace Refit
 {
     /// <summary>Reflection-based request builder that turns Refit interface calls into HTTP requests.</summary>
     internal partial class RequestBuilderImplementation
     {
+        /// <summary>Caches query-map properties by type without keeping collectible types alive.</summary>
+        [SuppressMessage(
+            "Style",
+            "IDE0028:Simplify collection initialization",
+            Justification = "ConditionalWeakTable collection expressions do not compile for all target frameworks.")]
+        [SuppressMessage(
+            "Style",
+            "IDE0090:Simplify new expression",
+            Justification = "Keeping the explicit type avoids collection-expression suggestions that do not compile for all target frameworks.")]
+        private static readonly ConditionalWeakTable<Type, PropertyInfo[]> QueryPropertyCache =
+            new ConditionalWeakTable<Type, PropertyInfo[]>();
+
         /// <summary>Determines whether a property should be skipped when building the query map.</summary>
         /// <param name="propertyInfo">The property to inspect.</param>
         /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
@@ -92,13 +101,15 @@ namespace Refit
             queryParamsToAdd ??= [];
             var query = HttpUtility.ParseQueryString(uri.Query);
             var index = 0;
-            foreach (var key in query.AllKeys)
+            var keys = query.AllKeys;
+            for (var i = 0; i < keys.Length; i++)
             {
+                var key = keys[i];
                 if (!string.IsNullOrWhiteSpace(key))
                 {
                     queryParamsToAdd.Insert(
                         index++,
-                        new KeyValuePair<string, string?>(key, query[key]));
+                        new(key, query[key]));
                 }
             }
         }
@@ -106,7 +117,7 @@ namespace Refit
         /// <summary>Builds an escaped query string from the collected key/value pairs.</summary>
         /// <param name="queryParamsToAdd">The query parameters to encode.</param>
         /// <returns>The encoded query string.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Major Code Smell",
             "S2930:\"IDisposables\" should be disposed",
             Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
@@ -114,8 +125,9 @@ namespace Refit
         {
             var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
             var firstQuery = true;
-            foreach (var queryParam in queryParamsToAdd)
+            for (var i = 0; i < queryParamsToAdd.Count; i++)
             {
+                var queryParam = queryParamsToAdd[i];
                 if (queryParam is not { Key: not null, Value: not null })
                 {
                     continue;
@@ -148,106 +160,6 @@ namespace Refit
             return vsb.ToString();
         }
 
-        /// <summary>Determines whether a value should be emitted directly rather than expanded into a query map.</summary>
-        /// <param name="value">The value to inspect.</param>
-        /// <returns><see langword="true"/> if the value is a simple/formattable type; otherwise <see langword="false"/>.</returns>
-#if NET5_0_OR_GREATER
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-#endif
-        private static bool DoNotConvertToQueryMap(object? value)
-        {
-            if (value is null)
-            {
-                return false;
-            }
-
-            var type = value.GetType();
-
-            // Bail out early & match string
-            if (ShouldReturn(type))
-            {
-                return true;
-            }
-
-            if (value is not IEnumerable)
-            {
-                return false;
-            }
-
-            // Get the element type for enumerables
-            var ienu = typeof(IEnumerable<>);
-
-            // We don't want to enumerate to get the type, so we'll just look for IEnumerable<T>
-            var intType = type.GetInterfaces()
-                .FirstOrDefault(
-                    i => i.GetTypeInfo().IsGenericType && i.GetGenericTypeDefinition() == ienu);
-
-            if (intType is null)
-            {
-                return false;
-            }
-
-            type = intType.GetGenericArguments()[0];
-            return ShouldReturn(type);
-
-            // Check if type is a simple string or IFormattable type, check underlying type if Nullable<T>
-            static bool ShouldReturn(Type type) =>
-                Nullable.GetUnderlyingType(type) is { } underlyingType
-                    ? ShouldReturn(underlyingType)
-                    : type == typeof(string)
-                      || type == typeof(bool)
-                      || type == typeof(char)
-                      || typeof(IFormattable).IsAssignableFrom(type)
-                      || type == typeof(Uri)
-                      || typeof(CultureInfo).IsAssignableFrom(type);
-        }
-
-        /// <summary>Sets or replaces a header on the request or its content, with CRLF-injection protection.</summary>
-        /// <param name="request">The request to modify.</param>
-        /// <param name="name">The header name.</param>
-        /// <param name="value">The header value, or null to only remove the header.</param>
-        private static void SetHeader(HttpRequestMessage request, string name, string? value)
-        {
-            // Clear any existing version of this header that might be set, because
-            // we want to allow removal/redefinition of headers.
-            // We also don't want to double up content headers which may have been
-            // set for us automatically.
-            // NB: We have to enumerate the header names to check existence because
-            // Contains throws if it's the wrong header type for the collection.
-            // HTTP header names are case-insensitive, so compare them that way; otherwise a
-            // differently cased header (e.g. "Content-type" vs "Content-Type") is not removed
-            // and ends up duplicated.
-            if (request.Headers.Any(x => string.Equals(x.Key, name, StringComparison.OrdinalIgnoreCase)))
-            {
-                request.Headers.Remove(name);
-            }
-
-            if (request.Content?.Headers.Any(x => string.Equals(x.Key, name, StringComparison.OrdinalIgnoreCase)) == true)
-            {
-                request.Content.Headers.Remove(name);
-            }
-
-            if (value is null)
-            {
-                return;
-            }
-
-            // CRLF injection protection
-            name = EnsureSafe(name);
-            value = EnsureSafe(value);
-
-            var added = request.Headers.TryAddWithoutValidation(name, value);
-
-            // Don't even bother trying to add the header as a content header
-            // if we just added it to the other collection.
-            if (added || request.Content is null)
-            {
-                return;
-            }
-
-            request.Content.Headers.TryAddWithoutValidation(name, value);
-        }
-
         /// <summary>Strips CR and LF characters from a header value to prevent header injection.</summary>
         /// <param name="value">The value to sanitize.</param>
         /// <returns>The value with carriage-return and line-feed characters removed.</returns>
@@ -265,27 +177,77 @@ namespace Refit
         /// <returns><see langword="true"/> for GET and HEAD; otherwise <see langword="false"/>.</returns>
         private static bool IsBodyless(HttpMethod method) => method == HttpMethod.Get || method == HttpMethod.Head;
 
+        /// <summary>Checks whether a header collection contains a key without throwing for unsupported header types.</summary>
+        /// <param name="headers">The header collection to inspect.</param>
+        /// <param name="name">The header name.</param>
+        /// <returns><see langword="true"/> when the header key exists; otherwise <see langword="false"/>.</returns>
+        private static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
+        {
+            foreach (var header in headers)
+            {
+                if (string.Equals(header.Key, name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Determines whether a property can be read through its public getter.</summary>
+        /// <param name="property">The property to inspect.</param>
+        /// <returns><see langword="true"/> when the property is readable; otherwise <see langword="false"/>.</returns>
+        private static bool IsReadablePublicProperty(PropertyInfo property) =>
+            property.CanRead && property.GetMethod?.IsPublic == true;
+
+        /// <summary>Gets cached readable public instance properties for query-map expansion.</summary>
+        /// <param name="type">The object type to inspect.</param>
+        /// <returns>The readable public instance properties.</returns>
+        private static PropertyInfo[] GetQueryProperties(
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+            Type type)
+        {
+            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            var count = 0;
+            for (var i = 0; i < properties.Length; i++)
+            {
+                if (IsReadablePublicProperty(properties[i]))
+                {
+                    count++;
+                }
+            }
+
+            if (count == properties.Length)
+            {
+                return properties;
+            }
+
+            var readableProperties = new PropertyInfo[count];
+            var index = 0;
+            for (var i = 0; i < properties.Length; i++)
+            {
+                if (IsReadablePublicProperty(properties[i]))
+                {
+                    readableProperties[index++] = properties[i];
+                }
+            }
+
+            return readableProperties;
+        }
+
+        /// <summary>Gets cached query-map properties for the given type.</summary>
+        /// <param name="type">The object type to inspect.</param>
+        /// <returns>The readable public instance properties.</returns>
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        private static PropertyInfo[] GetCachedQueryProperties(Type type) =>
+            QueryPropertyCache.GetValue(type, GetQueryProperties);
+
         /// <summary>Populates the Authorization header from the configured token getter when present.</summary>
         /// <param name="request">The request to add the header to.</param>
         /// <param name="cancellationToken">A token to cancel the getter.</param>
         /// <returns>A task that completes when the header has been set.</returns>
-        private async Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            if (_settings.AuthorizationHeaderValueGetter is null)
-            {
-                return;
-            }
-
-            var auth = request.Headers.Authorization;
-            if (auth is null || !string.IsNullOrWhiteSpace(auth.Parameter))
-            {
-                return;
-            }
-
-            var token = await _settings.AuthorizationHeaderValueGetter(request, cancellationToken)
-                .ConfigureAwait(false);
-            request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
-        }
+        private Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            RequestExecutionHelpers.AddAuthorizationHeaderFromGetterAsync(request, _settings, cancellationToken);
 
         /// <summary>Adds configured options/properties and Refit metadata to the request.</summary>
         /// <param name="restMethod">The rest method being invoked.</param>
@@ -299,7 +261,7 @@ namespace Refit
                 foreach (var p in _settings.HttpRequestMessageOptions)
                 {
 #if NET6_0_OR_GREATER
-                    ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+                    ret.Options.Set(new(p.Key), p.Value);
 #else
                     ret.Properties.Add(p);
 #endif
@@ -312,7 +274,7 @@ namespace Refit
                 {
 #if NET6_0_OR_GREATER
                     ret.Options.Set(
-                        new HttpRequestOptionsKey<object?>(propertyKey),
+                        new(propertyKey),
                         paramList[i]);
 #else
                     ret.Properties[propertyKey] = paramList[i];
@@ -323,10 +285,10 @@ namespace Refit
             // Always add the top-level type of the interface to the properties
 #if NET6_0_OR_GREATER
             ret.Options.Set(
-                new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType),
+                new(HttpRequestMessageOptions.InterfaceType),
                 TargetType);
             ret.Options.Set(
-                new HttpRequestOptionsKey<RestMethodInfo>(
+                new(
                     HttpRequestMessageOptions.RestMethodInfo),
                 restMethod.RestMethodInfo);
 #else
@@ -352,12 +314,10 @@ namespace Refit
         /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
         /// <returns>The query-string key/value pairs.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private List<KeyValuePair<string, object?>> BuildQueryMap(
-            object? @object,
+            object @object,
             string? delimiter = null,
             RestMethodParameterInfo? parameterInfo = null,
             CollectionFormat? collectionFormat = null)
@@ -369,18 +329,10 @@ namespace Refit
 
             var kvps = new List<KeyValuePair<string, object?>>();
 
-            if (@object is null)
+            var props = GetCachedQueryProperties(@object.GetType());
+            for (var i = 0; i < props.Length; i++)
             {
-                return kvps;
-            }
-
-            var props = @object
-                .GetType()
-                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Where(p => p.CanRead && p.GetMethod?.IsPublic == true);
-
-            foreach (var propertyInfo in props)
-            {
+                var propertyInfo = props[i];
                 AppendPropertyToQueryMap(@object, propertyInfo, kvps, delimiter, parameterInfo, collectionFormat);
             }
 
@@ -392,10 +344,8 @@ namespace Refit
         /// <param name="delimiter">The delimiter used between nested keys.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
         /// <returns>The query-string key/value pairs.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private List<KeyValuePair<string, object?>> BuildQueryMap(
             IDictionary dictionary,
             string? delimiter = null,
@@ -421,14 +371,16 @@ namespace Refit
 
                 if (DoNotConvertToQueryMap(obj))
                 {
-                    kvps.Add(new KeyValuePair<string, object?>(formattedKey!, obj));
+                    kvps.Add(new(formattedKey!, obj));
                 }
                 else
                 {
-                    foreach (var keyValuePair in BuildQueryMap(obj, delimiter, null, collectionFormat))
+                    var nestedQueryMap = BuildQueryMap(obj, delimiter, null, collectionFormat);
+                    for (var i = 0; i < nestedQueryMap.Count; i++)
                     {
+                        var keyValuePair = nestedQueryMap[i];
                         kvps.Add(
-                            new KeyValuePair<string, object?>(
+                            new(
                                 formattedKey + delimiter + keyValuePair.Key,
                                 keyValuePair.Value));
                     }
@@ -445,10 +397,8 @@ namespace Refit
         /// <param name="delimiter">The delimiter used between nested property names.</param>
         /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AppendPropertyToQueryMap(
             object @object,
             PropertyInfo propertyInfo,
@@ -466,14 +416,13 @@ namespace Refit
             var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
             var key = aliasAttribute?.Name ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
 
-            // Look to see if the property has a Query attribute, and if so, format it accordingly
             var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
-            if (queryAttribute is { Format: not null })
+            if (!TryFormatQueryPropertyValue(queryAttribute, obj, out var formattedObj))
             {
-                obj = _settings.FormUrlEncodedParameterFormatter.Format(
-                    obj,
-                    queryAttribute.Format);
+                return;
             }
+
+            obj = formattedObj;
 
             // If obj is IEnumerable - format it accounting for Query attribute and CollectionFormat
             if (obj is not string and IEnumerable ienu and not IDictionary)
@@ -484,11 +433,43 @@ namespace Refit
 
             if (DoNotConvertToQueryMap(obj))
             {
-                kvps.Add(new KeyValuePair<string, object?>(key, obj));
+                kvps.Add(new(key, obj));
                 return;
             }
 
             AppendNestedQueryMap(obj, key, kvps, delimiter, collectionFormat);
+        }
+
+        /// <summary>Applies a property-level query format, if present.</summary>
+        /// <typeparam name="T">The value type.</typeparam>
+        /// <param name="queryAttribute">The query attribute, if any.</param>
+        /// <param name="value">The value to format.</param>
+        /// <param name="formattedValue">Receives the formatted value.</param>
+        /// <returns><see langword="true"/> when a non-null value remains.</returns>
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        private bool TryFormatQueryPropertyValue<T>(
+            QueryAttribute? queryAttribute,
+            T value,
+            [NotNullWhen(true)] out object? formattedValue)
+        {
+            if (queryAttribute is not { Format: not null })
+            {
+                formattedValue = value!;
+                return true;
+            }
+
+            var formatted = _settings.FormUrlEncodedParameterFormatter.Format(
+                value,
+                queryAttribute.Format);
+            if (formatted is null)
+            {
+                formattedValue = null;
+                return false;
+            }
+
+            formattedValue = formatted;
+            return true;
         }
 
         /// <summary>Appends each formatted element of an enumerable property to the query map under one key.</summary>
@@ -498,10 +479,8 @@ namespace Refit
         /// <param name="kvps">The accumulating list of query pairs.</param>
         /// <param name="queryAttribute">The property's query attribute, if any.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AppendEnumerablePropertyValues(
             IEnumerable values,
             PropertyInfo propertyInfo,
@@ -511,13 +490,13 @@ namespace Refit
             CollectionFormat? collectionFormat)
         {
             foreach (var value in ParseEnumerableQueryParameterValue(
-                values,
-                propertyInfo,
-                propertyInfo.PropertyType,
-                queryAttribute,
-                collectionFormat))
+                         values,
+                         propertyInfo,
+                         propertyInfo.PropertyType,
+                         queryAttribute,
+                         collectionFormat))
             {
-                kvps.Add(new KeyValuePair<string, object?>(key, value));
+                kvps.Add(new(key, value));
             }
         }
 
@@ -527,12 +506,10 @@ namespace Refit
         /// <param name="kvps">The accumulating list of query pairs.</param>
         /// <param name="delimiter">The delimiter used between nested keys.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AppendNestedQueryMap(
-            object? obj,
+            object obj,
             string key,
             List<KeyValuePair<string, object?>> kvps,
             string? delimiter,
@@ -542,10 +519,11 @@ namespace Refit
                 ? BuildQueryMap(idict, delimiter, collectionFormat)
                 : BuildQueryMap(obj, delimiter, null, collectionFormat);
 
-            foreach (var keyValuePair in nested)
+            for (var i = 0; i < nested.Count; i++)
             {
+                var keyValuePair = nested[i];
                 kvps.Add(
-                    new KeyValuePair<string, object?>(
+                    new(
                         key + delimiter + keyValuePair.Key,
                         keyValuePair.Value));
             }

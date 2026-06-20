@@ -17,18 +17,12 @@ public class TestUrlParameterFormatter : IUrlParameterFormatter
 
     /// <summary>Initializes a new instance of the <see cref="TestUrlParameterFormatter"/> class.</summary>
     /// <param name="constantOutput">The constant value to return for every parameter.</param>
-    public TestUrlParameterFormatter(string constantOutput)
-    {
-        _constantParameterOutput = constantOutput;
-    }
+    public TestUrlParameterFormatter(string constantOutput) => _constantParameterOutput = constantOutput;
 
     /// <summary>Returns the configured constant value.</summary>
     /// <param name="value">The parameter value to format.</param>
     /// <param name="attributeProvider">The attribute provider for the parameter.</param>
     /// <param name="type">The declared type of the parameter.</param>
     /// <returns>The configured constant value.</returns>
-    public string Format(object? value, ICustomAttributeProvider attributeProvider, Type type)
-    {
-        return _constantParameterOutput;
-    }
+    public string Format(object? value, ICustomAttributeProvider attributeProvider, Type type) => _constantParameterOutput;
 }

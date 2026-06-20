@@ -12,8 +12,5 @@ public static class NamespaceCollisionApi
 {
     /// <summary>Creates a Refit implementation of <see cref="INamespaceCollisionApi"/>.</summary>
     /// <returns>A Refit-backed <see cref="INamespaceCollisionApi"/> instance.</returns>
-    public static INamespaceCollisionApi Create()
-    {
-        return RestService.For<INamespaceCollisionApi>("http://somewhere.com");
-    }
+    public static INamespaceCollisionApi Create() => RestService.For<INamespaceCollisionApi>("http://somewhere.com");
 }

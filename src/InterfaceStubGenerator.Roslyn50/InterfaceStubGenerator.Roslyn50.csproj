@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -9,7 +9,6 @@
     <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);ROSLYN_4;ROSLYN_5</DefineConstants>
     <MsCACSharpVersion>5.0.0</MsCACSharpVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 
@@ -18,13 +17,19 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Refit.GeneratorTests"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\InterfaceStubGenerator.Shared\**\*.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+  </ItemGroup>
+
   <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">
     <PropertyGroup>
       <Version>$(BuildVersion)</Version>
       <AssemblyVersion>$(BuildVersionSimple)</AssemblyVersion>
     </PropertyGroup>
   </Target>
-
-  <Import Project="..\InterfaceStubGenerator.Shared\InterfaceStubGenerator.Shared.projitems" Label="Shared"/>
 
 </Project>
