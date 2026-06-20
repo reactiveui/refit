@@ -46,6 +46,10 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The Refit put attribute metadata name.</summary>
     private const string PutAttributeMetadataName = "Refit.PutAttribute";
 
+    /// <summary>The Minimal API endpoint generator marker attribute metadata name.</summary>
+    private const string GenerateRefitMinimalApiAttributeMetadataName =
+        "Refit.GenerateRefitMinimalApiAttribute";
+
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -60,6 +64,11 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
                 syntax is InterfaceDeclarationSyntax { BaseList: not null },
             (generatorContext, _) => (InterfaceDeclarationSyntax)generatorContext.Node);
 
+        var minimalApiCandidateInterfacesProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
+            GenerateRefitMinimalApiAttributeMetadataName,
+            static (syntax, _) => syntax is InterfaceDeclarationSyntax,
+            static (generatorContext, _) => (InterfaceDeclarationSyntax)generatorContext.TargetNode);
+
         var generatorOptions =
             context.AnalyzerConfigOptionsProvider.Select(
                 static (analyzerConfigOptionsProvider, _) =>
@@ -71,6 +80,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
 
         var candidateSyntax = candidateMethodsProvider
             .Combine(candidateInterfacesProvider.Collect())
+            .Combine(minimalApiCandidateInterfacesProvider.Collect())
             .Select(static (combined, _) => CreateCandidateSyntax(combined));
 
         var syntaxAndOptions = candidateSyntax
@@ -91,6 +101,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
                         collectedValues.GeneratedRequestBuilding,
                         collectedValues.CandidateMethods,
                         collectedValues.CandidateInterfaces,
+                        collectedValues.MinimalApiCandidateInterfaces,
                         cancellationToken));
 
         var diagnostics = parseStep
@@ -308,8 +319,9 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="combined">The combined method and interface candidate collections.</param>
     /// <returns>The named candidate syntax input.</returns>
     private static CandidateSyntax CreateCandidateSyntax(
-        (ImmutableArray<MethodDeclarationSyntax> Methods, ImmutableArray<InterfaceDeclarationSyntax> Interfaces) combined) =>
-        new(combined.Methods, combined.Interfaces);
+        ((ImmutableArray<MethodDeclarationSyntax> Methods, ImmutableArray<InterfaceDeclarationSyntax> Interfaces) Left,
+        ImmutableArray<InterfaceDeclarationSyntax> MinimalApiInterfaces) combined) =>
+        new(combined.Left.Methods, combined.Left.Interfaces, combined.MinimalApiInterfaces);
 
     /// <summary>Creates the generator options input.</summary>
     /// <param name="options">The global analyzer-config options.</param>
@@ -339,6 +351,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         new(
             combined.SyntaxAndOptions.CandidateSyntax.CandidateMethods,
             combined.SyntaxAndOptions.CandidateSyntax.CandidateInterfaces,
+            combined.SyntaxAndOptions.CandidateSyntax.MinimalApiCandidateInterfaces,
             combined.SyntaxAndOptions.Options.RefitInternalNamespace,
             combined.SyntaxAndOptions.Options.GeneratedRequestBuilding,
             combined.SyntaxAndOptions.Options.DisableSourceGenerator,
@@ -372,9 +385,11 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The collected syntax candidates for one generator pass.</summary>
     /// <param name="CandidateMethods">The candidate method declarations.</param>
     /// <param name="CandidateInterfaces">The candidate interface declarations.</param>
+    /// <param name="MinimalApiCandidateInterfaces">The interfaces marked for generated Minimal API endpoint descriptors.</param>
     private readonly record struct CandidateSyntax(
         ImmutableArray<MethodDeclarationSyntax> CandidateMethods,
-        ImmutableArray<InterfaceDeclarationSyntax> CandidateInterfaces);
+        ImmutableArray<InterfaceDeclarationSyntax> CandidateInterfaces,
+        ImmutableArray<InterfaceDeclarationSyntax> MinimalApiCandidateInterfaces);
 
     /// <summary>The method declarations found through Refit's built-in HTTP method attributes.</summary>
     private readonly record struct StandardHttpMethodCandidates
@@ -420,6 +435,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The full input consumed by the parser.</summary>
     /// <param name="CandidateMethods">The candidate method declarations.</param>
     /// <param name="CandidateInterfaces">The candidate interface declarations.</param>
+    /// <param name="MinimalApiCandidateInterfaces">The interfaces marked for generated Minimal API endpoint descriptors.</param>
     /// <param name="RefitInternalNamespace">The optional Refit internal namespace prefix.</param>
     /// <param name="GeneratedRequestBuilding">Whether inline request construction is enabled.</param>
     /// <param name="DisableSourceGenerator">Whether source generation is disabled.</param>
@@ -427,6 +443,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     private readonly record struct GeneratorInputs(
         ImmutableArray<MethodDeclarationSyntax> CandidateMethods,
         ImmutableArray<InterfaceDeclarationSyntax> CandidateInterfaces,
+        ImmutableArray<InterfaceDeclarationSyntax> MinimalApiCandidateInterfaces,
         string? RefitInternalNamespace,
         bool GeneratedRequestBuilding,
         bool DisableSourceGenerator,

@@ -5,6 +5,7 @@
 namespace Refit.MinimalApi.Tests;
 
 /// <summary>Refit interface used by the Minimal API mapping tests.</summary>
+[GenerateRefitMinimalApi(typeof(MinimalApiTestJsonContext), generateClient: false)]
 internal interface ITodoApi
 {
     /// <summary>Gets an item.</summary>

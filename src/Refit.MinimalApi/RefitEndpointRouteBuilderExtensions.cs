@@ -2,7 +2,9 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
@@ -79,6 +81,26 @@ public static class RefitEndpointRouteBuilderExtensions
             Func<HttpContext, TApi> implementationFactory)
             where TApi : class =>
             MapRefitApiCore(endpoints, implementationFactory, CreateReflectiveEndpoints<TApi>());
+
+        /// <summary>Maps source-generated Refit Minimal API endpoint descriptors using a fixed implementation.</summary>
+        /// <typeparam name="TApi">The Refit interface to map.</typeparam>
+        /// <param name="implementation">The implementation invoked by each mapped endpoint.</param>
+        /// <returns>The endpoint route builder.</returns>
+        public IEndpointRouteBuilder MapGeneratedRefitApi<TApi>(TApi implementation)
+            where TApi : class
+        {
+            ArgumentExceptionHelper.ThrowIfNull(implementation);
+
+            return MapRefitApiCore(endpoints, _ => implementation, GetGeneratedEndpoints(implementation));
+        }
+
+        /// <summary>Maps source-generated Refit Minimal API endpoint descriptors using an implementation factory.</summary>
+        /// <typeparam name="TApi">The Refit interface to map.</typeparam>
+        /// <param name="implementationFactory">Creates the implementation invoked by each mapped endpoint.</param>
+        /// <returns>The endpoint route builder.</returns>
+        public IEndpointRouteBuilder MapGeneratedRefitApi<TApi>(Func<HttpContext, TApi> implementationFactory)
+            where TApi : class =>
+            MapRefitApiCore(endpoints, implementationFactory, GetGeneratedEndpoints(implementationFactory));
     }
 
     /// <summary>Message for reflection mapping that depends on runtime metadata.</summary>
@@ -112,6 +134,21 @@ public static class RefitEndpointRouteBuilderExtensions
             [typeof(TimeSpan)] = default(TimeSpan),
         }.ToFrozenDictionary();
 
+    /// <summary>Endpoint descriptors registered by generated code.</summary>
+    private static readonly ConcurrentDictionary<Type, object> GeneratedEndpoints = new();
+
+    /// <summary>Registers source-generated Minimal API endpoint descriptors for a Refit interface.</summary>
+    /// <typeparam name="TApi">The Refit interface.</typeparam>
+    /// <param name="apiEndpoints">The generated endpoint descriptors.</param>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void RegisterGeneratedMinimalApiEndpoints<TApi>(
+        IReadOnlyList<RefitMinimalApiEndpoint<TApi>> apiEndpoints)
+        where TApi : class
+    {
+        ArgumentExceptionHelper.ThrowIfNull(apiEndpoints);
+        GeneratedEndpoints[typeof(TApi)] = apiEndpoints;
+    }
+
     /// <summary>Maps already-built Refit Minimal API descriptors to ASP.NET Core endpoints.</summary>
     /// <typeparam name="TApi">The Refit interface to map.</typeparam>
     /// <param name="endpoints">The endpoint route builder.</param>
@@ -141,6 +178,52 @@ public static class RefitEndpointRouteBuilderExtensions
         }
 
         return endpoints;
+    }
+
+    /// <summary>Gets source-generated endpoint descriptors for a Refit interface.</summary>
+    /// <typeparam name="TApi">The Refit interface.</typeparam>
+    /// <param name="typeWitness">A value that allows type inference for the Refit interface.</param>
+    /// <returns>The generated endpoint descriptors.</returns>
+    private static IReadOnlyList<RefitMinimalApiEndpoint<TApi>> GetGeneratedEndpoints<TApi>(TApi typeWitness)
+        where TApi : class
+    {
+        ArgumentExceptionHelper.ThrowIfNull(typeWitness);
+
+        return GetGeneratedEndpointsCore<TApi>();
+    }
+
+    /// <summary>Gets source-generated endpoint descriptors for a Refit interface.</summary>
+    /// <typeparam name="TApi">The Refit interface.</typeparam>
+    /// <param name="typeWitness">A factory that allows type inference for the Refit interface.</param>
+    /// <returns>The generated endpoint descriptors.</returns>
+    private static IReadOnlyList<RefitMinimalApiEndpoint<TApi>> GetGeneratedEndpoints<TApi>(
+        Func<HttpContext, TApi> typeWitness)
+        where TApi : class
+    {
+        ArgumentExceptionHelper.ThrowIfNull(typeWitness);
+
+        return GetGeneratedEndpointsCore<TApi>();
+    }
+
+    /// <summary>Gets source-generated endpoint descriptors for a Refit interface.</summary>
+    /// <typeparam name="TApi">The Refit interface.</typeparam>
+    /// <returns>The generated endpoint descriptors.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally identifies the generated endpoint descriptor registration.")]
+    private static IReadOnlyList<RefitMinimalApiEndpoint<TApi>> GetGeneratedEndpointsCore<TApi>()
+        where TApi : class
+    {
+        if (GeneratedEndpoints.TryGetValue(typeof(TApi), out var endpoints)
+            && endpoints is IReadOnlyList<RefitMinimalApiEndpoint<TApi>> typedEndpoints)
+        {
+            return typedEndpoints;
+        }
+
+        throw new InvalidOperationException(
+            $"No generated Refit Minimal API endpoints were registered for {typeof(TApi).FullName}. "
+            + "Add GenerateRefitMinimalApiAttribute to the Refit interface and rebuild.");
     }
 
     /// <summary>Creates endpoint descriptors by reflecting over the Refit interface.</summary>

@@ -17,6 +17,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="TUnit" />
+    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn50\InterfaceStubGenerator.Roslyn50.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Refit.MinimalApi\Refit.MinimalApi.csproj" />
   </ItemGroup>
 </Project>

@@ -16,7 +16,7 @@ public static class Program
 
         var implementation = new TodoApi();
         app.MapGet("/", static () => Results.Redirect("/todos/1"));
-        app.MapRefitApi<ITodoApi>(implementation, TodoEndpoints.All);
+        app.MapGeneratedRefitApi<ITodoApi>(implementation);
 
         app.Run();
     }

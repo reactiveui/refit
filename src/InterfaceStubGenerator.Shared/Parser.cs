@@ -22,6 +22,14 @@ internal static partial class Parser
     /// <summary>The underlying value for <c>BodySerializationMethod.Serialized</c>.</summary>
     private const int BodySerializationSerialized = 3;
 
+    /// <summary>Gets empty Minimal API interface candidates used by direct parser callers.</summary>
+#if ROSLYN_5
+    private static ImmutableArray<InterfaceDeclarationSyntax> EmptyMinimalApiCandidateInterfaces => [];
+#else
+    private static ImmutableArray<InterfaceDeclarationSyntax> EmptyMinimalApiCandidateInterfaces =>
+        ImmutableArray<InterfaceDeclarationSyntax>.Empty;
+#endif
+
     /// <summary>Builds the generator model for the candidate Refit interfaces.</summary>
     /// <param name="compilation">The compilation.</param>
     /// <param name="refitInternalNamespace">The refit internal namespace.</param>
@@ -38,6 +46,34 @@ internal static partial class Parser
         bool generatedRequestBuilding,
         in ImmutableArray<MethodDeclarationSyntax> candidateMethods,
         in ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        CancellationToken cancellationToken) =>
+        GenerateInterfaceStubs(
+            compilation,
+            refitInternalNamespace,
+            generatedRequestBuilding,
+            candidateMethods,
+            candidateInterfaces,
+            EmptyMinimalApiCandidateInterfaces,
+            cancellationToken);
+
+    /// <summary>Builds the generator model for the candidate Refit interfaces.</summary>
+    /// <param name="compilation">The compilation.</param>
+    /// <param name="refitInternalNamespace">The refit internal namespace.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is enabled.</param>
+    /// <param name="candidateMethods">The candidate methods.</param>
+    /// <param name="candidateInterfaces">The candidate interfaces.</param>
+    /// <param name="minimalApiCandidateInterfaces">The interfaces marked for Minimal API endpoint generation.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The collected diagnostics and the model used to generate the stubs.</returns>
+    public static (
+        List<Diagnostic> diagnostics,
+        ContextGenerationModel contextGenerationSpec) GenerateInterfaceStubs(
+        CSharpCompilation compilation,
+        string? refitInternalNamespace,
+        bool generatedRequestBuilding,
+        in ImmutableArray<MethodDeclarationSyntax> candidateMethods,
+        in ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        in ImmutableArray<InterfaceDeclarationSyntax> minimalApiCandidateInterfaces,
         CancellationToken cancellationToken)
     {
         ArgumentExceptionHelper.ThrowIfNull(compilation);
@@ -72,6 +108,7 @@ internal static partial class Parser
             compilation,
             candidateMethods,
             candidateInterfaces,
+            minimalApiCandidateInterfaces,
             httpMethodBaseAttributeSymbol,
             interfaceToNullableEnabledMap,
             cancellationToken);
@@ -197,6 +234,7 @@ internal static partial class Parser
     /// <param name="compilation">The compilation.</param>
     /// <param name="candidateMethods">The candidate methods.</param>
     /// <param name="candidateInterfaces">The candidate interfaces.</param>
+    /// <param name="minimalApiCandidateInterfaces">The interfaces marked for Minimal API endpoint generation.</param>
     /// <param name="httpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
     /// <param name="interfaceToNullableEnabledMap">Receives the nullable-context flag per interface.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
@@ -205,6 +243,7 @@ internal static partial class Parser
         CSharpCompilation compilation,
         in ImmutableArray<MethodDeclarationSyntax> candidateMethods,
         in ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        in ImmutableArray<InterfaceDeclarationSyntax> minimalApiCandidateInterfaces,
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         Dictionary<INamedTypeSymbol, bool> interfaceToNullableEnabledMap,
         CancellationToken cancellationToken)
@@ -219,10 +258,54 @@ internal static partial class Parser
         var compilationNullableEnabled =
             compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
+        AddRefitMethodCandidates(
+            compilation,
+            candidateMethods,
+            httpMethodBaseAttributeSymbol,
+            interfaces,
+            interfaceToNullableEnabledMap,
+            compilationNullableEnabled,
+            cancellationToken);
+
+        AddInheritedRefitInterfaces(
+            compilation,
+            candidateInterfaces,
+            httpMethodBaseAttributeSymbol,
+            interfaces,
+            interfaceToNullableEnabledMap,
+            cancellationToken);
+
+        AddMinimalApiCandidateInterfaces(
+            compilation,
+            minimalApiCandidateInterfaces,
+            httpMethodBaseAttributeSymbol,
+            interfaces,
+            interfaceToNullableEnabledMap,
+            compilationNullableEnabled,
+            cancellationToken);
+
+        return interfaces;
+    }
+
+    /// <summary>Adds interfaces discovered from direct Refit method candidates.</summary>
+    /// <param name="compilation">The compilation.</param>
+    /// <param name="candidateMethods">The candidate methods.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
+    /// <param name="interfaces">The interface map to update.</param>
+    /// <param name="interfaceToNullableEnabledMap">Receives the nullable-context flag per interface.</param>
+    /// <param name="compilationNullableEnabled">Whether nullable is enabled for the compilation.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private static void AddRefitMethodCandidates(
+        CSharpCompilation compilation,
+        in ImmutableArray<MethodDeclarationSyntax> candidateMethods,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        Dictionary<INamedTypeSymbol, List<IMethodSymbol>> interfaces,
+        Dictionary<INamedTypeSymbol, bool> interfaceToNullableEnabledMap,
+        bool compilationNullableEnabled,
+        CancellationToken cancellationToken)
+    {
         foreach (var method in candidateMethods)
         {
-            // GetSemanticModel is cached per syntax tree, so calling it per method is cheap and
-            // lets us skip a GroupBy-by-tree allocation.
             var model = compilation.GetSemanticModel(method.SyntaxTree);
             var methodSymbol = model.GetDeclaredSymbol(method, cancellationToken);
             if (!IsRefitMethod(methodSymbol, httpMethodBaseAttributeSymbol))
@@ -243,33 +326,98 @@ internal static partial class Parser
 
             interfaceMethods.Add(methodSymbol);
         }
+    }
 
-        // Add interfaces whose Refit methods are inherited from base interfaces.
+    /// <summary>Adds interfaces that inherit Refit methods from base interfaces.</summary>
+    /// <param name="compilation">The compilation.</param>
+    /// <param name="candidateInterfaces">The candidate interfaces.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
+    /// <param name="interfaces">The interface map to update.</param>
+    /// <param name="interfaceToNullableEnabledMap">Receives the nullable-context flag per interface.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private static void AddInheritedRefitInterfaces(
+        CSharpCompilation compilation,
+        in ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        Dictionary<INamedTypeSymbol, List<IMethodSymbol>> interfaces,
+        Dictionary<INamedTypeSymbol, bool> interfaceToNullableEnabledMap,
+        CancellationToken cancellationToken)
+    {
         foreach (var iface in candidateInterfaces)
         {
             var model = compilation.GetSemanticModel(iface.SyntaxTree);
             var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken);
+            if (ifaceSymbol is null
+                || interfaces.ContainsKey(ifaceSymbol)
+                || !HasDerivedRefitMethods(ifaceSymbol, httpMethodBaseAttributeSymbol))
+            {
+                continue;
+            }
 
-            // Skip duplicates already captured from candidate methods.
+            interfaces.Add(ifaceSymbol, []);
+            interfaceToNullableEnabledMap[ifaceSymbol] =
+                model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
+        }
+    }
+
+    /// <summary>Adds interfaces marked for Minimal API endpoint generation.</summary>
+    /// <param name="compilation">The compilation.</param>
+    /// <param name="minimalApiCandidateInterfaces">The interfaces marked for Minimal API endpoint generation.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
+    /// <param name="interfaces">The interface map to update.</param>
+    /// <param name="interfaceToNullableEnabledMap">Receives the nullable-context flag per interface.</param>
+    /// <param name="compilationNullableEnabled">Whether nullable is enabled for the compilation.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    private static void AddMinimalApiCandidateInterfaces(
+        CSharpCompilation compilation,
+        in ImmutableArray<InterfaceDeclarationSyntax> minimalApiCandidateInterfaces,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol,
+        Dictionary<INamedTypeSymbol, List<IMethodSymbol>> interfaces,
+        Dictionary<INamedTypeSymbol, bool> interfaceToNullableEnabledMap,
+        bool compilationNullableEnabled,
+        CancellationToken cancellationToken)
+    {
+        foreach (var iface in minimalApiCandidateInterfaces)
+        {
+            var model = compilation.GetSemanticModel(iface.SyntaxTree);
+            var ifaceSymbol = model.GetDeclaredSymbol(iface, cancellationToken);
             if (ifaceSymbol is null || interfaces.ContainsKey(ifaceSymbol))
             {
                 continue;
             }
 
-            // The interface has no refit methods of its own, but its base interfaces might.
-            if (!HasDerivedRefitMethods(ifaceSymbol, httpMethodBaseAttributeSymbol))
+            var directRefitMethods = GetDirectRefitMethods(ifaceSymbol, httpMethodBaseAttributeSymbol);
+            if (directRefitMethods.Count == 0
+                && !HasDerivedRefitMethods(ifaceSymbol, httpMethodBaseAttributeSymbol))
             {
                 continue;
             }
 
-            // Add the interface with an empty method set; downstream processing already
-            // looks for inherited Refit methods.
-            interfaces.Add(ifaceSymbol, []);
+            interfaces.Add(ifaceSymbol, directRefitMethods);
             interfaceToNullableEnabledMap[ifaceSymbol] =
-                model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
+                compilationNullableEnabled
+                || model.GetNullableContext(iface.SpanStart) == NullableContext.Enabled;
+        }
+    }
+
+    /// <summary>Gets Refit methods declared directly on an interface.</summary>
+    /// <param name="interfaceSymbol">The interface symbol.</param>
+    /// <param name="httpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
+    /// <returns>The direct Refit methods.</returns>
+    private static List<IMethodSymbol> GetDirectRefitMethods(
+        INamedTypeSymbol interfaceSymbol,
+        INamedTypeSymbol httpMethodBaseAttributeSymbol)
+    {
+        var directRefitMethods = new List<IMethodSymbol>();
+        foreach (var member in interfaceSymbol.GetMembers())
+        {
+            if (member is IMethodSymbol method && IsRefitMethod(method, httpMethodBaseAttributeSymbol))
+            {
+                directRefitMethods.Add(method);
+            }
         }
 
-        return interfaces;
+        return directRefitMethods;
     }
 
     /// <summary>Builds the interface models for every collected Refit interface.</summary>
@@ -340,12 +488,14 @@ internal static partial class Parser
             context);
 
         var memberNames = CollectMemberNames(members);
+        var minimalApi = BuildMinimalApiModel(interfaceSymbol);
+        var forceRequestMetadata = minimalApi is not null;
 
-        var refitMethodsArray = ParseMethods(refitMethods, true, context);
+        var refitMethodsArray = ParseMethods(refitMethods, true, context, forceRequestMetadata);
 
         // Only include refit methods discovered on base interfaces here.
         // Do NOT duplicate the current interface's refit methods.
-        var derivedRefitMethodsArray = ParseMethods(partition.DerivedRefitMethods, false, context);
+        var derivedRefitMethodsArray = ParseMethods(partition.DerivedRefitMethods, false, context, forceRequestMetadata);
 
         var nonRefitMethodModels = BuildNonRefitMethodModels(
             partition.NonRefitMethods,
@@ -374,8 +524,55 @@ internal static partial class Parser
             nonRefitMethodModels,
             refitMethodsArray,
             derivedRefitMethodsArray,
+            minimalApi,
             nullability,
             partition.HasDispose);
+    }
+
+    /// <summary>Builds the Minimal API generation model for a marked interface.</summary>
+    /// <param name="interfaceSymbol">The interface symbol to inspect.</param>
+    /// <returns>The Minimal API model, or null when the interface is not marked.</returns>
+    private static MinimalApiModel? BuildMinimalApiModel(INamedTypeSymbol interfaceSymbol)
+    {
+        foreach (var attribute in interfaceSymbol.GetAttributes())
+        {
+            if (attribute.AttributeClass?.ToDisplayString() != "Refit.GenerateRefitMinimalApiAttribute")
+            {
+                continue;
+            }
+
+            var arguments = attribute.ConstructorArguments;
+            if (arguments.Length > 0 && arguments[0].Value is ITypeSymbol jsonSerializerContextType)
+            {
+                return new(
+                    jsonSerializerContextType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                    GetMinimalApiGenerateClient(attribute));
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Gets whether a Minimal API-marked interface should also generate a Refit client stub.</summary>
+    /// <param name="attribute">The marker attribute.</param>
+    /// <returns><see langword="true"/> when client generation should remain enabled.</returns>
+    private static bool GetMinimalApiGenerateClient(AttributeData attribute)
+    {
+        var arguments = attribute.ConstructorArguments;
+        if (arguments.Length > 1 && arguments[1].Value is bool positionalValue)
+        {
+            return positionalValue;
+        }
+
+        foreach (var namedArgument in attribute.NamedArguments)
+        {
+            if (namedArgument.Key == "GenerateClient" && namedArgument.Value.Value is bool namedValue)
+            {
+                return namedValue;
+            }
+        }
+
+        return true;
     }
 
     /// <summary>Computes the generated identifiers and display names for an interface.</summary>
@@ -728,11 +925,13 @@ internal static partial class Parser
     /// <param name="methods">The Refit methods to parse.</param>
     /// <param name="isImplicitInterface">Whether the methods belong to the implicitly implemented interface.</param>
     /// <param name="context">The shared generation context.</param>
+    /// <param name="forceRequestMetadata">Whether request metadata is required even when inline request construction is disabled.</param>
     /// <returns>The method models.</returns>
     private static ImmutableEquatableArray<MethodModel> ParseMethods(
         List<IMethodSymbol> methods,
         bool isImplicitInterface,
-        in InterfaceGenerationContext context)
+        in InterfaceGenerationContext context,
+        bool forceRequestMetadata = false)
     {
         if (methods.Count == 0)
         {
@@ -742,7 +941,7 @@ internal static partial class Parser
         var methodModels = new MethodModel[methods.Count];
         for (var i = 0; i < methods.Count; i++)
         {
-            methodModels[i] = ParseMethod(methods[i], isImplicitInterface, context);
+            methodModels[i] = ParseMethod(methods[i], isImplicitInterface, context, forceRequestMetadata);
         }
 
         return ImmutableEquatableArrayFactory.FromArray(methodModels);
@@ -1012,11 +1211,13 @@ internal static partial class Parser
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="isImplicitInterface">Whether the method belongs to the implicitly implemented interface.</param>
     /// <param name="context">The shared generation context.</param>
+    /// <param name="forceRequestMetadata">Whether request metadata is required even when inline request construction is disabled.</param>
     /// <returns>The model describing the Refit method.</returns>
     private static MethodModel ParseMethod(
         IMethodSymbol methodSymbol,
         bool isImplicitInterface,
-        in InterfaceGenerationContext context)
+        in InterfaceGenerationContext context,
+        bool forceRequestMetadata = false)
     {
         var returnType = methodSymbol.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
@@ -1028,7 +1229,7 @@ internal static partial class Parser
 
         var declaredBaseName = BuildDeclaredBaseName(methodSymbol);
         var returnTypeInfo = GetReturnTypeInfo(methodSymbol);
-        var request = ParseRequest(methodSymbol, returnTypeInfo, context);
+        var request = ParseRequest(methodSymbol, returnTypeInfo, context, forceRequestMetadata);
         var parameters = ParseParameters(methodSymbol.Parameters);
 
         var isExplicit = explicitImpl is not null;

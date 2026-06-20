@@ -15,13 +15,15 @@ internal static partial class Parser
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
     /// <param name="context">The shared generation context.</param>
+    /// <param name="forceRequestMetadata">Whether request metadata is required even when inline request construction is disabled.</param>
     /// <returns>The parsed request metadata.</returns>
     private static RequestModel ParseRequest(
         IMethodSymbol methodSymbol,
         ReturnTypeInfo returnTypeInfo,
-        in InterfaceGenerationContext context)
+        in InterfaceGenerationContext context,
+        bool forceRequestMetadata = false)
     {
-        if (!context.GeneratedRequestBuilding)
+        if (!context.GeneratedRequestBuilding && !forceRequestMetadata)
         {
             return RequestModel.Empty;
         }
@@ -476,7 +478,7 @@ internal static partial class Parser
         IParameterSymbol parameter,
         string parameterType) =>
         new(
-            parameter.MetadataName,
+            GetParameterAliasOrMetadataName(parameter),
             parameterType,
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
@@ -484,6 +486,28 @@ internal static partial class Parser
             string.Empty,
             string.Empty,
             BodyBufferMode.None);
+
+    /// <summary>Gets a parameter's Refit alias, or its metadata name when no alias is declared.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <returns>The request binding name.</returns>
+    private static string GetParameterAliasOrMetadataName(IParameterSymbol parameter)
+    {
+        foreach (var attribute in parameter.GetAttributes())
+        {
+            if (attribute.AttributeClass?.ToDisplayString() != "Refit.AliasAsAttribute")
+            {
+                continue;
+            }
+
+            var arguments = attribute.ConstructorArguments;
+            if (arguments.Length > 0 && arguments[0].Value is string { Length: > 0 } alias)
+            {
+                return alias;
+            }
+        }
+
+        return parameter.MetadataName;
+    }
 
     /// <summary>Determines whether generated code needs a null-safe dereference for a parameter value.</summary>
     /// <param name="type">The parameter type.</param>

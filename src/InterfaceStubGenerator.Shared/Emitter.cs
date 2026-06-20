@@ -31,11 +31,17 @@ internal static partial class Emitter
     /// <summary>Estimated characters needed for one generated factory registration.</summary>
     private const int EstimatedFactoryRegistrationCapacity = 256;
 
+    /// <summary>Estimated characters needed for one generated Minimal API registration.</summary>
+    private const int EstimatedMinimalApiRegistrationCapacity = 256;
+
     /// <summary>Initial buffer size for a typical generated interface implementation.</summary>
     private const int InterfaceSourceBaseCapacity = 4096;
 
     /// <summary>Estimated characters needed for one generated method body.</summary>
     private const int EstimatedMethodSourceCapacity = 768;
+
+    /// <summary>Estimated characters needed for one generated Minimal API endpoint handler.</summary>
+    private const int EstimatedMinimalApiEndpointSourceCapacity = 1024;
 
     /// <summary>Estimated characters needed for one generated property.</summary>
     private const int EstimatedPropertySourceCapacity = 128;
@@ -117,6 +123,7 @@ internal static partial class Emitter
                       {
               """);
         WriteGeneratedFactoryRegistrations(generatedSource, model.Interfaces);
+        WriteGeneratedMinimalApiEndpointRegistrations(generatedSource, model.Interfaces);
         generatedSource.WriteLine(
             """
                     }
@@ -134,6 +141,7 @@ internal static partial class Emitter
     public static SourceText EmitInterface(InterfaceModel model)
     {
         var source = new SourceWriter(EstimateInterfaceSourceCapacity(model));
+        var emitGeneratedClient = ShouldEmitGeneratedClient(model);
 
         // if nullability is supported emit the nullable directive
         if (model.Nullability != Nullability.None)
@@ -143,7 +151,7 @@ internal static partial class Emitter
         }
 
         source.WriteLine(
-            $$"""
+            """
               // This file is generated into consumer projects; suppress all analyzers so
               // consumer analyzer policy does not report Refit implementation details.
               #pragma warning disable
@@ -152,16 +160,47 @@ internal static partial class Emitter
 
                   partial class Generated
                   {
-
-                  /// <inheritdoc />
-                  [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-                  [global::System.Diagnostics.DebuggerNonUserCode]
-                  [{{model.PreserveAttributeDisplayName}}]
-                  [global::System.Reflection.Obfuscation(Exclude=true)]
-                  [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-                  partial class {{model.Ns}}{{model.ClassDeclaration}}
-                      : {{model.InterfaceDisplayName}}
               """);
+
+        if (emitGeneratedClient)
+        {
+            WriteGeneratedClient(source, model);
+        }
+
+        WriteMinimalApiEndpointDescriptors(source, model);
+
+        if (emitGeneratedClient)
+        {
+            source.Indentation--;
+        }
+
+        source.WriteLine(
+            """
+                }
+            }
+
+            #pragma warning restore
+            """);
+        return source.ToSourceText();
+    }
+
+    /// <summary>Writes the generated Refit client implementation class.</summary>
+    /// <param name="source">The source writer to emit to.</param>
+    /// <param name="model">The interface model being emitted.</param>
+    private static void WriteGeneratedClient(SourceWriter source, InterfaceModel model)
+    {
+        source.WriteLine(
+            $$"""
+
+              /// <inheritdoc />
+              [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
+              [global::System.Diagnostics.DebuggerNonUserCode]
+              [{{model.PreserveAttributeDisplayName}}]
+              [global::System.Reflection.Obfuscation(Exclude=true)]
+              [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+              partial class {{model.Ns}}{{model.ClassDeclaration}}
+                  : {{model.InterfaceDisplayName}}
+          """);
 
         source.Indentation += NamespaceAndClassIndentation;
         GenerateConstraints(source, model.Constraints, false);
@@ -186,13 +225,25 @@ internal static partial class Emitter
         source.Indentation++;
         var uniqueNames = new UniqueNameBuilder();
         uniqueNames.Reserve(model.MemberNames);
+        WriteGeneratedClientMembers(source, model, uniqueNames);
+        source.Indentation--;
+        source.WriteLine("}");
+    }
 
+    /// <summary>Writes the generated Refit client implementation members.</summary>
+    /// <param name="source">The source writer to emit to.</param>
+    /// <param name="model">The interface model being emitted.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    private static void WriteGeneratedClientMembers(
+        SourceWriter source,
+        InterfaceModel model,
+        UniqueNameBuilder uniqueNames)
+    {
         foreach (var property in model.Properties)
         {
             WriteInterfaceProperty(source, property);
         }
 
-        // Handle Refit Methods
         foreach (var method in model.RefitMethods)
         {
             WriteRefitMethod(source, method, true, model, uniqueNames);
@@ -203,35 +254,25 @@ internal static partial class Emitter
             WriteRefitMethod(source, method, false, model, uniqueNames);
         }
 
-        // Handle non-refit Methods that aren't static or properties or have a method body
         foreach (var method in model.NonRefitMethods)
         {
             WriteNonRefitMethod(source, method);
         }
 
-        // Handle Dispose
-        if (model.DisposeMethod)
+        if (!model.DisposeMethod)
         {
-            WriteDisposableMethod(source);
+            return;
         }
 
-        source.Indentation -= NamespaceAndClassIndentation;
-        source.WriteLine(
-            """
-                }
-                }
-            }
-
-            #pragma warning restore
-            """);
-        return source.ToSourceText();
+        WriteDisposableMethod(source);
     }
 
     /// <summary>Estimates the initial buffer size for shared generated infrastructure source.</summary>
     /// <param name="model">The context generation model describing the interfaces.</param>
     /// <returns>The estimated source buffer capacity.</returns>
     private static int EstimateSharedSourceCapacity(ContextGenerationModel model) =>
-        SharedGeneratedSourceBaseCapacity + (model.Interfaces.Count * EstimatedFactoryRegistrationCapacity);
+        SharedGeneratedSourceBaseCapacity
+        + (model.Interfaces.Count * (EstimatedFactoryRegistrationCapacity + EstimatedMinimalApiRegistrationCapacity));
 
     /// <summary>Estimates the initial buffer size for one generated interface implementation.</summary>
     /// <param name="model">The interface model being emitted.</param>
@@ -242,6 +283,7 @@ internal static partial class Emitter
             model.RefitMethods.Count + model.DerivedRefitMethods.Count + model.NonRefitMethods.Count;
         return InterfaceSourceBaseCapacity
             + (methodCount * EstimatedMethodSourceCapacity)
+            + (MinimalApiMethodCount(model) * EstimatedMinimalApiEndpointSourceCapacity)
             + (model.Properties.Count * EstimatedPropertySourceCapacity);
     }
 
@@ -255,7 +297,7 @@ internal static partial class Emitter
         for (var i = 0; i < interfaces.Count; i++)
         {
             var interfaceModel = interfaces[i];
-            if (interfaceModel.ClassDeclaration.Contains("<"))
+            if (!ShouldEmitGeneratedClient(interfaceModel) || interfaceModel.ClassDeclaration.Contains("<"))
             {
                 continue;
             }
