@@ -317,7 +317,7 @@ public partial class RestServiceIntegrationTests
             .WithHeaders("Content-Type:application/xml; charset=utf-8")
             .Respond(
                 req =>
-                    new HttpResponseMessage(HttpStatusCode.OK)
+                    new(HttpStatusCode.OK)
                     {
                         Content = new StringContent(
                             "<User><Name>Created</Name></User>",
@@ -327,7 +327,7 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var result = await fixture.CreateUser(new User()).ConfigureAwait(false);
+        var result = await fixture.CreateUser(new()).ConfigureAwait(false);
 
         await Assert.That(result.Name).IsEqualTo("Created");
 

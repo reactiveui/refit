@@ -18,7 +18,6 @@ namespace Refit;
 /// <exception cref="System.ArgumentNullException">settings</exception>
 public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttpContentSerializer
 {
-#if NET8_0_OR_GREATER
     /// <summary>Explains why the trimming warning is suppressed for XML reflection.</summary>
     private const string XmlReflectionTrimmingJustification =
         "Refit's XML serialization uses System.Xml.Serialization reflection that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.";
@@ -26,7 +25,6 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     /// <summary>Explains why the AOT warning is suppressed for XML reflection.</summary>
     private const string XmlReflectionAotJustification =
         "Refit's XML serialization may generate serialization assemblies at runtime. Use the Refit source generator for AOT apps.";
-#endif
 
     /// <summary>The settings controlling XML serialization.</summary>
     private readonly XmlContentSerializerSettings _settings =
@@ -46,10 +44,8 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     /// <param name="item">Object to serialize.</param>
     /// <returns><see cref="HttpContent"/> that contains the serialized <typeparamref name="T"/> object in Xml.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="item"/> is <see langword="null"/>.</exception>
-#if NET8_0_OR_GREATER
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
-#endif
     public HttpContent ToHttpContent<T>(T item)
     {
         if (item is null)
@@ -59,7 +55,7 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
 
         var xmlSerializer = _serializerCache.GetOrAdd(
             item.GetType(),
-            t => new XmlSerializer(t, _settings.XmlAttributeOverrides));
+            t => new(t, _settings.XmlAttributeOverrides));
 
         using var stream = new MemoryStream();
         using var writer = XmlWriter.Create(
@@ -77,10 +73,8 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     /// <param name="content">HttpContent object with Xml content to deserialize.</param>
     /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
     /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
-#if NET8_0_OR_GREATER
     [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
-#endif
     [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter selected explicitly by callers.")]
     public async Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
@@ -89,7 +83,7 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
         var xmlSerializer = _serializerCache.GetOrAdd(
             typeof(T),
             t =>
-                new XmlSerializer(
+                new(
                     t,
                     _settings.XmlAttributeOverrides,
                     [],

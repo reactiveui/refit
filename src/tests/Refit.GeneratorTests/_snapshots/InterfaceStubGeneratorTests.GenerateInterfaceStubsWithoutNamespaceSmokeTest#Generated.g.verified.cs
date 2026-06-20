@@ -1,4 +1,4 @@
-﻿//HintName: Generated.g.cs
+//HintName: Generated.g.cs
 
 // This file is generated into consumer projects; suppress all analyzers so
 // consumer analyzer policy does not report Refit implementation details.

@@ -6,6 +6,6 @@
 namespace System.Runtime.CompilerServices;
 
 /// <summary>Polyfill marker enabling init-only setters on older target frameworks.</summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage("RoslynCommonAnalyzers", "SST1436:Add members to a type or remove it", Justification = "Compiler-required marker type; intentionally empty.")]
+[Diagnostics.CodeAnalysis.SuppressMessage("RoslynCommonAnalyzers", "SST1436:Add members to a type or remove it", Justification = "Compiler-required marker type; intentionally empty.")]
 internal static class IsExternalInit;
 #endif

@@ -368,7 +368,7 @@ internal class RestMethodInfoInternal
                     parameterInfo,
                     ret,
                     fragmentList,
-                    new ParsedParameterName(rawName, name, isRoundTripping),
+                    new(rawName, name, isRoundTripping),
                     value);
             }
             else if (objectParamValidationDict.TryGetValue(name, out var value1) && !isRoundTripping)

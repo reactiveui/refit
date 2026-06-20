@@ -133,7 +133,7 @@ public class RefitSettings
     /// <value>
     /// The version policy.
     /// </value>
-    public System.Net.Http.HttpVersionPolicy VersionPolicy { get; set; } =
-        System.Net.Http.HttpVersionPolicy.RequestVersionOrLower;
+    public HttpVersionPolicy VersionPolicy { get; set; } =
+        HttpVersionPolicy.RequestVersionOrLower;
 #endif
 }

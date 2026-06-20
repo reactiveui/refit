@@ -1,4 +1,4 @@
-﻿//HintName: IContainedInterface.g.cs
+//HintName: IContainedInterface.g.cs
 #nullable disable
 // This file is generated into consumer projects; suppress all analyzers so
 // consumer analyzer policy does not report Refit implementation details.

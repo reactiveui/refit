@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <Product>Refit Xml Serializer ($(TargetFramework))</Product>
     <PackageDescription>XML content serializer for Refit clients that send or receive XML payloads through System.Xml.Serialization.XmlSerializer.</PackageDescription>

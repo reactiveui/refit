@@ -97,7 +97,7 @@ public sealed class LiveCompilationTests
             var request = handler.LastRequest!;
 
             await Assert.That(request.Method).IsEqualTo(HttpMethod.Get);
-            await Assert.That(request.RequestUri).IsEqualTo(new Uri("https://example.test/base/users"));
+            await Assert.That(request.RequestUri).IsEqualTo(new("https://example.test/base/users"));
             await Assert.That(request.Headers.GetValues("X-Static")).IsCollectionEqualTo(["static"]);
             await Assert.That(request.Headers.GetValues("X-Id")).IsCollectionEqualTo(["42"]);
             await Assert.That(request.Headers.GetValues("X-Dynamic")).IsCollectionEqualTo(["dynamic"]);

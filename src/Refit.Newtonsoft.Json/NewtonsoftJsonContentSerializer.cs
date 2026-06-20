@@ -33,10 +33,6 @@ public sealed class NewtonsoftJsonContentSerializer(
     }
 
     /// <inheritdoc/>
-#if !NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("Refit's Newtonsoft.Json serialization uses reflection that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.")]
-    [RequiresDynamicCode("Refit's Newtonsoft.Json serialization may generate code dynamically for runtime types. Use the Refit source generator for AOT apps.")]
-#else
     [UnconditionalSuppressMessage(
         "Trimming",
         "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
@@ -45,7 +41,6 @@ public sealed class NewtonsoftJsonContentSerializer(
         "AOT",
         "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
         Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-#endif
     public HttpContent ToHttpContent<T>(T item)
     {
         return new StringContent(
@@ -55,10 +50,6 @@ public sealed class NewtonsoftJsonContentSerializer(
     }
 
     /// <inheritdoc/>
-#if !NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("Refit's Newtonsoft.Json serialization uses reflection that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.")]
-    [RequiresDynamicCode("Refit's Newtonsoft.Json serialization may generate code dynamically for runtime types. Use the Refit source generator for AOT apps.")]
-#else
     [UnconditionalSuppressMessage(
         "Trimming",
         "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
@@ -67,7 +58,6 @@ public sealed class NewtonsoftJsonContentSerializer(
         "AOT",
         "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
         Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-#endif
     [SuppressMessage(
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",

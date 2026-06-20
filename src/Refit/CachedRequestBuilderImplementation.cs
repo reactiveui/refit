@@ -49,7 +49,7 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
 
         // use GetOrAdd with cloned array method table key. This prevents the array from being modified, breaking the dictionary.
         return MethodDictionary.GetOrAdd(
-            new MethodTableKey(
+            new(
                 methodName,
                 parameterTypes?.ToArray() ?? [],
                 genericArgumentTypes?.ToArray() ?? []),

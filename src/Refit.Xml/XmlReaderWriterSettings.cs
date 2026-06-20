@@ -16,21 +16,21 @@ public class XmlReaderWriterSettings
 
     /// <summary>Initializes a new instance of the <see cref="XmlReaderWriterSettings"/> class.</summary>
     public XmlReaderWriterSettings()
-        : this(new XmlReaderSettings(), new XmlWriterSettings())
+        : this(new(), new())
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="XmlReaderWriterSettings"/> class.</summary>
     /// <param name="readerSettings">The reader settings.</param>
     public XmlReaderWriterSettings(XmlReaderSettings readerSettings)
-        : this(readerSettings, new XmlWriterSettings())
+        : this(readerSettings, new())
     {
     }
 
     /// <summary>Initializes a new instance of the <see cref="XmlReaderWriterSettings"/> class.</summary>
     /// <param name="writerSettings">The writer settings.</param>
     public XmlReaderWriterSettings(XmlWriterSettings writerSettings)
-        : this(new XmlReaderSettings(), writerSettings)
+        : this(new(), writerSettings)
     {
     }
 

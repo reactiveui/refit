@@ -236,7 +236,7 @@ public class DefaultUrlParameterFormatterTests
         };
 
         var output = factory([parameters]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.Query).IsEqualTo(
             "?DateTime=2023");
@@ -259,13 +259,13 @@ public class DefaultUrlParameterFormatterTests
         {
             DateTimeCollection =
             [
-                new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified),
-                new DateTime(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
+                new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified),
+                new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified)
             ],
         };
 
         var output = factory([parameters]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.Query).IsEqualTo(
             "?DateTimeCollection=2023%2C2024");
@@ -288,13 +288,13 @@ public class DefaultUrlParameterFormatterTests
         {
             DateTimeDictionary = new Dictionary<int, DateTime>
             {
-                { 1, new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
-                { 2, new DateTime(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
+                { 1, new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
+                { 2, new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
             },
         };
 
         var output = factory([parameters]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.Query).IsEqualTo(
             "?DateTimeDictionary.1=2023&DateTimeDictionary.2=2024");
@@ -317,13 +317,13 @@ public class DefaultUrlParameterFormatterTests
         {
             DateTimeKeyedDictionary = new Dictionary<DateTime, int>
             {
-                { new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), 1 },
-                { new DateTime(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), 2 },
+                { new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), 1 },
+                { new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), 2 },
             },
         };
 
         var output = factory([parameters]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.Query).IsEqualTo(
             "?DateTimeKeyedDictionary.2023=1&DateTimeKeyedDictionary.2024=2");

@@ -6,7 +6,6 @@ using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Text.Json;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -115,10 +114,10 @@ public class HttpClientFactoryExtensionsTests
     public async Task HttpClientSettingsAreInjectableGivenGenericArgument()
     {
         var serviceCollection = new ServiceCollection().Configure<ClientOptions>(
-            o => o.Serializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions()));
+            o => o.Serializer = new(new()));
         serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
             _ =>
-                new RefitSettings
+                new()
                 {
                     ContentSerializer = _.GetRequiredService<
                         IOptions<ClientOptions>>().Value.Serializer!
@@ -138,11 +137,11 @@ public class HttpClientFactoryExtensionsTests
     public async Task HttpClientSettingsAreInjectableGivenTypeArgument()
     {
         var serviceCollection = new ServiceCollection().Configure<ClientOptions>(
-            o => o.Serializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions()));
+            o => o.Serializer = new(new()));
         serviceCollection.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             _ =>
-                new RefitSettings
+                new()
                 {
                     ContentSerializer = _.GetRequiredService<
                         IOptions<ClientOptions>>().Value.Serializer!
@@ -160,7 +159,7 @@ public class HttpClientFactoryExtensionsTests
     [Test]
     public async Task HttpClientSettingsCanBeProvidedStaticallyGivenGenericArgument()
     {
-        var contentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions());
+        var contentSerializer = new SystemTextJsonContentSerializer(new());
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
             new RefitSettings { ContentSerializer = contentSerializer });
@@ -177,7 +176,7 @@ public class HttpClientFactoryExtensionsTests
     [SuppressMessage("Usage", "CA2263:Prefer generic overload", Justification = "Test intentionally exercises the non-generic Type overload.")]
     public async Task HttpClientSettingsCanBeProvidedStaticallyGivenTypeArgument()
     {
-        var contentSerializer = new SystemTextJsonContentSerializer(new JsonSerializerOptions());
+        var contentSerializer = new SystemTextJsonContentSerializer(new());
         var serviceCollection = new ServiceCollection();
         serviceCollection.AddRefitClient(
             typeof(IFooWithOtherAttribute),

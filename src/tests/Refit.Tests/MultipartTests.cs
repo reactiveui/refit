@@ -179,8 +179,8 @@ public class MultipartTests
 
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             await fixture.UploadFileInfo(
-                [new FileInfo(fileName), new FileInfo(fileName)],
-                new FileInfo(fileName));
+                [new(fileName), new(fileName)],
+                new(fileName));
         }
         finally
         {
@@ -297,7 +297,7 @@ public class MultipartTests
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
-            new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
+            new(stream, "test-streampart.pdf", "application/pdf"));
     }
 
     /// <summary>Verifies a stream part with a named multipart uses the supplied name.</summary>
@@ -328,7 +328,7 @@ public class MultipartTests
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
-            new StreamPart(stream, "test-streampart.pdf", "application/pdf", "test-stream"));
+            new(stream, "test-streampart.pdf", "application/pdf", "test-stream"));
     }
 
     /// <summary>Verifies a stream part can be combined with query parameters.</summary>
@@ -360,8 +360,8 @@ public class MultipartTests
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
-            new ModelObject { Property1 = "test", Property2 = "test2" },
-            new StreamPart(stream, "test-streampart.pdf", "application/pdf"));
+            new() { Property1 = "test", Property2 = "test2" },
+            new(stream, "test-streampart.pdf", "application/pdf"));
     }
 
     /// <summary>Verifies a byte array part keeps its supplied alias, file name and content type.</summary>
@@ -397,7 +397,7 @@ public class MultipartTests
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadBytesPart(
-            new ByteArrayPart(bytes, "test-bytearraypart.pdf", "application/pdf"));
+            new(bytes, "test-bytearraypart.pdf", "application/pdf"));
     }
 
     /// <summary>Verifies a collection of file parts plus an extra part keep their names and content types.</summary>
@@ -459,17 +459,17 @@ public class MultipartTests
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             await fixture.UploadFileInfoPart(
                 [
-                    new FileInfoPart(
-                        new FileInfo(fileName),
+                    new(
+                        new(fileName),
                         "test-fileinfopart.pdf",
                         "application/pdf"),
-                    new FileInfoPart(
-                        new FileInfo(fileName),
+                    new(
+                        new(fileName),
                         "test-fileinfopart2.pdf",
                         contentType: null)
                 ],
-                new FileInfoPart(
-                    new FileInfo(fileName),
+                new(
+                    new(fileName),
                     fileName: "additionalfile.pdf",
                     contentType: "application/pdf"));
         }
@@ -680,7 +680,7 @@ public class MultipartTests
             await fixture.UploadMixedObjects(
                 [model1, model2],
                 anotherModel,
-                new FileInfo(fileName),
+                new(fileName),
                 AnEnum.Val2,
                 "frob",
                 42);
@@ -697,7 +697,7 @@ public class MultipartTests
     public async Task MultipartUploadShouldWorkWithHttpContent()
     {
         var httpContent = new StringContent("some text", Encoding.ASCII, "application/custom");
-        httpContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
+        httpContent.Headers.ContentDisposition = new("attachment")
         {
             Name = "myName",
             FileName = "myFileName",
@@ -834,7 +834,7 @@ public class MultipartTests
 
             await Asserts!(content!);
 
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            return new(HttpStatusCode.OK);
         }
     }
 }

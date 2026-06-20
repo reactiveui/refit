@@ -18,7 +18,6 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         (Nullable.GetUnderlyingType(typeToConvert) ?? typeToConvert).IsEnum;
 
     /// <inheritdoc/>
-#if NET6_0_OR_GREATER
     [UnconditionalSuppressMessage(
         "AssemblyLoadTrimming",
         "IL2026:RequiresUnreferencedCode",
@@ -44,7 +43,6 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         Justification =
             "The enum value type's parameterless constructor is intrinsically preserved; this path is " +
             "reflection-only and trimmed/AOT apps use the Refit source generator instead.")]
-#endif
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var underlyingType = Nullable.GetUnderlyingType(typeToConvert);

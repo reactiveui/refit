@@ -225,7 +225,7 @@ public class GeneratedRequestRunnerTests
         using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
         var settings = new RefitSettings(new RecordingContentSerializer())
         {
-            HttpRequestMessageOptions = new Dictionary<string, object>
+            HttpRequestMessageOptions = new()
             {
                 ["configured"] = 42
             }
@@ -272,7 +272,7 @@ public class GeneratedRequestRunnerTests
         {
             Content = new StringContent("body")
         };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer");
+        request.Headers.Authorization = new("Bearer");
         var exception = new InvalidOperationException("factory failure");
         var settings = CreateSettings();
         settings.AuthorizationHeaderValueGetter = (_, _) => Task.FromResult("token");
@@ -489,7 +489,7 @@ public class GeneratedRequestRunnerTests
             bufferBody: false,
             CancellationToken.None);
 
-        await Assert.That(result).IsEqualTo(new GeneratedResult(42));
+        await Assert.That(result).IsEqualTo(new(42));
         await Assert.That(serializer.DeserializeCallCount).IsEqualTo(1);
     }
 
@@ -633,7 +633,7 @@ public class GeneratedRequestRunnerTests
             CancellationToken.None);
 
         await Assert.That(result!.IsSuccessful).IsTrue();
-        await Assert.That(result.Content).IsEqualTo(new GeneratedResult(123));
+        await Assert.That(result.Content).IsEqualTo(new(123));
         await Assert.That(serializer.DeserializeCallCount).IsEqualTo(1);
     }
 
@@ -835,7 +835,7 @@ public class GeneratedRequestRunnerTests
             bufferBody: false,
             CancellationToken.None);
 
-        await Assert.That(result).IsEqualTo(new GeneratedResult(321));
+        await Assert.That(result).IsEqualTo(new(321));
         await Assert.That(serializer.DeserializeCallCount).IsEqualTo(1);
     }
 
@@ -874,7 +874,7 @@ public class GeneratedRequestRunnerTests
     private static HttpClient CreateClient(HttpMessageHandler handler) =>
         new(handler)
         {
-            BaseAddress = new Uri("https://api.example")
+            BaseAddress = new("https://api.example")
         };
 
     /// <summary>Captures request details sent by generated response helpers.</summary>

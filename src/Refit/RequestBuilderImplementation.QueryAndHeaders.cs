@@ -3,13 +3,10 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.Web;
-#if NET5_0_OR_GREATER
-using System.Diagnostics.CodeAnalysis;
-#endif
 
 namespace Refit
 {
@@ -98,7 +95,7 @@ namespace Refit
                 {
                     queryParamsToAdd.Insert(
                         index++,
-                        new KeyValuePair<string, string?>(key, query[key]));
+                        new(key, query[key]));
                 }
             }
         }
@@ -106,7 +103,7 @@ namespace Refit
         /// <summary>Builds an escaped query string from the collected key/value pairs.</summary>
         /// <param name="queryParamsToAdd">The query parameters to encode.</param>
         /// <returns>The encoded query string.</returns>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Major Code Smell",
             "S2930:\"IDisposables\" should be disposed",
             Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
@@ -269,23 +266,8 @@ namespace Refit
         /// <param name="request">The request to add the header to.</param>
         /// <param name="cancellationToken">A token to cancel the getter.</param>
         /// <returns>A task that completes when the header has been set.</returns>
-        private async Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            if (_settings.AuthorizationHeaderValueGetter is null)
-            {
-                return;
-            }
-
-            var auth = request.Headers.Authorization;
-            if (auth is null || !string.IsNullOrWhiteSpace(auth.Parameter))
-            {
-                return;
-            }
-
-            var token = await _settings.AuthorizationHeaderValueGetter(request, cancellationToken)
-                .ConfigureAwait(false);
-            request.Headers.Authorization = new AuthenticationHeaderValue(auth.Scheme, token);
-        }
+        private Task AddAuthorizationHeadersFromGetterAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            RequestExecutionHelpers.AddAuthorizationHeaderFromGetterAsync(request, _settings, cancellationToken);
 
         /// <summary>Adds configured options/properties and Refit metadata to the request.</summary>
         /// <param name="restMethod">The rest method being invoked.</param>
@@ -299,7 +281,7 @@ namespace Refit
                 foreach (var p in _settings.HttpRequestMessageOptions)
                 {
 #if NET6_0_OR_GREATER
-                    ret.Options.Set(new HttpRequestOptionsKey<object>(p.Key), p.Value);
+                    ret.Options.Set(new(p.Key), p.Value);
 #else
                     ret.Properties.Add(p);
 #endif
@@ -312,7 +294,7 @@ namespace Refit
                 {
 #if NET6_0_OR_GREATER
                     ret.Options.Set(
-                        new HttpRequestOptionsKey<object?>(propertyKey),
+                        new(propertyKey),
                         paramList[i]);
 #else
                     ret.Properties[propertyKey] = paramList[i];
@@ -323,10 +305,10 @@ namespace Refit
             // Always add the top-level type of the interface to the properties
 #if NET6_0_OR_GREATER
             ret.Options.Set(
-                new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType),
+                new(HttpRequestMessageOptions.InterfaceType),
                 TargetType);
             ret.Options.Set(
-                new HttpRequestOptionsKey<RestMethodInfo>(
+                new(
                     HttpRequestMessageOptions.RestMethodInfo),
                 restMethod.RestMethodInfo);
 #else
@@ -421,14 +403,14 @@ namespace Refit
 
                 if (DoNotConvertToQueryMap(obj))
                 {
-                    kvps.Add(new KeyValuePair<string, object?>(formattedKey!, obj));
+                    kvps.Add(new(formattedKey!, obj));
                 }
                 else
                 {
                     foreach (var keyValuePair in BuildQueryMap(obj, delimiter, null, collectionFormat))
                     {
                         kvps.Add(
-                            new KeyValuePair<string, object?>(
+                            new(
                                 formattedKey + delimiter + keyValuePair.Key,
                                 keyValuePair.Value));
                     }
@@ -484,7 +466,7 @@ namespace Refit
 
             if (DoNotConvertToQueryMap(obj))
             {
-                kvps.Add(new KeyValuePair<string, object?>(key, obj));
+                kvps.Add(new(key, obj));
                 return;
             }
 
@@ -517,7 +499,7 @@ namespace Refit
                 queryAttribute,
                 collectionFormat))
             {
-                kvps.Add(new KeyValuePair<string, object?>(key, value));
+                kvps.Add(new(key, value));
             }
         }
 
@@ -545,7 +527,7 @@ namespace Refit
             foreach (var keyValuePair in nested)
             {
                 kvps.Add(
-                    new KeyValuePair<string, object?>(
+                    new(
                         key + delimiter + keyValuePair.Key,
                         keyValuePair.Value));
             }

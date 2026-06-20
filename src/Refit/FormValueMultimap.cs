@@ -15,7 +15,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
 {
     /// <summary>Guards access to the shared property cache.</summary>
 #if NET9_0_OR_GREATER
-    private static readonly System.Threading.Lock _lock = new();
+    private static readonly Lock _lock = new();
 #else
     private static readonly object _lock = new();
 #endif

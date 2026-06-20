@@ -56,6 +56,6 @@ public class TestHttpMessageHandler : HttpMessageHandler
         CancellationToken = cancellationToken;
         MessagesSent++;
 
-        return new HttpResponseMessage(HttpStatusCode.OK) { Content = ContentFactory() };
+        return new(HttpStatusCode.OK) { Content = ContentFactory() };
     }
 }

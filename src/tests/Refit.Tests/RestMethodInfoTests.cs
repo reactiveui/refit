@@ -127,7 +127,7 @@ public partial class RestMethodInfoTests
 
         var output = factory([new System.Globalization.CultureInfo("en-US")]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?culture=en-US");
     }
@@ -145,7 +145,7 @@ public partial class RestMethodInfoTests
 
         var output = factory([42]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.AbsolutePath).IsEqualTo("/v1/foo/bar/42");
     }
@@ -168,7 +168,7 @@ public partial class RestMethodInfoTests
             _filterValues
         ]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -186,7 +186,7 @@ public partial class RestMethodInfoTests
 
         var output = factory([param]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?test-query-alias=one&TestAlias2=two");
     }
@@ -306,7 +306,7 @@ public partial class RestMethodInfoTests
 
         var param = new ComplexQueryObject { TestCollection = [1, 2, 3] };
         var output = factory([param]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?TestCollection=1%2C2%2C3");
     }
@@ -325,7 +325,7 @@ public partial class RestMethodInfoTests
             EnumCollectionMulti = [TestEnum.A, TestEnum.B]
         };
         var output = factory([param]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?listOfEnumMulti=A&listOfEnumMulti=B");
     }
@@ -341,7 +341,7 @@ public partial class RestMethodInfoTests
 
         var param = new ComplexQueryObject { TestCollection = [1, 2, 3] };
         var output = factory([param]);
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?TestCollection=1&TestCollection=2&TestCollection=3");
     }

@@ -4,12 +4,10 @@
 
 using System.Collections;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
-#if NET5_0_OR_GREATER
-using System.Diagnostics.CodeAnalysis;
-#endif
 
 namespace Refit
 {
@@ -17,16 +15,14 @@ namespace Refit
     internal partial class RequestBuilderImplementation
     {
         /// <summary>Cached reflection handle to the generic body-serialization method.</summary>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Major Code Smell",
             "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
             Justification = "Refit must invoke its own non-public generic serialization helper by reflection.")]
-#if NET5_0_OR_GREATER
-        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+        [UnconditionalSuppressMessage(
             "Trimming",
             "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
             Justification = "The reflective serialization path is only reached from public APIs already annotated with RequiresUnreferencedCode; the source generator is the trim-safe alternative.")]
-#endif
         private static readonly MethodInfo SerializeBodyMethod =
             typeof(RequestBuilderImplementation).GetMethod(
                 nameof(SerializeBodyGeneric),
@@ -126,7 +122,7 @@ namespace Refit
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
 #endif
-        [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
@@ -163,7 +159,7 @@ namespace Refit
                 MultipartFormDataContent? multiPartContent = null;
                 if (restMethod.IsMultipart)
                 {
-                    multiPartContent = new MultipartFormDataContent(restMethod.MultipartBoundary);
+                    multiPartContent = new(restMethod.MultipartBoundary);
                     ret.Content = multiPartContent;
                 }
 
@@ -323,7 +319,7 @@ namespace Refit
                 ? CreateQueryString(queryParamsToAdd)
                 : null;
 
-            ret.RequestUri = new Uri(
+            ret.RequestUri = new(
                 uri.Uri.GetComponents(UriComponents.PathAndQuery, restMethod.QueryUriFormat),
                 UriKind.Relative);
         }
@@ -801,12 +797,12 @@ namespace Refit
                     parameterInfo.ParameterType,
                     queryAttribute))
                 {
-                    yield return new KeyValuePair<string, string?>(queryPath, value);
+                    yield return new(queryPath, value);
                 }
             }
             else
             {
-                yield return new KeyValuePair<string, string?>(
+                yield return new(
                     queryPath,
                     _settings.UrlParameterFormatter.Format(
                         param,

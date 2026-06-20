@@ -316,7 +316,7 @@ public static class GeneratorComponentTests
                 "TypeSymbolTests",
                 [CSharpSyntaxTree.ParseText(source)],
                 references,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+                new(OutputKind.DynamicallyLinkedLibrary));
         }
 
         /// <summary>Resolves a named type symbol from the compilation by metadata name.</summary>

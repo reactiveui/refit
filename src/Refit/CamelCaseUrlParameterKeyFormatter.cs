@@ -28,7 +28,7 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
 #else
         char[] chars = key.ToCharArray();
         FixCasing(chars);
-        return new string(chars);
+        return new(chars);
 #endif
     }
 

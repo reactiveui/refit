@@ -60,7 +60,7 @@ public class XmlContentSerializerTests
         var serializerSettings = new XmlContentSerializerSettings();
         var attributes = new XmlAttributes
         {
-            XmlRoot = new XmlRootAttribute(overridenRootElementName)
+            XmlRoot = new(overridenRootElementName)
         };
         serializerSettings.XmlAttributeOverrides.Add(dto.GetType(), attributes);
         var sut = new XmlContentSerializer(serializerSettings);
@@ -82,7 +82,7 @@ public class XmlContentSerializerTests
         var dto = BuildDto();
         var serializerSettings = new XmlContentSerializerSettings
         {
-            XmlNamespaces = new XmlSerializerNamespaces()
+            XmlNamespaces = new()
         };
         serializerSettings.XmlNamespaces.Add(prefix, "https://google.com");
         var sut = new XmlContentSerializer(serializerSettings);
@@ -101,7 +101,7 @@ public class XmlContentSerializerTests
     {
         var serializerSettings = new XmlContentSerializerSettings
         {
-            XmlNamespaces = new XmlSerializerNamespaces()
+            XmlNamespaces = new()
         };
         var sut = new XmlContentSerializer(serializerSettings);
 
@@ -119,9 +119,9 @@ public class XmlContentSerializerTests
         var encoding = Encoding.UTF32;
         var serializerSettings = new XmlContentSerializerSettings
         {
-            XmlReaderWriterSettings = new XmlReaderWriterSettings
+            XmlReaderWriterSettings = new()
             {
-                WriterSettings = new XmlWriterSettings { Encoding = encoding }
+                WriterSettings = new() { Encoding = encoding }
             }
         };
         var sut = new XmlContentSerializer(serializerSettings);

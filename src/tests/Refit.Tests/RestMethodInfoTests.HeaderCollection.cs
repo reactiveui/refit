@@ -170,7 +170,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.HeaderCollectionAt(2)).IsTrue();
 
         input = typeof(IRestMethodInfoTests);
-        fixture = new RestMethodInfoInternal(
+        fixture = new(
             input,
             input
                 .GetMethods()

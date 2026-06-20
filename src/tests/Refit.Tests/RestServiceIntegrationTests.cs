@@ -45,7 +45,7 @@ public partial class RestServiceIntegrationTests
             typeof(IGeneratedFactoryApi),
             static (client, builder) => new GeneratedFactoryApiClient(client, builder));
 
-        using var client = new HttpClient { BaseAddress = new Uri("http://foo") };
+        using var client = new HttpClient { BaseAddress = new("http://foo") };
 
         var instance = RestService.For<IGeneratedFactoryApi>(client);
         var generated = await Assert.That(instance).IsTypeOf<GeneratedFactoryApiClient>();
@@ -185,7 +185,7 @@ public partial class RestServiceIntegrationTests
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
 
-        var client = new HttpClient(mockHttp) { BaseAddress = new Uri("http://foo") };
+        var client = new HttpClient(mockHttp) { BaseAddress = new("http://foo") };
 
         var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
@@ -204,7 +204,7 @@ public partial class RestServiceIntegrationTests
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
 
-        var client = new HttpClient(mockHttp) { BaseAddress = new Uri("http://foo/") };
+        var client = new HttpClient(mockHttp) { BaseAddress = new("http://foo/") };
 
         var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
@@ -227,7 +227,7 @@ public partial class RestServiceIntegrationTests
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
 
-        var client = new HttpClient(mockHttp) { BaseAddress = new Uri("http://foo/") };
+        var client = new HttpClient(mockHttp) { BaseAddress = new("http://foo/") };
 
         _ = await client.GetAsync(new Uri("/firstRequest", UriKind.RelativeOrAbsolute));
 
@@ -309,7 +309,7 @@ public partial class RestServiceIntegrationTests
         var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
         await fixture.GetFooBarsWithDifferentCasing(
-            new PathBoundObject { SomeProperty = 1, SomeProperty2 = "barNone" });
+            new() { SomeProperty = 1, SomeProperty2 = "barNone" });
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
@@ -329,7 +329,7 @@ public partial class RestServiceIntegrationTests
 
         await fixture.GetBarsByFoo(
             "myId",
-            new PathBoundObject { SomeProperty = 22, SomeProperty2 = "bart" });
+            new() { SomeProperty = 22, SomeProperty2 = "bart" });
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
@@ -341,14 +341,14 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/chooseMe/bar/barNone")
-            .WithExactQueryString([new KeyValuePair<string, string>("SomeProperty", "1")])
+            .WithExactQueryString([new("SomeProperty", "1")])
             .Respond("application/json", "Ok");
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
         var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
         await fixture.GetFooBars(
-            new PathBoundObject { SomeProperty = 1, SomeProperty2 = "barNone" },
+            new() { SomeProperty = 1, SomeProperty2 = "barNone" },
             "chooseMe");
         mockHttp.VerifyNoOutstandingExpectation();
     }
@@ -362,14 +362,14 @@ public partial class RestServiceIntegrationTests
         mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/1/bar/test")
             .WithExactQueryString(
-                [new KeyValuePair<string, string>("SomeProperty2", "barNone")])
+                [new("SomeProperty2", "barNone")])
             .Respond("application/json", "Ok");
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
         var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
         await fixture.GetFooBarsDerived(
-            new PathBoundDerivedObject
+            new()
             {
                 SomeProperty = 1,
                 SomeProperty2 = "barNone",
@@ -391,8 +391,8 @@ public partial class RestServiceIntegrationTests
             .Expect(HttpMethod.Get, "http://foo/foos/1/bar")
             .WithExactQueryString(
                 [
-                    new KeyValuePair<string, string>("SomeProperty3", "test"),
-                    new KeyValuePair<string, string>("SomeProperty2", "barNone")
+                    new("SomeProperty3", "test"),
+                    new("SomeProperty2", "barNone")
                 ])
             .Respond("application/json", "Ok");
 
@@ -418,14 +418,14 @@ public partial class RestServiceIntegrationTests
         mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/22/bar")
             .WithExactQueryString(
-                [new KeyValuePair<string, string>("SomeProperty2", "bart")])
+                [new("SomeProperty2", "bart")])
             .Respond("application/json", "Ok");
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
         var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
         await fixture.GetBarsByFoo(
-            new PathBoundObject { SomeProperty = 22, SomeProperty2 = "bart" });
+            new() { SomeProperty = 22, SomeProperty2 = "bart" });
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
@@ -443,7 +443,7 @@ public partial class RestServiceIntegrationTests
         var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
         await fixture.PostFooBar(
-            new PathBoundObject { SomeProperty = 22, SomeProperty2 = "bart" },
+            new() { SomeProperty = 22, SomeProperty2 = "bart" },
             new { });
         mockHttp.VerifyNoOutstandingExpectation();
     }
@@ -466,7 +466,7 @@ public partial class RestServiceIntegrationTests
         var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
         await fixture.GetFoos(
-            new PathBoundList
+            new()
             {
                 Values = [22, 23]
             });
@@ -512,7 +512,7 @@ public partial class RestServiceIntegrationTests
         var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
         await fixture.GetBarsWithCustomQueryFormat(
-            new PathBoundObjectWithQueryFormat
+            new()
             {
                 SomeQueryWithFormat = new DateTimeOffset(2020, 03, 05, 13, 55, 00, TimeSpan.Zero).UtcDateTime
             });
@@ -535,8 +535,8 @@ public partial class RestServiceIntegrationTests
         var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
 
         await fixture.PostFooBar(
-            new PathBoundObject { SomeProperty = 1, SomeProperty2 = "barNone" },
-            new ModelObject { Property1 = "test", Property2 = "test2" });
+            new() { SomeProperty = 1, SomeProperty2 = "barNone" },
+            new() { Property1 = "test", Property2 = "test2" });
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
@@ -557,7 +557,7 @@ public partial class RestServiceIntegrationTests
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         await fixture.PostFooBarStreamPart(
             new PathBoundObject { SomeProperty = 22, SomeProperty2 = "bar" },
-            new StreamPart(stream, "Test.pdf", "application/pdf"));
+            new(stream, "Test.pdf", "application/pdf"));
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
@@ -583,7 +583,7 @@ public partial class RestServiceIntegrationTests
                 SomeProperty2 = "bar",
                 SomeQuery = "test"
             },
-            new StreamPart(stream, "Test.pdf", "application/pdf"));
+            new(stream, "Test.pdf", "application/pdf"));
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
@@ -603,9 +603,9 @@ public partial class RestServiceIntegrationTests
 
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         await fixture.PostFooBarStreamPart(
-            new PathBoundObject { SomeProperty = 22, SomeProperty2 = "bar" },
-            new ModelObject { Property1 = "test", Property2 = "test2" },
-            new StreamPart(stream, "Test.pdf", "application/pdf"));
+            new() { SomeProperty = 22, SomeProperty2 = "bar" },
+            new() { Property1 = "test", Property2 = "test2" },
+            new(stream, "Test.pdf", "application/pdf"));
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
@@ -667,7 +667,7 @@ public partial class RestServiceIntegrationTests
 
         mockHttp
             .Expect(HttpMethod.Get, "http://foo/withDecimal")
-            .WithExactQueryString([new KeyValuePair<string, string>("value", "3.456")])
+            .WithExactQueryString([new("value", "3.456")])
             .Respond("application/json", "Ok");
 
         var fixture = RestService.For<IApiWithDecimal>("http://foo", settings);

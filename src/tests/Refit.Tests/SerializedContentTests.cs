@@ -163,7 +163,7 @@ public partial class SerializedContentTests
 
         var fixture = RestService.For<IGitHubApi>(BaseAddress, settings);
 
-        var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(new User()))
+        var fixtureTask = await RunTaskWithATimeLimit(fixture.CreateUser(new()))
             .ConfigureAwait(false);
         await Assert.That(fixtureTask.IsCompleted).IsTrue();
         await Assert.That(fixtureTask.Status).IsEqualTo(TaskStatus.RanToCompletion);
@@ -231,7 +231,7 @@ public partial class SerializedContentTests
         await Assert.That(settings.ContentSerializer).IsNotNull();
         await Assert.That(settings.ContentSerializer).IsTypeOf<SystemTextJsonContentSerializer>();
 
-        settings = new RefitSettings(new NewtonsoftJsonContentSerializer());
+        settings = new(new NewtonsoftJsonContentSerializer());
 
         await Assert.That(settings.ContentSerializer).IsNotNull();
         await Assert.That(settings.ContentSerializer).IsTypeOf<NewtonsoftJsonContentSerializer>();
@@ -435,7 +435,7 @@ public partial class SerializedContentTests
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(await Assert.That(result!.Value).IsTypeOf<DateTime>())
-            .IsEqualTo(new DateTime(2024, 1, 2, 3, 4, 5, DateTimeKind.Utc));
+            .IsEqualTo(new(2024, 1, 2, 3, 4, 5, DateTimeKind.Utc));
     }
 
     /// <summary>Verifies that string JSON object values are inferred as <see cref="string"/>.</summary>
@@ -730,7 +730,7 @@ public partial class SerializedContentTests
         var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
         var settings = new RefitSettings(
             new SystemTextJsonContentSerializer(
-                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+                new(JsonSerializerDefaults.Web)
                 {
                     TypeInfoResolver = resolver
                 }))
@@ -764,7 +764,7 @@ public partial class SerializedContentTests
         string? serializedBody = null;
         var settings = new RefitSettings(
             new SystemTextJsonContentSerializer(
-                new JsonSerializerOptions(JsonSerializerDefaults.Web)
+                new(JsonSerializerDefaults.Web)
                 {
                     TypeInfoResolver = PolymorphicRequestJsonSerializerContext.Default
                 }))
@@ -772,7 +772,7 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                return new(HttpStatusCode.OK)
                 {
                     Content = new StringContent("{}", Encoding.UTF8, "application/json")
                 };
@@ -798,7 +798,7 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                return new(HttpStatusCode.OK)
                 {
                     Content = new StringContent("{}", Encoding.UTF8, "application/json")
                 };
@@ -823,7 +823,7 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                return new(HttpStatusCode.OK)
                 {
                     Content = new StringContent("{}", Encoding.UTF8, "application/json")
                 };
@@ -931,7 +931,7 @@ public partial class SerializedContentTests
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
                 serializedBody = await request.Content!.ReadAsStringAsync();
-                return new HttpResponseMessage(HttpStatusCode.OK)
+                return new(HttpStatusCode.OK)
                 {
                     Content = new StringContent("{}", Encoding.UTF8, "application/json")
                 };
@@ -939,7 +939,7 @@ public partial class SerializedContentTests
         };
 
         var api = RestService.For<IIssue2083ColorApi>(BaseAddress, settings);
-        await api.PostColorAsync(new EnumMemberNameColorEnvelope { Color = EnumMemberNameColor.Green });
+        await api.PostColorAsync(new() { Color = EnumMemberNameColor.Green });
 
         await Assert.That(serializedBody).IsEqualTo("""{"color":"GREEN"}""");
     }
@@ -1041,7 +1041,7 @@ public partial class SerializedContentTests
 
             var responseContent = await Asserts(content!).ConfigureAwait(false);
 
-            return new HttpResponseMessage(HttpStatusCode.OK) { Content = responseContent };
+            return new(HttpStatusCode.OK) { Content = responseContent };
         }
     }
 

@@ -32,7 +32,7 @@ public partial class RequestBuilderTests
         var factory = fixture.RunRequest("GetWithCancellation");
         var output = factory([]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -48,7 +48,7 @@ public partial class RequestBuilderTests
         using var cts = new CancellationTokenSource();
         var output = factory([42, cts.Token]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/42");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -81,7 +81,7 @@ public partial class RequestBuilderTests
 
         var output = factory([cts.Token]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -142,9 +142,9 @@ public partial class RequestBuilderTests
         var task =
             (Task<ApiResponse<HttpContent>>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     [mpc])!;
         var result = await task;
@@ -175,9 +175,9 @@ public partial class RequestBuilderTests
         var task =
             (Task<HttpContent>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     [mpc])!;
         var result = await task;
@@ -206,9 +206,9 @@ public partial class RequestBuilderTests
         var task =
             (Task<ApiResponse<Stream>>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     ["test-file"])!;
         var result = await task;
@@ -243,9 +243,9 @@ public partial class RequestBuilderTests
 
         var response = (ApiResponse<string>)
             factory(
-                new HttpClient(testHttpMessageHandler)
+                new(testHttpMessageHandler)
                 {
-                    BaseAddress = new Uri("http://api/")
+                    BaseAddress = new("http://api/")
                 },
                 [42])!;
 
@@ -273,9 +273,9 @@ public partial class RequestBuilderTests
         var task =
             (Task<Stream>)
                 factory(
-                    new HttpClient(testHttpMessageHandler)
+                    new(testHttpMessageHandler)
                     {
-                        BaseAddress = new Uri("http://api/")
+                        BaseAddress = new("http://api/")
                     },
                     ["test-file"])!;
         var result = await task;
@@ -295,9 +295,9 @@ public partial class RequestBuilderTests
 
         var valueTask = (ValueTask<string>)
             factory(
-                new HttpClient(testHttpMessageHandler)
+                new(testHttpMessageHandler)
                 {
-                    BaseAddress = new Uri("http://api/")
+                    BaseAddress = new("http://api/")
                 },
                 ["value"])!;
 
@@ -318,9 +318,9 @@ public partial class RequestBuilderTests
 
         var valueTask = (ValueTask<ApiResponse<string>>)
             factory(
-                new HttpClient(testHttpMessageHandler)
+                new(testHttpMessageHandler)
                 {
-                    BaseAddress = new Uri("http://api/")
+                    BaseAddress = new("http://api/")
                 },
                 ["value"])!;
 
@@ -346,9 +346,9 @@ public partial class RequestBuilderTests
 
         var observable = (IObservable<string>)
             factory(
-                new HttpClient(testHttpMessageHandler)
+                new(testHttpMessageHandler)
                 {
-                    BaseAddress = new Uri("http://api/")
+                    BaseAddress = new("http://api/")
                 },
                 ["value", cts.Token])!;
 
@@ -452,7 +452,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithHardcodedQueryParameter");
         var output = factory([6]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf");
     }
 
@@ -466,7 +466,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithHardcodedAndOtherQueryParameters");
         var output = factory([6, "foo"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf&search_for=foo");
     }
 
@@ -480,7 +480,7 @@ public partial class RequestBuilderTests
             nameof(IDummyHttpApi.SomeApiThatUsesParameterMoreThanOnceInTheUrl));
         var output = factory([6]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/api/foo/6/file_6?query=6");
     }
 
@@ -503,7 +503,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithRoundTrippingParam");
         var output = factory([path, 1]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -521,7 +521,7 @@ public partial class RequestBuilderTests
         var output = factory(
             [new FileInfo(typeof(RequestBuilderTests).Assembly.Location), null!]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?name=");
     }
 
@@ -535,7 +535,7 @@ public partial class RequestBuilderTests
             nameof(IDummyHttpApi.QueryWithExplicitParameters));
         var output = factory(["value1", "value2"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?q1=value1&q2=value2");
     }
@@ -549,7 +549,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithQueryFormat");
         var output = factory([6]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6.0");
     }
 
@@ -563,7 +563,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithHardcodedAndOtherQueryParameters");
         var output = factory([6, "push!=pull&push"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf&search_for=push%21%3Dpull%26push");
     }
@@ -578,7 +578,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithVoidAndQueryAlias");
         var output = factory(["6 & 7/8", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6%20%26%207%2F8/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -593,7 +593,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithVoidAndQueryAlias");
         var output = factory(["6/6", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6%2F6/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -608,7 +608,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithDoubleQuotesInUrl");
         var output = factory([42]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?q=app_metadata.id%3A%2242%22");
     }
@@ -628,7 +628,7 @@ public partial class RequestBuilderTests
             methodToTest);
         var output = factory(["1"]);
 
-        var uri = new Uri(new Uri("http://api/"), output.RequestUri!);
+        var uri = new Uri(new("http://api/"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).EndsWith(constantChar);
         await Assert.That(uri.PathAndQuery).Contains(contains);
@@ -644,7 +644,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithVoidAndQueryAlias");
         var output = factory(["6", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -659,7 +659,7 @@ public partial class RequestBuilderTests
             "FetchSomeStuffWithNonFormattableQueryParams");
         var output = factory([true, 'x']);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?b=True&c=x");
     }
@@ -674,7 +674,7 @@ public partial class RequestBuilderTests
             "FetchSomethingWithMultipleParametersPerSegment");
         var output = factory([6, 1024, 768]);
 
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/6/1024x768/foo");
     }
 }

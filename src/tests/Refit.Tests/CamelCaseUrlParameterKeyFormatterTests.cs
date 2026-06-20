@@ -45,7 +45,7 @@ public class CamelCaseUrlParameterKeyFormatterTests
 
         var output = factory([complexQuery]);
         await Assert.That(output.RequestUri).IsNotNull();
-        var uri = new Uri(new Uri("http://api"), output.RequestUri!);
+        var uri = new Uri(new("http://api"), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?alreadyCamelCased=value1&notcamelCased=value2");
     }
