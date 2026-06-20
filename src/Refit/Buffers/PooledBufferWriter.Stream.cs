@@ -37,6 +37,7 @@ internal sealed partial class PooledBufferWriter
         }
 
         /// <summary>Finalizes an instance of the <see cref="PooledMemoryStream"/> class.</summary>
+        [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         ~PooledMemoryStream() => Dispose(false);
 
         /// <inheritdoc/>
@@ -177,10 +178,6 @@ internal sealed partial class PooledBufferWriter
                 var result = Read(buffer, offset, count);
 
                 return Task.FromResult(result);
-            }
-            catch (OperationCanceledException e)
-            {
-                return Task.FromCanceled<int>(e.CancellationToken);
             }
             catch (Exception e)
             {

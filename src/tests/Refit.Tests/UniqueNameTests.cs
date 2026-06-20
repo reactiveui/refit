@@ -65,4 +65,17 @@ public class UniqueNameTests
 
         await Assert.That(name2).IsNotEqualTo(name1);
     }
+
+    /// <summary>Verifies service keys are included only when present.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task ServiceKeysAreIncludedOnlyWhenPresent()
+    {
+        var withoutKey = UniqueName.ForType<Http.Client>(null);
+        var emptyKey = UniqueName.ForType<Http.Client>(string.Empty);
+        var withKey = UniqueName.ForType<Http.Client>("primary");
+
+        await Assert.That(emptyKey).IsEqualTo(withoutKey);
+        await Assert.That(withKey).Contains("ServiceKey=primary");
+    }
 }

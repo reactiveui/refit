@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -159,7 +160,11 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="name">The option name without the build-property prefix.</param>
     /// <param name="value">The option value when found.</param>
     /// <returns><see langword="true"/> when an option value was found.</returns>
-    private static bool TryGetGlobalOption(
+    [SuppressMessage(
+        "Style",
+        "SST1202:Members should be ordered by accessibility",
+        Justification = "Internal helper is kept near the private option parsing code it supports.")]
+    internal static bool TryGetGlobalOption(
         AnalyzerConfigOptions options,
         string name,
         out string? value)

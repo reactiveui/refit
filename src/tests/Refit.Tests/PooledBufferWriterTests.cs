@@ -37,6 +37,17 @@ public class PooledBufferWriterTests
         await Assert.That(buffer[PooledBufferWriter.DefaultSize]).IsEqualTo((byte)3);
     }
 
+    /// <summary>Verifies zero-sized span and memory requests still reserve at least one byte.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetMemoryAndSpanWithZeroSizeHintReturnWritableBuffers()
+    {
+        var (memoryLength, spanLength) = GetZeroSizeHintBufferLengths();
+
+        await Assert.That(memoryLength).IsGreaterThanOrEqualTo(1);
+        await Assert.That(spanLength).IsGreaterThanOrEqualTo(1);
+    }
+
     /// <summary>Verifies invalid advances throw the expected argument exceptions.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -47,6 +58,8 @@ public class PooledBufferWriterTests
         await Assert.That(() => writer.Advance(-1)).ThrowsExactly<ArgumentOutOfRangeException>();
         await Assert.That(() => writer.Advance(PooledBufferWriter.DefaultSize + 1))
             .ThrowsExactly<ArgumentOutOfRangeException>();
+        await Assert.That(() => writer.GetMemory(-1)).ThrowsExactly<ArgumentOutOfRangeException>();
+        await Assert.That(() => writer.GetSpan(-1)).ThrowsExactly<ArgumentOutOfRangeException>();
     }
 
     /// <summary>Verifies a detached stream reads only the bytes advanced into the writer.</summary>
@@ -95,6 +108,7 @@ public class PooledBufferWriterTests
         var firstRead = stream.Read(buffer, 0, buffer.Length);
         var secondRead = await stream.ReadAsync(buffer, 0, buffer.Length);
         var thirdRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+        await stream.FlushAsync();
 
         await Assert.That(stream.Length).IsEqualTo(3);
         await Assert.That(firstRead).IsEqualTo(2);
@@ -152,6 +166,24 @@ public class PooledBufferWriterTests
         await Assert.That(() => stream.Read(new byte[1], 0, 1)).ThrowsExactly<ObjectDisposedException>();
     }
 
+    /// <summary>Verifies disposed detached stream async paths surface object-disposed failures.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DetachedStreamAsyncMethodsThrowAfterDispose()
+    {
+        using var writer = CreateWriter(1);
+        var stream = writer.DetachStream();
+        await stream.DisposeAsync();
+
+        await Assert.That(() => stream.CopyToAsync(Stream.Null)).ThrowsExactly<ObjectDisposedException>();
+        await Assert.That(() => stream.ReadAsync(new byte[1], 0, 1))
+            .ThrowsExactly<ObjectDisposedException>();
+#if NET6_0_OR_GREATER
+        await Assert.That(() => stream.ReadAsync(new byte[1].AsMemory()).AsTask())
+            .ThrowsExactly<ObjectDisposedException>();
+#endif
+    }
+
 #if NET6_0_OR_GREATER
     /// <summary>Verifies span-based detached stream reads consume only available bytes.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -185,5 +217,19 @@ public class PooledBufferWriterTests
         values.CopyTo(writer.GetSpan(values.Length));
         writer.Advance(values.Length);
         return writer;
+    }
+
+    /// <summary>Gets buffer lengths from zero-size requests without carrying spans across async state-machine boundaries.</summary>
+    /// <returns>The memory and span lengths.</returns>
+    private static (int MemoryLength, int SpanLength) GetZeroSizeHintBufferLengths()
+    {
+        using var writer = new PooledBufferWriter();
+
+        var memory = writer.GetMemory();
+        memory.Span[0] = 1;
+        var span = writer.GetSpan();
+        span[0] = 2;
+
+        return (memory.Length, span.Length);
     }
 }

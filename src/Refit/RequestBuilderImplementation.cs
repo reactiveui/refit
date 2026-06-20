@@ -92,12 +92,6 @@ namespace Refit
             Type[]? parameterTypes = null,
             Type[]? genericArgumentTypes = null)
         {
-            if (!_interfaceHttpMethods.ContainsKey(methodName))
-            {
-                throw new ArgumentException(
-                    "Method must be defined and have an HTTP Method attribute");
-            }
-
             var restMethod = FindMatchingRestMethodInfo(
                 methodName,
                 parameterTypes,

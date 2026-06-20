@@ -14,6 +14,7 @@ namespace System
     /// <c>System.Index</c> is not available. It should not be used as a general-purpose
     /// substitute outside of this project.
     /// </remarks>
+    [Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [Diagnostics.CodeAnalysis.SuppressMessage(
         "Design",
         "CA2225:Operator overloads have named alternates",

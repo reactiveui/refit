@@ -28,15 +28,9 @@ public static partial class HttpClientFactoryExtensions
         [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         public IHttpClientBuilder AddRefitClient(Type refitInterfaceType)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
             return HttpClientFactoryCore.AddRefitClientCore(
                 services,
@@ -55,15 +49,9 @@ public static partial class HttpClientFactoryExtensions
             Type refitInterfaceType,
             RefitSettings? settings)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
             return HttpClientFactoryCore.AddRefitClientCore(
                 services,
@@ -84,15 +72,9 @@ public static partial class HttpClientFactoryExtensions
             RefitSettings? settings,
             string? httpClientName)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
             return HttpClientFactoryCore.AddRefitClientCore(
                 services,
@@ -114,15 +96,9 @@ public static partial class HttpClientFactoryExtensions
             Type refitInterfaceType,
             Func<IServiceProvider, RefitSettings?>? settingsAction)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
             return HttpClientFactoryCore.AddRefitClientCore(
                 services,
@@ -146,15 +122,9 @@ public static partial class HttpClientFactoryExtensions
             Func<IServiceProvider, RefitSettings?>? settingsAction,
             string? httpClientName)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
             return HttpClientFactoryCore.AddRefitClientCore(
                 services,
@@ -172,10 +142,7 @@ public static partial class HttpClientFactoryExtensions
         public IHttpClientBuilder AddRefitClient<T>()
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
             return HttpClientFactoryCore.AddRefitClientCore<T>(
                 services,
@@ -193,10 +160,7 @@ public static partial class HttpClientFactoryExtensions
         public IHttpClientBuilder AddRefitClient<T>(RefitSettings? settings)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
             return HttpClientFactoryCore.AddRefitClientCore<T>(
                 services,
@@ -217,10 +181,7 @@ public static partial class HttpClientFactoryExtensions
             string? httpClientName)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
             return HttpClientFactoryCore.AddRefitClientCore<T>(
                 services,
@@ -241,10 +202,7 @@ public static partial class HttpClientFactoryExtensions
         public IHttpClientBuilder AddRefitClient<T>(Func<IServiceProvider, RefitSettings?>? settingsAction)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
             return HttpClientFactoryCore.AddRefitClientCore<T>(
                 services,
@@ -268,10 +226,7 @@ public static partial class HttpClientFactoryExtensions
             string? httpClientName)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
             return HttpClientFactoryCore.AddRefitClientCore<T>(
                 services,
@@ -289,20 +244,11 @@ public static partial class HttpClientFactoryExtensions
             Type refitInterfaceType,
             object? serviceKey)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore(
                 services,
@@ -324,20 +270,11 @@ public static partial class HttpClientFactoryExtensions
             object? serviceKey,
             RefitSettings? settings)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore(
                 services,
@@ -361,20 +298,11 @@ public static partial class HttpClientFactoryExtensions
             RefitSettings? settings,
             string? httpClientName)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore(
                 services,
@@ -399,20 +327,11 @@ public static partial class HttpClientFactoryExtensions
             object? serviceKey,
             Func<IServiceProvider, RefitSettings?>? settingsAction)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore(
                 services,
@@ -439,20 +358,11 @@ public static partial class HttpClientFactoryExtensions
             Func<IServiceProvider, RefitSettings?>? settingsAction,
             string? httpClientName)
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (refitInterfaceType is null)
-            {
-                throw new ArgumentNullException(nameof(refitInterfaceType));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore(
                 services,
@@ -472,15 +382,9 @@ public static partial class HttpClientFactoryExtensions
         public IHttpClientBuilder AddKeyedRefitClient<T>(object? serviceKey)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore<T>(
                 services,
@@ -502,15 +406,9 @@ public static partial class HttpClientFactoryExtensions
             RefitSettings? settings)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore<T>(
                 services,
@@ -534,15 +432,9 @@ public static partial class HttpClientFactoryExtensions
             string? httpClientName)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore<T>(
                 services,
@@ -567,15 +459,9 @@ public static partial class HttpClientFactoryExtensions
             Func<IServiceProvider, RefitSettings?>? settingsAction)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore<T>(
                 services,
@@ -602,15 +488,9 @@ public static partial class HttpClientFactoryExtensions
             string? httpClientName)
             where T : class
         {
-            if (services is null)
-            {
-                throw new ArgumentNullException(nameof(services));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(services);
 
-            if (serviceKey is null)
-            {
-                throw new ArgumentNullException(nameof(serviceKey));
-            }
+            ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
             return HttpClientFactoryCore.AddKeyedRefitClientCore<T>(
                 services,

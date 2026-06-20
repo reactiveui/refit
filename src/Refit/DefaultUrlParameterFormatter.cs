@@ -55,10 +55,7 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
         ICustomAttributeProvider attributeProvider,
         Type type)
     {
-        if (attributeProvider is null)
-        {
-            throw new ArgumentNullException(nameof(attributeProvider));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(attributeProvider);
 
         if (value is null)
         {

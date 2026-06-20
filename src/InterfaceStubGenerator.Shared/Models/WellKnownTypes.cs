@@ -17,10 +17,11 @@ public class WellKnownTypes(Compilation compilation)
     /// <param name="type">The type.</param>
     /// <returns>The resolved named type symbol.</returns>
     /// <exception cref="InvalidOperationException">Could not get name of type " + type</exception>
-    public INamedTypeSymbol Get(Type type) =>
-        type is null
-            ? throw new ArgumentNullException(nameof(type))
-            : Get(type.FullName ?? throw new InvalidOperationException("Could not get name of type " + type));
+    public INamedTypeSymbol Get(Type type)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(type);
+        return Get(type.FullName ?? throw new InvalidOperationException("Could not get name of type " + type));
+    }
 
     /// <summary>Tries to resolve the named type symbol for the given full type name.</summary>
     /// <param name="typeFullName">Full name of the type.</param>

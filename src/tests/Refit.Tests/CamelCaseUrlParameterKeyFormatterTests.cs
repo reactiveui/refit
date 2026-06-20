@@ -22,6 +22,23 @@ public class CamelCaseUrlParameterKeyFormatterTests
         await Assert.That(output).IsEqualTo(string.Empty);
     }
 
+    /// <summary>Verifies the acronym casing rules stop before the first non-leading lowercase character.</summary>
+    /// <param name="key">The key to format.</param>
+    /// <param name="expected">The expected formatted key.</param>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    [Arguments("URLValue", "urlValue")]
+    [Arguments("UrlValue", "urlValue")]
+    [Arguments("URL", "url")]
+    public async Task Format_AcronymKeys_ReturnsExpectedValue(string key, string expected)
+    {
+        var urlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter();
+
+        var output = urlParameterKeyFormatter.Format(key);
+
+        await Assert.That(output).IsEqualTo(expected);
+    }
+
     /// <summary>Verifies that query keys are camelCased when building a request.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]

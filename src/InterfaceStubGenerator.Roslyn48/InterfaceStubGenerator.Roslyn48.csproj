@@ -9,7 +9,6 @@
     <Nullable>enable</Nullable>
     <DefineConstants>$(DefineConstants);ROSLYN_4</DefineConstants>
     <MsCACSharpVersion>4.8.0</MsCACSharpVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
 

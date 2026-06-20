@@ -7,6 +7,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Diagnostics;
 using Refit.Generator;
 
 namespace Refit.GeneratorTests;
@@ -70,6 +71,57 @@ public sealed class ParserCoverageTests
         await Assert.That(missingSecond).IsNull();
         await Assert.That(() => wellKnownTypes.Get(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => wellKnownTypes.Get(openGenericParameter)).ThrowsExactly<InvalidOperationException>();
+    }
+
+    /// <summary>Verifies parser and generator helper fallback paths that are easier to exercise directly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task InternalHelpersHandleFallbackPaths()
+    {
+        var emptyOptions = new DictionaryAnalyzerConfigOptions(new Dictionary<string, string>());
+        var buildOptions = new DictionaryAnalyzerConfigOptions(
+            new Dictionary<string, string>
+            {
+                ["build_property.RefitOption"] = "build",
+                ["AnalyzerOption"] = "analyzer"
+            });
+
+        var defaultConstant = default(TypedConstant);
+
+        await Assert.That(Parser.TryGetBodyBufferedValue(in defaultConstant, out var buffered)).IsFalse();
+        await Assert.That(buffered).IsFalse();
+        await Assert.That(InterfaceStubGeneratorV2.TryGetGlobalOption(emptyOptions, "Missing", out var missingValue)).IsFalse();
+        await Assert.That(missingValue).IsNull();
+        await Assert.That(InterfaceStubGeneratorV2.TryGetGlobalOption(buildOptions, "RefitOption", out var buildValue)).IsTrue();
+        await Assert.That(buildValue).IsEqualTo("build");
+        await Assert.That(InterfaceStubGeneratorV2.TryGetGlobalOption(buildOptions, "AnalyzerOption", out var analyzerValue)).IsTrue();
+        await Assert.That(analyzerValue).IsEqualTo("analyzer");
+    }
+
+    /// <summary>Verifies type-symbol inheritance helpers with base classes and interfaces.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task TypeSymbolInheritanceHelpersHandleBaseClassesAndInterfaces()
+    {
+        var syntaxTree = CSharpSyntaxTree.ParseText(
+            """
+            namespace Symbols;
+            public interface IMarker { }
+            public class Base { }
+            public class Derived : Base, IMarker { }
+            public class Other { }
+            """);
+        var compilation = Fixture.CreateLibrary(syntaxTree);
+        var derived = compilation.GetTypeByMetadataName("Symbols.Derived")!;
+        var @base = compilation.GetTypeByMetadataName("Symbols.Base")!;
+        var marker = compilation.GetTypeByMetadataName("Symbols.IMarker")!;
+        var other = compilation.GetTypeByMetadataName("Symbols.Other")!;
+
+        await Assert.That(derived.InheritsFromOrEquals(@base)).IsTrue();
+        await Assert.That(derived.InheritsFromOrEquals(derived, includeInterfaces: true)).IsTrue();
+        await Assert.That(derived.InheritsFromOrEquals(marker, includeInterfaces: true)).IsTrue();
+        await Assert.That(derived.InheritsFromOrEquals(marker, includeInterfaces: false)).IsFalse();
+        await Assert.That(derived.InheritsFromOrEquals(other, includeInterfaces: true)).IsFalse();
     }
 
     /// <summary>Verifies parser generation skips non-Refit methods while preserving Refit request metadata.</summary>
@@ -165,5 +217,14 @@ public sealed class ParserCoverageTests
             CancellationToken.None);
 
         await Assert.That(model.Interfaces.AsArray()[0].Nullability).IsEqualTo(Nullability.None);
+    }
+
+    /// <summary>Analyzer config options backed by a dictionary for direct helper tests.</summary>
+    /// <param name="values">The option values.</param>
+    private sealed class DictionaryAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values)
+        : AnalyzerConfigOptions
+    {
+        /// <inheritdoc/>
+        public override bool TryGetValue(string key, out string value) => values.TryGetValue(key, out value!);
     }
 }

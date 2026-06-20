@@ -100,6 +100,23 @@
     <Compile Include="$(MSBuildThisFileDirectory)Polyfills\*.cs" Link="Polyfills\%(Filename)%(Extension)"/>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <Compile Include="$(MSBuildThisFileDirectory)Polyfills\ArgumentExceptionHelper.cs" Link="Polyfills\ArgumentExceptionHelper.cs"/>
+    <Compile Include="$(MSBuildThisFileDirectory)Polyfills\ArgumentOutOfRangeExceptionHelper.cs" Link="Polyfills\ArgumentOutOfRangeExceptionHelper.cs"/>
+    <Compile Include="$(MSBuildThisFileDirectory)Polyfills\CallerArgumentExpressionAttribute.cs" Link="Polyfills\CallerArgumentExpressionAttribute.cs"/>
+    <Compile Include="$(MSBuildThisFileDirectory)Polyfills\NotNullAttribute.cs" Link="Polyfills\NotNullAttribute.cs"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4')) or '$(TargetFramework)' == 'netstandard2.0'">
+    <Using Include="Refit.Internal.ArgumentExceptionHelper" Alias="ArgumentExceptionHelper"/>
+    <Using Include="Refit.Internal.ArgumentOutOfRangeExceptionHelper" Alias="ArgumentOutOfRangeExceptionHelper"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="!$(TargetFramework.StartsWith('net4')) and '$(TargetFramework)' != 'netstandard2.0'">
+    <Using Include="System.ArgumentNullException" Alias="ArgumentExceptionHelper"/>
+    <Using Include="System.ArgumentOutOfRangeException" Alias="ArgumentOutOfRangeExceptionHelper"/>
+  </ItemGroup>
+
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="System.Net.Http"/>
     <Reference Include="System.Net.Http"/>

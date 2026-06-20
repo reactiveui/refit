@@ -151,6 +151,28 @@ public class XmlContentSerializerTests
             .IsNull();
     }
 
+    /// <summary>Verifies XML reader/writer settings constructors apply async overrides and null guards.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task XmlReaderWriterSettingsConstructorsAndGuardsShouldWork()
+    {
+        var readerSettings = new XmlReaderSettings();
+        var writerSettings = new XmlWriterSettings();
+
+        var readerOnly = new XmlReaderWriterSettings(readerSettings);
+        var writerOnly = new XmlReaderWriterSettings(writerSettings);
+        var both = new XmlReaderWriterSettings(new XmlReaderSettings(), new XmlWriterSettings());
+
+        await Assert.That(readerOnly.ReaderSettings).IsSameReferenceAs(readerSettings);
+        await Assert.That(readerOnly.ReaderSettings.Async).IsTrue();
+        await Assert.That(writerOnly.WriterSettings).IsSameReferenceAs(writerSettings);
+        await Assert.That(writerOnly.WriterSettings.Async).IsTrue();
+        await Assert.That(both.ReaderSettings.Async).IsTrue();
+        await Assert.That(both.WriterSettings.Async).IsTrue();
+        await Assert.That(() => both.ReaderSettings = null!).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => both.WriterSettings = null!).ThrowsExactly<ArgumentNullException>();
+    }
+
     /// <summary>Builds a populated <see cref="Dto"/> instance for the tests.</summary>
     /// <returns>A new <see cref="Dto"/>.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(

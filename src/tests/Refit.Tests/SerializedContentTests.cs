@@ -116,6 +116,16 @@ public partial class SerializedContentTests
         Task CreateWeapon([Body] AbstractCreateWeaponRequest request);
     }
 
+    /// <summary>Refit API used to verify resolver-provided polymorphic body metadata.</summary>
+    public interface IResolverPolymorphicRequestApi
+    {
+        /// <summary>Sends a weapon creation request.</summary>
+        /// <param name="request">The weapon request to serialize.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        [Post("/weapons")]
+        Task CreateWeapon([Body] ResolverPolymorphicRequest request);
+    }
+
 #if NET9_0_OR_GREATER
     /// <summary>Refit API used to verify JsonStringEnumMemberName handling on responses.</summary>
     public interface IIssue2067StatusApi
@@ -345,6 +355,37 @@ public partial class SerializedContentTests
         await Assert.That(exception!.ParamName).IsEqualTo("propertyInfo");
     }
 
+    /// <summary>Verifies quoted charsets are unwrapped before Newtonsoft deserialization resolves the encoding.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task NewtonsoftJsonContentSerializer_FromHttpContentAsync_UnwrapsQuotedCharset()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+        var content = new StringContent(
+            """{"Name":"Utf16 User"}""",
+            Encoding.Unicode,
+            "application/json");
+        content.Headers.ContentType!.CharSet = "\"utf-16\"";
+
+        var result = await serializer.FromHttpContentAsync<User>(content);
+
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result!.Name).IsEqualTo("Utf16 User");
+    }
+
+    /// <summary>Verifies invalid Newtonsoft response charsets fail with a clear operation exception.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task NewtonsoftJsonContentSerializer_FromHttpContentAsync_ThrowsForInvalidCharset()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+        var content = new StringContent("""{"Name":"Invalid"}""", Encoding.UTF8, "application/json");
+        content.Headers.ContentType!.CharSet = "not-a-real-charset";
+
+        await Assert.That(() => serializer.FromHttpContentAsync<User>(content))
+            .ThrowsExactly<InvalidOperationException>();
+    }
+
     /// <summary>Verifies that the System.Text.Json content serializer returns the JsonPropertyName for a property.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -395,6 +436,18 @@ public partial class SerializedContentTests
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(await Assert.That(result!.Value).IsTypeOf<bool>()).IsTrue();
+    }
+
+    /// <summary>Verifies false JSON object values are inferred as <see cref="bool"/>.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_InferFalseObjectValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<ObjectValueContainer>(
+            """{"value":false}""",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(await Assert.That(result!.Value).IsTypeOf<bool>()).IsFalse();
     }
 
     /// <summary>Verifies that integral JSON object values are inferred as <see cref="long"/>.</summary>
@@ -635,6 +688,21 @@ public partial class SerializedContentTests
         await Assert.That(json).IsEqualTo("999");
     }
 
+    /// <summary>Verifies undefined enum dictionary keys are serialized with numeric property names.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeUndefinedEnumDictionaryKeysAsNumbers()
+    {
+        var json = SystemTextJsonSerializer.Serialize(
+            new Dictionary<CamelCaseEnum, string>
+            {
+                [(CamelCaseEnum)999] = "unknown"
+            },
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(json).IsEqualTo("""{"999":"unknown"}""");
+    }
+
     /// <summary>Verifies that lowercase enum names are serialized unchanged.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -787,6 +855,55 @@ public partial class SerializedContentTests
         await Assert.That(serializedBody).Contains("\"name\":\"Photon\"");
     }
 
+    /// <summary>Verifies resolver-provided polymorphism metadata is honored for declared abstract body types.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task RestService_SerializesBodyUsingResolverPolymorphismMetadata()
+    {
+        string? serializedBody = null;
+        var resolver = new DefaultJsonTypeInfoResolver();
+        resolver.Modifiers.Add(
+            typeInfo =>
+            {
+                if (typeInfo.Type != typeof(ResolverPolymorphicRequest))
+                {
+                    return;
+                }
+
+                typeInfo.PolymorphismOptions = new()
+                {
+                    TypeDiscriminatorPropertyName = "$type",
+                    DerivedTypes =
+                    {
+                        new(typeof(ResolverLaserWeaponRequest), "laser")
+                    }
+                };
+            });
+        var settings = new RefitSettings(
+            new SystemTextJsonContentSerializer(
+                new(JsonSerializerDefaults.Web)
+                {
+                    TypeInfoResolver = resolver
+                }))
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
+            {
+                serializedBody = await request.Content!.ReadAsStringAsync();
+                return new(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+            })
+        };
+
+        var api = RestService.For<IResolverPolymorphicRequestApi>(BaseAddress, settings);
+        await api.CreateWeapon(new ResolverLaserWeaponRequest { Name = "Photon" });
+
+        await Assert.That(serializedBody).IsNotNull();
+        await Assert.That(serializedBody).Contains("\"$type\":\"laser\"");
+        await Assert.That(serializedBody).Contains("\"name\":\"Photon\"");
+    }
+
     /// <summary>Verifies that a request body uses the runtime type when the declared type is an interface.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -794,6 +911,36 @@ public partial class SerializedContentTests
     {
         string? serializedBody = null;
         var settings = new RefitSettings(new SystemTextJsonContentSerializer())
+        {
+            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
+            {
+                serializedBody = await request.Content!.ReadAsStringAsync();
+                return new(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                };
+            })
+        };
+
+        var api = RestService.For<IInterfaceRequestApi>(BaseAddress, settings);
+        await api.CreateWeapon(new InterfaceLaserWeaponRequest { Name = "Photon" });
+
+        await Assert.That(serializedBody).IsNotNull();
+        await Assert.That(serializedBody).IsEqualTo("""{"name":"Photon"}""");
+    }
+
+    /// <summary>Verifies resolver-backed options use runtime metadata when an interface body has no polymorphism metadata.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task RestService_SerializesInterfaceBodyUsingRuntimeTypeWithResolver()
+    {
+        string? serializedBody = null;
+        var settings = new RefitSettings(
+            new SystemTextJsonContentSerializer(
+                new(JsonSerializerDefaults.Web)
+                {
+                    TypeInfoResolver = new DefaultJsonTypeInfoResolver()
+                }))
         {
             HttpMessageHandlerFactory = () => new StubHttpMessageHandler(async request =>
             {
@@ -884,6 +1031,16 @@ public partial class SerializedContentTests
         await Assert.That(emptyNameValue).IsNull();
         await Assert.That(namedValue).IsEqualTo(CamelCaseEnum.ValueOne);
         await Assert.That(json).IsEqualTo("""{"":"empty","valueOne":"first"}""");
+    }
+
+    /// <summary>Verifies nullable enum values write null and concrete enum names through the custom converter.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_NullableEnumValuesWriteThroughConverter()
+    {
+        var json = WriteNullableEnumValues();
+
+        await Assert.That(json).IsEqualTo("""[null,"valueOne"]""");
     }
 
 #if NET9_0_OR_GREATER
@@ -998,6 +1155,26 @@ public partial class SerializedContentTests
         return (emptyNameValue, namedValue, Encoding.UTF8.GetString(stream.ToArray()));
     }
 
+    /// <summary>Writes nullable enum values through the converter directly.</summary>
+    /// <returns>The JSON written by the converter.</returns>
+    private static string WriteNullableEnumValues()
+    {
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+        var converter = (System.Text.Json.Serialization.JsonConverter<CamelCaseEnum?>)options.GetConverter(
+            typeof(CamelCaseEnum?));
+
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartArray();
+            converter.Write(writer, null, options);
+            converter.Write(writer, CamelCaseEnum.ValueOne, options);
+            writer.WriteEndArray();
+        }
+
+        return Encoding.UTF8.GetString(stream.ToArray());
+    }
+
     /// <summary>Base request type used to verify polymorphic body serialization.</summary>
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
     [JsonDerivedType(typeof(LaserWeaponRequest), "laser")]
@@ -1016,6 +1193,16 @@ public partial class SerializedContentTests
         /// <summary>Gets or sets the weapon name.</summary>
         public string? Name { get; set; }
     }
+
+    /// <summary>Base request whose polymorphism metadata is supplied by a resolver in tests.</summary>
+    public abstract class ResolverPolymorphicRequest
+    {
+        /// <summary>Gets or sets the weapon name.</summary>
+        public string? Name { get; set; }
+    }
+
+    /// <summary>Concrete request used with resolver-provided polymorphism metadata.</summary>
+    public sealed class ResolverLaserWeaponRequest : ResolverPolymorphicRequest;
 
     /// <summary>Marker abstract request used to verify serialization when the declared type is abstract.</summary>
     [SuppressMessage(

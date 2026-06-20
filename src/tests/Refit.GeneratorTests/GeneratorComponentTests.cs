@@ -166,6 +166,19 @@ public static class GeneratorComponentTests
             await Assert.That(text).StartsWith("second");
             await Assert.That(text.Split('\n')).DoesNotContain("first");
         }
+
+        /// <summary>Verifies CRLF line endings are normalized without preserving carriage returns.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task Append_MultilineCrLf_TrimsCarriageReturn()
+        {
+            var writer = new SourceWriter { Indentation = 1 };
+
+            writer.WriteLine("first\r\nsecond");
+            writer.Indentation = 0;
+
+            await Assert.That(writer.ToSourceText().ToString()).IsEqualTo("    first\n    second\n");
+        }
     }
 
     /// <summary>Tests for <see cref="ImmutableEquatableArray{T}"/>.</summary>
@@ -217,14 +230,22 @@ public static class GeneratorComponentTests
             const int FirstValue = 10;
             const int SecondValue = 20;
             const int ThirdValue = 30;
+            const int ExpectedCount = 3;
             var array = new ImmutableEquatableArray<int>([FirstValue, SecondValue, ThirdValue]);
 
             var collected = new List<int>(array.Count);
             collected.AddRange(array);
 
             await Assert.That(collected).IsCollectionEqualTo([FirstValue, SecondValue, ThirdValue]);
+            await Assert.That(array.Count).IsEqualTo(ExpectedCount);
             await Assert.That(array[1]).IsEqualTo(SecondValue);
+            await Assert.That(array.AsArray()).IsSameReferenceAs(array.AsArray());
+            await Assert.That(array.Equals(NullIntArray())).IsFalse();
         }
+
+        /// <summary>Returns a null immutable array reference without making the call site a constant condition.</summary>
+        /// <returns>A null array reference.</returns>
+        private static ImmutableEquatableArray<int>? NullIntArray() => null;
     }
 
     /// <summary>Tests for direct emitter formatting helpers.</summary>
@@ -318,6 +339,23 @@ public static class GeneratorComponentTests
             await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.")).IsEqualTo("IFoo.");
             await Assert.That(Emitter.StripExplicitInterfacePrefix("Bar")).IsEqualTo("Bar");
             await Assert.That(() => Emitter.ToHttpMethodExpression("TRACE")).ThrowsExactly<ArgumentOutOfRangeException>();
+        }
+
+        /// <summary>Verifies generated return invocation text for every return type shape.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task ReturnInvocationParts_HandleKnownAndInvalidValues()
+        {
+            await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.AsyncVoid))
+                .IsEqualTo((true, "await (", ").ConfigureAwait(false)"));
+            await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.AsyncResult))
+                .IsEqualTo((true, "return await (", ").ConfigureAwait(false)"));
+            await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.Return))
+                .IsEqualTo((false, "return ", string.Empty));
+            await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.SyncVoid))
+                .IsEqualTo((false, string.Empty, string.Empty));
+            await Assert.That(() => Emitter.GetReturnInvocationParts((ReturnTypeInfo)int.MaxValue))
+                .ThrowsExactly<ArgumentOutOfRangeException>();
         }
 
         /// <summary>Verifies explicit method openings receive a global interface qualifier.</summary>

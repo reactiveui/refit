@@ -62,10 +62,6 @@ namespace Refit.Buffers
 
                     return new(result);
                 }
-                catch (OperationCanceledException e)
-                {
-                    return new(Task.FromCanceled<int>(e.CancellationToken));
-                }
                 catch (Exception e)
                 {
                     return new(Task.FromException<int>(e));

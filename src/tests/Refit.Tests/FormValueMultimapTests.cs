@@ -56,8 +56,10 @@ public class FormValueMultimapTests
         var source = new Dictionary<string, string> { { "foo", "bar" }, { "xyz", "123" } };
 
         var target = new FormValueMultimap(source, _settings);
+        var nonGenericEntries = ((IEnumerable)target).Cast<KeyValuePair<string?, string?>>().ToArray();
 
         await Assert.That(target).IsCollectionEqualTo(ToNullableKvps(source));
+        await Assert.That(nonGenericEntries).IsCollectionEqualTo(ToNullableKvps(source));
     }
 
     /// <summary>Verifies the multimap loads entries from an object's public properties.</summary>

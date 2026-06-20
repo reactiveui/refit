@@ -75,6 +75,17 @@ public sealed class ApiResponseTests
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
         var requestError = new ApiRequestException("failed", request, HttpMethod.Get, new());
+        var innerRequestError = new ApiRequestException(
+            request,
+            HttpMethod.Post,
+            new(),
+            new InvalidOperationException("inner failure"));
+        var requestErrorWithInner = new ApiRequestException(
+            "failed with inner",
+            request,
+            HttpMethod.Put,
+            new(),
+            new InvalidOperationException("inner"));
         using var requestErrorResponse = new ApiResponse<string>(request, null, null, new(), requestError);
         using var apiResponseMessage = CreateResponse(HttpStatusCode.BadRequest, "bad");
         var apiError = await ApiException.Create(
@@ -91,6 +102,9 @@ public sealed class ApiResponseTests
 
         await Assert.That(requestErrorResponse.HasRequestError(out var typedRequestError)).IsTrue();
         await Assert.That(typedRequestError).IsSameReferenceAs(requestError);
+        await Assert.That(innerRequestError.Message).IsEqualTo("inner failure");
+        await Assert.That(innerRequestError.Uri).IsEqualTo(request.RequestUri);
+        await Assert.That(requestErrorWithInner.InnerException).IsTypeOf<InvalidOperationException>();
         await Assert.That(requestErrorResponse.HasResponseError(out _)).IsFalse();
         await Assert.That(responseErrorResponse.HasResponseError(out var typedResponseError)).IsTrue();
         await Assert.That(typedResponseError).IsSameReferenceAs(apiError);

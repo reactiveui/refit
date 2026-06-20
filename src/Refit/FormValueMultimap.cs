@@ -39,10 +39,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         "Form URL encoded bodies reflect over runtime object properties and serializer metadata.")]
     public FormValueMultimap(object source, RefitSettings settings)
     {
-        if (settings is null)
-        {
-            throw new ArgumentNullException(nameof(settings));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(settings);
 
         _contentSerializer = settings.ContentSerializer;
 

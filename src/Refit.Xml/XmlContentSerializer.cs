@@ -15,9 +15,7 @@ namespace Refit;
 /// <remarks>
 /// Initializes a new instance of the <see cref="XmlContentSerializer"/> class.
 /// </remarks>
-/// <param name="settings">The settings.</param>
-/// <exception cref="System.ArgumentNullException">settings</exception>
-public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttpContentSerializer
+public class XmlContentSerializer : IHttpContentSerializer
 {
     /// <summary>Explains why the trimming warning is suppressed for XML reflection.</summary>
     private const string XmlReflectionTrimmingJustification =
@@ -28,11 +26,19 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
         "Refit's XML serialization may generate serialization assemblies at runtime. Use the Refit source generator for AOT apps.";
 
     /// <summary>The settings controlling XML serialization.</summary>
-    private readonly XmlContentSerializerSettings _settings =
-        settings ?? throw new ArgumentNullException(nameof(settings));
+    private readonly XmlContentSerializerSettings _settings;
 
     /// <summary>Caches XML serializers keyed by the serialized type.</summary>
     private readonly ConcurrentDictionary<Type, XmlSerializer> _serializerCache = new();
+
+    /// <summary>Initializes a new instance of the <see cref="XmlContentSerializer"/> class.</summary>
+    /// <param name="settings">The settings.</param>
+    /// <exception cref="System.ArgumentNullException">settings</exception>
+    public XmlContentSerializer(XmlContentSerializerSettings settings)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(settings);
+        _settings = settings;
+    }
 
     /// <summary>Initializes a new instance of the <see cref="XmlContentSerializer"/> class.</summary>
     public XmlContentSerializer()
@@ -49,10 +55,7 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
     public HttpContent ToHttpContent<T>(T item)
     {
-        if (item is null)
-        {
-            throw new ArgumentNullException(nameof(item));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(item);
 
         var xmlSerializer = _serializerCache.GetOrAdd(
             item.GetType(),
@@ -106,10 +109,7 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
     /// <inheritdoc/>
     public string? GetFieldNameForProperty(PropertyInfo propertyInfo)
     {
-        if (propertyInfo is null)
-        {
-            throw new ArgumentNullException(nameof(propertyInfo));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(propertyInfo);
 
         return propertyInfo.GetCustomAttribute<XmlElementAttribute>(true)?.ElementName
                ?? propertyInfo.GetCustomAttribute<XmlAttributeAttribute>(true)?.AttributeName;

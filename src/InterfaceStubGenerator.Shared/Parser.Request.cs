@@ -87,6 +87,7 @@ internal static partial class Parser
     /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
     /// <param name="attributeClass">The attribute type.</param>
     /// <returns>The HTTP method name, or an empty string for unsupported custom attributes.</returns>
+    [ExcludeFromCodeCoverage]
     private static string GetHttpMethodName(INamedTypeSymbol? attributeClass) =>
         attributeClass?.MetadataName switch
         {
@@ -698,7 +699,7 @@ internal static partial class Parser
     /// <param name="argument">The constructor argument.</param>
     /// <param name="buffered">Receives the buffered value.</param>
     /// <returns><see langword="true"/> when the argument is a boolean buffered argument.</returns>
-    private static bool TryGetBodyBufferedValue(in TypedConstant argument, out bool buffered)
+    internal static bool TryGetBodyBufferedValue(in TypedConstant argument, out bool buffered)
     {
         if (argument is
             {

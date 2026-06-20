@@ -188,15 +188,11 @@ public sealed class ApiResponse<T>(
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
-    private async Task<ApiResponse<T>> EnsureSlowAsync()
-    {
-        await ThrowsApiExceptionAsync().ConfigureAwait(false);
-        return this;
-    }
+    private Task<ApiResponse<T>> EnsureSlowAsync() => ThrowsApiExceptionAsync();
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous throw operation.</returns>
-    private async Task ThrowsApiExceptionAsync()
+    private async Task<ApiResponse<T>> ThrowsApiExceptionAsync()
     {
         var responseMessage = response
                               ?? throw new InvalidOperationException(

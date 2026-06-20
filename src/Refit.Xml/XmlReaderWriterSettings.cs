@@ -59,7 +59,11 @@ public class XmlReaderWriterSettings
             ApplyOverrideSettings();
             return _readerSettings;
         }
-        set => _readerSettings = value ?? throw new ArgumentNullException(nameof(value));
+        set
+        {
+            ArgumentExceptionHelper.ThrowIfNull(value);
+            _readerSettings = value;
+        }
     }
 
     /// <summary>Gets or sets the writer settings.</summary>
@@ -74,7 +78,11 @@ public class XmlReaderWriterSettings
             ApplyOverrideSettings();
             return _writerSettings;
         }
-        set => _writerSettings = value ?? throw new ArgumentNullException(nameof(value));
+        set
+        {
+            ArgumentExceptionHelper.ThrowIfNull(value);
+            _writerSettings = value;
+        }
     }
 
     /// <summary>

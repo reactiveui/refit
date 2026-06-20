@@ -43,8 +43,10 @@ internal class RestMethodInfoInternal
         RefitSettings? refitSettings = null)
     {
         RefitSettings = refitSettings ?? new RefitSettings();
-        Type = targetInterface ?? throw new ArgumentNullException(nameof(targetInterface));
-        MethodInfo = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
+        ArgumentExceptionHelper.ThrowIfNull(targetInterface);
+        ArgumentExceptionHelper.ThrowIfNull(methodInfo);
+        Type = targetInterface;
+        MethodInfo = methodInfo;
 
         var hma = methodInfo.GetCustomAttribute<HttpMethodAttribute>(true)
                   ?? throw new InvalidOperationException("Sequence contains no elements");

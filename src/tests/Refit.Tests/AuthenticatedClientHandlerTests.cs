@@ -113,6 +113,17 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(handler.InnerHandler).IsNull();
     }
 
+    /// <summary>Verifies the constructor that takes an inner handler stores it when provided.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task ExplicitInnerHandlerIsAssigned()
+    {
+        using var innerHandler = new TestHttpMessageHandler();
+        var handler = new AuthenticatedHttpClientHandler(innerHandler, (_, _) => Task.FromResult(string.Empty));
+
+        await Assert.That(handler.InnerHandler).IsSameReferenceAs(innerHandler);
+    }
+
     /// <summary>Verifies a null token getter throws an <see cref="ArgumentNullException"/>.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]

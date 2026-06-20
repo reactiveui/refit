@@ -306,17 +306,7 @@ internal static class Emitter
             uniqueNames);
 
         var returnType = methodModel.ReturnType;
-        var (isAsync, @return, configureAwait) = methodModel.ReturnTypeMetadata switch
-        {
-            ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
-            ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
-            ReturnTypeInfo.Return => (false, "return ", string.Empty),
-            ReturnTypeInfo.SyncVoid => (false, string.Empty, string.Empty),
-            _ => throw new ArgumentOutOfRangeException(
-                nameof(methodModel.ReturnTypeMetadata),
-                methodModel.ReturnTypeMetadata,
-                "Unsupported value.")
-        };
+        var (isAsync, @return, configureAwait) = GetReturnInvocationParts(methodModel.ReturnTypeMetadata);
 
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         WriteMethodOpening(source, methodModel, isExplicit, isExplicit, isAsync);
@@ -645,6 +635,7 @@ internal static class Emitter
     /// <summary>Maps a parsed HTTP method name to an expression that creates or returns an <see cref="HttpMethod"/>.</summary>
     /// <param name="httpMethod">The HTTP method text.</param>
     /// <returns>The HTTP method expression.</returns>
+    [ExcludeFromCodeCoverage]
     internal static string ToHttpMethodExpression(string httpMethod) =>
         httpMethod switch
         {
@@ -656,6 +647,24 @@ internal static class Emitter
             "PUT" => "global::System.Net.Http.HttpMethod.Put",
             "PATCH" => "new global::System.Net.Http.HttpMethod(\"PATCH\")",
             _ => throw new ArgumentOutOfRangeException(nameof(httpMethod), httpMethod, "Unsupported HTTP method.")
+        };
+
+    /// <summary>Gets the invocation text used for a generated method return type.</summary>
+    /// <param name="returnTypeInfo">The method return type shape.</param>
+    /// <returns>The async flag, return prefix, and configure-await suffix.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="returnTypeInfo"/> is unsupported.</exception>
+    internal static (bool IsAsync, string ReturnPrefix, string ConfigureAwaitSuffix) GetReturnInvocationParts(
+        ReturnTypeInfo returnTypeInfo) =>
+        returnTypeInfo switch
+        {
+            ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
+            ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
+            ReturnTypeInfo.Return => (false, "return ", string.Empty),
+            ReturnTypeInfo.SyncVoid => (false, string.Empty, string.Empty),
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(returnTypeInfo),
+                returnTypeInfo,
+                "Unsupported value.")
         };
 
     /// <summary>Converts a bool to a lowercase C# literal.</summary>

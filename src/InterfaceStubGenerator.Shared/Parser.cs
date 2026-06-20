@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -36,10 +37,7 @@ internal static partial class Parser
         in ImmutableArray<InterfaceDeclarationSyntax> candidateInterfaces,
         CancellationToken cancellationToken)
     {
-        if (compilation is null)
-        {
-            throw new ArgumentNullException(nameof(compilation));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(compilation);
 
         refitInternalNamespace = $"{refitInternalNamespace ?? string.Empty}RefitInternalGenerated";
 
@@ -637,6 +635,7 @@ internal static partial class Parser
     /// <summary>Gets the request-property key declared on an interface property.</summary>
     /// <param name="property">The property to inspect.</param>
     /// <returns>The request-property key, or an empty string when the property is not request-bound.</returns>
+    [ExcludeFromCodeCoverage]
     private static string GetInterfacePropertyRequestKey(IPropertySymbol property)
     {
         foreach (var attribute in property.GetAttributes())

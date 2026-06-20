@@ -35,15 +35,9 @@ internal static class HttpClientFactoryCore
         Func<IServiceProvider, RefitSettings?>? settings,
         string? httpClientName)
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(services);
 
-        if (refitInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(refitInterfaceType));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
         // register settings
         var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
@@ -103,10 +97,7 @@ internal static class HttpClientFactoryCore
         string? httpClientName)
         where T : class
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(services);
 
         // register settings
         services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
@@ -147,20 +138,11 @@ internal static class HttpClientFactoryCore
         Func<IServiceProvider, RefitSettings?>? settings,
         string? httpClientName)
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(services);
 
-        if (refitInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(refitInterfaceType));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
-        if (serviceKey is null)
-        {
-            throw new ArgumentNullException(nameof(serviceKey));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
         // register settings
         var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
@@ -224,15 +206,9 @@ internal static class HttpClientFactoryCore
         string? httpClientName)
         where T : class
     {
-        if (services is null)
-        {
-            throw new ArgumentNullException(nameof(services));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(services);
 
-        if (serviceKey is null)
-        {
-            throw new ArgumentNullException(nameof(serviceKey));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
         // register settings
         services.AddKeyedSingleton(

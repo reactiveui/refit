@@ -30,6 +30,28 @@ public partial class RequestBuilderTests
             .ThrowsExactly<ArgumentException>();
     }
 
+    /// <summary>Verifies the public request-builder factory entry points create usable builders.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA2263:Prefer generic overloads", Justification = "This test intentionally covers the Type-based overloads.")]
+    public async Task RequestBuilderFactoryEntryPointsCreateBuilders()
+    {
+        var genericBuilder = RequestBuilder.ForType<IDummyHttpApi>();
+        var genericBuilderWithSettings = RequestBuilder.ForType<IDummyHttpApi>(new());
+        var typeBuilder = RequestBuilder.ForType(typeof(IDummyHttpApi));
+        var typeBuilderWithSettings = RequestBuilder.ForType(typeof(IDummyHttpApi), new());
+        var factory = new RequestBuilderFactory();
+        var factoryGenericBuilder = factory.Create<IDummyHttpApi>(new());
+        var factoryTypeBuilder = factory.Create(typeof(IDummyHttpApi), new());
+
+        await Assert.That(genericBuilder).IsNotNull();
+        await Assert.That(genericBuilderWithSettings).IsNotNull();
+        await Assert.That(typeBuilder).IsNotNull();
+        await Assert.That(typeBuilderWithSettings).IsNotNull();
+        await Assert.That(factoryGenericBuilder).IsNotNull();
+        await Assert.That(factoryTypeBuilder).IsNotNull();
+    }
+
     /// <summary>Rejects methods that are missing or ambiguous without parameter metadata.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

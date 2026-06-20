@@ -25,15 +25,9 @@ public static class RestService
         Type refitInterfaceType,
         Func<HttpClient, IRequestBuilder, object> factory)
     {
-        if (refitInterfaceType is null)
-        {
-            throw new ArgumentNullException(nameof(refitInterfaceType));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(refitInterfaceType);
 
-        if (factory is null)
-        {
-            throw new ArgumentNullException(nameof(factory));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(factory);
 
         _generatedFactories[refitInterfaceType] = factory;
     }

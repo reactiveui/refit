@@ -14,6 +14,7 @@ namespace System
     /// <c>System.Range</c> is not available. It should not be used as a general-purpose
     /// substitute outside of this project.
     /// </remarks>
+    [Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     public readonly record struct Range
     {
         /// <summary>Initializes a new instance of the <see cref="Range"/> struct.</summary>
