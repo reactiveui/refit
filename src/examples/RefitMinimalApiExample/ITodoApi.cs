@@ -5,7 +5,6 @@
 namespace Refit.MinimalApi.Example;
 
 /// <summary>Refit interface exposed by the Minimal API example.</summary>
-[GenerateRefitMinimalApi(typeof(TodoJsonContext), generateClient: false)]
 public interface ITodoApi
 {
     /// <summary>Gets an item.</summary>

@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -24,9 +25,6 @@ public sealed class RefitEndpointRouteBuilderExtensionsTests
     /// <summary>Identifier used by reflection mapping.</summary>
     private const int ReflectedItemId = 7;
 
-    /// <summary>Header name used by the test API.</summary>
-    private const string TraceHeaderName = "X-Trace";
-
     /// <summary>Verifies that descriptor-based endpoint mapping invokes the supplied handler.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -35,13 +33,35 @@ public sealed class RefitEndpointRouteBuilderExtensionsTests
         var app = new TestEndpointRouteBuilder();
         var api = new TodoApi();
 
-        app.MapGeneratedRefitApi<ITodoApi>(api);
+        app.MapRefitApi<ITodoApi>(
+            api,
+            [
+                new(
+                    "/todos/{id}",
+                    HttpMethods.Get,
+                    static async (context, implementation) =>
+                    {
+                        var id = Convert.ToInt32(
+                            context.Request.RouteValues["id"],
+                            CultureInfo.InvariantCulture);
+                        var item = await implementation
+                            .GetTodoAsync(id, "descriptor", "generated", context.RequestAborted)
+                            .ConfigureAwait(false);
+
+                        context.Response.ContentType = "application/json";
+                        await JsonSerializer
+                            .SerializeAsync(
+                                context.Response.Body,
+                                item,
+                                MinimalApiTestJsonContext.Default.Todo,
+                                context.RequestAborted)
+                            .ConfigureAwait(false);
+                    })
+            ]);
 
         var endpoint = GetEndpoint(app, "/todos/{id}", HttpMethods.Get);
         var context = CreateHttpContext(app);
-        SetRouteValue(context, "id", DescriptorItemId);
-        context.Request.QueryString = new("?tag=descriptor");
-        context.Request.Headers[TraceHeaderName] = "generated";
+        SetRouteValue(context, "id", DescriptorItemId.ToString(CultureInfo.InvariantCulture));
 
         await endpoint.RequestDelegate!(context).ConfigureAwait(false);
 
@@ -52,23 +72,6 @@ public sealed class RefitEndpointRouteBuilderExtensionsTests
         await Assert.That(item).IsNotNull();
         await Assert.That(item!.Id).IsEqualTo(DescriptorItemId);
         await Assert.That(item.Title).IsEqualTo("descriptor:generated:False");
-
-        var postEndpoint = GetEndpoint(app, "/todos", HttpMethods.Post);
-        var postContext = CreateHttpContext(app);
-        postContext.Request.Headers[TraceHeaderName] = "created";
-        postContext.Request.ContentType = "application/json";
-        postContext.Request.Body = new MemoryStream(
-            Encoding.UTF8.GetBytes("""{"title":"from generated body"}"""));
-
-        await postEndpoint.RequestDelegate!(postContext).ConfigureAwait(false);
-
-        var postItem = await ReadResponseAsync<Todo>(
-            postContext,
-            MinimalApiTestJsonContext.Default.Todo).ConfigureAwait(false);
-
-        await Assert.That(postItem).IsNotNull();
-        await Assert.That(postItem!.Id).IsEqualTo(CreatedItemId);
-        await Assert.That(postItem.Title).IsEqualTo("from generated body:created");
     }
 
     /// <summary>Verifies that reflection-based endpoint mapping binds route, query, header and body values.</summary>
@@ -92,9 +95,9 @@ public sealed class RefitEndpointRouteBuilderExtensionsTests
 
         var getEndpoint = GetEndpoint(app, "/todos/{id}", HttpMethods.Get);
         var getContext = CreateHttpContext(app);
-        SetRouteValue(getContext, "id", ReflectedItemId);
+        SetRouteValue(getContext, "id", ReflectedItemId.ToString(CultureInfo.InvariantCulture));
         getContext.Request.QueryString = new("?tag=reflected");
-        getContext.Request.Headers[TraceHeaderName] = "header";
+        getContext.Request.Headers["X-Trace"] = "header";
 
         await getEndpoint.RequestDelegate!(getContext).ConfigureAwait(false);
 
@@ -108,7 +111,7 @@ public sealed class RefitEndpointRouteBuilderExtensionsTests
 
         var postEndpoint = GetEndpoint(app, "/todos", HttpMethods.Post);
         var postContext = CreateHttpContext(app);
-        postContext.Request.Headers[TraceHeaderName] = "created";
+        postContext.Request.Headers["X-Trace"] = "created";
         postContext.Request.ContentType = "application/json";
         postContext.Request.Body = new MemoryStream(
             Encoding.UTF8.GetBytes("""{"title":"from body"}"""));

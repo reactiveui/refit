@@ -18,7 +18,6 @@ namespace Refit.Generator;
 /// <param name="NonRefitMethods">The non-Refit methods declared on the interface.</param>
 /// <param name="RefitMethods">The Refit methods declared on the interface.</param>
 /// <param name="DerivedRefitMethods">The Refit methods inherited from base interfaces.</param>
-/// <param name="MinimalApi">The Minimal API generation model, or null when endpoint descriptors are not generated.</param>
 /// <param name="Nullability">The nullable reference type context of the interface.</param>
 /// <param name="DisposeMethod">A value indicating whether the interface declares a dispose method.</param>
 internal sealed record InterfaceModel(
@@ -36,6 +35,5 @@ internal sealed record InterfaceModel(
     ImmutableEquatableArray<MethodModel> NonRefitMethods,
     ImmutableEquatableArray<MethodModel> RefitMethods,
     ImmutableEquatableArray<MethodModel> DerivedRefitMethods,
-    MinimalApiModel? MinimalApi,
     Nullability Nullability,
     bool DisposeMethod);
