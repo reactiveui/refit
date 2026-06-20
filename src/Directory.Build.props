@@ -70,6 +70,10 @@
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
   </PropertyGroup>
 
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0'))">
+    <Features>$(Features);runtime-async=on</Features>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Include="$(RepositoryRoot)images\logo.png" Pack="true" PackagePath="\" Visible="false"/>
     <None Include="$(RepositoryRoot)LICENSE" Pack="true" PackagePath="LICENSE"/>
