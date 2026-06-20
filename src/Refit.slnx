@@ -9,7 +9,6 @@
         <Project Path="examples/BlazorWasmIssue2065/BlazorWasmIssue2065.csproj" />
         <Project Path="examples/Meow.Common/Meow.Common.csproj" />
         <Project Path="examples/Meow/Meow.csproj" />
-        <Project Path="examples/RefitMinimalApiExample/RefitMinimalApiExample.csproj" />
         <Project Path="examples/SampleUsingLocalApi/ConsoleApplication/ConsoleSampleUsingLocalApi.csproj" />
         <Project Path="examples/SampleUsingLocalApi/LibraryWithSDKandRefitService/LibraryWithSDKandRefitService.csproj" />
         <Project Path="examples/SampleUsingLocalApi/RestApiforTest/RestApiForTest.csproj" />
@@ -37,7 +36,6 @@
         <Project Path="tests/Refit.Analyzers.Tests/Refit.Analyzers.Tests.csproj" />
         <Project Path="tests/Refit.CodeFixes.Tests/Refit.CodeFixes.Tests.csproj" />
         <Project Path="tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" />
-        <Project Path="tests/Refit.MinimalApi.Tests/Refit.MinimalApi.Tests.csproj" />
         <Project Path="tests/Refit.Tests/Refit.Tests.csproj" />
     </Folder>
     <Project Path="InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" />
@@ -47,7 +45,6 @@
     <Project Path="Refit.CodeFixes.Roslyn48/Refit.CodeFixes.Roslyn48.csproj" />
     <Project Path="Refit.CodeFixes.Roslyn50/Refit.CodeFixes.Roslyn50.csproj" />
     <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
-    <Project Path="Refit.MinimalApi/Refit.MinimalApi.csproj" />
     <Project Path="Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj" />
     <Project Path="Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />
     <Project Path="Refit.Xml/Refit.Xml.csproj" />
