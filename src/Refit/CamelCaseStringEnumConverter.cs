@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -36,6 +35,10 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         "AssemblyLoadTrimming",
         "IL2071:DynamicallyAccessedMembers",
         Justification = "The converter is created from a runtime enum Type and preserves enum fields on the closed converter.")]
+    [UnconditionalSuppressMessage(
+        "AssemblyLoadTrimming",
+        "IL2055:MakeGenericType",
+        Justification = "The converter is created from a runtime enum Type and preserves enum fields on the closed converter.")]
     public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
         var underlyingType = Nullable.GetUnderlyingType(typeToConvert);
@@ -48,10 +51,6 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
 
     /// <summary>A strongly-typed JSON converter that maps enum values to and from their camelCase names.</summary>
     /// <typeparam name="TEnum">The enum type whose fields are inspected.</typeparam>
-    [SuppressMessage(
-        "Usage",
-        "CA2263:Prefer the generic overload",
-        Justification = "The non-generic Enum.Parse(Type, ...) is retained because the generic overload is unavailable on the .NET Framework targets.")]
     private sealed class EnumConverter<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] TEnum> : JsonConverter<TEnum>
         where TEnum : struct, Enum
@@ -82,7 +81,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
                 return;
             }
 
-            writer.WriteNumberValue(Convert.ToInt64(value, CultureInfo.InvariantCulture));
+            EnumHelpers.Info<TEnum>.WriteJsonNumericValue(writer, value);
         }
 
         /// <inheritdoc/>
@@ -104,8 +103,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
                 return;
             }
 
-            writer.WritePropertyName(
-                Convert.ToInt64(value, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture));
+            writer.WritePropertyName(EnumHelpers.Info<TEnum>.FormatNumericValue(value));
         }
 
         /// <summary>Builds a map of serialized names to enum values using the given comparer.</summary>
@@ -117,7 +115,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
 
             foreach (var field in typeof(TEnum).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
-                var value = (TEnum)Enum.Parse(typeof(TEnum), field.Name, false);
+                var value = EnumHelpers.Info<TEnum>.ParseName(field.Name);
                 foreach (var name in GetSerializedNames(field))
                 {
                     map[name] = value;
@@ -135,7 +133,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
 
             foreach (var field in typeof(TEnum).GetFields(BindingFlags.Public | BindingFlags.Static))
             {
-                var value = (TEnum)Enum.Parse(typeof(TEnum), field.Name, false);
+                var value = EnumHelpers.Info<TEnum>.ParseName(field.Name);
                 map[value] = GetPreferredSerializedName(field);
             }
 
@@ -209,8 +207,7 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
 
             if (reader.TokenType == JsonTokenType.Number)
             {
-                var numericValue = reader.GetInt64();
-                return (TEnum)Enum.ToObject(typeof(TEnum), numericValue);
+                return EnumHelpers.Info<TEnum>.ReadJsonNumericValue(ref reader);
             }
 
             throw new JsonException($"Unexpected token {reader.TokenType} when parsing {typeof(TEnum)}.");

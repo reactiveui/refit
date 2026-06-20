@@ -12,6 +12,76 @@ public class GeneratedCodeComplianceTests
     /// <summary>The warning level used by compliance compilation tests.</summary>
     private const int StrictWarningLevel = 9999;
 
+    /// <summary>The generated implementation hint name used by compatibility tests.</summary>
+    private const string GeneratedClientHintName = "IGeneratedClient.g.cs";
+
+    /// <summary>Verifies generated source compiles for projects using C# 7.3.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GeneratedSourcesCompileWithCSharp73Baseline()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest
+            {
+                /// <summary>Generated client test interface.</summary>
+                public interface IGeneratedClient
+                {
+                    /// <summary>Gets a generated value.</summary>
+                    /// <param name="user">The user name.</param>
+                    /// <returns>The generated value.</returns>
+                    [Get("/users/{user}")]
+                    Task<string> Get(string user);
+                }
+            }
+            """;
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true, LanguageVersion.CSharp7_3);
+
+        await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
+        foreach (var generatedSource in result.GeneratedSources)
+        {
+            await Assert.That(generatedSource.Value).DoesNotContain("#nullable");
+            await Assert.That(generatedSource.Value).DoesNotContain("static (");
+        }
+    }
+
+    /// <summary>Verifies generated source emits nullable annotations when the consumer language version supports them.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GeneratedSourcesEmitNullableAnnotationsWhenSupported()
+    {
+        const string source =
+            """
+            #nullable enable
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest
+            {
+                /// <summary>Generated client test interface.</summary>
+                public interface IGeneratedClient
+                {
+                    /// <summary>Gets a generated value.</summary>
+                    /// <param name="user">The user name.</param>
+                    /// <returns>The generated value.</returns>
+                    [Get("/users/{user}")]
+                    Task<string?> Get(string? user);
+                }
+            }
+            """;
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true, LanguageVersion.CSharp8);
+
+        await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
+        var generatedClientSource = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generatedClientSource).Contains("#nullable enable annotations");
+        await Assert.That(generatedClientSource).Contains("global::Refit.IRequestBuilder?");
+        await Assert.That(generatedClientSource).Contains("string? @user");
+    }
+
     /// <summary>Verifies generated files carry analyzer-recognized generated-code markers.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -45,7 +115,7 @@ public class GeneratedCodeComplianceTests
             await Assert.That(generatedSource.Value).DoesNotContain("#pragma warning disable");
         }
 
-        await Assert.That(result.GeneratedSources["IGeneratedClient.g.cs"]).Contains(generatedCodeAttribute);
+        await Assert.That(result.GeneratedSources[GeneratedClientHintName]).Contains(generatedCodeAttribute);
         await Assert.That(result.GeneratedSources["Generated.g.cs"]).Contains(generatedCodeAttribute);
         await Assert.That(result.GeneratedSources["PreserveAttribute.g.cs"]).Contains(generatedCodeAttribute);
     }
@@ -119,4 +189,17 @@ public class GeneratedCodeComplianceTests
             source,
             new CSharpParseOptions(documentationMode: DocumentationMode.Diagnose),
             path);
+
+    /// <summary>Gets compiler errors from a generated-output compilation.</summary>
+    /// <param name="compilation">The compilation to inspect.</param>
+    /// <returns>The formatted compiler errors.</returns>
+    private static string GetCompilerErrors(Compilation compilation)
+    {
+        var diagnostics = compilation
+            .GetDiagnostics()
+            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(diagnostic => diagnostic.ToString());
+
+        return string.Join(Environment.NewLine, diagnostics);
+    }
 }

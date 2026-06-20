@@ -418,7 +418,7 @@ namespace Refit
             var property = parameterMapValue.ParameterProperties[fragment.PropertyIndex];
             var propertyObject = property.PropertyInfo.GetValue(param);
 
-            vsb.Append(Uri.EscapeDataString(_settings.UrlParameterFormatter.Format(
+            vsb.Append(StringHelpers.EscapeDataString(_settings.UrlParameterFormatter.Format(
                 propertyObject,
                 property.PropertyInfo,
                 property.PropertyInfo.PropertyType) ?? string.Empty));
@@ -442,7 +442,7 @@ namespace Refit
 
             if (parameterMapValue.Type == ParameterType.Normal)
             {
-                vsb.Append(Uri.EscapeDataString(
+                vsb.Append(StringHelpers.EscapeDataString(
                     _settings.UrlParameterFormatter.Format(
                         param,
                         parameterInfo,
@@ -468,7 +468,7 @@ namespace Refit
 
                 var section = paramValue.Substring(sectionStart, i - sectionStart);
                 vsb.Append(
-                    Uri.EscapeDataString(
+                    StringHelpers.EscapeDataString(
                         _settings.UrlParameterFormatter.Format(
                             section,
                             parameterInfo,
@@ -510,7 +510,7 @@ namespace Refit
                 {
                     ret.Content = param is string str
                         ? new StringContent(
-                            Uri.EscapeDataString(str),
+                            StringHelpers.EscapeDataString(str),
                             Encoding.UTF8,
                             "application/x-www-form-urlencoded")
                         : new FormUrlEncodedContent(new FormValueMultimap(param, _settings));

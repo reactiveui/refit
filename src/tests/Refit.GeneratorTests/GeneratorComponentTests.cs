@@ -306,7 +306,7 @@ public static class GeneratorComponentTests
                 ImmutableEquatableArray<TypeConstraint>.Empty,
                 false);
 
-            var source = Emitter.BuildMethodOpening(method, true, true, true);
+            var source = Emitter.BuildMethodOpening(method, true, true, supportsNullable: true, isAsync: true);
 
             await Assert.That(source)
                 .Contains("async global::System.Threading.Tasks.Task global::RefitGeneratorTest.IBase.Ping(");
@@ -406,7 +406,7 @@ public static class GeneratorComponentTests
             await Assert.That(Parser.IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel>.Empty)).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateHeaderParameter()]))).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody(string.Empty)]))).IsFalse();
-            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("UrlEncoded")]))).IsFalse();
+            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("UrlEncoded")]))).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("Serialized")]))).IsTrue();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpResponseMessage")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpContent")).IsFalse();

@@ -26,9 +26,9 @@ namespace Refit.Implementation
         internal static void Initialize()
         {
             global::Refit.RestService.RegisterGeneratedFactory<global::RefitGeneratorTest.IGeneratedClient>(
-                static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitGeneratorTestIGeneratedClient(client, requestBuilder));
+                (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitGeneratorTestIGeneratedClient(client, requestBuilder));
             global::Refit.RestService.RegisterGeneratedSettingsFactory<global::RefitGeneratorTest.IGeneratedClient>(
-                static (client, settings) => new global::Refit.Implementation.Generated.RefitGeneratorTestIGeneratedClient(client, settings));
+                (client, settings) => new global::Refit.Implementation.Generated.RefitGeneratorTestIGeneratedClient(client, settings));
         }
 #endif
     }

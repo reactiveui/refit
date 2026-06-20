@@ -375,6 +375,7 @@ internal static partial class Parser
             names.ClassSuffix,
             context.GeneratedRequestBuilding,
             context.EmitGeneratedCodeMarkers,
+            context.SupportsNullable,
             constraints,
             memberNames,
             properties,

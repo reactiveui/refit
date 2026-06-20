@@ -216,12 +216,6 @@ internal class RestMethodInfoInternal
         parameter.ParameterType == typeof(CancellationToken)
         || parameter.ParameterType == typeof(CancellationToken?);
 
-    /// <summary>Determines whether a property can be read through its public getter.</summary>
-    /// <param name="property">The property to inspect.</param>
-    /// <returns><see langword="true"/> when the property is readable; otherwise <see langword="false"/>.</returns>
-    private static bool IsReadablePublicProperty(PropertyInfo property) =>
-        property.CanRead && property.GetMethod?.IsPublic == true;
-
     /// <summary>Resolves the multipart boundary text for the method, defaulting when unspecified.</summary>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <param name="isMultipart">A value indicating whether the request is multipart.</param>
@@ -318,35 +312,8 @@ internal class RestMethodInfoInternal
     /// <param name="parameter">The parameter whose properties are enumerated.</param>
     /// <returns>The readable public instance properties.</returns>
     [RequiresUnreferencedCode("Reading request object properties requires public property metadata to be available at runtime.")]
-    private static PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
-    {
-        var properties = parameter.ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-        var count = 0;
-        for (var i = 0; i < properties.Length; i++)
-        {
-            if (IsReadablePublicProperty(properties[i]))
-            {
-                count++;
-            }
-        }
-
-        if (count == properties.Length)
-        {
-            return properties;
-        }
-
-        var readableProperties = new PropertyInfo[count];
-        var index = 0;
-        for (var i = 0; i < properties.Length; i++)
-        {
-            if (IsReadablePublicProperty(properties[i]))
-            {
-                readableProperties[index++] = properties[i];
-            }
-        }
-
-        return readableProperties;
-    }
+    private static PropertyInfo[] GetParameterProperties(ParameterInfo parameter) =>
+        ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(parameter.ParameterType);
 
     /// <summary>Verifies that the relative URL path is well formed and free of injection characters.</summary>
     /// <param name="relativePath">The relative URL path to validate.</param>
@@ -364,7 +331,7 @@ internal class RestMethodInfoInternal
         }
 
         // CRLF injection protection
-        if (!relativePath.Contains('\r') && !relativePath.Contains('\n'))
+        if (!StringHelpers.ContainsCrOrLf(relativePath))
         {
             return;
         }

@@ -582,6 +582,23 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
+    /// <summary>Verifies URL-encoded bodies use generated request construction.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsUrlEncodedBodyContent()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Post("/form")]
+            Task<string> Form([Body(BodySerializationMethod.UrlEncoded)] Dictionary<string, string> form);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("GeneratedRequestRunner.CreateUrlEncodedBodyContent<global::System.Collections.Generic.Dictionary<string, string>>");
+    }
+
     /// <summary>Verifies unsupported body serialization values fall back to the runtime builder.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -589,9 +606,6 @@ public class GeneratedRequestBuildingTests
     {
         var generated = Fixture.GenerateForBody(
             """
-            [Post("/form")]
-            Task<string> Form([Body(BodySerializationMethod.UrlEncoded)] Dictionary<string, string> form);
-
             [Post("/unknown")]
             Task<string> Unknown([Body((BodySerializationMethod)123)] string body);
             """,
@@ -599,7 +613,8 @@ public class GeneratedRequestBuildingTests
             generatedRequestBuilding: true);
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
-        await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.CreateBodyContent<global::System.Collections.Generic.Dictionary<string, string>>");
+        await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.CreateBodyContent<");
+        await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.CreateUrlEncodedBodyContent<");
     }
 
     /// <summary>Verifies return-type metadata for API response wrappers and raw response body types.</summary>

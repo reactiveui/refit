@@ -167,6 +167,10 @@ the response was received and is successful.
 Refit ships Roslyn source generators with the main `Refit` package. Projects that reference Refit through
 `PackageReference` get generated client implementations at build time without adding another package.
 
+Generated Refit client source is compatible with C# 7.3 as the baseline. When the consuming project uses C# 8 or newer
+and nullable reference types are available, the generator also emits nullable directives and nullable annotations for
+the generated client.
+
 The generated clients are still created with the normal APIs:
 
 ```csharp

@@ -1,6 +1,9 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+
 namespace Refit;
 
 /// <summary>Shared runtime helpers used by source-generated request construction.</summary>
@@ -50,7 +53,7 @@ public static class GeneratedRequestRunner
     /// <param name="bufferBody">Whether request content should be buffered before sending.</param>
     /// <param name="cancellationToken">A token to cancel the request.</param>
     /// <returns>The deserialized or wrapped response.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+    [SuppressMessage(
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by generated callers.")]
@@ -88,11 +91,11 @@ public static class GeneratedRequestRunner
     /// <param name="serializationMethod">The configured body serialization method.</param>
     /// <param name="streamBody">Whether serialized content should be streamed into the request.</param>
     /// <returns>The HTTP content for the body.</returns>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+    [SuppressMessage(
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by generated callers.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+    [SuppressMessage(
         "Usage",
         "CA2208:Instantiate argument exceptions correctly",
         Justification = "The exception matches existing Refit body-serialization behavior.")]
@@ -133,6 +136,42 @@ public static class GeneratedRequestRunner
                 }
             },
             content.Headers.ContentType);
+    }
+
+    /// <summary>Serializes a generated URL-encoded request body using the declared body type.</summary>
+    /// <typeparam name="TBody">The declared body type.</typeparam>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="body">The body value.</param>
+    /// <returns>The HTTP content for the URL-encoded body.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
+    public static HttpContent CreateUrlEncodedBodyContent<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+        TBody>(
+        RefitSettings settings,
+        TBody body)
+    {
+        if (body is HttpContent httpContent)
+        {
+            return httpContent;
+        }
+
+        if (body is Stream stream)
+        {
+            return new StreamContent(stream);
+        }
+
+        if (body is string stringBody)
+        {
+            return new StringContent(
+                StringHelpers.EscapeDataString(stringBody),
+                Encoding.UTF8,
+                "application/x-www-form-urlencoded");
+        }
+
+        return new FormUrlEncodedContent(FormValueMultimap.Create(body, settings));
     }
 
     /// <summary>Sets, replaces, or removes a generated request header.</summary>
@@ -216,7 +255,7 @@ public static class GeneratedRequestRunner
     /// <param name="request">The request to modify.</param>
     /// <param name="key">The property key.</param>
     /// <param name="value">The property value.</param>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+    [SuppressMessage(
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Generated callers specify the declared property type to avoid call-site boxing.")]
@@ -294,12 +333,5 @@ public static class GeneratedRequestRunner
     /// <summary>Removes CR and LF characters from a generated header name or value.</summary>
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
-    private static string EnsureSafeHeaderValue(string value) =>
-#if NET8_0_OR_GREATER
-        value.Replace("\r", string.Empty, StringComparison.Ordinal)
-            .Replace("\n", string.Empty, StringComparison.Ordinal);
-#else
-        value.Replace("\r", string.Empty)
-            .Replace("\n", string.Empty);
-#endif
+    private static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
 }

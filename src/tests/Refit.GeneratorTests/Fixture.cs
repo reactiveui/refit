@@ -150,9 +150,40 @@ public static class Fixture
         bool disableSourceGenerator)
     {
         var compilation = CreateLibrary(source);
+        return RunGenerator(compilation, generatedRequestBuilding, disableSourceGenerator, null);
+    }
+
+    /// <summary>Runs the generator over the source with a specific language version and returns the output compilation.</summary>
+    /// <param name="source">The source to compile and generate from.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
+    /// <param name="languageVersion">The language version to use for input and generated syntax trees.</param>
+    /// <returns>The generator result.</returns>
+    public static GeneratorTestResult RunGenerator(
+        string source,
+        bool? generatedRequestBuilding,
+        LanguageVersion languageVersion)
+    {
+        var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(languageVersion);
+        var compilation = CreateLibrary(CSharpSyntaxTree.ParseText(source, parseOptions));
+        return RunGenerator(compilation, generatedRequestBuilding, false, parseOptions);
+    }
+
+    /// <summary>Runs the generator over the compilation and returns the output compilation.</summary>
+    /// <param name="compilation">The compilation to run generation against.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
+    /// <param name="disableSourceGenerator">Whether source generation is disabled.</param>
+    /// <param name="parseOptions">The parse options to use for generated syntax trees.</param>
+    /// <returns>The generator result.</returns>
+    public static GeneratorTestResult RunGenerator(
+        CSharpCompilation compilation,
+        bool? generatedRequestBuilding,
+        bool disableSourceGenerator,
+        CSharpParseOptions? parseOptions)
+    {
         var generator = new InterfaceStubGeneratorV2();
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [generator.AsSourceGenerator()],
+            parseOptions: parseOptions,
             optionsProvider: new TestAnalyzerConfigOptionsProvider(
                 generatedRequestBuilding,
                 disableSourceGenerator));

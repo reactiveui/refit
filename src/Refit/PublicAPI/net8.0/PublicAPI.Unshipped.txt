@@ -1,4 +1,5 @@
 #nullable enable
+static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings! settings, TBody body) -> System.Net.Http.HttpContent!
 static Refit.RestService.RegisterGeneratedFactory<T>(System.Func<System.Net.Http.HttpClient!, Refit.IRequestBuilder!, T>! factory) -> void
 static Refit.RestService.RegisterGeneratedSettingsFactory<T>(System.Func<System.Net.Http.HttpClient!, Refit.RefitSettings!, T>! factory) -> void
 static Refit.RestService.ForGenerated(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client, Refit.RefitSettings! settings) -> object!

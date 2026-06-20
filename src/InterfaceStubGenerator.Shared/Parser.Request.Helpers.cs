@@ -184,8 +184,7 @@ internal static partial class Parser
                 continue;
             }
 
-            if (parameter.BodySerializationMethod.Length == 0
-                || parameter.BodySerializationMethod == "UrlEncoded")
+            if (parameter.BodySerializationMethod.Length == 0)
             {
                 return false;
             }

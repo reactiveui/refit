@@ -114,6 +114,40 @@ public class GeneratedRequestRunnerTests
         await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("serialized:streamed");
     }
 
+    /// <summary>Verifies URL-encoded string bodies are sent as escaped form content.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentEscapesStringBodies()
+    {
+        var settings = CreateSettings();
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(
+            settings,
+            "url&string");
+
+        await Assert.That(result.Headers.ContentType?.MediaType).IsEqualTo("application/x-www-form-urlencoded");
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("url%26string");
+    }
+
+    /// <summary>Verifies URL-encoded object bodies use the declared body type.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentUsesDeclaredBodyType()
+    {
+        var settings = CreateSettings();
+        DeclaredFormBody body = new DerivedFormBody
+        {
+            Name = "Ada",
+            Hidden = "ignored"
+        };
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent<DeclaredFormBody>(
+            settings,
+            body);
+
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("Name=Ada");
+    }
+
     /// <summary>Verifies that unsupported body serialization modes are rejected.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -126,7 +160,7 @@ public class GeneratedRequestRunnerTests
                 () => GeneratedRequestRunner.CreateBodyContent(
                     settings,
                     new { Value = 42 },
-                    BodySerializationMethod.UrlEncoded,
+                    (BodySerializationMethod)123,
                     streamBody: false))
             .ThrowsExactly<ArgumentOutOfRangeException>();
     }
@@ -984,6 +1018,20 @@ public class GeneratedRequestRunnerTests
             length = 1;
             return true;
         }
+    }
+
+    /// <summary>Declared form model used to verify generated URL-encoded bodies use compile-time metadata.</summary>
+    private class DeclaredFormBody
+    {
+        /// <summary>Gets or sets the declared form name.</summary>
+        public string? Name { get; set; }
+    }
+
+    /// <summary>Derived form model with an extra property that should not be emitted by the declared-type path.</summary>
+    private sealed class DerivedFormBody : DeclaredFormBody
+    {
+        /// <summary>Gets or sets a derived-only value.</summary>
+        public string? Hidden { get; set; }
     }
 
     /// <summary>Simple deserialized response model for generated runtime tests.</summary>

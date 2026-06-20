@@ -26,9 +26,9 @@ namespace Refit.Implementation
         internal static void Initialize()
         {
             global::Refit.RestService.RegisterGeneratedFactory<global::IServiceWithoutNamespace>(
-                static (client, requestBuilder) => new global::Refit.Implementation.Generated.IServiceWithoutNamespace(client, requestBuilder));
+                (client, requestBuilder) => new global::Refit.Implementation.Generated.IServiceWithoutNamespace(client, requestBuilder));
             global::Refit.RestService.RegisterGeneratedSettingsFactory<global::IServiceWithoutNamespace>(
-                static (client, settings) => new global::Refit.Implementation.Generated.IServiceWithoutNamespace(client, settings));
+                (client, settings) => new global::Refit.Implementation.Generated.IServiceWithoutNamespace(client, settings));
         }
 #endif
     }

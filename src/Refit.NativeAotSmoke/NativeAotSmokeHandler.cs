@@ -12,6 +12,9 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
     /// <summary>Gets a value indicating whether a POST body containing the expected payload was observed.</summary>
     public bool SawPostBody { get; private set; }
 
+    /// <summary>Gets a value indicating whether a URL-encoded form body was observed.</summary>
+    public bool SawFormBody { get; private set; }
+
     /// <inheritdoc/>
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
@@ -25,6 +28,17 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
 
             SawPostBody = body.Contains("prove native aot", StringComparison.Ordinal);
             return Json("""{"id":42,"title":"prove native aot"}""");
+        }
+
+        if (request.RequestUri?.AbsolutePath == "/forms")
+        {
+            var body = request.Content is null
+                ? string.Empty
+                : await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+            SawFormBody = body.Contains("Name=Ada", StringComparison.Ordinal)
+                && body.Contains("Count=2", StringComparison.Ordinal);
+            return new(HttpStatusCode.OK) { Content = new StringContent("accepted", Encoding.UTF8, "text/plain") };
         }
 
         if (request.RequestUri?.AbsolutePath == "/status")

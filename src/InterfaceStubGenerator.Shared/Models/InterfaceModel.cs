@@ -13,6 +13,7 @@ namespace Refit.Generator;
 /// <param name="ClassSuffix">The suffix appended to the generated class name.</param>
 /// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled for this interface.</param>
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
+/// <param name="SupportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
 /// <param name="Constraints">The generic type constraints of the interface.</param>
 /// <param name="MemberNames">The names of the interface members.</param>
 /// <param name="Properties">The interface properties implemented by the generated stub.</param>
@@ -31,6 +32,7 @@ internal sealed record InterfaceModel(
     string ClassSuffix,
     bool GeneratedRequestBuilding,
     bool EmitGeneratedCodeMarkers,
+    bool SupportsNullable,
     ImmutableEquatableArray<TypeConstraint> Constraints,
     ImmutableEquatableArray<string> MemberNames,
     ImmutableEquatableArray<InterfacePropertyModel> Properties,

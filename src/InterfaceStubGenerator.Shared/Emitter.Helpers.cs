@@ -145,18 +145,20 @@ internal static partial class Emitter
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isDerivedExplicitImpl">True if the method is a derived explicit implementation.</param>
     /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <param name="isAsync">True if the method should be emitted as async.</param>
     /// <returns>The generated method opening.</returns>
     internal static string BuildMethodOpening(
         MethodModel methodModel,
         bool isDerivedExplicitImpl,
         bool isExplicitInterface,
+        bool supportsNullable,
         bool isAsync = false)
     {
         var visibility = !isExplicitInterface ? "public " : string.Empty;
         var asyncKeyword = isAsync ? "async " : string.Empty;
         var explicitInterface = BuildExplicitInterfacePrefix(methodModel, isExplicitInterface);
-        var parameters = BuildParameterList(methodModel.Parameters);
+        var parameters = BuildParameterList(methodModel.Parameters, supportsNullable);
         var methodIndent = Indent(MethodMemberIndentation);
         var constraints = BuildConstraints(methodModel.Constraints, isDerivedExplicitImpl || isExplicitInterface, MethodBodyIndentation);
 
@@ -190,8 +192,11 @@ internal static partial class Emitter
 
     /// <summary>Builds the generated method parameter list.</summary>
     /// <param name="parameters">The parameter models.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated method parameter list.</returns>
-    private static string BuildParameterList(ImmutableEquatableArray<ParameterModel> parameters)
+    private static string BuildParameterList(
+        ImmutableEquatableArray<ParameterModel> parameters,
+        bool supportsNullable)
     {
         var parameterModels = parameters.AsArray();
         if (parameterModels.Length == 0)
@@ -204,26 +209,27 @@ internal static partial class Emitter
         {
             var (metadataName, type, annotation, _) = parameterModels[i];
             length += type.Length
-                + (annotation ? NullableParameterExtraLength : ParameterExtraLength)
+                + (supportsNullable && annotation ? NullableParameterExtraLength : ParameterExtraLength)
                 + metadataName.Length;
         }
 
         return CreateGeneratedString(
             length,
-            parameterModels,
+            (parameterModels, supportsNullable),
             static (destination, values) =>
             {
                 var position = 0;
-                for (var i = 0; i < values.Length; i++)
+                var (models, emitNullableAnnotations) = values;
+                for (var i = 0; i < models.Length; i++)
                 {
                     if (i > 0)
                     {
                         AppendText(destination, ", ", ref position);
                     }
 
-                    var (metadataName, type, annotation, _) = values[i];
+                    var (metadataName, type, annotation, _) = models[i];
                     AppendText(destination, type, ref position);
-                    if (annotation)
+                    if (emitNullableAnnotations && annotation)
                     {
                         destination[position++] = '?';
                     }

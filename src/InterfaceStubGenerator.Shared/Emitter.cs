@@ -148,15 +148,18 @@ internal static partial class Emitter
     {
         var uniqueNames = new UniqueNameBuilder();
         uniqueNames.Reserve(model.MemberNames);
-        var propertySource = BuildInterfaceProperties(model.Properties);
+        var propertySource = BuildInterfaceProperties(model.Properties, model.SupportsNullable);
         var refitMethodSource = BuildRefitMethods(model.RefitMethods, true, model, uniqueNames);
         var derivedRefitMethodSource = BuildRefitMethods(model.DerivedRefitMethods, false, model, uniqueNames);
-        var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods);
+        var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods, model.SupportsNullable);
         var disposableSource = BuildDisposableMethod(model.DisposeMethod);
         var memberSource = propertySource + refitMethodSource + derivedRefitMethodSource + nonRefitMethodSource + disposableSource;
         var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
         var generatedCodeAttribute = GeneratedCodeAttribute;
         var settingsConstructorSource = BuildSettingsConstructor(model);
+        var requestBuilderFieldType = model.SupportsNullable
+            ? "global::Refit.IRequestBuilder?"
+            : "global::Refit.IRequestBuilder";
         var source = $$"""
             {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}
             namespace Refit.Implementation
@@ -175,7 +178,7 @@ internal static partial class Emitter
                         : {{model.InterfaceDisplayName}}
             {{BuildConstraints(model.Constraints, false, ClassMemberIndentation)}}        {
                         /// <summary>The request builder used to create Refit method delegates.</summary>
-                        private readonly global::Refit.IRequestBuilder? _requestBuilder;
+                        private readonly {{requestBuilderFieldType}} _requestBuilder;
 
                         /// <summary>The settings used by this generated Refit implementation.</summary>
                         private readonly global::Refit.RefitSettings _settings;
@@ -331,7 +334,7 @@ internal static partial class Emitter
             var generatedType = $"global::Refit.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}";
             registrations[count++] = $$"""
                                     global::Refit.RestService.RegisterGeneratedFactory<{{interfaceModel.InterfaceDisplayName}}>(
-                                        static (client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
+                                        (client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
 
                         """;
 
@@ -339,7 +342,7 @@ internal static partial class Emitter
             {
                 registrations[count++] = $$"""
                                         global::Refit.RestService.RegisterGeneratedSettingsFactory<{{interfaceModel.InterfaceDisplayName}}>(
-                                            static (client, settings) => new {{generatedType}}(client, settings));
+                                            (client, settings) => new {{generatedType}}(client, settings));
 
                             """;
             }
@@ -426,14 +429,17 @@ internal static partial class Emitter
 
     /// <summary>Builds generated interface property implementations.</summary>
     /// <param name="properties">The property models to emit.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated property implementations.</returns>
-    private static string BuildInterfaceProperties(ImmutableEquatableArray<InterfacePropertyModel> properties)
+    private static string BuildInterfaceProperties(
+        ImmutableEquatableArray<InterfacePropertyModel> properties,
+        bool supportsNullable)
     {
         var parts = new string[properties.Count];
         var count = 0;
         for (var i = 0; i < properties.Count; i++)
         {
-            var source = BuildInterfaceProperty(properties[i]);
+            var source = BuildInterfaceProperty(properties[i], supportsNullable);
             if (source.Length != 0)
             {
                 parts[count++] = source;
@@ -455,27 +461,40 @@ internal static partial class Emitter
         InterfaceModel interfaceModel,
         UniqueNameBuilder uniqueNames)
     {
+        if (methods.Count == 0)
+        {
+            return string.Empty;
+        }
+
         var parts = new string[methods.Count];
         for (var i = 0; i < methods.Count; i++)
         {
             parts[i] = BuildRefitMethod(methods[i], isTopLevel, interfaceModel, uniqueNames);
         }
 
-        return parts.Length == 0 ? string.Empty : ConcatParts(parts, parts.Length);
+        return ConcatParts(parts, parts.Length);
     }
 
     /// <summary>Builds generated non-Refit method stubs.</summary>
     /// <param name="methods">The non-Refit method models to emit.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated method stubs.</returns>
-    private static string BuildNonRefitMethods(ImmutableEquatableArray<MethodModel> methods)
+    private static string BuildNonRefitMethods(
+        ImmutableEquatableArray<MethodModel> methods,
+        bool supportsNullable)
     {
+        if (methods.Count == 0)
+        {
+            return string.Empty;
+        }
+
         var parts = new string[methods.Count];
         for (var i = 0; i < methods.Count; i++)
         {
-            parts[i] = BuildNonRefitMethod(methods[i]);
+            parts[i] = BuildNonRefitMethod(methods[i], supportsNullable);
         }
 
-        return parts.Length == 0 ? string.Empty : ConcatParts(parts, parts.Length);
+        return ConcatParts(parts, parts.Length);
     }
 
     /// <summary>Builds the body of the Refit method.</summary>
@@ -514,7 +533,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return typeParameterFieldSource
-            + BuildMethodOpening(methodModel, isExplicit, isExplicit, isAsync)
+            + BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable, isAsync)
             + $$"""
                 {{bodyIndent}}var refitArguments = {{BuildArgumentsArrayLiteral(methodModel)}};
                 {{bodyIndent}}var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
@@ -550,7 +569,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{BuildMethodOpening(methodModel, isExplicit, isExplicit)}}{{bodyIndent}}var refitSettings = _settings;
+            {{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var refitSettings = _settings;
             {{bodyIndent}}var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
             {{bodyIndent}}refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
             {{bodyIndent}}var refitRequest = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
@@ -568,9 +587,19 @@ internal static partial class Emitter
     /// <returns>The generated content assignment.</returns>
     private static string BuildInlineContent(RequestParameterModel bodyParameter)
     {
+        var bodyIndent = Indent(MethodBodyIndentation);
+        if (bodyParameter.BodySerializationMethod == "UrlEncoded")
+        {
+            return $$"""
+                {{bodyIndent}}refitRequest.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
+                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    @{{bodyParameter.Name}});
+
+                """;
+        }
+
         var streamBodyExpression = BuildStreamBodyExpression(bodyParameter);
         var serializationMethodExpression = BuildBodySerializationMethodExpression(bodyParameter);
-        var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
             {{bodyIndent}}refitRequest.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<{{bodyParameter.Type}}>(
@@ -873,8 +902,9 @@ internal static partial class Emitter
 
     /// <summary>Builds a stub body for a non-Refit method that throws at runtime.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated method stub.</returns>
-    private static string BuildNonRefitMethod(MethodModel methodModel)
+    private static string BuildNonRefitMethod(MethodModel methodModel, bool supportsNullable)
     {
         var isExplicit = methodModel.IsExplicitInterface;
         var messageLiteral = ToCSharpStringLiteral(NonRefitMethodExceptionMessage);
@@ -882,7 +912,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{BuildMethodOpening(methodModel, isExplicit, isExplicit)}}{{bodyIndent}}throw new global::System.NotImplementedException({{messageLiteral}});
+            {{BuildMethodOpening(methodModel, isExplicit, isExplicit, supportsNullable)}}{{bodyIndent}}throw new global::System.NotImplementedException({{messageLiteral}});
             {{methodIndent}}}
 
             """;
@@ -890,8 +920,11 @@ internal static partial class Emitter
 
     /// <summary>Builds an interface property implementation.</summary>
     /// <param name="property">The property model being emitted.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <returns>The generated property implementation, or an empty string.</returns>
-    private static string BuildInterfaceProperty(InterfacePropertyModel property)
+    private static string BuildInterfaceProperty(
+        InterfacePropertyModel property,
+        bool supportsNullable)
     {
         if (property.IsSatisfiedByGeneratedMember)
         {
@@ -900,7 +933,7 @@ internal static partial class Emitter
 
         var methodIndent = Indent(MethodMemberIndentation);
         var visibility = property.IsExplicitInterface ? string.Empty : "public ";
-        var annotation = property.Annotation ? "?" : string.Empty;
+        var annotation = supportsNullable && property.Annotation ? "?" : string.Empty;
         var explicitInterface = property.IsExplicitInterface
             ? EnsureGlobalPrefix(property.ContainingType) + "."
             : string.Empty;
