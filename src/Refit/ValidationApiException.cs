@@ -80,9 +80,7 @@ public class ValidationApiException : ApiException
     public static ValidationApiException Create(ApiException exception)
     {
         var ex = CreateCore(exception);
-        ex.Content = JsonSerializer.Deserialize<ProblemDetails>(
-            exception.Content!,
-            ProblemDetailsJsonContext.Default.ProblemDetails);
+        ex.Content = DeserializeProblemDetails(exception.Content!);
         return ex;
     }
 
@@ -133,4 +131,147 @@ public class ValidationApiException : ApiException
 
         return new(exception);
     }
+
+    /// <summary>Deserializes RFC 7807 problem details without requiring public setters on extension data.</summary>
+    /// <param name="content">The JSON problem details content.</param>
+    /// <returns>The deserialized problem details.</returns>
+    private static ProblemDetails DeserializeProblemDetails(string content)
+    {
+        using var document = JsonDocument.Parse(content);
+        if (document.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new JsonException("Problem details JSON must be an object.");
+        }
+
+        var problemDetails = new ProblemDetails();
+        foreach (var property in document.RootElement.EnumerateObject())
+        {
+            ReadProblemDetailsProperty(problemDetails, property);
+        }
+
+        return problemDetails;
+    }
+
+    /// <summary>Reads a single problem-details property.</summary>
+    /// <param name="problemDetails">The problem details instance to populate.</param>
+    /// <param name="property">The JSON property to read.</param>
+    private static void ReadProblemDetailsProperty(
+        ProblemDetails problemDetails,
+        JsonProperty property)
+    {
+        if (IsJsonProperty(property, "type"))
+        {
+            problemDetails.Type = ReadString(property.Value);
+            return;
+        }
+
+        if (IsJsonProperty(property, "title"))
+        {
+            problemDetails.Title = ReadString(property.Value);
+            return;
+        }
+
+        if (IsJsonProperty(property, "status"))
+        {
+            problemDetails.Status = property.Value.GetInt32();
+            return;
+        }
+
+        if (IsJsonProperty(property, "detail"))
+        {
+            problemDetails.Detail = ReadString(property.Value);
+            return;
+        }
+
+        if (IsJsonProperty(property, "instance"))
+        {
+            problemDetails.Instance = ReadString(property.Value);
+            return;
+        }
+
+        if (IsJsonProperty(property, "errors"))
+        {
+            ReadErrors(property.Value, problemDetails.Errors);
+            return;
+        }
+
+        problemDetails.Extensions[property.Name] = ReadExtensionValue(property.Value);
+    }
+
+    /// <summary>Determines whether a JSON property has the given name.</summary>
+    /// <param name="property">The JSON property.</param>
+    /// <param name="name">The expected property name.</param>
+    /// <returns><see langword="true"/> when the names match.</returns>
+    private static bool IsJsonProperty(JsonProperty property, string name) =>
+        string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Reads a nullable JSON string value.</summary>
+    /// <param name="element">The JSON element.</param>
+    /// <returns>The string value.</returns>
+    private static string? ReadString(JsonElement element) =>
+        element.ValueKind == JsonValueKind.Null
+            ? null
+            : element.GetString();
+
+    /// <summary>Reads validation errors from a JSON object.</summary>
+    /// <param name="element">The JSON element.</param>
+    /// <param name="errors">The error dictionary to populate.</param>
+    private static void ReadErrors(
+        JsonElement element,
+        Dictionary<string, string[]> errors)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            return;
+        }
+
+        foreach (var property in element.EnumerateObject())
+        {
+            errors[property.Name] = ReadErrorMessages(property.Value);
+        }
+    }
+
+    /// <summary>Reads error messages from a JSON value.</summary>
+    /// <param name="element">The JSON element.</param>
+    /// <returns>The error messages.</returns>
+    private static string[] ReadErrorMessages(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Array)
+        {
+            var messages = new List<string>();
+            foreach (var item in element.EnumerateArray())
+            {
+                messages.Add(ReadErrorMessage(item));
+            }
+
+            return [.. messages];
+        }
+
+        return element.ValueKind == JsonValueKind.Null
+            ? []
+            : [ReadErrorMessage(element)];
+    }
+
+    /// <summary>Reads a single error message.</summary>
+    /// <param name="element">The JSON element.</param>
+    /// <returns>The error message.</returns>
+    private static string ReadErrorMessage(JsonElement element) =>
+        element.ValueKind == JsonValueKind.String
+            ? element.GetString() ?? string.Empty
+            : element.GetRawText();
+
+    /// <summary>Reads extension data using the same inferred primitives as the System.Text.Json converter.</summary>
+    /// <param name="element">The JSON element.</param>
+    /// <returns>The extension value.</returns>
+    private static object ReadExtensionValue(JsonElement element) =>
+        element.ValueKind switch
+        {
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Number when element.TryGetInt64(out var integer) => integer,
+            JsonValueKind.Number => element.GetDouble(),
+            JsonValueKind.String when element.TryGetDateTime(out var dateTime) => dateTime,
+            JsonValueKind.String => element.GetString() ?? string.Empty,
+            _ => element.Clone()
+        };
 }

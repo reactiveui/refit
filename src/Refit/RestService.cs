@@ -70,9 +70,15 @@ public static class RestService
         ArgumentExceptionHelper.ThrowIfNull(client);
         ArgumentExceptionHelper.ThrowIfNull(settings);
 
+        var requestBuilder = new GeneratedOnlyRequestBuilder(settings);
+        if (_generatedFactories.TryGetValue(typeof(T), out var untypedFactory))
+        {
+            return (T)untypedFactory(client, requestBuilder);
+        }
+
         if (GeneratedFactory<T>.Factory is { } factory)
         {
-            return factory(client, new GeneratedOnlyRequestBuilder(settings));
+            return factory(client, requestBuilder);
         }
 
         throw CreateMissingGeneratedFactoryException(typeof(T));
@@ -379,14 +385,8 @@ public static class RestService
     {
         var typeName = UniqueName.ForType(refitInterfaceType);
 
-        var generatedType = Type.GetType(typeName, false);
-
-        if (generatedType is null)
-        {
-            throw CreateMissingGeneratedFactoryException(refitInterfaceType);
-        }
-
-        return generatedType;
+        return Type.GetType(typeName, false)
+            ?? throw CreateMissingGeneratedFactoryException(refitInterfaceType);
     }
 
     /// <summary>Creates the exception thrown when no source-generated implementation is available.</summary>
