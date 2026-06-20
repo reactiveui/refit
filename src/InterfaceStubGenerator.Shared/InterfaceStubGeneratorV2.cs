@@ -25,18 +25,35 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <summary>The option that overrides the generated internal namespace prefix.</summary>
     private const string RefitInternalNamespaceOption = "RefitInternalNamespace";
 
+    /// <summary>The Refit delete attribute metadata name.</summary>
+    private const string DeleteAttributeMetadataName = "Refit.DeleteAttribute";
+
+    /// <summary>The Refit get attribute metadata name.</summary>
+    private const string GetAttributeMetadataName = "Refit.GetAttribute";
+
+    /// <summary>The Refit head attribute metadata name.</summary>
+    private const string HeadAttributeMetadataName = "Refit.HeadAttribute";
+
+    /// <summary>The Refit options attribute metadata name.</summary>
+    private const string OptionsAttributeMetadataName = "Refit.OptionsAttribute";
+
+    /// <summary>The Refit patch attribute metadata name.</summary>
+    private const string PatchAttributeMetadataName = "Refit.PatchAttribute";
+
+    /// <summary>The Refit post attribute metadata name.</summary>
+    private const string PostAttributeMetadataName = "Refit.PostAttribute";
+
+    /// <summary>The Refit put attribute metadata name.</summary>
+    private const string PutAttributeMetadataName = "Refit.PutAttribute";
+
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
-        var candidateMethodsProvider = context.SyntaxProvider.CreateSyntaxProvider(
-            (syntax, _) =>
-                syntax
-                    is MethodDeclarationSyntax
-                    {
-                        Parent: InterfaceDeclarationSyntax,
-                        AttributeLists.Count: > 0
-                    },
-            (generatorContext, _) => (MethodDeclarationSyntax)generatorContext.Node);
+        var standardCandidateMethodsProvider = CreateStandardHttpMethodCandidateProvider(context);
+
+        var customCandidateMethodsProvider = context.SyntaxProvider.CreateSyntaxProvider(
+            static (syntax, _) => IsPotentialCustomHttpMethodSyntax(syntax),
+            static (generatorContext, _) => (MethodDeclarationSyntax)generatorContext.Node);
 
         var candidateInterfacesProvider = context.SyntaxProvider.CreateSyntaxProvider(
             (syntax, _) =>
@@ -48,8 +65,11 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
                 static (analyzerConfigOptionsProvider, _) =>
                     CreateGeneratorOptions(analyzerConfigOptionsProvider.GlobalOptions));
 
+        var candidateMethodsProvider = standardCandidateMethodsProvider
+            .Combine(customCandidateMethodsProvider.Collect())
+            .Select(static (combined, _) => CombineCandidateMethods(combined));
+
         var candidateSyntax = candidateMethodsProvider
-            .Collect()
             .Combine(candidateInterfacesProvider.Collect())
             .Select(static (combined, _) => CreateCandidateSyntax(combined));
 
@@ -114,6 +134,168 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         value = null;
         return false;
     }
+
+    /// <summary>Creates the provider for methods decorated with Refit's built-in HTTP method attributes.</summary>
+    /// <param name="context">The generator initialization context.</param>
+    /// <returns>The collected candidate methods.</returns>
+    private static IncrementalValueProvider<ImmutableArray<MethodDeclarationSyntax>>
+        CreateStandardHttpMethodCandidateProvider(IncrementalGeneratorInitializationContext context)
+    {
+        var deleteMethods = CreateHttpMethodCandidateProvider(context, DeleteAttributeMetadataName).Collect();
+        var getMethods = CreateHttpMethodCandidateProvider(context, GetAttributeMetadataName).Collect();
+        var headMethods = CreateHttpMethodCandidateProvider(context, HeadAttributeMetadataName).Collect();
+        var optionsMethods = CreateHttpMethodCandidateProvider(context, OptionsAttributeMetadataName).Collect();
+        var patchMethods = CreateHttpMethodCandidateProvider(context, PatchAttributeMetadataName).Collect();
+        var postMethods = CreateHttpMethodCandidateProvider(context, PostAttributeMetadataName).Collect();
+        var putMethods = CreateHttpMethodCandidateProvider(context, PutAttributeMetadataName).Collect();
+
+        return deleteMethods
+            .Combine(getMethods)
+            .Combine(headMethods)
+            .Combine(optionsMethods)
+            .Combine(patchMethods)
+            .Combine(postMethods)
+            .Combine(putMethods)
+            .Select(static (combined, _) => CombineStandardHttpMethodCandidates(combined));
+    }
+
+    /// <summary>Creates a provider for a single Refit HTTP method attribute metadata name.</summary>
+    /// <param name="context">The generator initialization context.</param>
+    /// <param name="metadataName">The fully qualified metadata name.</param>
+    /// <returns>The matching method declarations.</returns>
+    private static IncrementalValuesProvider<MethodDeclarationSyntax> CreateHttpMethodCandidateProvider(
+        IncrementalGeneratorInitializationContext context,
+        string metadataName) =>
+        context.SyntaxProvider.ForAttributeWithMetadataName(
+            metadataName,
+            static (syntax, _) => syntax is MethodDeclarationSyntax { Parent: InterfaceDeclarationSyntax },
+            static (generatorContext, _) => (MethodDeclarationSyntax)generatorContext.TargetNode);
+
+    /// <summary>Combines standard HTTP method candidate arrays into one array.</summary>
+    /// <param name="combined">The nested combined candidate arrays.</param>
+    /// <returns>The combined candidates.</returns>
+    private static ImmutableArray<MethodDeclarationSyntax> CombineStandardHttpMethodCandidates(
+        ((((((ImmutableArray<MethodDeclarationSyntax> DeleteMethods, ImmutableArray<MethodDeclarationSyntax> GetMethods) First,
+        ImmutableArray<MethodDeclarationSyntax> HeadMethods) Second,
+        ImmutableArray<MethodDeclarationSyntax> OptionsMethods) Third,
+        ImmutableArray<MethodDeclarationSyntax> PatchMethods) Fourth,
+        ImmutableArray<MethodDeclarationSyntax> PostMethods) Fifth,
+        ImmutableArray<MethodDeclarationSyntax> PutMethods) combined)
+    {
+#if ROSLYN_5
+        return
+        [
+            ..combined.Fifth.Fourth.Third.Second.First.DeleteMethods,
+            ..combined.Fifth.Fourth.Third.Second.First.GetMethods,
+            ..combined.Fifth.Fourth.Third.Second.HeadMethods,
+            ..combined.Fifth.Fourth.Third.OptionsMethods,
+            ..combined.Fifth.Fourth.PatchMethods,
+            ..combined.Fifth.PostMethods,
+            ..combined.PutMethods
+        ];
+#else
+        var count =
+            combined.Fifth.Fourth.Third.Second.First.DeleteMethods.Length
+            + combined.Fifth.Fourth.Third.Second.First.GetMethods.Length
+            + combined.Fifth.Fourth.Third.Second.HeadMethods.Length
+            + combined.Fifth.Fourth.Third.OptionsMethods.Length
+            + combined.Fifth.Fourth.PatchMethods.Length
+            + combined.Fifth.PostMethods.Length
+            + combined.PutMethods.Length;
+        var builder = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(count);
+        builder.AddRange(combined.Fifth.Fourth.Third.Second.First.DeleteMethods);
+        builder.AddRange(combined.Fifth.Fourth.Third.Second.First.GetMethods);
+        builder.AddRange(combined.Fifth.Fourth.Third.Second.HeadMethods);
+        builder.AddRange(combined.Fifth.Fourth.Third.OptionsMethods);
+        builder.AddRange(combined.Fifth.Fourth.PatchMethods);
+        builder.AddRange(combined.Fifth.PostMethods);
+        builder.AddRange(combined.PutMethods);
+        return builder.MoveToImmutable();
+#endif
+    }
+
+    /// <summary>Combines built-in and potential custom HTTP method candidates.</summary>
+    /// <param name="combined">The built-in and custom candidate arrays.</param>
+    /// <returns>The combined candidates.</returns>
+    private static ImmutableArray<MethodDeclarationSyntax> CombineCandidateMethods(
+        (ImmutableArray<MethodDeclarationSyntax> StandardMethods,
+        ImmutableArray<MethodDeclarationSyntax> CustomMethods) combined)
+    {
+        if (combined.StandardMethods.Length == 0)
+        {
+            return combined.CustomMethods;
+        }
+
+        if (combined.CustomMethods.Length == 0)
+        {
+            return combined.StandardMethods;
+        }
+
+#if ROSLYN_5
+        return [..combined.StandardMethods, ..combined.CustomMethods];
+#else
+        var builder = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(
+            combined.StandardMethods.Length + combined.CustomMethods.Length);
+        builder.AddRange(combined.StandardMethods);
+        builder.AddRange(combined.CustomMethods);
+        return builder.MoveToImmutable();
+#endif
+    }
+
+    /// <summary>Determines whether syntax might be a method using a custom Refit HTTP method attribute.</summary>
+    /// <param name="syntax">The syntax node to inspect.</param>
+    /// <returns><see langword="true"/> when the method should go through the compatibility fallback.</returns>
+    private static bool IsPotentialCustomHttpMethodSyntax(SyntaxNode syntax)
+    {
+        if (syntax is not MethodDeclarationSyntax
+            {
+                Parent: InterfaceDeclarationSyntax,
+                AttributeLists.Count: > 0
+            } method)
+        {
+            return false;
+        }
+
+        foreach (var attributeList in method.AttributeLists)
+        {
+            foreach (var attribute in attributeList.Attributes)
+            {
+                if (IsStandardHttpMethodAttributeName(attribute.Name))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Determines whether an attribute syntax name is a built-in Refit HTTP method attribute name.</summary>
+    /// <param name="name">The attribute name syntax.</param>
+    /// <returns><see langword="true"/> when the name is one of Refit's built-in HTTP method attributes.</returns>
+    private static bool IsStandardHttpMethodAttributeName(NameSyntax name)
+    {
+        var identifier = GetRightmostIdentifier(name);
+        const string attributeSuffix = "Attribute";
+        if (identifier.EndsWith(attributeSuffix, StringComparison.Ordinal))
+        {
+            identifier = identifier[..^attributeSuffix.Length];
+        }
+
+        return identifier is "Delete" or "Get" or "Head" or "Options" or "Patch" or "Post" or "Put";
+    }
+
+    /// <summary>Gets the rightmost identifier text from an attribute name.</summary>
+    /// <param name="name">The attribute name syntax.</param>
+    /// <returns>The rightmost identifier text.</returns>
+    private static string GetRightmostIdentifier(NameSyntax name) =>
+        name switch
+        {
+            IdentifierNameSyntax identifierName => identifierName.Identifier.ValueText,
+            QualifiedNameSyntax qualifiedName => GetRightmostIdentifier(qualifiedName.Right),
+            AliasQualifiedNameSyntax aliasQualifiedName => aliasQualifiedName.Name.Identifier.ValueText,
+            _ => string.Empty
+        };
 
     /// <summary>Creates the collected candidate syntax input.</summary>
     /// <param name="combined">The combined method and interface candidate collections.</param>

@@ -260,7 +260,7 @@ internal static partial class Emitter
                 continue;
             }
 
-            source.WriteLine("                        global::Refit.RestService.RegisterGeneratedFactory<");
+            source.Append("                        global::Refit.RestService.RegisterGeneratedFactory<");
             source.Append(interfaceModel.InterfaceDisplayName);
             source.WriteLine(">(");
             source.Append(

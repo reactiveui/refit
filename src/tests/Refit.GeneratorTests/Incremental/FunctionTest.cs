@@ -240,6 +240,6 @@ public class FunctionTest
         var compilation2 = TestHelper.ReplaceMemberDeclaration(compilation1, InterfaceName, newInterface);
 
         var driver2 = driver1.RunGenerators(compilation2);
-        await TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.Modified);
+        await TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 }

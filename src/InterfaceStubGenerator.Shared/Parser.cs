@@ -349,8 +349,7 @@ internal static partial class Parser
 
         var nonRefitMethodModels = BuildNonRefitMethodModels(
             partition.NonRefitMethods,
-            partition.DerivedNonRefitMethods,
-            context.Diagnostics);
+            partition.DerivedNonRefitMethods);
         var properties = BuildInterfacePropertyModels(interfaceSymbol, members);
 
         var constraints = GenerateConstraints(interfaceSymbol.TypeParameters, false);
@@ -752,12 +751,10 @@ internal static partial class Parser
     /// <summary>Builds the non-Refit method models from the interface's direct and derived methods.</summary>
     /// <param name="nonRefitMethods">The non-Refit methods declared directly on the interface.</param>
     /// <param name="derivedNonRefitMethods">The non-Refit methods inherited from base interfaces.</param>
-    /// <param name="diagnostics">The list that collects diagnostics produced during processing.</param>
     /// <returns>The non-Refit method models.</returns>
     private static ImmutableEquatableArray<MethodModel> BuildNonRefitMethodModels(
         List<IMethodSymbol> nonRefitMethods,
-        List<IMethodSymbol> derivedNonRefitMethods,
-        List<Diagnostic> diagnostics)
+        List<IMethodSymbol> derivedNonRefitMethods)
     {
         // Only abstract instance methods become non-Refit method models.
         var methodModels = new MethodModel[nonRefitMethods.Count + derivedNonRefitMethods.Count];
@@ -766,7 +763,7 @@ internal static partial class Parser
         {
             if (IsEmittableNonRefitMethod(method))
             {
-                methodModels[count++] = ParseNonRefitMethod(method, diagnostics, false);
+                methodModels[count++] = ParseNonRefitMethod(method, false);
             }
         }
 
@@ -775,7 +772,7 @@ internal static partial class Parser
             if (IsEmittableNonRefitMethod(method))
             {
                 // Derived non-Refit methods are emitted as explicit interface implementations.
-                methodModels[count++] = ParseNonRefitMethod(method, diagnostics, true);
+                methodModels[count++] = ParseNonRefitMethod(method, true);
             }
         }
 
@@ -791,27 +788,14 @@ internal static partial class Parser
         && method.MethodKind != MethodKind.PropertySet
         && method.IsAbstract;
 
-    /// <summary>Builds a method model for a non-Refit interface method and reports a diagnostic for it.</summary>
+    /// <summary>Builds a method model for a non-Refit interface method.</summary>
     /// <param name="methodSymbol">The non-Refit method symbol.</param>
-    /// <param name="diagnostics">The list that collects diagnostics produced during parsing.</param>
     /// <param name="isDerived">Whether the method comes from a base interface.</param>
     /// <returns>The model describing the non-Refit method.</returns>
     private static MethodModel ParseNonRefitMethod(
         IMethodSymbol methodSymbol,
-        List<Diagnostic> diagnostics,
         bool isDerived)
     {
-        // Report RF001 for unsupported non-Refit methods.
-        foreach (var location in methodSymbol.Locations)
-        {
-            var diagnostic = Diagnostic.Create(
-                DiagnosticDescriptors.InvalidRefitMember,
-                location,
-                methodSymbol.ContainingType.Name,
-                methodSymbol.Name);
-            diagnostics.Add(diagnostic);
-        }
-
         // Derived base-interface methods are emitted as explicit implementations.
         var explicitImpl = FirstExplicitInterfaceImplementation(methodSymbol);
         var containingTypeSymbol = explicitImpl?.ContainingType ?? methodSymbol.ContainingType;

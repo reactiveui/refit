@@ -101,6 +101,6 @@ public class InheritanceTest
             }
             """);
         var driver2 = driver1.RunGenerators(compilation2);
-        await TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.Modified);
+        await TestHelper.AssertRunReasons(driver2, IncrementalGeneratorRunReasons.ModifiedSource);
     }
 }
