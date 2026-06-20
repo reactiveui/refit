@@ -177,7 +177,10 @@ public static class GeneratorComponentTests
             writer.WriteLine("first\r\nsecond");
             writer.Indentation = 0;
 
-            await Assert.That(writer.ToSourceText().ToString()).IsEqualTo("    first\n    second\n");
+            var text = writer.ToSourceText().ToString();
+
+            await Assert.That(text).IsEqualTo($"    first{Environment.NewLine}    second{Environment.NewLine}");
+            await Assert.That(text).DoesNotContain($"\r{Environment.NewLine}");
         }
     }
 

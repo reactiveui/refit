@@ -234,10 +234,6 @@ public class ApiException : ApiExceptionBase
         "Major Code Smell",
         "CA1031:Do not catch general exception types",
         Justification = "Best-effort content read while already handling an error; any failure must not hide the original error.")]
-    [SuppressMessage(
-        "Minor Code Smell",
-        "SST1429:Do not use an empty catch of the base exception",
-        Justification = "Best-effort content read while already handling an error; any failure must not hide the original error.")]
     public static async Task<ApiException> Create(
         string exceptionMessage,
         HttpRequestMessage message,
@@ -286,8 +282,10 @@ public class ApiException : ApiExceptionBase
 
             response.Content.Dispose();
         }
-        catch
+        catch (Exception readException)
         {
+            _ = readException;
+
             // NB: We're already handling an exception at this point,
             // so we want to make sure we don't throw another one
             // that hides the real error.

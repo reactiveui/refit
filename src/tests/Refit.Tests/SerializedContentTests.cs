@@ -1206,9 +1206,9 @@ public partial class SerializedContentTests
 
     /// <summary>Marker abstract request used to verify serialization when the declared type is abstract.</summary>
     [SuppressMessage(
-        "Design",
-        "SST1436:Add members to type or remove it",
-        Justification = "Intentional empty fixture type used to verify Refit serialization when the declared type is abstract.")]
+        "RoslynCommonAnalyzers",
+        "SST1436:Add members to a type or remove it",
+        Justification = "Intentional empty abstract fixture used to verify declared-type serialization behavior.")]
     public abstract class AbstractCreateWeaponRequest;
 
     /// <summary>Concrete request derived from <see cref="AbstractCreateWeaponRequest"/>.</summary>

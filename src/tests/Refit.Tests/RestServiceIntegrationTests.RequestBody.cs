@@ -522,9 +522,12 @@ public partial class RestServiceIntegrationTests
                     + "\"Other\": [\"12345\",\"10/31/2017 4:32:59 PM\",\"60282dd2-f79a-4400-be01-bcb0e86e7bc6\"], "
                     + "\"hardcoded\": \"true\"}}");
 
-        var myParams = new MyComplexQueryParams { FirstName = "John", LastName = "Rambo" };
-        myParams.Address.Postcode = 9999;
-        myParams.Address.Street = "HomeStreet 99";
+        var myParams = new MyComplexQueryParams
+        {
+            FirstName = "John",
+            LastName = "Rambo",
+            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+        };
 
         myParams.MetaData.Add("Age", 99);
         myParams.MetaData.Add("Initials", "JR");
@@ -568,9 +571,12 @@ public partial class RestServiceIntegrationTests
                     + "\"Other\": [\"12345\",\"10/31/2017 4:32:59 PM\",\"60282dd2-f79a-4400-be01-bcb0e86e7bc6\"], "
                     + "\"hardcoded\": \"true\"}}");
 
-        var myParams = new MyComplexQueryParams { FirstName = "John", LastName = "Rambo" };
-        myParams.Address.Postcode = 9999;
-        myParams.Address.Street = "HomeStreet 99";
+        var myParams = new MyComplexQueryParams
+        {
+            FirstName = "John",
+            LastName = "Rambo",
+            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+        };
 
         myParams.MetaData.Add("Age", 99);
         myParams.MetaData.Add("Initials", "JR");

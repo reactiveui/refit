@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -766,44 +765,6 @@ internal static partial class Parser
             isExplicit);
     }
 
-    /// <summary>Builds the unqualified declared method name, including any generic type parameters.</summary>
-    /// <param name="methodSymbol">The method symbol.</param>
-    /// <returns>The declared method name without its interface qualifier.</returns>
-    private static string BuildDeclaredBaseName(IMethodSymbol methodSymbol)
-    {
-        // Keep the declared method name unqualified.
-        var declaredBaseName = methodSymbol.Name;
-        var lastDot = declaredBaseName.LastIndexOf('.');
-        if (lastDot >= 0)
-        {
-            declaredBaseName = declaredBaseName[(lastDot + 1)..];
-        }
-
-        if (methodSymbol.TypeParameters.Length == 0)
-        {
-            return declaredBaseName;
-        }
-
-        var typeParameters = methodSymbol.TypeParameters;
-        var estimatedCapacity = declaredBaseName.Length + 2 + (typeParameters.Length * 32);
-        var builder = new StringBuilder(estimatedCapacity)
-            .Append(declaredBaseName)
-            .Append('<');
-
-        for (var i = 0; i < typeParameters.Length; i++)
-        {
-            if (i > 0)
-            {
-                builder.Append(", ");
-            }
-
-            builder.Append(typeParameters[i].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-        }
-
-        builder.Append('>');
-        return builder.ToString();
-    }
-
     /// <summary>Gets the first explicit interface implementation for a method, if one exists.</summary>
     /// <param name="methodSymbol">The method symbol to inspect.</param>
     /// <returns>The first explicit interface implementation, or <see langword="null"/> when there is none.</returns>
@@ -824,51 +785,6 @@ internal static partial class Parser
             "Void" => ReturnTypeInfo.SyncVoid,
             _ => ReturnTypeInfo.Return
         };
-
-    /// <summary>Determines whether a method is decorated with a Refit HTTP method attribute.</summary>
-    /// <param name="methodSymbol">The method symbol to inspect.</param>
-    /// <param name="httpMethodAttribute">The Refit HTTP method attribute symbol.</param>
-    /// <returns><see langword="true"/> if the method is a Refit method; otherwise, <see langword="false"/>.</returns>
-    private static bool IsRefitMethod(IMethodSymbol? methodSymbol, INamedTypeSymbol httpMethodAttribute)
-    {
-        if (methodSymbol is null)
-        {
-            return false;
-        }
-
-        // Avoid LINQ here: this is called for every candidate method and every inherited member.
-        foreach (var attributeData in methodSymbol.GetAttributes())
-        {
-            if (attributeData.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>Determines whether any base interface declares a Refit method.</summary>
-    /// <param name="interfaceSymbol">The interface symbol to inspect.</param>
-    /// <param name="httpMethodAttribute">The Refit HTTP method attribute symbol.</param>
-    /// <returns><see langword="true"/> if a base interface declares a Refit method; otherwise, <see langword="false"/>.</returns>
-    private static bool HasDerivedRefitMethods(
-        INamedTypeSymbol interfaceSymbol,
-        INamedTypeSymbol httpMethodAttribute)
-    {
-        foreach (var baseInterface in interfaceSymbol.AllInterfaces)
-        {
-            foreach (var member in baseInterface.GetMembers())
-            {
-                if (member is IMethodSymbol method && IsRefitMethod(method, httpMethodAttribute))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
 
     /// <summary>Builds the constraint models for a set of type parameters.</summary>
     /// <param name="typeParameters">The type parameters to generate constraints for.</param>

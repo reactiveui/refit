@@ -1058,16 +1058,16 @@ public class HttpClientFactoryExtensionsTests
 
     /// <summary>Marker type used as a generic argument to verify unique client naming.</summary>
     [SuppressMessage(
-        "Design",
-        "SST1436:Add members to type or remove it",
-        Justification = "Intentional empty fixture used only as a generic type argument to exercise client naming for Refit tests.")]
+        "RoslynCommonAnalyzers",
+        "SST1436:Add members to a type or remove it",
+        Justification = "Intentional empty marker fixture used as a generic argument for client naming tests.")]
     private sealed class User;
 
     /// <summary>Marker type used as a generic argument to verify unique client naming.</summary>
     [SuppressMessage(
-        "Design",
-        "SST1436:Add members to type or remove it",
-        Justification = "Intentional empty fixture used only as a generic type argument to exercise client naming for Refit tests.")]
+        "RoslynCommonAnalyzers",
+        "SST1436:Add members to a type or remove it",
+        Justification = "Intentional empty marker fixture used as a generic argument for client naming tests.")]
     private sealed class Role;
 
     /// <summary>Options carrying a content serializer used to verify settings injection.</summary>

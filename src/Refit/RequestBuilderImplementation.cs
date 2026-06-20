@@ -39,14 +39,6 @@ namespace Refit
         /// <param name="refitSettings">The settings to use, or null for defaults.</param>
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-        [SuppressMessage(
-            "Minor Code Smell",
-            "SST1114:Remove the blank line between the declaration and the first parameter",
-            Justification = "False positive: the parameter attribute is required for trim annotations.")]
-        [SuppressMessage(
-            "Minor Code Smell",
-            "SST1115:Remove the blank line before this parameter",
-            Justification = "False positive: the parameter attribute is required for trim annotations.")]
         public RequestBuilderImplementation(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
@@ -121,25 +113,7 @@ namespace Refit
                 return BuildResultFuncForMethod(restMethod, nameof(BuildRxFuncForMethod));
             }
 
-            var isExplicitInterfaceMember = restMethod.MethodInfo.Name.Contains('.');
-            var isNonPublic = !restMethod.MethodInfo.IsPublic;
-            if (isExplicitInterfaceMember || isNonPublic)
-            {
-                return BuildGeneratedSyncFuncForMethod(restMethod);
-            }
-
-            throw new ArgumentException(
-                $"Method \"{restMethod.MethodInfo.Name}\" is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>");
-        }
-
-        /// <summary>Gets the lookup key for a method, stripping any explicit-interface prefix from the name.</summary>
-        /// <param name="methodInfo">The method to derive a key for.</param>
-        /// <returns>The simple method name used as a lookup key.</returns>
-        private static string GetLookupKeyForMethod(MethodInfo methodInfo)
-        {
-            var name = methodInfo.Name;
-            var lastDot = name.LastIndexOf('.');
-            return lastDot >= 0 ? name[(lastDot + 1)..] : name;
+            return BuildGeneratedSyncFuncForMethod(restMethod);
         }
 
         /// <summary>Finds a method declared on this implementation type by name.</summary>
@@ -153,7 +127,7 @@ namespace Refit
             "Trimming",
             "IL2111:Reflection access to methods with DynamicallyAccessedMembersAttribute",
             Justification = "This helper filters by known method names and does not invoke methods with dynamic-access requirements.")]
-        private static MethodInfo FindDeclaredMethod(string name)
+        internal static MethodInfo FindDeclaredMethod(string name)
         {
             foreach (var method in typeof(RequestBuilderImplementation).GetTypeInfo().DeclaredMethods)
             {
@@ -164,6 +138,16 @@ namespace Refit
             }
 
             throw new MissingMethodException(typeof(RequestBuilderImplementation).FullName, name);
+        }
+
+        /// <summary>Gets the lookup key for a method, stripping any explicit-interface prefix from the name.</summary>
+        /// <param name="methodInfo">The method to derive a key for.</param>
+        /// <returns>The simple method name used as a lookup key.</returns>
+        private static string GetLookupKeyForMethod(MethodInfo methodInfo)
+        {
+            var name = methodInfo.Name;
+            var lastDot = name.LastIndexOf('.');
+            return lastDot >= 0 ? name[(lastDot + 1)..] : name;
         }
 
         /// <summary>Determines whether the method's return type is a closed generic of the supplied open generic type.</summary>
@@ -262,11 +246,6 @@ namespace Refit
         /// <returns><see langword="true"/> when the parameter types match.</returns>
         private static bool ParametersMatch(ParameterInfo[] parameters, Type[] parameterTypes)
         {
-            if (parameters.Length != parameterTypes.Length)
-            {
-                return false;
-            }
-
             for (var i = 0; i < parameters.Length; i++)
             {
                 if (parameters[i].ParameterType != parameterTypes[i])
@@ -298,14 +277,6 @@ namespace Refit
         /// <param name="interfaceType">The interface to scan for HTTP methods.</param>
         /// <param name="methods">The dictionary to populate with discovered methods.</param>
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [SuppressMessage(
-            "Minor Code Smell",
-            "SST1114:Remove the blank line between the declaration and the first parameter",
-            Justification = "False positive: the parameter attribute is required for trim annotations.")]
-        [SuppressMessage(
-            "Minor Code Smell",
-            "SST1115:Remove the blank line before this parameter",
-            Justification = "False positive: the parameter attribute is required for trim annotations.")]
         private void AddInterfaceHttpMethods(
             [DynamicallyAccessedMembers(
                 DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]

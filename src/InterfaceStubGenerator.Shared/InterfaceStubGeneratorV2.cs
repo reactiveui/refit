@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -90,6 +89,32 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             static (spc, model) => Emitter.EmitSharedCode(model, spc.AddSource));
     }
 
+    /// <summary>Reads a global analyzer-config option by bare name or MSBuild build-property name.</summary>
+    /// <param name="options">The analyzer-config options.</param>
+    /// <param name="name">The option name without the build-property prefix.</param>
+    /// <param name="value">The option value when found.</param>
+    /// <returns><see langword="true"/> when an option value was found.</returns>
+    internal static bool TryGetGlobalOption(
+        AnalyzerConfigOptions options,
+        string name,
+        out string? value)
+    {
+        if (options.TryGetValue(BuildPropertyPrefix + name, out var buildPropertyValue))
+        {
+            value = buildPropertyValue;
+            return true;
+        }
+
+        if (options.TryGetValue(name, out var analyzerConfigValue))
+        {
+            value = analyzerConfigValue;
+            return true;
+        }
+
+        value = null;
+        return false;
+    }
+
     /// <summary>Creates the collected candidate syntax input.</summary>
     /// <param name="combined">The combined method and interface candidate collections.</param>
     /// <returns>The named candidate syntax input.</returns>
@@ -154,36 +179,6 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         TryGetGlobalOption(options, name, out var value) && bool.TryParse(value, out var parsed)
             ? parsed
             : defaultValue;
-
-    /// <summary>Reads a global analyzer-config option by bare name or MSBuild build-property name.</summary>
-    /// <param name="options">The analyzer-config options.</param>
-    /// <param name="name">The option name without the build-property prefix.</param>
-    /// <param name="value">The option value when found.</param>
-    /// <returns><see langword="true"/> when an option value was found.</returns>
-    [SuppressMessage(
-        "Style",
-        "SST1202:Members should be ordered by accessibility",
-        Justification = "Internal helper is kept near the private option parsing code it supports.")]
-    internal static bool TryGetGlobalOption(
-        AnalyzerConfigOptions options,
-        string name,
-        out string? value)
-    {
-        if (options.TryGetValue(BuildPropertyPrefix + name, out var buildPropertyValue))
-        {
-            value = buildPropertyValue;
-            return true;
-        }
-
-        if (options.TryGetValue(name, out var analyzerConfigValue))
-        {
-            value = analyzerConfigValue;
-            return true;
-        }
-
-        value = null;
-        return false;
-    }
 
     /// <summary>The collected syntax candidates for one generator pass.</summary>
     /// <param name="CandidateMethods">The candidate method declarations.</param>

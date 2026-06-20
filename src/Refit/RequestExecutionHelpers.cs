@@ -456,18 +456,15 @@ internal static class RequestExecutionHelpers
         "Design",
         "CA1031:Do not catch general exception types",
         Justification = "Best-effort buffering matches the existing runtime response path.")]
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Minor Code Smell",
-        "SST1429:Do not use an empty catch of the base exception",
-        Justification = "Best-effort buffering matches the existing runtime response path.")]
     private static async Task TryBufferContentAsync(HttpContent content, CancellationToken cancellationToken)
     {
         try
         {
             await content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch
+        catch (Exception bufferingException)
         {
+            _ = bufferingException;
         }
     }
 
