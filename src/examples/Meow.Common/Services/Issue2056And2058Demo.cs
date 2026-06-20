@@ -31,23 +31,41 @@ public static class Issue2056And2058Demo
     /// <returns>A task that completes when the validation has finished.</returns>
     private static async Task ValidateIssue2056Async(IIssueDemoApi api)
     {
-        var customerIds = Enumerable.Range(1000, 50).ToArray();
+        const int firstCustomerId = 1000;
+        const int customerCount = 50;
 
-        var responses = await Task.WhenAll(
-            customerIds.Select(async customerId =>
+        var requests = new Task<(int Expected, string? Actual)>[customerCount];
+        for (var i = 0; i < requests.Length; i++)
+        {
+            var customerId = firstCustomerId + i;
+            requests[i] = EchoCustomerAsync(api, customerId);
+        }
+
+        var responses = await Task.WhenAll(requests).ConfigureAwait(false);
+        var mismatchCount = 0;
+        for (var i = 0; i < responses.Length; i++)
+        {
+            if (responses[i].Expected.ToString() != responses[i].Actual)
             {
-                var echo = await api.EchoCustomerAsync(customerId).ConfigureAwait(false);
-                return (Expected: customerId, Actual: echo.CustomerIdHeader);
-            })).ConfigureAwait(false);
+                mismatchCount++;
+            }
+        }
 
-        var mismatches = responses.Where(x => x.Expected.ToString() != x.Actual).ToArray();
-        if (mismatches.Length == 0)
+        if (mismatchCount == 0)
         {
             return;
         }
 
         throw new InvalidOperationException(
-            $"Issue #2056 check failed. Found {mismatches.Length} mismatched CustomerId headers.");
+            $"Issue #2056 check failed. Found {mismatchCount} mismatched CustomerId headers.");
+
+        static async Task<(int Expected, string? Actual)> EchoCustomerAsync(
+            IIssueDemoApi api,
+            int customerId)
+        {
+            var echo = await api.EchoCustomerAsync(customerId).ConfigureAwait(false);
+            return (customerId, echo.CustomerIdHeader);
+        }
     }
 
     /// <summary>Validates that a large async-only payload is fully read and deserialized.</summary>

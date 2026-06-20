@@ -51,8 +51,8 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
         return MethodDictionary.GetOrAdd(
             new(
                 methodName,
-                parameterTypes?.ToArray() ?? [],
-                genericArgumentTypes?.ToArray() ?? []),
+                parameterTypes is not null ? (Type[])parameterTypes.Clone() : [],
+                genericArgumentTypes is not null ? (Type[])genericArgumentTypes.Clone() : []),
             _ =>
                 _innerBuilder.BuildRestResultFuncForMethod(
                     methodName,

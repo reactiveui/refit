@@ -32,14 +32,14 @@ internal readonly struct MethodTableKey : IEquatable<MethodTableKey>
         HashCode hashCode = default;
         hashCode.Add(MethodName);
 
-        foreach (var argument in Parameters)
+        for (var i = 0; i < Parameters.Length; i++)
         {
-            hashCode.Add(argument);
+            hashCode.Add(Parameters[i]);
         }
 
-        foreach (var genericArgument in GenericArguments)
+        for (var i = 0; i < GenericArguments.Length; i++)
         {
-            hashCode.Add(genericArgument);
+            hashCode.Add(GenericArguments[i]);
         }
 
         return hashCode.ToHashCode();

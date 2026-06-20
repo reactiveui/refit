@@ -8,6 +8,10 @@ using Microsoft.CodeAnalysis.Text;
 namespace Refit.Generator;
 
 /// <summary>Emits the generated source code for Refit interface implementations.</summary>
+[SuppressMessage(
+    "Style",
+    "SST1202:Members should be ordered by accessibility",
+    Justification = "Internal helper seams are kept next to their production call sites to preserve generator readability.")]
 internal static class Emitter
 {
     /// <summary>The generated literal for <see langword="false"/>.</summary>
@@ -580,7 +584,7 @@ internal static class Emitter
     /// <summary>Builds the request-body buffering expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter, if any.</param>
     /// <returns>The buffering expression.</returns>
-    private static string BuildBufferBodyExpression(RequestParameterModel? bodyParameter) =>
+    internal static string BuildBufferBodyExpression(RequestParameterModel? bodyParameter) =>
         bodyParameter is null
             ? FalseLiteral
             : bodyParameter.BodyBufferMode switch
@@ -593,7 +597,7 @@ internal static class Emitter
     /// <summary>Builds the serialized-body streaming expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter.</param>
     /// <returns>The streaming expression.</returns>
-    private static string BuildStreamBodyExpression(RequestParameterModel bodyParameter) =>
+    internal static string BuildStreamBodyExpression(RequestParameterModel bodyParameter) =>
         bodyParameter.BodySerializationMethod == "UrlEncoded"
             ? FalseLiteral
             : bodyParameter.BodyBufferMode switch
@@ -618,7 +622,7 @@ internal static class Emitter
     /// <summary>Builds the expression used to read an implemented interface property.</summary>
     /// <param name="property">The property model.</param>
     /// <returns>The generated property access expression.</returns>
-    private static string BuildPropertyAccessExpression(InterfacePropertyModel property)
+    internal static string BuildPropertyAccessExpression(InterfacePropertyModel property)
     {
         if (property.IsSatisfiedByGeneratedMember)
         {
@@ -633,7 +637,7 @@ internal static class Emitter
     /// <summary>Ensures a type display name is prefixed with <c>global::</c>.</summary>
     /// <param name="typeName">The type display name.</param>
     /// <returns>The globally qualified type display name.</returns>
-    private static string EnsureGlobalPrefix(string typeName) =>
+    internal static string EnsureGlobalPrefix(string typeName) =>
         typeName.StartsWith(GlobalPrefix, StringComparison.Ordinal)
             ? typeName
             : GlobalPrefix + typeName;
@@ -641,7 +645,7 @@ internal static class Emitter
     /// <summary>Maps a parsed HTTP method name to an expression that creates or returns an <see cref="HttpMethod"/>.</summary>
     /// <param name="httpMethod">The HTTP method text.</param>
     /// <returns>The HTTP method expression.</returns>
-    private static string ToHttpMethodExpression(string httpMethod) =>
+    internal static string ToHttpMethodExpression(string httpMethod) =>
         httpMethod switch
         {
             "DELETE" => "global::System.Net.Http.HttpMethod.Delete",
@@ -678,7 +682,7 @@ internal static class Emitter
     /// <summary>Converts a nullable string into a C# string literal or null literal.</summary>
     /// <param name="value">The value to quote.</param>
     /// <returns>The generated expression.</returns>
-    private static string ToNullableCSharpStringLiteral(string? value) =>
+    internal static string ToNullableCSharpStringLiteral(string? value) =>
         value is null ? "null" : ToCSharpStringLiteral(value);
 
     /// <summary>Appends one escaped C# string-literal character.</summary>
@@ -688,7 +692,7 @@ internal static class Emitter
         "CodeQuality",
         "S1541:Methods and properties should not be too complex",
         Justification = "A compact switch avoids a dictionary or repeated helper calls on the generator hot path.")]
-    private static void AppendEscapedCharacter(StringBuilder builder, char character) =>
+    internal static void AppendEscapedCharacter(StringBuilder builder, char character) =>
         _ = character switch
         {
             '\\' => builder.Append(@"\\"),
@@ -763,7 +767,7 @@ internal static class Emitter
     /// <summary>Strips an explicit interface prefix from a method name (e.g. <c>IFoo.Bar</c> becomes <c>Bar</c>).</summary>
     /// <param name="name">The method name to normalize.</param>
     /// <returns>The method name without any explicit interface prefix.</returns>
-    private static string StripExplicitInterfacePrefix(string name)
+    internal static string StripExplicitInterfacePrefix(string name)
     {
         var lastDotIndex = name.LastIndexOf('.');
         return lastDotIndex >= 0 && lastDotIndex < name.Length - 1
@@ -925,7 +929,7 @@ internal static class Emitter
     /// <param name="isDerivedExplicitImpl">True if the method is a derived explicit implementation.</param>
     /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
     /// <param name="isAsync">True if the method should be emitted as async.</param>
-    private static void WriteMethodOpening(
+    internal static void WriteMethodOpening(
         SourceWriter source,
         MethodModel methodModel,
         bool isDerivedExplicitImpl,

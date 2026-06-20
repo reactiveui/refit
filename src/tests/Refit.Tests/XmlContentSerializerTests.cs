@@ -133,6 +133,24 @@ public class XmlContentSerializerTests
         await Assert.That(documentEncoding).IsEqualTo(encoding.WebName);
     }
 
+    /// <summary>Verifies constructor, serialization, and field-name guard branches.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GuardsAndXmlFieldNamesShouldWork()
+    {
+        var sut = new XmlContentSerializer();
+
+        await Assert.That(() => new XmlContentSerializer(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => sut.ToHttpContent<Dto>(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => sut.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Element))!))
+            .IsEqualTo("element-name");
+        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Attribute))!))
+            .IsEqualTo("attribute-name");
+        await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Unannotated))!))
+            .IsNull();
+    }
+
     /// <summary>Builds a populated <see cref="Dto"/> instance for the tests.</summary>
     /// <returns>A new <see cref="Dto"/>.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -159,5 +177,20 @@ public class XmlContentSerializerTests
         /// <summary>Gets or sets the name, serialized into the Google namespace.</summary>
         [XmlElement(Namespace = "https://google.com")]
         public string? Name { get; set; }
+    }
+
+    /// <summary>DTO used to verify XML field-name lookup.</summary>
+    public class XmlFieldNameDto
+    {
+        /// <summary>Gets or sets an XML element-backed value.</summary>
+        [XmlElement("element-name")]
+        public string? Element { get; set; }
+
+        /// <summary>Gets or sets an XML attribute-backed value.</summary>
+        [XmlAttribute("attribute-name")]
+        public string? Attribute { get; set; }
+
+        /// <summary>Gets or sets an unannotated value.</summary>
+        public string? Unannotated { get; set; }
     }
 }

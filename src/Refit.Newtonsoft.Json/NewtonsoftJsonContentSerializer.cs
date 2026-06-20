@@ -105,15 +105,9 @@ public sealed class NewtonsoftJsonContentSerializer(
     /// </returns>
     /// <exception cref="System.ArgumentNullException">propertyInfo</exception>
     public string? GetFieldNameForProperty(PropertyInfo propertyInfo) =>
-        propertyInfo switch
-        {
-            null => throw new ArgumentNullException(nameof(propertyInfo)),
-            _
-                => propertyInfo
-                    .GetCustomAttributes<JsonPropertyAttribute>(true)
-                    .Select(a => a.PropertyName)
-                    .FirstOrDefault()
-        };
+        propertyInfo is null
+            ? throw new ArgumentNullException(nameof(propertyInfo))
+            : propertyInfo.GetCustomAttribute<JsonPropertyAttribute>(true)?.PropertyName;
 
     /// <summary>Resolves the text encoding from the content type charset, if present.</summary>
     /// <param name="content">The HTTP content to inspect.</param>

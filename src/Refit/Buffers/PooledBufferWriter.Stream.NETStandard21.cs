@@ -93,7 +93,7 @@ namespace Refit.Buffers
 
                 var destination = buffer[..bytesCopied];
 
-                source.CopyTo(destination);
+                source[..bytesCopied].CopyTo(destination);
 
                 _position += bytesCopied;
 

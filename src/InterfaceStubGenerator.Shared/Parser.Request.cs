@@ -2,12 +2,17 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
 
 /// <summary>Parses candidate interfaces and methods into the models used to generate Refit stubs.</summary>
 /// <content>Request parsing helpers for the Refit source generator.</content>
+[SuppressMessage(
+    "Style",
+    "SST1202:Members should be ordered by accessibility",
+    Justification = "Internal helper seams are kept next to their production call sites to preserve parser readability.")]
 internal static partial class Parser
 {
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
@@ -109,7 +114,7 @@ internal static partial class Parser
     /// <summary>Determines whether the initial inline emitter can use the path as a literal URI.</summary>
     /// <param name="path">The path to inspect.</param>
     /// <returns><see langword="true"/> when the path is supported.</returns>
-    private static bool IsConstantPathSupported(string path) =>
+    internal static bool IsConstantPathSupported(string path) =>
         (path.Length == 0 || path[0] == '/')
         && path.IndexOf('{') < 0
         && path.IndexOf('}') < 0
@@ -119,7 +124,7 @@ internal static partial class Parser
     /// <summary>Normalizes constant inline paths to match the reflection request builder URI cleanup.</summary>
     /// <param name="path">The source path from the HTTP method attribute.</param>
     /// <returns>The normalized path used by generated request construction.</returns>
-    private static string NormalizeConstantPathForInline(string path)
+    internal static string NormalizeConstantPathForInline(string path)
     {
         var fragmentIndex = path.IndexOf('#');
         if (fragmentIndex >= 0)
@@ -205,7 +210,7 @@ internal static partial class Parser
     /// <param name="start">The slice start index.</param>
     /// <param name="length">The slice length.</param>
     /// <returns><see langword="true"/> if the slice is empty or all whitespace.</returns>
-    private static bool IsWhiteSpace(string value, int start, int length)
+    internal static bool IsWhiteSpace(string value, int start, int length)
     {
         if (length <= 0)
         {
@@ -316,7 +321,7 @@ internal static partial class Parser
     /// <summary>Adds one static header to the final header list.</summary>
     /// <param name="headers">The mutable header list.</param>
     /// <param name="header">The raw header declaration.</param>
-    private static void AddStaticHeader(List<HeaderModel> headers, string header)
+    internal static void AddStaticHeader(List<HeaderModel> headers, string header)
     {
         if (string.IsNullOrWhiteSpace(header))
         {
@@ -712,7 +717,7 @@ internal static partial class Parser
     /// <summary>Gets the Refit body serialization enum member name for an underlying value.</summary>
     /// <param name="value">The enum value.</param>
     /// <returns>The enum member name.</returns>
-    private static string GetBodySerializationMethodName(int value) =>
+    internal static string GetBodySerializationMethodName(int value) =>
         value switch
         {
             0 => "Default",
@@ -725,7 +730,7 @@ internal static partial class Parser
     /// <summary>Determines whether all body bindings are supported by the initial inline emitter.</summary>
     /// <param name="parameters">The parsed request parameter models.</param>
     /// <returns><see langword="true"/> when every body binding is supported.</returns>
-    private static bool IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel> parameters)
+    internal static bool IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel> parameters)
     {
         foreach (var parameter in parameters)
         {
@@ -799,7 +804,7 @@ internal static partial class Parser
     /// <summary>Determines whether the shared runner should dispose the response.</summary>
     /// <param name="deserializedResultType">The deserialized result type.</param>
     /// <returns><see langword="true"/> when the runner owns response disposal.</returns>
-    private static bool ShouldDisposeResponse(string deserializedResultType) =>
+    internal static bool ShouldDisposeResponse(string deserializedResultType) =>
         deserializedResultType is not
             "global::System.Net.Http.HttpResponseMessage" and not
             "global::System.Net.Http.HttpContent" and not

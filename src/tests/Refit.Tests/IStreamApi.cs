@@ -10,6 +10,12 @@ namespace Refit.Tests;
 /// <summary>A Refit interface returning <see cref="Stream"/> responses.</summary>
 public interface IStreamApi
 {
+    /// <summary>Posts a stream as the request body.</summary>
+    /// <param name="stream">The stream to send.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Post("/stream")]
+    Task PostStream([Body] Stream stream);
+
     /// <summary>Gets a remote file as a stream.</summary>
     /// <param name="filename">The name of the file to retrieve.</param>
     /// <returns>The file content stream.</returns>

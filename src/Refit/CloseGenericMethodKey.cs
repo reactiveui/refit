@@ -26,8 +26,23 @@ internal readonly struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKe
     /// <summary>Determines whether this key equals another key by open method definition and type arguments.</summary>
     /// <param name="other">The key to compare against.</param>
     /// <returns><see langword="true"/> if the keys are equal; otherwise, <see langword="false"/>.</returns>
-    public bool Equals(CloseGenericMethodKey other) =>
-        OpenMethodInfo == other.OpenMethodInfo && Types.SequenceEqual(other.Types);
+    public bool Equals(CloseGenericMethodKey other)
+    {
+        if (OpenMethodInfo != other.OpenMethodInfo || Types.Length != other.Types.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < Types.Length; i++)
+        {
+            if (Types[i] != other.Types[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)
@@ -45,9 +60,9 @@ internal readonly struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKe
     {
         HashCode hashCode = default;
         hashCode.Add(OpenMethodInfo);
-        foreach (var type in Types)
+        for (var i = 0; i < Types.Length; i++)
         {
-            hashCode.Add(type);
+            hashCode.Add(Types[i]);
         }
 
         return hashCode.ToHashCode();

@@ -874,6 +874,18 @@ public partial class SerializedContentTests
         await Assert.That(roundTrip[CamelCaseEnum.alreadyLowercase]).IsEqualTo("second");
     }
 
+    /// <summary>Verifies nullable enum dictionary key conversion handles empty and non-empty property names.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_NullableEnumPropertyNamesRoundTripThroughConverter()
+    {
+        var (emptyNameValue, namedValue, json) = ReadAndWriteNullableEnumPropertyNames();
+
+        await Assert.That(emptyNameValue).IsNull();
+        await Assert.That(namedValue).IsEqualTo(CamelCaseEnum.ValueOne);
+        await Assert.That(json).IsEqualTo("""{"":"empty","valueOne":"first"}""");
+    }
+
 #if NET9_0_OR_GREATER
     /// <summary>Verifies that JsonStringEnumMemberName is honored when serializing and deserializing.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
@@ -953,6 +965,37 @@ public partial class SerializedContentTests
         var circuitBreakerTask = Task.Delay(TimeSpan.FromSeconds(30));
         await Task.WhenAny(fixtureTask, circuitBreakerTask);
         return fixtureTask;
+    }
+
+    /// <summary>Exercises the nullable enum converter's property-name read and write paths.</summary>
+    /// <returns>The values read from property names and the JSON written through the converter.</returns>
+    private static (CamelCaseEnum? EmptyNameValue, CamelCaseEnum? NamedValue, string Json) ReadAndWriteNullableEnumPropertyNames()
+    {
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+        var converter = (System.Text.Json.Serialization.JsonConverter<CamelCaseEnum?>)options.GetConverter(
+            typeof(CamelCaseEnum?));
+        var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes("""{"":"empty","valueOne":"first"}"""));
+        reader.Read();
+        reader.Read();
+        var emptyNameValue = converter.ReadAsPropertyName(ref reader, typeof(CamelCaseEnum?), options);
+        reader.Read();
+        reader.Read();
+        var namedValue = converter.ReadAsPropertyName(ref reader, typeof(CamelCaseEnum?), options);
+
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+#pragma warning disable CS8607 // The nullable converter intentionally supports null keys by writing an empty property name.
+            converter.WriteAsPropertyName(writer, null, options);
+#pragma warning restore CS8607
+            writer.WriteStringValue("empty");
+            converter.WriteAsPropertyName(writer, CamelCaseEnum.ValueOne, options);
+            writer.WriteStringValue("first");
+            writer.WriteEndObject();
+        }
+
+        return (emptyNameValue, namedValue, Encoding.UTF8.GetString(stream.ToArray()));
     }
 
     /// <summary>Base request type used to verify polymorphic body serialization.</summary>

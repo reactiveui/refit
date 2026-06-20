@@ -690,4 +690,75 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.Headers["User-Agent"]).IsEqualTo("RefitTestClient");
         await Assert.That(fixture.Headers.Count).IsEqualTo(2);
     }
+
+    /// <summary>Verifies constructor guard and missing HTTP method branches.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ConstructorGuardsAndMissingHttpMethodThrow()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuff));
+        var missingInput = typeof(IMissingHttpMethodApi);
+        var missingHttpMethod = missingInput.GetMethod(nameof(IMissingHttpMethodApi.MethodWithoutHttpMethod))!;
+
+        await Assert.That(() => new RestMethodInfoInternal(null!, method))
+            .ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => new RestMethodInfoInternal(input, null!))
+            .ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => new RestMethodInfoInternal(missingInput, missingHttpMethod))
+            .ThrowsExactly<InvalidOperationException>();
+    }
+
+    /// <summary>Verifies CR/LF paths are rejected.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task PathContainingNewlineThrows()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.NewlinePath));
+
+        await Assert.That(() => new RestMethodInfoInternal(input, method))
+            .ThrowsExactly<ArgumentException>();
+    }
+
+    /// <summary>Verifies object route binding ignores unreadable public properties.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ObjectRouteBindingIgnoresUnreadableProperties()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var fixture = new RestMethodInfoInternal(
+            input,
+            input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.ObjectRouteWithUnreadableProperty)));
+
+        await Assert.That(fixture.ParameterMap).HasSingleItem();
+        await Assert.That(fixture.ParameterMap[0].IsObjectPropertyParameter).IsTrue();
+        await Assert.That(fixture.ParameterMap[0].ParameterProperties).HasSingleItem();
+        await Assert.That(fixture.ParameterMap[0].ParameterProperties[0].PropertyInfo.Name)
+            .IsEqualTo(nameof(RouteObjectWithUnreadableProperty.Visible));
+    }
+
+    /// <summary>Verifies a path cannot bind a parameter both directly and through one of its properties.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ObjectRouteBindingConflictingDirectAndPropertyMatchThrows()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.ConflictingObjectRoute));
+
+        await Assert.That(() => new RestMethodInfoInternal(input, method))
+            .ThrowsExactly<ArgumentException>();
+    }
+
+    /// <summary>Verifies only one authorization parameter may be declared.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task DuplicateAuthorizeParametersThrow()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.DuplicateAuthorize));
+
+        await Assert.That(() => new RestMethodInfoInternal(input, method))
+            .ThrowsExactly<ArgumentException>();
+    }
 }

@@ -141,12 +141,12 @@ public static class GeneratedRequestRunner
     /// <param name="value">The header value, or null to remove the header.</param>
     public static void SetHeader(HttpRequestMessage request, string name, string? value)
     {
-        if (request.Headers.Any(x => string.Equals(x.Key, name, StringComparison.OrdinalIgnoreCase)))
+        if (ContainsHeader(request.Headers, name))
         {
             request.Headers.Remove(name);
         }
 
-        if (request.Content?.Headers.Any(x => string.Equals(x.Key, name, StringComparison.OrdinalIgnoreCase)) == true)
+        if (request.Content is not null && ContainsHeader(request.Content.Headers, name))
         {
             request.Content.Headers.Remove(name);
         }
@@ -273,6 +273,23 @@ public static class GeneratedRequestRunner
     /// <returns><see langword="true"/> for bodyless methods.</returns>
     private static bool IsBodyless(HttpMethod method) =>
         method == HttpMethod.Get || method == HttpMethod.Head;
+
+    /// <summary>Checks whether a header collection contains a key without throwing for unsupported header types.</summary>
+    /// <param name="headers">The header collection to inspect.</param>
+    /// <param name="name">The header name.</param>
+    /// <returns><see langword="true"/> when the header key exists; otherwise <see langword="false"/>.</returns>
+    private static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
+    {
+        foreach (var header in headers)
+        {
+            if (string.Equals(header.Key, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /// <summary>Removes CR and LF characters from a generated header name or value.</summary>
     /// <param name="value">The header name or value.</param>

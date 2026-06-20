@@ -65,12 +65,8 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
             return null;
         }
 
-        // See if we have a format
-        var formatString = attributeProvider
-            .GetCustomAttributes(typeof(QueryAttribute), true)
-            .OfType<QueryAttribute>()
-            .FirstOrDefault()
-            ?.Format;
+        var queryAttribute = GetFirstQueryAttribute(attributeProvider);
+        var formatString = queryAttribute?.Format;
 
         var parameterType = value.GetType();
         var enumMember = ResolveEnumMember(parameterType, value);
@@ -100,10 +96,45 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
         return cached.GetOrAdd(
             value.ToString()!,
             val =>
-                parameterType
-                    .GetTypeInfo()
-                    .DeclaredFields.FirstOrDefault(field => field.Name == val)
-                    ?.GetCustomAttribute<EnumMemberAttribute>());
+                GetEnumField(parameterType, val)?.GetCustomAttribute<EnumMemberAttribute>());
+    }
+
+    /// <summary>Gets the first query attribute from an attribute provider.</summary>
+    /// <param name="attributeProvider">The attribute provider to inspect.</param>
+    /// <returns>The first query attribute, or null when absent.</returns>
+    private static QueryAttribute? GetFirstQueryAttribute(ICustomAttributeProvider attributeProvider)
+    {
+        var attributes = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true);
+        for (var i = 0; i < attributes.Length; i++)
+        {
+            if (attributes[i] is QueryAttribute attribute)
+            {
+                return attribute;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Finds an enum field by name.</summary>
+    /// <param name="enumType">The enum type to inspect.</param>
+    /// <param name="name">The field name.</param>
+    /// <returns>The matching field, or null when absent.</returns>
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2070:DynamicallyAccessedMembers",
+        Justification = "The caller is already annotated with RequiresUnreferencedCode because enum metadata may be trimmed.")]
+    private static FieldInfo? GetEnumField(Type enumType, string name)
+    {
+        foreach (var field in enumType.GetTypeInfo().DeclaredFields)
+        {
+            if (field.Name == name)
+            {
+                return field;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Selects the effective format string, preferring the attribute format, then specific, then general formats.</summary>

@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Xml;
@@ -64,8 +65,11 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
         var encoding =
             _settings.XmlReaderWriterSettings.WriterSettings?.Encoding ?? Encoding.Unicode;
         xmlSerializer.Serialize(writer, item, _settings.XmlNamespaces);
-        var str = encoding.GetString(stream.ToArray());
-        return new StringContent(str, encoding, "application/xml");
+        writer.Flush();
+
+        var content = new ByteArrayContent(stream.GetBuffer(), 0, (int)stream.Length);
+        content.Headers.ContentType = new("application/xml") { CharSet = encoding.WebName };
+        return content;
     }
 
     /// <summary>Deserializes an object of type <typeparamref name="T"/> from a <see cref="HttpContent"/> object that contains Xml content.</summary>
@@ -107,13 +111,7 @@ public class XmlContentSerializer(XmlContentSerializerSettings settings) : IHttp
             throw new ArgumentNullException(nameof(propertyInfo));
         }
 
-        return propertyInfo
-                   .GetCustomAttributes<XmlElementAttribute>(true)
-                   .Select(a => a.ElementName)
-                   .FirstOrDefault()
-               ?? propertyInfo
-                   .GetCustomAttributes<XmlAttributeAttribute>(true)
-                   .Select(a => a.AttributeName)
-                   .FirstOrDefault();
+        return propertyInfo.GetCustomAttribute<XmlElementAttribute>(true)?.ElementName
+               ?? propertyInfo.GetCustomAttribute<XmlAttributeAttribute>(true)?.AttributeName;
     }
 }

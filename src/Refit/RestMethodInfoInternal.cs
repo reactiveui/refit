@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -45,12 +46,13 @@ internal class RestMethodInfoInternal
         Type = targetInterface ?? throw new ArgumentNullException(nameof(targetInterface));
         MethodInfo = methodInfo ?? throw new ArgumentNullException(nameof(methodInfo));
 
-        var hma = methodInfo.GetCustomAttributes(true).OfType<HttpMethodAttribute>().First();
+        var hma = methodInfo.GetCustomAttribute<HttpMethodAttribute>(true)
+                  ?? throw new InvalidOperationException("Sequence contains no elements");
 
         HttpMethod = hma.Method;
         RelativePath = hma.Path;
 
-        IsMultipart = methodInfo.GetCustomAttributes(true).OfType<MultipartAttribute>().Any();
+        IsMultipart = methodInfo.GetCustomAttribute<MultipartAttribute>(true) is not null;
 
         MultipartBoundary = GetMultipartBoundary(methodInfo, IsMultipart);
 
@@ -63,12 +65,7 @@ internal class RestMethodInfoInternal
         ShouldDisposeResponse = DetermineIfResponseMustBeDisposed(DeserializedResultType);
 
         // Exclude cancellation token parameters from this list
-        ParameterInfoArray =
-        [
-            .. methodInfo
-                .GetParameters()
-                .Where(static p => p.ParameterType != typeof(CancellationToken) &&
-                                   p.ParameterType != typeof(CancellationToken?))];
+        ParameterInfoArray = GetNonCancellationTokenParameters(methodInfo.GetParameters());
         (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray);
         BodyParameterInfo = FindBodyParameter(ParameterInfoArray, IsMultipart, hma.Method);
         AuthorizeParameterInfo = FindAuthorizationParameter(ParameterInfoArray);
@@ -178,6 +175,51 @@ internal class RestMethodInfoInternal
     public bool HeaderCollectionAt(int index) =>
         _headerCollectionParameterIndex >= 0 && _headerCollectionParameterIndex == index;
 
+    /// <summary>Removes cancellation-token parameters from a reflected parameter array.</summary>
+    /// <param name="parameters">The reflected method parameters.</param>
+    /// <returns>The parameters used for request mapping.</returns>
+    private static ParameterInfo[] GetNonCancellationTokenParameters(ParameterInfo[] parameters)
+    {
+        var count = 0;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            if (!IsCancellationTokenParameter(parameters[i]))
+            {
+                count++;
+            }
+        }
+
+        if (count == parameters.Length)
+        {
+            return parameters;
+        }
+
+        var mappedParameters = new ParameterInfo[count];
+        var index = 0;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            if (!IsCancellationTokenParameter(parameters[i]))
+            {
+                mappedParameters[index++] = parameters[i];
+            }
+        }
+
+        return mappedParameters;
+    }
+
+    /// <summary>Determines whether a parameter is a cancellation token.</summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <returns><see langword="true"/> for cancellation-token parameters.</returns>
+    private static bool IsCancellationTokenParameter(ParameterInfo parameter) =>
+        parameter.ParameterType == typeof(CancellationToken)
+        || parameter.ParameterType == typeof(CancellationToken?);
+
+    /// <summary>Determines whether a property can be read through its public getter.</summary>
+    /// <param name="property">The property to inspect.</param>
+    /// <returns><see langword="true"/> when the property is readable; otherwise <see langword="false"/>.</returns>
+    private static bool IsReadablePublicProperty(PropertyInfo property) =>
+        property.CanRead && property.GetMethod?.IsPublic == true;
+
     /// <summary>Resolves the multipart boundary text for the method, defaulting when unspecified.</summary>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <param name="isMultipart">A value indicating whether the request is multipart.</param>
@@ -218,10 +260,7 @@ internal class RestMethodInfoInternal
         for (var i = 0; i < parameterArray.Length; i++)
         {
             var param = parameterArray[i];
-            var headerCollection = param
-                .GetCustomAttributes(true)
-                .OfType<HeaderCollectionAttribute>()
-                .FirstOrDefault();
+            var headerCollection = param.GetCustomAttribute<HeaderCollectionAttribute>(true);
 
             if (headerCollection is null)
             {
@@ -258,10 +297,7 @@ internal class RestMethodInfoInternal
         for (var i = 0; i < parameterArray.Length; i++)
         {
             var param = parameterArray[i];
-            var propertyAttribute = param
-                .GetCustomAttributes(true)
-                .OfType<PropertyAttribute>()
-                .FirstOrDefault();
+            var propertyAttribute = param.GetCustomAttribute<PropertyAttribute>(true);
 
             if (propertyAttribute is not null)
             {
@@ -281,10 +317,35 @@ internal class RestMethodInfoInternal
     /// <returns>The readable public instance properties.</returns>
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
         "Refit reflects over complex parameter types when expanding route-bound properties.")]
-    private static IEnumerable<PropertyInfo> GetParameterProperties(ParameterInfo parameter) =>
-        parameter
-            .ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(static p => p.CanRead && p.GetMethod?.IsPublic == true);
+    private static PropertyInfo[] GetParameterProperties(ParameterInfo parameter)
+    {
+        var properties = parameter.ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        var count = 0;
+        for (var i = 0; i < properties.Length; i++)
+        {
+            if (IsReadablePublicProperty(properties[i]))
+            {
+                count++;
+            }
+        }
+
+        if (count == properties.Length)
+        {
+            return properties;
+        }
+
+        var readableProperties = new PropertyInfo[count];
+        var index = 0;
+        for (var i = 0; i < properties.Length; i++)
+        {
+            if (IsReadablePublicProperty(properties[i]))
+            {
+                readableProperties[index++] = properties[i];
+            }
+        }
+
+        return readableProperties;
+    }
 
     /// <summary>Verifies that the relative URL path is well formed and free of injection characters.</summary>
     /// <param name="relativePath">The relative URL path to validate.</param>
@@ -317,6 +378,14 @@ internal class RestMethodInfoInternal
     /// <returns>A tuple containing the parameter map and the ordered list of URL fragments.</returns>
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
         "Refit reflects over complex parameter types when building route parameter maps.")]
+    [SuppressMessage(
+        "Major Code Smell",
+        "S3776:Cognitive Complexity of methods should not be too high",
+        Justification = "Request route parsing has several validation branches that are clearer kept together.")]
+    [SuppressMessage(
+        "Major Code Smell",
+        "S1541:Methods and properties should not be too complex",
+        Justification = "Request route parsing has several validation branches that are clearer kept together.")]
     private static (Dictionary<int, RestMethodParameterInfo> Map, List<ParameterFragment> Fragments)
         BuildParameterMap(
             string relativePath,
@@ -324,31 +393,49 @@ internal class RestMethodInfoInternal
     {
         var ret = new Dictionary<int, RestMethodParameterInfo>();
 
-        var parameterizedParts = ParameterRegex().Matches(relativePath).Cast<Match>().ToArray();
+        var parameterizedParts = ParameterRegex().Matches(relativePath);
 
-        if (parameterizedParts.Length == 0)
+        if (parameterizedParts.Count == 0)
         {
             return string.IsNullOrEmpty(relativePath)
                 ? (ret, [])
                 : (ret, [ParameterFragment.Constant(relativePath)]);
         }
 
-        var paramValidationDict = parameterInfo.ToDictionary(
-            k => GetUrlNameForParameter(k).ToLowerInvariant(),
-            v => v);
+        var paramValidationDict = new Dictionary<string, ParameterInfo>(parameterInfo.Length);
+        for (var i = 0; i < parameterInfo.Length; i++)
+        {
+            paramValidationDict[GetUrlNameForParameter(parameterInfo[i]).ToLowerInvariant()] = parameterInfo[i];
+        }
 
         // If the parameter is a class, build a dictionary for all of its potential bound properties.
-        var objectParamValidationDict = parameterInfo
-            .Where(x => x.ParameterType.GetTypeInfo().IsClass)
-            .SelectMany(x => GetParameterProperties(x).Select(p => Tuple.Create(x, p)))
-            .GroupBy(i => $"{i.Item1.Name}.{GetUrlNameForProperty(i.Item2)}".ToLowerInvariant())
-            .ToDictionary(k => k.Key, v => v.First());
+        var objectParamValidationDict = new Dictionary<string, Tuple<ParameterInfo, PropertyInfo>>();
+        for (var i = 0; i < parameterInfo.Length; i++)
+        {
+            var parameter = parameterInfo[i];
+            if (!parameter.ParameterType.GetTypeInfo().IsClass)
+            {
+                continue;
+            }
+
+            var properties = GetParameterProperties(parameter);
+            for (var j = 0; j < properties.Length; j++)
+            {
+                var key = $"{parameter.Name}.{GetUrlNameForProperty(properties[j])}".ToLowerInvariant();
+                if (!objectParamValidationDict.ContainsKey(key))
+                {
+                    objectParamValidationDict.Add(key, Tuple.Create(parameter, properties[j]));
+                }
+            }
+        }
 
         var fragmentList = new List<ParameterFragment>();
         var index = 0;
 
-        foreach (var match in parameterizedParts)
+        for (var i = 0; i < parameterizedParts.Count; i++)
         {
+            var match = parameterizedParts[i];
+
             // Add constant value from given http path
             if (match.Index != index)
             {
@@ -487,10 +574,7 @@ internal class RestMethodInfoInternal
     /// <returns>The aliased or declared parameter name.</returns>
     private static string GetUrlNameForParameter(ParameterInfo paramInfo)
     {
-        var aliasAttr = paramInfo
-            .GetCustomAttributes(true)
-            .OfType<AliasAsAttribute>()
-            .FirstOrDefault();
+        var aliasAttr = paramInfo.GetCustomAttribute<AliasAsAttribute>(true);
         return aliasAttr is not null ? aliasAttr.Name : paramInfo.Name!;
     }
 
@@ -499,10 +583,7 @@ internal class RestMethodInfoInternal
     /// <returns>The aliased or declared property name.</returns>
     private static string GetUrlNameForProperty(PropertyInfo propInfo)
     {
-        var aliasAttr = propInfo
-            .GetCustomAttributes(true)
-            .OfType<AliasAsAttribute>()
-            .FirstOrDefault();
+        var aliasAttr = propInfo.GetCustomAttribute<AliasAsAttribute>(true);
         return aliasAttr is not null ? aliasAttr.Name : propInfo.Name;
     }
 
@@ -512,14 +593,11 @@ internal class RestMethodInfoInternal
     private static string GetAttachmentNameForParameter(ParameterInfo paramInfo)
     {
 #pragma warning disable CS0618 // Type or member is obsolete
-        var nameAttr = paramInfo
-            .GetCustomAttributes<AttachmentNameAttribute>(true)
+        var nameAttr = paramInfo.GetCustomAttribute<AttachmentNameAttribute>(true);
 #pragma warning restore CS0618 // Type or member is obsolete
-            .FirstOrDefault();
 
         // also check for AliasAs
-        return nameAttr?.Name
-               ?? paramInfo.GetCustomAttributes<AliasAsAttribute>(true).FirstOrDefault()?.Name!;
+        return nameAttr?.Name ?? paramInfo.GetCustomAttribute<AliasAsAttribute>(true)?.Name!;
     }
 
     /// <summary>Finds the parameter that carries the authorization value.</summary>
@@ -527,30 +605,34 @@ internal class RestMethodInfoInternal
     /// <returns>The authorization parameter information, or null when there is no authorize parameter.</returns>
     private static Tuple<string, int>? FindAuthorizationParameter(ParameterInfo[] parameterArray)
     {
-        var authorizeParamsEnumerable = parameterArray
-            .Select(x =>
-                (
-                    Parameter: x,
-                    AuthorizeAttribute: x.GetCustomAttributes(true)
-                        .OfType<AuthorizeAttribute>()
-                        .FirstOrDefault()
-                ))
-            .Where(x => x.AuthorizeAttribute is not null)
-            .TryGetSingle(out var authorizeParam);
+        ParameterInfo? authorizeParameter = null;
+        AuthorizeAttribute? authorizeAttribute = null;
+        var authorizeIndex = -1;
 
-        if (authorizeParamsEnumerable == EnumerablePeek.Many)
+        for (var i = 0; i < parameterArray.Length; i++)
         {
-            throw new ArgumentException("Only one parameter can be an Authorize parameter");
+            var attribute = parameterArray[i].GetCustomAttribute<AuthorizeAttribute>(true);
+            if (attribute is null)
+            {
+                continue;
+            }
+
+            if (authorizeParameter is not null)
+            {
+                throw new ArgumentException("Only one parameter can be an Authorize parameter");
+            }
+
+            authorizeParameter = parameterArray[i];
+            authorizeAttribute = attribute;
+            authorizeIndex = i;
         }
 
-        if (authorizeParamsEnumerable != EnumerablePeek.Single)
+        if (authorizeParameter is null || authorizeAttribute is null)
         {
             return null;
         }
 
-        return Tuple.Create(
-            authorizeParam!.AuthorizeAttribute!.Scheme,
-            Array.IndexOf(parameterArray, authorizeParam.Parameter));
+        return Tuple.Create(authorizeAttribute.Scheme, authorizeIndex);
     }
 
     /// <summary>Finds the single cancellation token parameter for the method.</summary>
@@ -558,19 +640,51 @@ internal class RestMethodInfoInternal
     /// <returns>The cancellation token parameter, or null when none is present.</returns>
     private static ParameterInfo? FindCancellationTokenParameter(MethodInfo methodInfo)
     {
-        var cancellationTokenPeek = methodInfo
-            .GetParameters()
-            .Where(p => p.ParameterType == typeof(CancellationToken) ||
-                        p.ParameterType == typeof(CancellationToken?))
-            .TryGetSingle(out var cancellationTokenParam);
-
-        if (cancellationTokenPeek == EnumerablePeek.Many)
+        var parameters = methodInfo.GetParameters();
+        ParameterInfo? cancellationTokenParam = null;
+        for (var i = 0; i < parameters.Length; i++)
         {
-            throw new ArgumentException(
-                $"Argument list to method \"{methodInfo.Name}\" can only contain a single CancellationToken");
+            if (!IsCancellationTokenParameter(parameters[i]))
+            {
+                continue;
+            }
+
+            if (cancellationTokenParam is not null)
+            {
+                throw new ArgumentException(
+                    $"Argument list to method \"{methodInfo.Name}\" can only contain a single CancellationToken");
+            }
+
+            cancellationTokenParam = parameters[i];
         }
 
         return cancellationTokenParam;
+    }
+
+    /// <summary>Adds headers from a <see cref="HeadersAttribute"/> into the accumulated map.</summary>
+    /// <param name="headersAttribute">The header attribute to process.</param>
+    /// <param name="ret">The accumulated map, created as needed.</param>
+    private static void AddHeaders(HeadersAttribute headersAttribute, ref Dictionary<string, string?>? ret)
+    {
+        var headers = headersAttribute.Headers;
+        for (var i = 0; i < headers.Length; i++)
+        {
+            var header = headers[i];
+            if (string.IsNullOrWhiteSpace(header))
+            {
+                continue;
+            }
+
+            ret ??= [];
+            var colonIndex = header.IndexOf(':');
+            if (colonIndex < 0)
+            {
+                ret[header.Trim()] = null;
+                continue;
+            }
+
+            ret[header[..colonIndex].Trim()] = header[(colonIndex + 1)..].Trim();
+        }
     }
 
     /// <summary>Parses the static headers declared on the method and its declaring type.</summary>
@@ -578,48 +692,46 @@ internal class RestMethodInfoInternal
     /// <returns>A map of header names to header values.</returns>
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
         "Refit reflects over inherited interface metadata when composing header maps.")]
+    [SuppressMessage(
+        "Major Code Smell",
+        "S3776:Cognitive Complexity of methods should not be too high",
+        Justification = "Header precedence is order-sensitive and easier to audit in one method.")]
     private static Dictionary<string, string?> ParseHeaders(MethodInfo methodInfo)
     {
-        var inheritedAttributes =
-            methodInfo.DeclaringType is not null
-                ? methodInfo
-                    .DeclaringType.GetInterfaces()
-                    .SelectMany(i => i.GetTypeInfo().GetCustomAttributes(true))
-                    .Reverse()
-                : [];
-
-        var declaringTypeAttributes =
-            methodInfo.DeclaringType is not null
-                ? methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true)
-                : [];
-
-        // Headers set on the declaring type have to come first,
-        // so headers set on the method can replace them. Switching
-        // the order here will break stuff.
-        var headers = inheritedAttributes
-            .Concat(declaringTypeAttributes)
-            .Concat(methodInfo.GetCustomAttributes(true))
-            .OfType<HeadersAttribute>()
-            .SelectMany(ha => ha.Headers);
-
         Dictionary<string, string?>? ret = null;
 
-        foreach (var header in headers)
+        if (methodInfo.DeclaringType is not null)
         {
-            if (string.IsNullOrWhiteSpace(header))
+            var interfaces = methodInfo.DeclaringType.GetInterfaces();
+            for (var i = interfaces.Length - 1; i >= 0; i--)
             {
-                continue;
+                var attributes = interfaces[i].GetTypeInfo().GetCustomAttributes(true);
+                for (var j = attributes.Length - 1; j >= 0; j--)
+                {
+                    if (attributes[j] is HeadersAttribute headersAttribute)
+                    {
+                        AddHeaders(headersAttribute, ref ret);
+                    }
+                }
             }
 
-            ret ??= [];
+            var declaringAttributes = methodInfo.DeclaringType.GetTypeInfo().GetCustomAttributes(true);
+            for (var i = 0; i < declaringAttributes.Length; i++)
+            {
+                if (declaringAttributes[i] is HeadersAttribute headersAttribute)
+                {
+                    AddHeaders(headersAttribute, ref ret);
+                }
+            }
+        }
 
-            // NB: Silverlight doesn't have an overload for String.Split()
-            // with a count parameter, but header values can contain
-            // ':' so we have to re-join all but the first part to get the
-            // value.
-            var parts = header.Split(':');
-            ret[parts[0].Trim()] =
-                parts.Length > 1 ? string.Join(":", parts.Skip(1)).Trim() : null;
+        var methodAttributes = methodInfo.GetCustomAttributes(true);
+        for (var i = 0; i < methodAttributes.Length; i++)
+        {
+            if (methodAttributes[i] is HeadersAttribute headersAttribute)
+            {
+                AddHeaders(headersAttribute, ref ret);
+            }
         }
 
         return ret ?? EmptyDictionary<string, string?>.Get();
@@ -634,16 +746,12 @@ internal class RestMethodInfoInternal
 
         for (var i = 0; i < parameterArray.Length; i++)
         {
-            var header = parameterArray[i]
-                .GetCustomAttributes(true)
-                .OfType<HeaderAttribute>()
-                .Select(ha => ha.Header)
-                .FirstOrDefault();
+            var header = parameterArray[i].GetCustomAttribute<HeaderAttribute>(true)?.Header;
 
             if (!string.IsNullOrWhiteSpace(header))
             {
                 ret ??= [];
-                ret[i] = header.Trim();
+                ret[i] = header!.Trim();
             }
         }
 
@@ -808,6 +916,10 @@ internal class RestMethodInfoInternal
     /// <param name="isMultipart">A value indicating whether the request is multipart.</param>
     /// <param name="method">The HTTP method of the request.</param>
     /// <returns>The body parameter information, or null when there is no body parameter.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S1541:Methods and properties should not be too complex",
+        Justification = "Body parameter inference mirrors the documented precedence rules.")]
     private Tuple<BodySerializationMethod, bool, int>? FindBodyParameter(
         ParameterInfo[] parameterArray,
         bool isMultipart,
@@ -817,21 +929,33 @@ internal class RestMethodInfoInternal
         // 1) [Body] attribute
         // 2) POST/PUT/PATCH: Reference type other than string
         // 3) If there are two reference types other than string, without the body attribute, throw
-        var bodyParamEnumerable = parameterArray
-            .Select(x =>
-                (
-                    Parameter: x,
-                    BodyAttribute: x.GetCustomAttributes(true)
-                        .OfType<BodyAttribute>()
-                        .FirstOrDefault()
-                ))
-            .Where(x => x.BodyAttribute is not null)
-            .TryGetSingle(out var bodyParam);
+        ParameterInfo? bodyParameter = null;
+        BodyAttribute? bodyAttribute = null;
+        var bodyParameterIndex = -1;
+        var hasMultipleBodyParameters = false;
+        for (var i = 0; i < parameterArray.Length; i++)
+        {
+            var attribute = parameterArray[i].GetCustomAttribute<BodyAttribute>(true);
+            if (attribute is null)
+            {
+                continue;
+            }
+
+            if (bodyParameter is not null)
+            {
+                hasMultipleBodyParameters = true;
+                break;
+            }
+
+            bodyParameter = parameterArray[i];
+            bodyAttribute = attribute;
+            bodyParameterIndex = i;
+        }
 
         // multipart requests may not contain a body, implicit or explicit
         if (isMultipart)
         {
-            if (bodyParamEnumerable != EnumerablePeek.Empty)
+            if (bodyParameter is not null)
             {
                 throw new ArgumentException(
                     "Multipart requests may not contain a Body parameter");
@@ -840,18 +964,18 @@ internal class RestMethodInfoInternal
             return null;
         }
 
-        if (bodyParamEnumerable == EnumerablePeek.Many)
+        if (hasMultipleBodyParameters)
         {
             throw new ArgumentException("Only one parameter can be a Body parameter");
         }
 
         // #1, body attribute wins
-        if (bodyParamEnumerable == EnumerablePeek.Single)
+        if (bodyParameter is not null && bodyAttribute is not null)
         {
             return Tuple.Create(
-                bodyParam!.BodyAttribute!.SerializationMethod,
-                bodyParam.BodyAttribute.Buffered ?? RefitSettings.Buffered,
-                Array.IndexOf(parameterArray, bodyParam.Parameter));
+                bodyAttribute.SerializationMethod,
+                bodyAttribute.Buffered ?? RefitSettings.Buffered,
+                bodyParameterIndex);
         }
 
         // Not in post/put/patch? bail
@@ -874,23 +998,31 @@ internal class RestMethodInfoInternal
     {
         // see if we're a post/put/patch
         // explicitly skip [Query], [HeaderCollection], and [Property]-denoted params
-        var refParamEnumerable = parameterArray
-            .Where(pi =>
-                !pi.ParameterType.GetTypeInfo().IsValueType
-                && pi.ParameterType != typeof(string)
-                && pi.GetCustomAttribute<QueryAttribute>() is null
-                && pi.GetCustomAttribute<HeaderCollectionAttribute>() is null
-                && pi.GetCustomAttribute<PropertyAttribute>() is null)
-            .TryGetSingle(out var refParam);
-
-        // Check for rule #3
-        if (refParamEnumerable == EnumerablePeek.Many)
+        ParameterInfo? refParam = null;
+        var refParamIndex = -1;
+        for (var i = 0; i < parameterArray.Length; i++)
         {
-            throw new ArgumentException(
-                "Multiple complex types found. Specify one parameter as the body using BodyAttribute");
+            var parameter = parameterArray[i];
+            if (parameter.ParameterType.GetTypeInfo().IsValueType
+                || parameter.ParameterType == typeof(string)
+                || parameter.GetCustomAttribute<QueryAttribute>() is not null
+                || parameter.GetCustomAttribute<HeaderCollectionAttribute>() is not null
+                || parameter.GetCustomAttribute<PropertyAttribute>() is not null)
+            {
+                continue;
+            }
+
+            if (refParam is not null)
+            {
+                throw new ArgumentException(
+                    "Multiple complex types found. Specify one parameter as the body using BodyAttribute");
+            }
+
+            refParam = parameter;
+            refParamIndex = i;
         }
 
-        if (refParamEnumerable != EnumerablePeek.Single)
+        if (refParam is null)
         {
             return null;
         }
@@ -898,7 +1030,7 @@ internal class RestMethodInfoInternal
         return Tuple.Create(
             BodySerializationMethod.Serialized,
             RefitSettings.Buffered,
-            Array.IndexOf(parameterArray, refParam!));
+            refParamIndex);
     }
 
     /// <summary>Holds the parsed forms of a route parameter name extracted from a URL template.</summary>

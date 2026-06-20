@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -224,6 +225,236 @@ public static class GeneratorComponentTests
             await Assert.That(collected).IsCollectionEqualTo([FirstValue, SecondValue, ThirdValue]);
             await Assert.That(array[1]).IsEqualTo(SecondValue);
         }
+    }
+
+    /// <summary>Tests for direct emitter formatting helpers.</summary>
+    public class EmitterHelperTests
+    {
+        /// <summary>The default body serialization method name.</summary>
+        private const string DefaultSerializationMethod = "Default";
+
+        /// <summary>The generated false literal.</summary>
+        private const string FalseLiteral = "false";
+
+        /// <summary>The generated true literal.</summary>
+        private const string TrueLiteral = "true";
+
+        /// <summary>Verifies escaping every special C# string-literal character.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task AppendEscapedCharacter_HandlesSpecialCharacters()
+        {
+            var builder = new StringBuilder();
+
+            foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', 'x' })
+            {
+                Emitter.AppendEscapedCharacter(builder, value);
+            }
+
+            await Assert.That(builder.ToString()).IsEqualTo(@"\\\""\0\a\b\f\n\r\t\vx");
+        }
+
+        /// <summary>Verifies body buffering and streaming expressions for all supported modes.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task BodyExpressionHelpers_HandleBufferModes()
+        {
+            var settingsBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Settings);
+            var bufferedBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Buffered);
+            var streamingBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Streaming);
+            var noneBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.None);
+            var urlEncodedBody = CreateBody("UrlEncoded", BodyBufferMode.Streaming);
+
+            await Assert.That(Emitter.BuildBufferBodyExpression(null)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody)).IsEqualTo("______settings.Buffered");
+            await Assert.That(Emitter.BuildBufferBodyExpression(bufferedBody)).IsEqualTo(TrueLiteral);
+            await Assert.That(Emitter.BuildBufferBodyExpression(streamingBody)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildBufferBodyExpression(noneBody)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildStreamBodyExpression(settingsBody)).IsEqualTo("!______settings.Buffered");
+            await Assert.That(Emitter.BuildStreamBodyExpression(bufferedBody)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildStreamBodyExpression(streamingBody)).IsEqualTo(TrueLiteral);
+            await Assert.That(Emitter.BuildStreamBodyExpression(noneBody)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildStreamBodyExpression(urlEncodedBody)).IsEqualTo(FalseLiteral);
+        }
+
+        /// <summary>Verifies property access and global-prefix helpers.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task PropertyAccessHelpers_HandleGeneratedExplicitAndPublicProperties()
+        {
+            const string TenantInterface = "RefitGeneratorTest.ITenant";
+            const string GlobalTenantInterface = "global::RefitGeneratorTest.ITenant";
+
+            var generatedProperty = CreateProperty("Client", "global::System.Net.Http.HttpClient", "RefitGeneratorTest.IClient", true, false);
+            var explicitProperty = CreateProperty("Tenant", "int", TenantInterface, false, true);
+            var prefixedExplicitProperty = CreateProperty("Tenant", "int", GlobalTenantInterface, false, true);
+            var publicProperty = CreateProperty("Tenant", "int", TenantInterface, false, false);
+
+            await Assert.That(Emitter.BuildPropertyAccessExpression(generatedProperty)).IsEqualTo("this.Client");
+            await Assert.That(Emitter.BuildPropertyAccessExpression(explicitProperty))
+                .IsEqualTo($"(({GlobalTenantInterface})this).Tenant");
+            await Assert.That(Emitter.BuildPropertyAccessExpression(prefixedExplicitProperty))
+                .IsEqualTo($"(({GlobalTenantInterface})this).Tenant");
+            await Assert.That(Emitter.BuildPropertyAccessExpression(publicProperty)).IsEqualTo("this.Tenant");
+            await Assert.That(Emitter.EnsureGlobalPrefix(TenantInterface)).IsEqualTo(GlobalTenantInterface);
+            await Assert.That(Emitter.EnsureGlobalPrefix(GlobalTenantInterface)).IsEqualTo(GlobalTenantInterface);
+        }
+
+        /// <summary>Verifies HTTP method, literal, and explicit-prefix formatting helpers.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task LiteralAndHttpMethodHelpers_HandleKnownAndInvalidValues()
+        {
+            await Assert.That(Emitter.ToNullableCSharpStringLiteral(null)).IsEqualTo("null");
+            await Assert.That(Emitter.ToNullableCSharpStringLiteral("value")).IsEqualTo("\"value\"");
+            await Assert.That(Emitter.ToHttpMethodExpression("DELETE")).IsEqualTo("global::System.Net.Http.HttpMethod.Delete");
+            await Assert.That(Emitter.ToHttpMethodExpression("GET")).IsEqualTo("global::System.Net.Http.HttpMethod.Get");
+            await Assert.That(Emitter.ToHttpMethodExpression("HEAD")).IsEqualTo("global::System.Net.Http.HttpMethod.Head");
+            await Assert.That(Emitter.ToHttpMethodExpression("OPTIONS")).IsEqualTo("global::System.Net.Http.HttpMethod.Options");
+            await Assert.That(Emitter.ToHttpMethodExpression("POST")).IsEqualTo("global::System.Net.Http.HttpMethod.Post");
+            await Assert.That(Emitter.ToHttpMethodExpression("PUT")).IsEqualTo("global::System.Net.Http.HttpMethod.Put");
+            await Assert.That(Emitter.ToHttpMethodExpression("PATCH")).IsEqualTo("new global::System.Net.Http.HttpMethod(\"PATCH\")");
+            await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.Bar")).IsEqualTo("Bar");
+            await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.")).IsEqualTo("IFoo.");
+            await Assert.That(Emitter.StripExplicitInterfacePrefix("Bar")).IsEqualTo("Bar");
+            await Assert.That(() => Emitter.ToHttpMethodExpression("TRACE")).ThrowsExactly<ArgumentOutOfRangeException>();
+        }
+
+        /// <summary>Verifies explicit method openings receive a global interface qualifier.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task WriteMethodOpening_QualifiesExplicitInterfaceMethods()
+        {
+            var writer = new SourceWriter();
+            var method = new MethodModel(
+                "Ping",
+                "global::System.Threading.Tasks.Task",
+                "RefitGeneratorTest.IBase",
+                "Ping",
+                ReturnTypeInfo.AsyncVoid,
+                RequestModel.Empty,
+                ImmutableEquatableArray<ParameterModel>.Empty,
+                ImmutableEquatableArray<TypeConstraint>.Empty,
+                false);
+
+            Emitter.WriteMethodOpening(writer, method, true, true, true);
+
+            await Assert.That(writer.ToSourceText().ToString())
+                .Contains("async global::System.Threading.Tasks.Task global::RefitGeneratorTest.IBase.Ping(");
+        }
+
+        /// <summary>Creates a body request parameter model.</summary>
+        /// <param name="serializationMethod">The serialization method name.</param>
+        /// <param name="bufferMode">The body buffer mode.</param>
+        /// <returns>The request parameter model.</returns>
+        private static RequestParameterModel CreateBody(string serializationMethod, BodyBufferMode bufferMode) =>
+            new("body", "string", RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, bufferMode);
+
+        /// <summary>Creates an interface property model.</summary>
+        /// <param name="name">The property name.</param>
+        /// <param name="type">The property type.</param>
+        /// <param name="containingType">The containing type display name.</param>
+        /// <param name="generated">Whether it is satisfied by a generated member.</param>
+        /// <param name="explicitInterface">Whether it is implemented explicitly.</param>
+        /// <returns>The interface property model.</returns>
+        private static InterfacePropertyModel CreateProperty(
+            string name,
+            string type,
+            string containingType,
+            bool generated,
+            bool explicitInterface) =>
+            new(name, type, false, containingType, string.Empty, true, true, generated, explicitInterface);
+    }
+
+    /// <summary>Tests for direct parser request helpers.</summary>
+    public class ParserRequestHelperTests
+    {
+        /// <summary>The simple path used by parser helper assertions.</summary>
+        private const string SimplePath = "/path";
+
+        /// <summary>The number of characters checked in whitespace assertions.</summary>
+        private const int WhitespaceLength = 2;
+
+        /// <summary>The enum value for URL encoded body serialization.</summary>
+        private const int UrlEncodedSerializationValue = 2;
+
+        /// <summary>The enum value for serialized body serialization.</summary>
+        private const int SerializedSerializationValue = 3;
+
+        /// <summary>An unsupported body serialization enum value.</summary>
+        private const int UnsupportedSerializationValue = 4;
+
+        /// <summary>Verifies inline path normalization and constant path classification.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task InlinePathHelpers_NormalizeAndClassifyPaths()
+        {
+            await Assert.That(Parser.NormalizeConstantPathForInline(SimplePath)).IsEqualTo(SimplePath);
+            await Assert.That(Parser.NormalizeConstantPathForInline("/path?")).IsEqualTo(SimplePath);
+            await Assert.That(Parser.NormalizeConstantPathForInline("/path?& \t =drop")).IsEqualTo(SimplePath);
+            await Assert.That(Parser.NormalizeConstantPathForInline("/path?one=1&&two=2#fragment")).IsEqualTo("/path?one=1&two=2");
+            await Assert.That(Parser.IsConstantPathSupported(string.Empty)).IsTrue();
+            await Assert.That(Parser.IsConstantPathSupported(SimplePath)).IsTrue();
+            await Assert.That(Parser.IsConstantPathSupported("relative")).IsFalse();
+            await Assert.That(Parser.IsConstantPathSupported("/{id}")).IsFalse();
+            await Assert.That(Parser.IsConstantPathSupported("/id}")).IsFalse();
+            await Assert.That(Parser.IsConstantPathSupported("/line\nbreak")).IsFalse();
+            await Assert.That(Parser.IsConstantPathSupported("/line\rbreak")).IsFalse();
+            await Assert.That(Parser.IsWhiteSpace(" \t", 0, WhitespaceLength)).IsTrue();
+            await Assert.That(Parser.IsWhiteSpace(" a", 0, WhitespaceLength)).IsFalse();
+        }
+
+        /// <summary>Verifies static header merging behavior.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task AddStaticHeader_SkipsBlankAndReplacesExistingValues()
+        {
+            const int ExpectedHeaderCount = 2;
+            var headers = new List<HeaderModel>();
+
+            Parser.AddStaticHeader(headers, " ");
+            Parser.AddStaticHeader(headers, "X-One");
+            Parser.AddStaticHeader(headers, "X-Two: two");
+            Parser.AddStaticHeader(headers, "X-One: replaced");
+
+            await Assert.That(headers.Count).IsEqualTo(ExpectedHeaderCount);
+            await Assert.That(headers[0].Name).IsEqualTo("X-One");
+            await Assert.That(headers[0].Value).IsEqualTo("replaced");
+            await Assert.That(headers[1].Name).IsEqualTo("X-Two");
+            await Assert.That(headers[1].Value).IsEqualTo("two");
+        }
+
+        /// <summary>Verifies body serialization, inline-body eligibility, and response disposal helpers.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task BodyAndDisposalHelpers_ClassifySupportedValues()
+        {
+            await Assert.That(Parser.GetBodySerializationMethodName(0)).IsEqualTo("Default");
+            await Assert.That(Parser.GetBodySerializationMethodName(1)).IsEqualTo("Json");
+            await Assert.That(Parser.GetBodySerializationMethodName(UrlEncodedSerializationValue)).IsEqualTo("UrlEncoded");
+            await Assert.That(Parser.GetBodySerializationMethodName(SerializedSerializationValue)).IsEqualTo("Serialized");
+            await Assert.That(Parser.GetBodySerializationMethodName(UnsupportedSerializationValue)).IsEqualTo(string.Empty);
+            await Assert.That(Parser.IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel>.Empty)).IsTrue();
+            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateHeaderParameter()]))).IsTrue();
+            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody(string.Empty)]))).IsFalse();
+            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("UrlEncoded")]))).IsFalse();
+            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("Serialized")]))).IsTrue();
+            await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpResponseMessage")).IsFalse();
+            await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpContent")).IsFalse();
+            await Assert.That(Parser.ShouldDisposeResponse("global::System.IO.Stream")).IsFalse();
+            await Assert.That(Parser.ShouldDisposeResponse("global::System.String")).IsTrue();
+        }
+
+        /// <summary>Creates a non-body parameter model.</summary>
+        /// <returns>The request parameter model.</returns>
+        private static RequestParameterModel CreateHeaderParameter() =>
+            new("query", "string", RequestParameterKind.Header, true, string.Empty, string.Empty, string.Empty, BodyBufferMode.None);
+
+        /// <summary>Creates a body parameter model.</summary>
+        /// <param name="serializationMethod">The serialization method name.</param>
+        /// <returns>The request parameter model.</returns>
+        private static RequestParameterModel CreateBody(string serializationMethod) =>
+            new("body", "string", RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, BodyBufferMode.Buffered);
     }
 
     /// <summary>Tests for the <c>ITypeSymbol</c> generator extension helpers.</summary>

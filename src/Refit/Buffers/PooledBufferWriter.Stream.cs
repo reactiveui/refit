@@ -191,17 +191,18 @@ internal sealed partial class PooledBufferWriter
         /// <inheritdoc/>
         public override int ReadByte()
         {
-            if (_pooledBuffer is null)
+            var pooledBuffer = _pooledBuffer;
+            if (pooledBuffer is null)
             {
                 ThrowObjectDisposedException();
             }
 
-            if (_position >= _pooledBuffer!.Length)
+            if (_position >= _length)
             {
                 return -1;
             }
 
-            return _pooledBuffer[_position++];
+            return pooledBuffer![_position++];
         }
 
         /// <inheritdoc/>

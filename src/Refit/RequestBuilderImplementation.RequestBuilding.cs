@@ -15,18 +15,12 @@ namespace Refit
     internal partial class RequestBuilderImplementation
     {
         /// <summary>Cached reflection handle to the generic body-serialization method.</summary>
-        [SuppressMessage(
-            "Major Code Smell",
-            "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
-            Justification = "Refit must invoke its own non-public generic serialization helper by reflection.")]
         [UnconditionalSuppressMessage(
             "Trimming",
             "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
             Justification = "The reflective serialization path is only reached from public APIs already annotated with RequiresUnreferencedCode; the source generator is the trim-safe alternative.")]
         private static readonly MethodInfo SerializeBodyMethod =
-            typeof(RequestBuilderImplementation).GetMethod(
-                nameof(SerializeBodyGeneric),
-                BindingFlags.Static | BindingFlags.NonPublic)!;
+            FindDeclaredMethod(nameof(SerializeBodyGeneric));
 
         /// <summary>Maps a single header, header-collection or authorization parameter into the pending headers.</summary>
         /// <param name="restMethod">The rest method being invoked.</param>
@@ -87,10 +81,8 @@ namespace Refit
         /// <param name="restMethod">The rest method being invoked.</param>
         /// <param name="i">The index of the parameter.</param>
         /// <returns><see langword="true"/> when the parameter is property-only and should not also feed the query string.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private static bool IsPropertyOnlyParameter(RestMethodInfoInternal restMethod, int i) =>
             restMethod.PropertyParameterMap.ContainsKey(i)
             && restMethod.ParameterInfoArray[i].GetCustomAttribute<QueryAttribute>() is null;
@@ -100,10 +92,8 @@ namespace Refit
         /// <param name="body">The body value to serialize.</param>
         /// <param name="declaredBodyType">The declared (static) type of the body.</param>
         /// <returns>The serialized HTTP content.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private static HttpContent SerializeBody(
             IHttpContentSerializer serializer,
             object? body,
@@ -118,10 +108,8 @@ namespace Refit
         /// <param name="serializer">The content serializer to use.</param>
         /// <param name="body">The body value to serialize.</param>
         /// <returns>The serialized HTTP content.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
@@ -129,16 +117,46 @@ namespace Refit
         private static HttpContent SerializeBodyGeneric<T>(IHttpContentSerializer serializer, object? body) =>
             serializer.ToHttpContent((T)body!);
 
+        /// <summary>Returns a copy of an argument array with cancellation tokens removed.</summary>
+        /// <param name="paramList">The original argument values.</param>
+        /// <returns>The argument values used for request mapping.</returns>
+        private static object[] RemoveCancellationTokens(object[] paramList)
+        {
+            var count = 0;
+            for (var i = 0; i < paramList.Length; i++)
+            {
+                if (paramList[i] is not CancellationToken)
+                {
+                    count++;
+                }
+            }
+
+            if (count == paramList.Length)
+            {
+                return paramList;
+            }
+
+            var mappedParams = new object[count];
+            var index = 0;
+            for (var i = 0; i < paramList.Length; i++)
+            {
+                if (paramList[i] is not CancellationToken)
+                {
+                    mappedParams[index++] = paramList[i];
+                }
+            }
+
+            return mappedParams;
+        }
+
         /// <summary>Builds the full request message for a method invocation, including body, headers and query.</summary>
         /// <param name="restMethod">The rest method being invoked.</param>
         /// <param name="basePath">The base path from the client's base address.</param>
         /// <param name="paramsContainsCancellationToken">Whether the argument list contains a cancellation token.</param>
         /// <param name="paramList">The argument values for the call.</param>
         /// <returns>The constructed request message.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private async Task<HttpRequestMessage?> BuildRequestMessageForMethodAsync(
             RestMethodInfoInternal restMethod,
             string basePath,
@@ -149,8 +167,8 @@ namespace Refit
 
             if (paramsContainsCancellationToken)
             {
-                cancellationToken = paramList.OfType<CancellationToken>().FirstOrDefault();
-                paramList = [.. paramList.Where(o => o is not CancellationToken)];
+                cancellationToken = GetCancellationToken(paramList);
+                paramList = RemoveCancellationTokens(paramList);
             }
 
             var ret = new HttpRequestMessage { Method = restMethod.HttpMethod };
@@ -195,10 +213,8 @@ namespace Refit
         /// <param name="multiPartContent">The multipart content, when the method is multipart.</param>
         /// <param name="headersToAdd">The pending header collection, created as needed.</param>
         /// <param name="queryParamsToAdd">The pending query parameter collection, created as needed.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void MapParametersToRequest(
             RestMethodInfoInternal restMethod,
             object[] paramList,
@@ -258,10 +274,8 @@ namespace Refit
         /// <param name="ret">The request message being populated.</param>
         /// <param name="headersToAdd">The pending header collection, created as needed.</param>
         /// <returns><see langword="true"/> when the parameter was fully mapped and needs no further handling.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private bool MapSingleParameterToRequest(
             RestMethodInfoInternal restMethod,
             int i,
@@ -299,10 +313,8 @@ namespace Refit
         /// <param name="basePath">The base path from the client's base address.</param>
         /// <param name="paramList">The argument values for the call.</param>
         /// <param name="queryParamsToAdd">The query parameters collected for the request, if any.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AssignRequestUri(
             RestMethodInfoInternal restMethod,
             HttpRequestMessage ret,
@@ -329,10 +341,8 @@ namespace Refit
         /// <param name="restMethod">The rest method being invoked.</param>
         /// <param name="paramList">The argument values used to resolve dynamic fragments.</param>
         /// <returns>The fully expanded relative path.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
         {
             // Every path fragment is prefixed with '/', so trim a trailing slash from the
@@ -354,8 +364,9 @@ namespace Refit
             var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
             vsb.Append(basePath);
 
-            foreach (var fragment in pathFragments)
+            for (var i = 0; i < pathFragments.Count; i++)
             {
+                var fragment = pathFragments[i];
                 AppendPathFragmentValue(ref vsb, restMethod, paramList, fragment);
             }
 
@@ -367,10 +378,8 @@ namespace Refit
         /// <param name="restMethod">The rest method being invoked.</param>
         /// <param name="paramList">The argument values used to resolve the fragment.</param>
         /// <param name="fragment">The path fragment to append.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AppendPathFragmentValue(
             ref ValueStringBuilder vsb,
             RestMethodInfoInternal restMethod,
@@ -409,10 +418,8 @@ namespace Refit
         /// <param name="paramList">The argument values used to resolve the fragment.</param>
         /// <param name="fragment">The path fragment to append.</param>
         /// <param name="parameterMapValue">The parameter info for the fragment.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AppendObjectPropertyFragment(
             ref ValueStringBuilder vsb,
             object[] paramList,
@@ -435,10 +442,8 @@ namespace Refit
         /// <param name="paramList">The argument values used to resolve the fragment.</param>
         /// <param name="fragment">The path fragment to append.</param>
         /// <param name="parameterMapValue">The parameter info for the fragment.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AppendDynamicRouteFragment(
             ref ValueStringBuilder vsb,
             RestMethodInfoInternal restMethod,
@@ -459,26 +464,30 @@ namespace Refit
                 return;
             }
 
-            // If round tripping, split string up, format each segment and append to vsb.
+            // If round tripping, format each path segment independently.
             Debug.Assert(parameterMapValue.Type == ParameterType.RoundTripping, "Dynamic route fragments must be Normal or RoundTripping.");
             var paramValue = (string)param;
-            var split = paramValue.Split('/');
-
-            var firstSection = true;
-            foreach (var section in split)
+            var sectionStart = 0;
+            for (var i = 0; i <= paramValue.Length; i++)
             {
-                if (!firstSection)
+                if (i != paramValue.Length && paramValue[i] != '/')
+                {
+                    continue;
+                }
+
+                if (sectionStart > 0)
                 {
                     vsb.Append('/');
                 }
 
+                var section = paramValue.Substring(sectionStart, i - sectionStart);
                 vsb.Append(
                     Uri.EscapeDataString(
                         _settings.UrlParameterFormatter.Format(
                             section,
                             parameterInfo,
                             parameterInfo.ParameterType) ?? string.Empty));
-                firstSection = false;
+                sectionStart = i + 1;
             }
         }
 
@@ -486,10 +495,8 @@ namespace Refit
         /// <param name="restMethod">The rest method being invoked.</param>
         /// <param name="param">The body argument value.</param>
         /// <param name="ret">The request message to populate.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AddBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
         {
             if (param is HttpContent httpContentParam)
@@ -542,10 +549,8 @@ namespace Refit
         /// <param name="restMethod">The rest method being invoked.</param>
         /// <param name="param">The body argument value.</param>
         /// <param name="ret">The request message to populate.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AddSerializedBodyToRequest(RestMethodInfoInternal restMethod, object param, HttpRequestMessage ret)
         {
             var declaredBodyType = restMethod.ParameterInfoArray[
@@ -578,10 +583,8 @@ namespace Refit
         /// <param name="queryParamsToAdd">The list of query parameters being built.</param>
         /// <param name="i">The index of the parameter.</param>
         /// <param name="parameterInfo">Optional parameter info for property-bound parameters.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AddQueryParameters(
             RestMethodInfoInternal restMethod,
             QueryAttribute? queryAttribute,
@@ -593,40 +596,42 @@ namespace Refit
             var attr = queryAttribute ?? DefaultQueryAttribute;
             if (attr.TreatAsString)
             {
-                queryParamsToAdd.AddRange(
-                    ParseQueryParameter(
-                        param.ToString(),
-                        restMethod.ParameterInfoArray[i],
-                        restMethod.QueryParameterMap[i],
-                        attr));
+                AppendQueryParameter(
+                    queryParamsToAdd,
+                    param.ToString(),
+                    restMethod.ParameterInfoArray[i],
+                    restMethod.QueryParameterMap[i],
+                    attr);
                 return;
             }
 
             if (DoNotConvertToQueryMap(param))
             {
-                queryParamsToAdd.AddRange(
-                    ParseQueryParameter(
-                        param,
-                        restMethod.ParameterInfoArray[i],
-                        restMethod.QueryParameterMap[i],
-                        attr));
+                AppendQueryParameter(
+                    queryParamsToAdd,
+                    param,
+                    restMethod.ParameterInfoArray[i],
+                    restMethod.QueryParameterMap[i],
+                    attr);
                 return;
             }
 
             var parameterCollectionFormat = attr.IsCollectionFormatSpecified
                 ? attr.CollectionFormat
                 : (CollectionFormat?)null;
-            foreach (var kvp in BuildQueryMap(param, attr.Delimiter, parameterInfo, parameterCollectionFormat))
+            var queryMap = BuildQueryMap(param, attr.Delimiter, parameterInfo, parameterCollectionFormat);
+            for (var queryMapIndex = 0; queryMapIndex < queryMap.Count; queryMapIndex++)
             {
+                var kvp = queryMap[queryMapIndex];
                 var path = !string.IsNullOrWhiteSpace(attr.Prefix)
                     ? attr.Prefix + attr.Delimiter + kvp.Key
                     : kvp.Key;
-                queryParamsToAdd.AddRange(
-                    ParseQueryParameter(
-                        kvp.Value,
-                        restMethod.ParameterInfoArray[i],
-                        path,
-                        attr));
+                AppendQueryParameter(
+                    queryParamsToAdd,
+                    kvp.Value,
+                    restMethod.ParameterInfoArray[i],
+                    path,
+                    attr);
             }
         }
 
@@ -635,10 +640,8 @@ namespace Refit
         /// <param name="i">The index of the parameter.</param>
         /// <param name="param">The argument value, which may be a single item or an enumerable.</param>
         /// <param name="multiPartContent">The multipart content to add to.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AddMultiPart(
             RestMethodInfoInternal restMethod,
             int i,
@@ -680,10 +683,8 @@ namespace Refit
         /// <param name="fileName">The file name to use for file-like parts.</param>
         /// <param name="parameterName">The form field name for the part.</param>
         /// <param name="itemValue">The value to add.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AddMultipartItem(
             MultipartFormDataContent multiPartContent,
             string fileName,
@@ -741,10 +742,8 @@ namespace Refit
         /// <param name="fileName">The file name used in the error message.</param>
         /// <param name="parameterName">The form field name for the part.</param>
         /// <param name="itemValue">The value to serialize and add.</param>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private void AddSerializedMultipartItem(
             MultipartFormDataContent multiPartContent,
             string fileName,
@@ -773,17 +772,16 @@ namespace Refit
                 e);
         }
 
-        /// <summary>Produces query key/value pairs for a single parameter value.</summary>
+        /// <summary>Appends query key/value pairs for a single parameter value.</summary>
+        /// <param name="queryParamsToAdd">The list receiving query parameters.</param>
         /// <param name="param">The parameter value.</param>
         /// <param name="parameterInfo">Reflection info for the parameter.</param>
         /// <param name="queryPath">The query key path for the parameter.</param>
         /// <param name="queryAttribute">The query attribute governing formatting.</param>
-        /// <returns>The query key/value pairs.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
-        private IEnumerable<KeyValuePair<string, string?>> ParseQueryParameter(
+        private void AppendQueryParameter(
+            List<KeyValuePair<string, string?>> queryParamsToAdd,
             object? param,
             ParameterInfo parameterInfo,
             string queryPath,
@@ -792,23 +790,24 @@ namespace Refit
             if (param is not string and IEnumerable paramValues)
             {
                 foreach (var value in ParseEnumerableQueryParameterValue(
-                    paramValues,
-                    parameterInfo,
-                    parameterInfo.ParameterType,
-                    queryAttribute))
+                             paramValues,
+                             parameterInfo,
+                             parameterInfo.ParameterType,
+                             queryAttribute))
                 {
-                    yield return new(queryPath, value);
+                    queryParamsToAdd.Add(new(queryPath, value));
                 }
+
+                return;
             }
-            else
-            {
-                yield return new(
+
+            queryParamsToAdd.Add(
+                new(
                     queryPath,
                     _settings.UrlParameterFormatter.Format(
                         param,
                         parameterInfo,
-                        parameterInfo.ParameterType));
-            }
+                        parameterInfo.ParameterType)));
         }
 
         /// <summary>Formats an enumerable parameter value according to the effective collection format.</summary>
@@ -818,10 +817,8 @@ namespace Refit
         /// <param name="queryAttribute">The query attribute governing the collection format, if any.</param>
         /// <param name="fallbackCollectionFormat">The collection format to use when none is specified.</param>
         /// <returns>The formatted query values.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private IEnumerable<string?> ParseEnumerableQueryParameterValue(
             IEnumerable paramValues,
             ICustomAttributeProvider customAttributeProvider,
@@ -860,16 +857,58 @@ namespace Refit
                 };
 
             // Missing a "default" clause was preventing the collection from serializing at all, as it was hitting "continue" thus causing an off-by-one error
-            var formattedValues = paramValues
-                .Cast<object>()
-                .Select(
-                    v =>
+            yield return JoinFormattedQueryValues(paramValues, customAttributeProvider, type, delimiter);
+        }
+
+        /// <summary>Formats and joins an enumerable query value without LINQ adapters.</summary>
+        /// <param name="paramValues">The enumerable values to format.</param>
+        /// <param name="customAttributeProvider">The attribute provider for the parameter or property.</param>
+        /// <param name="type">The element type used for formatting.</param>
+        /// <param name="delimiter">The delimiter between formatted values.</param>
+        /// <returns>The joined formatted values.</returns>
+        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [SuppressMessage(
+            "Major Code Smell",
+            "S2930:\"IDisposables\" should be disposed",
+            Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
+        private string JoinFormattedQueryValues(
+            IEnumerable paramValues,
+            ICustomAttributeProvider customAttributeProvider,
+            Type type,
+            string delimiter)
+        {
+            var enumerator = paramValues.GetEnumerator();
+            try
+            {
+                if (!enumerator.MoveNext())
+                {
+                    return string.Empty;
+                }
+
+                var builder = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
+                builder.Append(
+                    _settings.UrlParameterFormatter.Format(
+                        enumerator.Current,
+                        customAttributeProvider,
+                        type));
+
+                while (enumerator.MoveNext())
+                {
+                    builder.Append(delimiter);
+                    builder.Append(
                         _settings.UrlParameterFormatter.Format(
-                            v,
+                            enumerator.Current,
                             customAttributeProvider,
                             type));
+                }
 
-            yield return string.Join(delimiter, formattedValues);
+                return builder.ToString();
+            }
+            finally
+            {
+                (enumerator as IDisposable)?.Dispose();
+            }
         }
     }
 }

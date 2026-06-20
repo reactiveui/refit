@@ -2,11 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
-using System.Net;
 using System.Net.Http;
 using System.Reflection;
-
-using RichardSzalay.MockHttp;
 
 namespace Refit.Tests;
 
@@ -41,48 +38,23 @@ public class CachedRequestBuilderTests
     [Test]
     public async Task CacheHasCorrectNumberOfElementsTest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var innerBuilder = new CountingRequestBuilder();
+        var requestBuilder = new CachedRequestBuilderImplementation(innerBuilder);
 
-        var fixture = RestService.For<IGeneralRequests>("http://bar", settings);
-
-        // get internal dictionary to check count
-        var requestBuilderField = fixture.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Single(x => x.Name == "requestBuilder");
-        var requestBuilder = (CachedRequestBuilderImplementation)requestBuilderField.GetValue(fixture)!;
-
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .Respond(HttpStatusCode.OK);
-        await fixture.Empty();
-
-        // The source-generated request path handles simple parameterless methods without using the reflection cache.
-        await Assert.That(requestBuilder.MethodDictionary).IsEmpty();
-
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .WithQueryString("id", "id")
-            .Respond(HttpStatusCode.OK);
-        await fixture.SingleParameter("id");
+        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
+        await Assert.That(innerBuilder.BuildCount).IsEqualTo(1);
 
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .WithQueryString("id", "id")
-            .WithQueryString("name", "name")
-            .Respond(HttpStatusCode.OK);
-        await fixture.MultiParameter("id", "name");
+        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.MultiParameter), [typeof(string), typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(2);
+        await Assert.That(innerBuilder.BuildCount).IsEqualTo(2);
 
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .WithQueryString("id", "id")
-            .WithQueryString("name", "name")
-            .WithQueryString("generic", "generic")
-            .Respond(HttpStatusCode.OK);
-        await fixture.SingleGenericMultiParameter("id", "name", "generic");
+        requestBuilder.BuildRestResultFuncForMethod(
+            nameof(IGeneralRequests.SingleGenericMultiParameter),
+            [typeof(string), typeof(string), typeof(string)],
+            [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(3);
-
-        mockHttp.VerifyNoOutstandingExpectation();
+        await Assert.That(innerBuilder.BuildCount).IsEqualTo(3);
     }
 
     /// <summary>Verifies repeated identical requests do not create duplicate cache entries.</summary>
@@ -90,38 +62,18 @@ public class CachedRequestBuilderTests
     [Test]
     public async Task NoDuplicateEntriesTest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var innerBuilder = new CountingRequestBuilder();
+        var requestBuilder = new CachedRequestBuilderImplementation(innerBuilder);
 
-        var fixture = RestService.For<IGeneralRequests>("http://bar", settings);
-
-        // get internal dictionary to check count
-        var requestBuilderField = fixture.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Single(x => x.Name == "requestBuilder");
-        var requestBuilder = (CachedRequestBuilderImplementation)requestBuilderField.GetValue(fixture)!;
-
-        // send the same request repeatedly to ensure that multiple dictionary entries are not created
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .WithQueryString("id", "id")
-            .Respond(HttpStatusCode.OK);
-        await fixture.SingleParameter("id");
+        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
 
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .WithQueryString("id", "id")
-            .Respond(HttpStatusCode.OK);
-        await fixture.SingleParameter("id");
+        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
 
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .WithQueryString("id", "id")
-            .Respond(HttpStatusCode.OK);
-        await fixture.SingleParameter("id");
+        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
-
-        mockHttp.VerifyNoOutstandingExpectation();
+        await Assert.That(innerBuilder.BuildCount).IsEqualTo(1);
     }
 
     /// <summary>Verifies same-named overloads with different parameter types produce distinct cache entries.</summary>
@@ -129,30 +81,55 @@ public class CachedRequestBuilderTests
     [Test]
     public async Task SameNameDuplicateEntriesTest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var innerBuilder = new CountingRequestBuilder();
+        var requestBuilder = new CachedRequestBuilderImplementation(innerBuilder);
 
-        var fixture = RestService.For<IDuplicateNames>("http://bar", settings);
-
-        // get internal dictionary to check count
-        var requestBuilderField = fixture.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).Single(x => x.Name == "requestBuilder");
-        var requestBuilder = (CachedRequestBuilderImplementation)requestBuilderField.GetValue(fixture)!;
-
-        // send the two different requests with the same name
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .WithQueryString("id", "id")
-            .Respond(HttpStatusCode.OK);
-        await fixture.SingleParameter("id");
+        requestBuilder.BuildRestResultFuncForMethod(nameof(IDuplicateNames.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
 
-        mockHttp
-            .Expect(HttpMethod.Post, "http://bar/foo")
-            .WithQueryString("id", "10")
-            .Respond(HttpStatusCode.OK);
-        await fixture.SingleParameter(10);
+        requestBuilder.BuildRestResultFuncForMethod(nameof(IDuplicateNames.SingleParameter), [typeof(int)]);
         await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(2);
+        await Assert.That(innerBuilder.BuildCount).IsEqualTo(2);
+    }
 
-        mockHttp.VerifyNoOutstandingExpectation();
+    /// <summary>Request-builder test double that records how many functions the cache asks it to build.</summary>
+    private sealed class CountingRequestBuilder : IRequestBuilder
+    {
+        /// <summary>Gets the number of build calls received.</summary>
+        public int BuildCount { get; private set; }
+
+        /// <inheritdoc />
+        public RefitSettings Settings { get; } = new(new NullContentSerializer());
+
+        /// <inheritdoc />
+        [RequiresUnreferencedCode("Test double matches the IRequestBuilder contract.")]
+        [RequiresDynamicCode("Test double matches the IRequestBuilder contract.")]
+        public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
+            string methodName,
+            Type[]? parameterTypes = null,
+            Type[]? genericArgumentTypes = null)
+        {
+            BuildCount++;
+            return static (_, _) => null;
+        }
+    }
+
+    /// <summary>Content serializer test double used only to satisfy <see cref="RefitSettings"/> construction.</summary>
+    private sealed class NullContentSerializer : IHttpContentSerializer
+    {
+        /// <inheritdoc />
+        public HttpContent ToHttpContent<T>(T item) => new ByteArrayContent([]);
+
+        /// <inheritdoc />
+        [SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "The method implements IHttpContentSerializer and must preserve the interface shape.")]
+        public Task<T?> FromHttpContentAsync<T>(
+            HttpContent content,
+            CancellationToken cancellationToken = default) => Task.FromResult<T?>(default);
+
+        /// <inheritdoc />
+        public string? GetFieldNameForProperty(PropertyInfo propertyInfo) => propertyInfo.Name;
     }
 }

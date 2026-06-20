@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -36,6 +37,15 @@ public class FormValueMultimapTests
     {
         var target = new FormValueMultimap(null!, _settings);
         await Assert.That(target).IsEmpty();
+    }
+
+    /// <summary>Verifies a null settings instance is rejected before source processing.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task RejectsNullSettings()
+    {
+        await Assert.That(() => new FormValueMultimap(new object(), null!))
+            .ThrowsExactly<ArgumentNullException>();
     }
 
     /// <summary>Verifies the multimap loads entries from a dictionary source.</summary>
@@ -170,6 +180,38 @@ public class FormValueMultimapTests
         };
 
         var actual = new FormValueMultimap(source, settingsWithCollectionFormat);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
+    /// <summary>Verifies an empty delimited collection is represented by an empty value.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task EmptyDelimitedCollectionSerializesAsEmptyValue()
+    {
+        var source = new ObjectWithEmptyDelimitedCollection();
+        var expected = new[]
+        {
+            new KeyValuePair<string?, string?>("Values", string.Empty)
+        };
+
+        var actual = new FormValueMultimap(source, _settings);
+
+        await Assert.That(actual).IsCollectionEqualTo(expected);
+    }
+
+    /// <summary>Verifies unknown collection formats fall back to formatting the collection object itself.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task UnknownCollectionFormatFallsBackToObjectFormatter()
+    {
+        var source = new ObjectWithUnknownCollectionFormat();
+        var expected = new[]
+        {
+            new KeyValuePair<string?, string?>("Values", source.Values.ToString())
+        };
+
+        var actual = new FormValueMultimap(source, _settings);
 
         await Assert.That(actual).IsCollectionEqualTo(expected);
     }
@@ -335,6 +377,22 @@ public class FormValueMultimapTests
         /// <summary>Gets the integer array with no explicit collection format.</summary>
         [Query]
         public int[]? F { get; init; }
+    }
+
+    /// <summary>Test fixture with an empty collection using a delimited collection format.</summary>
+    public class ObjectWithEmptyDelimitedCollection
+    {
+        /// <summary>Gets the empty values collection.</summary>
+        [Query(CollectionFormat.Csv)]
+        public ArrayList Values { get; } = [];
+    }
+
+    /// <summary>Test fixture with an unsupported collection format value.</summary>
+    public class ObjectWithUnknownCollectionFormat
+    {
+        /// <summary>Gets the values collection.</summary>
+        [Query((CollectionFormat)123)]
+        public int[] Values { get; } = [1, 2];
     }
 
     /// <summary>Test fixture whose properties have non-public getters to verify they are excluded.</summary>

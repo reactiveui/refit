@@ -25,10 +25,8 @@ namespace Refit
         /// <param name="paramsContainsCancellationToken">Whether the argument list contains a cancellation token.</param>
         /// <param name="cancellationToken">A token to cancel the request.</param>
         /// <returns>A task that completes when the request finishes.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         private async Task ExecuteVoidRequestAsync(
             HttpClient client,
             RestMethodInfoInternal restMethod,
@@ -64,10 +62,8 @@ namespace Refit
         /// <param name="paramsContainsCancellationToken">Whether the argument list contains a cancellation token.</param>
         /// <param name="cancellationToken">A token to cancel the request.</param>
         /// <returns>The deserialized result, or default when there is no content.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
@@ -97,10 +93,8 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that sends the request with a cancellation token.</returns>
-#if NET5_0_OR_GREATER
         [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
         [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
-#endif
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",

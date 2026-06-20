@@ -76,12 +76,29 @@ internal static class GeneratorBenchmarkHarness
 
     /// <summary>Gets the distinct, non-dynamic assemblies to reference when compiling the benchmark source.</summary>
     /// <returns>The distinct, non-dynamic assemblies to reference.</returns>
-    private static Assembly[] GetAssemblyReferencesForCodegen() =>
-        [
-            .. AppDomain
-                .CurrentDomain.GetAssemblies()
-                .Concat(_importantAssemblies.Select(x => x.Assembly))
-                .Distinct()
-                .Where(a => !a.IsDynamic)
-        ];
+    private static Assembly[] GetAssemblyReferencesForCodegen()
+    {
+        var assemblies = new HashSet<Assembly>();
+        var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+        for (var i = 0; i < loadedAssemblies.Length; i++)
+        {
+            if (!loadedAssemblies[i].IsDynamic)
+            {
+                assemblies.Add(loadedAssemblies[i]);
+            }
+        }
+
+        for (var i = 0; i < _importantAssemblies.Length; i++)
+        {
+            var assembly = _importantAssemblies[i].Assembly;
+            if (!assembly.IsDynamic)
+            {
+                assemblies.Add(assembly);
+            }
+        }
+
+        var references = new Assembly[assemblies.Count];
+        assemblies.CopyTo(references);
+        return references;
+    }
 }

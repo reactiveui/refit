@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -528,6 +529,28 @@ public class MultipartTests
         await fixture.UploadJsonObject(model1);
     }
 
+    /// <summary>Verifies multipart object serialization failures are wrapped with a descriptive argument exception.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartUploadWithUnserializableObjectThrowsArgumentException()
+    {
+        var fixture = RestService.For<IRunscopeApi>(
+            BaseAddress,
+            new()
+            {
+                ContentSerializer = new ThrowingContentSerializer()
+            });
+
+        Task UploadJsonObject() => fixture.UploadJsonObject(new ModelObject());
+
+        var exception = await Assert
+            .That(UploadJsonObject)
+            .ThrowsExactly<ArgumentException>();
+
+        await Assert.That(exception!.Message).Contains("Unexpected parameter type", StringComparison.Ordinal);
+        await Assert.That(exception.InnerException).IsTypeOf<InvalidOperationException>();
+    }
+
     /// <summary>Verifies multiple objects are serialized to separate multipart parts by each serializer.</summary>
     /// <param name="contentSerializerType">The serializer type to exercise.</param>
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
@@ -836,5 +859,27 @@ public class MultipartTests
 
             return new(HttpStatusCode.OK);
         }
+    }
+
+    /// <summary>An <see cref="IHttpContentSerializer"/> that rejects all serialization calls.</summary>
+    private sealed class ThrowingContentSerializer : IHttpContentSerializer
+    {
+        /// <inheritdoc />
+        public HttpContent ToHttpContent<T>(T item) =>
+            throw new InvalidOperationException("serialization failed");
+
+        /// <inheritdoc />
+        [SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "The method implements Refit's published serializer interface.")]
+        public Task<T?> FromHttpContentAsync<T>(
+            HttpContent content,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(default(T));
+
+        /// <inheritdoc />
+        public string? GetFieldNameForProperty(PropertyInfo propertyInfo) =>
+            null;
     }
 }

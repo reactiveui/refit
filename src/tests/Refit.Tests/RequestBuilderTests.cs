@@ -4,8 +4,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Reactive.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 
 namespace Refit.Tests;
 
@@ -22,6 +20,28 @@ public partial class RequestBuilderTests
 
     /// <summary>The string array {"A", "B"} used as query test data.</summary>
     private static readonly string[] _stringArrayAb = ["A", "B"];
+
+    /// <summary>Rejects non-interface request-builder targets.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ConstructorRejectsNonInterfaceTargets()
+    {
+        await Assert.That(() => new RequestBuilderImplementation(typeof(string)))
+            .ThrowsExactly<ArgumentException>();
+    }
+
+    /// <summary>Rejects methods that are missing or ambiguous without parameter metadata.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRestResultFuncRejectsMissingAndAmbiguousMethods()
+    {
+        var fixture = new RequestBuilderImplementation<IOverloadedApi>();
+
+        await Assert.That(() => fixture.BuildRestResultFuncForMethod("Missing"))
+            .ThrowsExactly<ArgumentException>();
+        await Assert.That(() => fixture.BuildRestResultFuncForMethod(nameof(IOverloadedApi.Overloaded)))
+            .ThrowsExactly<ArgumentException>();
+    }
 
     /// <summary>Builds a request when no cancellation token is supplied.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -186,6 +206,20 @@ public partial class RequestBuilderTests
         await Assert.That(result).IsEqualTo(retContent);
     }
 
+    /// <summary>A stream body is wrapped directly in stream content.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task StreamRequestBodyUsesStreamContent()
+    {
+        var fixture = new RequestBuilderImplementation<IStreamApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IStreamApi.PostStream));
+
+        await using var stream = new MemoryStream([1, 2, 3]);
+        var request = factory([stream]);
+
+        await Assert.That(request.Content).IsTypeOf<StreamContent>();
+    }
+
     /// <summary>A stream response is wrapped in an ApiResponse.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -228,26 +262,17 @@ public partial class RequestBuilderTests
     [Test]
     public async Task GeneratedSyncApiResponseShouldPreserveRequestMessage()
     {
-        var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-        var restMethod = new RestMethodInfoInternal(
-            typeof(IDummyHttpApi),
-            typeof(IDummyHttpApi)
-                .GetMethods()
-                .First(x => x.Name == nameof(IDummyHttpApi.FetchSomeStringWithMetadata)));
-        var buildGeneratedSyncFuncForMethod = typeof(RequestBuilderImplementation).GetMethod(
-            "BuildGeneratedSyncFuncForMethod",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        var factory = (Func<HttpClient, object[], object?>)
-            buildGeneratedSyncFuncForMethod!.Invoke(fixture, [restMethod])!;
+        var fixture = new RequestBuilderImplementation<ExplicitInterfaceRefitTests.ISyncPipelineApi>();
+        var factory = fixture.BuildRestResultFuncForMethod("GetApiResponse");
         var testHttpMessageHandler = new TestHttpMessageHandler();
 
-        var response = (ApiResponse<string>)
+        var response = (IApiResponse<string>)
             factory(
                 new(testHttpMessageHandler)
                 {
                     BaseAddress = new("http://api/")
                 },
-                [42])!;
+                [])!;
 
         await Assert.That(response.RequestMessage).IsSameReferenceAs(testHttpMessageHandler.RequestMessage);
         await Assert.That(response.RequestMessage!.RequestUri).IsEqualTo(testHttpMessageHandler.RequestMessage!.RequestUri);
@@ -357,42 +382,13 @@ public partial class RequestBuilderTests
         await Assert.That(testHttpMessageHandler.CancellationToken.IsCancellationRequested).IsTrue();
     }
 
-    /// <summary>Throws for an invalid public sync method built from injected metadata.</summary>
+    /// <summary>Throws while analyzing an invalid public synchronous method.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    [SuppressMessage("Interoperability", "SYSLIB0050", Justification = "Test intentionally exercises the obsolete API.")]
-    public async Task BuildRestResultFuncForMethodThrowsForInvalidPublicSyncMethodFromInjectedMetadata()
+    public async Task ConstructorThrowsForInvalidPublicSyncMethod()
     {
-        var fixture = new RequestBuilderImplementation<ICancellableMethods>();
-        var interfaceHttpMethodsField = typeof(RequestBuilderImplementation).GetField(
-            "_interfaceHttpMethods",
-            BindingFlags.Instance | BindingFlags.NonPublic);
-        var interfaceHttpMethods =
-            (Dictionary<string, List<RestMethodInfoInternal>>)interfaceHttpMethodsField!.GetValue(fixture)!;
-
-        var restMethod = (RestMethodInfoInternal)RuntimeHelpers.GetUninitializedObject(
-            typeof(RestMethodInfoInternal));
-        typeof(RestMethodInfoInternal)
-            .GetField("<MethodInfo>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(
-                restMethod,
-                typeof(IInvalidReturnTypeIApiResponse).GetMethod(nameof(IInvalidReturnTypeIApiResponse.GetValue)));
-        typeof(RestMethodInfoInternal)
-            .GetField("<ReturnType>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(restMethod, typeof(IApiResponse));
-        typeof(RestMethodInfoInternal)
-            .GetField("<ReturnResultType>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(restMethod, typeof(IApiResponse));
-        typeof(RestMethodInfoInternal)
-            .GetField(
-                "<DeserializedResultType>k__BackingField",
-                BindingFlags.Instance | BindingFlags.NonPublic)!
-            .SetValue(restMethod, typeof(HttpContent));
-
-        interfaceHttpMethods["GetValue"] = [restMethod];
-
         var exception = await Assert.That(
-            () => fixture.BuildRestResultFuncForMethod("GetValue")).ThrowsExactly<ArgumentException>();
+            () => new RequestBuilderImplementation<IInvalidReturnTypeIApiResponse>()).ThrowsExactly<ArgumentException>();
 
         await Assert.That(exception!.Message).Contains(
             "All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>");

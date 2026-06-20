@@ -36,8 +36,23 @@ internal sealed class ImmutableEquatableArray<T>
     public T[] AsArray() => _values;
 
     /// <inheritdoc/>
-    public bool Equals(ImmutableEquatableArray<T>? other) =>
-        other is not null && ((ReadOnlySpan<T>)_values).SequenceEqual(other._values);
+    public bool Equals(ImmutableEquatableArray<T>? other)
+    {
+        if (other is null || other._values.Length != _values.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < _values.Length; i++)
+        {
+            if (!_values[i].Equals(other._values[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) =>
@@ -47,9 +62,9 @@ internal sealed class ImmutableEquatableArray<T>
     public override int GetHashCode()
     {
         var hash = 0;
-        foreach (var value in _values)
+        for (var i = 0; i < _values.Length; i++)
         {
-            hash = Combine(hash, value.GetHashCode());
+            hash = Combine(hash, _values[i].GetHashCode());
         }
 
         return hash;

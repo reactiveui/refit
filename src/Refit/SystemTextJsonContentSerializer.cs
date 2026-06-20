@@ -99,14 +99,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// The calculated field name.
     /// </returns>
     /// <exception cref="System.ArgumentNullException">propertyInfo.</exception>
-    public string? GetFieldNameForProperty(PropertyInfo propertyInfo) => propertyInfo switch
-    {
-        null => throw new ArgumentNullException(nameof(propertyInfo)),
-        _ => propertyInfo
-            .GetCustomAttributes<JsonPropertyNameAttribute>(true)
-            .Select(a => a.Name)
-            .FirstOrDefault()
-    };
+    public string? GetFieldNameForProperty(PropertyInfo propertyInfo) =>
+        propertyInfo is null
+            ? throw new ArgumentNullException(nameof(propertyInfo))
+            : propertyInfo.GetCustomAttribute<JsonPropertyNameAttribute>(true)?.Name;
 
     /// <summary>Determines whether the declared type is configured for polymorphic serialization.</summary>
     /// <param name="type">The declared type to inspect.</param>

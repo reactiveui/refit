@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Reflection;
 using System.Text;
 
 namespace Refit.GeneratorTests;
@@ -16,10 +15,6 @@ public sealed class LiveCompilationTests
     [Test]
     [RequiresUnreferencedCode("The test deliberately reflects over a live-generated assembly.")]
     [RequiresDynamicCode("The test deliberately emits and invokes a live-generated assembly.")]
-    [SuppressMessage(
-        "Major Code Smell",
-        "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields",
-        Justification = "The test owns the generated assembly and must instantiate Refit's internal generated implementation.")]
     public async Task GeneratedRequestBuilding_CanBeEmittedLoadedAndInvoked()
     {
         const int HeaderId = 42;
@@ -72,12 +67,7 @@ public sealed class LiveCompilationTests
             };
             var settings = new RefitSettings();
             var requestBuilder = RequestBuilder.ForType(interfaceType, settings);
-            var api = Activator.CreateInstance(
-                generatedType,
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-                binder: null,
-                args: [client, requestBuilder],
-                culture: null)!;
+            var api = Activator.CreateInstance(generatedType, [client, requestBuilder])!;
 
             interfaceType.GetProperty("TenantId")!.SetValue(api, PropertyTenantId);
             var task = (Task)interfaceType.GetMethod("Get")!.Invoke(
