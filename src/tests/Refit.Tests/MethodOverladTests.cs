@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -11,8 +10,6 @@ using RichardSzalay.MockHttp;
 namespace Refit.Tests;
 
 /// <summary>Tests that Refit dispatches correctly across overloaded interface methods.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class MethodOverladTests
 {
     /// <summary>Verifies that non-generic <c>Get</c> overloads resolve to the correct request.</summary>

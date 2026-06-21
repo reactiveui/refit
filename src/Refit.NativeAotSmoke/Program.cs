@@ -25,6 +25,13 @@ if (created.Id != ExpectedTodoId || created.Title != "prove native aot")
     throw new InvalidOperationException("The AOT POST response was not deserialized correctly.");
 }
 
+var formResponse = await api.SubmitFormAsync(new("Ada", 2)).ConfigureAwait(false);
+
+if (formResponse != "accepted")
+{
+    throw new InvalidOperationException("The AOT form response was not returned correctly.");
+}
+
 var status = await api.GetStatusAsync().ConfigureAwait(false);
 
 if (!status.IsSuccessStatusCode || status.Content?.Name != "native-aot")
@@ -35,6 +42,11 @@ if (!status.IsSuccessStatusCode || status.Content?.Name != "native-aot")
 if (!handler.SawPostBody)
 {
     throw new InvalidOperationException("The AOT request body was not serialized through Refit.");
+}
+
+if (!handler.SawFormBody)
+{
+    throw new InvalidOperationException("The AOT URL-encoded request body was not serialized through generated Refit code.");
 }
 
 Console.WriteLine("Native AOT Refit smoke test passed.");

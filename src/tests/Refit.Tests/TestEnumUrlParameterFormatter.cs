@@ -2,14 +2,11 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Refit.Tests;
 
 /// <summary>Converts enums to ints and adds a suffix to strings to test key and value formatting.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class TestEnumUrlParameterFormatter : DefaultUrlParameterFormatter
 {
     /// <summary>Gets the suffix appended to formatted string parameters.</summary>

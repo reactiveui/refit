@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -11,8 +10,6 @@ using RichardSzalay.MockHttp;
 namespace Refit.Tests;
 
 /// <summary>Tests for the <see cref="RefitSettings.ExceptionFactory"/> behavior.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based RestService/serialization is exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based RestService/serialization is exercised by these tests.")]
 public class ExceptionFactoryTests
 {
     /// <summary>Refit fixture interface used to exercise the exception factory.</summary>

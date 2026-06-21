@@ -16,13 +16,39 @@ using RichardSzalay.MockHttp;
 namespace Refit.Tests;
 
 /// <summary>Integration tests that exercise <see cref="RestService"/> end to end against a mock HTTP handler.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public partial class RestServiceIntegrationTests
 {
     /// <summary>JSON serializer options that apply the camelCase property naming policy.</summary>
     private static readonly JsonSerializerOptions _camelCaseJsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+    /// <summary>Refit interface used to verify Type-based generated factory lookup.</summary>
+    [SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST1437:Add members to type or remove it",
+        Justification = "Empty fixture interface verifies manual Type-based generated factory registration.")]
+    internal interface IGeneratedTypeFactoryApi;
+
+    /// <summary>Refit interface used to verify the typed request-builder factory fallback.</summary>
+    [SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST1437:Add members to type or remove it",
+        Justification = "Empty fixture interface verifies direct typed generated factory registration.")]
+    internal interface IGeneratedTypedFactoryApi;
+
+    /// <summary>Refit interface used to verify the settings dictionary factory fallback.</summary>
+    [SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST1437:Add members to type or remove it",
+        Justification = "Empty fixture interface verifies generated settings factory fallback behavior.")]
+    internal interface IGeneratedTypedSettingsFallbackApi;
+
+    /// <summary>Interface intentionally excluded from source generation.</summary>
+    [SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST1437:Add members to type or remove it",
+        Justification = "Empty fixture interface verifies missing generated factory behavior.")]
+    private interface INotGeneratedApi;
 
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>Verifies an instance can be created via the interface's static factory method.</summary>
@@ -52,6 +78,201 @@ public partial class RestServiceIntegrationTests
 
         await Assert.That(generated!.Client).IsSameReferenceAs(client);
         await Assert.That(generated.Builder).IsNotNull();
+    }
+
+    /// <summary>Verifies the generated-only API creates clients without a reflection request builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedUsesRegisteredFactoryWithoutReflectionBuilder()
+    {
+        RestService.RegisterGeneratedFactory(
+            typeof(IGeneratedFactoryApi),
+            static (client, builder) => new GeneratedFactoryApiClient(client, builder));
+
+        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var instance = RestService.ForGenerated<IGeneratedFactoryApi>(client, settings);
+        var generated = await Assert.That(instance).IsTypeOf<GeneratedFactoryApiClient>();
+
+        await Assert.That(generated!.Client).IsSameReferenceAs(client);
+        await Assert.That(generated.Builder.Settings).IsSameReferenceAs(settings);
+        await Assert.That(
+                () => generated.Builder.BuildRestResultFuncForMethod(nameof(IGeneratedFactoryApi.Get)))
+            .ThrowsExactly<NotSupportedException>();
+    }
+
+    /// <summary>Verifies the generated-only API prefers settings factories when they are registered.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedUsesRegisteredSettingsFactory()
+    {
+        RestService.RegisterGeneratedSettingsFactory<IGeneratedSettingsFactoryApi>(
+            static (client, settings) => new GeneratedSettingsFactoryApiClient(client, settings));
+
+        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var instance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>(client, settings);
+        var generated = await Assert.That(instance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+
+        await Assert.That(generated!.Client).IsSameReferenceAs(client);
+        await Assert.That(generated.Settings).IsSameReferenceAs(settings);
+
+        var generatedApiType = typeof(IGeneratedSettingsFactoryApi);
+        var typedInstance = RestService.ForGenerated(generatedApiType, client, settings);
+        var typedGenerated = await Assert.That(typedInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+
+        await Assert.That(typedGenerated!.Client).IsSameReferenceAs(client);
+        await Assert.That(typedGenerated.Settings).IsSameReferenceAs(settings);
+    }
+
+    /// <summary>Verifies generated-only overloads create clients from host URLs.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "This test intentionally covers the Type-based generated-client overload.")]
+    public async Task ForGeneratedHostUrlOverloadsCreateRegisteredSettingsClients()
+    {
+        RestService.RegisterGeneratedSettingsFactory<IGeneratedSettingsFactoryApi>(
+            static (client, settings) => new GeneratedSettingsFactoryApiClient(client, settings));
+
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var defaultSettingsInstance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>("http://foo/");
+        var explicitSettingsInstance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>("http://bar/", settings);
+        var typedInstance = RestService.ForGenerated(typeof(IGeneratedSettingsFactoryApi), "http://baz/", settings);
+
+        var defaultGenerated = await Assert.That(defaultSettingsInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+        var explicitGenerated = await Assert.That(explicitSettingsInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+        var typedGenerated = await Assert.That(typedInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+
+        await Assert.That(defaultGenerated!.Client.BaseAddress).IsEqualTo(new Uri("http://foo"));
+        await Assert.That(explicitGenerated!.Client.BaseAddress).IsEqualTo(new Uri("http://bar"));
+        await Assert.That(explicitGenerated.Settings).IsSameReferenceAs(settings);
+        await Assert.That(typedGenerated!.Client.BaseAddress).IsEqualTo(new Uri("http://baz"));
+        await Assert.That(typedGenerated.Settings).IsSameReferenceAs(settings);
+    }
+
+    /// <summary>Verifies generated-only Type overloads use request-builder factories and fail clearly when absent.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "This test intentionally covers the Type-based generated-client overload.")]
+    public async Task ForGeneratedTypeOverloadsUseRegisteredRequestBuilderFactories()
+    {
+        RestService.RegisterGeneratedFactory(
+            typeof(IGeneratedTypeFactoryApi),
+            static (client, builder) => new GeneratedTypeFactoryApiClient(client, builder));
+
+        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var instance = RestService.ForGenerated(typeof(IGeneratedTypeFactoryApi), client, settings);
+        var generated = await Assert.That(instance).IsTypeOf<GeneratedTypeFactoryApiClient>();
+
+        await Assert.That(generated!.Client).IsSameReferenceAs(client);
+        await Assert.That(generated.Builder.Settings).IsSameReferenceAs(settings);
+        await Assert.That(
+                () => generated.Builder.BuildRestResultFuncForMethod("Get"))
+            .ThrowsExactly<NotSupportedException>();
+
+        var exception = await Assert
+            .That(() => RestService.ForGenerated(typeof(INotGeneratedApi), client, settings))
+            .ThrowsExactly<InvalidOperationException>();
+
+        await Assert.That(exception!.Message).Contains("source generator is installed");
+    }
+
+    /// <summary>Verifies convenience overloads delegate to generated factory registrations.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA2263:Prefer generic overload when type is known", Justification = "This test intentionally covers the Type-based reflection overload.")]
+    public async Task GeneratedConvenienceOverloadsDelegateToRegisteredFactories()
+    {
+        RestService.RegisterGeneratedSettingsFactory<IGeneratedSettingsFactoryApi>(
+            static (client, settings) => new GeneratedSettingsFactoryApiClient(client, settings));
+        RestService.RegisterGeneratedFactory(
+            typeof(IGeneratedFactoryApi),
+            static (client, builder) => new GeneratedFactoryApiClient(client, builder));
+
+        using var generatedClient = new HttpClient { BaseAddress = new("http://settings") };
+        using var reflectionClient = new HttpClient { BaseAddress = new("http://factory") };
+
+        var generatedOnly = RestService.ForGenerated<IGeneratedSettingsFactoryApi>(generatedClient);
+        var reflectionPath = RestService.For(typeof(IGeneratedFactoryApi), reflectionClient);
+
+        var generatedOnlyClient = await Assert.That(generatedOnly).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+        var reflectionClientInstance = await Assert.That(reflectionPath).IsTypeOf<GeneratedFactoryApiClient>();
+
+        await Assert.That(generatedOnlyClient!.Client).IsSameReferenceAs(generatedClient);
+        await Assert.That(reflectionClientInstance!.Client).IsSameReferenceAs(reflectionClient);
+    }
+
+    /// <summary>Verifies typed generated request-builder factories can be invoked without dictionary registration.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedUsesTypedRequestBuilderFactoryFallback()
+    {
+        var previousFactory = RestService.GeneratedFactory<IGeneratedTypedFactoryApi>.Factory;
+        RestService.GeneratedFactory<IGeneratedTypedFactoryApi>.Factory =
+            static (client, builder) => new GeneratedTypedFactoryApiClient(client, builder);
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new("http://typed") };
+            var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+            var instance = RestService.ForGenerated<IGeneratedTypedFactoryApi>(client, settings);
+            var generated = await Assert.That(instance).IsTypeOf<GeneratedTypedFactoryApiClient>();
+
+            await Assert.That(generated!.Client).IsSameReferenceAs(client);
+            await Assert.That(generated.Builder.Settings).IsSameReferenceAs(settings);
+        }
+        finally
+        {
+            RestService.GeneratedFactory<IGeneratedTypedFactoryApi>.Factory = previousFactory;
+        }
+    }
+
+    /// <summary>Verifies registered settings factories remain usable through the untyped registry.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedUsesUntypedSettingsFactoryFallback()
+    {
+        RestService.RegisterGeneratedSettingsFactory<IGeneratedTypedSettingsFallbackApi>(
+            static (client, settings) => new GeneratedTypedSettingsFallbackApiClient(client, settings));
+        var previousFactory = RestService.GeneratedSettingsFactory<IGeneratedTypedSettingsFallbackApi>.Factory;
+        RestService.GeneratedSettingsFactory<IGeneratedTypedSettingsFallbackApi>.Factory = null;
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new("http://typed-settings") };
+            var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+            var instance = RestService.ForGenerated<IGeneratedTypedSettingsFallbackApi>(client, settings);
+            var generated = await Assert.That(instance).IsTypeOf<GeneratedTypedSettingsFallbackApiClient>();
+
+            await Assert.That(generated!.Client).IsSameReferenceAs(client);
+            await Assert.That(generated.Settings).IsSameReferenceAs(settings);
+        }
+        finally
+        {
+            RestService.GeneratedSettingsFactory<IGeneratedTypedSettingsFallbackApi>.Factory = previousFactory;
+        }
+    }
+
+    /// <summary>Verifies the generated-only API fails clearly when no generated factory is available.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedRequiresRegisteredFactory()
+    {
+        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var exception = await Assert
+            .That(() => RestService.ForGenerated<INotGeneratedApi>(client, settings))
+            .ThrowsExactly<InvalidOperationException>();
+
+        await Assert.That(exception!.Message).Contains("source generator is installed");
     }
 
     /// <summary>Verifies methods returning a <see cref="ValueTask{TResult}"/> work as expected.</summary>
@@ -714,4 +935,43 @@ public partial class RestServiceIntegrationTests
     /// <param name="actualString">The actual stack trace string to inspect.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     private static async Task AssertStackTraceContains(string expectedSubstring, string? actualString) => await Assert.That(actualString).Contains(expectedSubstring);
+
+    /// <summary>Hand-written generated implementation for Type-based generated factory tests.</summary>
+    /// <param name="client">The HTTP client supplied by Refit.</param>
+    /// <param name="builder">The request builder supplied by Refit.</param>
+    private sealed class GeneratedTypeFactoryApiClient(HttpClient client, IRequestBuilder builder)
+        : IGeneratedTypeFactoryApi
+    {
+        /// <summary>Gets the HTTP client supplied to the factory.</summary>
+        public HttpClient Client { get; } = client;
+
+        /// <summary>Gets the request builder supplied to the factory.</summary>
+        public IRequestBuilder Builder { get; } = builder;
+    }
+
+    /// <summary>Client used to verify typed generated request-builder factories.</summary>
+    /// <param name="client">The HTTP client supplied to the generated factory.</param>
+    /// <param name="builder">The generated-only request builder supplied to the generated factory.</param>
+    private sealed class GeneratedTypedFactoryApiClient(HttpClient client, IRequestBuilder builder)
+        : IGeneratedTypedFactoryApi
+    {
+        /// <summary>Gets the HTTP client supplied to the generated factory.</summary>
+        public HttpClient Client { get; } = client;
+
+        /// <summary>Gets the generated-only request builder supplied to the generated factory.</summary>
+        public IRequestBuilder Builder { get; } = builder;
+    }
+
+    /// <summary>Client used to verify generated settings factory fallbacks.</summary>
+    /// <param name="client">The HTTP client supplied to the generated factory.</param>
+    /// <param name="settings">The Refit settings supplied to the generated factory.</param>
+    private sealed class GeneratedTypedSettingsFallbackApiClient(HttpClient client, RefitSettings settings)
+        : IGeneratedTypedSettingsFallbackApi
+    {
+        /// <summary>Gets the HTTP client supplied to the generated factory.</summary>
+        public HttpClient Client { get; } = client;
+
+        /// <summary>Gets the settings supplied to the generated factory.</summary>
+        public RefitSettings Settings { get; } = settings;
+    }
 }

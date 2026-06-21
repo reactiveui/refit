@@ -34,6 +34,7 @@ internal static partial class Parser
         (path.Length == 0 || path[0] == '/')
         && path.IndexOf('{') < 0
         && path.IndexOf('}') < 0
+        && path.IndexOf('\\') < 0
         && path.IndexOf('\r') < 0
         && path.IndexOf('\n') < 0;
 
@@ -183,8 +184,7 @@ internal static partial class Parser
                 continue;
             }
 
-            if (parameter.BodySerializationMethod.Length == 0
-                || parameter.BodySerializationMethod == "UrlEncoded")
+            if (parameter.BodySerializationMethod.Length == 0)
             {
                 return false;
             }

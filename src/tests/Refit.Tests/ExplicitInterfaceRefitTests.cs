@@ -1,7 +1,6 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -10,8 +9,6 @@ using RichardSzalay.MockHttp;
 namespace Refit.Tests;
 
 /// <summary>Tests for explicit interface implementations and the synchronous Refit pipeline.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class ExplicitInterfaceRefitTests
 {
     /// <summary>A simple interface whose member is reused by explicit-implementation fixtures.</summary>

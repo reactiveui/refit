@@ -4,12 +4,11 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
+using System.Text.Json;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for API exception factory and validation exception edge cases.</summary>
-[RequiresUnreferencedCode("ValidationApiException.Create uses System.Text.Json reflection-based deserialization.")]
-[RequiresDynamicCode("ValidationApiException.Create uses System.Text.Json reflection-based deserialization.")]
 public sealed class ApiExceptionTests
 {
     /// <summary>Verifies ApiException factory guard clauses.</summary>
@@ -145,6 +144,105 @@ public sealed class ApiExceptionTests
         await Assert.That(validationException.Content.Status).IsEqualTo(400);
         await Assert.That(validationException.Content.Errors["Name"][0]).IsEqualTo("Required");
     }
+
+    /// <summary>Verifies the synchronous ValidationApiException factory hydrates problem detail extensions and scalar errors.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    public async Task ValidationApiExceptionCreateReadsExtensionsAndScalarErrors()
+    {
+        using var response = CreateErrorResponse(
+            """
+            {
+              "TYPE": null,
+              "title": "invalid",
+              "status": 400,
+              "detail": null,
+              "instance": null,
+              "errors": {
+                "Name": null,
+                "Count": 42
+              },
+              "enabled": true,
+              "disabled": false,
+              "integer": 123,
+              "fraction": 12.5,
+              "timestamp": "2024-02-03T04:05:06Z",
+              "message": "hello",
+              "metadata": { "nested": "value" }
+            }
+            """,
+            "application/problem+json");
+        var apiException = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        var validationException = ValidationApiException.Create(apiException);
+
+        await Assert.That(validationException.Content).IsNotNull();
+        await Assert.That(validationException.Content!.Type).IsNull();
+        await Assert.That(validationException.Content.Detail).IsNull();
+        await Assert.That(validationException.Content.Instance).IsNull();
+        await Assert.That(validationException.Content.Errors["Name"]).IsEmpty();
+        await Assert.That(validationException.Content.Errors["Count"][0]).IsEqualTo("42");
+        await Assert.That((bool)validationException.Content.Extensions["enabled"]).IsTrue();
+        await Assert.That((bool)validationException.Content.Extensions["disabled"]).IsFalse();
+        await Assert.That(validationException.Content.Extensions["integer"]).IsEqualTo(123L);
+        await Assert.That(validationException.Content.Extensions["fraction"]).IsEqualTo(12.5);
+        await Assert.That(validationException.Content.Extensions["timestamp"]).IsTypeOf<DateTime>();
+        await Assert.That(validationException.Content.Extensions["message"]).IsEqualTo("hello");
+        await Assert.That(validationException.Content.Extensions["metadata"]).IsTypeOf<JsonElement>();
+    }
+
+    /// <summary>Verifies the synchronous ValidationApiException factory ignores malformed validation error bags.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    public async Task ValidationApiExceptionCreateIgnoresNonObjectErrors()
+    {
+        using var response = CreateErrorResponse(
+            "{\"title\":\"invalid\",\"errors\":\"not-an-object\"}",
+            "application/problem+json");
+        var apiException = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        var validationException = ValidationApiException.Create(apiException);
+
+        await Assert.That(validationException.Content).IsNotNull();
+        await Assert.That(validationException.Content!.Errors).IsEmpty();
+    }
+
+    /// <summary>Verifies the synchronous ValidationApiException factory rejects non-object problem details.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
+    public async Task ValidationApiExceptionCreateRejectsNonObjectProblemDetails()
+    {
+        using var response = CreateErrorResponse("[1,2,3]", "application/problem+json");
+        var apiException = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        await Assert.That(() => ValidationApiException.Create(apiException))
+            .ThrowsExactly<JsonException>();
+    }
+
+    /// <summary>Verifies the ValidationApiException inner-exception constructor rejects null inner exceptions.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ValidationApiExceptionInnerConstructorRejectsNullInnerException() =>
+        await Assert.That(() => new ValidationApiException("message", null!))
+            .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Creates an error response with an attached request.</summary>
     /// <param name="content">The response content.</param>

@@ -1,15 +1,12 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using RichardSzalay.MockHttp;
 
 namespace Refit.Tests;
 
 /// <summary>Tests that the reflection-based Refit implementation passes the expected attribute providers and types to the URL parameter formatter.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public sealed class ReflectionTests : IDisposable
 {
     /// <summary>The mock HTTP message handler used to intercept and assert outgoing requests.</summary>

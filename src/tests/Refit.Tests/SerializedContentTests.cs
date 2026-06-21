@@ -19,8 +19,6 @@ using SystemTextJsonSerializer = System.Text.Json.JsonSerializer;
 namespace Refit.Tests;
 
 /// <summary>Tests that verify how Refit serializes request bodies and deserializes responses across content serializers.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public partial class SerializedContentTests
 {
     /// <summary>The base address used when creating Refit clients for these tests.</summary>
@@ -60,6 +58,16 @@ public partial class SerializedContentTests
 
         /// <summary>An already-lowercase value, serialized unchanged as "alreadyLowercase".</summary>
         alreadyLowercase = 2
+    }
+
+    /// <summary>Enum with an unsigned backing type used to verify large numeric values.</summary>
+    private enum UnsignedCamelCaseEnum : ulong
+    {
+        /// <summary>The first value, serialized as "small".</summary>
+        Small = 1,
+
+        /// <summary>The maximum unsigned value, serialized as "large".</summary>
+        Large = ulong.MaxValue
     }
 
     /// <summary>
@@ -438,6 +446,21 @@ public partial class SerializedContentTests
         await Assert.That(await Assert.That(result!.Value).IsTypeOf<bool>()).IsTrue();
     }
 
+#if NET10_0_OR_GREATER
+    /// <summary>Verifies duplicate JSON properties are rejected by the default serializer options.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_RejectDuplicateProperties()
+    {
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+
+        await Assert
+            .That(() => SystemTextJsonSerializer.Deserialize<ObjectValueContainer>("""{"value":1,"value":2}""", options))
+            .ThrowsExactly<System.Text.Json.JsonException>();
+    }
+
+#endif
+
     /// <summary>Verifies false JSON object values are inferred as <see cref="bool"/>.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -612,6 +635,18 @@ public partial class SerializedContentTests
         await Assert.That(result).IsEqualTo(CamelCaseEnum.alreadyLowercase);
     }
 
+    /// <summary>Verifies that unsigned numeric enum values are deserialized correctly.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_DeserializeUnsignedNumericEnumValues()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<UnsignedCamelCaseEnum>(
+            "18446744073709551615",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(result).IsEqualTo(UnsignedCamelCaseEnum.Large);
+    }
+
     /// <summary>Verifies that JSON null deserializes to a null nullable enum.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -688,6 +723,18 @@ public partial class SerializedContentTests
         await Assert.That(json).IsEqualTo("999");
     }
 
+    /// <summary>Verifies that undefined unsigned enum values are serialized as unsigned numbers.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeUndefinedUnsignedEnumValuesAsNumbers()
+    {
+        var json = SystemTextJsonSerializer.Serialize(
+            (UnsignedCamelCaseEnum)9_223_372_036_854_775_808UL,
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(json).IsEqualTo("9223372036854775808");
+    }
+
     /// <summary>Verifies undefined enum dictionary keys are serialized with numeric property names.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -701,6 +748,21 @@ public partial class SerializedContentTests
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(json).IsEqualTo("""{"999":"unknown"}""");
+    }
+
+    /// <summary>Verifies undefined unsigned enum dictionary keys are serialized with unsigned numeric property names.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeUndefinedUnsignedEnumDictionaryKeysAsNumbers()
+    {
+        var json = SystemTextJsonSerializer.Serialize(
+            new Dictionary<UnsignedCamelCaseEnum, string>
+            {
+                [(UnsignedCamelCaseEnum)9_223_372_036_854_775_808UL] = "unknown"
+            },
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(json).IsEqualTo("""{"9223372036854775808":"unknown"}""");
     }
 
     /// <summary>Verifies that lowercase enum names are serialized unchanged.</summary>

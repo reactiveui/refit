@@ -15,8 +15,6 @@ public interface IHttpContentSerializer
     /// <param name="item">Object to serialize.</param>
     /// <returns><see cref="HttpContent"/> that contains the serialized <typeparamref name="T"/> object.</returns>
 #if !NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("System.Text.Json serialization may require metadata that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.")]
-    [RequiresDynamicCode("System.Text.Json serialization may generate code dynamically for runtime types. Use the Refit source generator for trimmed/AOT apps.")]
 #endif
     [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
     HttpContent ToHttpContent<T>(T item);
@@ -27,8 +25,6 @@ public interface IHttpContentSerializer
     /// <param name="cancellationToken">CancellationToken to abort the deserialization.</param>
     /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
 #if !NET8_0_OR_GREATER
-    [RequiresUnreferencedCode("System.Text.Json deserialization may require metadata that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.")]
-    [RequiresDynamicCode("System.Text.Json deserialization may generate code dynamically for runtime types. Use the Refit source generator for trimmed/AOT apps.")]
 #endif
     [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter intentionally specified explicitly by callers.")]
     [SuppressMessage(

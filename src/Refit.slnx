@@ -33,11 +33,18 @@
         <File Path="../.github/workflows/sonarcloud.yml" />
     </Folder>
     <Folder Name="/Tests/">
+        <Project Path="tests/Refit.Analyzers.Tests/Refit.Analyzers.Tests.csproj" />
+        <Project Path="tests/Refit.CodeFixes.Tests/Refit.CodeFixes.Tests.csproj" />
+        <Project Path="tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" />
         <Project Path="tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" />
         <Project Path="tests/Refit.Tests/Refit.Tests.csproj" />
     </Folder>
     <Project Path="InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" />
     <Project Path="InterfaceStubGenerator.Roslyn50/InterfaceStubGenerator.Roslyn50.csproj" />
+    <Project Path="Refit.Analyzers.Roslyn48/Refit.Analyzers.Roslyn48.csproj" />
+    <Project Path="Refit.Analyzers.Roslyn50/Refit.Analyzers.Roslyn50.csproj" />
+    <Project Path="Refit.CodeFixes.Roslyn48/Refit.CodeFixes.Roslyn48.csproj" />
+    <Project Path="Refit.CodeFixes.Roslyn50/Refit.CodeFixes.Roslyn50.csproj" />
     <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
     <Project Path="Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj" />
     <Project Path="Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />

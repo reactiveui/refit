@@ -13,8 +13,6 @@ using Microsoft.Extensions.Options;
 namespace Refit.Tests;
 
 /// <summary>Tests for the Refit HttpClientFactory dependency-injection extension methods.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class HttpClientFactoryExtensionsTests
 {
     /// <summary>Verifies that generic Refit clients registered for different interfaces receive unique client names.</summary>

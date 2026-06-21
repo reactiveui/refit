@@ -11,6 +11,9 @@
          payloads that cannot be source-generated). Keep reflection-based System.Text.Json enabled at
          runtime so those behaviors are actually verified; source-gen-specific tests use their own contexts. -->
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <!-- This test assembly intentionally calls the reflection-based APIs that product assemblies annotate.
+         Keep product analyzers strict, but avoid duplicating those annotations across every test fixture. -->
+    <NoWarn>$(NoWarn);IL2026;IL2046;IL2067;IL2072;IL2075;IL2091;IL2109;IL3050;IL3051;RF003;RF004;RF005</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

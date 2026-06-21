@@ -9,8 +9,6 @@ public class RefitSettings
 {
     /// <summary>Initializes a new instance of the <see cref="RefitSettings"/> class.</summary>
 #if NET8_0_OR_GREATER
-    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode(
-        "Default System.Text.Json serializer options include enum name reflection that trimming cannot statically preserve. Use the Refit source generator for trimmed/AOT apps.")]
 #endif
     public RefitSettings()
     {

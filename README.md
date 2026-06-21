@@ -43,6 +43,7 @@ services
     * [Breaking changes in 6.x](#breaking-changes-in-6x)
     * [Breaking changes in 11.x](#breaking-changes-in-11x)
 * [Source generation](#source-generation)
+    * [Generated-only client creation](#generated-only-client-creation)
     * [Generated request building](#generated-request-building)
 * [API Attributes](#api-attributes)
 * [Querystrings](#querystrings)
@@ -166,6 +167,10 @@ the response was received and is successful.
 Refit ships Roslyn source generators with the main `Refit` package. Projects that reference Refit through
 `PackageReference` get generated client implementations at build time without adding another package.
 
+Generated Refit client source is compatible with C# 7.3 as the baseline. When the consuming project uses C# 8 or newer
+and nullable reference types are available, the generator also emits nullable directives and nullable annotations for
+the generated client.
+
 The generated clients are still created with the normal APIs:
 
 ```csharp
@@ -192,6 +197,24 @@ clients continue to honor settings such as:
 * `DeserializationExceptionFactory`
 * `HttpRequestMessageOptions`
 * `Version` and `VersionPolicy`
+
+#### Generated-only client creation
+
+For Native AoT or trimming-sensitive applications, `RestService.ForGenerated<T>` creates a client only when Refit's
+source generator registered an implementation for that interface:
+
+```csharp
+using var client = new HttpClient
+{
+    BaseAddress = new Uri("https://api.github.com")
+};
+
+var api = RestService.ForGenerated<IGitHubApi>(client);
+```
+
+`ForGenerated<T>` does not fall back to the runtime reflection client. When the generated client can build all requests
+directly, Refit also avoids creating the reflection request builder for that client. If the generated implementation is
+not available at runtime, Refit throws an `InvalidOperationException` that points back to source generation setup.
 
 #### Generated request building
 
@@ -235,6 +258,18 @@ If you need to disable Refit source generation entirely, set:
 ```
 
 Most applications should leave both settings unset.
+
+#### Analyzer diagnostics and code fixes
+
+Refit also ships analyzers with the main package. They report common interface issues at compile time, including:
+
+* methods or properties on Refit interfaces that cannot be generated or called by Refit
+* route templates that use backslashes instead of forward slashes
+* methods with more than one `CancellationToken` parameter
+* `[HeaderCollection]` parameters that are not `IDictionary<string, string>`
+
+Where the fix is mechanical, Refit includes a code fix. Current fixes can replace route backslashes with forward
+slashes and change invalid `[HeaderCollection]` parameter types to `IDictionary<string, string>`.
 
 ### API Attributes
 
@@ -1606,7 +1641,8 @@ SomeApi.Client.Timeout = timeout;
 Refit's recommended **source-generator-first** setup for Native AoT and trimmed applications is:
 
 1. Use normal Refit interfaces so the Refit source generator produces the client implementation at build time.
-2. Prefer `RestService.For<T>(...)` over reflection-heavy manual patterns around `Type` where possible.
+2. Use `RestService.ForGenerated<T>(...)` when the application should require a source-generated client at runtime.
+   Otherwise, prefer `RestService.For<T>(...)` over reflection-heavy manual patterns around `Type` where possible.
 3. Supply source-generated `System.Text.Json` metadata for your DTOs.
 
 For the default `SystemTextJsonContentSerializer` on .NET 8+, Refit prefers `JsonTypeInfo` metadata from your configured

@@ -3,14 +3,11 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Refit.Tests;
 
 /// <summary>Joins enumerable parameter values into a comma-separated formatted string.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
 {
     /// <summary>Formats enumerable values by joining their formatted elements with commas.</summary>

@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -22,8 +21,6 @@ using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 namespace Refit.Tests;
 
 /// <summary>Tests covering response deserialization, error handling, and exception hydration behavior.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public sealed class ResponseTests : IDisposable
 {
     /// <summary>Problem detail entries for the first validation problem fixture.</summary>

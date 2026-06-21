@@ -15,7 +15,10 @@ namespace Refit
         /// <summary>Determines whether a value should be emitted directly rather than expanded into a query map.</summary>
         /// <param name="value">The value to inspect.</param>
         /// <returns><see langword="true"/> if the value is a simple/formattable type; otherwise <see langword="false"/>.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2075:UnrecognizedReflectionPattern",
+            Justification = "Query-map formatting only checks implemented enumerable interfaces on the runtime value.")]
         internal static bool DoNotConvertToQueryMap(object value)
         {
             var type = value.GetType();

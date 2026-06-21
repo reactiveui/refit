@@ -35,9 +35,19 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Initializes a new instance of the <see cref="FormValueMultimap"/> class from a source object.</summary>
     /// <param name="source">The source object or dictionary to convert into form entries.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    [RequiresUnreferencedCode(
-        "Form URL encoded bodies reflect over runtime object properties and serializer metadata.")]
     public FormValueMultimap(object source, RefitSettings settings)
+        : this(source, settings, null)
+    {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="FormValueMultimap"/> class from a source object.</summary>
+    /// <param name="source">The source object or dictionary to convert into form entries.</param>
+    /// <param name="settings">The Refit settings controlling formatting.</param>
+    /// <param name="declaredProperties">The declared source type properties, if available.</param>
+    private FormValueMultimap(
+        object? source,
+        RefitSettings settings,
+        PropertyInfo[]? declaredProperties)
     {
         ArgumentExceptionHelper.ThrowIfNull(settings);
 
@@ -54,7 +64,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             return;
         }
 
-        AddObject(source, settings);
+        AddObject(source, declaredProperties ?? GetCachedProperties(source.GetType()), settings);
     }
 
     /// <summary>Gets a key for each entry. If multiple entries share the same key, the key is returned multiple times.</summary>
@@ -67,48 +77,52 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    /// <summary>Gets the readable public instance properties of the given type.</summary>
-    /// <param name="type">The type to inspect.</param>
-    /// <returns>The readable public properties.</returns>
-    private static PropertyInfo[] GetProperties(
+    /// <summary>Creates a form value map using the declared source type for property discovery.</summary>
+    /// <typeparam name="TSource">The declared source type.</typeparam>
+    /// <param name="source">The source object or dictionary to convert into form entries.</param>
+    /// <param name="settings">The Refit settings controlling formatting.</param>
+    /// <returns>The created form value map.</returns>
+    internal static FormValueMultimap Create<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        Type type)
+        TSource>(
+        TSource source,
+        RefitSettings settings)
     {
-        var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-        var count = 0;
-        for (var i = 0; i < properties.Length; i++)
+        if (source is null or IDictionary)
         {
-            if (IsReadablePublicProperty(properties[i]))
-            {
-                count++;
-            }
+            return new FormValueMultimap(source!, settings);
         }
 
-        if (count == properties.Length)
-        {
-            return properties;
-        }
-
-        var readableProperties = new PropertyInfo[count];
-        var index = 0;
-        for (var i = 0; i < properties.Length; i++)
-        {
-            if (IsReadablePublicProperty(properties[i]))
-            {
-                readableProperties[index++] = properties[i];
-            }
-        }
-
-        return readableProperties;
+        return new FormValueMultimap(
+            source,
+            settings,
+            GetCachedProperties(source));
     }
 
     /// <summary>Resolves the cached readable public properties for the given source type.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns>The cached readable public properties.</returns>
-    [RequiresUnreferencedCode(
-        "Form URL encoded bodies reflect over runtime object properties and serializer metadata.")]
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2111:Method with DynamicallyAccessedMembersAttribute is accessed via reflection",
+        Justification = "The cache callback receives the same Type key that carries the public property metadata requirement.")]
     private static PropertyInfo[] GetCachedProperties(Type type)
-        => _propertyCache.GetValue(type, GetProperties);
+        => _propertyCache.GetValue(type, ReflectionPropertyHelpers.GetReadablePublicInstanceProperties);
+
+    /// <summary>Resolves the cached readable public properties for the given declared source type.</summary>
+    /// <typeparam name="TSource">The declared source type to inspect.</typeparam>
+    /// <param name="source">A value of the declared source type.</param>
+    /// <returns>The cached readable public properties.</returns>
+    private static PropertyInfo[] GetCachedProperties<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+        TSource>(TSource source)
+    {
+        _ = source;
+
+        return _propertyCache.GetValue(
+            typeof(TSource),
+            static _ => ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(typeof(TSource)));
+    }
 
     /// <summary>Gets the delimiter string for a delimited collection format.</summary>
     /// <param name="collectionFormat">The delimited collection format.</param>
@@ -122,20 +136,12 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             _ => "|"
         };
 
-    /// <summary>Determines whether a property can be read through its public getter.</summary>
-    /// <param name="property">The property to inspect.</param>
-    /// <returns><see langword="true"/> when the property is readable; otherwise <see langword="false"/>.</returns>
-    private static bool IsReadablePublicProperty(PropertyInfo property) =>
-        property.CanRead && property.GetMethod?.IsPublic == true;
-
     /// <summary>Formats and joins a collection-valued form field without LINQ adapters.</summary>
     /// <param name="enumerable">The collection to format.</param>
     /// <param name="delimiter">The delimiter between formatted values.</param>
     /// <param name="attrib">The query attribute, if any.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
     /// <returns>The joined formatted value.</returns>
-    [RequiresUnreferencedCode(
-        "Form URL encoded value formatting may reflect over runtime enum metadata; use the Refit source generator for trimmed/AOT apps.")]
     [SuppressMessage(
         "Major Code Smell",
         "S2930:\"IDisposables\" should be disposed",
@@ -173,8 +179,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Adds the entries from an <see cref="IDictionary"/> source.</summary>
     /// <param name="dictionary">The dictionary source.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    [RequiresUnreferencedCode(
-        "Form URL encoded value formatting may reflect over runtime enum metadata; use the Refit source generator for trimmed/AOT apps.")]
     private void AddDictionary(IDictionary dictionary, RefitSettings settings)
     {
         foreach (var key in dictionary.Keys)
@@ -191,12 +195,13 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
 
     /// <summary>Adds the entries reflected from an object source.</summary>
     /// <param name="source">The object source.</param>
+    /// <param name="properties">The properties to read from the source.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    [RequiresUnreferencedCode(
-        "Form URL encoded bodies reflect over runtime object properties and serializer metadata.")]
-    private void AddObject(object source, RefitSettings settings)
+    private void AddObject(
+        object source,
+        PropertyInfo[] properties,
+        RefitSettings settings)
     {
-        var properties = GetCachedProperties(source.GetType());
         for (var i = 0; i < properties.Length; i++)
         {
             var property = properties[i];
@@ -236,8 +241,6 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <param name="attrib">The query attribute, if any.</param>
     /// <param name="collectionFormat">The resolved collection format.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    [RequiresUnreferencedCode(
-        "Form URL encoded value formatting may reflect over runtime enum metadata; use the Refit source generator for trimmed/AOT apps.")]
     private void AddCollection(
         string fieldName,
         IEnumerable enumerable,

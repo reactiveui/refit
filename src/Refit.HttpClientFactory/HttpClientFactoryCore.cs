@@ -12,11 +12,11 @@ internal static class HttpClientFactoryCore
 {
     /// <summary>Diagnostic message explaining why the reflection-based registration path is not trim-safe.</summary>
     private const string RequiresUnreferencedCodeMessage =
-        "Refit's HttpClientFactory integration uses reflection to build clients and is not trim-safe; use the Refit source generator for trimmed/AOT apps.";
+        "Registering Refit clients with HttpClientFactory requires reflected interface and request metadata.";
 
     /// <summary>Diagnostic message explaining why the reflection-based registration path is not AOT-safe.</summary>
     private const string RequiresDynamicCodeMessage =
-        "Refit's HttpClientFactory integration builds generic types at runtime; use the Refit source generator for AOT apps.";
+        "Registering Refit clients by Type with HttpClientFactory requires runtime generic type and method instantiation.";
 
     /// <summary>Lazily cached generic RequestBuilder.ForType method used to build request builders by type.</summary>
     private static MethodInfo? _requestBuilderGenericForTypeMethod;
@@ -31,6 +31,10 @@ internal static class HttpClientFactoryCore
     [RequiresDynamicCode(RequiresDynamicCodeMessage)]
     internal static IHttpClientBuilder AddRefitClientCore(
         IServiceCollection services,
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         Func<IServiceProvider, RefitSettings?>? settings,
         string? httpClientName)
@@ -88,10 +92,14 @@ internal static class HttpClientFactoryCore
     /// <param name="settings">A factory that produces the Refit settings, or null.</param>
     /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
     /// <returns>The HTTP client builder for further configuration.</returns>
-    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
     [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-    internal static IHttpClientBuilder AddRefitClientCore<T>(
+    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+    internal static IHttpClientBuilder AddRefitClientCore<
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        T>(
         IServiceCollection services,
         Func<IServiceProvider, RefitSettings?>? settings,
         string? httpClientName)
@@ -133,6 +141,10 @@ internal static class HttpClientFactoryCore
     [RequiresDynamicCode(RequiresDynamicCodeMessage)]
     internal static IHttpClientBuilder AddKeyedRefitClientCore(
         IServiceCollection services,
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.NonPublicMethods)]
         Type refitInterfaceType,
         object? serviceKey,
         Func<IServiceProvider, RefitSettings?>? settings,
@@ -196,10 +208,14 @@ internal static class HttpClientFactoryCore
     /// <param name="settings">A factory that produces the Refit settings, or null.</param>
     /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
     /// <returns>The HTTP client builder for further configuration.</returns>
-    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
     [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
-    internal static IHttpClientBuilder AddKeyedRefitClientCore<T>(
+    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
+    internal static IHttpClientBuilder AddKeyedRefitClientCore<
+        [DynamicallyAccessedMembers(
+            DynamicallyAccessedMemberTypes.Interfaces |
+            DynamicallyAccessedMemberTypes.PublicMethods |
+            DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        T>(
         IServiceCollection services,
         object? serviceKey,
         Func<IServiceProvider, RefitSettings?>? settings,
@@ -247,15 +263,13 @@ internal static class HttpClientFactoryCore
 
     /// <summary>Resolves and caches the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
     /// <returns>The open generic <c>RequestBuilder.ForType</c> method definition.</returns>
-    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
+    [RequiresUnreferencedCode("Resolving RequestBuilder.ForType by reflection requires method metadata to be available at runtime.")]
     private static MethodInfo GetRequestBuilderGenericForTypeMethod() =>
         _requestBuilderGenericForTypeMethod ??= FindRequestBuilderGenericForTypeMethod();
 
     /// <summary>Finds the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
     /// <returns>The matching method definition.</returns>
-    [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
-    [RequiresDynamicCode(RequiresDynamicCodeMessage)]
+    [RequiresUnreferencedCode("Resolving RequestBuilder.ForType by reflection requires method metadata to be available at runtime.")]
     private static MethodInfo FindRequestBuilderGenericForTypeMethod()
     {
         var methods = typeof(RequestBuilder).GetMethods(BindingFlags.Public | BindingFlags.Static);

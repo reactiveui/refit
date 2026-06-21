@@ -8,7 +8,7 @@
     <PublishAot>true</PublishAot>
     <InvariantGlobalization>true</InvariantGlobalization>
     <TrimMode>full</TrimMode>
-    <WarningsAsErrors>$(WarningsAsErrors);IL2026;IL3050;IL2070;IL2072;IL2075;IL2067;IL2091</WarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);IL2026;IL2055;IL3050;IL2070;IL2072;IL2075;IL2067;IL2091</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Refit\Refit.csproj" />

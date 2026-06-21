@@ -25,6 +25,7 @@ public sealed class ParserCoverageTests
                     null!,
                     null,
                     generatedRequestBuilding: true,
+                    emitGeneratedCodeMarkers: true,
                     [],
                     [],
                     CancellationToken.None))
@@ -43,6 +44,7 @@ public sealed class ParserCoverageTests
             compilation,
             "bad-name@thing-",
             generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
             [],
             [],
             CancellationToken.None);
@@ -50,6 +52,53 @@ public sealed class ParserCoverageTests
         await Assert.That(diagnostics.Count).IsEqualTo(1);
         await Assert.That(model.RefitInternalNamespace).IsEqualTo("bad_name_thing_RefitInternalGenerated");
         await Assert.That(model.Interfaces).IsEmpty();
+    }
+
+    /// <summary>Verifies namespace normalization handles blank segments from MSBuild properties.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GenerateInterfaceStubsSanitizesInternalNamespaceSegments()
+    {
+        var syntaxTree = CSharpSyntaxTree.ParseText("public interface IUnused { }");
+        var compilation = CSharpCompilation.Create("no-refit", [syntaxTree]);
+
+        var (_, leadingDotModel) = Parser.GenerateInterfaceStubs(
+            compilation,
+            ".Application",
+            generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
+            [],
+            [],
+            CancellationToken.None);
+        var (_, digitModel) = Parser.GenerateInterfaceStubs(
+            compilation,
+            "123-App",
+            generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
+            [],
+            [],
+            CancellationToken.None);
+        var (_, dottedModel) = Parser.GenerateInterfaceStubs(
+            compilation,
+            "One.Two",
+            generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
+            [],
+            [],
+            CancellationToken.None);
+        var (_, invalidStartModel) = Parser.GenerateInterfaceStubs(
+            compilation,
+            "!.Application",
+            generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
+            [],
+            [],
+            CancellationToken.None);
+
+        await Assert.That(leadingDotModel.RefitInternalNamespace).IsEqualTo("ApplicationRefitInternalGenerated");
+        await Assert.That(digitModel.RefitInternalNamespace).IsEqualTo("_123_AppRefitInternalGenerated");
+        await Assert.That(dottedModel.RefitInternalNamespace).IsEqualTo("One.TwoRefitInternalGenerated");
+        await Assert.That(invalidStartModel.RefitInternalNamespace).IsEqualTo("__.ApplicationRefitInternalGenerated");
     }
 
     /// <summary>Verifies well-known type lookup caching and failure paths.</summary>
@@ -170,6 +219,7 @@ public sealed class ParserCoverageTests
             compilation,
             "mixed",
             generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
             candidateMethods,
             candidateInterfaces,
             CancellationToken.None);
@@ -212,6 +262,7 @@ public sealed class ParserCoverageTests
             compilation,
             "legacy",
             generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
             candidateMethods,
             candidateInterfaces,
             CancellationToken.None);

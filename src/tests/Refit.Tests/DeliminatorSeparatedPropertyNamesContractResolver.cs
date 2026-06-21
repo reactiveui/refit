@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
 using Newtonsoft.Json.Serialization;
@@ -11,8 +10,6 @@ using Newtonsoft.Json.Serialization;
 namespace Refit.Tests;
 
 /// <summary>Contract resolver that joins PascalCase property name words with a configurable separator.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class DeliminatorSeparatedPropertyNamesContractResolver : DefaultContractResolver
 {
     /// <summary>The separator inserted between lowercased property name words.</summary>

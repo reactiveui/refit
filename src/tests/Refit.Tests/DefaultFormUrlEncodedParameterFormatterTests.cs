@@ -2,13 +2,11 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="DefaultFormUrlEncodedParameterFormatter"/>.</summary>
-[RequiresUnreferencedCode("Formatting enum values reflects over enum metadata in these tests.")]
 public class DefaultFormUrlEncodedParameterFormatterTests
 {
     /// <summary>Enum used to verify enum-member formatting and undefined enum fallback.</summary>

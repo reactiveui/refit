@@ -139,7 +139,7 @@ namespace Refit
                     vsb.Append('&');
                 }
 
-                var key = Uri.EscapeDataString(queryParam.Key);
+                var key = StringHelpers.EscapeDataString(queryParam.Key);
 #if NET6_0_OR_GREATER
                 // if first query does not start with ? then prepend it
                 if (vsb.Length == 0 && key.Length > 0 && key[0] != '?')
@@ -150,7 +150,7 @@ namespace Refit
 #endif
                 vsb.Append(key);
                 vsb.Append('=');
-                vsb.Append(Uri.EscapeDataString(queryParam.Value ?? string.Empty));
+                vsb.Append(StringHelpers.EscapeDataString(queryParam.Value ?? string.Empty));
                 if (firstQuery)
                 {
                     firstQuery = false;
@@ -163,14 +163,7 @@ namespace Refit
         /// <summary>Strips CR and LF characters from a header value to prevent header injection.</summary>
         /// <param name="value">The value to sanitize.</param>
         /// <returns>The value with carriage-return and line-feed characters removed.</returns>
-        private static string EnsureSafe(string value) =>
-#if NET8_0_OR_GREATER
-            value.Replace("\r", string.Empty, StringComparison.Ordinal)
-                .Replace("\n", string.Empty, StringComparison.Ordinal);
-#else
-            value.Replace("\r", string.Empty)
-                .Replace("\n", string.Empty);
-#endif
+        private static string EnsureSafe(string value) => StringHelpers.RemoveCrOrLf(value);
 
         /// <summary>Determines whether the HTTP method must not carry a request body.</summary>
         /// <param name="method">The HTTP method to check.</param>
@@ -194,53 +187,15 @@ namespace Refit
             return false;
         }
 
-        /// <summary>Determines whether a property can be read through its public getter.</summary>
-        /// <param name="property">The property to inspect.</param>
-        /// <returns><see langword="true"/> when the property is readable; otherwise <see langword="false"/>.</returns>
-        private static bool IsReadablePublicProperty(PropertyInfo property) =>
-            property.CanRead && property.GetMethod?.IsPublic == true;
-
-        /// <summary>Gets cached readable public instance properties for query-map expansion.</summary>
-        /// <param name="type">The object type to inspect.</param>
-        /// <returns>The readable public instance properties.</returns>
-        private static PropertyInfo[] GetQueryProperties(
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-            Type type)
-        {
-            var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            var count = 0;
-            for (var i = 0; i < properties.Length; i++)
-            {
-                if (IsReadablePublicProperty(properties[i]))
-                {
-                    count++;
-                }
-            }
-
-            if (count == properties.Length)
-            {
-                return properties;
-            }
-
-            var readableProperties = new PropertyInfo[count];
-            var index = 0;
-            for (var i = 0; i < properties.Length; i++)
-            {
-                if (IsReadablePublicProperty(properties[i]))
-                {
-                    readableProperties[index++] = properties[i];
-                }
-            }
-
-            return readableProperties;
-        }
-
         /// <summary>Gets cached query-map properties for the given type.</summary>
         /// <param name="type">The object type to inspect.</param>
         /// <returns>The readable public instance properties.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2111:Method with DynamicallyAccessedMembersAttribute is accessed via reflection",
+            Justification = "The cache callback receives the same Type key that carries the public property metadata requirement.")]
         private static PropertyInfo[] GetCachedQueryProperties(Type type) =>
-            QueryPropertyCache.GetValue(type, GetQueryProperties);
+            QueryPropertyCache.GetValue(type, ReflectionPropertyHelpers.GetReadablePublicInstanceProperties);
 
         /// <summary>Populates the Authorization header from the configured token getter when present.</summary>
         /// <param name="request">The request to add the header to.</param>
@@ -314,8 +269,6 @@ namespace Refit
         /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
         /// <returns>The query-string key/value pairs.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         private List<KeyValuePair<string, object?>> BuildQueryMap(
             object @object,
             string? delimiter = null,
@@ -344,8 +297,6 @@ namespace Refit
         /// <param name="delimiter">The delimiter used between nested keys.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
         /// <returns>The query-string key/value pairs.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         private List<KeyValuePair<string, object?>> BuildQueryMap(
             IDictionary dictionary,
             string? delimiter = null,
@@ -397,8 +348,6 @@ namespace Refit
         /// <param name="delimiter">The delimiter used between nested property names.</param>
         /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         private void AppendPropertyToQueryMap(
             object @object,
             PropertyInfo propertyInfo,
@@ -446,8 +395,6 @@ namespace Refit
         /// <param name="value">The value to format.</param>
         /// <param name="formattedValue">Receives the formatted value.</param>
         /// <returns><see langword="true"/> when a non-null value remains.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         private bool TryFormatQueryPropertyValue<T>(
             QueryAttribute? queryAttribute,
             T value,
@@ -479,8 +426,6 @@ namespace Refit
         /// <param name="kvps">The accumulating list of query pairs.</param>
         /// <param name="queryAttribute">The property's query attribute, if any.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         private void AppendEnumerablePropertyValues(
             IEnumerable values,
             PropertyInfo propertyInfo,
@@ -506,8 +451,6 @@ namespace Refit
         /// <param name="kvps">The accumulating list of query pairs.</param>
         /// <param name="delimiter">The delimiter used between nested keys.</param>
         /// <param name="collectionFormat">The collection format for enumerable values.</param>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         private void AppendNestedQueryMap(
             object obj,
             string key,

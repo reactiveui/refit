@@ -36,5 +36,5 @@ internal static class SmokeApiFactory
     public static INativeAotApi Create(HttpClient client, JsonSerializerOptions jsonOptions) =>
         RestService.For<INativeAotApi>(
             client,
-            new RefitSettings { ContentSerializer = new SystemTextJsonContentSerializer(jsonOptions) });
+            new RefitSettings(new SystemTextJsonContentSerializer(jsonOptions)));
 }

@@ -37,11 +37,12 @@ namespace Refit
         /// <summary>Initializes a new instance of the <see cref="RequestBuilderImplementation"/> class for the given interface type.</summary>
         /// <param name="refitInterfaceType">The Refit interface type to build requests for.</param>
         /// <param name="refitSettings">The settings to use, or null for defaults.</param>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [RequiresUnreferencedCode("Building requests from reflected interface methods requires interface and request object metadata to be available at runtime.")]
         public RequestBuilderImplementation(
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             Type refitInterfaceType,
             RefitSettings? refitSettings = null)
         {
@@ -77,8 +78,8 @@ namespace Refit
         public RefitSettings Settings => _settings;
 
         /// <inheritdoc/>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [RequiresUnreferencedCode("Building request delegates from reflected method metadata requires generic method metadata to be available at runtime.")]
+        [RequiresDynamicCode("Building request delegates from reflected method metadata requires runtime generic method instantiation.")]
         public Func<HttpClient, object[], object?> BuildRestResultFuncForMethod(
             string methodName,
             Type[]? parameterTypes = null,
@@ -122,7 +123,7 @@ namespace Refit
         [UnconditionalSuppressMessage(
             "Trimming",
             "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
-            Justification = "This only resolves Refit's own generic delegate factories for the reflection-based request builder path, which is already annotated as not trim-safe.")]
+            Justification = "This resolves Refit's own private generic delegate factory methods by known method name.")]
         [UnconditionalSuppressMessage(
             "Trimming",
             "IL2111:Reflection access to methods with DynamicallyAccessedMembersAttribute",
@@ -276,10 +277,12 @@ namespace Refit
         /// <summary>Discovers the Refit HTTP methods on an interface and adds them to the lookup dictionary.</summary>
         /// <param name="interfaceType">The interface to scan for HTTP methods.</param>
         /// <param name="methods">The dictionary to populate with discovered methods.</param>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
+        [RequiresUnreferencedCode("Reading reflected interface methods requires interface and request object metadata to be available at runtime.")]
         private void AddInterfaceHttpMethods(
             [DynamicallyAccessedMembers(
-                DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]
+                DynamicallyAccessedMemberTypes.Interfaces
+                | DynamicallyAccessedMemberTypes.PublicMethods
+                | DynamicallyAccessedMemberTypes.NonPublicMethods)]
             Type interfaceType,
             Dictionary<string, List<RestMethodInfoInternal>> methods)
         {
@@ -308,8 +311,8 @@ namespace Refit
         /// <param name="parameterTypes">The parameter types to match, or null to match a single overload.</param>
         /// <param name="genericArgumentTypes">The generic argument types to close over, or null.</param>
         /// <returns>The matching rest method info.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [RequiresUnreferencedCode("Resolving generic Refit methods from reflected metadata requires generic method metadata to be available at runtime.")]
+        [RequiresDynamicCode("Resolving generic Refit methods from reflected metadata requires runtime generic method instantiation.")]
         private RestMethodInfoInternal FindMatchingRestMethodInfo(
             string key,
             Type[]? parameterTypes,
@@ -354,8 +357,8 @@ namespace Refit
         /// <param name="restMethodInfo">The (possibly generic) rest method.</param>
         /// <param name="genericArgumentTypes">The generic argument types, or null if not generic.</param>
         /// <returns>The closed rest method info, or the original when no generic arguments are supplied.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [RequiresUnreferencedCode("Closing generic Refit methods requires generic method metadata to be available at runtime.")]
+        [RequiresDynamicCode("Closing generic Refit methods requires runtime generic method instantiation.")]
         private RestMethodInfoInternal CloseGenericMethodIfNeeded(
             RestMethodInfoInternal restMethodInfo,
             Type[]? genericArgumentTypes)
@@ -378,8 +381,8 @@ namespace Refit
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <param name="builderMethodName">The name of the private generic builder method.</param>
         /// <returns>A delegate that invokes the method.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [RequiresUnreferencedCode("Building generic result delegates requires generic method metadata to be available at runtime.")]
+        [RequiresDynamicCode("Building generic result delegates requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], object?> BuildResultFuncForMethod(
             RestMethodInfoInternal restMethod,
             string builderMethodName)
@@ -397,8 +400,8 @@ namespace Refit
         /// <summary>Builds a synchronous invocation delegate for a generated (sync) interface method.</summary>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that invokes the method synchronously.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [RequiresUnreferencedCode("Building synchronous result delegates requires generic method metadata to be available at runtime.")]
+        [RequiresDynamicCode("Building synchronous result delegates requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethod(
             RestMethodInfoInternal restMethod)
         {
@@ -432,12 +435,11 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that invokes the method synchronously.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
             RestMethodInfoInternal restMethod)
         {
@@ -456,12 +458,11 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that returns an observable of the result.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], IObservable<T?>> BuildRxFuncForMethod<T, TBody>(
             RestMethodInfoInternal restMethod)
         {
@@ -491,12 +492,11 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that returns a task of the result.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], Task<T?>> BuildTaskFuncForMethod<T, TBody>(
             RestMethodInfoInternal restMethod)
         {
@@ -521,12 +521,11 @@ namespace Refit
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that returns a value task of the result.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
         [SuppressMessage(
             "Major Code Smell",
             "S4018:Generic methods should provide type parameters",
             Justification = "Type parameter intentionally specified explicitly by callers.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], ValueTask<T?>> BuildValueTaskFuncForMethod<T, TBody>(
             RestMethodInfoInternal restMethod)
         {
@@ -538,8 +537,7 @@ namespace Refit
         /// <summary>Builds a task invocation delegate for a method with no response body.</summary>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
         /// <returns>A delegate that returns a task with no result.</returns>
-        [RequiresUnreferencedCode("Refit's reflection-based request building is not trim-safe; use the Refit source generator for trimmed/AOT apps.")]
-        [RequiresDynamicCode("Refit's reflection-based request building requires runtime code generation; use the Refit source generator for AOT apps.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(
             RestMethodInfoInternal restMethod)
         {

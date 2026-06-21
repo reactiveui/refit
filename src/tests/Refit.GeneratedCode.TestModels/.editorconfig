@@ -1,0 +1,2 @@
+[obj/Generated/**/*.cs]
+generated_code = false

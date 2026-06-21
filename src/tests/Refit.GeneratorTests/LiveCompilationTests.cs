@@ -13,8 +13,7 @@ public sealed class LiveCompilationTests
     /// <summary>Compiles, loads, and invokes generated request-building code.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [RequiresUnreferencedCode("The test deliberately reflects over a live-generated assembly.")]
-    [RequiresDynamicCode("The test deliberately emits and invokes a live-generated assembly.")]
+    [RequiresUnreferencedCode("The live compilation test loads a generated assembly and reflects over generated types and members.")]
     public async Task GeneratedRequestBuilding_CanBeEmittedLoadedAndInvoked()
     {
         const int HeaderId = 42;

@@ -24,13 +24,9 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 {
     /// <summary>Justification shared by the reflection-fallback trim/AOT suppressions.</summary>
     private const string ReflectionFallbackJustification =
-        "The reflection-based serialization fallback runs only when the supplied JsonSerializerOptions has no "
-        + "TypeInfoResolver. Such options originate from the [RequiresUnreferencedCode] default options, so the "
-        + "reflection requirement is already surfaced to callers; source-generated/AOT callers supply a resolver "
-        + "and take the metadata path instead.";
+        "Serializing or deserializing without supplied JSON type metadata requires runtime serializer metadata.";
 
     /// <summary>Initializes a new instance of the <see cref="SystemTextJsonContentSerializer"/> class.</summary>
-    [RequiresUnreferencedCode("Default System.Text.Json serializer options include enum name reflection that trimming cannot statically preserve.")]
     public SystemTextJsonContentSerializer()
         : this(GetDefaultJsonSerializerOptions())
     {
@@ -38,13 +34,16 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
     /// <summary>Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters.</summary>
     /// <returns>The default <see cref="JsonSerializerOptions"/>.</returns>
-    [RequiresUnreferencedCode("Default System.Text.Json serializer options include enum name reflection that trimming cannot statically preserve.")]
     public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
     {
         // Default to case insensitive property name matching as that's likely the behavior most users expect
         var jsonSerializerOptions = new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+#if NET10_0_OR_GREATER
+            AllowDuplicateProperties = false
+#endif
         };
         jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
         jsonSerializerOptions.Converters.Add(new CamelCaseStringEnumConverter());

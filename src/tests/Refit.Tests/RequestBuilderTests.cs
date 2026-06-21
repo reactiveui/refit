@@ -8,8 +8,6 @@ using System.Reactive.Linq;
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="RequestBuilderImplementation{T}"/> request construction.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public partial class RequestBuilderTests
 {
     /// <summary>The integer array {1, 2, 3} used as query test data.</summary>

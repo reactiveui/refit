@@ -32,7 +32,11 @@ public class ObjectToInferredTypesConverter : JsonConverter<object>
             JsonTokenType.Number => reader.GetDouble(),
             JsonTokenType.String when reader.TryGetDateTime(out var datetime) => datetime,
             JsonTokenType.String => reader.GetString(),
+#if NET8_0_OR_GREATER
+            _ => JsonElement.ParseValue(ref reader)
+#else
             _ => JsonDocument.ParseValue(ref reader).RootElement.Clone()
+#endif
         };
 
     /// <summary>Writes the specified writer.</summary>

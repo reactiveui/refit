@@ -150,14 +150,45 @@ public static class Fixture
         bool disableSourceGenerator)
     {
         var compilation = CreateLibrary(source);
+        return RunGenerator(compilation, generatedRequestBuilding, disableSourceGenerator, null);
+    }
+
+    /// <summary>Runs the generator over the source with a specific language version and returns the output compilation.</summary>
+    /// <param name="source">The source to compile and generate from.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
+    /// <param name="languageVersion">The language version to use for input and generated syntax trees.</param>
+    /// <returns>The generator result.</returns>
+    public static GeneratorTestResult RunGenerator(
+        string source,
+        bool? generatedRequestBuilding,
+        LanguageVersion languageVersion)
+    {
+        var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(languageVersion);
+        var compilation = CreateLibrary(CSharpSyntaxTree.ParseText(source, parseOptions));
+        return RunGenerator(compilation, generatedRequestBuilding, false, parseOptions);
+    }
+
+    /// <summary>Runs the generator over the compilation and returns the output compilation.</summary>
+    /// <param name="compilation">The compilation to run generation against.</param>
+    /// <param name="generatedRequestBuilding">Whether generated request construction is explicitly configured.</param>
+    /// <param name="disableSourceGenerator">Whether source generation is disabled.</param>
+    /// <param name="parseOptions">The parse options to use for generated syntax trees.</param>
+    /// <returns>The generator result.</returns>
+    public static GeneratorTestResult RunGenerator(
+        CSharpCompilation compilation,
+        bool? generatedRequestBuilding,
+        bool disableSourceGenerator,
+        CSharpParseOptions? parseOptions)
+    {
         var generator = new InterfaceStubGeneratorV2();
-        var driver = CSharpGeneratorDriver.Create(
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
             [generator.AsSourceGenerator()],
+            parseOptions: parseOptions,
             optionsProvider: new TestAnalyzerConfigOptionsProvider(
                 generatedRequestBuilding,
                 disableSourceGenerator));
 
-        driver.RunGeneratorsAndUpdateCompilation(
+        driver = driver.RunGeneratorsAndUpdateCompilation(
             compilation,
             out var outputCompilation,
             out var generatorDiagnostics);
@@ -168,7 +199,7 @@ public static class Fixture
     /// <summary>Emits a generated output compilation and loads it into a collectible assembly context.</summary>
     /// <param name="result">The generator result to emit.</param>
     /// <returns>The loaded assembly and load context.</returns>
-    [RequiresUnreferencedCode("Live-compilation tests intentionally load generated assemblies from memory.")]
+    [RequiresUnreferencedCode("Loading an emitted test assembly from a stream requires runtime metadata for referenced types.")]
     public static (Assembly Assembly, CollectibleAssemblyLoadContext Context) EmitAndLoad(
         GeneratorTestResult result)
     {

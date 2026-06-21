@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,8 +12,6 @@ using RichardSzalay.MockHttp;
 namespace Refit.Tests;
 
 /// <summary>Tests for the authenticated HTTP client handler behavior.</summary>
-[RequiresUnreferencedCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
-[RequiresDynamicCode("Refit's reflection-based serialization and request building are exercised by these tests.")]
 public class AuthenticatedClientHandlerTests
 {
     /// <summary>Refit service contract exercising the various authentication scenarios.</summary>

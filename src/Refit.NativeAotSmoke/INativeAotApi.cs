@@ -12,6 +12,12 @@ public interface INativeAotApi
     [Post("/todos")]
     Task<Todo> CreateTodoAsync([Body] Todo item);
 
+    /// <summary>Submits URL-encoded form data.</summary>
+    /// <param name="form">The form payload.</param>
+    /// <returns>The form response.</returns>
+    [Post("/forms")]
+    Task<string> SubmitFormAsync([Body(BodySerializationMethod.UrlEncoded)] SmokeForm form);
+
     /// <summary>Gets the service status.</summary>
     /// <returns>The service status response.</returns>
     [Get("/status")]
