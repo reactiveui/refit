@@ -137,14 +137,19 @@ public class ValidationApiException : ApiException
     /// <returns>The deserialized problem details.</returns>
     private static ProblemDetails DeserializeProblemDetails(string content)
     {
+#if NET10_0_OR_GREATER
+        var rootElement = JsonElement.Parse(content);
+#else
         using var document = JsonDocument.Parse(content);
-        if (document.RootElement.ValueKind != JsonValueKind.Object)
+        var rootElement = document.RootElement;
+#endif
+        if (rootElement.ValueKind != JsonValueKind.Object)
         {
             throw new JsonException("Problem details JSON must be an object.");
         }
 
         var problemDetails = new ProblemDetails();
-        foreach (var property in document.RootElement.EnumerateObject())
+        foreach (var property in rootElement.EnumerateObject())
         {
             ReadProblemDetailsProperty(problemDetails, property);
         }

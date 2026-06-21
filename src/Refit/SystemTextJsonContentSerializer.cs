@@ -39,7 +39,11 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         // Default to case insensitive property name matching as that's likely the behavior most users expect
         var jsonSerializerOptions = new JsonSerializerOptions
         {
-            PropertyNameCaseInsensitive = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+#if NET10_0_OR_GREATER
+            AllowDuplicateProperties = false
+#endif
         };
         jsonSerializerOptions.Converters.Add(new ObjectToInferredTypesConverter());
         jsonSerializerOptions.Converters.Add(new CamelCaseStringEnumConverter());

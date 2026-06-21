@@ -446,6 +446,21 @@ public partial class SerializedContentTests
         await Assert.That(await Assert.That(result!.Value).IsTypeOf<bool>()).IsTrue();
     }
 
+#if NET10_0_OR_GREATER
+    /// <summary>Verifies duplicate JSON properties are rejected by the default serializer options.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_RejectDuplicateProperties()
+    {
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+
+        await Assert
+            .That(() => SystemTextJsonSerializer.Deserialize<ObjectValueContainer>("""{"value":1,"value":2}""", options))
+            .ThrowsExactly<System.Text.Json.JsonException>();
+    }
+
+#endif
+
     /// <summary>Verifies false JSON object values are inferred as <see cref="bool"/>.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
