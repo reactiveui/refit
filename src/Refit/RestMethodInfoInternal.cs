@@ -572,7 +572,6 @@ internal class RestMethodInfoInternal
     /// <returns>The authorization parameter information, or null when there is no authorize parameter.</returns>
     private static Tuple<string, int>? FindAuthorizationParameter(ParameterInfo[] parameterArray)
     {
-        ParameterInfo? authorizeParameter = null;
         AuthorizeAttribute? authorizeAttribute = null;
         var authorizeIndex = -1;
 
@@ -584,17 +583,16 @@ internal class RestMethodInfoInternal
                 continue;
             }
 
-            if (authorizeParameter is not null)
+            if (authorizeAttribute is not null)
             {
                 throw new ArgumentException("Only one parameter can be an Authorize parameter");
             }
 
-            authorizeParameter = parameterArray[i];
             authorizeAttribute = attribute;
             authorizeIndex = i;
         }
 
-        if (authorizeParameter is null || authorizeAttribute is null)
+        if (authorizeAttribute is null)
         {
             return null;
         }
@@ -895,7 +893,6 @@ internal class RestMethodInfoInternal
         // 1) [Body] attribute
         // 2) POST/PUT/PATCH: Reference type other than string
         // 3) If there are two reference types other than string, without the body attribute, throw
-        ParameterInfo? bodyParameter = null;
         BodyAttribute? bodyAttribute = null;
         var bodyParameterIndex = -1;
         var hasMultipleBodyParameters = false;
@@ -907,13 +904,12 @@ internal class RestMethodInfoInternal
                 continue;
             }
 
-            if (bodyParameter is not null)
+            if (bodyAttribute is not null)
             {
                 hasMultipleBodyParameters = true;
                 break;
             }
 
-            bodyParameter = parameterArray[i];
             bodyAttribute = attribute;
             bodyParameterIndex = i;
         }
@@ -921,7 +917,7 @@ internal class RestMethodInfoInternal
         // multipart requests may not contain a body, implicit or explicit
         if (isMultipart)
         {
-            if (bodyParameter is not null)
+            if (bodyAttribute is not null)
             {
                 throw new ArgumentException(
                     "Multipart requests may not contain a Body parameter");
@@ -936,7 +932,7 @@ internal class RestMethodInfoInternal
         }
 
         // #1, body attribute wins
-        if (bodyParameter is not null && bodyAttribute is not null)
+        if (bodyAttribute is not null)
         {
             return Tuple.Create(
                 bodyAttribute.SerializationMethod,
