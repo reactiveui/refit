@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Refit.GeneratorTests"/>
+    <InternalsVisibleTo Include="Refit.Analyzers.Tests"/>
   </ItemGroup>
 
   <ItemGroup>

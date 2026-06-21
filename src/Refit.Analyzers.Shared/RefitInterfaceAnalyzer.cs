@@ -32,6 +32,22 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(RegisterCompilationAnalysis);
     }
 
+    /// <summary>Gets the literal path from a Refit HTTP method attribute.</summary>
+    /// <param name="attributeData">The attribute data.</param>
+    /// <returns>The path literal.</returns>
+    internal static string GetHttpPath(AttributeData? attributeData)
+    {
+        if (attributeData is null)
+        {
+            return string.Empty;
+        }
+
+        var arguments = attributeData.ConstructorArguments;
+        return arguments.Length > 0 && arguments[0].Value is string path
+            ? path
+            : string.Empty;
+    }
+
 #if !ROSLYN_5
     /// <summary>Creates the immutable descriptor set without using Roslyn 5-only collection expressions.</summary>
     /// <returns>The supported diagnostics.</returns>
@@ -322,22 +338,6 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    /// <summary>Gets the literal path from a Refit HTTP method attribute.</summary>
-    /// <param name="attributeData">The attribute data.</param>
-    /// <returns>The path literal.</returns>
-    private static string GetHttpPath(AttributeData? attributeData)
-    {
-        if (attributeData is null)
-        {
-            return string.Empty;
-        }
-
-        var arguments = attributeData.ConstructorArguments;
-        return arguments.Length > 0 && arguments[0].Value is string path
-            ? path
-            : string.Empty;
     }
 
     /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>

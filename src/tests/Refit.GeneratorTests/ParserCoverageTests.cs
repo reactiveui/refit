@@ -78,9 +78,27 @@ public sealed class ParserCoverageTests
             [],
             [],
             CancellationToken.None);
+        var (_, dottedModel) = Parser.GenerateInterfaceStubs(
+            compilation,
+            "One.Two",
+            generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
+            [],
+            [],
+            CancellationToken.None);
+        var (_, invalidStartModel) = Parser.GenerateInterfaceStubs(
+            compilation,
+            "!.Application",
+            generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
+            [],
+            [],
+            CancellationToken.None);
 
         await Assert.That(leadingDotModel.RefitInternalNamespace).IsEqualTo("ApplicationRefitInternalGenerated");
         await Assert.That(digitModel.RefitInternalNamespace).IsEqualTo("_123_AppRefitInternalGenerated");
+        await Assert.That(dottedModel.RefitInternalNamespace).IsEqualTo("One.TwoRefitInternalGenerated");
+        await Assert.That(invalidStartModel.RefitInternalNamespace).IsEqualTo("__.ApplicationRefitInternalGenerated");
     }
 
     /// <summary>Verifies well-known type lookup caching and failure paths.</summary>

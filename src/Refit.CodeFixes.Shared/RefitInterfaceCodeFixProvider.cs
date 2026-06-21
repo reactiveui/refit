@@ -79,33 +79,17 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
         return Task.CompletedTask;
     }
 
-#if !ROSLYN_5
-    /// <summary>Creates the immutable fixable ID set without using Roslyn 5-only collection expressions.</summary>
-    /// <returns>The fixable diagnostic IDs.</returns>
-    private static ImmutableArray<string> CreateFixableDiagnosticIds()
-    {
-        var builder = ImmutableArray.CreateBuilder<string>(2);
-        builder.Add(DiagnosticIds.InvalidRouteBackslash);
-        builder.Add(DiagnosticIds.InvalidHeaderCollectionParameter);
-        return builder.MoveToImmutable();
-    }
-#endif
-
     /// <summary>Replaces backslashes in a Refit route literal with forward slashes.</summary>
     /// <param name="document">The document to update.</param>
     /// <param name="diagnostic">The diagnostic to fix.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The updated document.</returns>
-    private static async Task<Document> UseForwardSlashesAsync(
+    internal static async Task<Document> UseForwardSlashesAsync(
         Document document,
         Diagnostic diagnostic,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
+        var root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
         var attribute = root
             .FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true)
@@ -132,16 +116,12 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
     /// <param name="diagnostic">The diagnostic to fix.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The updated document.</returns>
-    private static async Task<Document> UseHeaderCollectionTypeAsync(
+    internal static async Task<Document> UseHeaderCollectionTypeAsync(
         Document document,
         Diagnostic diagnostic,
         CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-        {
-            return document;
-        }
+        var root = (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false))!;
 
         var parameter = root
             .FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true)
@@ -156,4 +136,16 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
         var updatedParameter = parameter.WithType(replacementType.WithTriviaFrom(parameter.Type));
         return document.WithSyntaxRoot(root.ReplaceNode(parameter, updatedParameter));
     }
+
+#if !ROSLYN_5
+    /// <summary>Creates the immutable fixable ID set without using Roslyn 5-only collection expressions.</summary>
+    /// <returns>The fixable diagnostic IDs.</returns>
+    private static ImmutableArray<string> CreateFixableDiagnosticIds()
+    {
+        var builder = ImmutableArray.CreateBuilder<string>(2);
+        builder.Add(DiagnosticIds.InvalidRouteBackslash);
+        builder.Add(DiagnosticIds.InvalidHeaderCollectionParameter);
+        return builder.MoveToImmutable();
+    }
+#endif
 }

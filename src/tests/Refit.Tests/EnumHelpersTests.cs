@@ -145,6 +145,19 @@ public sealed class EnumHelpersTests
     public async Task ParseNameReturnsDeclaredEnumValue() =>
         await Assert.That(EnumHelpers.Info<MemberEnum>.ParseName(nameof(MemberEnum.Custom))).IsEqualTo(MemberEnum.Custom);
 
+    /// <summary>Verifies numeric enum helpers reject impossible backing-type combinations.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task NumericHelpersRejectUnsupportedBackingTypeRequests()
+    {
+        await Assert.That(() => EnumHelpers.Info<UInt32Enum>.ToInt64(UInt32Enum.Value))
+            .ThrowsExactly<JsonException>();
+        await Assert.That(() => EnumHelpers.Info<Int32Enum>.ToUInt64(Int32Enum.Value))
+            .ThrowsExactly<JsonException>();
+        await Assert.That(ReadUnsupportedNumericValue)
+            .ThrowsExactly<JsonException>();
+    }
+
     /// <summary>Verifies numeric enum read, write, and formatting helpers agree for a value.</summary>
     /// <typeparam name="TEnum">The enum type under test.</typeparam>
     /// <param name="expected">The expected enum value.</param>
@@ -172,5 +185,14 @@ public sealed class EnumHelpersTests
         }
 
         await Assert.That(Encoding.UTF8.GetString(stream.ToArray())).IsEqualTo(formatted);
+    }
+
+    /// <summary>Reads an enum value using an unsupported backing type code.</summary>
+    /// <returns>The read enum value.</returns>
+    private static MemberEnum ReadUnsupportedNumericValue()
+    {
+        var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes("1"));
+        reader.Read();
+        return EnumHelpers.Info<MemberEnum>.ReadJsonNumericValue(TypeCode.Boolean, ref reader);
     }
 }

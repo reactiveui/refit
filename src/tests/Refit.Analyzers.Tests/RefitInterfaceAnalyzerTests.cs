@@ -6,6 +6,56 @@ namespace Refit.Analyzers.Tests;
 /// <summary>Tests for Refit interface contract diagnostics.</summary>
 public sealed class RefitInterfaceAnalyzerTests
 {
+    /// <summary>The diagnostic identifier for non-Refit interface members.</summary>
+    private const string NonRefitMemberDiagnosticId = "RF001";
+
+    /// <summary>Verifies analysis exits when the compilation does not reference Refit.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DoesNotRunWithoutRefitReference()
+    {
+        var diagnostics = await AnalyzerFixture.RunWithoutRefitReference(
+            """
+            public interface IGeneratedClient
+            {
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    /// <summary>Verifies non-interface named types are ignored.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task IgnoresNonInterfaceTypes()
+    {
+        var diagnostics = await AnalyzerFixture.Run(
+            """
+            using Refit;
+
+            namespace RefitAnalyzerTest;
+
+            public sealed class GeneratedClient
+            {
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    /// <summary>Verifies interfaces without Refit methods are ignored.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task IgnoresInterfacesWithoutRefitMethods()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            void NonRefitMethod();
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
     /// <summary>Verifies request shape diagnostics are reported outside the generator path.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -13,6 +63,7 @@ public sealed class RefitInterfaceAnalyzerTests
     {
         var diagnostics = await AnalyzerFixture.RunForBody(
             """
+            [Obsolete]
             [Get("/bad\\route")]
             Task<string> BadRoute();
 
@@ -44,7 +95,7 @@ public sealed class RefitInterfaceAnalyzerTests
             """);
 
         await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
-            .Contains("RF001");
+            .Contains(NonRefitMemberDiagnosticId);
     }
 
     /// <summary>Verifies inherited non-Refit members on Refit interfaces are reported.</summary>
@@ -72,8 +123,42 @@ public sealed class RefitInterfaceAnalyzerTests
             """);
 
         await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
-            .Contains("RF001");
+            .Contains(NonRefitMemberDiagnosticId);
     }
+
+    /// <summary>Verifies interfaces with inherited Refit methods still validate their own non-Refit members.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReportsNonRefitMembersWhenRefitMethodIsInherited()
+    {
+        var diagnostics = await AnalyzerFixture.Run(
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitAnalyzerTest;
+
+            public interface IBaseInterface
+            {
+                [Get("/users")]
+                Task<string> Get();
+            }
+
+            public interface IGeneratedClient : IBaseInterface
+            {
+                void NonRefitMethod();
+            }
+            """);
+
+        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+            .Contains(NonRefitMemberDiagnosticId);
+    }
+
+    /// <summary>Verifies HTTP path extraction handles missing attribute data.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetHttpPathReturnsEmptyForMissingAttribute() =>
+        await Assert.That(RefitInterfaceAnalyzer.GetHttpPath(null)).IsEqualTo(string.Empty);
 
     /// <summary>Verifies IDisposable inheritance does not produce RF001.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -96,6 +181,6 @@ public sealed class RefitInterfaceAnalyzerTests
             """);
 
         await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
-            .DoesNotContain("RF001");
+            .DoesNotContain(NonRefitMemberDiagnosticId);
     }
 }

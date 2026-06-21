@@ -9,6 +9,7 @@ using System.Text;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 using Refit.Generator;
 
@@ -192,6 +193,15 @@ public static class GeneratorComponentTests
         /// <summary>The generated true literal.</summary>
         private const string TrueLiteral = "true";
 
+        /// <summary>The generated fully-qualified task type name.</summary>
+        private const string TaskTypeName = "global::System.Threading.Tasks.Task";
+
+        /// <summary>The generated string type name.</summary>
+        private const string StringTypeName = "string";
+
+        /// <summary>The populated part count used by join helper tests.</summary>
+        private const int PopulatedPartCount = 2;
+
         /// <summary>Verifies escaping every special C# string-literal character.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
         [Test]
@@ -297,7 +307,7 @@ public static class GeneratorComponentTests
         {
             var method = new MethodModel(
                 "Ping",
-                "global::System.Threading.Tasks.Task",
+                TaskTypeName,
                 "RefitGeneratorTest.IBase",
                 "Ping",
                 ReturnTypeInfo.AsyncVoid,
@@ -312,12 +322,104 @@ public static class GeneratorComponentTests
                 .Contains("async global::System.Threading.Tasks.Task global::RefitGeneratorTest.IBase.Ping(");
         }
 
+        /// <summary>Verifies emitted XML documentation text escapes special characters.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task ToXmlDocumentationText_EscapesSpecialCharacters() =>
+            await Assert.That(Emitter.ToXmlDocumentationTextForTesting("A&B<C>")).IsEqualTo("A&amp;B&lt;C&gt;");
+
+        /// <summary>Verifies generated file headers for analyzer-enabled generated code tests.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task BuildGeneratedFileHeader_SupportsNonGeneratedMarkers()
+        {
+            var noneHeader = Emitter.BuildGeneratedFileHeaderForTesting(Nullability.None, emitGeneratedCodeMarkers: false);
+            var nullableHeader = Emitter.BuildGeneratedFileHeaderForTesting(Nullability.Enabled, emitGeneratedCodeMarkers: false);
+
+            await Assert.That(noneHeader).Contains("ReactiveUI and Contributors");
+            await Assert.That(noneHeader).DoesNotContain("#nullable");
+            await Assert.That(nullableHeader).Contains("#nullable enable annotations");
+        }
+
+        /// <summary>Verifies generated settings factories require at least one inline-capable Refit method.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task CanUseGeneratedSettingsFactory_RejectsEmptyInterfaces()
+        {
+            var emptyModel = CreateInterfaceModel(
+                ImmutableEquatableArray<MethodModel>.Empty,
+                ImmutableEquatableArray<MethodModel>.Empty);
+            var inlineModel = CreateInterfaceModel(
+                new ImmutableEquatableArray<MethodModel>([CreateRefitMethod(canGenerateInline: true)]),
+                ImmutableEquatableArray<MethodModel>.Empty);
+
+            await Assert.That(Emitter.CanUseGeneratedSettingsFactoryForTesting(emptyModel)).IsFalse();
+            await Assert.That(Emitter.CanUseGeneratedSettingsFactoryForTesting(inlineModel)).IsTrue();
+        }
+
+        /// <summary>Verifies parameter type-list helpers handle empty and populated parameter lists.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task BuildParameterTypeList_HandlesEmptyAndPopulatedParameters()
+        {
+            var parameters = new ImmutableEquatableArray<ParameterModel>(
+                [
+                    new("first", StringTypeName, false, false),
+                    new("second", "global::System.Int32", false, false)
+                ]);
+
+            await Assert.That(Emitter.BuildParameterTypeListForTesting(ImmutableEquatableArray<ParameterModel>.Empty))
+                .IsEqualTo(string.Empty);
+            await Assert.That(Emitter.BuildParameterTypeListForTesting(parameters))
+                .IsEqualTo("typeof(string), typeof(global::System.Int32)");
+        }
+
+        /// <summary>Verifies source fragment joining avoids extra separators for empty input.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task JoinParts_HandlesEmptyAndPopulatedParts()
+        {
+            await Assert.That(Emitter.JoinPartsForTesting([], 0, ", ")).IsEqualTo(string.Empty);
+            await Assert.That(Emitter.JoinPartsForTesting(["a", "b", "ignored"], PopulatedPartCount, ", ")).IsEqualTo("a, b");
+        }
+
+        /// <summary>Verifies candidate method combining preserves standard and custom methods.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task CombineCandidateMethods_CombinesStandardAndCustomMethods()
+        {
+            var standard = ParseMethod("Standard", "[Get(\"/standard\")]");
+            var custom = ParseMethod("Custom", "[Custom(\"CUSTOM\", \"/custom\")]");
+
+            var result = InterfaceStubGeneratorV2.CombineCandidateMethodsForTesting(
+                ([standard], [custom]));
+
+            var names = result.Select(static method => method.Identifier.ValueText).ToArray();
+
+            await Assert.That(names.Length).IsEqualTo(PopulatedPartCount);
+            await Assert.That(names[0]).IsEqualTo("Standard");
+            await Assert.That(names[1]).IsEqualTo("Custom");
+        }
+
+        /// <summary>Verifies standard HTTP method attribute detection handles suffixes and qualified names.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task IsStandardHttpMethodAttributeName_HandlesQualifiedAndAliasNames()
+        {
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("GetAttribute"))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("Refit.Post"))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("global::PutAttribute"))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("global::Refit.PutAttribute"))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("GetAttribute<string>"))).IsFalse();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("Custom"))).IsFalse();
+        }
+
         /// <summary>Creates a body request parameter model.</summary>
         /// <param name="serializationMethod">The serialization method name.</param>
         /// <param name="bufferMode">The body buffer mode.</param>
         /// <returns>The request parameter model.</returns>
         private static RequestParameterModel CreateBody(string serializationMethod, BodyBufferMode bufferMode) =>
-            new("body", "string", RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, bufferMode);
+            new("body", StringTypeName, RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, bufferMode);
 
         /// <summary>Creates an interface property model.</summary>
         /// <param name="name">The property name.</param>
@@ -333,6 +435,74 @@ public static class GeneratorComponentTests
             bool generated,
             bool explicitInterface) =>
             new(name, type, false, containingType, string.Empty, true, true, generated, explicitInterface);
+
+        /// <summary>Creates an interface model for direct emitter helper tests.</summary>
+        /// <param name="refitMethods">The directly declared Refit methods.</param>
+        /// <param name="derivedRefitMethods">The inherited Refit methods.</param>
+        /// <returns>The interface model.</returns>
+        private static InterfaceModel CreateInterfaceModel(
+            ImmutableEquatableArray<MethodModel> refitMethods,
+            ImmutableEquatableArray<MethodModel> derivedRefitMethods) =>
+            new(
+                "RefitInternalGenerated.PreserveAttribute",
+                "IGeneratedClient.g.cs",
+                "IGeneratedClient",
+                "RefitGeneratorTest",
+                "public partial class IGeneratedClient",
+                "RefitGeneratorTest.IGeneratedClient",
+                string.Empty,
+                true,
+                true,
+                true,
+                ImmutableEquatableArray<TypeConstraint>.Empty,
+                ImmutableEquatableArray<string>.Empty,
+                ImmutableEquatableArray<InterfacePropertyModel>.Empty,
+                ImmutableEquatableArray<MethodModel>.Empty,
+                refitMethods,
+                derivedRefitMethods,
+                Nullability.Enabled,
+                false);
+
+        /// <summary>Creates a Refit method model for direct emitter helper tests.</summary>
+        /// <param name="canGenerateInline">Whether the request can be generated inline.</param>
+        /// <returns>The method model.</returns>
+        private static MethodModel CreateRefitMethod(bool canGenerateInline) =>
+            new(
+                "Get",
+                TaskTypeName,
+                "RefitGeneratorTest.IGeneratedClient",
+                "Get",
+                ReturnTypeInfo.AsyncVoid,
+                new RequestModel(
+                    "GET",
+                    "/",
+                    TaskTypeName,
+                    "global::System.Threading.Tasks.Task",
+                    false,
+                    true,
+                    canGenerateInline,
+                    ImmutableEquatableArray<HeaderModel>.Empty,
+                    ImmutableEquatableArray<RequestParameterModel>.Empty),
+                ImmutableEquatableArray<ParameterModel>.Empty,
+                ImmutableEquatableArray<TypeConstraint>.Empty,
+                false);
+
+        /// <summary>Parses a method declaration for syntax helper tests.</summary>
+        /// <param name="name">The method name.</param>
+        /// <param name="attribute">The attribute source.</param>
+        /// <returns>The method declaration syntax.</returns>
+        private static MethodDeclarationSyntax ParseMethod(string name, string attribute)
+        {
+            var compilationUnit = SyntaxFactory.ParseCompilationUnit(
+                $"public interface I {{ {attribute} void {name}(); }}");
+            return compilationUnit.DescendantNodes().OfType<MethodDeclarationSyntax>().Single();
+        }
+
+        /// <summary>Parses an attribute name for syntax helper tests.</summary>
+        /// <param name="name">The name source.</param>
+        /// <returns>The parsed name syntax.</returns>
+        private static NameSyntax ParseName(string name) =>
+            SyntaxFactory.ParseName(name);
     }
 
     /// <summary>Tests for direct parser request helpers.</summary>

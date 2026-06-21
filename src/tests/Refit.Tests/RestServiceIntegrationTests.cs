@@ -29,6 +29,20 @@ public partial class RestServiceIntegrationTests
         Justification = "Empty fixture interface verifies manual Type-based generated factory registration.")]
     internal interface IGeneratedTypeFactoryApi;
 
+    /// <summary>Refit interface used to verify the typed request-builder factory fallback.</summary>
+    [SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST1437:Add members to type or remove it",
+        Justification = "Empty fixture interface verifies direct typed generated factory registration.")]
+    internal interface IGeneratedTypedFactoryApi;
+
+    /// <summary>Refit interface used to verify the settings dictionary factory fallback.</summary>
+    [SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST1437:Add members to type or remove it",
+        Justification = "Empty fixture interface verifies generated settings factory fallback behavior.")]
+    internal interface IGeneratedTypedSettingsFallbackApi;
+
     /// <summary>Interface intentionally excluded from source generation.</summary>
     [SuppressMessage(
         "RoslynCommonAnalyzers",
@@ -191,6 +205,59 @@ public partial class RestServiceIntegrationTests
 
         await Assert.That(generatedOnlyClient!.Client).IsSameReferenceAs(generatedClient);
         await Assert.That(reflectionClientInstance!.Client).IsSameReferenceAs(reflectionClient);
+    }
+
+    /// <summary>Verifies typed generated request-builder factories can be invoked without dictionary registration.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedUsesTypedRequestBuilderFactoryFallback()
+    {
+        var previousFactory = RestService.GeneratedFactory<IGeneratedTypedFactoryApi>.Factory;
+        RestService.GeneratedFactory<IGeneratedTypedFactoryApi>.Factory =
+            static (client, builder) => new GeneratedTypedFactoryApiClient(client, builder);
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new("http://typed") };
+            var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+            var instance = RestService.ForGenerated<IGeneratedTypedFactoryApi>(client, settings);
+            var generated = await Assert.That(instance).IsTypeOf<GeneratedTypedFactoryApiClient>();
+
+            await Assert.That(generated!.Client).IsSameReferenceAs(client);
+            await Assert.That(generated.Builder.Settings).IsSameReferenceAs(settings);
+        }
+        finally
+        {
+            RestService.GeneratedFactory<IGeneratedTypedFactoryApi>.Factory = previousFactory;
+        }
+    }
+
+    /// <summary>Verifies registered settings factories remain usable through the untyped registry.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ForGeneratedUsesUntypedSettingsFactoryFallback()
+    {
+        RestService.RegisterGeneratedSettingsFactory<IGeneratedTypedSettingsFallbackApi>(
+            static (client, settings) => new GeneratedTypedSettingsFallbackApiClient(client, settings));
+        var previousFactory = RestService.GeneratedSettingsFactory<IGeneratedTypedSettingsFallbackApi>.Factory;
+        RestService.GeneratedSettingsFactory<IGeneratedTypedSettingsFallbackApi>.Factory = null;
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new("http://typed-settings") };
+            var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+            var instance = RestService.ForGenerated<IGeneratedTypedSettingsFallbackApi>(client, settings);
+            var generated = await Assert.That(instance).IsTypeOf<GeneratedTypedSettingsFallbackApiClient>();
+
+            await Assert.That(generated!.Client).IsSameReferenceAs(client);
+            await Assert.That(generated.Settings).IsSameReferenceAs(settings);
+        }
+        finally
+        {
+            RestService.GeneratedSettingsFactory<IGeneratedTypedSettingsFallbackApi>.Factory = previousFactory;
+        }
     }
 
     /// <summary>Verifies the generated-only API fails clearly when no generated factory is available.</summary>
@@ -880,5 +947,31 @@ public partial class RestServiceIntegrationTests
 
         /// <summary>Gets the request builder supplied to the factory.</summary>
         public IRequestBuilder Builder { get; } = builder;
+    }
+
+    /// <summary>Client used to verify typed generated request-builder factories.</summary>
+    /// <param name="client">The HTTP client supplied to the generated factory.</param>
+    /// <param name="builder">The generated-only request builder supplied to the generated factory.</param>
+    private sealed class GeneratedTypedFactoryApiClient(HttpClient client, IRequestBuilder builder)
+        : IGeneratedTypedFactoryApi
+    {
+        /// <summary>Gets the HTTP client supplied to the generated factory.</summary>
+        public HttpClient Client { get; } = client;
+
+        /// <summary>Gets the generated-only request builder supplied to the generated factory.</summary>
+        public IRequestBuilder Builder { get; } = builder;
+    }
+
+    /// <summary>Client used to verify generated settings factory fallbacks.</summary>
+    /// <param name="client">The HTTP client supplied to the generated factory.</param>
+    /// <param name="settings">The Refit settings supplied to the generated factory.</param>
+    private sealed class GeneratedTypedSettingsFallbackApiClient(HttpClient client, RefitSettings settings)
+        : IGeneratedTypedSettingsFallbackApi
+    {
+        /// <summary>Gets the HTTP client supplied to the generated factory.</summary>
+        public HttpClient Client { get; } = client;
+
+        /// <summary>Gets the settings supplied to the generated factory.</summary>
+        public RefitSettings Settings { get; } = settings;
     }
 }

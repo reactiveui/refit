@@ -76,6 +76,37 @@ internal static class CodeFixFixture
         return changedText.ToString();
     }
 
+    /// <summary>Gets the fix-all provider from the Refit code-fix provider.</summary>
+    /// <returns>The fix-all provider.</returns>
+    public static FixAllProvider? GetFixAllProvider() =>
+        new RefitInterfaceCodeFixProvider().GetFixAllProvider();
+
+    /// <summary>Applies the forward-slash helper directly at the first occurrence of the marker.</summary>
+    /// <param name="source">The source to update.</param>
+    /// <param name="marker">The source marker used to create the diagnostic span.</param>
+    /// <returns>The updated source.</returns>
+    public static async Task<string> UseForwardSlashesDirectly(string source, string marker)
+    {
+        var document = CreateDocument(source);
+        var diagnostic = CreateDiagnostic("RF003", source, marker);
+        var changedDocument = await RefitInterfaceCodeFixProvider
+            .UseForwardSlashesAsync(document, diagnostic, CancellationToken.None);
+        return (await changedDocument.GetTextAsync()).ToString();
+    }
+
+    /// <summary>Applies the header-collection helper directly at the first occurrence of the marker.</summary>
+    /// <param name="source">The source to update.</param>
+    /// <param name="marker">The source marker used to create the diagnostic span.</param>
+    /// <returns>The updated source.</returns>
+    public static async Task<string> UseHeaderCollectionTypeDirectly(string source, string marker)
+    {
+        var document = CreateDocument(source);
+        var diagnostic = CreateDiagnostic("RF005", source, marker);
+        var changedDocument = await RefitInterfaceCodeFixProvider
+            .UseHeaderCollectionTypeAsync(document, diagnostic, CancellationToken.None);
+        return (await changedDocument.GetTextAsync()).ToString();
+    }
+
     /// <summary>Gets metadata references for code-fix test compilations.</summary>
     /// <returns>The metadata references.</returns>
     private static List<MetadataReference> GetMetadataReferences()
@@ -98,6 +129,45 @@ internal static class CodeFixFixture
         }
 
         return references;
+    }
+
+    /// <summary>Creates a Roslyn document for direct code-fix helper tests.</summary>
+    /// <param name="source">The source text.</param>
+    /// <returns>The created document.</returns>
+    private static Document CreateDocument(string source)
+    {
+        var workspace = new AdhocWorkspace();
+        return workspace
+            .AddProject("DirectCodeFixTest", LanguageNames.CSharp)
+            .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+            .WithParseOptions(CSharpParseOptions.Default)
+            .AddMetadataReferences(GetMetadataReferences())
+            .AddDocument("Test.cs", SourceText.From(source));
+    }
+
+    /// <summary>Creates a diagnostic over the first occurrence of a marker string.</summary>
+    /// <param name="diagnosticId">The diagnostic ID.</param>
+    /// <param name="source">The source text.</param>
+    /// <param name="marker">The marker text.</param>
+    /// <returns>The created diagnostic.</returns>
+    private static Diagnostic CreateDiagnostic(string diagnosticId, string source, string marker)
+    {
+        var start = source.IndexOf(marker, StringComparison.Ordinal);
+        if (start < 0)
+        {
+            throw new InvalidOperationException($"Marker '{marker}' was not found.");
+        }
+
+        var span = new TextSpan(start, marker.Length);
+        var lineSpan = new LinePositionSpan(new LinePosition(0, 0), new LinePosition(0, marker.Length));
+        var descriptor = new DiagnosticDescriptor(
+            diagnosticId,
+            "Test diagnostic",
+            "Test diagnostic",
+            "Refit",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
+        return Diagnostic.Create(descriptor, Location.Create("Test.cs", span, lineSpan));
     }
 
     /// <summary>Gets the assemblies referenced when compiling code-fix test input.</summary>

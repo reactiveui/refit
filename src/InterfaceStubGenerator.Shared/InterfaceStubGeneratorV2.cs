@@ -113,6 +113,20 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             static (spc, model) => Emitter.EmitSharedCode(model, spc.AddSource));
     }
 
+    /// <summary>Combines built-in and potential custom HTTP method candidates.</summary>
+    /// <param name="combined">The built-in and custom candidate arrays.</param>
+    /// <returns>The combined candidates.</returns>
+    internal static ImmutableArray<MethodDeclarationSyntax> CombineCandidateMethodsForTesting(
+        (ImmutableArray<MethodDeclarationSyntax> StandardMethods,
+        ImmutableArray<MethodDeclarationSyntax> CustomMethods) combined) =>
+        CombineCandidateMethods(combined);
+
+    /// <summary>Determines whether an attribute syntax name is a built-in Refit HTTP method attribute name.</summary>
+    /// <param name="name">The attribute name syntax.</param>
+    /// <returns><see langword="true"/> when the name is one of Refit's built-in HTTP method attributes.</returns>
+    internal static bool IsStandardHttpMethodAttributeNameForTesting(NameSyntax name) =>
+        IsStandardHttpMethodAttributeName(name);
+
     /// <summary>Reads a global analyzer-config option by bare name or MSBuild build-property name.</summary>
     /// <param name="options">The analyzer-config options.</param>
     /// <param name="name">The option name without the build-property prefix.</param>

@@ -129,6 +129,37 @@ public class GeneratedRequestRunnerTests
         await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("url%26string");
     }
 
+    /// <summary>Verifies URL-encoded HTTP content bodies are reused directly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentReusesHttpContent()
+    {
+        var settings = CreateSettings();
+        var content = new StringContent("content-body");
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(
+            settings,
+            content);
+
+        await Assert.That(result).IsSameReferenceAs(content);
+    }
+
+    /// <summary>Verifies URL-encoded stream bodies are wrapped as stream content.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentUsesStreamContentForStreams()
+    {
+        var settings = CreateSettings();
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes("stream-body"));
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(
+            settings,
+            stream);
+
+        await Assert.That(result).IsTypeOf<StreamContent>();
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("stream-body");
+    }
+
     /// <summary>Verifies URL-encoded object bodies use the declared body type.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

@@ -99,7 +99,14 @@ internal static class EnumHelpers
         /// <param name="reader">The reader positioned on the numeric token.</param>
         /// <returns>The enum value represented by the numeric token.</returns>
         internal static TEnum ReadJsonNumericValue(ref Utf8JsonReader reader) =>
-            _underlyingTypeCode switch
+            ReadJsonNumericValue(_underlyingTypeCode, ref reader);
+
+        /// <summary>Reads an undefined enum value using the supplied backing type code.</summary>
+        /// <param name="underlyingTypeCode">The enum backing type code.</param>
+        /// <param name="reader">The JSON reader positioned at a numeric token.</param>
+        /// <returns>The enum value represented by the numeric token.</returns>
+        internal static TEnum ReadJsonNumericValue(TypeCode underlyingTypeCode, ref Utf8JsonReader reader) =>
+            underlyingTypeCode switch
             {
                 TypeCode.SByte => ToEnum(checked((sbyte)reader.GetInt64())),
                 TypeCode.Byte => ToEnum(checked((byte)reader.GetUInt64())),
@@ -126,15 +133,10 @@ internal static class EnumHelpers
             writer.WriteNumberValue(ToInt64(value));
         }
 
-        /// <summary>Determines whether the enum backing type is unsigned.</summary>
-        /// <returns><see langword="true"/> when the enum backing type is unsigned.</returns>
-        private static bool IsUnsignedBackingType() =>
-            _underlyingTypeCode is TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64;
-
         /// <summary>Converts an enum value to a signed 64-bit number without boxing.</summary>
         /// <param name="value">The enum value.</param>
         /// <returns>The signed numeric value.</returns>
-        private static long ToInt64(TEnum value) =>
+        internal static long ToInt64(TEnum value) =>
             _underlyingTypeCode switch
             {
                 TypeCode.SByte => Unsafe.As<TEnum, sbyte>(ref value),
@@ -144,18 +146,10 @@ internal static class EnumHelpers
                 _ => throw new JsonException($"Enum {typeof(TEnum)} does not use a signed backing type.")
             };
 
-        /// <summary>Converts a numeric backing value to the enum type without boxing.</summary>
-        /// <typeparam name="TUnderlying">The enum backing value type.</typeparam>
-        /// <param name="value">The numeric backing value.</param>
-        /// <returns>The enum value.</returns>
-        private static TEnum ToEnum<TUnderlying>(TUnderlying value)
-            where TUnderlying : struct =>
-            Unsafe.As<TUnderlying, TEnum>(ref value);
-
         /// <summary>Converts an enum value to an unsigned 64-bit number without boxing.</summary>
         /// <param name="value">The enum value.</param>
         /// <returns>The unsigned numeric value.</returns>
-        private static ulong ToUInt64(TEnum value) =>
+        internal static ulong ToUInt64(TEnum value) =>
             _underlyingTypeCode switch
             {
                 TypeCode.Byte => Unsafe.As<TEnum, byte>(ref value),
@@ -164,5 +158,18 @@ internal static class EnumHelpers
                 TypeCode.UInt64 => Unsafe.As<TEnum, ulong>(ref value),
                 _ => throw new JsonException($"Enum {typeof(TEnum)} does not use an unsigned backing type.")
             };
+
+        /// <summary>Determines whether the enum backing type is unsigned.</summary>
+        /// <returns><see langword="true"/> when the enum backing type is unsigned.</returns>
+        private static bool IsUnsignedBackingType() =>
+            _underlyingTypeCode is TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64;
+
+        /// <summary>Converts a numeric backing value to the enum type without boxing.</summary>
+        /// <typeparam name="TUnderlying">The enum backing value type.</typeparam>
+        /// <param name="value">The numeric backing value.</param>
+        /// <returns>The enum value.</returns>
+        private static TEnum ToEnum<TUnderlying>(TUnderlying value)
+            where TUnderlying : struct =>
+            Unsafe.As<TUnderlying, TEnum>(ref value);
     }
 }

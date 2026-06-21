@@ -436,7 +436,7 @@ public static class RestService
 
     /// <summary>Holds the typed generated factory for a single Refit interface.</summary>
     /// <typeparam name="T">The Refit interface type.</typeparam>
-    private static class GeneratedFactory<T>
+    internal static class GeneratedFactory<T>
     {
         /// <summary>Gets or sets the generated implementation factory.</summary>
         internal static Func<HttpClient, IRequestBuilder, T>? Factory { get; set; }
@@ -444,7 +444,7 @@ public static class RestService
 
     /// <summary>Holds the typed generated settings factory for a single Refit interface.</summary>
     /// <typeparam name="T">The Refit interface type.</typeparam>
-    private static class GeneratedSettingsFactory<T>
+    internal static class GeneratedSettingsFactory<T>
     {
         /// <summary>Gets or sets the generated implementation factory.</summary>
         internal static Func<HttpClient, RefitSettings, T>? Factory { get; set; }

@@ -55,9 +55,21 @@ public class FormValueMultimapTests
 
         var target = new FormValueMultimap(source, _settings);
         var nonGenericEntries = ((IEnumerable)target).Cast<KeyValuePair<string?, string?>>().ToArray();
+        var nonGenericEnumerator = ((IEnumerable)target).GetEnumerator();
 
         await Assert.That(target).IsCollectionEqualTo(ToNullableKvps(source));
         await Assert.That(nonGenericEntries).IsCollectionEqualTo(ToNullableKvps(source));
+        await Assert.That(nonGenericEnumerator.MoveNext()).IsTrue();
+    }
+
+    /// <summary>Verifies the generic factory handles null sources without property discovery.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateHandlesNullSources()
+    {
+        var target = FormValueMultimap.Create<object?>(null, _settings);
+
+        await Assert.That(target).IsEmpty();
     }
 
     /// <summary>Verifies the multimap loads entries from an object's public properties.</summary>
