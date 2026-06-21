@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Shared Version Variables">
-    <PrimitivesVersion>5.4.0</PrimitivesVersion>
+    <PrimitivesVersion>5.6.0</PrimitivesVersion>
     <TUnitVersion>1.56.0</TUnitVersion>
   </PropertyGroup>
 
@@ -28,7 +28,6 @@
   <!-- Core runtime / serialization dependencies -->
   <ItemGroup Label="Core Runtime And Serialization">
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
-    <PackageVersion Include="System.Reactive" Version="6.1.0"/>
   </ItemGroup>
 
 

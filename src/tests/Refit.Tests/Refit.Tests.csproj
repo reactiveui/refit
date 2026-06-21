@@ -34,8 +34,8 @@
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
     <PackageReference Include="Moq" />
+    <PackageReference Include="ReactiveUI.Primitives" ExcludeAssets="analyzers" />
     <PackageReference Include="TUnit" />
-    <PackageReference Include="System.Reactive" />
     <PackageReference Include="RichardSzalay.MockHttp" />
     <ProjectReference Include="..\..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
     <ProjectReference Include="..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />

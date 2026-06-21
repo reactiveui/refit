@@ -80,6 +80,10 @@
     <None Include="$(RepositoryRoot)README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="$(CompilerGeneratedFilesOutputPath)\**\*.cs"/>
+  </ItemGroup>
+
   <ItemGroup Condition="'$(IsTestProject)' == 'true'">
     <None Include="$(MSBuildThisFileDirectory)testconfig.json">
       <Link>$(AssemblyName).testconfig.json</Link>
