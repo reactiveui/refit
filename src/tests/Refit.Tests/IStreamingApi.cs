@@ -34,4 +34,11 @@ public interface IStreamingApi
     /// <returns>The streamed items.</returns>
     [Get("/groups/{group}/array")]
     IAsyncEnumerable<StreamItem> GetGroupArray(string group);
+
+    /// <summary>Streams from a dynamic route with a cancellation token, exercising the reflection path's token linking.</summary>
+    /// <param name="group">The route segment value.</param>
+    /// <param name="cancellationToken">A token to cancel streaming.</param>
+    /// <returns>The streamed items.</returns>
+    [Get("/groups/{group}/array")]
+    IAsyncEnumerable<StreamItem> GetGroupArrayCancellable(string group, CancellationToken cancellationToken);
 }

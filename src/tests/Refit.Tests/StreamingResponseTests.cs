@@ -150,11 +150,70 @@ public class StreamingResponseTests
             .Throws<OperationCanceledException>();
     }
 
+    /// <summary>Verifies the source-generated metadata path streams a JSON array.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StreamsJsonArrayWithSourceGenContext()
+    {
+        var fixture = CreateFixture(
+            "application/json",
+            "[{\"id\":1},{\"id\":2}]",
+            new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
+
+        var ids = new List<int>();
+        await foreach (var item in fixture.GetArray())
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([1, 2]);
+    }
+
+    /// <summary>Verifies the source-gen JSON Lines path handles CRLF endings, a line larger than the read buffer, and a final line with no trailing newline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StreamsJsonLinesWithSourceGenContextAndReaderEdges()
+    {
+        var bigGap = new string(' ', 5000);
+
+        // Includes a whitespace-only line (skipped), a line larger than the read buffer, CRLF endings, and no final newline.
+        var payload = "{\"id\":1}\r\n   \r\n{" + bigGap + "\"id\":2}\r\n{\"id\":3}";
+        var fixture = CreateFixture(
+            "application/x-jsonlines",
+            payload,
+            new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
+
+        var ids = new List<int>();
+        await foreach (var item in fixture.GetLines())
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([1, 2, 3]);
+    }
+
+    /// <summary>Verifies the reflection path links the method cancellation token for a dynamic route.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StreamsViaReflectionPathWithCancellationToken()
+    {
+        var fixture = CreateFixture("application/json", "[{\"id\":8}]");
+
+        var ids = new List<int>();
+        await foreach (var item in fixture.GetGroupArrayCancellable("g1", CancellationToken.None))
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([8]);
+    }
+
     /// <summary>Creates a streaming fixture backed by a mock handler returning the given payload.</summary>
     /// <param name="mediaType">The response media type.</param>
     /// <param name="payload">The response body.</param>
+    /// <param name="serializer">An optional content serializer; the default is used when null.</param>
     /// <returns>The streaming API fixture.</returns>
-    private static IStreamingApi CreateFixture(string mediaType, string payload)
+    private static IStreamingApi CreateFixture(string mediaType, string payload, IHttpContentSerializer? serializer = null)
     {
         var mockHttp = new MockHttpMessageHandler();
         _ = mockHttp
@@ -164,7 +223,8 @@ public class StreamingResponseTests
                 Content = new StringContent(payload, System.Text.Encoding.UTF8, mediaType),
             });
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var settings = serializer is null ? new RefitSettings() : new RefitSettings(serializer);
+        settings.HttpMessageHandlerFactory = () => mockHttp;
         return RestService.For<IStreamingApi>("http://foo", settings);
     }
 }

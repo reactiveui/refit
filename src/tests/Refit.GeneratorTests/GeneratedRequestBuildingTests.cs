@@ -57,6 +57,23 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
+    /// <summary>Verifies an IAsyncEnumerable method falls back to the reflective builder when inline generation is off.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task IAsyncEnumerableSwitchOffUsesReflectiveRequestBuilder()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Get("/items")]
+            IAsyncEnumerable<string> Stream();
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: false);
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.StreamAsync<");
+    }
+
     /// <summary>Verifies an explicit switch-off keeps using the reflective request builder.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

@@ -60,13 +60,43 @@ public class SynchronousBodySerializationTests
         await Assert.That(capture.Body).Contains("13", StringComparison.Ordinal);
     }
 
+    /// <summary>Verifies buffered serialization uses the source-generated metadata fast path.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SourceGenBufferedSerializesBody()
+    {
+        var capture = await PostAsync(
+            RequestBodySerializationMode.Buffered,
+            api => api.PostItem(new() { Id = 21 }),
+            new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
+
+        await Assert.That(capture.ContentLength).IsNotNull();
+        await Assert.That(capture.Body).Contains("21", StringComparison.Ordinal);
+    }
+
+    /// <summary>Verifies streamed serialization uses the source-generated metadata fast path.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SourceGenStreamedSerializesBody()
+    {
+        var capture = await PostAsync(
+            RequestBodySerializationMode.Streamed,
+            api => api.PostItem(new() { Id = 34 }),
+            new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
+
+        await Assert.That(capture.ContentLength).IsNull();
+        await Assert.That(capture.Body).Contains("34", StringComparison.Ordinal);
+    }
+
     /// <summary>Posts through a sync-body fixture and captures the request content details seen by the handler.</summary>
     /// <param name="mode">The request-body serialization mode to use.</param>
     /// <param name="call">The interface call to invoke.</param>
+    /// <param name="serializer">An optional content serializer; the default is used when null.</param>
     /// <returns>The captured body, media type, and content length.</returns>
     private static async Task<(string? Body, string? MediaType, long? ContentLength)> PostAsync(
         RequestBodySerializationMode mode,
-        Func<ISyncBodyApi, Task> call)
+        Func<ISyncBodyApi, Task> call,
+        IHttpContentSerializer? serializer = null)
     {
         string? body = null;
         string? mediaType = null;
@@ -82,11 +112,9 @@ public class SynchronousBodySerializationTests
                 return new HttpResponseMessage(HttpStatusCode.OK);
             });
 
-        var settings = new RefitSettings
-        {
-            RequestBodySerialization = mode,
-            HttpMessageHandlerFactory = () => mockHttp,
-        };
+        var settings = serializer is null ? new RefitSettings() : new RefitSettings(serializer);
+        settings.RequestBodySerialization = mode;
+        settings.HttpMessageHandlerFactory = () => mockHttp;
 
         var fixture = RestService.For<ISyncBodyApi>("http://foo", settings);
         await call(fixture);
