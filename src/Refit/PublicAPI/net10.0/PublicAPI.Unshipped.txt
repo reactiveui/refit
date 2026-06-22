@@ -8,3 +8,12 @@ static Refit.RestService.ForGenerated<T>(System.Net.Http.HttpClient! client) -> 
 static Refit.RestService.ForGenerated<T>(System.Net.Http.HttpClient! client, Refit.RefitSettings! settings) -> T
 static Refit.RestService.ForGenerated<T>(string! hostUrl) -> T
 static Refit.RestService.ForGenerated<T>(string! hostUrl, Refit.RefitSettings! settings) -> T
+Refit.KebabCaseUrlParameterKeyFormatter
+Refit.KebabCaseUrlParameterKeyFormatter.Format(string! key) -> string!
+Refit.KebabCaseUrlParameterKeyFormatter.KebabCaseUrlParameterKeyFormatter() -> void
+Refit.SnakeCaseUrlParameterKeyFormatter
+Refit.SnakeCaseUrlParameterKeyFormatter.Format(string! key) -> string!
+Refit.SnakeCaseUrlParameterKeyFormatter.SnakeCaseUrlParameterKeyFormatter() -> void
+static Refit.RefitSettings.CamelCase() -> Refit.RefitSettings!
+static Refit.RefitSettings.KebabCase() -> Refit.RefitSettings!
+static Refit.RefitSettings.SnakeCase() -> Refit.RefitSettings!

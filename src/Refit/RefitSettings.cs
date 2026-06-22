@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Text.Json;
+
 namespace Refit;
 
 /// <summary>Defines various parameters on how Refit should work.</summary>
@@ -134,4 +136,35 @@ public class RefitSettings
     public HttpVersionPolicy VersionPolicy { get; set; } =
         HttpVersionPolicy.RequestVersionOrLower;
 #endif
+
+    /// <summary>Creates settings whose query keys, form-url-encoded keys, and JSON body property names are all formatted in camelCase.</summary>
+    /// <returns>A new <see cref="RefitSettings"/> instance configured for camelCase naming.</returns>
+    public static RefitSettings CamelCase() =>
+        ForNamingConvention(JsonNamingPolicy.CamelCase, new CamelCaseUrlParameterKeyFormatter());
+
+    /// <summary>Creates settings whose query keys, form-url-encoded keys, and JSON body property names are all formatted in snake_case.</summary>
+    /// <returns>A new <see cref="RefitSettings"/> instance configured for snake_case naming.</returns>
+    public static RefitSettings SnakeCase() =>
+        ForNamingConvention(SeparatedCaseJsonNamingPolicy.Snake, new SnakeCaseUrlParameterKeyFormatter());
+
+    /// <summary>Creates settings whose query keys, form-url-encoded keys, and JSON body property names are all formatted in kebab-case.</summary>
+    /// <returns>A new <see cref="RefitSettings"/> instance configured for kebab-case naming.</returns>
+    public static RefitSettings KebabCase() =>
+        ForNamingConvention(SeparatedCaseJsonNamingPolicy.Kebab, new KebabCaseUrlParameterKeyFormatter());
+
+    /// <summary>Builds settings that apply the given JSON naming policy and URL parameter key formatter consistently.</summary>
+    /// <param name="jsonNamingPolicy">The naming policy applied to JSON body property names.</param>
+    /// <param name="urlParameterKeyFormatter">The formatter applied to query and form-url-encoded keys.</param>
+    /// <returns>The configured settings.</returns>
+    private static RefitSettings ForNamingConvention(
+        JsonNamingPolicy jsonNamingPolicy,
+        IUrlParameterKeyFormatter urlParameterKeyFormatter)
+    {
+        var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+        options.PropertyNamingPolicy = jsonNamingPolicy;
+        return new RefitSettings(new SystemTextJsonContentSerializer(options))
+        {
+            UrlParameterKeyFormatter = urlParameterKeyFormatter,
+        };
+    }
 }

@@ -23,6 +23,9 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>The content serializer used to resolve field names.</summary>
     private readonly IHttpContentSerializer _contentSerializer;
 
+    /// <summary>The formatter applied to property names that are not explicitly aliased.</summary>
+    private readonly IUrlParameterKeyFormatter _urlParameterKeyFormatter;
+
     /// <summary>Initializes a new instance of the <see cref="FormValueMultimap"/> class from a source object.</summary>
     /// <param name="source">The source object or dictionary to convert into form entries.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
@@ -43,6 +46,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         ArgumentExceptionHelper.ThrowIfNull(settings);
 
         _contentSerializer = settings.ContentSerializer;
+        _urlParameterKeyFormatter = settings.UrlParameterKeyFormatter;
 
         if (source is null)
         {
@@ -296,7 +300,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     {
         var name = propertyInfo.GetCustomAttribute<AliasAsAttribute>(true)?.Name
                    ?? _contentSerializer.GetFieldNameForProperty(propertyInfo)
-                   ?? propertyInfo.Name;
+                   ?? _urlParameterKeyFormatter.Format(propertyInfo.Name);
 
         var qattrib = propertyInfo.GetCustomAttribute<QueryAttribute>(true);
         return qattrib is not null && !string.IsNullOrWhiteSpace(qattrib.Prefix)
