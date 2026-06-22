@@ -107,9 +107,7 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task<global::System.Net.Http.HttpResponseMessage> GetIndex()
             {
                 var refitSettings = _settings;
-                var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
-                refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/", global::System.UriKind.Relative));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/", refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;
@@ -140,9 +138,7 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task NothingToSeeHere()
             {
                 var refitSettings = _settings;
-                var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
-                refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/give-me-some-404-action", global::System.UriKind.Relative));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/give-me-some-404-action", refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;

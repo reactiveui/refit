@@ -146,10 +146,10 @@ public partial class RestServiceIntegrationTests
         var explicitGenerated = await Assert.That(explicitSettingsInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
         var typedGenerated = await Assert.That(typedInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
 
-        await Assert.That(defaultGenerated!.Client.BaseAddress).IsEqualTo(new Uri("http://foo"));
-        await Assert.That(explicitGenerated!.Client.BaseAddress).IsEqualTo(new Uri("http://bar"));
+        await Assert.That(defaultGenerated!.Client.BaseAddress).IsEqualTo(new("http://foo"));
+        await Assert.That(explicitGenerated!.Client.BaseAddress).IsEqualTo(new("http://bar"));
         await Assert.That(explicitGenerated.Settings).IsSameReferenceAs(settings);
-        await Assert.That(typedGenerated!.Client.BaseAddress).IsEqualTo(new Uri("http://baz"));
+        await Assert.That(typedGenerated!.Client.BaseAddress).IsEqualTo(new("http://baz"));
         await Assert.That(typedGenerated.Settings).IsSameReferenceAs(settings);
     }
 
@@ -292,6 +292,42 @@ public partial class RestServiceIntegrationTests
         await Assert.That(result).IsEqualTo("test");
         mockHttp.VerifyNoOutstandingExpectation();
     }
+
+    /// <summary>Verifies an unmatched route placeholder is left in the URL verbatim when <see cref="RefitSettings.AllowUnmatchedRouteParameters"/> is set.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UnmatchedRouteParameterIsLeftVerbatimWhenAllowed()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        Uri? captured = null;
+        _ = mockHttp
+            .When("*")
+            .Respond(request =>
+            {
+                captured = request.RequestUri;
+                return new(HttpStatusCode.OK) { Content = new StringContent("test") };
+            });
+
+        var settings = new RefitSettings
+        {
+            AllowUnmatchedRouteParameters = true,
+            HttpMessageHandlerFactory = () => mockHttp,
+        };
+
+        var fixture = RestService.For<IUrlNoMatchingParameters>("http://foo", settings);
+
+        var result = await fixture.GetValue();
+
+        await Assert.That(result).IsEqualTo("test");
+        await Assert.That(captured).IsNotNull();
+        await Assert.That(Uri.UnescapeDataString(captured!.ToString())).Contains("/{value}", StringComparison.Ordinal);
+    }
+
+    /// <summary>Verifies an unmatched route placeholder still throws by default.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UnmatchedRouteParameterStillThrowsByDefault() =>
+        await Assert.That(() => RestService.For<IUrlNoMatchingParameters>("http://foo")).ThrowsExactly<ArgumentException>();
 
     /// <summary>Verifies methods returning a <see cref="ValueTask{TResult}"/> of an API response work.</summary>
     /// <returns>A task representing the asynchronous test.</returns>

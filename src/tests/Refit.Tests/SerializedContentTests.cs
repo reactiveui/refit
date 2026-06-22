@@ -392,6 +392,54 @@ public partial class SerializedContentTests
         await Assert.That(await Assert.That(result!.Value).IsTypeOf<double>()).IsEqualTo(42.5);
     }
 
+    /// <summary>Verifies the default options read numeric properties from JSON strings.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_ReadNumbersFromString()
+    {
+        var result = SystemTextJsonSerializer.Deserialize<NumberContainer>(
+            """{"id":"123","amount":"9.99"}""",
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(result!.Id).IsEqualTo(123);
+        await Assert.That(result.Amount).IsEqualTo(9.99m);
+    }
+
+    /// <summary>Verifies the default options still write numbers as JSON numbers, not strings.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_WriteNumbersAsNumbers()
+    {
+        var json = SystemTextJsonSerializer.Serialize(
+            new NumberContainer { Id = 123, Amount = 9.99m },
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+
+        await Assert.That(json).Contains("123", StringComparison.Ordinal);
+        await Assert.That(json).DoesNotContain("\"123\"", StringComparison.Ordinal);
+    }
+
+    /// <summary>Verifies the default options expose <see cref="JsonNumberHandling.AllowReadingFromString"/>.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DefaultOptions_NumberHandlingAllowsReadingFromString() =>
+        await Assert
+            .That(SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions().NumberHandling)
+            .IsEqualTo(JsonNumberHandling.AllowReadingFromString);
+
+    /// <summary>Verifies the fast-path options omit the settings that disable the System.Text.Json fast-path.</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_FastPathOptions_AreFastPathEligible()
+    {
+        var options = SystemTextJsonContentSerializer.GetFastPathJsonSerializerOptions();
+
+        await Assert.That(options.Converters).IsEmpty();
+        await Assert.That(options.NumberHandling).IsEqualTo(JsonNumberHandling.Strict);
+        await Assert.That(options.ReferenceHandler).IsNull();
+        await Assert.That(options.Encoder).IsNull();
+        await Assert.That(options.PropertyNamingPolicy).IsEqualTo(JsonNamingPolicy.CamelCase);
+    }
+
     /// <summary>Verifies that ISO date JSON object values are inferred as <see cref="DateTime"/>.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -1196,6 +1244,16 @@ public partial class SerializedContentTests
     {
         /// <summary>Gets or sets the boxed value.</summary>
         public object? Value { get; set; }
+    }
+
+    /// <summary>Container with numeric values used to verify <see cref="JsonNumberHandling.AllowReadingFromString"/> behavior.</summary>
+    public sealed class NumberContainer
+    {
+        /// <summary>Gets or sets an integral value.</summary>
+        public int Id { get; set; }
+
+        /// <summary>Gets or sets a decimal value.</summary>
+        public decimal Amount { get; set; }
     }
 
     /// <summary>Source-generated serialization context for the <see cref="User"/> type.</summary>

@@ -5,7 +5,7 @@ using System.Net;
 
 namespace Refit.Benchmarks;
 
-/// <summary>An <see cref="HttpMessageHandler"/> that always responds with the contents of a file.</summary>
+/// <summary>An HttpMessageHandler that always responds with the contents of a file.</summary>
 public class StaticFileHttpResponseHandler : HttpMessageHandler
 {
     /// <summary>The status code returned for every response.</summary>

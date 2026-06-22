@@ -83,7 +83,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         TSource source,
         RefitSettings settings) =>
         source is null or IDictionary
-            ? new FormValueMultimap(source!, settings)
+            ? new(source!, settings)
             : new FormValueMultimap(
                 source,
                 settings,

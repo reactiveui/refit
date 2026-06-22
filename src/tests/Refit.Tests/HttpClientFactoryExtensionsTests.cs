@@ -451,7 +451,7 @@ public class HttpClientFactoryExtensionsTests
 
         var genericSettings = services.AddRefitClient<IFooWithOtherAttribute>(settings, "generic-settings");
         var genericFactory = services.AddRefitClient<IFooWithOtherAttribute>(
-            static _ => new RefitSettings(),
+            static _ => new(),
             "generic-factory");
         var typeSettings = services.AddRefitClient(
             typeof(IFooWithOtherAttribute),
@@ -459,7 +459,7 @@ public class HttpClientFactoryExtensionsTests
             "type-settings");
         var typeFactory = services.AddRefitClient(
             typeof(IFooWithOtherAttribute),
-            static _ => new RefitSettings(),
+            static _ => new(),
             "type-factory");
 
         await Assert.That(genericSettings.Name).IsEqualTo("generic-settings");
@@ -490,7 +490,7 @@ public class HttpClientFactoryExtensionsTests
             "generic-settings-client");
         _ = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-factory",
-            static _ => new RefitSettings());
+            static _ => new());
         var genericNamedFactory = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-factory-named",
             _ => new() { ContentSerializer = genericFactorySerializer },
@@ -813,7 +813,7 @@ public class HttpClientFactoryExtensionsTests
         var builder = services.AddHttpClient("builder-matrix");
 
         var typeBuilder = builder.AddRefitClient(typeof(IFooWithOtherAttribute));
-        _ = builder.AddRefitClient<IFooWithOtherAttribute>(static _ => new RefitSettings());
+        _ = builder.AddRefitClient<IFooWithOtherAttribute>(static _ => new());
         _ = builder.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             new RefitSettings { ContentSerializer = typeSettingsSerializer });

@@ -40,7 +40,7 @@ public class FormValueMultimapTests
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task RejectsNullSettings() =>
-        await Assert.That(() => new FormValueMultimap(new object(), null!))
+        await Assert.That(() => new FormValueMultimap(new(), null!))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies the multimap loads entries from a dictionary source.</summary>

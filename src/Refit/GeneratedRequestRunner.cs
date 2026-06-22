@@ -13,6 +13,25 @@ public static class GeneratedRequestRunner
     /// <summary>The underlying value of the obsolete <c>BodySerializationMethod.Json</c> member.</summary>
     private const int ObsoleteJsonBodySerializationMethodValue = 1;
 
+    /// <summary>Builds the relative request URI for a generated request, joining the client base address with the method path.</summary>
+    /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
+    /// <param name="relativePath">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="urlResolution">The configured URL resolution mode.</param>
+    /// <returns>A relative <see cref="Uri"/> to assign to the request, which the client merges with its base address.</returns>
+    public static Uri BuildRelativeUri(HttpClient client, string relativePath, UrlResolutionMode urlResolution)
+    {
+        if (urlResolution == UrlResolutionMode.Rfc3986)
+        {
+            // Let the HttpClient merge the base address with the relative path per RFC 3986; emit the path verbatim.
+            return new(relativePath, UriKind.Relative);
+        }
+
+        var basePath = client.BaseAddress?.AbsolutePath
+            ?? throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+        basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
+        return new(basePath + relativePath, UriKind.Relative);
+    }
+
     /// <summary>Sends a generated request with no response body, throwing on HTTP errors.</summary>
     /// <param name="client">The HTTP client to send with.</param>
     /// <param name="request">The generated request message.</param>
@@ -74,7 +93,7 @@ public static class GeneratedRequestRunner
                     client,
                     request,
                     settings,
-                    new RequestExecutionOptions(
+                    new(
                         isApiResponse,
                         shouldDisposeResponse,
                         bufferBody,
@@ -122,7 +141,8 @@ public static class GeneratedRequestRunner
 
         var content = CreateSerializedBodyContent(settings, body, serializationMethod);
 
-        return streamBody
+        // A synchronously-serialized body is already a buffer (and lets the fast-path engage), so never re-stream it.
+        return streamBody && !UsesSynchronousSerialization(settings)
             ? new PushStreamContent(
                 async (stream, _, _) =>
                 {
@@ -315,11 +335,29 @@ public static class GeneratedRequestRunner
         if (serializationMethod is BodySerializationMethod.Default or BodySerializationMethod.Serialized
             || IsObsoleteJsonSerializationMethod(serializationMethod))
         {
+            if (settings.ContentSerializer is ISynchronousContentSerializer synchronousSerializer)
+            {
+                switch (settings.RequestBodySerialization)
+                {
+                    case RequestBodySerializationMode.Buffered:
+                        return synchronousSerializer.ToHttpContentSynchronous(body);
+                    case RequestBodySerializationMode.Streamed:
+                        return synchronousSerializer.ToStreamingHttpContent(body);
+                }
+            }
+
             return settings.ContentSerializer.ToHttpContent(body);
         }
 
         throw new ArgumentOutOfRangeException(nameof(serializationMethod), serializationMethod, null);
     }
+
+    /// <summary>Determines whether request bodies should be serialized synchronously through the configured serializer.</summary>
+    /// <param name="settings">The Refit settings to inspect.</param>
+    /// <returns><see langword="true"/> when synchronous body serialization is enabled and supported.</returns>
+    private static bool UsesSynchronousSerialization(RefitSettings settings) =>
+        settings.RequestBodySerialization != RequestBodySerializationMode.Default
+        && settings.ContentSerializer is ISynchronousContentSerializer;
 
     /// <summary>Determines whether the body should use the legacy JSON enum member.</summary>
     /// <param name="serializationMethod">The body serialization method.</param>

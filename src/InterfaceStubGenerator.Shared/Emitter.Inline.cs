@@ -77,7 +77,7 @@ internal static partial class Emitter
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter);
         var requestUriExpression =
-            $"new global::System.Uri(refitBasePath + {ToCSharpStringLiteral(request.Path)}, global::System.UriKind.Relative)";
+            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(request.Path)}, refitSettings.UrlResolution)";
         var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter);
         var headerSource = BuildInlineHeaders(request);
         var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel);
@@ -87,8 +87,6 @@ internal static partial class Emitter
 
         return $$"""
             {{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var refitSettings = {{settingsFieldName}};
-            {{bodyIndent}}var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
-            {{bodyIndent}}refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
             {{bodyIndent}}var refitRequest = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}refitRequest.Version = refitSettings.Version;

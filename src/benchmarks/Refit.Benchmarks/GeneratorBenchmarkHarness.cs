@@ -8,10 +8,7 @@ using Refit.Generator;
 
 namespace Refit.Benchmarks;
 
-/// <summary>
-/// Shared setup for the source-generator benchmarks: builds a compilation that references Refit
-/// plus the current app domain, and creates a driver running <see cref="InterfaceStubGeneratorV2"/>.
-/// </summary>
+/// <summary>Shared setup for the source-generator benchmarks: builds a compilation and a generator driver.</summary>
 internal static class GeneratorBenchmarkHarness
 {
     /// <summary>The metadata reference to the Refit assembly, including its XML documentation.</summary>
@@ -31,9 +28,9 @@ internal static class GeneratorBenchmarkHarness
         typeof(Attribute)
     ];
 
-    /// <summary>Creates a compilation for <paramref name="sourceText"/> and a generator driver for it.</summary>
+    /// <summary>Creates a compilation for the source text and a generator driver for it.</summary>
     /// <param name="sourceText">The source text to compile and feed to the generator.</param>
-    /// <returns>The compilation and generator driver for the supplied source text.</returns>
+    /// <returns>The compilation and generator driver.</returns>
     public static (Compilation Compilation, CSharpGeneratorDriver Driver) Create(string sourceText)
     {
         var references = new List<MetadataReference>();
@@ -58,12 +55,9 @@ internal static class GeneratorBenchmarkHarness
         return (compilation, driver);
     }
 
-    /// <summary>
-    /// Runs the generator once and then adds an unrelated syntax tree, leaving the driver primed
-    /// for an incremental (cached) re-run.
-    /// </summary>
+    /// <summary>Runs the generator once and primes the driver for an incremental (cached) re-run.</summary>
     /// <param name="sourceText">The source text to compile and feed to the generator.</param>
-    /// <returns>The compilation and primed generator driver for the supplied source text.</returns>
+    /// <returns>The compilation and primed generator driver.</returns>
     public static (Compilation Compilation, CSharpGeneratorDriver Driver) CreatePrimedForCachedRun(
         string sourceText)
     {

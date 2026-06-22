@@ -235,6 +235,7 @@ construction for request shapes the generator can safely model. It currently cov
 * `[Property]` interface properties
 * cancellation tokens
 * `Task`, `Task<T>`, `Task<ApiResponse<T>>`, and related response wrappers
+* `IAsyncEnumerable<T>` for streamed responses
 
 If a method uses a shape the generator cannot safely emit yet, Refit falls back to the existing runtime request-builder
 path for that method.
@@ -343,6 +344,39 @@ Task<List<Page>> Search(string page);
 
 Search("admin/products");
 >>> "/search/admin/products"
+```
+
+By default Refit throws if a route template contains a placeholder with no matching method argument. If you want to
+resolve a placeholder later yourself (for example an API-versioning token rewritten inside a `DelegatingHandler`), set
+`AllowUnmatchedRouteParameters` on `RefitSettings`. The unmatched `{token}` is then left in the URL verbatim instead of
+throwing.
+
+```csharp
+var settings = new RefitSettings { AllowUnmatchedRouteParameters = true };
+var api = RestService.For<IVersionedApi>("https://api.example.com", settings);
+
+// [Get("/api/{version:apiVersion}/values")]
+// the {version:apiVersion} token is left in the path for a DelegatingHandler to replace.
+```
+
+#### Base address and URL resolution
+
+By default Refit requires relative paths to start with `/`, prepends the base address path itself, and trims a trailing
+slash from the base address. If you would rather have the base address and relative URL combined the same way
+`HttpClient` and `System.Uri` do (RFC 3986), set `UrlResolution` on `RefitSettings`:
+
+```csharp
+var settings = new RefitSettings { UrlResolution = UrlResolutionMode.Rfc3986 };
+var api = RestService.For<IMyApi>("https://api.example.com/api/v1/", settings);
+```
+
+Under `UrlResolutionMode.Rfc3986` the leading-slash requirement is relaxed and the trailing slash on the base address is
+significant, exactly as with `HttpClient`:
+
+```csharp
+// base address "https://api.example.com/api/v1/"
+[Get("values")]   // -> https://api.example.com/api/v1/values  (appended)
+[Get("/values")]  // -> https://api.example.com/values         (leading slash replaces the base path)
 ```
 
 ### Querystrings
@@ -669,6 +703,66 @@ performance and low memory usage, while the latter uses the known `Newtonsoft.Js
 customizable. You can read more about the two serializers and the main differences between the
 two [at this link](https://docs.microsoft.com/dotnet/standard/serialization/system-text-json-migrate-from-newtonsoft-how-to).
 
+The default `System.Text.Json` serializer uses camelCase property names, case-insensitive matching, and reads numbers
+from JSON strings (`NumberHandling = AllowReadingFromString`). Override any of these by starting from Refit's defaults,
+tweaking the `JsonSerializerOptions`, and passing them in:
+
+```csharp
+var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
+options.NumberHandling = JsonNumberHandling.Strict; // opt out of reading numbers from strings
+
+var settings = new RefitSettings(new SystemTextJsonContentSerializer(options));
+```
+
+##### Fast-path source-generated serialization
+
+The default options add custom converters and set `NumberHandling`, which the System.Text.Json source generator does
+not support on its serialization [fast-path](https://learn.microsoft.com/dotnet/standard/serialization/system-text-json/source-generation-modes#serialization-optimization-fast-path-mode),
+so the default serializer always uses the (slower) metadata logic. If you want the fast-path, start from
+`GetFastPathJsonSerializerOptions()` instead — it omits the converters and `NumberHandling` so the options stay
+fast-path eligible — and assign a source-generated `TypeInfoResolver`:
+
+```csharp
+var options = SystemTextJsonContentSerializer.GetFastPathJsonSerializerOptions();
+options.TypeInfoResolver = MyJsonContext.Default; // a JsonSerializerContext you declare
+
+var settings = new RefitSettings(new SystemTextJsonContentSerializer(options));
+```
+
+```csharp
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(MyRequest))]
+internal partial class MyJsonContext : JsonSerializerContext;
+```
+
+Two caveats: dropping the converters means `object`-typed members are no longer inferred and enums are no longer written
+as camelCase strings (add your own converters only if you accept losing the fast-path); and the fast-path runs through
+the **synchronous** serialization primitives (`SerializeToUtf8Bytes`, `Serialize(Utf8JsonWriter, ...)`) — the one API
+that bypasses it is the built-in `JsonSerializer.SerializeAsync(Stream, ...)`.
+
+By default Refit serializes request bodies with `JsonContent`, which uses exactly that `SerializeAsync(Stream)` path, so
+the fast-path is not used even with fast-path-eligible options. To opt in, set `RequestBodySerialization` on
+`RefitSettings` to one of the synchronous modes, which serialize through the fast-path:
+
+- `RequestBodySerializationMode.Buffered` — serialize synchronously to UTF-8 bytes up front and send as a
+  `ByteArrayContent`. Sets a `Content-Length` header; best for small-to-medium bodies.
+- `RequestBodySerializationMode.Streamed` — serialize through a `Utf8JsonWriter` written to the request stream and
+  flushed asynchronously. No `Content-Length`, but peak memory is bounded (pooled writer chunks rather than the whole
+  body); best for large uploads.
+
+```csharp
+var options = SystemTextJsonContentSerializer.GetFastPathJsonSerializerOptions();
+options.TypeInfoResolver = MyJsonContext.Default;
+
+var settings = new RefitSettings(new SystemTextJsonContentSerializer(options))
+{
+    RequestBodySerialization = RequestBodySerializationMode.Buffered, // or .Streamed for large uploads
+};
+```
+
+Both modes require the content serializer to implement `ISynchronousContentSerializer` (the default
+`SystemTextJsonContentSerializer` does); otherwise the body falls back to the default asynchronous serialization.
+
 For instance, here is how to create a new `RefitSettings` instance using the `Newtonsoft.Json`-based serializer (you'll
 also need to add a `PackageReference` to `Refit.Newtonsoft.Json`):
 
@@ -762,6 +856,33 @@ public interface IDocumentApi
 The request body is streamed (one serialized element per line, separated by `\n`) with a content type of
 `application/x-ndjson`. A non-enumerable value is sent as a single line. If you need a different content type (for
 example `text/plain`), set it with a [static header](#static-headers) or a [dynamic header](#dynamic-headers).
+
+#### Streaming responses with `IAsyncEnumerable<T>`
+
+Declare a method that returns `IAsyncEnumerable<T>` to consume a large response without buffering the whole body. Refit
+reads the response with `HttpCompletionOption.ResponseHeadersRead` and yields each element as it is deserialized:
+
+```csharp
+public interface IDocumentApi
+{
+    [Get("/documents")]
+    IAsyncEnumerable<Company> GetDocuments();
+}
+
+await foreach (var company in api.GetDocuments())
+{
+    // each item is yielded as soon as it is read off the wire
+}
+```
+
+The frame format is auto-detected from the response content type: a content type of `application/jsonl`,
+`application/x-ndjson`, or `application/x-jsonlines` is read as JSON Lines (one value per line); anything else is read
+as a single streamed JSON array. To observe cancellation, add a `CancellationToken` parameter, or use
+`WithCancellation(token)` on the enumerable.
+
+Streaming requires the configured `ContentSerializer` to implement `IStreamingContentSerializer`. The default
+`SystemTextJsonContentSerializer` does; a serializer that does not will throw `NotSupportedException` when the sequence
+is enumerated.
 
 #### XML Content
 

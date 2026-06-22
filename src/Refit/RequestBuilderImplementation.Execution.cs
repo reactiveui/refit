@@ -86,6 +86,46 @@ namespace Refit
                 .ConfigureAwait(false);
         }
 
+        /// <summary>Builds, sends and streams the response for a method returning <see cref="IAsyncEnumerable{T}"/>.</summary>
+        /// <typeparam name="T">The element type yielded to the caller.</typeparam>
+        /// <param name="client">The HTTP client to send with.</param>
+        /// <param name="restMethod">The rest method being invoked.</param>
+        /// <param name="paramList">The argument values for the call.</param>
+        /// <param name="cancellationToken">A token, supplied by the consumer's enumeration, to cancel streaming.</param>
+        /// <returns>An asynchronous sequence of deserialized elements.</returns>
+        [SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "Type parameter intentionally specified explicitly by callers.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+        private async IAsyncEnumerable<T?> ExecuteAsyncEnumerableRequestAsync<T>(
+            HttpClient client,
+            RestMethodInfoInternal restMethod,
+            object[] paramList,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        {
+            RequestExecutionHelpers.ThrowIfBaseAddressMissing(client);
+
+            var methodCt = restMethod.CancellationToken is not null
+                ? GetCancellationToken(paramList)
+                : CancellationToken.None;
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(methodCt, cancellationToken);
+
+            var request = await BuildRequestMessageForMethodAsync(
+                    restMethod,
+                    client.BaseAddress!.AbsolutePath,
+                    restMethod.CancellationToken is not null,
+                    paramList)
+                .ConfigureAwait(false);
+
+            await foreach (var item in RequestExecutionHelpers
+                .StreamResponseAsync<T>(client, request!, _settings, false, linked.Token)
+                .ConfigureAwait(false))
+            {
+                yield return item;
+            }
+        }
+
         /// <summary>Builds a cancellable task delegate that sends the request and deserializes the response.</summary>
         /// <typeparam name="T">The result type returned to the caller.</typeparam>
         /// <typeparam name="TBody">The body type used for API responses.</typeparam>
@@ -141,7 +181,7 @@ namespace Refit
                 client,
                 request,
                 _settings,
-                new RequestExecutionOptions(
+                new(
                     restMethod.IsApiResponse,
                     restMethod.ShouldDisposeResponse,
                     IsBodyBuffered(restMethod, request),

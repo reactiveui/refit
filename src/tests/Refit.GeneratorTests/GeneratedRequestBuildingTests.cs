@@ -186,7 +186,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("refitBasePath + \"/foo?key=value\"");
+        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/foo?key=value\"");
         await Assert.That(generated).DoesNotContain("#name");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -204,7 +204,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("refitBasePath + \"/foo\"");
+        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/foo\"");
         await Assert.That(generated).DoesNotContain("?key=value");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -222,7 +222,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("refitBasePath + \"/foo?key=&two=2\"");
+        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/foo?key=&two=2\"");
         await Assert.That(generated).DoesNotContain("=drop");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
@@ -339,9 +339,9 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("refitBasePath + \"/global\"");
-        await Assert.That(generated).Contains("refitBasePath + \"/alias\"");
-        await Assert.That(generated).Contains("refitBasePath + \"/qualified\"");
+        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/global\"");
+        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/alias\"");
+        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/qualified\"");
         await Assert.That(generated).Contains("HttpMethod.Get");
         await Assert.That(generated).Contains("HttpMethod.Post");
         await Assert.That(generated).Contains("HttpMethod.Put");
@@ -412,9 +412,9 @@ public class GeneratedRequestBuildingTests
             generatedRequestBuilding: true);
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
-        await Assert.That(generated).DoesNotContain("refitBasePath + \"relative\"");
-        await Assert.That(generated).DoesNotContain("refitBasePath + \"/users/{id}\"");
-        await Assert.That(generated).DoesNotContain("refitBasePath + \"/bad");
+        await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"relative\"");
+        await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"/users/{id}\"");
+        await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"/bad");
     }
 
     /// <summary>Verifies custom HTTP method attributes are discovered but fall back to the runtime builder.</summary>
@@ -510,7 +510,7 @@ public class GeneratedRequestBuildingTests
             GeneratedClientHintName,
             generatedRequestBuilding: true);
 
-        await Assert.That(generated).Contains("refitBasePath + \"/foo?one=1&two\"");
+        await Assert.That(generated).Contains("BuildRelativeUri(this.Client, \"/foo?one=1&two\"");
         await Assert.That(generated).DoesNotContain("drop");
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }

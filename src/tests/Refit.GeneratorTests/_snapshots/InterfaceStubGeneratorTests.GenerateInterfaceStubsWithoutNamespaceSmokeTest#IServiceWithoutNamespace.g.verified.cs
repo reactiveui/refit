@@ -50,9 +50,7 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task GetRoot()
             {
                 var refitSettings = _settings;
-                var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
-                refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/", global::System.UriKind.Relative));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/", refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;
@@ -70,9 +68,7 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task PostRoot()
             {
                 var refitSettings = _settings;
-                var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
-                refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Post, new global::System.Uri(refitBasePath + "/", global::System.UriKind.Relative));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Post, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/", refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;

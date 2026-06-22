@@ -237,7 +237,7 @@ public class GeneratedCodeComplianceTests
     private static SyntaxTree ParseComplianceSource(string source, string path) =>
         CSharpSyntaxTree.ParseText(
             source,
-            new CSharpParseOptions(documentationMode: DocumentationMode.Diagnose),
+            new(documentationMode: DocumentationMode.Diagnose),
             path);
 
     /// <summary>Gets compiler errors from a generated-output compilation.</summary>

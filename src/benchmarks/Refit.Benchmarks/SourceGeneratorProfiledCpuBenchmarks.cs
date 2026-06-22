@@ -8,10 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace Refit.Benchmarks;
 
-/// <summary>
-/// CPU-profile benchmarks for the Refit source generator using an EventPipe CPU-sampling trace.
-/// The exported *.speedscope.json shows where parse/emit time is spent.
-/// </summary>
+/// <summary>EventPipe CPU-sampling profile of the Refit source generator (where parse/emit time is spent).</summary>
 [ShortRunJob]
 [EventPipeProfiler(EventPipeProfile.CpuSampling)]
 public class SourceGeneratorProfiledCpuBenchmarks

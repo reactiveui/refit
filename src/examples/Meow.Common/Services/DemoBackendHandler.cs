@@ -19,7 +19,7 @@ public sealed class DemoBackendHandler : HttpMessageHandler
             {
                 "/echo-customer" => EchoCustomer(request),
                 "/large-payload" => LargePayload(request),
-                _ => new HttpResponseMessage(HttpStatusCode.NotFound),
+                _ => new(HttpStatusCode.NotFound),
             });
 
     /// <summary>Builds the echo response that reflects the CustomerId request header back to the caller.</summary>
@@ -37,7 +37,7 @@ public sealed class DemoBackendHandler : HttpMessageHandler
             }
         }
 
-        return new HttpResponseMessage(HttpStatusCode.OK)
+        return new(HttpStatusCode.OK)
         {
             Content = new StringContent(
                 JsonConvert.SerializeObject(new CustomerEchoResponse { CustomerIdHeader = customerIdHeader }),
@@ -67,6 +67,6 @@ public sealed class DemoBackendHandler : HttpMessageHandler
         response.Items.AddRange(Enumerable.Range(1, size));
         var payload = JsonConvert.SerializeObject(response);
 
-        return new HttpResponseMessage(HttpStatusCode.OK) { Content = new AsyncOnlyJsonHttpContent(payload) };
+        return new(HttpStatusCode.OK) { Content = new AsyncOnlyJsonHttpContent(payload) };
     }
 }

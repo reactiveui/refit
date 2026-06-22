@@ -32,7 +32,7 @@ public class JsonLinesContentTests
     public async Task CreateJsonLinesBodyContentPassesThroughHttpContent()
     {
         using var inner = new StringContent("passthrough");
-        var content = GeneratedRequestRunner.CreateJsonLinesBodyContent(new RefitSettings(), inner);
+        var content = GeneratedRequestRunner.CreateJsonLinesBodyContent(new(), inner);
         await Assert.That(content).IsSameReferenceAs(inner);
     }
 
@@ -42,7 +42,7 @@ public class JsonLinesContentTests
     public async Task CreateJsonLinesBodyContentWrapsStream()
     {
         await using var stream = new MemoryStream([1, 2, 3]);
-        var content = GeneratedRequestRunner.CreateJsonLinesBodyContent(new RefitSettings(), stream);
+        var content = GeneratedRequestRunner.CreateJsonLinesBodyContent(new(), stream);
         await Assert.That(content).IsTypeOf<StreamContent>();
     }
 
@@ -52,7 +52,7 @@ public class JsonLinesContentTests
     public async Task CreateJsonLinesBodyContentWrapsSingleValue()
     {
         var content = GeneratedRequestRunner.CreateJsonLinesBodyContent(
-            new RefitSettings(),
+            new(),
             new JsonLineRecord { Id = "1", Name = "single" });
 
         await Assert.That(content).IsTypeOf<JsonLinesContent>();

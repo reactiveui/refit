@@ -350,7 +350,7 @@ public static class GeneratorComponentTests
                 ImmutableEquatableArray<MethodModel>.Empty,
                 ImmutableEquatableArray<MethodModel>.Empty);
             var inlineModel = CreateInterfaceModel(
-                new ImmutableEquatableArray<MethodModel>([CreateRefitMethod(canGenerateInline: true)]),
+                new([CreateRefitMethod(canGenerateInline: true)]),
                 ImmutableEquatableArray<MethodModel>.Empty);
 
             await Assert.That(Emitter.CanUseGeneratedSettingsFactoryForTesting(emptyModel)).IsFalse();
@@ -422,21 +422,21 @@ public static class GeneratorComponentTests
             var explicitReflective = CreateRefitMethod(canGenerateInline: false) with { IsExplicitInterface = true };
             var explicitInline = CreateRefitMethod(canGenerateInline: true) with { IsExplicitInterface = true };
             var model = CreateInterfaceModel(
-                new ImmutableEquatableArray<MethodModel>([explicitReflective]),
+                new([explicitReflective]),
                 ImmutableEquatableArray<MethodModel>.Empty);
 
             var reflective = Emitter.BuildRefitMethodForTesting(
                 explicitReflective,
                 isTopLevel: true,
                 model,
-                new UniqueNameBuilder(),
+                new(),
                 "_requestBuilder",
                 "_settings");
             var inline = Emitter.BuildRefitMethodForTesting(
                 explicitInline,
                 isTopLevel: true,
                 model,
-                new UniqueNameBuilder(),
+                new(),
                 "_requestBuilder",
                 "_settings");
 
@@ -472,7 +472,7 @@ public static class GeneratorComponentTests
         {
             var textual = extra.Length == 0
                 ? ImmutableEquatableArray<string>.Empty
-                : new ImmutableEquatableArray<string>(extra);
+                : new(extra);
             return new("T", "T", known, textual);
         }
 
@@ -535,7 +535,7 @@ public static class GeneratorComponentTests
                 "RefitGeneratorTest.IGeneratedClient",
                 "Get",
                 ReturnTypeInfo.AsyncVoid,
-                new RequestModel(
+                new(
                     "GET",
                     "/",
                     TaskTypeName,
@@ -640,11 +640,11 @@ public static class GeneratorComponentTests
             await Assert.That(Parser.GetBodySerializationMethodName(JsonLinesSerializationValue)).IsEqualTo("JsonLines");
             await Assert.That(Parser.GetBodySerializationMethodName(UnsupportedSerializationValue)).IsEqualTo(string.Empty);
             await Assert.That(Parser.IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel>.Empty)).IsTrue();
-            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateHeaderParameter()]))).IsTrue();
-            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody(string.Empty)]))).IsFalse();
-            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("UrlEncoded")]))).IsTrue();
-            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("Serialized")]))).IsTrue();
-            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("JsonLines")]))).IsTrue();
+            await Assert.That(Parser.IsSupportedInlineBody(new([CreateHeaderParameter()]))).IsTrue();
+            await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody(string.Empty)]))).IsFalse();
+            await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody("UrlEncoded")]))).IsTrue();
+            await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody("Serialized")]))).IsTrue();
+            await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody("JsonLines")]))).IsTrue();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpResponseMessage")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpContent")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.IO.Stream")).IsFalse();

@@ -597,7 +597,7 @@ public class MultipartTests
                 ContentSerializer = new ThrowingContentSerializer()
             });
 
-        Task UploadJsonObject() => fixture.UploadJsonObject(new ModelObject());
+        Task UploadJsonObject() => fixture.UploadJsonObject(new());
 
         var exception = await Assert
             .That(UploadJsonObject)

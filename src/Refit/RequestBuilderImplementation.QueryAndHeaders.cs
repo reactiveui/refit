@@ -78,15 +78,46 @@ namespace Refit
         /// <summary>Extracts any query parameters already present on the URI into the pending list.</summary>
         /// <param name="uri">The URI builder whose query is read.</param>
         /// <param name="queryParamsToAdd">The pending query parameter list, created if needed.</param>
-        private static void ParseExistingQueryString(UriBuilder uri, ref List<KeyValuePair<string, string?>>? queryParamsToAdd)
+        private static void ParseExistingQueryString(UriBuilder uri, ref List<KeyValuePair<string, string?>>? queryParamsToAdd) =>
+            ParseQueryStringInto(uri.Query, ref queryParamsToAdd);
+
+        /// <summary>Assigns the request URI as a bare relative reference so the <see cref="HttpClient"/> merges it
+        /// with the base address using RFC 3986 rules, preserving whether the path has a leading slash.</summary>
+        /// <param name="ret">The request message being populated.</param>
+        /// <param name="urlTarget">The expanded relative path, with dynamic segments already escaped.</param>
+        /// <param name="queryParamsToAdd">The query parameters collected for the request, if any.</param>
+        private static void AssignRequestUriRfc3986(
+            HttpRequestMessage ret,
+            string urlTarget,
+            List<KeyValuePair<string, string?>>? queryParamsToAdd)
         {
-            if (string.IsNullOrEmpty(uri.Query))
+            var path = urlTarget;
+            var queryIndex = urlTarget.IndexOf('?');
+            if (queryIndex >= 0)
+            {
+                ParseQueryStringInto(urlTarget[queryIndex..], ref queryParamsToAdd);
+                path = urlTarget[..queryIndex];
+            }
+
+            var query = queryParamsToAdd is not null && queryParamsToAdd.Count != 0
+                ? CreateQueryString(queryParamsToAdd)
+                : string.Empty;
+
+            ret.RequestUri = new(path + query, UriKind.Relative);
+        }
+
+        /// <summary>Parses a raw query string into the pending query parameter list.</summary>
+        /// <param name="queryString">The raw query string, with or without a leading '?'.</param>
+        /// <param name="queryParamsToAdd">The pending query parameter list, created if needed.</param>
+        private static void ParseQueryStringInto(string? queryString, ref List<KeyValuePair<string, string?>>? queryParamsToAdd)
+        {
+            if (string.IsNullOrEmpty(queryString))
             {
                 return;
             }
 
             queryParamsToAdd ??= [];
-            var query = HttpUtility.ParseQueryString(uri.Query);
+            var query = HttpUtility.ParseQueryString(queryString);
             var index = 0;
             var keys = query.AllKeys;
             for (var i = 0; i < keys.Length; i++)
