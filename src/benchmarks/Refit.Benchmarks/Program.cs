@@ -6,11 +6,11 @@ using Refit.Benchmarks;
 
 if (args is { Length: > 0 })
 {
-    BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+    _ = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
 }
 else
 {
-    BenchmarkRunner.Run<EndToEndBenchmark>();
+    _ = BenchmarkRunner.Run<EndToEndBenchmark>();
 
     // To run a different suite by default, swap the type above for StartupBenchmark,
     // PerformanceBenchmark, or SourceGeneratorBenchmark (or pass a filter on the command line).

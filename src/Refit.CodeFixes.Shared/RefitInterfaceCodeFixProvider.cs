@@ -94,10 +94,20 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
         var attribute = root
             .FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true)
             .FirstAncestorOrSelf<AttributeSyntax>();
-        var literal = attribute?
-            .DescendantNodes()
-            .OfType<LiteralExpressionSyntax>()
-            .FirstOrDefault(x => x.IsKind(SyntaxKind.StringLiteralExpression));
+        LiteralExpressionSyntax? literal = null;
+        if (attribute is not null)
+        {
+            foreach (var node in attribute.DescendantNodes())
+            {
+                if (node is LiteralExpressionSyntax candidate
+                    && candidate.IsKind(SyntaxKind.StringLiteralExpression))
+                {
+                    literal = candidate;
+                    break;
+                }
+            }
+        }
+
         if (literal is null || literal.Token.Value is not string route || route.IndexOf('\\') < 0)
         {
             return document;

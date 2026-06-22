@@ -247,25 +247,25 @@ internal static partial class Emitter
             {
                 case '&':
                     {
-                        builder.Append("&amp;");
+                        _ = builder.Append("&amp;");
                         break;
                     }
 
                 case '<':
                     {
-                        builder.Append("&lt;");
+                        _ = builder.Append("&lt;");
                         break;
                     }
 
                 case '>':
                     {
-                        builder.Append("&gt;");
+                        _ = builder.Append("&gt;");
                         break;
                     }
 
                 default:
                     {
-                        builder.Append(c);
+                        _ = builder.Append(c);
                         break;
                     }
             }
@@ -369,39 +369,28 @@ internal static partial class Emitter
     /// <param name="model">The interface model being emitted.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <returns>The generated constructor source, or an empty string.</returns>
-    private static string BuildSettingsConstructor(InterfaceModel model, string settingsFieldName)
-    {
-        if (!CanUseGeneratedSettingsFactory(model))
-        {
-            return string.Empty;
-        }
+    private static string BuildSettingsConstructor(InterfaceModel model, string settingsFieldName) =>
+        !CanUseGeneratedSettingsFactory(model)
+            ? string.Empty
+            : $$"""
 
-        return $$"""
-
-                        /// <summary>Initializes a new instance of the {{model.Ns}}{{model.ClassSuffix}} class for generated-only execution.</summary>
-                        /// <param name="client">The HTTP client used by the generated implementation.</param>
-                        /// <param name="settings">The settings used by the generated implementation.</param>
-                        public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
-                        {
-                            Client = client;
-                            {{settingsFieldName}} = settings;
-                        }
-            """;
-    }
+                            /// <summary>Initializes a new instance of the {{model.Ns}}{{model.ClassSuffix}} class for generated-only execution.</summary>
+                            /// <param name="client">The HTTP client used by the generated implementation.</param>
+                            /// <param name="settings">The settings used by the generated implementation.</param>
+                            public {{model.Ns}}{{model.ClassSuffix}}(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
+                            {
+                                Client = client;
+                                {{settingsFieldName}} = settings;
+                            }
+                """;
 
     /// <summary>Determines whether an interface can be constructed without a reflection request builder.</summary>
     /// <param name="model">The interface model being emitted.</param>
     /// <returns><see langword="true"/> when all Refit methods use generated request construction.</returns>
-    private static bool CanUseGeneratedSettingsFactory(InterfaceModel model)
-    {
-        if (model.RefitMethods.Count == 0 && model.DerivedRefitMethods.Count == 0)
-        {
-            return false;
-        }
-
-        return AllRequestsCanGenerateInline(model.RefitMethods)
-               && AllRequestsCanGenerateInline(model.DerivedRefitMethods);
-    }
+    private static bool CanUseGeneratedSettingsFactory(InterfaceModel model) =>
+        (model.RefitMethods.Count != 0 || model.DerivedRefitMethods.Count != 0)
+        && AllRequestsCanGenerateInline(model.RefitMethods)
+        && AllRequestsCanGenerateInline(model.DerivedRefitMethods);
 
     /// <summary>Determines whether all methods in a collection use generated request construction.</summary>
     /// <param name="methods">The methods to inspect.</param>
@@ -668,9 +657,8 @@ internal static partial class Emitter
                 """;
         }
 
-        if (methodModel.ReturnType.StartsWith("global::System.Threading.Tasks.ValueTask<", StringComparison.Ordinal))
-        {
-            return $$"""
+        return methodModel.ReturnType.StartsWith("global::System.Threading.Tasks.ValueTask<", StringComparison.Ordinal)
+            ? $$"""
                 {{bodyIndent}}return new {{methodModel.ReturnType}}(global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
                 {{bodyIndent}}    this.Client,
                 {{bodyIndent}}    refitRequest,
@@ -680,20 +668,18 @@ internal static partial class Emitter
                 {{bodyIndent}}    {{bufferBodyExpression}},
                 {{bodyIndent}}    {{cancellationTokenExpression}}));
 
+                """
+            : $$"""
+                {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
+                {{bodyIndent}}    this.Client,
+                {{bodyIndent}}    refitRequest,
+                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
+                {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
+                {{bodyIndent}}    {{bufferBodyExpression}},
+                {{bodyIndent}}    {{cancellationTokenExpression}});
+
                 """;
-        }
-
-        return $$"""
-            {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
-            {{bodyIndent}}    this.Client,
-            {{bodyIndent}}    refitRequest,
-            {{bodyIndent}}    refitSettings,
-            {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
-            {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
-            {{bodyIndent}}    {{bufferBodyExpression}},
-            {{bodyIndent}}    {{cancellationTokenExpression}});
-
-            """;
     }
 
     /// <summary>Builds static and dynamic header application for an inline generated method.</summary>
@@ -838,13 +824,13 @@ internal static partial class Emitter
     private static string ToCSharpStringLiteral(string value)
     {
         var builder = new StringBuilder(value.Length + 2);
-        builder.Append('"');
+        _ = builder.Append('"');
         foreach (var c in value)
         {
             AppendEscapedCharacter(builder, c);
         }
 
-        builder.Append('"');
+        _ = builder.Append('"');
         return builder.ToString();
     }
 
@@ -1049,15 +1035,10 @@ internal static partial class Emitter
     /// <returns>The generated type parameter expression.</returns>
     private static string BuildTypeParameterExpression(
         ImmutableEquatableArray<ParameterModel> parameters,
-        string? cachedTypeParameterFieldName)
-    {
-        if (parameters.Count == 0)
-        {
-            return "global::System.Array.Empty<global::System.Type>()";
-        }
-
-        return cachedTypeParameterFieldName ?? $"new global::System.Type[] {{ {BuildParameterTypeList(parameters)} }}";
-    }
+        string? cachedTypeParameterFieldName) =>
+        parameters.Count == 0
+            ? "global::System.Array.Empty<global::System.Type>()"
+            : cachedTypeParameterFieldName ?? $"new global::System.Type[] {{ {BuildParameterTypeList(parameters)} }}";
 
     /// <summary>Builds the generated <c>typeof(...)</c> argument list for method parameters.</summary>
     /// <param name="parameters">The parameter models to emit.</param>
@@ -1130,20 +1111,15 @@ internal static partial class Emitter
     private static string BuildConstraintsForTypeParameter(
         in TypeConstraint typeParameter,
         bool isOverrideOrExplicitImplementation,
-        int indentationLevel)
-    {
-        if (!HasConstraintKeywords(typeParameter, isOverrideOrExplicitImplementation))
-        {
-            return string.Empty;
-        }
-
-        return Indent(indentationLevel)
-            + "where "
-            + typeParameter.TypeName
-            + " : "
-            + BuildConstraintList(typeParameter, isOverrideOrExplicitImplementation)
-            + "\n";
-    }
+        int indentationLevel) =>
+        !HasConstraintKeywords(typeParameter, isOverrideOrExplicitImplementation)
+            ? string.Empty
+            : Indent(indentationLevel)
+                + "where "
+                + typeParameter.TypeName
+                + " : "
+                + BuildConstraintList(typeParameter, isOverrideOrExplicitImplementation)
+                + "\n";
 
     /// <summary>Determines whether a type parameter has constraints that should be emitted.</summary>
     /// <param name="typeParameter">The type parameter constraint to inspect.</param>
@@ -1154,23 +1130,12 @@ internal static partial class Emitter
         bool isOverrideOrExplicitImplementation)
     {
         var knownConstraints = typeParameter.KnownTypeConstraint;
-        if (knownConstraints.HasFlag(KnownTypeConstraint.Class))
-        {
-            return true;
-        }
-
-        if (knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation)
-        {
-            return true;
-        }
-
-        if (knownConstraints.HasFlag(KnownTypeConstraint.Struct))
-        {
-            return true;
-        }
-
-        return (knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation)
-               || (!isOverrideOrExplicitImplementation && (typeParameter.Constraints.Count > 0 || knownConstraints.HasFlag(KnownTypeConstraint.New)));
+        return knownConstraints.HasFlag(KnownTypeConstraint.Class)
+               || (knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation)
+               || knownConstraints.HasFlag(KnownTypeConstraint.Struct)
+               || (knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation)
+               || (!isOverrideOrExplicitImplementation && (typeParameter.Constraints.Count > 0 ||
+                                                           knownConstraints.HasFlag(KnownTypeConstraint.New)));
     }
 
     /// <summary>Builds the comma-separated constraint list for a type parameter.</summary>

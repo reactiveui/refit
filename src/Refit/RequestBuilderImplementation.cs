@@ -114,12 +114,9 @@ namespace Refit
             }
 
             // IObservable<T>
-            if (IsGenericReturnType(restMethod, typeof(IObservable<>)))
-            {
-                return BuildResultFuncForMethod(restMethod, nameof(BuildRxFuncForMethod));
-            }
-
-            return BuildGeneratedSyncFuncForMethod(restMethod);
+            return IsGenericReturnType(restMethod, typeof(IObservable<>))
+                ? BuildResultFuncForMethod(restMethod, nameof(BuildRxFuncForMethod))
+                : BuildGeneratedSyncFuncForMethod(restMethod);
         }
 
         /// <summary>Finds a method declared on this implementation type by name.</summary>
@@ -366,21 +363,16 @@ namespace Refit
         [RequiresDynamicCode("Closing generic Refit methods requires runtime generic method instantiation.")]
         private RestMethodInfoInternal CloseGenericMethodIfNeeded(
             RestMethodInfoInternal restMethodInfo,
-            Type[]? genericArgumentTypes)
-        {
-            if (genericArgumentTypes is not null)
-            {
-                return _interfaceGenericHttpMethods.GetOrAdd(
+            Type[]? genericArgumentTypes) =>
+            genericArgumentTypes is not null
+                ? _interfaceGenericHttpMethods.GetOrAdd(
                     new(restMethodInfo.MethodInfo, genericArgumentTypes),
                     _ =>
                         new(
                             restMethodInfo.Type,
                             restMethodInfo.MethodInfo.MakeGenericMethod(genericArgumentTypes),
-                            restMethodInfo.RefitSettings));
-            }
-
-            return restMethodInfo;
-        }
+                            restMethodInfo.RefitSettings))
+                : restMethodInfo;
 
         /// <summary>Builds a result delegate for a method by invoking the named generic builder over the result types.</summary>
         /// <param name="restMethod">The rest method to build a delegate for.</param>
@@ -506,17 +498,9 @@ namespace Refit
             var ret = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
             return (client, paramList) =>
-            {
-                if (restMethod.CancellationToken is not null)
-                {
-                    return ret(
-                        client,
-                        GetCancellationToken(paramList),
-                        paramList);
-                }
-
-                return ret(client, CancellationToken.None, paramList);
-            };
+                restMethod.CancellationToken is not null
+                    ? ret(client, GetCancellationToken(paramList), paramList)
+                    : ret(client, CancellationToken.None, paramList);
         }
 
         /// <summary>Builds a value-task invocation delegate for a method.</summary>

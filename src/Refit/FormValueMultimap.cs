@@ -15,16 +15,7 @@ namespace Refit;
 internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, string?>>
 {
     /// <summary>Caches the readable public properties for each source type without keeping collectible types alive.</summary>
-    [SuppressMessage(
-        "Style",
-        "IDE0028:Simplify collection initialization",
-        Justification = "ConditionalWeakTable collection expressions do not compile for all target frameworks.")]
-    [SuppressMessage(
-        "Style",
-        "IDE0090:Simplify new expression",
-        Justification = "Keeping the explicit type avoids collection-expression suggestions that do not compile for all target frameworks.")]
-    private static readonly ConditionalWeakTable<Type, PropertyInfo[]> _propertyCache =
-        new ConditionalWeakTable<Type, PropertyInfo[]>();
+    private static readonly ConditionalWeakTable<Type, PropertyInfo[]> _propertyCache = new();
 
     /// <summary>Holds the collected form key/value entries.</summary>
     private readonly List<KeyValuePair<string?, string?>> _formEntries = [];
@@ -86,18 +77,13 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
         TSource>(
         TSource source,
-        RefitSettings settings)
-    {
-        if (source is null or IDictionary)
-        {
-            return new FormValueMultimap(source!, settings);
-        }
-
-        return new FormValueMultimap(
-            source,
-            settings,
-            GetCachedProperties(source));
-    }
+        RefitSettings settings) =>
+        source is null or IDictionary
+            ? new FormValueMultimap(source!, settings)
+            : new FormValueMultimap(
+                source,
+                settings,
+                GetCachedProperties(source));
 
     /// <summary>Resolves the cached readable public properties for the given source type.</summary>
     /// <param name="type">The type to inspect.</param>

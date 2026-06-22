@@ -118,7 +118,7 @@ internal static class CodeFixFixture
         {
             if (!assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location))
             {
-                referencePaths.Add(assembly.Location);
+                _ = referencePaths.Add(assembly.Location);
             }
         }
 
@@ -178,7 +178,7 @@ internal static class CodeFixFixture
             .GetAssemblies()
             .Concat(
             [
-                typeof(Refit.GetAttribute).Assembly,
+                typeof(GetAttribute).Assembly,
                 typeof(Task).Assembly,
                 typeof(Dictionary<string, string>).Assembly,
                 typeof(IDisposable).Assembly
@@ -201,7 +201,7 @@ internal static class CodeFixFixture
         {
             if (!string.IsNullOrEmpty(referencePath))
             {
-                referencePaths.Add(referencePath);
+                _ = referencePaths.Add(referencePath);
             }
         }
     }

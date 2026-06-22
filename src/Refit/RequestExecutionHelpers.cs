@@ -341,22 +341,17 @@ internal static class RequestExecutionHelpers
         HttpRequestMessage request,
         HttpResponseMessage response,
         RefitSettings settings,
-        Exception exception)
-    {
-        if (settings.DeserializationExceptionFactory is not null)
-        {
-            return await settings.DeserializationExceptionFactory(response, exception)
-                .ConfigureAwait(false);
-        }
-
-        return await ApiException.Create(
-            DeserializationErrorMessage,
-            request,
-            request.Method,
-            response,
-            settings,
-            exception).ConfigureAwait(false);
-    }
+        Exception exception) =>
+        settings.DeserializationExceptionFactory is not null
+            ? await settings.DeserializationExceptionFactory(response, exception)
+                .ConfigureAwait(false)
+            : await ApiException.Create(
+                DeserializationErrorMessage,
+                request,
+                request.Method,
+                response,
+                settings,
+                exception).ConfigureAwait(false);
 
     /// <summary>Deserializes the response content into the requested type.</summary>
     /// <typeparam name="T">The type to deserialize into.</typeparam>

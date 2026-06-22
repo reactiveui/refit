@@ -283,7 +283,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp.Expect(HttpMethod.Get, "http://foo/value").Respond("text/plain", "test");
+        _ = mockHttp.Expect(HttpMethod.Get, "http://foo/value").Respond("text/plain", "test");
 
         var fixture = RestService.For<IValueTaskApi>("http://foo", settings);
 
@@ -301,7 +301,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp.Expect(HttpMethod.Get, "http://foo/value").Respond("text/plain", "test");
+        _ = mockHttp.Expect(HttpMethod.Get, "http://foo/value").Respond("text/plain", "test");
 
         var fixture = RestService.For<IValueTaskApiResponseApi>("http://foo", settings);
 
@@ -322,7 +322,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://foo/nobody")
 
             // The content length header is set automatically by the HttpContent instance,
@@ -347,7 +347,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithNoParametersTest()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/someendpoint")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -365,7 +365,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithNoContentResponseReturnsDefault()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp.Expect(HttpMethod.Get, "http://foo/values").Respond(HttpStatusCode.NoContent);
+        _ = mockHttp.Expect(HttpMethod.Get, "http://foo/values").Respond(HttpStatusCode.NoContent);
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
         var fixture = RestService.For<INoContentApi>("http://foo", settings);
@@ -382,7 +382,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithNoContentApiResponseReturnsNullContent()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp.Expect(HttpMethod.Get, "http://foo/values").Respond(HttpStatusCode.NoContent);
+        _ = mockHttp.Expect(HttpMethod.Get, "http://foo/values").Respond(HttpStatusCode.NoContent);
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
         var fixture = RestService.For<INoContentApi>("http://foo", settings);
@@ -401,7 +401,7 @@ public partial class RestServiceIntegrationTests
     public async Task BaseAddressFromHttpClientMatchesTest()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/someendpoint")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -420,7 +420,7 @@ public partial class RestServiceIntegrationTests
     public async Task BaseAddressWithTrailingSlashFromHttpClientMatchesTest()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/someendpoint")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -439,11 +439,11 @@ public partial class RestServiceIntegrationTests
     public async Task BaseAddressWithTrailingSlashCalledBeforeFromHttpClientMatchesTest()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/firstRequest")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/someendpoint")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -464,7 +464,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithNoParametersTestTrailingSlashInBase()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/someendpoint")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -482,7 +482,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundObject()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -502,7 +502,7 @@ public partial class RestServiceIntegrationTests
     {
         var mockHttp = new MockHttpMessageHandler();
         var longPathString = string.Concat(Enumerable.Repeat("barNone", 1000));
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, $"http://foo/foos/12345/bar/{longPathString}")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -521,7 +521,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundObjectDifferentCasing()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -540,7 +540,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundObjectAndParameter()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/myId/22/bar/bart")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -560,7 +560,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundObjectAndParameterParameterPrecedence()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/chooseMe/bar/barNone")
             .WithExactQueryString([new("SomeProperty", "1")])
             .Respond("application/json", "Ok");
@@ -580,7 +580,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundDerivedObject()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/1/bar/test")
             .WithExactQueryString(
                 [new("SomeProperty2", "barNone")])
@@ -608,7 +608,7 @@ public partial class RestServiceIntegrationTests
         // path must not also be emitted as a query parameter when a derived instance is
         // passed for a base-typed parameter.
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/1/bar")
             .WithExactQueryString(
                 [
@@ -636,7 +636,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundObjectAndQueryParameter()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/22/bar")
             .WithExactQueryString(
                 [new("SomeProperty2", "bart")])
@@ -656,7 +656,7 @@ public partial class RestServiceIntegrationTests
     public async Task PostFooBarPathBoundObject()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bart")
             .Respond("application/json", "Ok");
 
@@ -675,7 +675,7 @@ public partial class RestServiceIntegrationTests
     public async Task PathBoundObjectsRespectFormatter()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/22%2C23")
             .Respond("application/json", "Ok");
 
@@ -700,7 +700,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundObjectAndQuery()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
             .WithExactQueryString("SomeQuery=test")
             .Respond("application/json", "Ok");
@@ -724,7 +724,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundObjectAndQueryWithFormat()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/foo")
             .WithExactQueryString("SomeQueryWithFormat=2020-03-05T13:55:00Z")
             .Respond("application/json", "Ok");
@@ -747,7 +747,7 @@ public partial class RestServiceIntegrationTests
     public async Task GetWithPathBoundObjectAndQueryObject()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://foo/foos/1/bar/barNone")
             .WithExactQueryString("Property1=test&Property2=test2")
             .Respond("application/json", "Ok");
@@ -767,7 +767,7 @@ public partial class RestServiceIntegrationTests
     public async Task PostFooBarPathMultipart()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
             .WithExactQueryString(string.Empty)
             .Respond("application/json", "Ok");
@@ -788,7 +788,7 @@ public partial class RestServiceIntegrationTests
     public async Task PostFooBarPathQueryMultipart()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
             .WithExactQueryString("SomeQuery=test")
             .Respond("application/json", "Ok");
@@ -814,7 +814,7 @@ public partial class RestServiceIntegrationTests
     public async Task PostFooBarPathQueryObjectMultipart()
     {
         var mockHttp = new MockHttpMessageHandler();
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
             .WithExactQueryString("Property1=test&Property2=test2")
             .Respond("application/json", "Ok");
@@ -838,7 +838,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/nobody")
 
             // We can't add HttpContent to a GET request,
@@ -862,7 +862,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Head, "http://foo/nobody")
 
             // We can't add HttpContent to a HEAD request,
@@ -886,7 +886,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/withDecimal")
             .WithExactQueryString([new("value", "3.456")])
             .Respond("application/json", "Ok");

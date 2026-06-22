@@ -13,7 +13,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using SystemTextJsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Refit.Tests;
@@ -159,7 +158,6 @@ public partial class SerializedContentTests
     /// <param name="contentSerializerType">The content serializer implementation under test.</param>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [Arguments(typeof(NewtonsoftJsonContentSerializer))]
     [Arguments(typeof(SystemTextJsonContentSerializer))]
     [Arguments(typeof(XmlContentSerializer))]
     public async Task WhenARequestRequiresABodyThenItDoesNotDeadlock(Type contentSerializerType)
@@ -191,7 +189,6 @@ public partial class SerializedContentTests
     /// <param name="contentSerializerType">The content serializer implementation under test.</param>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [Arguments(typeof(NewtonsoftJsonContentSerializer))]
     [Arguments(typeof(SystemTextJsonContentSerializer))]
     [Arguments(typeof(XmlContentSerializer))]
     public async Task WhenARequestRequiresABodyThenItIsSerialized(Type contentSerializerType)
@@ -248,11 +245,6 @@ public partial class SerializedContentTests
 
         await Assert.That(settings.ContentSerializer).IsNotNull();
         await Assert.That(settings.ContentSerializer).IsTypeOf<SystemTextJsonContentSerializer>();
-
-        settings = new(new NewtonsoftJsonContentSerializer());
-
-        await Assert.That(settings.ContentSerializer).IsNotNull();
-        await Assert.That(settings.ContentSerializer).IsTypeOf<NewtonsoftJsonContentSerializer>();
     }
 
     /// <summary>Verifies stream deserialization using the System.Text.Json content serializer.</summary>
@@ -295,103 +287,6 @@ public partial class SerializedContentTests
         await Assert.That(json.Headers.ContentType).IsNotNull();
         await Assert.That(json.Headers.ContentType!.CharSet).IsEqualTo("utf-8");
         await Assert.That(json.Headers.ContentType.MediaType).IsEqualTo("application/json");
-    }
-
-    /// <summary>Verifies that the Newtonsoft content serializer never falls back to synchronous stream reads.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task StreamDeserialization_UsingNewtonsoftJsonContentSerializer_DoesNotUseSynchronousReads()
-    {
-        var serializer = new NewtonsoftJsonContentSerializer();
-        var content = new AsyncOnlyJsonContent("{\"name\":\"Road Runner\"}");
-
-        var result = await serializer.FromHttpContentAsync<User>(content);
-
-        await Assert.That(result).IsNotNull();
-        await Assert.That(result!.Name).IsEqualTo("Road Runner");
-    }
-
-    /// <summary>Verifies that the Newtonsoft content serializer returns the default value for null content.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task StreamDeserialization_UsingNewtonsoftJsonContentSerializer_ReturnsDefaultForNullContent()
-    {
-        var serializer = new NewtonsoftJsonContentSerializer();
-
-        var result = await serializer.FromHttpContentAsync<User>(null!);
-
-        await Assert.That(result).IsNull();
-    }
-
-    /// <summary>Verifies that the Newtonsoft content serializer returns the JsonProperty name for a property.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ReturnsJsonPropertyName()
-    {
-        var serializer = new NewtonsoftJsonContentSerializer();
-        var property = typeof(NewtonsoftFieldNameModel).GetProperty(
-            nameof(NewtonsoftFieldNameModel.Name));
-
-        var fieldName = serializer.GetFieldNameForProperty(property!);
-
-        await Assert.That(fieldName).IsEqualTo("json_name");
-    }
-
-    /// <summary>Verifies that the Newtonsoft content serializer returns null when no JsonProperty attribute exists.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ReturnsNullWithoutJsonPropertyAttribute()
-    {
-        var serializer = new NewtonsoftJsonContentSerializer();
-        var property = typeof(NewtonsoftFieldNameModel).GetProperty(
-            nameof(NewtonsoftFieldNameModel.Unaliased));
-
-        var fieldName = serializer.GetFieldNameForProperty(property!);
-
-        await Assert.That(fieldName).IsNull();
-    }
-
-    /// <summary>Verifies that the Newtonsoft content serializer throws when the property argument is null.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task NewtonsoftJsonContentSerializer_GetFieldNameForProperty_ThrowsForNullProperty()
-    {
-        var serializer = new NewtonsoftJsonContentSerializer();
-
-        var exception = await Assert.That(() => serializer.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
-
-        await Assert.That(exception!.ParamName).IsEqualTo("propertyInfo");
-    }
-
-    /// <summary>Verifies quoted charsets are unwrapped before Newtonsoft deserialization resolves the encoding.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task NewtonsoftJsonContentSerializer_FromHttpContentAsync_UnwrapsQuotedCharset()
-    {
-        var serializer = new NewtonsoftJsonContentSerializer();
-        var content = new StringContent(
-            """{"Name":"Utf16 User"}""",
-            Encoding.Unicode,
-            "application/json");
-        content.Headers.ContentType!.CharSet = "\"utf-16\"";
-
-        var result = await serializer.FromHttpContentAsync<User>(content);
-
-        await Assert.That(result).IsNotNull();
-        await Assert.That(result!.Name).IsEqualTo("Utf16 User");
-    }
-
-    /// <summary>Verifies invalid Newtonsoft response charsets fail with a clear operation exception.</summary>
-    /// <returns>A task that represents the asynchronous test operation.</returns>
-    [Test]
-    public async Task NewtonsoftJsonContentSerializer_FromHttpContentAsync_ThrowsForInvalidCharset()
-    {
-        var serializer = new NewtonsoftJsonContentSerializer();
-        var content = new StringContent("""{"Name":"Invalid"}""", Encoding.UTF8, "application/json");
-        content.Headers.ContentType!.CharSet = "not-a-real-charset";
-
-        await Assert.That(() => serializer.FromHttpContentAsync<User>(content))
-            .ThrowsExactly<InvalidOperationException>();
     }
 
     /// <summary>Verifies that the System.Text.Json content serializer returns the JsonPropertyName for a property.</summary>
@@ -456,7 +351,7 @@ public partial class SerializedContentTests
 
         await Assert
             .That(() => SystemTextJsonSerializer.Deserialize<ObjectValueContainer>("""{"value":1,"value":2}""", options))
-            .ThrowsExactly<System.Text.Json.JsonException>();
+            .ThrowsExactly<JsonException>();
     }
 
 #endif
@@ -679,7 +574,7 @@ public partial class SerializedContentTests
                 () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "null",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
-            .ThrowsExactly<System.Text.Json.JsonException>();
+            .ThrowsExactly<JsonException>();
 
     /// <summary>Verifies that an empty string throws for a non-nullable enum.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
@@ -689,7 +584,7 @@ public partial class SerializedContentTests
                 () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "\"\"",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
-            .ThrowsExactly<System.Text.Json.JsonException>();
+            .ThrowsExactly<JsonException>();
 
     /// <summary>Verifies that an unknown enum name throws.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
@@ -699,7 +594,7 @@ public partial class SerializedContentTests
                 () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "\"notAValue\"",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
-            .ThrowsExactly<System.Text.Json.JsonException>();
+            .ThrowsExactly<JsonException>();
 
     /// <summary>Verifies that unexpected JSON tokens throw when parsing enums.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
@@ -709,7 +604,7 @@ public partial class SerializedContentTests
                 () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "true",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
-            .ThrowsExactly<System.Text.Json.JsonException>();
+            .ThrowsExactly<JsonException>();
 
     /// <summary>Verifies that undefined enum values are serialized as numbers.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
@@ -1191,14 +1086,14 @@ public partial class SerializedContentTests
     private static (CamelCaseEnum? EmptyNameValue, CamelCaseEnum? NamedValue, string Json) ReadAndWriteNullableEnumPropertyNames()
     {
         var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
-        var converter = (System.Text.Json.Serialization.JsonConverter<CamelCaseEnum?>)options.GetConverter(
+        var converter = (JsonConverter<CamelCaseEnum?>)options.GetConverter(
             typeof(CamelCaseEnum?));
-        var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes("""{"":"empty","valueOne":"first"}"""));
-        reader.Read();
-        reader.Read();
+        var reader = new Utf8JsonReader("""{"":"empty","valueOne":"first"}"""u8);
+        _ = reader.Read();
+        _ = reader.Read();
         var emptyNameValue = converter.ReadAsPropertyName(ref reader, typeof(CamelCaseEnum?), options);
-        reader.Read();
-        reader.Read();
+        _ = reader.Read();
+        _ = reader.Read();
         var namedValue = converter.ReadAsPropertyName(ref reader, typeof(CamelCaseEnum?), options);
 
         using var stream = new MemoryStream();
@@ -1222,7 +1117,7 @@ public partial class SerializedContentTests
     private static string WriteNullableEnumValues()
     {
         var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
-        var converter = (System.Text.Json.Serialization.JsonConverter<CamelCaseEnum?>)options.GetConverter(
+        var converter = (JsonConverter<CamelCaseEnum?>)options.GetConverter(
             typeof(CamelCaseEnum?));
 
         using var stream = new MemoryStream();
@@ -1350,7 +1245,7 @@ public partial class SerializedContentTests
         /// <returns>The type info, or null if the inner resolver has none.</returns>
         public JsonTypeInfo? GetTypeInfo(Type type, JsonSerializerOptions options)
         {
-            RequestedTypes.Add(type);
+            _ = RequestedTypes.Add(type);
             return innerResolver.GetTypeInfo(type, options);
         }
     }
@@ -1365,17 +1260,6 @@ public partial class SerializedContentTests
             CancellationToken cancellationToken) => responder(request);
     }
 
-    /// <summary>Model used to verify Newtonsoft field-name resolution.</summary>
-    private sealed class NewtonsoftFieldNameModel
-    {
-        /// <summary>Gets or sets the aliased name property.</summary>
-        [JsonProperty(PropertyName = "json_name")]
-        public string? Name { get; set; }
-
-        /// <summary>Gets or sets the unaliased property; present only so reflection can resolve a property without a JsonProperty attribute.</summary>
-        public string? Unaliased { get; set; } = string.Empty;
-    }
-
     /// <summary>Model used to verify System.Text.Json field-name resolution.</summary>
     private sealed class SystemTextFieldNameModel
     {
@@ -1385,81 +1269,5 @@ public partial class SerializedContentTests
 
         /// <summary>Gets or sets the unaliased property; present only so reflection can resolve a property without a JsonPropertyName attribute.</summary>
         public string? Unaliased { get; set; } = string.Empty;
-    }
-
-    /// <summary>HTTP content that only supports asynchronous reads, used to verify async-only deserialization.</summary>
-    /// <param name="json">The JSON payload to serve as the content body.</param>
-    private sealed class AsyncOnlyJsonContent(string json) : HttpContent
-    {
-        /// <summary>The UTF-8 encoded JSON payload.</summary>
-        private readonly byte[] _bytes = Encoding.UTF8.GetBytes(json);
-
-        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
-            stream.WriteAsync(_bytes, 0, _bytes.Length);
-
-        protected override bool TryComputeLength(out long length)
-        {
-            length = _bytes.Length;
-            return true;
-        }
-
-        protected override Task<Stream> CreateContentReadStreamAsync() =>
-            Task.FromResult<Stream>(new AsyncOnlyReadStream(_bytes));
-    }
-
-    /// <summary>Read-only stream that throws on synchronous reads to verify async-only consumption.</summary>
-    /// <param name="bytes">The bytes the stream exposes for reading.</param>
-    private sealed class AsyncOnlyReadStream(byte[] bytes) : Stream
-    {
-        /// <summary>The backing memory stream that supplies the bytes.</summary>
-        private readonly MemoryStream _inner = new(bytes, writable: false);
-
-        /// <inheritdoc/>
-        public override bool CanRead => true;
-
-        /// <inheritdoc/>
-        public override bool CanSeek => _inner.CanSeek;
-
-        /// <inheritdoc/>
-        public override bool CanWrite => false;
-
-        /// <inheritdoc/>
-        public override long Length => _inner.Length;
-
-        /// <inheritdoc/>
-        public override long Position
-        {
-            get => _inner.Position;
-            set => _inner.Position = value;
-        }
-
-        /// <inheritdoc/>
-        public override void Flush() => _inner.Flush();
-
-        /// <inheritdoc/>
-        public override int Read(byte[] buffer, int offset, int count) =>
-            throw new NotSupportedException("Synchronous reads are intentionally not supported.");
-
-        /// <inheritdoc/>
-        public override ValueTask<int> ReadAsync(
-            Memory<byte> buffer,
-            CancellationToken cancellationToken = default) => _inner.ReadAsync(buffer, cancellationToken);
-
-        /// <inheritdoc/>
-        public override Task<int> ReadAsync(
-            byte[] buffer,
-            int offset,
-            int count,
-            CancellationToken cancellationToken) => _inner.ReadAsync(buffer, offset, count, cancellationToken);
-
-        /// <inheritdoc/>
-        public override long Seek(long offset, SeekOrigin origin) => _inner.Seek(offset, origin);
-
-        /// <inheritdoc/>
-        public override void SetLength(long value) => throw new NotSupportedException();
-
-        /// <inheritdoc/>
-        public override void Write(byte[] buffer, int offset, int count) =>
-            throw new NotSupportedException();
     }
 }

@@ -142,7 +142,7 @@ public class AuthenticatedClientHandlerTests
             HttpMessageHandlerFactory = () => handler
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/unauth")
             .With(msg => msg.Headers.Authorization is null)
             .Respond("text/plain", "Ok");
@@ -168,7 +168,7 @@ public class AuthenticatedClientHandlerTests
             HttpMessageHandlerFactory = () => handler
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/auth")
             .WithHeaders("Authorization", "Bearer tokenValue")
             .Respond("text/plain", "Ok");
@@ -190,7 +190,7 @@ public class AuthenticatedClientHandlerTests
         var handler = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/auth")
             .WithHeaders("Authorization", "Bearer tokenValue")
             .Respond("text/plain", "Ok");
@@ -218,7 +218,7 @@ public class AuthenticatedClientHandlerTests
             { "Authorization", "Bearer tokenValue" }
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/auth")
             .WithHeaders(headers)
             .Respond("text/plain", "Ok");
@@ -253,7 +253,7 @@ public class AuthenticatedClientHandlerTests
             { "X-Forwarded-For", "Refit" }
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/auth")
             .WithHeaders(expectedHeaders)
             .Respond("text/plain", "Ok");
@@ -291,7 +291,7 @@ public class AuthenticatedClientHandlerTests
             { "X-Forwarded-For", "Refit" }
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/auth")
             .WithHeaders(expectedHeaders)
             .Respond("text/plain", "Ok");
@@ -324,7 +324,7 @@ public class AuthenticatedClientHandlerTests
             { "ThingId", id.ToString() }
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Post, $"http://api/auth/{id}")
             .WithHeaders(headers)
             .Respond("text/plain", "Ok");
@@ -353,7 +353,7 @@ public class AuthenticatedClientHandlerTests
             HttpMessageHandlerFactory = () => handler
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-base-thing")
             .WithHeaders("Authorization", "Bearer tokenValue")
             .Respond("text/plain", "Ok");
@@ -381,7 +381,7 @@ public class AuthenticatedClientHandlerTests
             HttpMessageHandlerFactory = () => handler
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-inherited-thing")
             .WithHeaders("Authorization", "Bearer tokenValue")
             .Respond("text/plain", "Ok");
@@ -409,7 +409,7 @@ public class AuthenticatedClientHandlerTests
             HttpMessageHandlerFactory = () => handler,
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-inherited-thing")
             .WithHeaders("Authorization", "Bearer tokenValue")
             .Respond("text/plain", "Ok");
@@ -437,7 +437,7 @@ public class AuthenticatedClientHandlerTests
             AuthorizationHeaderValueGetter = (_, _) => Task.FromResult("tokenValue")
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/auth")
             .WithHeaders("Authorization", "Bearer tokenValue")
             .Respond("text/plain", "Ok");
@@ -467,7 +467,7 @@ public class AuthenticatedClientHandlerTests
             }
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/auth")
             .WithHeaders("Authorization", "Bearer tokenValue")
             .Respond("text/plain", "Ok");
@@ -493,7 +493,7 @@ public class AuthenticatedClientHandlerTests
             AuthorizationHeaderValueGetter = (_, _) => Task.FromResult("token-from-getter")
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/auth")
             .WithHeaders("Authorization", "Bearer token-from-parameter")
             .Respond("text/plain", "Ok");

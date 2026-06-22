@@ -252,7 +252,7 @@ public partial class RequestBuilderTests
         var writer = new StreamWriter(streamResponse);
         await writer.WriteAsync(reponseContent);
         await writer.FlushAsync();
-        streamResponse.Seek(0L, SeekOrigin.Begin);
+        _ = streamResponse.Seek(0L, SeekOrigin.Begin);
 
         var task =
             (Task<ApiResponse<Stream>>)
@@ -310,7 +310,7 @@ public partial class RequestBuilderTests
         var writer = new StreamWriter(streamResponse);
         await writer.WriteAsync(reponseContent);
         await writer.FlushAsync();
-        streamResponse.Seek(0L, SeekOrigin.Begin);
+        _ = streamResponse.Seek(0L, SeekOrigin.Begin);
 
         var task =
             (Task<Stream>)
@@ -427,7 +427,7 @@ public partial class RequestBuilderTests
             try
             {
                 var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-                fixture.BuildRequestFactoryForMethod(v!);
+                _ = fixture.BuildRequestFactoryForMethod(v!);
             }
             catch (Exception)
             {
@@ -444,7 +444,7 @@ public partial class RequestBuilderTests
             try
             {
                 var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
-                fixture.BuildRequestFactoryForMethod(v);
+                _ = fixture.BuildRequestFactoryForMethod(v);
             }
             catch (Exception)
             {

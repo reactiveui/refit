@@ -31,7 +31,7 @@ public class DeserializationExceptionFactoryTests
         };
 
         const int intContent = 123;
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-with-result")
             .Respond(HttpStatusCode.OK, new StringContent($"{intContent}"));
 
@@ -55,7 +55,7 @@ public class DeserializationExceptionFactoryTests
             HttpMessageHandlerFactory = () => handler,
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-with-result")
             .Respond(HttpStatusCode.OK, new StringContent("non-int-result"));
 
@@ -80,7 +80,7 @@ public class DeserializationExceptionFactoryTests
         };
 
         const int intContent = 123;
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-with-result")
             .Respond(HttpStatusCode.OK, new StringContent($"{intContent}"));
 
@@ -105,7 +105,7 @@ public class DeserializationExceptionFactoryTests
             DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null)
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-with-result")
             .Respond(HttpStatusCode.OK, new StringContent("non-int-result"));
 
@@ -131,7 +131,7 @@ public class DeserializationExceptionFactoryTests
             DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(exception)
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-with-result")
             .Respond(HttpStatusCode.OK, new StringContent("non-int-result"));
 
@@ -157,7 +157,7 @@ public class DeserializationExceptionFactoryTests
         };
 
         const int intContent = 123;
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-with-result")
             .Respond(HttpStatusCode.OK, new StringContent($"{intContent}"));
 

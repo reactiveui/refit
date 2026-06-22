@@ -37,6 +37,7 @@
         <Project Path="tests/Refit.CodeFixes.Tests/Refit.CodeFixes.Tests.csproj" />
         <Project Path="tests/Refit.GeneratedCode.TestModels/Refit.GeneratedCode.TestModels.csproj" />
         <Project Path="tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" />
+        <Project Path="tests/Refit.Newtonsoft.Json.Tests/Refit.Newtonsoft.Json.Tests.csproj" />
         <Project Path="tests/Refit.Tests/Refit.Tests.csproj" />
     </Folder>
     <Project Path="InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" />

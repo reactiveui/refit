@@ -66,7 +66,7 @@ internal static class AnalyzerFixture
         {
             if (!assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location))
             {
-                referencePaths.Add(assembly.Location);
+                _ = referencePaths.Add(assembly.Location);
             }
         }
 
@@ -86,46 +86,33 @@ internal static class AnalyzerFixture
     /// <summary>Gets the assemblies referenced when compiling analyzer test input.</summary>
     /// <param name="includeRefitReference">Whether the Refit assembly should be referenced.</param>
     /// <returns>The distinct, non-dynamic assemblies to reference.</returns>
-    private static Assembly[] GetAssemblyReferences(bool includeRefitReference)
-    {
-        if (!includeRefitReference)
-        {
-            return GetRequiredAssemblies(includeRefitReference);
-        }
-
-        return
-        [
-            .. AppDomain.CurrentDomain
-                .GetAssemblies()
-                .Concat(GetRequiredAssemblies(includeRefitReference))
-                .Distinct()
-                .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
-        ];
-    }
+    private static Assembly[] GetAssemblyReferences(bool includeRefitReference) =>
+        includeRefitReference
+            ? [
+                .. AppDomain.CurrentDomain
+                    .GetAssemblies()
+                    .Concat(GetRequiredAssemblies(includeRefitReference))
+                    .Distinct()
+                    .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+            ]
+            : GetRequiredAssemblies(includeRefitReference);
 
     /// <summary>Gets required assemblies for analyzer test input.</summary>
     /// <param name="includeRefitReference">Whether the Refit assembly should be referenced.</param>
     /// <returns>The required assemblies.</returns>
-    private static Assembly[] GetRequiredAssemblies(bool includeRefitReference)
-    {
-        if (includeRefitReference)
-        {
-            return
-            [
-                typeof(Refit.GetAttribute).Assembly,
+    private static Assembly[] GetRequiredAssemblies(bool includeRefitReference) =>
+        includeRefitReference
+            ? [
+                typeof(GetAttribute).Assembly,
+                typeof(Task).Assembly,
+                typeof(Dictionary<string, string>).Assembly,
+                typeof(IDisposable).Assembly
+            ]
+            : [
                 typeof(Task).Assembly,
                 typeof(Dictionary<string, string>).Assembly,
                 typeof(IDisposable).Assembly
             ];
-        }
-
-        return
-        [
-            typeof(Task).Assembly,
-            typeof(Dictionary<string, string>).Assembly,
-            typeof(IDisposable).Assembly
-        ];
-    }
 
     /// <summary>Adds runtime framework references used by Roslyn in-memory compilations.</summary>
     /// <param name="referencePaths">The reference path set to populate.</param>
@@ -143,7 +130,7 @@ internal static class AnalyzerFixture
             if (!string.IsNullOrEmpty(referencePath)
                 && (includeRefitReference || !string.Equals(Path.GetFileName(referencePath), RefitAssemblyFileName, StringComparison.Ordinal)))
             {
-                referencePaths.Add(referencePath);
+                _ = referencePaths.Add(referencePath);
             }
         }
     }

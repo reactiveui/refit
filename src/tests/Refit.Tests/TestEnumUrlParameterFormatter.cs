@@ -28,11 +28,8 @@ public class TestEnumUrlParameterFormatter : DefaultUrlParameterFormatter
             return enumBackingValue.ToString();
         }
 
-        if (value is string stringValue)
-        {
-            return stringValue + StringParameterSuffix;
-        }
-
-        return base.Format(value, attributeProvider, type);
+        return value is string stringValue
+            ? stringValue + StringParameterSuffix
+            : base.Format(value, attributeProvider, type);
     }
 }

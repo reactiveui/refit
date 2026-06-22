@@ -149,10 +149,10 @@ internal static partial class Parser
 
             if (builder.Length > 0)
             {
-                builder.Append('.');
+                _ = builder.Append('.');
             }
 
-            builder.Append(normalized);
+            _ = builder.Append(normalized);
         }
 
         return builder.Length == 0 ? RefitInternalGeneratedSuffix : builder.ToString();
@@ -175,21 +175,21 @@ internal static partial class Parser
             {
                 if (SyntaxFacts.IsIdentifierStartCharacter(character))
                 {
-                    builder.Append(character);
+                    _ = builder.Append(character);
                 }
                 else if (SyntaxFacts.IsIdentifierPartCharacter(character))
                 {
-                    builder.Append('_').Append(character);
+                    _ = builder.Append('_').Append(character);
                 }
                 else
                 {
-                    builder.Append('_');
+                    _ = builder.Append('_');
                 }
 
                 continue;
             }
 
-            builder.Append(SyntaxFacts.IsIdentifierPartCharacter(character) ? character : '_');
+            _ = builder.Append(SyntaxFacts.IsIdentifierPartCharacter(character) ? character : '_');
         }
 
         var normalized = builder.ToString();
@@ -302,13 +302,13 @@ internal static partial class Parser
             // Each entry is keyed by the interface symbol and contains the methods already known
             // to be Refit methods. Remaining members still need RF001 validation.
             var keyName = group.Key.Name;
-            int value;
-            while (keyCount.TryGetValue(keyName, out value))
+            while (keyCount.TryGetValue(keyName, out var value))
             {
                 keyName = $"{keyName}{++value}";
             }
 
-            keyCount[keyName] = value;
+            // A failed TryGetValue leaves value at its default of 0, so the deduplicated name starts at zero.
+            keyCount[keyName] = 0;
             var fileName = $"{keyName}.g.cs";
 
             interfaceModels[index++] = ProcessInterface(
@@ -562,7 +562,7 @@ internal static partial class Parser
             foreach (var baseMethod in method.ExplicitInterfaceImplementations)
             {
                 // Compare generic methods by definition so explicit implementations line up.
-                explicitlyImplementedBaseMethods.Add(baseMethod.OriginalDefinition);
+                _ = explicitlyImplementedBaseMethods.Add(baseMethod.OriginalDefinition);
             }
         }
 

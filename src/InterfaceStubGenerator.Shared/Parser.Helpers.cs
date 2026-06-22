@@ -37,13 +37,13 @@ internal static partial class Parser
         {
             if (i > 0)
             {
-                builder.Append(", ");
+                _ = builder.Append(", ");
             }
 
-            builder.Append(typeParameters[i].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            _ = builder.Append(typeParameters[i].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
         }
 
-        builder.Append('>');
+        _ = builder.Append('>');
         return builder.ToString();
     }
 

@@ -122,20 +122,17 @@ public static class GeneratedRequestRunner
 
         var content = CreateSerializedBodyContent(settings, body, serializationMethod);
 
-        if (!streamBody)
-        {
-            return content;
-        }
-
-        return new PushStreamContent(
-            async (stream, _, _) =>
-            {
-                using (stream)
+        return streamBody
+            ? new PushStreamContent(
+                async (stream, _, _) =>
                 {
-                    await content.CopyToAsync(stream).ConfigureAwait(false);
-                }
-            },
-            content.Headers.ContentType);
+                    using (stream)
+                    {
+                        await content.CopyToAsync(stream).ConfigureAwait(false);
+                    }
+                },
+                content.Headers.ContentType)
+            : content;
     }
 
     /// <summary>Serializes a generated URL-encoded request body using the declared body type.</summary>
@@ -163,15 +160,12 @@ public static class GeneratedRequestRunner
             return new StreamContent(stream);
         }
 
-        if (body is string stringBody)
-        {
-            return new StringContent(
+        return body is string stringBody
+            ? new StringContent(
                 StringHelpers.EscapeDataString(stringBody),
                 Encoding.UTF8,
-                "application/x-www-form-urlencoded");
-        }
-
-        return new FormUrlEncodedContent(FormValueMultimap.Create(body, settings));
+                "application/x-www-form-urlencoded")
+            : new FormUrlEncodedContent(FormValueMultimap.Create(body, settings));
     }
 
     /// <summary>Sets, replaces, or removes a generated request header.</summary>
@@ -182,12 +176,12 @@ public static class GeneratedRequestRunner
     {
         if (ContainsHeader(request.Headers, name))
         {
-            request.Headers.Remove(name);
+            _ = request.Headers.Remove(name);
         }
 
         if (request.Content is not null && ContainsHeader(request.Content.Headers, name))
         {
-            request.Content.Headers.Remove(name);
+            _ = request.Content.Headers.Remove(name);
         }
 
         if (value is null)
@@ -209,7 +203,7 @@ public static class GeneratedRequestRunner
             return;
         }
 
-        request.Content.Headers.TryAddWithoutValidation(name, value);
+        _ = request.Content.Headers.TryAddWithoutValidation(name, value);
     }
 
     /// <summary>Adds a generated request header collection, replacing earlier values by key.</summary>

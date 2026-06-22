@@ -23,7 +23,7 @@ public class UniqueNameBuilder
 
         foreach (var name in names)
         {
-            _usedNames.Add(name);
+            _ = _usedNames.Add(name);
         }
     }
 
@@ -40,7 +40,7 @@ public class UniqueNameBuilder
             i++;
         }
 
-        _usedNames.Add(uniqueName);
+        _ = _usedNames.Add(uniqueName);
 
         return uniqueName;
     }

@@ -17,8 +17,8 @@ public sealed class CustomerIdHeaderHandler(HttpMessageHandler innerHandler) : D
     {
         if (request.Options.TryGetValue(_customerIdKey, out var customerId) && customerId is not null)
         {
-            request.Headers.Remove("CustomerId");
-            request.Headers.TryAddWithoutValidation("CustomerId", customerId.ToString());
+            _ = request.Headers.Remove("CustomerId");
+            _ = request.Headers.TryAddWithoutValidation("CustomerId", customerId.ToString());
         }
 
         return base.SendAsync(request, cancellationToken);

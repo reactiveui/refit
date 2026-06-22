@@ -478,7 +478,7 @@ internal class RestMethodInfoInternal
         var parameterIndex = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
         fragmentList.Add(ParameterFragment.Dynamic(parameterIndex));
 #if NET6_0_OR_GREATER
-        ret.TryAdd(parameterIndex, restMethodParameterInfo);
+        _ = ret.TryAdd(parameterIndex, restMethodParameterInfo);
 #else
         if (ret.ContainsKey(parameterIndex))
         {
@@ -525,7 +525,7 @@ internal class RestMethodInfoInternal
         var idx = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
         fragmentList.Add(ParameterFragment.DynamicObject(idx, 0));
 #if NET6_0_OR_GREATER
-        ret.TryAdd(idx, restMethodParameterInfo);
+        _ = ret.TryAdd(idx, restMethodParameterInfo);
 #else
         if (ret.ContainsKey(idx))
         {
@@ -592,12 +592,9 @@ internal class RestMethodInfoInternal
             authorizeIndex = i;
         }
 
-        if (authorizeAttribute is null)
-        {
-            return null;
-        }
-
-        return Tuple.Create(authorizeAttribute.Scheme, authorizeIndex);
+        return authorizeAttribute is null
+            ? null
+            : Tuple.Create(authorizeAttribute.Scheme, authorizeIndex);
     }
 
     /// <summary>Finds the single cancellation token parameter for the method.</summary>
@@ -752,7 +749,12 @@ internal class RestMethodInfoInternal
         // Allow synchronous return types only for methods that are implemented by generated stubs
         // (for example explicit/default interface implementations). Public top-level Refit methods must
         // still use async-compatible return shapes.
+#if NET8_0_OR_GREATER        
         var isExplicitInterfaceMember = methodInfo.Name.Contains('.');
+#else
+        var isExplicitInterfaceMember = methodInfo.Name.Contains(".");
+#endif
+
         var isNonPublic = !methodInfo.IsPublic;
 
         if (!isExplicitInterfaceMember && !isNonPublic)
@@ -940,17 +942,12 @@ internal class RestMethodInfoInternal
                 bodyParameterIndex);
         }
 
-        // Not in post/put/patch? bail
-        if (
-            !method.Equals(HttpMethod.Post)
-            && !method.Equals(HttpMethod.Put)
-            && !method.Equals(_patchMethod)
-        )
-        {
-            return null;
-        }
-
-        return FindImplicitBodyParameter(parameterArray);
+        // Only post/put/patch carry an implicit body.
+        return method.Equals(HttpMethod.Post)
+            || method.Equals(HttpMethod.Put)
+            || method.Equals(_patchMethod)
+            ? FindImplicitBodyParameter(parameterArray)
+            : null;
     }
 
     /// <summary>Finds an implicit body parameter for POST/PUT/PATCH requests.</summary>
@@ -984,15 +981,12 @@ internal class RestMethodInfoInternal
             refParamIndex = i;
         }
 
-        if (refParam is null)
-        {
-            return null;
-        }
-
-        return Tuple.Create(
-            BodySerializationMethod.Serialized,
-            RefitSettings.Buffered,
-            refParamIndex);
+        return refParam is null
+            ? null
+            : Tuple.Create(
+                BodySerializationMethod.Serialized,
+                RefitSettings.Buffered,
+                refParamIndex);
     }
 
     /// <summary>Holds the parsed forms of a route parameter name extracted from a URL template.</summary>

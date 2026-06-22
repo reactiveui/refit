@@ -5,7 +5,7 @@ namespace Refit.Tests.Tcp;
 
 /// <summary>
 /// A TCP client fixture used to verify that <see cref="T:Refit.UniqueName"/> produces a name
-/// distinct from the identically named client in the <see cref="Refit.Tests.Http"/> namespace.
+/// distinct from the identically named client in the <see cref="Http"/> namespace.
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
     "RoslynCommonAnalyzers",

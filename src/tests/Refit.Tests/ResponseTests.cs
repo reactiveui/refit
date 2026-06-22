@@ -11,12 +11,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Refit.Buffers;
 using RichardSzalay.MockHttp;
-
-// for the code gen
-using JsonSerializer = Newtonsoft.Json.JsonSerializer;
 
 namespace Refit.Tests;
 
@@ -74,7 +70,7 @@ public sealed class ResponseTests : IDisposable
     [Test]
     public async Task JsonPropertyCanBeUsedToAliasFieldNamesInResponses()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "http://api/aliasTest")
             .Respond(
                 "application/json",
@@ -93,7 +89,7 @@ public sealed class ResponseTests : IDisposable
     [Test]
     public async Task AliasAsCannotBeUsedToAliasFieldNamesInResponses()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "http://api/aliasTest")
             .Respond(
                 "application/json",
@@ -124,11 +120,11 @@ public sealed class ResponseTests : IDisposable
         };
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
+            Content = new StringContent(JsonSerializer.Serialize(expectedContent))
         };
         expectedResponse.Content.Headers.ContentType =
             new("application/problem+json");
-        _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
         var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
         await Assert.That(actualException!.Content).IsNotNull();
@@ -152,11 +148,11 @@ public sealed class ResponseTests : IDisposable
         var expectedContent = new ProblemDetails { Detail = "detail", Title = "title" };
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
+            Content = new StringContent(JsonSerializer.Serialize(expectedContent))
         };
         expectedResponse.Content.Headers.ContentType = new(
             "application/problem+json");
-        _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
         var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
 
@@ -190,7 +186,7 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.ContentType = new(
             "application/problem+json");
-        localHandler
+        _ = localHandler
             .Expect(HttpMethod.Get, "http://api/aliasTest")
             .Respond(req => expectedResponse);
 
@@ -224,12 +220,12 @@ public sealed class ResponseTests : IDisposable
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
+            Content = new StringContent(JsonSerializer.Serialize(expectedContent))
         };
 
         expectedResponse.Content.Headers.ContentType =
             new("application/problem+json");
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
             .Respond(req => expectedResponse);
 
@@ -256,7 +252,7 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent("Invalid JSON")
         };
 
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
             .Respond(req => expectedResponse);
 
@@ -278,7 +274,7 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent("Invalid JSON")
         };
 
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
             .Respond(req => expectedResponse);
 
@@ -301,7 +297,7 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent("Invalid JSON")
         };
 
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
             .Respond(req => expectedResponse);
 
@@ -312,7 +308,7 @@ public sealed class ResponseTests : IDisposable
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
         await Assert.That(response.IsSuccessful).IsFalse();
         await Assert.That(actualException).IsNotNull();
-        await Assert.That(actualException!.InnerException).IsTypeOf<System.Text.Json.JsonException>();
+        await Assert.That(actualException!.InnerException).IsTypeOf<JsonException>();
     }
 
     /// <summary>Verifies that ProblemDetails extensions are hydrated when present on the response.</summary>
@@ -320,27 +316,25 @@ public sealed class ResponseTests : IDisposable
     [Test]
     public async Task WhenProblemDetailsResponseContainsExtensions_ShouldHydrateExtensions()
     {
-        var expectedContent = new
-        {
-            Detail = "detail",
-            Instance = "instance",
-            Status = 1,
-            Title = "title",
-            Type = "type",
-            Foo = "bar",
-            Baz = 123d,
-        };
+        var expectedContent = new ProblemDetailsWithExtensions(
+            Detail: "detail",
+            Instance: "instance",
+            Status: 1,
+            Title: "title",
+            Type: "type",
+            Foo: "bar",
+            Baz: 123.5d);
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            Content = new StringContent(JsonConvert.SerializeObject(expectedContent))
+            Content = new StringContent(JsonSerializer.Serialize(expectedContent))
         };
 
         expectedResponse.Content.Headers.ContentType =
             new("application/problem+json");
-        _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
-        _mockHandler.Expect(HttpMethod.Get, "http://api/soloyolo").Respond(req => expectedResponse);
+        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/soloyolo").Respond(req => expectedResponse);
 
         var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
         await Assert.That(actualException!.Content).IsNotNull();
@@ -408,7 +402,7 @@ public sealed class ResponseTests : IDisposable
         expectedResponse.Content.Headers.ContentType = new("application/json");
         expectedResponse.StatusCode = HttpStatusCode.OK;
 
-        localHandler
+        _ = localHandler
             .Expect(HttpMethod.Get, "http://api/aliasTest")
             .Respond(req => expectedResponse);
 
@@ -450,7 +444,7 @@ public sealed class ResponseTests : IDisposable
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
-        localHandler
+        _ = localHandler
             .Expect(HttpMethod.Get, "http://api/aliasTest")
             .Respond(req => expectedResponse);
 
@@ -492,7 +486,7 @@ public sealed class ResponseTests : IDisposable
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
-        localHandler
+        _ = localHandler
             .Expect(HttpMethod.Get, "http://api/xmlTest")
             .Respond(req => expectedResponse);
 
@@ -515,7 +509,7 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
         var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ApiException>();
 
@@ -534,7 +528,7 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetApiResponseTestObject)}")
             .Respond(req => expectedResponse);
 
@@ -558,7 +552,7 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetIApiResponse)}")
             .Respond(req => expectedResponse);
 
@@ -582,7 +576,7 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetValueTaskIApiResponse)}")
             .Respond(req => expectedResponse);
 
@@ -608,14 +602,14 @@ public sealed class ResponseTests : IDisposable
             Title = "title",
             Type = "type"
         };
-        var expectedContent = JsonConvert.SerializeObject(expectedProblemDetails);
+        var expectedContent = JsonSerializer.Serialize(expectedProblemDetails);
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
             Content = new StringContent(expectedContent)
         };
         expectedResponse.Content.Headers.ContentType = new(
             "application/problem+json");
-        _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
         var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
         var actualBaseException = actualException as ApiException;
@@ -634,11 +628,11 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
 
         var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ApiException>();
 
-        await Assert.That(actualException!.InnerException).IsTypeOf<System.Text.Json.JsonException>();
+        await Assert.That(actualException!.InnerException).IsTypeOf<JsonException>();
         await Assert.That(actualException.Content).IsNotNull();
         await Assert.That(actualException.Content).IsEqualTo(htmlResponse);
     }
@@ -655,79 +649,17 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetApiResponseTestObject)}")
             .Respond(req => expectedResponse);
 
         var apiResponse = await _fixture.GetApiResponseTestObject();
 
         await Assert.That(apiResponse!.Error).IsNotNull();
-        await Assert.That(apiResponse.Error!.InnerException).IsTypeOf<System.Text.Json.JsonException>();
+        await Assert.That(apiResponse.Error!.InnerException).IsTypeOf<JsonException>();
         await Assert.That(apiResponse.HasResponseError(out var error)).IsTrue();
         await Assert.That(error!.Content).IsNotNull();
         await Assert.That(error.Content).IsEqualTo(htmlResponse);
-    }
-
-    /// <summary>Verifies that a non-JSON response surfaces as an ApiException with the Newtonsoft serializer.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiException()
-    {
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => _mockHandler,
-            ContentSerializer = new NewtonsoftJsonContentSerializer()
-        };
-
-        var newtonSoftFixture = RestService.For<IMyAliasService>("http://api", settings);
-
-        const string nonJsonResponse = "bad response";
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(nonJsonResponse)
-        };
-        expectedResponse.Content.Headers.Clear();
-
-        _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
-
-        var actualException = await Assert.That(newtonSoftFixture.GetTestObject).ThrowsExactly<ApiException>();
-
-        await Assert.That(actualException!.InnerException).IsTypeOf<JsonReaderException>();
-        await Assert.That(actualException.Content).IsNotNull();
-        await Assert.That(actualException.Content).IsEqualTo(nonJsonResponse);
-    }
-
-    /// <summary>Verifies that a non-JSON response surfaces through the ApiResponse error with the Newtonsoft serializer.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiResponse()
-    {
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => _mockHandler,
-            ContentSerializer = new NewtonsoftJsonContentSerializer()
-        };
-
-        var newtonSoftFixture = RestService.For<IMyAliasService>("http://api", settings);
-
-        const string nonJsonResponse = "bad response";
-        var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(nonJsonResponse)
-        };
-        expectedResponse.Content.Headers.Clear();
-
-        _mockHandler
-            .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetApiResponseTestObject)}")
-            .Respond(req => expectedResponse);
-
-        var apiResponse = await newtonSoftFixture.GetApiResponseTestObject();
-
-        await Assert.That(apiResponse!.Error).IsNotNull();
-        await Assert.That(apiResponse.Error!.InnerException).IsTypeOf<JsonReaderException>();
-        await Assert.That(apiResponse.HasResponseError(out var error)).IsTrue();
-        await Assert.That(error!.Content).IsNotNull();
-        await Assert.That(error.Content).IsEqualTo(nonJsonResponse);
     }
 
     /// <summary>Verifies that the exception factory throws a clear exception when the request message is missing.</summary>
@@ -747,4 +679,21 @@ public sealed class ResponseTests : IDisposable
 
     /// <summary>Releases the resources used by the test fixture.</summary>
     public void Dispose() => _mockHandler.Dispose();
+
+    /// <summary>Problem-details payload carrying extension members for the extension-hydration test.</summary>
+    /// <param name="Detail">The problem detail.</param>
+    /// <param name="Instance">The problem instance.</param>
+    /// <param name="Status">The status code.</param>
+    /// <param name="Title">The problem title.</param>
+    /// <param name="Type">The problem type.</param>
+    /// <param name="Foo">An extension member serialized outside the standard ProblemDetails fields.</param>
+    /// <param name="Baz">A numeric extension member serialized outside the standard ProblemDetails fields.</param>
+    private sealed record ProblemDetailsWithExtensions(
+        string Detail,
+        string Instance,
+        int Status,
+        string Title,
+        string Type,
+        string Foo,
+        double Baz);
 }

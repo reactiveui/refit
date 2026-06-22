@@ -84,7 +84,7 @@ internal static class GeneratorBenchmarkHarness
         {
             if (!loadedAssemblies[i].IsDynamic)
             {
-                assemblies.Add(loadedAssemblies[i]);
+                _ = assemblies.Add(loadedAssemblies[i]);
             }
         }
 
@@ -93,7 +93,7 @@ internal static class GeneratorBenchmarkHarness
             var assembly = _importantAssemblies[i].Assembly;
             if (!assembly.IsDynamic)
             {
-                assemblies.Add(assembly);
+                _ = assemblies.Add(assembly);
             }
         }
 

@@ -121,7 +121,7 @@ public sealed class NewtonsoftJsonContentSerializer(
 
         try
         {
-            if (charset.Length > QuotePairLength && charset[0] == '"' && charset[charset.Length - 1] == '"')
+            if (charset.Length > QuotePairLength && charset[0] == '"' && charset[^1] == '"')
             {
                 charset = charset.Substring(1, charset.Length - QuotePairLength);
             }

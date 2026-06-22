@@ -309,7 +309,7 @@ public static class Fixture
         {
             if (!assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location))
             {
-                referencePaths.Add(assembly.Location);
+                _ = referencePaths.Add(assembly.Location);
             }
         }
 
@@ -361,7 +361,7 @@ public static class Fixture
         {
             if (!string.IsNullOrEmpty(referencePath))
             {
-                referencePaths.Add(referencePath);
+                _ = referencePaths.Add(referencePath);
             }
         }
     }

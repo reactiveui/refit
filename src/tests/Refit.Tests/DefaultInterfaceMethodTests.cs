@@ -23,7 +23,7 @@ public class DefaultInterfaceMethodTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/")
             .Respond(HttpStatusCode.OK, "text/html", "OK");
 
@@ -42,7 +42,7 @@ public class DefaultInterfaceMethodTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/")
             .Respond(HttpStatusCode.OK, "text/html", "OK");
 
@@ -61,7 +61,7 @@ public class DefaultInterfaceMethodTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/")
             .Respond(HttpStatusCode.OK, "text/html", "OK");
 

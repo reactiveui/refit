@@ -17,7 +17,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task UrlParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/bar")
             .Respond("application/json", nameof(IBasicApi.GetParam));
 
@@ -41,7 +41,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task DerivedUrlParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/DerivedRecord%20%7B%20Value%20%3D%20Derived%20%7D")
             .Respond("application/json", nameof(IBasicApi.GetDerivedParam));
 
@@ -65,7 +65,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task PropertyParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/propVal")
             .Respond("application/json", nameof(IBasicApi.GetPropertyParam));
 
@@ -88,7 +88,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task GenericParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/genericVal")
             .Respond("application/json", nameof(IBasicApi.GetGenericParam));
 
@@ -113,7 +113,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task QueryParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString(
                 [new("queryKey", "queryValue")])
@@ -139,7 +139,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task QueryPropertyParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString([new("Value", "queryVal")])
             .Respond("application/json", nameof(IBasicApi.GetPropertyQuery));
@@ -164,7 +164,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task DerivedQueryPropertyParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString(
                 [
@@ -195,7 +195,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task GenericQueryParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString(
                 [new("queryKey", "queryValue")])
@@ -222,7 +222,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task EnumerableQueryParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString([new("enums", "k0,k1")])
             .Respond("application/json", nameof(IBasicApi.GetEnumerableQuery));
@@ -249,7 +249,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task EnumerablePropertyQueryParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString([new("Enumerable", "0,1")])
             .Respond("application/json", nameof(IBasicApi.GetEnumerablePropertyQuery));
@@ -277,7 +277,7 @@ public sealed class ReflectionTests : IDisposable
     [Test]
     public async Task QueryDictionaryParameterShouldBeExpectedReflection()
     {
-        _mockHandler
+        _ = _mockHandler
             .Expect(HttpMethod.Get, "https://foo/")
             .WithExactQueryString(
                 [

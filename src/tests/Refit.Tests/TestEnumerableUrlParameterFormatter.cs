@@ -18,20 +18,11 @@ public class TestEnumerableUrlParameterFormatter : DefaultUrlParameterFormatter
     public override string? Format(
         object? value,
         ICustomAttributeProvider attributeProvider,
-        Type type)
-    {
-        if (value is IEnumerable<object> enu)
+        Type type) =>
+        value switch
         {
-            return string.Join(",", enu.Select(o => base.Format(o, attributeProvider, type)));
-        }
-
-        if (value is IEnumerable en)
-        {
-            return string.Join(
-                ",",
-                en.Cast<object>().Select(o => base.Format(o, attributeProvider, type)));
-        }
-
-        return base.Format(value, attributeProvider, type);
-    }
+            IEnumerable<object> enu => string.Join(",", enu.Select(o => base.Format(o, attributeProvider, type))),
+            IEnumerable en => string.Join(",", en.Cast<object>().Select(o => base.Format(o, attributeProvider, type))),
+            _ => base.Format(value, attributeProvider, type),
+        };
 }

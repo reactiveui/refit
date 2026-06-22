@@ -7,7 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text.Json.Serialization;
-using Newtonsoft.Json;
 
 namespace Refit.Tests;
 
@@ -242,6 +241,10 @@ public class FormValueMultimapTests
     /// <summary>Verifies the multimap loads entries from an anonymous type's properties.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
+    [SuppressMessage(
+        "RoslynCommonAnalyzers",
+        "SST2224:Convert anonymous type to a tuple",
+        Justification = "Verifies loading from an anonymous type; a tuple exposes Item1/Item2 fields, not reflectable named properties.")]
     public async Task LoadsFromAnonymousType()
     {
         var source = new { foo = "bar", xyz = 123 };
@@ -267,7 +270,7 @@ public class FormValueMultimapTests
         await Assert.That(target.FirstOrDefault(entry => entry.Key == "f").Value).IsEqualTo("abc");
     }
 
-    /// <summary>Verifies the Newtonsoft <see cref="JsonPropertyAttribute"/> renames a property's key.</summary>
+    /// <summary>Verifies the <see cref="JsonPropertyNameAttribute"/> renames a property's key.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task UsesJsonPropertyAttribute()
@@ -295,7 +298,7 @@ public class FormValueMultimapTests
         await Assert.That(target.FirstOrDefault(entry => entry.Key == "prefix-fr").Value).IsEqualTo("4.0");
     }
 
-    /// <summary>Verifies the <see cref="AliasAsAttribute"/> takes precedence over the Newtonsoft <see cref="JsonPropertyAttribute"/>.</summary>
+    /// <summary>Verifies the <see cref="AliasAsAttribute"/> takes precedence over the <see cref="JsonPropertyNameAttribute"/>.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task GivesPrecedenceToAliasAs()
@@ -427,14 +430,12 @@ public class FormValueMultimapTests
         [AliasAs("f")]
         public string? Foo { get; set; }
 
-        /// <summary>Gets or sets the value renamed via the JSON property attributes.</summary>
-        [JsonProperty(PropertyName = "b")]
+        /// <summary>Gets or sets the value renamed via the JSON property name attribute.</summary>
         [JsonPropertyName("b")]
         public string? Bar { get; set; }
 
         /// <summary>Gets or sets the value where <see cref="AliasAsAttribute"/> takes precedence over JSON naming.</summary>
         [AliasAs("a")]
-        [JsonProperty(PropertyName = "z")]
         [JsonPropertyName("z")]
         public string? Baz { get; set; }
 

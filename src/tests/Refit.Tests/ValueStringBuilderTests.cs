@@ -184,7 +184,7 @@ public sealed class ValueStringBuilderTests
             builder.EnsureCapacity(1);
             builder.Append("ab");
             builder.Append("cdef");
-            builder.GetPinnableReference(terminate: true);
+            _ = builder.GetPinnableReference(terminate: true);
 
             var text = builder.AsSpan().ToString();
             var suffix = builder.AsSpan(2).ToString();
@@ -280,7 +280,7 @@ public sealed class ValueStringBuilderTests
             builder.AppendSpan(1)[0] = 'j';
 
             var first = builder.GetPinnableReference();
-            builder.AsSpan(terminate: true);
+            _ = builder.AsSpan(terminate: true);
             var length = builder.Length;
             var terminated = builder.RawChars[length];
             var text = builder.AsSpan().ToString();

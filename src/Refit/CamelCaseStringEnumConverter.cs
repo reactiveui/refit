@@ -163,12 +163,10 @@ internal sealed class CamelCaseStringEnumConverter : JsonConverterFactory
         {
 #if NET9_0_OR_GREATER
             var enumMemberNameAttribute = field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>();
-            if (enumMemberNameAttribute is not null)
-            {
-                return enumMemberNameAttribute.Name;
-            }
-#endif
+            return enumMemberNameAttribute?.Name ?? ToCamelCase(field.Name);
+#else
             return ToCamelCase(field.Name);
+#endif
         }
 
         /// <summary>Converts the given value to camelCase.</summary>

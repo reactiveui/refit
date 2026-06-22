@@ -246,6 +246,9 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
         (ImmutableArray<MethodDeclarationSyntax> StandardMethods,
         ImmutableArray<MethodDeclarationSyntax> CustomMethods) combined)
     {
+#if ROSLYN_5
+        return [.. combined.StandardMethods, .. combined.CustomMethods];
+#else
         if (combined.StandardMethods.Length == 0)
         {
             return combined.CustomMethods;
@@ -256,9 +259,6 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             return combined.StandardMethods;
         }
 
-#if ROSLYN_5
-        return [..combined.StandardMethods, ..combined.CustomMethods];
-#else
         var builder = ImmutableArray.CreateBuilder<MethodDeclarationSyntax>(
             combined.StandardMethods.Length + combined.CustomMethods.Length);
         builder.AddRange(combined.StandardMethods);
@@ -334,7 +334,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <returns>The named generator options input.</returns>
     private static GeneratorOptions CreateGeneratorOptions(AnalyzerConfigOptions options)
     {
-        TryGetGlobalOption(options, RefitInternalNamespaceOption, out var refitInternalNamespace);
+        _ = TryGetGlobalOption(options, RefitInternalNamespaceOption, out var refitInternalNamespace);
 
         return new(
             refitInternalNamespace,

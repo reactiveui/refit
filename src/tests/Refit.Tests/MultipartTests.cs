@@ -13,7 +13,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using SystemTextJsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Refit.Tests;
 
@@ -483,7 +483,6 @@ public class MultipartTests
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments(typeof(NewtonsoftJsonContentSerializer), "application/json")]
     [Arguments(typeof(SystemTextJsonContentSerializer), "application/json")]
     [Arguments(typeof(XmlContentSerializer), "application/xml")]
     public async Task MultipartUploadShouldWorkWithAnObject(
@@ -554,7 +553,6 @@ public class MultipartTests
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments(typeof(NewtonsoftJsonContentSerializer), "application/json")]
     [Arguments(typeof(SystemTextJsonContentSerializer), "application/json")]
     [Arguments(typeof(XmlContentSerializer), "application/xml")]
     public async Task MultipartUploadShouldWorkWithObjects(
@@ -634,24 +632,27 @@ public class MultipartTests
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("theObjects");
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsNull();
                 await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result0 = JsonConvert.DeserializeObject<ModelObject>(
-                    await parts[0].ReadAsStringAsync().ConfigureAwait(false));
+                var result0 = SystemTextJsonSerializer.Deserialize<ModelObject>(
+                    await parts[0].ReadAsStringAsync().ConfigureAwait(false),
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
                 await Assert.That(result0!.Property1).IsEqualTo(model1.Property1);
                 await Assert.That(result0!.Property2).IsEqualTo(model1.Property2);
 
                 await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo("theObjects");
                 await Assert.That(parts[1].Headers.ContentDisposition!.FileName).IsNull();
                 await Assert.That(parts[1].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result1 = JsonConvert.DeserializeObject<ModelObject>(
-                    await parts[1].ReadAsStringAsync().ConfigureAwait(false));
+                var result1 = SystemTextJsonSerializer.Deserialize<ModelObject>(
+                    await parts[1].ReadAsStringAsync().ConfigureAwait(false),
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
                 await Assert.That(result1!.Property1).IsEqualTo(model2.Property1);
                 await Assert.That(result1!.Property2).IsEqualTo(model2.Property2);
 
                 await Assert.That(parts[2].Headers.ContentDisposition!.Name).IsEqualTo("anotherModel");
                 await Assert.That(parts[2].Headers.ContentDisposition!.FileName).IsNull();
                 await Assert.That(parts[2].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result2 = JsonConvert.DeserializeObject<AnotherModel>(
-                    await parts[2].ReadAsStringAsync().ConfigureAwait(false));
+                var result2 = SystemTextJsonSerializer.Deserialize<AnotherModel>(
+                    await parts[2].ReadAsStringAsync().ConfigureAwait(false),
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
                 await Assert.That(result2!.Foos!.Length).IsEqualTo(2);
                 await Assert.That(result2!.Foos![0]).IsEqualTo("bar1");
                 await Assert.That(result2!.Foos![1]).IsEqualTo("bar2");
@@ -668,8 +669,9 @@ public class MultipartTests
                 await Assert.That(parts[4].Headers.ContentDisposition!.Name).IsEqualTo("anEnum");
                 await Assert.That(parts[4].Headers.ContentDisposition!.FileName).IsNull();
                 await Assert.That(parts[4].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result4 = JsonConvert.DeserializeObject<AnEnum>(
-                    await parts[4].ReadAsStringAsync().ConfigureAwait(false));
+                var result4 = SystemTextJsonSerializer.Deserialize<AnEnum>(
+                    await parts[4].ReadAsStringAsync().ConfigureAwait(false),
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
                 await Assert.That(result4).IsEqualTo(AnEnum.Val2);
 
                 await Assert.That(parts[5].Headers.ContentDisposition!.Name).IsEqualTo("aString");
@@ -681,8 +683,9 @@ public class MultipartTests
                 await Assert.That(parts[6].Headers.ContentDisposition!.Name).IsEqualTo("anInt");
                 await Assert.That(parts[6].Headers.ContentDisposition!.FileName).IsNull();
                 await Assert.That(parts[6].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result6 = JsonConvert.DeserializeObject<int>(
-                    await parts[6].ReadAsStringAsync().ConfigureAwait(false));
+                var result6 = SystemTextJsonSerializer.Deserialize<int>(
+                    await parts[6].ReadAsStringAsync().ConfigureAwait(false),
+                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
                 await Assert.That(result6).IsEqualTo(42);
             }
         };
