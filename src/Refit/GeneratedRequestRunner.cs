@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Refit;
@@ -100,6 +101,40 @@ public static class GeneratedRequestRunner
                         true),
                     cancellationToken)
                 .ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Sends a generated request and streams the response as an <see cref="IAsyncEnumerable{T}"/>.</summary>
+    /// <typeparam name="T">The element type yielded to the caller.</typeparam>
+    /// <param name="client">The HTTP client to send with.</param>
+    /// <param name="request">The generated request message; disposed when streaming completes.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="methodCancellationToken">The cancellation token supplied as a method argument, if any.</param>
+    /// <param name="cancellationToken">The token supplied by the consumer's enumeration.</param>
+    /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally specified explicitly by generated callers.")]
+    [SuppressMessage(
+        "Major Code Smell",
+        "S2360:Optional parameters should not be used",
+        Justification = "The optional CancellationToken carries the [EnumeratorCancellation] token for the await-foreach WithCancellation pattern.")]
+    public static async IAsyncEnumerable<T?> StreamAsync<T>(
+        HttpClient client,
+        HttpRequestMessage request,
+        RefitSettings settings,
+        CancellationToken methodCancellationToken,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        RequestExecutionHelpers.ThrowIfBaseAddressMissing(client);
+
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, cancellationToken);
+        await foreach (var item in RequestExecutionHelpers
+            .StreamResponseAsync<T>(client, request, settings, true, linked.Token)
+            .ConfigureAwait(false))
+        {
+            yield return item;
         }
     }
 

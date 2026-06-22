@@ -355,6 +355,7 @@ static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.Ref
 static Refit.GeneratedRequestRunner.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!
 static Refit.GeneratedRequestRunner.SendVoidAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage! request, string! name, string? value) -> void
+static Refit.GeneratedRequestRunner.StreamAsync<T>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Threading.CancellationToken methodCancellationToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
 static Refit.HttpRequestMessageOptions.InterfaceType.get -> string!
 static Refit.HttpRequestMessageOptions.RestMethodInfo.get -> string!
 static Refit.JsonLinesContent.JsonLinesMediaType.get -> string!

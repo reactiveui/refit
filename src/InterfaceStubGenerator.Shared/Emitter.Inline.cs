@@ -162,6 +162,18 @@ internal static partial class Emitter
                 """;
         }
 
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncEnumerable)
+        {
+            return $$"""
+                {{bodyIndent}}return global::Refit.GeneratedRequestRunner.StreamAsync<{{request.ResultType}}>(
+                {{bodyIndent}}    this.Client,
+                {{bodyIndent}}    refitRequest,
+                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    {{cancellationTokenExpression}});
+
+                """;
+        }
+
         return methodModel.ReturnType.StartsWith("global::System.Threading.Tasks.ValueTask<", StringComparison.Ordinal)
             ? $$"""
                 {{bodyIndent}}return new {{methodModel.ReturnType}}(global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(

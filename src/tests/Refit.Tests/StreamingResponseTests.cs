@@ -30,6 +30,22 @@ public class StreamingResponseTests
         await Assert.That(ids).IsEquivalentTo([1, 2, 3]);
     }
 
+    /// <summary>Verifies streaming works through the reflection (non-inline) path for a dynamic route.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StreamsViaReflectionPathForDynamicRoute()
+    {
+        var fixture = CreateFixture("application/json", "[{\"id\":4},{\"id\":5}]");
+
+        var ids = new List<int>();
+        await foreach (var item in fixture.GetGroupArray("g1"))
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([4, 5]);
+    }
+
     /// <summary>Verifies a newline-delimited JSON response is streamed line by line.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
