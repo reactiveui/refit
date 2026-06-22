@@ -414,6 +414,68 @@ public static class GeneratorComponentTests
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("Custom"))).IsFalse();
         }
 
+        /// <summary>Verifies an explicitly-implemented Refit method emits an explicit interface prefix on both paths.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task BuildRefitMethod_EmitsExplicitInterfaceForExplicitMethod()
+        {
+            var explicitReflective = CreateRefitMethod(canGenerateInline: false) with { IsExplicitInterface = true };
+            var explicitInline = CreateRefitMethod(canGenerateInline: true) with { IsExplicitInterface = true };
+            var model = CreateInterfaceModel(
+                new ImmutableEquatableArray<MethodModel>([explicitReflective]),
+                ImmutableEquatableArray<MethodModel>.Empty);
+
+            var reflective = Emitter.BuildRefitMethodForTesting(
+                explicitReflective,
+                isTopLevel: true,
+                model,
+                new UniqueNameBuilder(),
+                "_requestBuilder",
+                "_settings");
+            var inline = Emitter.BuildRefitMethodForTesting(
+                explicitInline,
+                isTopLevel: true,
+                model,
+                new UniqueNameBuilder(),
+                "_requestBuilder",
+                "_settings");
+
+            await Assert.That(reflective).Contains("global::RefitGeneratorTest.IGeneratedClient.Get");
+            await Assert.That(inline).Contains("global::RefitGeneratorTest.IGeneratedClient.Get");
+        }
+
+        /// <summary>Verifies constraint emission suppresses override-incompatible keywords for explicit implementations.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task HasConstraintKeywords_HandlesOverrideAndNonOverridePaths()
+        {
+            // class/struct are always emitted; unmanaged/notnull/new/textual are suppressed on overrides/explicit impls.
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Class), true)).IsTrue();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Struct), true)).IsTrue();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Unmanaged), true)).IsFalse();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.NotNull), true)).IsFalse();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.New), true)).IsFalse();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None, "global::System.IDisposable"), true)).IsFalse();
+
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.Unmanaged), false)).IsTrue();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.NotNull), false)).IsTrue();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.New), false)).IsTrue();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None, "global::System.IDisposable"), false)).IsTrue();
+            await Assert.That(Emitter.HasConstraintKeywordsForTesting(Constraint(KnownTypeConstraint.None), false)).IsFalse();
+        }
+
+        /// <summary>Creates a type-parameter constraint model.</summary>
+        /// <param name="known">The well-known constraint flags.</param>
+        /// <param name="extra">Additional textual constraints.</param>
+        /// <returns>The type constraint.</returns>
+        private static TypeConstraint Constraint(KnownTypeConstraint known, params string[] extra)
+        {
+            var textual = extra.Length == 0
+                ? ImmutableEquatableArray<string>.Empty
+                : new ImmutableEquatableArray<string>(extra);
+            return new("T", "T", known, textual);
+        }
+
         /// <summary>Creates a body request parameter model.</summary>
         /// <param name="serializationMethod">The serialization method name.</param>
         /// <param name="bufferMode">The body buffer mode.</param>
@@ -520,8 +582,11 @@ public static class GeneratorComponentTests
         /// <summary>The enum value for serialized body serialization.</summary>
         private const int SerializedSerializationValue = 3;
 
+        /// <summary>The enum value for JSON Lines body serialization.</summary>
+        private const int JsonLinesSerializationValue = 4;
+
         /// <summary>An unsupported body serialization enum value.</summary>
-        private const int UnsupportedSerializationValue = 4;
+        private const int UnsupportedSerializationValue = 99;
 
         /// <summary>Verifies inline path normalization and constant path classification.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
@@ -572,12 +637,14 @@ public static class GeneratorComponentTests
             await Assert.That(Parser.GetBodySerializationMethodName(1)).IsEqualTo("Json");
             await Assert.That(Parser.GetBodySerializationMethodName(UrlEncodedSerializationValue)).IsEqualTo("UrlEncoded");
             await Assert.That(Parser.GetBodySerializationMethodName(SerializedSerializationValue)).IsEqualTo("Serialized");
+            await Assert.That(Parser.GetBodySerializationMethodName(JsonLinesSerializationValue)).IsEqualTo("JsonLines");
             await Assert.That(Parser.GetBodySerializationMethodName(UnsupportedSerializationValue)).IsEqualTo(string.Empty);
             await Assert.That(Parser.IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel>.Empty)).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateHeaderParameter()]))).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody(string.Empty)]))).IsFalse();
             await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("UrlEncoded")]))).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("Serialized")]))).IsTrue();
+            await Assert.That(Parser.IsSupportedInlineBody(new ImmutableEquatableArray<RequestParameterModel>([CreateBody("JsonLines")]))).IsTrue();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpResponseMessage")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpContent")).IsFalse();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.IO.Stream")).IsFalse();

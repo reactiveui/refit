@@ -217,6 +217,65 @@ public class MultipartTests
         await fixture.UploadString(text);
     }
 
+    /// <summary>Verifies <see cref="Guid"/> and <see cref="DateTime"/> values are sent as plain text, not JSON-quoted.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartUploadShouldWorkWithFormattableValues()
+    {
+        var id = new Guid("12345678-1234-1234-1234-1234567890ab");
+        var timestamp = new DateTimeOffset(2021, 12, 1, 8, 16, 16, TimeSpan.Zero);
+
+        var handler = new MockHttpMessageHandler
+        {
+            Asserts = async content =>
+            {
+                var parts = content.ToList();
+
+                await Assert.That(parts.Count).IsEqualTo(2);
+
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("id");
+                var idText = await parts[0].ReadAsStringAsync();
+                await Assert.That(idText).IsEqualTo(id.ToString());
+
+                await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo("timestamp");
+                var timestampText = await parts[1].ReadAsStringAsync();
+                await Assert
+                    .That(timestampText)
+                    .IsEqualTo(timestamp.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+        };
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
+
+        var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+        await fixture.UploadFormattableValues(id, timestamp);
+    }
+
+    /// <summary>Verifies a formatter returning null yields an empty multipart part rather than throwing.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartFormattableValueWithNullFormatterIsEmpty()
+    {
+        var handler = new MockHttpMessageHandler
+        {
+            Asserts = async content =>
+            {
+                var parts = content.ToList();
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("id");
+                await Assert.That(await parts[0].ReadAsStringAsync()).IsEqualTo(string.Empty);
+            }
+        };
+
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            FormUrlEncodedParameterFormatter = new NullReturningFormUrlEncodedParameterFormatter()
+        };
+
+        var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
+        await fixture.UploadFormattableValues(Guid.NewGuid(), DateTimeOffset.UnixEpoch);
+    }
+
     /// <summary>Verifies a header and request property are sent alongside a multipart string upload.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -860,6 +919,13 @@ public class MultipartTests
 
             return new(HttpStatusCode.OK);
         }
+    }
+
+    /// <summary>An <see cref="IFormUrlEncodedParameterFormatter"/> that always returns null.</summary>
+    private sealed class NullReturningFormUrlEncodedParameterFormatter : IFormUrlEncodedParameterFormatter
+    {
+        /// <inheritdoc />
+        public string? Format(object? value, string? formatString) => null;
     }
 
     /// <summary>An <see cref="IHttpContentSerializer"/> that rejects all serialization calls.</summary>

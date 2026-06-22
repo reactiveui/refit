@@ -66,6 +66,10 @@ public sealed class ApiResponse<T>(
     /// <summary>Gets the deserialized request content as <typeparamref name="T"/>.</summary>
     public T? Content { get; } = content;
 
+    /// <summary>Gets a value indicating whether deserialized <see cref="Content"/> is available.</summary>
+    [MemberNotNullWhen(true, nameof(Content))]
+    public bool HasContent => Content is not null;
+
     /// <summary>Gets the Refit settings used to send the request.</summary>
     public RefitSettings Settings { get; } = settings;
 

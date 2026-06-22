@@ -78,6 +78,34 @@ public partial class RestServiceIntegrationTests
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
+    /// <summary>Verifies a collection body is sent as JSON Lines (newline-delimited JSON).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task PostJsonLinesToRequestBin()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        const string expected = "{\"id\":\"124\",\"name\":\"Stark Industries\"}\n{\"id\":\"125\",\"name\":\"Acme Corp\"}";
+
+        _ = mockHttp
+            .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+            .With(message => message.Content!.Headers.ContentType!.MediaType == "application/x-ndjson")
+            .WithContent(expected)
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+        await fixture.PostJsonLines(
+            [
+                new JsonLineRecord { Id = "124", Name = "Stark Industries" },
+                new JsonLineRecord { Id = "125", Name = "Acme Corp" }
+            ]);
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
     /// <summary>Verifies posting a raw string body serialized as JSON works.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

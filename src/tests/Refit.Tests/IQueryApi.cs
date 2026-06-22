@@ -56,4 +56,16 @@ public interface IQueryApi
     /// <returns>A task that completes when the request finishes.</returns>
     [Get("/foo")]
     Task NullableIntCollectionQuery([Query] int?[] values);
+
+    /// <summary>Gets with a complex object whose property declares a query prefix and delimiter.</summary>
+    /// <param name="query">The complex query object.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Get("/foo")]
+    Task PrefixedQuery(PrefixedQueryObject query);
+
+    /// <summary>Gets with a complex value forced to serialize via ToString using an empty format.</summary>
+    /// <param name="size">The value-object query parameter.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Get("/info")]
+    Task EmptyFormatComplexQuery([Query(Format = "")] EnumerationQueryValue size);
 }

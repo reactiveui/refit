@@ -126,6 +126,32 @@ public partial class RequestBuilderTests
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?someValue=value1");
     }
 
+    /// <summary>A property-level query prefix and delimiter customize the query key.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task PropertyQueryPrefixAndDelimiterAreUsedForQueryKey()
+    {
+        var fixture = new RequestBuilderImplementation<IQueryApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IQueryApi.PrefixedQuery));
+        var output = factory([new PrefixedQueryObject { Password = "secret", User = "bob" }]);
+
+        var uri = new Uri(new("http://api"), output.RequestUri!);
+        await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?dontlog-Password=secret&User=bob");
+    }
+
+    /// <summary>An empty query format serializes a complex value via ToString under the parameter name.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task EmptyQueryFormatSerializesComplexValueViaToString()
+    {
+        var fixture = new RequestBuilderImplementation<IQueryApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IQueryApi.EmptyFormatComplexQuery));
+        var output = factory([new EnumerationQueryValue("medium")]);
+
+        var uri = new Uri(new("http://api"), output.RequestUri!);
+        await Assert.That(uri.PathAndQuery).IsEqualTo("/info?size=medium");
+    }
+
     /// <summary>A dynamic header appears in the request headers.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

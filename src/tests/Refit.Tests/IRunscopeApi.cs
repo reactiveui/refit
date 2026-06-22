@@ -64,6 +64,16 @@ public interface IRunscopeApi
     [Post("/")]
     Task<HttpResponseMessage> UploadString([AliasAs("SomeStringAlias")] string someString);
 
+    /// <summary>Uploads a <see cref="Guid"/> and a <see cref="DateTimeOffset"/> as multipart values.</summary>
+    /// <param name="id">The identifier to upload.</param>
+    /// <param name="timestamp">The timestamp to upload.</param>
+    /// <returns>The HTTP response message.</returns>
+    [Multipart]
+    [Post("/")]
+    Task<HttpResponseMessage> UploadFormattableValues(
+        [AliasAs("id")] Guid id,
+        [AliasAs("timestamp")] DateTimeOffset timestamp);
+
     /// <summary>Uploads a string value alongside a header and a request property.</summary>
     /// <param name="authorization">The authorization header value.</param>
     /// <param name="someProperty">The request property value.</param>

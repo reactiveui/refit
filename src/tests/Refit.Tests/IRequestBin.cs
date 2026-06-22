@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Refit.Tests;
@@ -58,6 +59,24 @@ public interface IRequestBin
     /// <returns>A task that completes when the request finishes.</returns>
     [Post("/big")]
     Task PostBig(BigObject big);
+
+    /// <summary>Posts a collection serialized as JSON Lines (newline-delimited JSON).</summary>
+    /// <param name="records">The records to post, one JSON document per line.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Post("/foo")]
+    Task PostJsonLines([Body(BodySerializationMethod.JsonLines)] IEnumerable<JsonLineRecord> records);
+
+    /// <summary>Posts a single (non-enumerable) value as a one-line JSON Lines body.</summary>
+    /// <param name="record">The single record to post.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Post("/foo")]
+    Task PostJsonLinesSingle([Body(BodySerializationMethod.JsonLines)] JsonLineRecord record);
+
+    /// <summary>Posts a string value as a one-line JSON Lines body.</summary>
+    /// <param name="line">The string body, treated as a single line.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Post("/foo")]
+    Task PostJsonLinesString([Body(BodySerializationMethod.JsonLines)] string line);
 
     /// <summary>Exercises a route whose template parameter shares the generated code-gen variable name.</summary>
     /// <param name="arguments">The path segment value.</param>

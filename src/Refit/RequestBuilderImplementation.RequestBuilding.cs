@@ -116,6 +116,14 @@ namespace Refit
         private static HttpContent SerializeBodyGeneric<T>(IHttpContentSerializer serializer, object? body) =>
             serializer.ToHttpContent((T)body!);
 
+        /// <summary>Coerces a JSON Lines body argument into the sequence of values to serialize line by line.</summary>
+        /// <param name="param">The body argument value.</param>
+        /// <returns>The sequence of values; a non-enumerable value becomes a single line.</returns>
+        private static IEnumerable AsJsonLinesSequence(object param) =>
+            param is IEnumerable enumerable and not string
+                ? enumerable
+                : new[] { param };
+
         /// <summary>Returns a copy of an argument array with cancellation tokens removed.</summary>
         /// <param name="paramList">The original argument values.</param>
         /// <returns>The argument values used for request mapping.</returns>
@@ -517,6 +525,12 @@ namespace Refit
                     break;
                 }
 
+                case BodySerializationMethod.JsonLines:
+                {
+                    ret.Content = new JsonLinesContent(AsJsonLinesSequence(param), _serializer);
+                    break;
+                }
+
                 // BodySerializationMethod.Json is obsolete, but the reflection path must still
                 // accept legacy [Body(BodySerializationMethod.Json)] usage from compiled callers.
                 // Falling through to Default would incorrectly send string bodies as raw text.
@@ -576,7 +590,10 @@ namespace Refit
             RestMethodParameterInfo? parameterInfo)
         {
             var attr = queryAttribute ?? DefaultQueryAttribute;
-            if (attr.TreatAsString)
+
+            // TreatAsString, or an explicitly empty Format, serializes the value via ToString() under the
+            // parameter name instead of flattening a complex object's public properties into the query.
+            if (attr.TreatAsString || attr.Format is { Length: 0 })
             {
                 AppendQueryParameter(
                     queryParamsToAdd,
@@ -726,6 +743,21 @@ namespace Refit
             string parameterName,
             object itemValue)
         {
+            // Date/time and Guid values are wrapped in quotes by the JSON serializer (e.g. "<guid>"),
+            // which servers reject when reading a multipart form field. Send them as their plain text
+            // representation instead. Numbers, booleans and enums are intentionally left to the
+            // serializer to preserve existing behavior.
+            if (itemValue is Guid or DateTime or DateTimeOffset or TimeSpan
+#if NET6_0_OR_GREATER
+                or DateOnly or TimeOnly
+#endif
+                )
+            {
+                var formatted = _settings.FormUrlEncodedParameterFormatter.Format(itemValue, null);
+                multiPartContent.Add(new StringContent(formatted ?? string.Empty), parameterName);
+                return;
+            }
+
             // Fallback to serializer
             Exception e;
             try

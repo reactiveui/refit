@@ -349,10 +349,9 @@ namespace Refit
                 return;
             }
 
-            var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
-            var key = aliasAttribute?.Name ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
-
             var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
+            var key = BuildPropertyQueryKey(propertyInfo, queryAttribute);
+
             if (!TryFormatQueryPropertyValue(queryAttribute, obj, out var formattedObj))
             {
                 return;
@@ -374,6 +373,21 @@ namespace Refit
             }
 
             AppendNestedQueryMap(obj, key, kvps, delimiter, collectionFormat);
+        }
+
+        /// <summary>Builds the query key for a property, honoring its alias and any query prefix/delimiter.</summary>
+        /// <param name="propertyInfo">The property being flattened.</param>
+        /// <param name="queryAttribute">The property's query attribute, if any.</param>
+        /// <returns>The query key for the property.</returns>
+        private string BuildPropertyQueryKey(PropertyInfo propertyInfo, QueryAttribute? queryAttribute)
+        {
+            var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
+            var name = aliasAttribute?.Name ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
+
+            // Honor a property-level [Query(delimiter, prefix)], matching how form-encoded fields are named.
+            return queryAttribute is not null && !string.IsNullOrWhiteSpace(queryAttribute.Prefix)
+                ? queryAttribute.Prefix + queryAttribute.Delimiter + name
+                : name;
         }
 
         /// <summary>Applies a property-level query format, if present.</summary>
