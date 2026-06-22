@@ -54,6 +54,7 @@ services
 * [Body content](#body-content)
     * [Buffering and the Content-Length header](#buffering-and-the-content-length-header)
     * [JSON content](#json-content)
+    * [JSON Lines content](#json-lines-content)
     * [XML Content](#xml-content)
     * [Form posts](#form-posts)
 * [Setting request headers](#setting-request-headers)
@@ -520,6 +521,43 @@ To customize the format of query keys, you have two main options:
 **Note**: The `AliasAs` attribute always takes the top priority. If both the attribute and a custom key formatter are
 present, the `AliasAs` attribute's value will be used.
 
+**Built-in key formatters and naming-convention presets**:
+
+Refit ships `CamelCaseUrlParameterKeyFormatter`, `SnakeCaseUrlParameterKeyFormatter`, and
+`KebabCaseUrlParameterKeyFormatter`. To apply a single naming convention consistently across query keys, form field
+names **and** the JSON request body, use the `RefitSettings` presets — each wires up the matching
+`UrlParameterKeyFormatter` and `JsonNamingPolicy` together:
+
+```csharp
+var api = RestService.For<IMyApi>("https://api.example.com", RefitSettings.SnakeCase());
+// also available: RefitSettings.KebabCase() and RefitSettings.CamelCase()
+```
+
+**Per-property key prefix and delimiter**:
+
+A `[Query]` attribute on a property of a complex query object customizes that property's key as
+`{prefix}{delimiter}{name}` (matching how form fields are named):
+
+```csharp
+public class Form
+{
+    [Query("-", "dontlog")]
+    public string Password { get; set; }
+}
+// => ?dontlog-Password=...
+```
+
+**Serializing a value object via `ToString()`**:
+
+By default a complex query parameter is flattened into its public properties. To instead send a single value using the
+object's `ToString()` under the parameter's own name, mark it with an explicit empty format `[Query(Format = "")]` (or
+`[Query(TreatAsString = true)]`):
+
+```csharp
+[Get("/info")]
+Task<string> GetInfo([Query(Format = "")] Size size); // => ?size=medium  (uses size.ToString())
+```
+
 #### Formatting URL Parameter Values with the `UrlParameterFormatter`
 
 In Refit, the `UrlParameterFormatter` property within `RefitSettings` allows you to customize how parameter values are
@@ -604,6 +642,8 @@ type of the parameter:
   is set which will send it as a `StringContent`
 * If the parameter has the attribute `[Body(BodySerializationMethod.UrlEncoded)]`,
   the content will be URL-encoded (see [form posts](#form-posts) below)
+* If the parameter has the attribute `[Body(BodySerializationMethod.JsonLines)]`,
+  an enumerable body is sent as [JSON Lines](https://jsonlines.org) (see [JSON Lines content](#json-lines-content) below)
 * For all other types, the object will be serialized using the content serializer specified in
   RefitSettings (JSON is the default).
 
@@ -704,6 +744,24 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
 When using `System.Text.Json` polymorphism features such as `[JsonDerivedType]` / `[JsonPolymorphic]`, Refit serializes
 request bodies using the **declared Refit method parameter type** rather than the boxed runtime `object`. This ensures
 type discriminators configured on the base contract are preserved in outgoing request payloads.
+
+#### <a name="json-lines-content"></a>JSON Lines content
+
+Some APIs accept a batch of records as [JSON Lines](https://jsonlines.org) (newline-delimited JSON), where each line is
+a self-contained JSON document. Mark an enumerable body parameter with `[Body(BodySerializationMethod.JsonLines)]` and
+Refit serializes each element with the configured content serializer, writing one document per line:
+
+```csharp
+public interface IDocumentApi
+{
+    [Post("/collections/companies/documents/import")]
+    Task ImportAsync([Body(BodySerializationMethod.JsonLines)] IEnumerable<Company> documents);
+}
+```
+
+The request body is streamed (one serialized element per line, separated by `\n`) with a content type of
+`application/x-ndjson`. A non-enumerable value is sent as a single line. If you need a different content type (for
+example `text/plain`), set it with a [static header](#static-headers) or a [dynamic header](#dynamic-headers).
 
 #### XML Content
 
@@ -1265,6 +1323,8 @@ Methods decorated with `Multipart` attribute will be submitted with multipart co
 At this time, multipart methods support the following parameter types:
 
 - `string` (parameter name will be used as name and string value as value)
+- `Guid`, `DateTime`, `DateTimeOffset`, `TimeSpan` (and `DateOnly` / `TimeOnly` on supported targets) — sent as their
+  plain text form (not JSON-quoted)
 - byte array
 - `Stream`
 - `FileInfo`
@@ -1380,6 +1440,52 @@ if (response.IsReceived)
     var user = response.Content;
 }
 ```
+
+`HasContent` is the covariance-safe way to access `Content` with null-state flow analysis — when it is `true` the
+compiler knows `Content` is non-null:
+
+```csharp
+if (response.HasContent)
+{
+    // response.Content is non-null here
+    Process(response.Content);
+}
+```
+
+`EnsureSuccessStatusCodeAsync()` and `EnsureSuccessfulAsync()` are available directly on `IApiResponse<T>` (not just the
+concrete `ApiResponse<T>`), throwing the captured `ApiException` / `ApiRequestException` when the request was not
+successful:
+
+```csharp
+IApiResponse<User> response = await gitHubApi.GetUser("octocat");
+await response.EnsureSuccessStatusCodeAsync();
+```
+
+#### Do I need to dispose the response?
+
+`ApiResponse<T>` (and `IApiResponse` / `IApiResponse<T>`) implement `IDisposable`, but for the common case you do **not**
+need to dispose them and you are **not** leaking sockets. For every return type *except* the streaming ones below, Refit
+buffers the body into memory, returns the connection to the pool, and **disposes the underlying `HttpResponseMessage`
+before handing the result back to you**. Calling `Dispose()` (or a `using`) on those responses is a harmless, idempotent
+no-op — fine to keep to satisfy analyzers, but not required.
+
+Disposal genuinely matters only when you ask Refit for the **live** response, where the body is not buffered and you own
+the connection until you dispose it:
+
+* `HttpResponseMessage`, `HttpContent`, `Stream`
+* `ApiResponse<HttpResponseMessage>`, `ApiResponse<HttpContent>`, `ApiResponse<Stream>`
+
+```csharp
+// Streaming: you own the response — dispose it (e.g. with `using`)
+[Get("/files/{id}")]
+Task<ApiResponse<Stream>> DownloadAsync(string id);
+
+using var response = await api.DownloadAsync("42");
+await using var stream = response.Content; // released when the response is disposed
+```
+
+The rule is decided in `RestMethodInfoInternal.DetermineIfResponseMustBeDisposed`: those three types (and their
+`ApiResponse<>` wrappers) are the only ones Refit does not auto-dispose for you.
 
 ### Using generic interfaces
 
