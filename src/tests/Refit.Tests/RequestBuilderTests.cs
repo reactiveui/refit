@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Reactive.Linq;
 
 namespace Refit.Tests;
 
@@ -22,11 +21,9 @@ public partial class RequestBuilderTests
     /// <summary>Rejects non-interface request-builder targets.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task ConstructorRejectsNonInterfaceTargets()
-    {
+    public async Task ConstructorRejectsNonInterfaceTargets() =>
         await Assert.That(() => new RequestBuilderImplementation(typeof(string)))
             .ThrowsExactly<ArgumentException>();
-    }
 
     /// <summary>Verifies the public request-builder factory entry points create usable builders.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
@@ -397,7 +394,7 @@ public partial class RequestBuilderTests
                 },
                 ["value", cts.Token])!;
 
-        await Assert.That(() => observable.Wait()).ThrowsExactly<TaskCanceledException>();
+        await Assert.That(() => (Task)ObservableTestHelpers.Await(observable)).ThrowsExactly<TaskCanceledException>();
         await Assert.That(testHttpMessageHandler.RequestMessage!.RequestUri!.ToString()).IsEqualTo("http://api/value/value");
         await Assert.That(testHttpMessageHandler.CancellationToken.IsCancellationRequested).IsTrue();
     }

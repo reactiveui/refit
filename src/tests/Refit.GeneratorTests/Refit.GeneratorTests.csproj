@@ -16,7 +16,7 @@
     <PackageReference Include="Verify.DiffPlex" />
     <PackageReference Include="Verify.SourceGenerators" />
     <PackageReference Include="Verify.TUnit" />
-    <PackageReference Include="System.Reactive" />
+    <PackageReference Include="ReactiveUI.Primitives" ExcludeAssets="analyzers" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing" />
     <ProjectReference Include="..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />

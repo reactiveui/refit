@@ -129,23 +129,19 @@ public sealed class ApiResponse<T>(
     /// <returns>The current <see cref="ApiResponse{T}"/></returns>
     /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
     /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
-    public Task<ApiResponse<T>> EnsureSuccessStatusCodeAsync()
-    {
-        return IsSuccessStatusCode
+    public Task<ApiResponse<T>> EnsureSuccessStatusCodeAsync() =>
+        IsSuccessStatusCode
             ? Task.FromResult(this)
             : EnsureSlowAsync();
-    }
 
     /// <summary>Ensures the request was successful and without any other error by throwing an exception in case of failure.</summary>
     /// <returns>The current <see cref="ApiResponse{T}"/></returns>
     /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
     /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
-    public Task<ApiResponse<T>> EnsureSuccessfulAsync()
-    {
-        return IsSuccessful
+    public Task<ApiResponse<T>> EnsureSuccessfulAsync() =>
+        IsSuccessful
             ? Task.FromResult(this)
             : EnsureSlowAsync();
-    }
 
     /// <inheritdoc/>
     [SuppressMessage(

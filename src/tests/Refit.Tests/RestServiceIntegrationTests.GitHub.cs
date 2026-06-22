@@ -6,7 +6,6 @@ using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -167,9 +166,8 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var result = await fixture
-            .GetUserObservableWithMetadata("octocat")
-            .Timeout(TimeSpan.FromSeconds(10));
+        var result = await ObservableTestHelpers.AwaitWithTimeout(
+            fixture.GetUserObservableWithMetadata("octocat"));
 
         await Assert.That(result.Headers!.Any()).IsTrue();
         await Assert.That(result.IsSuccessStatusCode).IsTrue();
@@ -216,9 +214,8 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var result = await fixture
-            .GetUserIApiResponseObservableWithMetadata("octocat")
-            .Timeout(TimeSpan.FromSeconds(10));
+        var result = await ObservableTestHelpers.AwaitWithTimeout(
+            fixture.GetUserIApiResponseObservableWithMetadata("octocat"));
 
         await Assert.That(result.Headers!.Any()).IsTrue();
         await Assert.That(result.IsSuccessStatusCode).IsTrue();
@@ -286,7 +283,7 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var result = await fixture.GetUserCamelCase("octocat");
+        var result = await ObservableTestHelpers.AwaitWithTimeout(fixture.GetUserCamelCase("octocat"));
 
         await Assert.That(result.Login).IsEqualTo("octocat");
         await Assert.That(string.IsNullOrEmpty(result.AvatarUrl)).IsFalse();
@@ -516,7 +513,7 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var result = await fixture.GetUserObservable("octocat").Timeout(TimeSpan.FromSeconds(10));
+        var result = await ObservableTestHelpers.AwaitWithTimeout(fixture.GetUserObservable("octocat"));
 
         await Assert.That(result.Login).IsEqualTo("octocat");
         await Assert.That(string.IsNullOrEmpty(result.AvatarUrl)).IsFalse();
@@ -547,12 +544,12 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
 
-        var obs = fixture.GetUserObservable("octocat").Timeout(TimeSpan.FromSeconds(10));
+        var obs = ObservableTestHelpers.WithTimeout(fixture.GetUserObservable("octocat"));
 
         // NB: We're gonna await twice, so that the 2nd await is definitely
         // after the result has completed.
-        await obs;
-        var result2 = await obs;
+        await ObservableTestHelpers.Await(obs);
+        var result2 = await ObservableTestHelpers.Await(obs);
         await Assert.That(result2.Login).IsEqualTo("octocat");
         await Assert.That(string.IsNullOrEmpty(result2.AvatarUrl)).IsFalse();
     }
@@ -573,12 +570,12 @@ public partial class RestServiceIntegrationTests
 
         await Assert.That(input.MessagesSent).IsEqualTo(0);
 
-        var obs = fixture.GetIndexObservable().Timeout(TimeSpan.FromSeconds(10));
+        var obs = ObservableTestHelpers.WithTimeout(fixture.GetIndexObservable());
 
-        var result1 = await obs;
+        var result1 = await ObservableTestHelpers.Await(obs);
         await Assert.That(input.MessagesSent).IsEqualTo(1);
 
-        var result2 = await obs;
+        var result2 = await ObservableTestHelpers.Await(obs);
         await Assert.That(input.MessagesSent).IsEqualTo(2);
 
         // NB: TestHttpMessageHandler returns what we tell it to ('test' by default)

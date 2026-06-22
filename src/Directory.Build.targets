@@ -10,4 +10,10 @@
   <Target Name="ValidateNugetProperties" Condition="!$(IsTestProject) or $(IsTestProject) == ''" BeforeTargets="Compile">
     <Error Condition="$(PackageDescription) == '' or $(PackageDescription) == $(DefaultPackageDescription)" Text="The Nuget PackageDescription property needs to be set for the project. Currently : '$(PackageDescription)'"/>
   </Target>
+
+  <Target Name="RemoveReactiveUIPrimitivesR3BridgeAnalyzer" AfterTargets="ResolveLockFileAnalyzers">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'ReactiveUI.Primitives' and '%(Analyzer.Filename)%(Analyzer.Extension)' == 'ReactiveUI.Primitives.R3Bridge.Generator.dll'"/>
+    </ItemGroup>
+  </Target>
 </Project>

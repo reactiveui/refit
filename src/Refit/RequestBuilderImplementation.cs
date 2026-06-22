@@ -5,10 +5,15 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using ReactiveUI.Primitives.Advanced;
 
 namespace Refit
 {
     /// <summary>Reflection-based request builder that turns Refit interface calls into HTTP requests.</summary>
+    [SuppressMessage(
+        "Minor Code Smell",
+        "SST1432:Mark type as static",
+        Justification = "False positive: this is one part of a partial class whose other parts declare instance members; the type cannot be static.")]
     internal partial class RequestBuilderImplementation : IRequestBuilder
     {
         /// <summary>Maximum stack-allocated buffer size, in characters, used when building paths and query strings.</summary>
@@ -441,9 +446,8 @@ namespace Refit
             Justification = "Type parameter intentionally specified explicitly by callers.")]
         [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], object?> BuildGeneratedSyncFuncForMethodGeneric<T, TBody>(
-            RestMethodInfoInternal restMethod)
-        {
-            return (client, paramList) =>
+            RestMethodInfoInternal restMethod) =>
+            (client, paramList) =>
                 RunSynchronous(() =>
                     ExecuteRequestAsync<T, TBody>(
                         client,
@@ -451,7 +455,6 @@ namespace Refit
                         paramList,
                         paramsContainsCancellationToken: false,
                         CancellationToken.None));
-        }
 
         /// <summary>Builds an observable invocation delegate for a method.</summary>
         /// <typeparam name="T">The result type returned to the caller.</typeparam>
@@ -469,7 +472,7 @@ namespace Refit
             var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
 
             return (client, paramList) =>
-                new TaskToObservable<T>(ct =>
+                new FromAsyncSignal<T?>(ct =>
                 {
                     var methodCt = CancellationToken.None;
                     if (restMethod.CancellationToken is not null)
@@ -539,9 +542,8 @@ namespace Refit
         /// <returns>A delegate that returns a task with no result.</returns>
         [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, object[], Task> BuildVoidTaskFuncForMethod(
-            RestMethodInfoInternal restMethod)
-        {
-            return (client, paramList) =>
+            RestMethodInfoInternal restMethod) =>
+            (client, paramList) =>
             {
                 var ct = CancellationToken.None;
 
@@ -557,6 +559,5 @@ namespace Refit
                     restMethod.CancellationToken is not null,
                     ct);
             };
-        }
     }
 }

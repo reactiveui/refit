@@ -41,13 +41,11 @@ public sealed class NewtonsoftJsonContentSerializer(
         "AOT",
         "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
         Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
-    public HttpContent ToHttpContent<T>(T item)
-    {
-        return new StringContent(
+    public HttpContent ToHttpContent<T>(T item) =>
+        new StringContent(
             JsonConvert.SerializeObject(item, _jsonSerializerSettings.Value),
             Encoding.UTF8,
             "application/json");
-    }
 
     /// <inheritdoc/>
     [UnconditionalSuppressMessage(

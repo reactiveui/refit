@@ -18,8 +18,7 @@ public sealed class ParserCoverageTests
     /// <summary>Verifies parser argument validation.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task GenerateInterfaceStubsRejectsNullCompilation()
-    {
+    public async Task GenerateInterfaceStubsRejectsNullCompilation() =>
         await Assert.That(
                 () => Parser.GenerateInterfaceStubs(
                     null!,
@@ -30,7 +29,6 @@ public sealed class ParserCoverageTests
                     [],
                     CancellationToken.None))
             .ThrowsExactly<ArgumentNullException>();
-    }
 
     /// <summary>Verifies parser diagnostics and namespace normalization when Refit is not referenced.</summary>
     /// <returns>A task representing the asynchronous test.</returns>

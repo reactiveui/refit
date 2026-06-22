@@ -97,9 +97,8 @@ namespace Refit
             Justification = "Type parameter intentionally specified explicitly by callers.")]
         [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
         private Func<HttpClient, CancellationToken, object[], Task<T?>> BuildCancellableTaskFuncForMethod<T, TBody>(
-            RestMethodInfoInternal restMethod)
-        {
-            return async (client, ct, paramList) =>
+            RestMethodInfoInternal restMethod) =>
+            async (client, ct, paramList) =>
             {
                 RequestExecutionHelpers.ThrowIfBaseAddressMissing(client);
 
@@ -120,7 +119,6 @@ namespace Refit
                     request?.Dispose();
                 }
             };
-        }
 
         /// <summary>Processes a response for a reflection-built request using the shared runtime state machine.</summary>
         /// <typeparam name="T">The result type returned to the caller.</typeparam>

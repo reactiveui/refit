@@ -32,7 +32,7 @@ public static class Fixture
     [
         typeof(Binder),
         typeof(GetAttribute),
-        typeof(System.Reactive.Unit),
+        typeof(ReactiveUI.Primitives.RxVoid),
         typeof(Enumerable),
         typeof(Newtonsoft.Json.JsonConvert),
         typeof(TestAttribute),
