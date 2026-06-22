@@ -182,7 +182,7 @@ namespace System.Net.Http
                 // We don't dispose the underlying stream because we don't own it. Dispose in this case just signifies
                 // that the user's action is finished. The base class honours ownsInnerStream: false and therefore
                 // does not dispose the inner stream.
-                _serializeToStreamTask.TrySetResult(true);
+                _ = _serializeToStreamTask.TrySetResult(true);
                 base.Dispose(disposing);
             }
         }

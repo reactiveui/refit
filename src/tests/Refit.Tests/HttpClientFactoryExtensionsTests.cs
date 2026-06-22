@@ -34,8 +34,8 @@ public class HttpClientFactoryExtensionsTests
     public async Task HttpClientServicesAreDifferentThanKeyedServices()
     {
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
-        serviceCollection.AddKeyedRefitClient<IFooWithOtherAttribute>("keyed");
+        _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
+        _ = serviceCollection.AddKeyedRefitClient<IFooWithOtherAttribute>("keyed");
 
         var serviceProvider = serviceCollection.BuildServiceProvider();
         var nonKeyedService = serviceProvider.GetService<IFooWithOtherAttribute>();
@@ -60,7 +60,7 @@ public class HttpClientFactoryExtensionsTests
     public async Task HttpClientServicesAreAddedCorrectlyGivenGenericArgument()
     {
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
+        _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
         await Assert.That(serviceCollection).Contains(
             z => z.ServiceType == typeof(SettingsFor<IFooWithOtherAttribute>));
         await Assert.That(serviceCollection).Contains(
@@ -74,7 +74,7 @@ public class HttpClientFactoryExtensionsTests
     public async Task HttpClientServicesAreAddedCorrectlyGivenTypeArgument()
     {
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddRefitClient(typeof(IFooWithOtherAttribute));
+        _ = serviceCollection.AddRefitClient(typeof(IFooWithOtherAttribute));
         await Assert.That(serviceCollection).Contains(
             z => z.ServiceType == typeof(SettingsFor<IFooWithOtherAttribute>));
         await Assert.That(serviceCollection).Contains(
@@ -87,7 +87,7 @@ public class HttpClientFactoryExtensionsTests
     public async Task HttpClientReturnsClientGivenGenericArgument()
     {
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
+        _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
         var serviceProvider = serviceCollection.BuildServiceProvider();
         await Assert.That(serviceProvider.GetService<IFooWithOtherAttribute>()).IsNotNull();
     }
@@ -99,7 +99,7 @@ public class HttpClientFactoryExtensionsTests
     public async Task HttpClientReturnsClientGivenTypeArgument()
     {
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddRefitClient(typeof(IFooWithOtherAttribute));
+        _ = serviceCollection.AddRefitClient(typeof(IFooWithOtherAttribute));
         var serviceProvider = serviceCollection.BuildServiceProvider();
         await Assert.That(serviceProvider.GetService<IFooWithOtherAttribute>()).IsNotNull();
     }
@@ -111,7 +111,7 @@ public class HttpClientFactoryExtensionsTests
     {
         var serviceCollection = new ServiceCollection().Configure<ClientOptions>(
             o => o.Serializer = new(new()));
-        serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
+        _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
             _ =>
                 new()
                 {
@@ -134,7 +134,7 @@ public class HttpClientFactoryExtensionsTests
     {
         var serviceCollection = new ServiceCollection().Configure<ClientOptions>(
             o => o.Serializer = new(new()));
-        serviceCollection.AddRefitClient(
+        _ = serviceCollection.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             _ =>
                 new()
@@ -157,7 +157,7 @@ public class HttpClientFactoryExtensionsTests
     {
         var contentSerializer = new SystemTextJsonContentSerializer(new());
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
+        _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
             new RefitSettings { ContentSerializer = contentSerializer });
         var serviceProvider = serviceCollection.BuildServiceProvider();
         await Assert.That(
@@ -174,7 +174,7 @@ public class HttpClientFactoryExtensionsTests
     {
         var contentSerializer = new SystemTextJsonContentSerializer(new());
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddRefitClient(
+        _ = serviceCollection.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             new RefitSettings { ContentSerializer = contentSerializer });
         var serviceProvider = serviceCollection.BuildServiceProvider();
@@ -248,7 +248,7 @@ public class HttpClientFactoryExtensionsTests
         var settings = new RefitSettings { ContentSerializer = contentSerializer };
         var services = new ServiceCollection();
 
-        services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "service-key", settings);
+        _ = services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "service-key", settings);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
@@ -481,27 +481,27 @@ public class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
 
         var genericNoSettings = services.AddKeyedRefitClient<IFooWithOtherAttribute>("generic-none");
-        services.AddKeyedRefitClient<IFooWithOtherAttribute>(
+        _ = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-settings",
             new RefitSettings { ContentSerializer = genericSettingsSerializer });
         var genericNamedSettings = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-settings-named",
             new RefitSettings(),
             "generic-settings-client");
-        services.AddKeyedRefitClient<IFooWithOtherAttribute>(
+        _ = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-factory",
             static _ => new RefitSettings());
         var genericNamedFactory = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-factory-named",
             _ => new() { ContentSerializer = genericFactorySerializer },
             "generic-factory-client");
-        services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "type-none");
+        _ = services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "type-none");
         var typeNamedSettings = services.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             "type-settings-named",
             new RefitSettings { ContentSerializer = typeNamedSerializer },
             "type-settings-client");
-        services.AddKeyedRefitClient(
+        _ = services.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             "type-factory",
             _ => new() { ContentSerializer = typeFactorySerializer });
@@ -562,7 +562,7 @@ public class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
         var builder = services.AddHttpClient("builder-settings");
 
-        builder.AddRefitClient<IFooWithOtherAttribute>(settings);
+        _ = builder.AddRefitClient<IFooWithOtherAttribute>(settings);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
@@ -580,7 +580,7 @@ public class HttpClientFactoryExtensionsTests
             o => o.Serializer = new(new()));
         var builder = services.AddHttpClient("builder-settings-factory");
 
-        builder.AddRefitClient<IFooWithOtherAttribute>(
+        _ = builder.AddRefitClient<IFooWithOtherAttribute>(
             serviceProvider => new()
             {
                 ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
@@ -605,7 +605,7 @@ public class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
         var builder = services.AddHttpClient("builder-type-settings");
 
-        builder.AddRefitClient(typeof(IFooWithOtherAttribute), settings);
+        _ = builder.AddRefitClient(typeof(IFooWithOtherAttribute), settings);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
@@ -624,7 +624,7 @@ public class HttpClientFactoryExtensionsTests
             o => o.Serializer = new(new()));
         var builder = services.AddHttpClient("builder-type-settings-factory");
 
-        builder.AddRefitClient(
+        _ = builder.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             serviceProvider => new()
             {
@@ -668,7 +668,7 @@ public class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
         var builder = services.AddHttpClient("builder-keyed-settings");
 
-        builder.AddKeyedRefitClient<IFooWithOtherAttribute>("builder-key", settings);
+        _ = builder.AddKeyedRefitClient<IFooWithOtherAttribute>("builder-key", settings);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
@@ -687,7 +687,7 @@ public class HttpClientFactoryExtensionsTests
             o => o.Serializer = new(new()));
         var builder = services.AddHttpClient("builder-keyed-type-settings-factory");
 
-        builder.AddKeyedRefitClient(
+        _ = builder.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             "builder-key",
             serviceProvider => new()
@@ -813,16 +813,16 @@ public class HttpClientFactoryExtensionsTests
         var builder = services.AddHttpClient("builder-matrix");
 
         var typeBuilder = builder.AddRefitClient(typeof(IFooWithOtherAttribute));
-        builder.AddRefitClient<IFooWithOtherAttribute>(static _ => new RefitSettings());
-        builder.AddRefitClient(
+        _ = builder.AddRefitClient<IFooWithOtherAttribute>(static _ => new RefitSettings());
+        _ = builder.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             new RefitSettings { ContentSerializer = typeSettingsSerializer });
         var keyedTypeBuilder = builder.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "type-none");
-        builder.AddKeyedRefitClient(
+        _ = builder.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             "type-settings",
             new RefitSettings { ContentSerializer = keyedTypeSettingsSerializer });
-        builder.AddKeyedRefitClient<IFooWithOtherAttribute>(
+        _ = builder.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-factory",
             _ => new() { ContentSerializer = keyedGenericFactorySerializer });
 
@@ -900,7 +900,7 @@ public class HttpClientFactoryExtensionsTests
         var baseUri = new Uri("https://0:1337");
         var services = new ServiceCollection();
 
-        services.AddHttpClient("MyHttpClient", client =>
+        _ = services.AddHttpClient("MyHttpClient", client =>
         {
             client.BaseAddress = baseUri;
             client.DefaultRequestHeaders.Add("X-Powered-By", Environment.OSVersion.VersionString);

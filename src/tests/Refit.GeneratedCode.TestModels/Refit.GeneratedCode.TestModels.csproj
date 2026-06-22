@@ -9,6 +9,9 @@
     <RefitGeneratedRequestBuilding>true</RefitGeneratedRequestBuilding>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(MSBuildProjectDirectory)/obj/Generated</CompilerGeneratedFilesOutputPath>
+    <!-- This project exists only to eyeball generated source; the generator deliberately fully-qualifies
+         names with global:: for collision safety, which trips the SST1116 "shorten qualified name" rule. -->
+    <NoWarn>$(NoWarn);SST1116</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -11,7 +11,7 @@ public class RefitSettingsTests
     [Test]
     public async Task Can_CreateRefitSettings_WithoutException()
     {
-        var contentSerializer = new NewtonsoftJsonContentSerializer();
+        var contentSerializer = new SystemTextJsonContentSerializer();
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
         var urlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter();
         var formUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();

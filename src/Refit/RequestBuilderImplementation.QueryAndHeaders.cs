@@ -14,16 +14,7 @@ namespace Refit
     internal partial class RequestBuilderImplementation
     {
         /// <summary>Caches query-map properties by type without keeping collectible types alive.</summary>
-        [SuppressMessage(
-            "Style",
-            "IDE0028:Simplify collection initialization",
-            Justification = "ConditionalWeakTable collection expressions do not compile for all target frameworks.")]
-        [SuppressMessage(
-            "Style",
-            "IDE0090:Simplify new expression",
-            Justification = "Keeping the explicit type avoids collection-expression suggestions that do not compile for all target frameworks.")]
-        private static readonly ConditionalWeakTable<Type, PropertyInfo[]> QueryPropertyCache =
-            new ConditionalWeakTable<Type, PropertyInfo[]>();
+        private static readonly ConditionalWeakTable<Type, PropertyInfo[]> QueryPropertyCache = new();
 
         /// <summary>Determines whether a property should be skipped when building the query map.</summary>
         /// <param name="propertyInfo">The property to inspect.</param>
@@ -31,16 +22,12 @@ namespace Refit
         /// <returns><see langword="true"/> when the property is ignored or already bound to the path.</returns>
         private static bool ShouldSkipQueryProperty(PropertyInfo propertyInfo, RestMethodParameterInfo? parameterInfo)
         {
-            if (ShouldIgnorePropertyInQueryMap(propertyInfo))
-            {
-                return true;
-            }
-
             // Compare by name rather than PropertyInfo reference: for a derived runtime
             // type the inherited property is a different PropertyInfo instance, which
             // would otherwise be wrongly emitted as a duplicate query parameter.
-            return parameterInfo is { IsObjectPropertyParameter: true }
-                && parameterInfo.ParameterProperties.Exists(x => x.PropertyInfo.Name == propertyInfo.Name);
+            return ShouldIgnorePropertyInQueryMap(propertyInfo)
+                || (parameterInfo is { IsObjectPropertyParameter: true }
+                    && parameterInfo.ParameterProperties.Exists(x => x.PropertyInfo.Name == propertyInfo.Name));
         }
 
         /// <summary>Determines whether a property is marked to be ignored during serialization.</summary>

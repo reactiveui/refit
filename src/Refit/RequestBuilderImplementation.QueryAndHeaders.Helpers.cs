@@ -88,12 +88,12 @@ namespace Refit
             // and ends up duplicated.
             if (ContainsHeader(request.Headers, name))
             {
-                request.Headers.Remove(name);
+                _ = request.Headers.Remove(name);
             }
 
             if (request.Content is not null && ContainsHeader(request.Content.Headers, name))
             {
-                request.Content.Headers.Remove(name);
+                _ = request.Content.Headers.Remove(name);
             }
 
             if (value is null)
@@ -114,7 +114,7 @@ namespace Refit
                 return;
             }
 
-            request.Content.Headers.TryAddWithoutValidation(name, value);
+            _ = request.Content.Headers.TryAddWithoutValidation(name, value);
         }
     }
 }

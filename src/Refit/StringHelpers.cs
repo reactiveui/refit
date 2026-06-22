@@ -40,15 +40,11 @@ internal static class StringHelpers
     /// <param name="start">The slice start index.</param>
     /// <param name="length">The slice length.</param>
     /// <returns>The escaped value.</returns>
-    [SuppressMessage(
-        "Performance",
-        "CA1846:Prefer AsSpan over Substring",
-        Justification = "The span overload is only available on targets newer than net9.0.")]
     internal static string EscapeDataString(string value, int start, int length) =>
 #if NET10_0_OR_GREATER
         Uri.EscapeDataString(value.AsSpan(start, length));
 #else
-        Uri.EscapeDataString(value.Substring(start, length));
+        Uri.EscapeDataString(value[start..(start + length)]);
 #endif
 
     /// <summary>Removes CR and LF characters from an HTTP header name or value.</summary>

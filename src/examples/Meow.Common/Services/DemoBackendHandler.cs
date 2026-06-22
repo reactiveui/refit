@@ -13,46 +13,60 @@ public sealed class DemoBackendHandler : HttpMessageHandler
     /// <inheritdoc/>
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
-        CancellationToken cancellationToken)
-    {
-        if (request.RequestUri?.AbsolutePath == "/echo-customer")
-        {
-            var customerIdHeader = request.Headers.TryGetValues("CustomerId", out var values)
-                ? values.FirstOrDefault()
-                : null;
-
-            return Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK)
-                {
-                    Content = new StringContent(
-                        JsonConvert.SerializeObject(new CustomerEchoResponse { CustomerIdHeader = customerIdHeader }),
-                        Encoding.UTF8,
-                        "application/json")
-                });
-        }
-
-        if (request.RequestUri?.AbsolutePath == "/large-payload")
-        {
-            var query = request.RequestUri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
-            var size = 100;
-            foreach (var part in query)
+        CancellationToken cancellationToken) =>
+        Task.FromResult(
+            request.RequestUri?.AbsolutePath switch
             {
-                var kv = part.Split('=', 2);
-                if (kv.Length == 2 && kv[0] == "size" && int.TryParse(Uri.UnescapeDataString(kv[1]), out var parsed))
-                {
-                    size = parsed;
-                    break;
-                }
+                "/echo-customer" => EchoCustomer(request),
+                "/large-payload" => LargePayload(request),
+                _ => new HttpResponseMessage(HttpStatusCode.NotFound),
+            });
+
+    /// <summary>Builds the echo response that reflects the CustomerId request header back to the caller.</summary>
+    /// <param name="request">The incoming request.</param>
+    /// <returns>The echo response.</returns>
+    private static HttpResponseMessage EchoCustomer(HttpRequestMessage request)
+    {
+        string? customerIdHeader = null;
+        if (request.Headers.TryGetValues("CustomerId", out var values))
+        {
+            using var enumerator = values.GetEnumerator();
+            if (enumerator.MoveNext())
+            {
+                customerIdHeader = enumerator.Current;
             }
-
-            var response = new LargePayloadResponse();
-            response.Items.AddRange(Enumerable.Range(1, size));
-            var payload = JsonConvert.SerializeObject(response);
-
-            return Task.FromResult(
-                new HttpResponseMessage(HttpStatusCode.OK) { Content = new AsyncOnlyJsonHttpContent(payload) });
         }
 
-        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+        return new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                JsonConvert.SerializeObject(new CustomerEchoResponse { CustomerIdHeader = customerIdHeader }),
+                Encoding.UTF8,
+                "application/json")
+        };
+    }
+
+    /// <summary>Builds a large payload response sized by the optional <c>size</c> query parameter.</summary>
+    /// <param name="request">The incoming request.</param>
+    /// <returns>The large payload response.</returns>
+    private static HttpResponseMessage LargePayload(HttpRequestMessage request)
+    {
+        var query = request.RequestUri!.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
+        var size = 100;
+        foreach (var part in query)
+        {
+            var kv = part.Split('=', 2);
+            if (kv.Length == 2 && kv[0] == "size" && int.TryParse(Uri.UnescapeDataString(kv[1]), out var parsed))
+            {
+                size = parsed;
+                break;
+            }
+        }
+
+        var response = new LargePayloadResponse();
+        response.Items.AddRange(Enumerable.Range(1, size));
+        var payload = JsonConvert.SerializeObject(response);
+
+        return new HttpResponseMessage(HttpStatusCode.OK) { Content = new AsyncOnlyJsonHttpContent(payload) };
     }
 }

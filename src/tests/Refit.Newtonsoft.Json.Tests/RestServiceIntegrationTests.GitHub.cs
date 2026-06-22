@@ -44,7 +44,7 @@ public partial class RestServiceIntegrationTests
         };
         responseMessage.Headers.Add("Cookie", "Value");
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
             .Respond(req => responseMessage);
 
@@ -81,7 +81,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
             .Respond(HttpStatusCode.NotFound);
 
@@ -115,7 +115,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
             .Respond(HttpStatusCode.NotFound);
 
@@ -160,7 +160,7 @@ public partial class RestServiceIntegrationTests
         };
         responseMessage.Headers.Add("Cookie", "Value");
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
             .Respond(req => responseMessage);
 
@@ -208,7 +208,7 @@ public partial class RestServiceIntegrationTests
         };
         responseMessage.Headers.Add("Cookie", "Value");
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
             .Respond(req => responseMessage);
 
@@ -246,7 +246,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
             .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
 
@@ -277,7 +277,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
             .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
 
@@ -308,7 +308,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
             .Respond(
                 "application/json",
@@ -341,12 +341,12 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
             .Respond(
                 "application/json",
                 "[{ 'login':'octocat', 'avatar_url':'http://foo/bar', 'type':'User'}]");
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/orgs/github/members")
             .Respond(
                 "application/json",
@@ -390,7 +390,7 @@ public partial class RestServiceIntegrationTests
 
         using var cts = new CancellationTokenSource();
 
-        mockHttp
+        _ = mockHttp
             .When(HttpMethod.Get, "https://api.github.com/orgs/github/members")
             .Respond(req =>
             {
@@ -430,7 +430,7 @@ public partial class RestServiceIntegrationTests
 
         using var cts = new CancellationTokenSource();
 
-        mockHttp
+        _ = mockHttp
             .When(HttpMethod.Get, "https://api.github.com/users/github")
             .Respond(req =>
             {
@@ -474,7 +474,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/search/users")
             .WithQueryString("q", "tom repos:>42 followers:>1000")
             .Respond(
@@ -507,7 +507,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://api.github.com/users/octocat")
             .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
 
@@ -538,7 +538,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp
+        _ = mockHttp
             .When(HttpMethod.Get, "https://api.github.com/users/octocat")
             .Respond("application/json", "{ 'login':'octocat', 'avatar_url':'http://foo/bar' }");
 
@@ -600,7 +600,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp.When(HttpMethod.Get, "https://api.github.com/").Respond(HttpStatusCode.OK);
+        _ = mockHttp.When(HttpMethod.Get, "https://api.github.com/").Respond(HttpStatusCode.OK);
 
         var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
         var result = await fixture.GetIndex();
@@ -626,7 +626,7 @@ public partial class RestServiceIntegrationTests
                 })
         };
 
-        mockHttp.When(HttpMethod.Get, "https://api.github.com/").Respond(HttpStatusCode.OK);
+        _ = mockHttp.When(HttpMethod.Get, "https://api.github.com/").Respond(HttpStatusCode.OK);
 
         var fixture = RestService.For<TestNested.INestedGitHubApi>(
             "https://api.github.com",

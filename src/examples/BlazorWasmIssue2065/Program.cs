@@ -12,12 +12,12 @@ builder.RootComponents.Add<App>("#app");
 
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new(builder.HostEnvironment.BaseAddress) });
+_ = builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new(builder.HostEnvironment.BaseAddress) });
 
-builder.Services.AddScoped(sp =>
+_ = builder.Services.AddScoped(sp =>
     RestService.For<IIssue2065Api>(sp.GetRequiredService<HttpClient>()));
 
-builder.Services.AddScoped(sp =>
+_ = builder.Services.AddScoped(sp =>
     RestService.For<IIssue2067Api>(
         sp.GetRequiredService<HttpClient>(),
         new RefitSettings(

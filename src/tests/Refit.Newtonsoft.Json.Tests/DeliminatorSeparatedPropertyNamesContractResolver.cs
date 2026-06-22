@@ -30,10 +30,10 @@ public class DeliminatorSeparatedPropertyNamesContractResolver : DefaultContract
             if (char.IsUpper(c) && currentWord.Length > 0)
             {
                 parts.Add(currentWord.ToString());
-                currentWord.Clear();
+                _ = currentWord.Clear();
             }
 
-            currentWord.Append(char.ToLower(c));
+            _ = currentWord.Append(char.ToLower(c));
         }
 
         if (currentWord.Length > 0)

@@ -39,15 +39,15 @@ public class CachedRequestBuilderTests
         var innerBuilder = new CountingRequestBuilder();
         var requestBuilder = new CachedRequestBuilderImplementation(innerBuilder);
 
-        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
+        _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
         await Assert.That(innerBuilder.BuildCount).IsEqualTo(1);
 
-        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.MultiParameter), [typeof(string), typeof(string)]);
+        _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.MultiParameter), [typeof(string), typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(2);
         await Assert.That(innerBuilder.BuildCount).IsEqualTo(2);
 
-        requestBuilder.BuildRestResultFuncForMethod(
+        _ = requestBuilder.BuildRestResultFuncForMethod(
             nameof(IGeneralRequests.SingleGenericMultiParameter),
             [typeof(string), typeof(string), typeof(string)],
             [typeof(string)]);
@@ -63,13 +63,13 @@ public class CachedRequestBuilderTests
         var innerBuilder = new CountingRequestBuilder();
         var requestBuilder = new CachedRequestBuilderImplementation(innerBuilder);
 
-        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
+        _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
 
-        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
+        _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
 
-        requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
+        _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
         await Assert.That(innerBuilder.BuildCount).IsEqualTo(1);
     }
@@ -82,10 +82,10 @@ public class CachedRequestBuilderTests
         var innerBuilder = new CountingRequestBuilder();
         var requestBuilder = new CachedRequestBuilderImplementation(innerBuilder);
 
-        requestBuilder.BuildRestResultFuncForMethod(nameof(IDuplicateNames.SingleParameter), [typeof(string)]);
+        _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IDuplicateNames.SingleParameter), [typeof(string)]);
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
 
-        requestBuilder.BuildRestResultFuncForMethod(nameof(IDuplicateNames.SingleParameter), [typeof(int)]);
+        _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IDuplicateNames.SingleParameter), [typeof(int)]);
         await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(2);
         await Assert.That(innerBuilder.BuildCount).IsEqualTo(2);
     }

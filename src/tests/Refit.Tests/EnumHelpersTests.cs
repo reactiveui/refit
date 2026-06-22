@@ -171,7 +171,7 @@ public sealed class EnumHelpersTests
         where TEnum : struct, Enum
     {
         var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes(json));
-        reader.Read();
+        _ = reader.Read();
 
         var read = EnumHelpers.Info<TEnum>.ReadJsonNumericValue(ref reader);
 
@@ -191,8 +191,8 @@ public sealed class EnumHelpersTests
     /// <returns>The read enum value.</returns>
     private static MemberEnum ReadUnsupportedNumericValue()
     {
-        var reader = new Utf8JsonReader(Encoding.UTF8.GetBytes("1"));
-        reader.Read();
+        var reader = new Utf8JsonReader("1"u8);
+        _ = reader.Read();
         return EnumHelpers.Info<MemberEnum>.ReadJsonNumericValue(TypeCode.Boolean, ref reader);
     }
 }

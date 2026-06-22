@@ -38,11 +38,11 @@ internal sealed class Startup
     {
         if (env.IsDevelopment())
         {
-            app.UseDeveloperExceptionPage();
+            _ = app.UseDeveloperExceptionPage();
         }
 
-        app.UseRouting();
+        _ = app.UseRouting();
 
-        app.UseEndpoints(endpoints => endpoints.MapControllers());
+        _ = app.UseEndpoints(endpoints => endpoints.MapControllers());
     }
 }

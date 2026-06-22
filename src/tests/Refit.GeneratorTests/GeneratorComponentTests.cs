@@ -106,7 +106,7 @@ public static class GeneratorComponentTests
         public async Task IndependentBuilders_DoNotShareGeneratedNames()
         {
             var first = new UniqueNameBuilder();
-            first.New("local");
+            _ = first.New("local");
 
             var second = new UniqueNameBuilder();
 

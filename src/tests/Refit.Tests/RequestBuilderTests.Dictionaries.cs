@@ -444,17 +444,17 @@ public partial class RequestBuilderTests
         var internalBuilder = new RequestBuilderMock();
         var cachedBuilder = new CachedRequestBuilderImplementation(internalBuilder);
 
-        cachedBuilder.BuildRestResultFuncForMethod(
+        _ = cachedBuilder.BuildRestResultFuncForMethod(
             "TestMethodName",
             [typeof(CollisionA.SomeType)]);
-        cachedBuilder.BuildRestResultFuncForMethod(
+        _ = cachedBuilder.BuildRestResultFuncForMethod(
             "TestMethodName",
             [typeof(CollisionB.SomeType)]);
-        cachedBuilder.BuildRestResultFuncForMethod(
+        _ = cachedBuilder.BuildRestResultFuncForMethod(
             "TestMethodName",
             null,
             [typeof(CollisionA.SomeType)]);
-        cachedBuilder.BuildRestResultFuncForMethod(
+        _ = cachedBuilder.BuildRestResultFuncForMethod(
             "TestMethodName",
             null,
             [typeof(CollisionB.SomeType)]);

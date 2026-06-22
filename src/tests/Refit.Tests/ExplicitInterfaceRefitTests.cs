@@ -86,7 +86,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/bar")
             .Respond("application/json", "41");
 
@@ -106,7 +106,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/bar")
             .Respond("application/json", "41");
 
@@ -126,7 +126,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond(HttpStatusCode.NotFound);
 
@@ -146,7 +146,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond(HttpStatusCode.NotFound);
 
@@ -167,7 +167,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond("text/plain", "hello");
 
@@ -189,7 +189,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond("text/plain", "hello");
 
@@ -211,7 +211,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond(HttpStatusCode.InternalServerError);
 
@@ -234,7 +234,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond("application/json", "\"hello\"");
 
@@ -260,7 +260,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond("text/plain", "hello");
 
@@ -283,7 +283,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond(HttpStatusCode.BadRequest);
 
@@ -302,7 +302,7 @@ public class ExplicitInterfaceRefitTests
         var mockHttp = new SyncCapableMockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/resource")
             .Respond(HttpStatusCode.OK);
 

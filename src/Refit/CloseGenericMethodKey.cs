@@ -45,15 +45,8 @@ internal readonly struct CloseGenericMethodKey : IEquatable<CloseGenericMethodKe
     }
 
     /// <inheritdoc/>
-    public override bool Equals(object? obj)
-    {
-        if (obj is not CloseGenericMethodKey closeGenericMethodKey)
-        {
-            return false;
-        }
-
-        return Equals(closeGenericMethodKey);
-    }
+    public override bool Equals(object? obj) =>
+        obj is CloseGenericMethodKey closeGenericMethodKey && Equals(closeGenericMethodKey);
 
     /// <inheritdoc/>
     public override int GetHashCode()

@@ -45,7 +45,7 @@ internal static class HttpClientFactoryCore
 
         // register settings
         var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
-        services.AddSingleton(
+        _ = services.AddSingleton(
             settingsType,
             provider => Activator.CreateInstance(
                 typeof(SettingsFor<>).MakeGenericType(refitInterfaceType)!,
@@ -53,7 +53,7 @@ internal static class HttpClientFactoryCore
 
         // register RequestBuilder
         var requestBuilderType = typeof(IRequestBuilder<>).MakeGenericType(refitInterfaceType);
-        services.AddSingleton(
+        _ = services.AddSingleton(
             requestBuilderType,
             provider => GetRequestBuilderGenericForTypeMethod()
                 .MakeGenericMethod(refitInterfaceType)
@@ -65,13 +65,13 @@ internal static class HttpClientFactoryCore
         var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType(refitInterfaceType));
 
         // configure the primary handler from the supplied settings (or fall back to the default)
-        builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+        _ = builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
             CreateInnerHandlerIfProvided(
                 ((ISettingsFor)serviceProvider.GetRequiredService(settingsType)).Settings)
             ?? new HttpClientHandler());
 
         // add typed client (register transient that resolves HttpClient from IHttpClientFactory and creates Refit client)
-        builder.Services.AddTransient(
+        _ = builder.Services.AddTransient(
             refitInterfaceType,
             s =>
             {
@@ -108,17 +108,17 @@ internal static class HttpClientFactoryCore
         ArgumentExceptionHelper.ThrowIfNull(services);
 
         // register settings
-        services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
+        _ = services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
 
         // register RequestBuilder
-        services.AddSingleton(provider =>
+        _ = services.AddSingleton(provider =>
             RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings));
 
         // create HttpClientBuilder
         var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>());
 
         // configure the primary handler from the supplied settings (or fall back to the default)
-        builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+        _ = builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
             CreateInnerHandlerIfProvided(
                 serviceProvider.GetRequiredService<SettingsFor<T>>().Settings)
             ?? new HttpClientHandler());
@@ -158,7 +158,7 @@ internal static class HttpClientFactoryCore
 
         // register settings
         var settingsType = typeof(SettingsFor<>).MakeGenericType(refitInterfaceType);
-        services.AddKeyedSingleton(
+        _ = services.AddKeyedSingleton(
             settingsType,
             serviceKey,
             (provider, _) => Activator.CreateInstance(
@@ -167,7 +167,7 @@ internal static class HttpClientFactoryCore
 
         // register RequestBuilder
         var requestBuilderType = typeof(IRequestBuilder<>).MakeGenericType(refitInterfaceType);
-        services.AddKeyedSingleton(
+        _ = services.AddKeyedSingleton(
             requestBuilderType,
             serviceKey,
             (provider, _) => GetRequestBuilderGenericForTypeMethod()
@@ -185,7 +185,7 @@ internal static class HttpClientFactoryCore
             serviceProvider => (ISettingsFor)serviceProvider.GetRequiredKeyedService(settingsType, serviceKey));
 
         // add keyed typed client (register keyed transient that resolves HttpClient and creates Refit client)
-        builder.Services.AddKeyedTransient(
+        _ = builder.Services.AddKeyedTransient(
             refitInterfaceType,
             serviceKey,
             (s, _) =>
@@ -227,12 +227,12 @@ internal static class HttpClientFactoryCore
         ArgumentExceptionHelper.ThrowIfNull(serviceKey);
 
         // register settings
-        services.AddKeyedSingleton(
+        _ = services.AddKeyedSingleton(
             serviceKey,
             (provider, _) => new SettingsFor<T>(settings?.Invoke(provider)));
 
         // register RequestBuilder
-        services.AddKeyedSingleton(
+        _ = services.AddKeyedSingleton(
             serviceKey,
             (provider, _) =>
                 RequestBuilder.ForType<T>(
@@ -247,7 +247,7 @@ internal static class HttpClientFactoryCore
             serviceProvider => serviceProvider.GetRequiredKeyedService<SettingsFor<T>>(serviceKey));
 
         // add keyed typed client (inline keyed registration)
-        builder.Services.AddKeyedTransient(
+        _ = builder.Services.AddKeyedTransient(
             serviceKey,
             (s, _) =>
             {
@@ -300,10 +300,10 @@ internal static class HttpClientFactoryCore
         IHttpClientBuilder builder,
         Func<IServiceProvider, ISettingsFor> settingsResolver)
     {
-        builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+        _ = builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
             settingsResolver(serviceProvider).Settings?.HttpMessageHandlerFactory?.Invoke() ?? new HttpClientHandler());
 
-        builder.ConfigureAdditionalHttpMessageHandlers((handlers, serviceProvider) =>
+        _ = builder.ConfigureAdditionalHttpMessageHandlers((handlers, serviceProvider) =>
         {
             if (settingsResolver(serviceProvider).Settings?.AuthorizationHeaderValueGetter is not { } getToken)
             {

@@ -69,15 +69,10 @@ internal sealed partial class PooledBufferWriter
         }
 
         /// <inheritdoc/>
-        public override Task FlushAsync(CancellationToken cancellationToken)
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return Task.FromCanceled(cancellationToken);
-            }
-
-            return Task.CompletedTask;
-        }
+        public override Task FlushAsync(CancellationToken cancellationToken) =>
+            cancellationToken.IsCancellationRequested
+                ? Task.FromCanceled(cancellationToken)
+                : Task.CompletedTask;
 
         /// <inheritdoc/>
         public override
@@ -194,12 +189,7 @@ internal sealed partial class PooledBufferWriter
                 ThrowObjectDisposedException();
             }
 
-            if (_position >= _length)
-            {
-                return -1;
-            }
-
-            return pooledBuffer![_position++];
+            return _position >= _length ? -1 : pooledBuffer![_position++];
         }
 
         /// <inheritdoc/>

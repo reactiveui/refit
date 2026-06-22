@@ -54,20 +54,22 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <inheritdoc/>
     public HttpContent ToHttpContent<T>(T item)
     {
-        if (item is not null
+        var serializeByRuntimeType = item is not null
             && (typeof(T).IsInterface || typeof(T).IsAbstract)
-            && !DeclaredTypeIsPolymorphic(typeof(T), jsonSerializerOptions))
-        {
-            return ToHttpContentRuntimeTyped(item, item.GetType());
-        }
+            && !DeclaredTypeIsPolymorphic(typeof(T), jsonSerializerOptions);
 
 #if NET8_0_OR_GREATER
-        if (jsonSerializerOptions.TypeInfoResolver is not null)
+        return serializeByRuntimeType switch
         {
-            return JsonContent.Create(item, GetJsonTypeInfo<T>());
-        }
+            true => ToHttpContentRuntimeTyped(item!, item!.GetType()),
+            false when jsonSerializerOptions.TypeInfoResolver is not null => JsonContent.Create(item, GetJsonTypeInfo<T>()),
+            _ => ToHttpContentReflection(item),
+        };
+#else
+        return serializeByRuntimeType
+            ? ToHttpContentRuntimeTyped(item!, item!.GetType())
+            : ToHttpContentReflection(item);
 #endif
-        return ToHttpContentReflection(item);
     }
 
     /// <inheritdoc/>
@@ -80,14 +82,14 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         CancellationToken cancellationToken = default)
     {
 #if NET8_0_OR_GREATER
-        if (jsonSerializerOptions.TypeInfoResolver is not null)
-        {
-            return await content
+        return jsonSerializerOptions.TypeInfoResolver is not null
+            ? await content
                 .ReadFromJsonAsync(GetJsonTypeInfo<T>(), cancellationToken)
-                .ConfigureAwait(false);
-        }
-#endif
+                .ConfigureAwait(false)
+            : await FromHttpContentReflectionAsync<T>(content, cancellationToken).ConfigureAwait(false);
+#else
         return await FromHttpContentReflectionAsync<T>(content, cancellationToken).ConfigureAwait(false);
+#endif
     }
 
     /// <summary>
@@ -110,22 +112,15 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     /// <returns><see langword="true"/> if the type is polymorphic; otherwise <see langword="false"/>.</returns>
     private static bool DeclaredTypeIsPolymorphic(Type type, JsonSerializerOptions jsonSerializerOptions)
     {
-        if (type.IsDefined(typeof(JsonPolymorphicAttribute), false)
-            || type.IsDefined(typeof(JsonDerivedTypeAttribute), false))
-        {
-            return true;
-        }
-
 #if NET8_0_OR_GREATER
-        if (jsonSerializerOptions.TypeInfoResolver is null)
-        {
-            return false;
-        }
-
-        return GetJsonTypeInfo(type, jsonSerializerOptions).PolymorphismOptions is not null;
+        return type.IsDefined(typeof(JsonPolymorphicAttribute), false)
+            || type.IsDefined(typeof(JsonDerivedTypeAttribute), false)
+            || (jsonSerializerOptions.TypeInfoResolver is not null
+                && GetJsonTypeInfo(type, jsonSerializerOptions).PolymorphismOptions is not null);
 #else
         _ = jsonSerializerOptions;
-        return false;
+        return type.IsDefined(typeof(JsonPolymorphicAttribute), false)
+            || type.IsDefined(typeof(JsonDerivedTypeAttribute), false);
 #endif
     }
 
@@ -184,12 +179,12 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     private JsonContent ToHttpContentRuntimeTyped(object item, Type runtimeType)
     {
 #if NET8_0_OR_GREATER
-        if (jsonSerializerOptions.TypeInfoResolver is not null)
-        {
-            return JsonContent.Create(item, GetJsonTypeInfo(runtimeType, jsonSerializerOptions));
-        }
-#endif
+        return jsonSerializerOptions.TypeInfoResolver is not null
+            ? JsonContent.Create(item, GetJsonTypeInfo(runtimeType, jsonSerializerOptions))
+            : ToHttpContentRuntimeReflection(item, runtimeType);
+#else
         return ToHttpContentRuntimeReflection(item, runtimeType);
+#endif
     }
 
     /// <summary>Serializes the item by runtime type using reflection-based metadata (used when the options provide no resolver).</summary>

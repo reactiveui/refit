@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using RichardSzalay.MockHttp;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -26,7 +25,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://registry.npmjs.org/congruence")
             .Respond(
                 "application/json",
@@ -49,7 +48,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
+        _ = mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
 
         var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
 
@@ -67,7 +66,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://httpbin.org/foo")
             .WithContent("raw string")
             .Respond(HttpStatusCode.OK);
@@ -88,7 +87,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://httpbin.org/foo")
             .WithContent("\"json string\"")
             .WithHeaders("Content-Type", "application/json; charset=utf-8")
@@ -110,7 +109,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://httpbin.org/foo")
             .WithContent("url%26string")
             .WithHeaders("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
@@ -132,7 +131,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
+        _ = mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
 
         var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
 
@@ -142,7 +141,7 @@ public partial class RestServiceIntegrationTests
 
         mockHttp.ResetExpectations();
 
-        mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
+        _ = mockHttp.Expect(HttpMethod.Post, "http://httpbin.org/1h3a5jm1").Respond(HttpStatusCode.OK);
 
         await fixture.PostGeneric("4");
 
@@ -160,7 +159,7 @@ public partial class RestServiceIntegrationTests
 
         var postBody = new Dictionary<string, string> { { "some", "body" }, { "once", "told me" } };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://httpbin.org/foo")
             .With(request => request.Content?.Headers.ContentLength > 0)
             .Respond(HttpStatusCode.OK);
@@ -184,7 +183,7 @@ public partial class RestServiceIntegrationTests
         var postBody = new Dictionary<string, string> { { "some", "body" }, { "once", "told me" } };
         const string expectedResponse = "some response";
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://httpbin.org/foo")
             .With(request => request.Content?.Headers.ContentLength > 0)
             .Respond("text/plain", expectedResponse);
@@ -209,53 +208,13 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://httpbin.org/foo/something")
             .Respond(HttpStatusCode.OK);
 
         await fixture.SomeApiThatUsesVariableNameFromCodeGen("something");
 
         mockHttp.VerifyNoOutstandingExpectation();
-    }
-
-    /// <summary>Verifies error content can be read from error responses.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task CanGetDataOutOfErrorResponses()
-    {
-        var mockHttp = new MockHttpMessageHandler();
-
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => mockHttp,
-            ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
-        };
-
-        mockHttp
-            .When(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
-            .Respond(
-                HttpStatusCode.NotFound,
-                "application/json",
-                "{'message': 'Not Found', 'documentation_url': 'http://foo/bar'}");
-
-        var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
-        try
-        {
-            await fixture.NothingToSeeHere();
-            Assert.Fail("Expected ApiException was not thrown.");
-        }
-        catch (ApiException exception)
-        {
-            await Assert.That(exception.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
-            var content = await exception.GetContentAsAsync<Dictionary<string, string>>();
-
-            await Assert.That(content!["message"]).IsEqualTo("Not Found");
-            await Assert.That(content["documentation_url"]).IsNotNull();
-        }
     }
 
     /// <summary>Verifies large data can be serialized and posted.</summary>
@@ -276,7 +235,7 @@ public partial class RestServiceIntegrationTests
             BigData = [.. Enumerable.Range(0, 800_000).Select(x => (byte)(x % 256))]
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "http://httpbin.org/big")
             .With(m =>
             {
@@ -298,85 +257,6 @@ public partial class RestServiceIntegrationTests
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
-    /// <summary>Verifies error content is returned when a request fails.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task ErrorsFromApiReturnErrorContent()
-    {
-        var mockHttp = new MockHttpMessageHandler();
-
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => mockHttp,
-            ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
-        };
-
-        mockHttp
-            .Expect(HttpMethod.Post, "https://api.github.com/users")
-            .Respond(
-                HttpStatusCode.BadRequest,
-                "application/json",
-                "{ 'errors': [ 'error1', 'message' ]}");
-
-        var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
-
-        var result = await Assert.That(
-            () => (Task)fixture.CreateUser(new() { Name = "foo" })).ThrowsExactly<ApiException>();
-
-        await AssertStackTraceContains(nameof(IGitHubApi.CreateUser), result!.StackTrace);
-
-        var errors = await result.GetContentAsAsync<ErrorResponse>();
-
-        await Assert.That(errors!.Errors).Contains("error1");
-        await Assert.That(errors.Errors).Contains("message");
-
-        mockHttp.VerifyNoOutstandingExpectation();
-    }
-
-    /// <summary>Verifies error content is returned in an API response when a request fails.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task ErrorsFromApiReturnErrorContentWhenApiResponse()
-    {
-        var mockHttp = new MockHttpMessageHandler();
-
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => mockHttp,
-            ContentSerializer = new NewtonsoftJsonContentSerializer(
-                new()
-                {
-                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
-                })
-        };
-
-        mockHttp
-            .Expect(HttpMethod.Post, "https://api.github.com/users")
-            .Respond(
-                HttpStatusCode.BadRequest,
-                "application/json",
-                "{ 'errors': [ 'error1', 'message' ]}");
-
-        var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
-
-        using var response = await fixture.CreateUserWithMetadata(new() { Name = "foo" });
-        await Assert.That(response.IsSuccessStatusCode).IsFalse();
-        await Assert.That(response.Error).IsNotNull();
-
-        await Assert.That(response.HasRequestError(out _)).IsFalse();
-        await Assert.That(response.HasResponseError(out var error)).IsTrue();
-        var errors = await error!.GetContentAsAsync<ErrorResponse>();
-
-        await Assert.That(errors!.Errors).Contains("error1");
-        await Assert.That(errors.Errors).Contains("message");
-
-        mockHttp.VerifyNoOutstandingExpectation();
-    }
-
     /// <summary>Verifies non-Refit interfaces throw a meaningful exception.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -384,7 +264,7 @@ public partial class RestServiceIntegrationTests
     {
         try
         {
-            RestService.For<INoRefitHereBuddy>("http://example.com");
+            _ = RestService.For<INoRefitHereBuddy>("http://example.com");
         }
         catch (InvalidOperationException exception)
         {
@@ -419,7 +299,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://httpbin.org/get")
             .WithHeaders("X-Refit", "99")
             .WithQueryString("param", "foo")
@@ -480,7 +360,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .WithHeaders("X-Refit", "99")
             .Respond(
@@ -508,7 +388,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond(
                 "application/json",
@@ -557,7 +437,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "https://httpbin.org/post")
             .Respond(
                 "application/json",

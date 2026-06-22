@@ -38,7 +38,7 @@ public class ExceptionFactoryTests
             ExceptionFactory = _ => Task.FromResult<Exception?>(null)
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-with-result")
             .Respond(HttpStatusCode.NotFound, new StringContent("error-result"));
 
@@ -63,7 +63,7 @@ public class ExceptionFactoryTests
             ExceptionFactory = _ => Task.FromResult<Exception?>(null)
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Put, "http://api/put-without-result")
             .Respond(HttpStatusCode.NotFound);
 
@@ -87,7 +87,7 @@ public class ExceptionFactoryTests
             ExceptionFactory = _ => Task.FromResult<Exception?>(exception)
         };
 
-        handler
+        _ = handler
             .Expect(HttpMethod.Get, "http://api/get-with-result")
             .Respond(HttpStatusCode.OK, new StringContent("success-result"));
 
@@ -112,7 +112,7 @@ public class ExceptionFactoryTests
             ExceptionFactory = _ => Task.FromResult<Exception?>(exception)
         };
 
-        handler.Expect(HttpMethod.Put, "http://api/put-without-result").Respond(HttpStatusCode.OK);
+        _ = handler.Expect(HttpMethod.Put, "http://api/put-without-result").Respond(HttpStatusCode.OK);
 
         var fixture = RestService.For<IMyService>("http://api", settings);
 

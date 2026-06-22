@@ -581,12 +581,9 @@ public partial class RequestBuilderTests
         var output = factory(
             [
                 6,
-                new
-                {
-                    Foo = "Something",
-                    Bar = 100,
-                    Baz = string.Empty // explicitly use blank to preserve value that would be stripped if null
-                }
+
+                // Baz is intentionally blank to verify empty values are preserved rather than stripped.
+                new UrlEncodedBody(Foo: "Something", Bar: 100, Baz: string.Empty)
             ]);
 
         await Assert.That(output.SendContent).IsEqualTo("Foo=Something&Bar=100&Baz=");
@@ -603,13 +600,9 @@ public partial class RequestBuilderTests
         var output = factory(
             [
                 6,
-                new
-                {
-                    Foo = "Something",
-                    Bar = 100,
-                    FooBar = _intArray57,
-                    Baz = string.Empty // explicitly use blank to preserve value that would be stripped if null
-                }
+
+                // Baz is intentionally blank to verify empty values are preserved rather than stripped.
+                new UrlEncodedBodyWithCollection(Foo: "Something", Bar: 100, FooBar: _intArray57, Baz: string.Empty)
             ]);
 
         await Assert.That(output.SendContent).IsEqualTo("Foo=Something&Bar=100&FooBar=5%2C7&Baz=");
@@ -684,4 +677,17 @@ public partial class RequestBuilderTests
         var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?numbers=1%2C2%2C3");
     }
+
+    /// <summary>Body payload for the URL-encoded request body test.</summary>
+    /// <param name="Foo">The first value.</param>
+    /// <param name="Bar">The numeric value.</param>
+    /// <param name="Baz">A blank value used to verify empty fields are preserved rather than stripped.</param>
+    private sealed record UrlEncodedBody(string Foo, int Bar, string Baz);
+
+    /// <summary>Body payload with a collection field for the URL-encoded collection-format test.</summary>
+    /// <param name="Foo">The first value.</param>
+    /// <param name="Bar">The numeric value.</param>
+    /// <param name="FooBar">The collection value.</param>
+    /// <param name="Baz">A blank value used to verify empty fields are preserved rather than stripped.</param>
+    private sealed record UrlEncodedBodyWithCollection(string Foo, int Bar, int[] FooBar, string Baz);
 }

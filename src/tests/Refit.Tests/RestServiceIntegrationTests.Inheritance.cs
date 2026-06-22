@@ -27,7 +27,7 @@ public partial class RestServiceIntegrationTests
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
         const string response = "4";
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond("application/json", response);
 
@@ -35,7 +35,7 @@ public partial class RestServiceIntegrationTests
         {
             ["FirstName"] = "John",
             ["LastName"] = "Rambo",
-            ["Address"] = new { Zip = 9999, Street = "HomeStreet 99" }
+            ["Address"] = (Zip: 9999, Street: "HomeStreet 99")
         };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>(
@@ -48,7 +48,7 @@ public partial class RestServiceIntegrationTests
 
         mockHttp.VerifyNoOutstandingExpectation();
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond("application/json", response);
 
@@ -59,7 +59,7 @@ public partial class RestServiceIntegrationTests
 
         mockHttp.VerifyNoOutstandingExpectation();
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond("application/json", response);
 
@@ -80,21 +80,21 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IAmInterfaceC>("https://httpbin.org", settings);
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond("application/json", nameof(IAmInterfaceA.Ping));
         var resp = await fixture.Ping();
         await Assert.That(resp).IsEqualTo(nameof(IAmInterfaceA.Ping));
         mockHttp.VerifyNoOutstandingExpectation();
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond("application/json", nameof(IAmInterfaceB.Pong));
         resp = await fixture.Pong();
         await Assert.That(resp).IsEqualTo(nameof(IAmInterfaceB.Pong));
         mockHttp.VerifyNoOutstandingExpectation();
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond("application/json", nameof(IAmInterfaceC.Pang));
         resp = await fixture.Pang();
@@ -113,14 +113,14 @@ public partial class RestServiceIntegrationTests
 
         var fixture = RestService.For<IContainAandB>("https://httpbin.org", settings);
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond("application/json", nameof(IAmInterfaceA.Ping));
         var resp = await fixture.Ping();
         await Assert.That(resp).IsEqualTo(nameof(IAmInterfaceA.Ping));
         mockHttp.VerifyNoOutstandingExpectation();
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond("application/json", nameof(IAmInterfaceB.Pong));
         resp = await fixture.Pong();
@@ -141,7 +141,7 @@ public partial class RestServiceIntegrationTests
             "https://httpbin.org",
             settings);
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/doSomething")
             .WithQueryString("parameter", "4")
             .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomething));
@@ -149,7 +149,7 @@ public partial class RestServiceIntegrationTests
         await fixture.DoSomething(4);
         mockHttp.VerifyNoOutstandingExpectation();
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/DoSomethingElse")
             .Respond("application/json", nameof(IImplementTheInterfaceAndUseRefit.DoSomethingElse));
         await fixture.DoSomethingElse();
@@ -180,7 +180,7 @@ public partial class RestServiceIntegrationTests
         mockHttp.VerifyNoOutstandingExpectation();
 
         // base Refit method should respond
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .WithQueryString("result", "Test")
             .Respond("application/json", nameof(IAmInterfaceD.Test));
@@ -198,7 +198,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond(
                 "application/json",
@@ -211,7 +211,7 @@ public partial class RestServiceIntegrationTests
         {
             ["FirstName"] = "John",
             ["LastName"] = "Rambo",
-            ["Address"] = new { Zip = 9999, Street = "HomeStreet 99" }
+            ["Address"] = (Zip: 9999, Street: "HomeStreet 99")
         };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>(
@@ -234,7 +234,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .Respond(
                 "application/json",
@@ -269,7 +269,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "http://foo/")
 
             // We can't add HttpContent to a GET request,
@@ -293,7 +293,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp.Expect(HttpMethod.Post, "http://foo/").Respond("application/json", "Ok");
+        _ = mockHttp.Expect(HttpMethod.Post, "http://foo/").Respond("application/json", "Ok");
 
         var fixture = RestService.For<IServiceWithoutNamespace>("http://foo", settings);
 
@@ -315,7 +315,7 @@ public partial class RestServiceIntegrationTests
             ContentSerializer = contentSerializer
         };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Post, "/users")
             .WithHeaders("Content-Type:application/xml; charset=utf-8")
             .Respond(
@@ -357,7 +357,7 @@ public partial class RestServiceIntegrationTests
     {
         try
         {
-            RestService.For<IValidApi>(hostUrl: null!);
+            _ = RestService.For<IValidApi>(hostUrl: null!);
         }
         catch (ArgumentException ex)
         {
@@ -375,7 +375,7 @@ public partial class RestServiceIntegrationTests
     {
         try
         {
-            RestService.For<IValidApi>(hostUrl: string.Empty);
+            _ = RestService.For<IValidApi>(hostUrl: string.Empty);
         }
         catch (ArgumentException ex)
         {
@@ -393,7 +393,7 @@ public partial class RestServiceIntegrationTests
     {
         try
         {
-            RestService.For<IValidApi>(hostUrl: " ");
+            _ = RestService.For<IValidApi>(hostUrl: " ");
         }
         catch (ArgumentException ex)
         {
@@ -428,7 +428,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo?")
             .WithExactQueryString(string.Empty)
             .Respond(HttpStatusCode.OK);
@@ -448,7 +448,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo?")
             .WithExactQueryString(string.Empty)
             .Respond(HttpStatusCode.OK);
@@ -468,7 +468,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo?")
             .WithExactQueryString(string.Empty)
             .Respond(HttpStatusCode.OK);
@@ -488,7 +488,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo?key=")
             .WithExactQueryString("key=")
             .Respond(HttpStatusCode.OK);
@@ -508,7 +508,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo?")
             .WithExactQueryString(string.Empty)
             .Respond(HttpStatusCode.OK);
@@ -528,7 +528,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .WithExactQueryString("key%2C=value%2C&key1%28=value1%28")
             .Respond(HttpStatusCode.OK);
@@ -548,7 +548,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .WithExactQueryString("key%2C=value%2C&key1%28=value1%28")
             .Respond(HttpStatusCode.OK);
@@ -568,7 +568,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .WithExactQueryString("key1=value1")
             .Respond(HttpStatusCode.OK);
@@ -588,7 +588,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .WithExactQueryString("key1%2C=value1%2C")
             .Respond(HttpStatusCode.OK);
@@ -608,7 +608,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .WithExactQueryString("values=3%2C4%2C")
             .Respond(HttpStatusCode.OK);
@@ -628,7 +628,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .Respond(HttpStatusCode.OK);
 
@@ -647,7 +647,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .Respond(HttpStatusCode.OK);
 
@@ -666,7 +666,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .Respond(HttpStatusCode.OK);
 
@@ -685,7 +685,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .Respond(HttpStatusCode.OK);
 
@@ -704,7 +704,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .WithExactQueryString("key=value")
             .Respond(HttpStatusCode.OK);
@@ -724,7 +724,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .Respond(HttpStatusCode.OK);
 
@@ -774,7 +774,7 @@ public partial class RestServiceIntegrationTests
         var mockHttp = new MockHttpMessageHandler();
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp, };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://github.com/foo")
             .Respond(HttpStatusCode.OK);
 
@@ -796,13 +796,13 @@ public partial class RestServiceIntegrationTests
 
         const string url = "https://httpbin.org/get";
 
-        mockHttp.Expect(HttpMethod.Get, url).Respond("application/json", "{ }");
+        _ = mockHttp.Expect(HttpMethod.Get, url).Respond("application/json", "{ }");
 
         var fixtureA = RestService.For<ITypeCollisionApiA>(url, settings);
 
         var respA = await fixtureA.SomeARequest();
 
-        mockHttp.Expect(HttpMethod.Get, url).Respond("application/json", "{ }");
+        _ = mockHttp.Expect(HttpMethod.Get, url).Respond("application/json", "{ }");
 
         var fixtureB = RestService.For<ITypeCollisionApiB>(url, settings);
 
@@ -823,19 +823,19 @@ public partial class RestServiceIntegrationTests
 
         const string url = "https://httpbin.org/get";
 
-        mockHttp.Expect(HttpMethod.Get, url + "/").Respond("application/json", "{ }");
+        _ = mockHttp.Expect(HttpMethod.Get, url + "/").Respond("application/json", "{ }");
 
         var fixtureA = RestService.For<INamespaceCollisionApi>(url, settings);
 
         var respA = await fixtureA.SomeRequest();
 
-        mockHttp.Expect(HttpMethod.Get, url + "/").Respond("application/json", "{ }");
+        _ = mockHttp.Expect(HttpMethod.Get, url + "/").Respond("application/json", "{ }");
 
         var fixtureB = RestService.For<CollisionA.INamespaceCollisionApi>(url, settings);
 
         var respB = await fixtureB.SomeRequest();
 
-        mockHttp.Expect(HttpMethod.Get, url + "/").Respond("application/json", "{ }");
+        _ = mockHttp.Expect(HttpMethod.Get, url + "/").Respond("application/json", "{ }");
 
         var fixtureC = RestService.For<CollisionB.INamespaceCollisionApi>(url, settings);
 

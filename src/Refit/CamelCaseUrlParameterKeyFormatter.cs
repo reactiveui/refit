@@ -11,21 +11,23 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
     /// <returns>The camelCase form of the key.</returns>
     public string Format(string key)
     {
+#if NETCOREAPP
+        return string.IsNullOrEmpty(key) || !char.IsUpper(key[0])
+            ? key
+            : string.Create(
+                key.Length,
+                key,
+                (chars, name) =>
+                {
+                    name.CopyTo(chars);
+                    FixCasing(chars);
+                });
+#else
         if (string.IsNullOrEmpty(key) || !char.IsUpper(key[0]))
         {
             return key;
         }
 
-#if NETCOREAPP
-        return string.Create(
-            key.Length,
-            key,
-            (chars, name) =>
-            {
-                name.CopyTo(chars);
-                FixCasing(chars);
-            });
-#else
         char[] chars = key.ToCharArray();
         FixCasing(chars);
         return new(chars);

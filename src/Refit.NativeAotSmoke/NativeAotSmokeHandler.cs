@@ -41,12 +41,9 @@ internal sealed class NativeAotSmokeHandler : HttpMessageHandler
             return new(HttpStatusCode.OK) { Content = new StringContent("accepted", Encoding.UTF8, "text/plain") };
         }
 
-        if (request.RequestUri?.AbsolutePath == "/status")
-        {
-            return Json("""{"name":"native-aot"}""");
-        }
-
-        return new(HttpStatusCode.NotFound);
+        return request.RequestUri?.AbsolutePath == "/status"
+            ? Json("""{"name":"native-aot"}""")
+            : new(HttpStatusCode.NotFound);
     }
 
     /// <summary>Builds an OK response with the given JSON content.</summary>

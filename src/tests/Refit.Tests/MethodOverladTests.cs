@@ -21,11 +21,11 @@ public class MethodOverladTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/")
             .Respond(HttpStatusCode.OK, "text/html", "OK");
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/status/403")
             .Respond(HttpStatusCode.Forbidden);
 
@@ -47,7 +47,7 @@ public class MethodOverladTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/")
             .Respond(HttpStatusCode.OK, "text/html", "OK");
 
@@ -68,7 +68,7 @@ public class MethodOverladTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/status/403")
             .Respond(HttpStatusCode.Forbidden);
 
@@ -90,7 +90,7 @@ public class MethodOverladTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .WithQueryString("someVal", "201")
             .Respond("application/json", "some-T-value");
@@ -113,7 +113,7 @@ public class MethodOverladTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .WithHeaders("X-Refit", "99")
             .WithQueryString("param", "foo")
@@ -139,7 +139,7 @@ public class MethodOverladTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .WithHeaders("X-Refit", "foo")
             .WithQueryString("param", "99")
@@ -165,7 +165,7 @@ public class MethodOverladTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .WithQueryString("input", "99")
             .Respond("application/json", "generic-output");
@@ -188,7 +188,7 @@ public class MethodOverladTests
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
 
-        mockHttp
+        _ = mockHttp
             .Expect(HttpMethod.Get, "https://httpbin.org/get")
             .WithQueryString(
                 new Dictionary<string, string> { { "input1", "str" }, { "input2", "3" } })

@@ -5,7 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Text;
 
 namespace Refit.Tests;
 
@@ -34,7 +33,7 @@ public class GeneratedRequestRunnerTests
     [Test]
     public async Task CreateBodyContentUsesStreamContentForStreamBodies()
     {
-        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes("stream-body"));
+        await using var stream = new MemoryStream("stream-body"u8.ToArray());
         var settings = CreateSettings();
 
         var result = GeneratedRequestRunner.CreateBodyContent(
@@ -150,7 +149,7 @@ public class GeneratedRequestRunnerTests
     public async Task CreateUrlEncodedBodyContentUsesStreamContentForStreams()
     {
         var settings = CreateSettings();
-        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes("stream-body"));
+        await using var stream = new MemoryStream("stream-body"u8.ToArray());
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(
             settings,
