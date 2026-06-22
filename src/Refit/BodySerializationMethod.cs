@@ -22,5 +22,11 @@ public enum BodySerializationMethod
     UrlEncoded,
 
     /// <summary>Encodes everything using the ContentSerializer in RefitSettings.</summary>
-    Serialized
+    Serialized,
+
+    /// <summary>
+    /// Encodes an enumerable body as JSON Lines (newline-delimited JSON): each element is serialized
+    /// with the ContentSerializer and emitted on its own line. See <see href="https://jsonlines.org"/>.
+    /// </summary>
+    JsonLines
 }

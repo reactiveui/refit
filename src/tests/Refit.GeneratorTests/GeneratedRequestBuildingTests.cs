@@ -81,6 +81,50 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
+    /// <summary>Verifies a JSON Lines body parameter emits the JSON Lines body factory call.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsJsonLinesBodyContent()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Post("/import")]
+            Task Import([Body(BodySerializationMethod.JsonLines)] IEnumerable<string> documents);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent");
+    }
+
+    /// <summary>Verifies an inherited Refit method is emitted through an explicit interface implementation.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnEmitsInlineConstructionForDerivedRefitMethod()
+    {
+        var generated = Fixture.GenerateForDeclaration(
+            """
+            namespace RefitGeneratorTest;
+
+            public interface IBaseClient
+            {
+                [Get("/base")]
+                Task<string> GetBase();
+            }
+
+            public interface IDerivedClient : IBaseClient
+            {
+                [Get("/derived")]
+                Task<string> GetDerived();
+            }
+            """,
+            "IDerivedClient.g.cs",
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains("global::RefitGeneratorTest.IBaseClient.GetBase");
+        await Assert.That(generated).Contains(GeneratedRequestRunnerSendAsync);
+    }
+
     /// <summary>Verifies generated inline request construction compiles in a consumer compilation.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

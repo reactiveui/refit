@@ -237,6 +237,52 @@ public partial class RequestBuilderTests
         await Assert.That(request.Content).IsTypeOf<StreamContent>();
     }
 
+    /// <summary>A JSON Lines body parameter is routed to JSON Lines content via the reflection path.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task JsonLinesRequestBodyUsesJsonLinesContent()
+    {
+        var fixture = new RequestBuilderImplementation<IRequestBin>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IRequestBin.PostJsonLines));
+
+        var request = factory(
+        [
+            new[]
+            {
+                new JsonLineRecord { Id = "124", Name = "Stark Industries" },
+                new JsonLineRecord { Id = "125", Name = "Acme Corp" }
+            }
+        ]);
+
+        await Assert.That(request.Content).IsTypeOf<JsonLinesContent>();
+    }
+
+    /// <summary>A single (non-enumerable) JSON Lines body is wrapped as a one-line JSON Lines content.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task JsonLinesSingleBodyUsesJsonLinesContent()
+    {
+        var fixture = new RequestBuilderImplementation<IRequestBin>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IRequestBin.PostJsonLinesSingle));
+
+        var request = factory([new JsonLineRecord { Id = "1", Name = "single" }]);
+
+        await Assert.That(request.Content).IsTypeOf<JsonLinesContent>();
+    }
+
+    /// <summary>A string JSON Lines body is treated as a single line, not enumerated by character.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task JsonLinesStringBodyUsesJsonLinesContent()
+    {
+        var fixture = new RequestBuilderImplementation<IRequestBin>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IRequestBin.PostJsonLinesString));
+
+        var request = factory(["a line"]);
+
+        await Assert.That(request.Content).IsTypeOf<JsonLinesContent>();
+    }
+
     /// <summary>A stream response is wrapped in an ApiResponse.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

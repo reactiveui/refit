@@ -1,0 +1,130 @@
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+
+namespace Refit.Generator;
+
+/// <summary>Emits generic type-parameter constraint clauses for generated Refit method implementations.</summary>
+internal static partial class Emitter
+{
+    /// <summary>Builds the generic type constraint clauses for the given type parameters.</summary>
+    /// <param name="typeParameters">The type parameter constraints to emit.</param>
+    /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
+    /// <param name="indentationLevel">The generated indentation level.</param>
+    /// <returns>The generated type constraint clauses.</returns>
+    private static string BuildConstraints(
+        ImmutableEquatableArray<TypeConstraint> typeParameters,
+        bool isOverrideOrExplicitImplementation,
+        int indentationLevel)
+    {
+        var parts = new string[typeParameters.Count];
+        var count = 0;
+        for (var i = 0; i < typeParameters.Count; i++)
+        {
+            var source = BuildConstraintsForTypeParameter(
+                typeParameters[i],
+                isOverrideOrExplicitImplementation,
+                indentationLevel);
+            if (source.Length != 0)
+            {
+                parts[count++] = source;
+            }
+        }
+
+        return count == 0 ? string.Empty : ConcatParts(parts, count);
+    }
+
+    /// <summary>Builds the constraint clause for a single type parameter.</summary>
+    /// <param name="typeParameter">The type parameter constraint to emit.</param>
+    /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
+    /// <param name="indentationLevel">The generated indentation level.</param>
+    /// <returns>The generated type constraint clause, or an empty string.</returns>
+    private static string BuildConstraintsForTypeParameter(
+        in TypeConstraint typeParameter,
+        bool isOverrideOrExplicitImplementation,
+        int indentationLevel) =>
+        !HasConstraintKeywords(typeParameter, isOverrideOrExplicitImplementation)
+            ? string.Empty
+            : Indent(indentationLevel)
+                + "where "
+                + typeParameter.TypeName
+                + " : "
+                + BuildConstraintList(typeParameter, isOverrideOrExplicitImplementation)
+                + "\n";
+
+    /// <summary>Determines whether a type parameter has constraints that should be emitted.</summary>
+    /// <param name="typeParameter">The type parameter constraint to inspect.</param>
+    /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
+    /// <returns><see langword="true"/> when at least one constraint should be emitted.</returns>
+    private static bool HasConstraintKeywords(
+        in TypeConstraint typeParameter,
+        bool isOverrideOrExplicitImplementation)
+    {
+        var knownConstraints = typeParameter.KnownTypeConstraint;
+        return knownConstraints.HasFlag(KnownTypeConstraint.Class)
+               || (knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation)
+               || knownConstraints.HasFlag(KnownTypeConstraint.Struct)
+               || (knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation)
+               || (!isOverrideOrExplicitImplementation && (typeParameter.Constraints.Count > 0 ||
+                                                           knownConstraints.HasFlag(KnownTypeConstraint.New)));
+    }
+
+    /// <summary>Builds the comma-separated constraint list for a type parameter.</summary>
+    /// <param name="typeParameter">The type parameter constraint to inspect.</param>
+    /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
+    /// <returns>The generated constraint list.</returns>
+    private static string BuildConstraintList(
+        in TypeConstraint typeParameter,
+        bool isOverrideOrExplicitImplementation)
+    {
+        var parts = new string[typeParameter.Constraints.Count + 5];
+        var count = 0;
+        var knownConstraints = typeParameter.KnownTypeConstraint;
+        AddConstraint(parts, "class", knownConstraints.HasFlag(KnownTypeConstraint.Class), ref count);
+        AddConstraint(
+            parts,
+            "unmanaged",
+            knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation,
+            ref count);
+        AddConstraint(parts, "struct", knownConstraints.HasFlag(KnownTypeConstraint.Struct), ref count);
+        AddConstraint(
+            parts,
+            "notnull",
+            knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation,
+            ref count);
+
+        if (!isOverrideOrExplicitImplementation)
+        {
+            foreach (var constraint in typeParameter.Constraints)
+            {
+                AddConstraint(parts, constraint, true, ref count);
+            }
+        }
+
+        AddConstraint(
+            parts,
+            "new()",
+            knownConstraints.HasFlag(KnownTypeConstraint.New) && !isOverrideOrExplicitImplementation,
+            ref count);
+        return JoinParts(parts, count, ", ");
+    }
+
+    /// <summary>Adds one constraint keyword when the condition is true.</summary>
+    /// <param name="parts">The target constraint buffer.</param>
+    /// <param name="keyword">The constraint keyword.</param>
+    /// <param name="condition">Whether the keyword should be emitted.</param>
+    /// <param name="count">The populated part count.</param>
+    private static void AddConstraint(
+        string[] parts,
+        string keyword,
+        bool condition,
+        ref int count)
+    {
+        if (!condition)
+        {
+            return;
+        }
+
+        parts[count++] = keyword;
+    }
+}

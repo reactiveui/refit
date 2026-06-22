@@ -38,4 +38,28 @@ internal static partial class Emitter
     /// <returns>The joined source.</returns>
     internal static string JoinPartsForTesting(string[] parts, int count, string separator) =>
         JoinParts(parts, count, separator);
+
+    /// <summary>Determines whether a type parameter has constraints that should be emitted.</summary>
+    /// <param name="typeParameter">The type parameter constraint to inspect.</param>
+    /// <param name="isOverrideOrExplicitImplementation">True if emitting for an override or explicit implementation.</param>
+    /// <returns><see langword="true"/> when at least one constraint should be emitted.</returns>
+    internal static bool HasConstraintKeywordsForTesting(in TypeConstraint typeParameter, bool isOverrideOrExplicitImplementation) =>
+        HasConstraintKeywords(typeParameter, isOverrideOrExplicitImplementation);
+
+    /// <summary>Builds the generated body of a Refit method.</summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="isTopLevel">Whether the method is declared directly on the generated interface.</param>
+    /// <param name="interfaceModel">The interface model being emitted.</param>
+    /// <param name="uniqueNames">The unique member names in the interface scope.</param>
+    /// <param name="requestBuilderFieldName">The generated request-builder field name.</param>
+    /// <param name="settingsFieldName">The generated settings field name.</param>
+    /// <returns>The generated method implementation.</returns>
+    internal static string BuildRefitMethodForTesting(
+        MethodModel methodModel,
+        bool isTopLevel,
+        InterfaceModel interfaceModel,
+        UniqueNameBuilder uniqueNames,
+        string requestBuilderFieldName,
+        string settingsFieldName) =>
+        BuildRefitMethod(methodModel, isTopLevel, interfaceModel, uniqueNames, requestBuilderFieldName, settingsFieldName);
 }

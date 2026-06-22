@@ -135,6 +135,32 @@ public static class GeneratedRequestRunner
             : content;
     }
 
+    /// <summary>Serializes a generated request body as JSON Lines (newline-delimited JSON).</summary>
+    /// <typeparam name="TBody">The declared body type.</typeparam>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="body">The enumerable body value.</param>
+    /// <returns>The HTTP content for the JSON Lines body.</returns>
+    public static HttpContent CreateJsonLinesBodyContent<TBody>(
+        RefitSettings settings,
+        TBody body)
+    {
+        if (body is HttpContent httpContent)
+        {
+            return httpContent;
+        }
+
+        if (body is Stream stream)
+        {
+            return new StreamContent(stream);
+        }
+
+        var items = body is System.Collections.IEnumerable enumerable and not string
+            ? enumerable
+            : new[] { (object?)body };
+
+        return new JsonLinesContent(items, settings.ContentSerializer);
+    }
+
     /// <summary>Serializes a generated URL-encoded request body using the declared body type.</summary>
     /// <typeparam name="TBody">The declared body type.</typeparam>
     /// <param name="settings">The Refit settings to use.</param>

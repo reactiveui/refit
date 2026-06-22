@@ -22,6 +22,9 @@ internal static partial class Parser
     /// <summary>The underlying value for <c>BodySerializationMethod.Serialized</c>.</summary>
     private const int BodySerializationSerialized = 3;
 
+    /// <summary>The underlying value for <c>BodySerializationMethod.JsonLines</c>.</summary>
+    private const int BodySerializationJsonLines = 4;
+
     /// <summary>Builds the generator model for the candidate Refit interfaces.</summary>
     /// <param name="compilation">The compilation.</param>
     /// <param name="refitInternalNamespace">The refit internal namespace.</param>

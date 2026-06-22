@@ -3,12 +3,130 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Net;
+using System.Reflection;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for direct <see cref="ApiResponse{T}"/> construction and error handling.</summary>
 public sealed class ApiResponseTests
 {
+    /// <summary>Verifies the generic interface does not shadow base members, so a single setup is observed via the base interface.</summary>
+    /// <param name="memberName">The member expected to be declared only on the non-generic interface.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments(nameof(IApiResponse.ContentHeaders))]
+    [Arguments(nameof(IApiResponse.Error))]
+    [Arguments(nameof(IApiResponse.IsSuccessStatusCode))]
+    [Arguments(nameof(IApiResponse.IsSuccessful))]
+    public async Task GenericApiResponseDoesNotShadowBaseMembers(string memberName)
+    {
+        // The generic interface must not redeclare (shadow) the member: a single setup on
+        // IApiResponse<T> should be observed through the non-generic IApiResponse as well.
+        var declaredOnGeneric = typeof(IApiResponse<string>).GetProperty(
+            memberName,
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        await Assert.That(declaredOnGeneric).IsNull();
+
+        await Assert.That(typeof(IApiResponse).GetProperty(memberName)).IsNotNull();
+    }
+
+    /// <summary>Verifies the generic interface declares the covariance-safe <c>HasContent</c> narrowing member.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GenericApiResponseDeclaresHasContent()
+    {
+        var hasContent = typeof(IApiResponse<string>).GetProperty(
+            "HasContent",
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        await Assert.That(hasContent).IsNotNull();
+    }
+
+    /// <summary>Verifies HasContent reports content availability and ensure-success returns a successful response.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SuccessfulResponseHasContentAndPassesEnsureSuccess()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var httpResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
+        using var response = new ApiResponse<string>(httpResponse, "body", new());
+
+        await Assert.That(response.HasContent).IsTrue();
+
+        IApiResponse<string> asInterface = response;
+        var ensured = await asInterface.EnsureSuccessStatusCodeAsync();
+        await Assert.That(ensured).IsSameReferenceAs(response);
+    }
+
+    /// <summary>Verifies ensure-success on the interface throws the captured error for an unsuccessful response.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UnsuccessfulResponseEnsureSuccessThrowsCapturedError()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var httpResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = request };
+        var error = await ApiException.Create(request, HttpMethod.Get, httpResponse, new());
+        using var response = new ApiResponse<string>(httpResponse, null, new(), error);
+
+        await Assert.That(response.HasContent).IsFalse();
+
+        IApiResponse<string> asInterface = response;
+        await Assert
+            .That(() => (Task)asInterface.EnsureSuccessStatusCodeAsync())
+            .ThrowsExactly<ApiException>();
+    }
+
+    /// <summary>Verifies EnsureSuccessfulAsync returns the response on success and throws the error on failure.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EnsureSuccessfulAsyncReturnsOnSuccessAndThrowsOnFailure()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var okResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
+        using var success = new ApiResponse<string>(okResponse, "body", new());
+
+        IApiResponse<string> okInterface = success;
+        await Assert.That(await okInterface.EnsureSuccessfulAsync()).IsSameReferenceAs(success);
+
+        using var badResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = request };
+        var error = await ApiException.Create(request, HttpMethod.Get, badResponse, new());
+        using var failure = new ApiResponse<string>(badResponse, null, new(), error);
+
+        IApiResponse<string> failInterface = failure;
+        await Assert
+            .That(() => (Task)failInterface.EnsureSuccessfulAsync())
+            .ThrowsExactly<ApiException>();
+    }
+
+    /// <summary>Verifies the success-guard extensions reject a null response.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EnsureSuccessExtensionsRejectNullResponse()
+    {
+        var nullResponse = (IApiResponse<string>)null!;
+
+        await Assert
+            .That(() => (Task)nullResponse.EnsureSuccessStatusCodeAsync())
+            .ThrowsExactly<ArgumentNullException>();
+        await Assert
+            .That(() => (Task)nullResponse.EnsureSuccessfulAsync())
+            .ThrowsExactly<ArgumentNullException>();
+    }
+
+    /// <summary>Verifies an unsuccessful response without a captured error throws a descriptive fallback.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EnsureSuccessThrowsFallbackWhenNoErrorCaptured()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var badResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = request };
+        using var response = new ApiResponse<string>(badResponse, null, new());
+
+        IApiResponse<string> asInterface = response;
+        await Assert
+            .That(() => (Task)asInterface.EnsureSuccessStatusCodeAsync())
+            .ThrowsExactly<InvalidOperationException>();
+    }
+
     /// <summary>Verifies public constructors reject missing response data needed by the wrapper.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

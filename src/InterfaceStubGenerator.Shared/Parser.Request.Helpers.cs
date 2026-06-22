@@ -169,6 +169,7 @@ internal static partial class Parser
             1 => "Json",
             BodySerializationUrlEncoded => "UrlEncoded",
             BodySerializationSerialized => "Serialized",
+            BodySerializationJsonLines => "JsonLines",
             _ => string.Empty
         };
 
