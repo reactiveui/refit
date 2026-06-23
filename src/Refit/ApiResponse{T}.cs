@@ -72,7 +72,7 @@ public sealed class ApiResponse<T>(
 
     /// <summary>Gets a value indicating whether the request was successful and deserialized <see cref="Content"/> is available.</summary>
     [MemberNotNullWhen(true, nameof(Content))]
-    public bool IsSuccessfulWithContent => IsSuccessful && Content is not null;
+    public bool IsSuccessfulWithContent => IsSuccessful && HasContent;
 
     /// <summary>Gets the Refit settings used to send the request.</summary>
     public RefitSettings Settings { get; } = settings;
