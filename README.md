@@ -1562,11 +1562,26 @@ if (response.IsReceived)
 }
 ```
 
-`HasContent` is the covariance-safe way to access `Content` with null-state flow analysis — when it is `true` the
-compiler knows `Content` is non-null:
+A successful response does **not** imply a response body. Per [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110.html) a
+204 (No Content), a 304 (Not Modified), a response to `HEAD`, or any 2xx with a zero-length or literal `null` body
+deserializes to `Content == null` *without* an error — so `IsSuccessful` / `IsSuccessStatusCode` being `true` tells you
+the request succeeded, not that `Content` is present. Use one of the content-presence members below when you need the
+deserialized body:
+
+* `HasContent` — the covariance-safe way to null-check `Content` on its own; when `true` the compiler knows `Content` is
+  non-null.
+* `IsSuccessfulWithContent` — a single check that combines success **and** content presence (`IsSuccessful && Content is
+  not null`); when `true` the compiler knows `Content` is non-null.
 
 ```csharp
 if (response.HasContent)
+{
+    // response.Content is non-null here
+    Process(response.Content);
+}
+
+// Or, when you want "succeeded and has a body" in one narrowing check:
+if (response.IsSuccessfulWithContent)
 {
     // response.Content is non-null here
     Process(response.Content);
@@ -1940,7 +1955,9 @@ else
 > [!NOTE]
 > The `IsSuccessful` property checks whether the response status code is in the range 200-299 and there wasn't any other
 > error (for example, during content deserialization). If you just want to check the HTTP response status code, you can
-> use the `IsSuccessStatusCode` property.
+> use the `IsSuccessStatusCode` property. Neither property implies a non-null `Content` — a successful response can have
+> no body (e.g. 204 No Content or a literal `null` body). Use `HasContent` or `IsSuccessfulWithContent` when you need the
+> deserialized `Content` to be present.
 
 #### When returning `Task<T>`
 

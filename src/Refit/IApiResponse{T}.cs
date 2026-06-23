@@ -21,4 +21,15 @@ public interface IApiResponse<out T> : IApiResponse
     /// </remarks>
     [MemberNotNullWhen(true, nameof(Content))]
     bool HasContent { get; }
+
+    /// <summary>Gets a value indicating whether the request was successful and deserialized <see cref="Content"/> is available.</summary>
+    /// <remarks>
+    /// This restores single-check content narrowing — <c>if (response.IsSuccessfulWithContent) { /* response.Content is non-null */ }</c>
+    /// — that <see cref="IApiResponse.IsSuccessful"/> can no longer promise (a successful response may
+    /// carry no body). It is a brand-new generic-only member rather than a <c>new</c> shadow of a base
+    /// member, so it references <see cref="Content"/> directly and behaves correctly through mocks and
+    /// explicit interface implementations.
+    /// </remarks>
+    [MemberNotNullWhen(true, nameof(Content))]
+    bool IsSuccessfulWithContent { get; }
 }
