@@ -15,6 +15,9 @@ internal enum ReturnTypeInfo
     /// <summary>The method returns an awaitable with a result.</summary>
     AsyncResult,
 
+    /// <summary>The method returns an IAsyncEnumerable stream.</summary>
+    AsyncEnumerable,
+
     /// <summary>The method returns void synchronously.</summary>
     SyncVoid
 }

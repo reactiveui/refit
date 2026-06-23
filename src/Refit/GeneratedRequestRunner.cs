@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Refit;
@@ -12,6 +13,25 @@ public static class GeneratedRequestRunner
 {
     /// <summary>The underlying value of the obsolete <c>BodySerializationMethod.Json</c> member.</summary>
     private const int ObsoleteJsonBodySerializationMethodValue = 1;
+
+    /// <summary>Builds the relative request URI for a generated request, joining the client base address with the method path.</summary>
+    /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
+    /// <param name="relativePath">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="urlResolution">The configured URL resolution mode.</param>
+    /// <returns>A relative <see cref="Uri"/> to assign to the request, which the client merges with its base address.</returns>
+    public static Uri BuildRelativeUri(HttpClient client, string relativePath, UrlResolutionMode urlResolution)
+    {
+        if (urlResolution == UrlResolutionMode.Rfc3986)
+        {
+            // Let the HttpClient merge the base address with the relative path per RFC 3986; emit the path verbatim.
+            return new(relativePath, UriKind.Relative);
+        }
+
+        var basePath = client.BaseAddress?.AbsolutePath
+            ?? throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+        basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
+        return new(basePath + relativePath, UriKind.Relative);
+    }
 
     /// <summary>Sends a generated request with no response body, throwing on HTTP errors.</summary>
     /// <param name="client">The HTTP client to send with.</param>
@@ -74,13 +94,47 @@ public static class GeneratedRequestRunner
                     client,
                     request,
                     settings,
-                    new RequestExecutionOptions(
+                    new(
                         isApiResponse,
                         shouldDisposeResponse,
                         bufferBody,
                         true),
                     cancellationToken)
                 .ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Sends a generated request and streams the response as an <see cref="IAsyncEnumerable{T}"/>.</summary>
+    /// <typeparam name="T">The element type yielded to the caller.</typeparam>
+    /// <param name="client">The HTTP client to send with.</param>
+    /// <param name="request">The generated request message; disposed when streaming completes.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="methodCancellationToken">The cancellation token supplied as a method argument, if any.</param>
+    /// <param name="cancellationToken">The token supplied by the consumer's enumeration.</param>
+    /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally specified explicitly by generated callers.")]
+    [SuppressMessage(
+        "Major Code Smell",
+        "S2360:Optional parameters should not be used",
+        Justification = "The optional CancellationToken carries the [EnumeratorCancellation] token for the await-foreach WithCancellation pattern.")]
+    public static async IAsyncEnumerable<T?> StreamAsync<T>(
+        HttpClient client,
+        HttpRequestMessage request,
+        RefitSettings settings,
+        CancellationToken methodCancellationToken,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        RequestExecutionHelpers.ThrowIfBaseAddressMissing(client);
+
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, cancellationToken);
+        await foreach (var item in RequestExecutionHelpers
+            .StreamResponseAsync<T>(client, request, settings, true, linked.Token)
+            .ConfigureAwait(false))
+        {
+            yield return item;
         }
     }
 
@@ -122,7 +176,8 @@ public static class GeneratedRequestRunner
 
         var content = CreateSerializedBodyContent(settings, body, serializationMethod);
 
-        return streamBody
+        // A synchronously-serialized body is already a buffer (and lets the fast-path engage), so never re-stream it.
+        return streamBody && !UsesSynchronousSerialization(settings)
             ? new PushStreamContent(
                 async (stream, _, _) =>
                 {
@@ -315,11 +370,29 @@ public static class GeneratedRequestRunner
         if (serializationMethod is BodySerializationMethod.Default or BodySerializationMethod.Serialized
             || IsObsoleteJsonSerializationMethod(serializationMethod))
         {
+            if (settings.ContentSerializer is ISynchronousContentSerializer synchronousSerializer)
+            {
+                switch (settings.RequestBodySerialization)
+                {
+                    case RequestBodySerializationMode.Buffered:
+                        return synchronousSerializer.ToHttpContentSynchronous(body);
+                    case RequestBodySerializationMode.Streamed:
+                        return synchronousSerializer.ToStreamingHttpContent(body);
+                }
+            }
+
             return settings.ContentSerializer.ToHttpContent(body);
         }
 
         throw new ArgumentOutOfRangeException(nameof(serializationMethod), serializationMethod, null);
     }
+
+    /// <summary>Determines whether request bodies should be serialized synchronously through the configured serializer.</summary>
+    /// <param name="settings">The Refit settings to inspect.</param>
+    /// <returns><see langword="true"/> when synchronous body serialization is enabled and supported.</returns>
+    private static bool UsesSynchronousSerialization(RefitSettings settings) =>
+        settings.RequestBodySerialization != RequestBodySerializationMode.Default
+        && settings.ContentSerializer is ISynchronousContentSerializer;
 
     /// <summary>Determines whether the body should use the legacy JSON enum member.</summary>
     /// <param name="serializationMethod">The body serialization method.</param>

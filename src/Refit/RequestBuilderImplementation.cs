@@ -113,6 +113,12 @@ namespace Refit
                 return BuildResultFuncForMethod(restMethod, nameof(BuildValueTaskFuncForMethod));
             }
 
+            // IAsyncEnumerable<T>
+            if (IsGenericReturnType(restMethod, typeof(IAsyncEnumerable<>)))
+            {
+                return BuildResultFuncForMethod(restMethod, nameof(BuildAsyncEnumerableFuncForMethod));
+            }
+
             // IObservable<T>
             return IsGenericReturnType(restMethod, typeof(IObservable<>))
                 ? BuildResultFuncForMethod(restMethod, nameof(BuildRxFuncForMethod))
@@ -481,6 +487,24 @@ namespace Refit
                     return DisposeWhenDoneAsync(task, cts);
                 });
         }
+
+        /// <summary>Builds a delegate that streams the response of a method returning <see cref="IAsyncEnumerable{T}"/>.</summary>
+        /// <typeparam name="T">The element type yielded to the caller.</typeparam>
+        /// <typeparam name="TBody">Unused; present so the delegate factory shares the two-type-parameter shape.</typeparam>
+        /// <param name="restMethod">The rest method to build a delegate for.</param>
+        /// <returns>A delegate that returns an asynchronous sequence of the result.</returns>
+        [SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "Type parameter intentionally specified explicitly by callers.")]
+        [SuppressMessage(
+            "Major Code Smell",
+            "S2326:Unused type parameters should be removed",
+            Justification = "The second type parameter is required so this factory matches the two-type-argument shape invoked reflectively by BuildResultFuncForMethod.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+        private Func<HttpClient, object[], IAsyncEnumerable<T?>> BuildAsyncEnumerableFuncForMethod<T, TBody>(
+            RestMethodInfoInternal restMethod) =>
+            (client, paramList) => ExecuteAsyncEnumerableRequestAsync<T>(client, restMethod, paramList);
 
         /// <summary>Builds a task invocation delegate for a method.</summary>
         /// <typeparam name="T">The result type returned to the caller.</typeparam>

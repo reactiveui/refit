@@ -13,14 +13,14 @@
     <ProjectReference Include="..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
     <ProjectReference Include="..\..\Refit.Xml\Refit.Xml.csproj" />
-    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" />
+    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AutoFixture" />
     <PackageReference Include="BenchmarkDotNet" />
-    <!-- Aligned with the Roslyn version BenchmarkDotNet pulls in, so the benchmark's
+    <!-- Kept on the same Roslyn version BenchmarkDotNet pulls in so the benchmark's
          Microsoft.CodeAnalysis.* assemblies stay on a single consistent version. -->
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" VersionOverride="4.14.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="newtonsoft-json-10-users.json" />

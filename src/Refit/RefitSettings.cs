@@ -118,6 +118,28 @@ public class RefitSettings
     /// </summary>
     public bool Buffered { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether a route placeholder with no matching method argument is allowed.
+    /// When false (the default) Refit throws while building the method; when true the unmatched <c>{token}</c> is
+    /// left in the URL verbatim so it can be rewritten later, for example inside a <see cref="DelegatingHandler"/>.
+    /// </summary>
+    public bool AllowUnmatchedRouteParameters { get; set; }
+
+    /// <summary>
+    /// Gets or sets how the client's base address is combined with a method's relative URL
+    /// (defaults to <see cref="UrlResolutionMode.RefitLegacy"/>). Set to <see cref="UrlResolutionMode.Rfc3986"/>
+    /// to opt in to RFC 3986 / <see cref="System.Net.Http.HttpClient"/> style resolution.
+    /// </summary>
+    public UrlResolutionMode UrlResolution { get; set; } = UrlResolutionMode.RefitLegacy;
+
+    /// <summary>
+    /// Gets or sets how JSON request bodies are serialized (defaults to <see cref="RequestBodySerializationMode.Default"/>).
+    /// <see cref="RequestBodySerializationMode.Buffered"/> and <see cref="RequestBodySerializationMode.Streamed"/> use
+    /// the synchronous serialization path so the System.Text.Json source-generated fast-path can engage; both require
+    /// the configured <see cref="ContentSerializer"/> to implement <see cref="ISynchronousContentSerializer"/>.
+    /// </summary>
+    public RequestBodySerializationMode RequestBodySerialization { get; set; } = RequestBodySerializationMode.Default;
+
     /// <summary>Gets optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.</summary>
     public Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
 
@@ -162,7 +184,7 @@ public class RefitSettings
     {
         var options = SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions();
         options.PropertyNamingPolicy = jsonNamingPolicy;
-        return new RefitSettings(new SystemTextJsonContentSerializer(options))
+        return new(new SystemTextJsonContentSerializer(options))
         {
             UrlParameterKeyFormatter = urlParameterKeyFormatter,
         };

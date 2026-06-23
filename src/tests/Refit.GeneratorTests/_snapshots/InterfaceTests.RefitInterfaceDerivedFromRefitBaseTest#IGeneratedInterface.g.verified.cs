@@ -50,9 +50,7 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task<string> Get()
             {
                 var refitSettings = _settings;
-                var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
-                refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/users", global::System.UriKind.Relative));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/users", refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;
@@ -72,9 +70,7 @@ namespace Refit.Implementation
             global::System.Threading.Tasks.Task<string> global::RefitGeneratorTest.IBaseInterface.GetPosts()
             {
                 var refitSettings = _settings;
-                var refitBasePath = this.Client.BaseAddress?.AbsolutePath ?? throw new global::System.InvalidOperationException("BaseAddress must be set on the HttpClient instance");
-                refitBasePath = refitBasePath == "/" ? string.Empty : refitBasePath.TrimEnd('/');
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, new global::System.Uri(refitBasePath + "/posts", global::System.UriKind.Relative));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/posts", refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;

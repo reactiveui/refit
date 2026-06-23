@@ -22,6 +22,22 @@ namespace Refit
         private static readonly MethodInfo SerializeBodyMethod =
             FindDeclaredMethod(nameof(SerializeBodyGeneric));
 
+        /// <summary>Cached reflection handle to the generic synchronous body-serialization method.</summary>
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
+            Justification = "The cached method handle points to a local generic serialization helper used through runtime generic method closure.")]
+        private static readonly MethodInfo SerializeBodySynchronouslyMethod =
+            FindDeclaredMethod(nameof(SerializeBodySynchronouslyGeneric));
+
+        /// <summary>Cached reflection handle to the generic streaming body-serialization method.</summary>
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' may break when trimming",
+            Justification = "The cached method handle points to a local generic serialization helper used through runtime generic method closure.")]
+        private static readonly MethodInfo SerializeBodyStreamingMethod =
+            FindDeclaredMethod(nameof(SerializeBodyStreamingGeneric));
+
         /// <summary>Maps a single header, header-collection or authorization parameter into the pending headers.</summary>
         /// <param name="restMethod">The rest method being invoked.</param>
         /// <param name="i">The index of the parameter.</param>
@@ -115,6 +131,68 @@ namespace Refit
             Justification = "Type parameter intentionally specified explicitly by callers.")]
         private static HttpContent SerializeBodyGeneric<T>(IHttpContentSerializer serializer, object? body) =>
             serializer.ToHttpContent((T)body!);
+
+        /// <summary>Serializes a request body synchronously as the given type.</summary>
+        /// <param name="serializer">The synchronous content serializer to use.</param>
+        /// <param name="body">The body value to serialize.</param>
+        /// <param name="declaredBodyType">The declared body type to serialize as.</param>
+        /// <returns>The serialized, buffered HTTP content.</returns>
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2060:MakeGenericMethod",
+            Justification = "The reflection request builder intentionally closes the serializer method over the runtime body type.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+        private static HttpContent SerializeBodySynchronously(
+            ISynchronousContentSerializer serializer,
+            object? body,
+            Type declaredBodyType)
+        {
+            var serializeMethod = SerializeBodySynchronouslyMethod.MakeGenericMethod(declaredBodyType);
+            return (HttpContent)serializeMethod.Invoke(null, [serializer, body])!;
+        }
+
+        /// <summary>Serializes a request body synchronously as the given type.</summary>
+        /// <typeparam name="T">The type to serialize the body as.</typeparam>
+        /// <param name="serializer">The synchronous content serializer to use.</param>
+        /// <param name="body">The body value to serialize.</param>
+        /// <returns>The serialized, buffered HTTP content.</returns>
+        [SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "Type parameter intentionally specified explicitly by callers.")]
+        private static HttpContent SerializeBodySynchronouslyGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
+            serializer.ToHttpContentSynchronous((T)body!);
+
+        /// <summary>Serializes a request body as a streaming content for the given type.</summary>
+        /// <param name="serializer">The synchronous content serializer to use.</param>
+        /// <param name="body">The body value to serialize.</param>
+        /// <param name="declaredBodyType">The declared body type to serialize as.</param>
+        /// <returns>The streaming HTTP content.</returns>
+        [UnconditionalSuppressMessage(
+            "Trimming",
+            "IL2060:MakeGenericMethod",
+            Justification = "The reflection request builder intentionally closes the serializer method over the runtime body type.")]
+        [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+        private static HttpContent SerializeBodyStreaming(
+            ISynchronousContentSerializer serializer,
+            object? body,
+            Type declaredBodyType)
+        {
+            var serializeMethod = SerializeBodyStreamingMethod.MakeGenericMethod(declaredBodyType);
+            return (HttpContent)serializeMethod.Invoke(null, [serializer, body])!;
+        }
+
+        /// <summary>Serializes a request body as a streaming content for the given type.</summary>
+        /// <typeparam name="T">The type to serialize the body as.</typeparam>
+        /// <param name="serializer">The synchronous content serializer to use.</param>
+        /// <param name="body">The body value to serialize.</param>
+        /// <returns>The streaming HTTP content.</returns>
+        [SuppressMessage(
+            "Major Code Smell",
+            "S4018:Generic methods should provide type parameters",
+            Justification = "Type parameter intentionally specified explicitly by callers.")]
+        private static HttpContent SerializeBodyStreamingGeneric<T>(ISynchronousContentSerializer serializer, object? body) =>
+            serializer.ToStreamingHttpContent((T)body!);
 
         /// <summary>Coerces a JSON Lines body argument into the sequence of values to serialize line by line.</summary>
         /// <param name="param">The body argument value.</param>
@@ -326,6 +404,12 @@ namespace Refit
         {
             var urlTarget = BuildRelativePath(basePath, restMethod, paramList);
 
+            if (restMethod.RefitSettings.UrlResolution == UrlResolutionMode.Rfc3986)
+            {
+                AssignRequestUriRfc3986(ret, urlTarget, queryParamsToAdd);
+                return;
+            }
+
             var uri = new UriBuilder(new Uri(BaseUri, urlTarget));
             ParseExistingQueryString(uri, ref queryParamsToAdd);
 
@@ -345,9 +429,13 @@ namespace Refit
         /// <returns>The fully expanded relative path.</returns>
         private string BuildRelativePath(string basePath, RestMethodInfoInternal restMethod, object[] paramList)
         {
-            // Every path fragment is prefixed with '/', so trim a trailing slash from the
-            // base path to avoid emitting a double slash when the base address ends with one.
-            basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
+            // Under RFC 3986 resolution the HttpClient merges the base address with the relative path itself,
+            // so emit only the declared relative path (preserving any leading slash) and prepend nothing.
+            // Otherwise every path fragment is prefixed with '/', so trim a trailing slash from the base path
+            // to avoid emitting a double slash when the base address ends with one.
+            basePath = restMethod.RefitSettings.UrlResolution == UrlResolutionMode.Rfc3986 || basePath == "/"
+                ? string.Empty
+                : basePath.TrimEnd('/');
             var pathFragments = restMethod.FragmentPath;
             if (pathFragments.Count == 0)
             {
@@ -553,6 +641,18 @@ namespace Refit
         {
             var declaredBodyType = restMethod.ParameterInfoArray[
                 restMethod.BodyParameterInfo!.Item3].ParameterType;
+
+            // Synchronous serialization lets the source-gen fast-path engage: Buffered produces a ByteArrayContent up
+            // front, Streamed writes through a Utf8JsonWriter on the request stream without buffering the whole body.
+            if (_settings.RequestBodySerialization != RequestBodySerializationMode.Default
+                && _serializer is ISynchronousContentSerializer syncSerializer)
+            {
+                ret.Content = _settings.RequestBodySerialization == RequestBodySerializationMode.Streamed
+                    ? SerializeBodyStreaming(syncSerializer, param, declaredBodyType)
+                    : SerializeBodySynchronously(syncSerializer, param, declaredBodyType);
+                return;
+            }
+
             var content = SerializeBody(_serializer, param, declaredBodyType);
 
             if (restMethod.BodyParameterInfo.Item2)

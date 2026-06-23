@@ -69,7 +69,7 @@ public static class RestService
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    public static T ForGenerated<T>(HttpClient client) => ForGenerated<T>(client, new RefitSettings());
+    public static T ForGenerated<T>(HttpClient client) => ForGenerated<T>(client, new());
 
     /// <summary>Create a source-generated Refit implementation without falling back to reflection.</summary>
     /// <typeparam name="T">Interface to create the implementation for.</typeparam>
@@ -118,7 +118,7 @@ public static class RestService
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    public static T ForGenerated<T>(string hostUrl) => ForGenerated<T>(hostUrl, new RefitSettings());
+    public static T ForGenerated<T>(string hostUrl) => ForGenerated<T>(hostUrl, new());
 
     /// <summary>Create a source-generated Refit implementation without falling back to reflection.</summary>
     /// <typeparam name="T">Interface to create the implementation for.</typeparam>
@@ -398,7 +398,11 @@ public static class RestService
             }
         }
 
-        return new(innerHandler ?? new HttpClientHandler()) { BaseAddress = new(hostUrl.TrimEnd('/')) };
+        // Under RFC 3986 resolution the trailing slash is significant (it controls whether a relative path is
+        // appended to or replaces the base path), so preserve the host URL as supplied. The legacy mode trims it
+        // because it prepends the base path itself.
+        var baseAddress = settings?.UrlResolution == UrlResolutionMode.Rfc3986 ? hostUrl : hostUrl.TrimEnd('/');
+        return new(innerHandler ?? new HttpClientHandler()) { BaseAddress = new(baseAddress) };
     }
 
     /// <summary>Resolves the generated implementation type for a Refit interface.</summary>

@@ -38,7 +38,7 @@ internal static partial class Parser
 
         var canGenerateInline =
             parameterEligibility
-            && returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult
+            && returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
             && methodSymbol.TypeParameters.Length == 0
             && httpMethod.Length > 0
             && IsConstantPathSupported(path)
@@ -573,15 +573,24 @@ internal static partial class Parser
     /// <summary>Gets the result type wrapped by Task or ValueTask.</summary>
     /// <param name="returnType">The declared return type.</param>
     /// <returns>The result type.</returns>
-    private static ITypeSymbol GetReturnResultType(ITypeSymbol returnType) =>
-        returnType is INamedTypeSymbol
+    private static ITypeSymbol GetReturnResultType(ITypeSymbol returnType)
+    {
+        if (returnType is INamedTypeSymbol { TypeArguments.Length: 1 } namedType)
         {
-            MetadataName: "Task`1" or "ValueTask`1",
-            TypeArguments.Length: 1
-        } namedType
-        && namedType.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks"
-            ? namedType.TypeArguments[0]
-            : returnType;
+            var ns = namedType.ContainingNamespace.ToDisplayString();
+            if (namedType.MetadataName is "Task`1" or "ValueTask`1" && ns == "System.Threading.Tasks")
+            {
+                return namedType.TypeArguments[0];
+            }
+
+            if (namedType.MetadataName == "IAsyncEnumerable`1" && ns == "System.Collections.Generic")
+            {
+                return namedType.TypeArguments[0];
+            }
+        }
+
+        return returnType;
+    }
 
     /// <summary>Determines whether a type is one of Refit's API response wrappers.</summary>
     /// <param name="type">The type to inspect.</param>

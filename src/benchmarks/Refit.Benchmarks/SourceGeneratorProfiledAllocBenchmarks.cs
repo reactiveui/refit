@@ -8,12 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 
 namespace Refit.Benchmarks;
 
-/// <summary>
-/// Allocation-profile benchmarks for the Refit source generator. Uses an EventPipe GC-verbose
-/// trace, which captures real GC/allocation events and is more accurate than the sampling
-/// MemoryDiagnoser. The exported *.speedscope.json (under BenchmarkDotNet.Artifacts/) can be
-/// opened to inspect per-call-site allocations.
-/// </summary>
+/// <summary>EventPipe GC-verbose allocation profile of the Refit source generator (per-call-site allocations).</summary>
 [ShortRunJob]
 [EventPipeProfiler(EventPipeProfile.GcVerbose)]
 public class SourceGeneratorProfiledAllocBenchmarks

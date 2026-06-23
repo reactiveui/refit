@@ -126,7 +126,7 @@ public class EndToEndBenchmark
      * Each [Benchmark] tests one return type that Refit allows and is parameterized to test different, serializers, and http methods, and status codes
      */
 
-    /// <summary>Benchmarks a method that returns a plain <see cref="Task"/>.</summary>
+    /// <summary>Benchmarks a method that returns a plain Task.</summary>
     /// <returns>A task that completes when the request has finished.</returns>
     [Benchmark]
     public async Task Task_Async()

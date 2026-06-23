@@ -159,7 +159,7 @@ internal static class CodeFixFixture
         }
 
         var span = new TextSpan(start, marker.Length);
-        var lineSpan = new LinePositionSpan(new LinePosition(0, 0), new LinePosition(0, marker.Length));
+        var lineSpan = new LinePositionSpan(new(0, 0), new(0, marker.Length));
         var descriptor = new DiagnosticDescriptor(
             diagnosticId,
             "Test diagnostic",

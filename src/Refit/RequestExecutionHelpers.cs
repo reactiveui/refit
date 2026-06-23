@@ -118,7 +118,7 @@ internal static class RequestExecutionHelpers
             }
 
             response = sendResult.Response!;
-            content = response.Content ?? new StringContent(string.Empty);
+            content = EnsureResponseContent(response);
             disposeResponse = options.ShouldDisposeResponse;
 
             var exception = typeof(T) != typeof(HttpResponseMessage)
@@ -161,6 +161,41 @@ internal static class RequestExecutionHelpers
         }
     }
 
+    /// <summary>Sends a request and streams the response body into a sequence, throwing on HTTP errors.</summary>
+    /// <typeparam name="T">The element type yielded to the caller.</typeparam>
+    /// <param name="client">The HTTP client to send with.</param>
+    /// <param name="request">The request message; disposed when streaming completes.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="applyAuthorizationHeader">Whether to apply the configured authorization getter before sending.</param>
+    /// <param name="cancellationToken">A token to cancel streaming.</param>
+    /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
+    public static IAsyncEnumerable<T?> StreamResponseAsync<T>(
+        HttpClient client,
+        HttpRequestMessage request,
+        RefitSettings settings,
+        bool applyAuthorizationHeader,
+        CancellationToken cancellationToken)
+    {
+        if (settings.ContentSerializer is not IStreamingContentSerializer streamingSerializer)
+        {
+            request.Dispose();
+            throw new NotSupportedException(
+                $"The configured {nameof(IHttpContentSerializer)} does not support streaming responses. Implement {nameof(IStreamingContentSerializer)} to return an IAsyncEnumerable<T>.");
+        }
+
+        return StreamResponseIteratorAsync<T>(
+            client,
+            request,
+            settings,
+            streamingSerializer,
+            applyAuthorizationHeader,
+            cancellationToken);
+    }
+
     /// <summary>Populates an empty Authorization header through the configured token getter.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="settings">The Refit settings to use.</param>
@@ -185,6 +220,90 @@ internal static class RequestExecutionHelpers
         var token = await settings.AuthorizationHeaderValueGetter(request, cancellationToken)
             .ConfigureAwait(false);
         request.Headers.Authorization = new(auth.Scheme, token);
+    }
+
+    /// <summary>Returns the response content, substituting empty content when the response has none.</summary>
+    /// <param name="response">The response whose content is read.</param>
+    /// <returns>The response content, or empty content when none is present.</returns>
+    internal static HttpContent EnsureResponseContent(HttpResponseMessage response) =>
+        response.Content ?? new StringContent(string.Empty);
+
+    /// <summary>Sends the request and streams its body, throwing on HTTP errors and disposing the request when done.</summary>
+    /// <typeparam name="T">The element type yielded to the caller.</typeparam>
+    /// <param name="client">The HTTP client to send with.</param>
+    /// <param name="request">The request message; disposed when streaming completes.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="streamingSerializer">The streaming-capable content serializer.</param>
+    /// <param name="applyAuthorizationHeader">Whether to apply the configured authorization getter before sending.</param>
+    /// <param name="cancellationToken">A token to cancel streaming.</param>
+    /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally specified explicitly by generated and reflection callers.")]
+    private static async IAsyncEnumerable<T?> StreamResponseIteratorAsync<T>(
+        HttpClient client,
+        HttpRequestMessage request,
+        RefitSettings settings,
+        IStreamingContentSerializer streamingSerializer,
+        bool applyAuthorizationHeader,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        using (request)
+        {
+            if (applyAuthorizationHeader)
+            {
+                await AddAuthorizationHeaderFromGetterAsync(request, settings, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            using var response = await client
+                .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+                .ConfigureAwait(false);
+
+            var exception = await settings.ExceptionFactory(response).ConfigureAwait(false);
+            if (exception is not null)
+            {
+                throw exception;
+            }
+
+            var content = EnsureResponseContent(response);
+            var format = DetectStreamingFormat(content);
+
+#if NET6_0_OR_GREATER
+            var stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
+            await using (stream.ConfigureAwait(false))
+            {
+                await foreach (var item in streamingSerializer
+                    .DeserializeStreamAsync<T>(stream, format, cancellationToken)
+                    .ConfigureAwait(false))
+                {
+                    yield return item;
+                }
+            }
+#else
+            using var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+            await foreach (var item in streamingSerializer
+                .DeserializeStreamAsync<T>(stream, format, cancellationToken)
+                .ConfigureAwait(false))
+            {
+                yield return item;
+            }
+#endif
+        }
+    }
+
+    /// <summary>Chooses the streaming frame format from the response content type.</summary>
+    /// <param name="content">The response content whose media type is inspected.</param>
+    /// <returns>The detected streaming format.</returns>
+    private static StreamingContentFormat DetectStreamingFormat(HttpContent content)
+    {
+        var mediaType = content.Headers.ContentType?.MediaType;
+        return string.Equals(mediaType, "application/jsonl", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(mediaType, "application/x-ndjson", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(mediaType, "application/x-jsonlines", StringComparison.OrdinalIgnoreCase)
+            ? StreamingContentFormat.JsonLines
+            : StreamingContentFormat.JsonArray;
     }
 
     /// <summary>Sends the request, capturing a transport failure as an API response when required.</summary>

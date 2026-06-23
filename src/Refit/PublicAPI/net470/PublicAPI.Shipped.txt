@@ -1,12 +1,37 @@
 #nullable enable
+abstract Refit.HttpMethodAttribute.Method.get -> System.Net.Http.HttpMethod!
+abstract Refit.MultipartItem.CreateContent() -> System.Net.Http.HttpContent!
+override Refit.ByteArrayPart.CreateContent() -> System.Net.Http.HttpContent!
+override Refit.DeleteAttribute.Method.get -> System.Net.Http.HttpMethod!
+override Refit.FileInfoPart.CreateContent() -> System.Net.Http.HttpContent!
+override Refit.GetAttribute.Method.get -> System.Net.Http.HttpMethod!
+override Refit.HeadAttribute.Method.get -> System.Net.Http.HttpMethod!
+override Refit.ObjectToInferredTypesConverter.Read(ref System.Text.Json.Utf8JsonReader reader, System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> object?
+override Refit.ObjectToInferredTypesConverter.Write(System.Text.Json.Utf8JsonWriter! writer, object! value, System.Text.Json.JsonSerializerOptions! options) -> void
+override Refit.OptionsAttribute.Method.get -> System.Net.Http.HttpMethod!
+override Refit.PatchAttribute.Method.get -> System.Net.Http.HttpMethod!
+override Refit.PostAttribute.Method.get -> System.Net.Http.HttpMethod!
+override Refit.PutAttribute.Method.get -> System.Net.Http.HttpMethod!
+override Refit.RestMethodInfo.Equals(object? obj) -> bool
+override Refit.RestMethodInfo.GetHashCode() -> int
+override Refit.RestMethodInfo.ToString() -> string!
+override Refit.StreamPart.CreateContent() -> System.Net.Http.HttpContent!
 Refit.AliasAsAttribute
 Refit.AliasAsAttribute.AliasAsAttribute(string! name) -> void
 Refit.AliasAsAttribute.Name.get -> string!
 Refit.ApiException
-Refit.ApiException.ApiException(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders! headers, Refit.RefitSettings! refitSettings) -> void
-Refit.ApiException.ApiException(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders! headers, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> void
-Refit.ApiException.ApiException(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders! headers, Refit.RefitSettings! refitSettings) -> void
 Refit.ApiException.ApiException(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders! headers, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> void
+Refit.ApiException.ApiException(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders! headers, Refit.RefitSettings! refitSettings) -> void
+Refit.ApiException.ApiException(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders! headers, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> void
+Refit.ApiException.ApiException(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, string? content, System.Net.HttpStatusCode statusCode, string? reasonPhrase, System.Net.Http.Headers.HttpResponseHeaders! headers, Refit.RefitSettings! refitSettings) -> void
+Refit.ApiExceptionBase
+Refit.ApiExceptionBase.ApiExceptionBase(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> void
+Refit.ApiExceptionBase.ApiExceptionBase(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings) -> void
+Refit.ApiExceptionBase.ApiExceptionBase(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings, System.Exception! innerException) -> void
+Refit.ApiExceptionBase.HttpMethod.get -> System.Net.Http.HttpMethod!
+Refit.ApiExceptionBase.RefitSettings.get -> Refit.RefitSettings!
+Refit.ApiExceptionBase.RequestMessage.get -> System.Net.Http.HttpRequestMessage!
+Refit.ApiExceptionBase.Uri.get -> System.Uri?
 Refit.ApiException.Content.get -> string?
 Refit.ApiException.ContentHeaders.get -> System.Net.Http.Headers.HttpContentHeaders?
 Refit.ApiException.ContentHeaders.set -> void
@@ -15,44 +40,36 @@ Refit.ApiException.HasContent.get -> bool
 Refit.ApiException.Headers.get -> System.Net.Http.Headers.HttpResponseHeaders!
 Refit.ApiException.ReasonPhrase.get -> string?
 Refit.ApiException.StatusCode.get -> System.Net.HttpStatusCode
-Refit.ApiExceptionBase
-Refit.ApiExceptionBase.ApiExceptionBase(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings, System.Exception! innerException) -> void
-Refit.ApiExceptionBase.ApiExceptionBase(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings) -> void
-Refit.ApiExceptionBase.ApiExceptionBase(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> void
-Refit.ApiExceptionBase.HttpMethod.get -> System.Net.Http.HttpMethod!
-Refit.ApiExceptionBase.RefitSettings.get -> Refit.RefitSettings!
-Refit.ApiExceptionBase.RequestMessage.get -> System.Net.Http.HttpRequestMessage!
-Refit.ApiExceptionBase.Uri.get -> System.Uri?
 Refit.ApiRequestException
-Refit.ApiRequestException.ApiRequestException(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings, System.Exception! innerException) -> void
-Refit.ApiRequestException.ApiRequestException(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings) -> void
 Refit.ApiRequestException.ApiRequestException(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> void
+Refit.ApiRequestException.ApiRequestException(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings) -> void
+Refit.ApiRequestException.ApiRequestException(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, Refit.RefitSettings! refitSettings, System.Exception! innerException) -> void
+Refit.ApiResponseExtensions
+Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!)
+Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!).EnsureSuccessfulAsync() -> System.Threading.Tasks.Task<Refit.IApiResponse<T>!>!
+Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!).EnsureSuccessStatusCodeAsync() -> System.Threading.Tasks.Task<Refit.IApiResponse<T>!>!
 Refit.ApiResponse<T>
 Refit.ApiResponse<T>.ApiResponse(System.Net.Http.HttpRequestMessage! request, System.Net.Http.HttpResponseMessage? response, T? content, Refit.RefitSettings! settings, Refit.ApiExceptionBase? error = null) -> void
-Refit.ApiResponse<T>.ApiResponse(System.Net.Http.HttpResponseMessage! response, T? content, Refit.RefitSettings! settings) -> void
 Refit.ApiResponse<T>.ApiResponse(System.Net.Http.HttpResponseMessage! response, T? content, Refit.RefitSettings! settings, Refit.ApiExceptionBase? error) -> void
+Refit.ApiResponse<T>.ApiResponse(System.Net.Http.HttpResponseMessage! response, T? content, Refit.RefitSettings! settings) -> void
 Refit.ApiResponse<T>.Content.get -> T?
 Refit.ApiResponse<T>.ContentHeaders.get -> System.Net.Http.Headers.HttpContentHeaders?
 Refit.ApiResponse<T>.Dispose() -> void
-Refit.ApiResponse<T>.EnsureSuccessStatusCodeAsync() -> System.Threading.Tasks.Task<Refit.ApiResponse<T>!>!
 Refit.ApiResponse<T>.EnsureSuccessfulAsync() -> System.Threading.Tasks.Task<Refit.ApiResponse<T>!>!
+Refit.ApiResponse<T>.EnsureSuccessStatusCodeAsync() -> System.Threading.Tasks.Task<Refit.ApiResponse<T>!>!
 Refit.ApiResponse<T>.Error.get -> Refit.ApiExceptionBase?
 Refit.ApiResponse<T>.HasContent.get -> bool
 Refit.ApiResponse<T>.HasRequestError(out Refit.ApiRequestException? error) -> bool
 Refit.ApiResponse<T>.HasResponseError(out Refit.ApiException? error) -> bool
 Refit.ApiResponse<T>.Headers.get -> System.Net.Http.Headers.HttpResponseHeaders?
 Refit.ApiResponse<T>.IsReceived.get -> bool
-Refit.ApiResponse<T>.IsSuccessStatusCode.get -> bool
 Refit.ApiResponse<T>.IsSuccessful.get -> bool
+Refit.ApiResponse<T>.IsSuccessStatusCode.get -> bool
 Refit.ApiResponse<T>.ReasonPhrase.get -> string?
 Refit.ApiResponse<T>.RequestMessage.get -> System.Net.Http.HttpRequestMessage!
 Refit.ApiResponse<T>.Settings.get -> Refit.RefitSettings!
 Refit.ApiResponse<T>.StatusCode.get -> System.Net.HttpStatusCode?
 Refit.ApiResponse<T>.Version.get -> System.Version?
-Refit.ApiResponseExtensions
-Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!)
-Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!).EnsureSuccessStatusCodeAsync() -> System.Threading.Tasks.Task<Refit.IApiResponse<T>!>!
-Refit.ApiResponseExtensions.extension<T>(Refit.IApiResponse<T>!).EnsureSuccessfulAsync() -> System.Threading.Tasks.Task<Refit.IApiResponse<T>!>!
 Refit.AttachmentNameAttribute
 Refit.AttachmentNameAttribute.AttachmentNameAttribute(string! name) -> void
 Refit.AttachmentNameAttribute.Name.get -> string!
@@ -60,10 +77,10 @@ Refit.AuthorizeAttribute
 Refit.AuthorizeAttribute.AuthorizeAttribute(string! scheme = "Bearer") -> void
 Refit.AuthorizeAttribute.Scheme.get -> string!
 Refit.BodyAttribute
-Refit.BodyAttribute.BodyAttribute() -> void
-Refit.BodyAttribute.BodyAttribute(Refit.BodySerializationMethod serializationMethod) -> void
-Refit.BodyAttribute.BodyAttribute(Refit.BodySerializationMethod serializationMethod, bool buffered) -> void
 Refit.BodyAttribute.BodyAttribute(bool buffered) -> void
+Refit.BodyAttribute.BodyAttribute(Refit.BodySerializationMethod serializationMethod, bool buffered) -> void
+Refit.BodyAttribute.BodyAttribute(Refit.BodySerializationMethod serializationMethod) -> void
+Refit.BodyAttribute.BodyAttribute() -> void
 Refit.BodyAttribute.Buffered.get -> bool?
 Refit.BodyAttribute.SerializationMethod.get -> Refit.BodySerializationMethod
 Refit.BodySerializationMethod
@@ -107,13 +124,13 @@ Refit.GetAttribute.GetAttribute(string! path) -> void
 Refit.HeadAttribute
 Refit.HeadAttribute.HeadAttribute(string! path) -> void
 Refit.HeaderAttribute
-Refit.HeaderAttribute.Header.get -> string!
 Refit.HeaderAttribute.HeaderAttribute(string! header) -> void
+Refit.HeaderAttribute.Header.get -> string!
 Refit.HeaderCollectionAttribute
 Refit.HeaderCollectionAttribute.HeaderCollectionAttribute() -> void
 Refit.HeadersAttribute
-Refit.HeadersAttribute.Headers.get -> string![]!
 Refit.HeadersAttribute.HeadersAttribute(params string![]! headers) -> void
+Refit.HeadersAttribute.Headers.get -> string![]!
 Refit.HttpMethodAttribute
 Refit.HttpMethodAttribute.HttpMethodAttribute(string! path) -> void
 Refit.HttpRequestMessageOptions
@@ -124,15 +141,15 @@ Refit.IApiResponse.HasRequestError(out Refit.ApiRequestException? error) -> bool
 Refit.IApiResponse.HasResponseError(out Refit.ApiException? error) -> bool
 Refit.IApiResponse.Headers.get -> System.Net.Http.Headers.HttpResponseHeaders?
 Refit.IApiResponse.IsReceived.get -> bool
-Refit.IApiResponse.IsSuccessStatusCode.get -> bool
 Refit.IApiResponse.IsSuccessful.get -> bool
+Refit.IApiResponse.IsSuccessStatusCode.get -> bool
 Refit.IApiResponse.ReasonPhrase.get -> string?
 Refit.IApiResponse.RequestMessage.get -> System.Net.Http.HttpRequestMessage?
 Refit.IApiResponse.StatusCode.get -> System.Net.HttpStatusCode?
-Refit.IApiResponse.Version.get -> System.Version?
 Refit.IApiResponse<T>
 Refit.IApiResponse<T>.Content.get -> T?
 Refit.IApiResponse<T>.HasContent.get -> bool
+Refit.IApiResponse.Version.get -> System.Version?
 Refit.IFormUrlEncodedParameterFormatter
 Refit.IFormUrlEncodedParameterFormatter.Format(object? value, string? formatString) -> string?
 Refit.IHttpContentSerializer
@@ -143,6 +160,11 @@ Refit.IRequestBuilder
 Refit.IRequestBuilder.BuildRestResultFuncForMethod(string! methodName, System.Type![]? parameterTypes = null, System.Type![]? genericArgumentTypes = null) -> System.Func<System.Net.Http.HttpClient!, object![]!, object?>!
 Refit.IRequestBuilder.Settings.get -> Refit.RefitSettings!
 Refit.IRequestBuilder<T>
+Refit.IStreamingContentSerializer
+Refit.IStreamingContentSerializer.DeserializeStreamAsync<T>(System.IO.Stream! stream, Refit.StreamingContentFormat format, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
+Refit.ISynchronousContentSerializer
+Refit.ISynchronousContentSerializer.ToHttpContentSynchronous<T>(T item) -> System.Net.Http.HttpContent!
+Refit.ISynchronousContentSerializer.ToStreamingHttpContent<T>(T item) -> System.Net.Http.HttpContent!
 Refit.IUrlParameterFormatter
 Refit.IUrlParameterFormatter.Format(object? value, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string?
 Refit.IUrlParameterKeyFormatter
@@ -163,8 +185,8 @@ Refit.MultipartAttribute.MultipartAttribute(string! boundaryText = "----MyGreatB
 Refit.MultipartItem
 Refit.MultipartItem.ContentType.get -> string?
 Refit.MultipartItem.FileName.get -> string!
-Refit.MultipartItem.MultipartItem(string! fileName, string? contentType) -> void
 Refit.MultipartItem.MultipartItem(string! fileName, string? contentType, string? name) -> void
+Refit.MultipartItem.MultipartItem(string! fileName, string? contentType) -> void
 Refit.MultipartItem.Name.get -> string?
 Refit.MultipartItem.ToContent() -> System.Net.Http.HttpContent!
 Refit.ObjectToInferredTypesConverter
@@ -196,8 +218,8 @@ Refit.ProblemDetails.Type.get -> string?
 Refit.ProblemDetails.Type.set -> void
 Refit.PropertyAttribute
 Refit.PropertyAttribute.Key.get -> string?
-Refit.PropertyAttribute.PropertyAttribute() -> void
 Refit.PropertyAttribute.PropertyAttribute(string! key) -> void
+Refit.PropertyAttribute.PropertyAttribute() -> void
 Refit.PutAttribute
 Refit.PutAttribute.PutAttribute(string! path) -> void
 Refit.QueryAttribute
@@ -208,17 +230,19 @@ Refit.QueryAttribute.Format.get -> string?
 Refit.QueryAttribute.Format.set -> void
 Refit.QueryAttribute.IsCollectionFormatSpecified.get -> bool
 Refit.QueryAttribute.Prefix.get -> string?
-Refit.QueryAttribute.QueryAttribute() -> void
 Refit.QueryAttribute.QueryAttribute(Refit.CollectionFormat collectionFormat) -> void
-Refit.QueryAttribute.QueryAttribute(string! delimiter) -> void
-Refit.QueryAttribute.QueryAttribute(string! delimiter, string! prefix) -> void
 Refit.QueryAttribute.QueryAttribute(string! delimiter, string! prefix, string! format) -> void
+Refit.QueryAttribute.QueryAttribute(string! delimiter, string! prefix) -> void
+Refit.QueryAttribute.QueryAttribute(string! delimiter) -> void
+Refit.QueryAttribute.QueryAttribute() -> void
 Refit.QueryAttribute.TreatAsString.get -> bool
 Refit.QueryAttribute.TreatAsString.set -> void
 Refit.QueryUriFormatAttribute
 Refit.QueryUriFormatAttribute.QueryUriFormatAttribute(System.UriFormat uriFormat) -> void
 Refit.QueryUriFormatAttribute.UriFormat.get -> System.UriFormat
 Refit.RefitSettings
+Refit.RefitSettings.AllowUnmatchedRouteParameters.get -> bool
+Refit.RefitSettings.AllowUnmatchedRouteParameters.set -> void
 Refit.RefitSettings.AuthorizationHeaderValueGetter.get -> System.Func<System.Net.Http.HttpRequestMessage!, System.Threading.CancellationToken, System.Threading.Tasks.Task<string!>!>?
 Refit.RefitSettings.AuthorizationHeaderValueGetter.set -> void
 Refit.RefitSettings.Buffered.get -> bool
@@ -237,15 +261,23 @@ Refit.RefitSettings.HttpMessageHandlerFactory.get -> System.Func<System.Net.Http
 Refit.RefitSettings.HttpMessageHandlerFactory.set -> void
 Refit.RefitSettings.HttpRequestMessageOptions.get -> System.Collections.Generic.Dictionary<string!, object!>?
 Refit.RefitSettings.HttpRequestMessageOptions.init -> void
-Refit.RefitSettings.RefitSettings() -> void
-Refit.RefitSettings.RefitSettings(Refit.IHttpContentSerializer! contentSerializer) -> void
-Refit.RefitSettings.RefitSettings(Refit.IHttpContentSerializer! contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter) -> void
-Refit.RefitSettings.RefitSettings(Refit.IHttpContentSerializer! contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter, Refit.IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter) -> void
 Refit.RefitSettings.RefitSettings(Refit.IHttpContentSerializer! contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter, Refit.IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter, Refit.IUrlParameterKeyFormatter? urlParameterKeyFormatter) -> void
+Refit.RefitSettings.RefitSettings(Refit.IHttpContentSerializer! contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter, Refit.IFormUrlEncodedParameterFormatter? formUrlEncodedParameterFormatter) -> void
+Refit.RefitSettings.RefitSettings(Refit.IHttpContentSerializer! contentSerializer, Refit.IUrlParameterFormatter? urlParameterFormatter) -> void
+Refit.RefitSettings.RefitSettings(Refit.IHttpContentSerializer! contentSerializer) -> void
+Refit.RefitSettings.RefitSettings() -> void
+Refit.RefitSettings.RequestBodySerialization.get -> Refit.RequestBodySerializationMode
+Refit.RefitSettings.RequestBodySerialization.set -> void
 Refit.RefitSettings.UrlParameterFormatter.get -> Refit.IUrlParameterFormatter!
 Refit.RefitSettings.UrlParameterFormatter.set -> void
 Refit.RefitSettings.UrlParameterKeyFormatter.get -> Refit.IUrlParameterKeyFormatter!
 Refit.RefitSettings.UrlParameterKeyFormatter.set -> void
+Refit.RefitSettings.UrlResolution.get -> Refit.UrlResolutionMode
+Refit.RefitSettings.UrlResolution.set -> void
+Refit.RequestBodySerializationMode
+Refit.RequestBodySerializationMode.Buffered = 1 -> Refit.RequestBodySerializationMode
+Refit.RequestBodySerializationMode.Default = 0 -> Refit.RequestBodySerializationMode
+Refit.RequestBodySerializationMode.Streamed = 2 -> Refit.RequestBodySerializationMode
 Refit.RequestBuilder
 Refit.RestMethodInfo
 Refit.RestMethodInfo.<Clone>$() -> Refit.RestMethodInfo!
@@ -285,51 +317,45 @@ Refit.RestService
 Refit.SnakeCaseUrlParameterKeyFormatter
 Refit.SnakeCaseUrlParameterKeyFormatter.Format(string! key) -> string!
 Refit.SnakeCaseUrlParameterKeyFormatter.SnakeCaseUrlParameterKeyFormatter() -> void
+Refit.StreamingContentFormat
+Refit.StreamingContentFormat.JsonArray = 0 -> Refit.StreamingContentFormat
+Refit.StreamingContentFormat.JsonLines = 1 -> Refit.StreamingContentFormat
 Refit.StreamPart
 Refit.StreamPart.StreamPart(System.IO.Stream! value, string! fileName, string? contentType = null, string? name = null) -> void
 Refit.StreamPart.Value.get -> System.IO.Stream!
 Refit.SystemTextJsonContentSerializer
+Refit.SystemTextJsonContentSerializer.DeserializeStreamAsync<T>(System.IO.Stream! stream, Refit.StreamingContentFormat format, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
 Refit.SystemTextJsonContentSerializer.FromHttpContentAsync<T>(System.Net.Http.HttpContent! content, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
 Refit.SystemTextJsonContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyInfo! propertyInfo) -> string?
-Refit.SystemTextJsonContentSerializer.SystemTextJsonContentSerializer() -> void
 Refit.SystemTextJsonContentSerializer.SystemTextJsonContentSerializer(System.Text.Json.JsonSerializerOptions! jsonSerializerOptions) -> void
+Refit.SystemTextJsonContentSerializer.SystemTextJsonContentSerializer() -> void
+Refit.SystemTextJsonContentSerializer.ToHttpContentSynchronous<T>(T item) -> System.Net.Http.HttpContent!
 Refit.SystemTextJsonContentSerializer.ToHttpContent<T>(T item) -> System.Net.Http.HttpContent!
+Refit.SystemTextJsonContentSerializer.ToStreamingHttpContent<T>(T item) -> System.Net.Http.HttpContent!
+Refit.UrlResolutionMode
+Refit.UrlResolutionMode.RefitLegacy = 0 -> Refit.UrlResolutionMode
+Refit.UrlResolutionMode.Rfc3986 = 1 -> Refit.UrlResolutionMode
 Refit.ValidationApiException
 Refit.ValidationApiException.Content.get -> Refit.ProblemDetails?
-Refit.ValidationApiException.ValidationApiException(string! message) -> void
 Refit.ValidationApiException.ValidationApiException(string! message, System.Exception! innerException) -> void
-abstract Refit.HttpMethodAttribute.Method.get -> System.Net.Http.HttpMethod!
-abstract Refit.MultipartItem.CreateContent() -> System.Net.Http.HttpContent!
-override Refit.ByteArrayPart.CreateContent() -> System.Net.Http.HttpContent!
-override Refit.DeleteAttribute.Method.get -> System.Net.Http.HttpMethod!
-override Refit.FileInfoPart.CreateContent() -> System.Net.Http.HttpContent!
-override Refit.GetAttribute.Method.get -> System.Net.Http.HttpMethod!
-override Refit.HeadAttribute.Method.get -> System.Net.Http.HttpMethod!
-override Refit.ObjectToInferredTypesConverter.Read(ref System.Text.Json.Utf8JsonReader reader, System.Type! typeToConvert, System.Text.Json.JsonSerializerOptions! options) -> object?
-override Refit.ObjectToInferredTypesConverter.Write(System.Text.Json.Utf8JsonWriter! writer, object! value, System.Text.Json.JsonSerializerOptions! options) -> void
-override Refit.OptionsAttribute.Method.get -> System.Net.Http.HttpMethod!
-override Refit.PatchAttribute.Method.get -> System.Net.Http.HttpMethod!
-override Refit.PostAttribute.Method.get -> System.Net.Http.HttpMethod!
-override Refit.PutAttribute.Method.get -> System.Net.Http.HttpMethod!
-override Refit.RestMethodInfo.Equals(object? obj) -> bool
-override Refit.RestMethodInfo.GetHashCode() -> int
-override Refit.RestMethodInfo.ToString() -> string!
-override Refit.StreamPart.CreateContent() -> System.Net.Http.HttpContent!
-static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings) -> System.Threading.Tasks.Task<Refit.ApiException!>!
-static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
-static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings) -> System.Threading.Tasks.Task<Refit.ApiException!>!
+Refit.ValidationApiException.ValidationApiException(string! message) -> void
 static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
-static Refit.ApiResponseExtensions.EnsureSuccessStatusCodeAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.Task<Refit.IApiResponse<T>!>!
+static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings) -> System.Threading.Tasks.Task<Refit.ApiException!>!
+static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings, System.Exception? innerException) -> System.Threading.Tasks.Task<Refit.ApiException!>!
+static Refit.ApiException.Create(System.Net.Http.HttpRequestMessage! message, System.Net.Http.HttpMethod! httpMethod, System.Net.Http.HttpResponseMessage! response, Refit.RefitSettings! refitSettings) -> System.Threading.Tasks.Task<Refit.ApiException!>!
 static Refit.ApiResponseExtensions.EnsureSuccessfulAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.Task<Refit.IApiResponse<T>!>!
+static Refit.ApiResponseExtensions.EnsureSuccessStatusCodeAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.Task<Refit.IApiResponse<T>!>!
 static Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Type! interfaceType) -> void
 static Refit.GeneratedRequestRunner.AddHeaderCollection(System.Net.Http.HttpRequestMessage! request, System.Collections.Generic.IDictionary<string!, string!>? headers) -> void
 static Refit.GeneratedRequestRunner.AddRequestProperty<TValue>(System.Net.Http.HttpRequestMessage! request, string! key, TValue value) -> void
+static Refit.GeneratedRequestRunner.BuildRelativeUri(System.Net.Http.HttpClient! client, string! relativePath, Refit.UrlResolutionMode urlResolution) -> System.Uri!
 static Refit.GeneratedRequestRunner.CreateBodyContent<TBody>(Refit.RefitSettings! settings, TBody body, Refit.BodySerializationMethod serializationMethod, bool streamBody) -> System.Net.Http.HttpContent!
 static Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<TBody>(Refit.RefitSettings! settings, TBody body) -> System.Net.Http.HttpContent!
 static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings! settings, TBody body) -> System.Net.Http.HttpContent!
 static Refit.GeneratedRequestRunner.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!
 static Refit.GeneratedRequestRunner.SendVoidAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
 static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage! request, string! name, string? value) -> void
+static Refit.GeneratedRequestRunner.StreamAsync<T>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Threading.CancellationToken methodCancellationToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
 static Refit.HttpRequestMessageOptions.InterfaceType.get -> string!
 static Refit.HttpRequestMessageOptions.RestMethodInfo.get -> string!
 static Refit.JsonLinesContent.JsonLinesMediaType.get -> string!
@@ -343,26 +369,27 @@ static Refit.RequestBuilder.ForType<T>(Refit.RefitSettings? settings) -> Refit.I
 static Refit.RestMethodInfo.operator !=(Refit.RestMethodInfo? left, Refit.RestMethodInfo? right) -> bool
 static Refit.RestMethodInfo.operator ==(Refit.RestMethodInfo? left, Refit.RestMethodInfo? right) -> bool
 static Refit.RestService.CreateHttpClient(string! hostUrl, Refit.RefitSettings? settings) -> System.Net.Http.HttpClient!
+static Refit.RestService.ForGenerated(System.Type! refitInterfaceType, string! hostUrl, Refit.RefitSettings! settings) -> object!
+static Refit.RestService.ForGenerated(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client, Refit.RefitSettings! settings) -> object!
+static Refit.RestService.ForGenerated<T>(string! hostUrl, Refit.RefitSettings! settings) -> T
+static Refit.RestService.ForGenerated<T>(string! hostUrl) -> T
+static Refit.RestService.ForGenerated<T>(System.Net.Http.HttpClient! client, Refit.RefitSettings! settings) -> T
+static Refit.RestService.ForGenerated<T>(System.Net.Http.HttpClient! client) -> T
+static Refit.RestService.For(System.Type! refitInterfaceType, string! hostUrl) -> object!
+static Refit.RestService.For(System.Type! refitInterfaceType, string! hostUrl, Refit.RefitSettings? settings) -> object!
 static Refit.RestService.For(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client) -> object!
 static Refit.RestService.For(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client, Refit.IRequestBuilder! builder) -> object!
 static Refit.RestService.For(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client, Refit.RefitSettings? settings) -> object!
-static Refit.RestService.For(System.Type! refitInterfaceType, string! hostUrl) -> object!
-static Refit.RestService.For(System.Type! refitInterfaceType, string! hostUrl, Refit.RefitSettings? settings) -> object!
-static Refit.RestService.For<T>(System.Net.Http.HttpClient! client) -> T
+static Refit.RestService.For<T>(string! hostUrl, Refit.RefitSettings? settings) -> T
+static Refit.RestService.For<T>(string! hostUrl) -> T
 static Refit.RestService.For<T>(System.Net.Http.HttpClient! client, Refit.IRequestBuilder<T>! builder) -> T
 static Refit.RestService.For<T>(System.Net.Http.HttpClient! client, Refit.RefitSettings? settings) -> T
-static Refit.RestService.For<T>(string! hostUrl) -> T
-static Refit.RestService.For<T>(string! hostUrl, Refit.RefitSettings? settings) -> T
-static Refit.RestService.ForGenerated(System.Type! refitInterfaceType, System.Net.Http.HttpClient! client, Refit.RefitSettings! settings) -> object!
-static Refit.RestService.ForGenerated(System.Type! refitInterfaceType, string! hostUrl, Refit.RefitSettings! settings) -> object!
-static Refit.RestService.ForGenerated<T>(System.Net.Http.HttpClient! client) -> T
-static Refit.RestService.ForGenerated<T>(System.Net.Http.HttpClient! client, Refit.RefitSettings! settings) -> T
-static Refit.RestService.ForGenerated<T>(string! hostUrl) -> T
-static Refit.RestService.ForGenerated<T>(string! hostUrl, Refit.RefitSettings! settings) -> T
+static Refit.RestService.For<T>(System.Net.Http.HttpClient! client) -> T
 static Refit.RestService.RegisterGeneratedFactory(System.Type! refitInterfaceType, System.Func<System.Net.Http.HttpClient!, Refit.IRequestBuilder!, object!>! factory) -> void
 static Refit.RestService.RegisterGeneratedFactory<T>(System.Func<System.Net.Http.HttpClient!, Refit.IRequestBuilder!, T>! factory) -> void
 static Refit.RestService.RegisterGeneratedSettingsFactory<T>(System.Func<System.Net.Http.HttpClient!, Refit.RefitSettings!, T>! factory) -> void
 static Refit.SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions() -> System.Text.Json.JsonSerializerOptions!
+static Refit.SystemTextJsonContentSerializer.GetFastPathJsonSerializerOptions() -> System.Text.Json.JsonSerializerOptions!
 static Refit.ValidationApiException.Create(Refit.ApiException! exception) -> Refit.ValidationApiException!
 virtual Refit.DefaultFormUrlEncodedParameterFormatter.Format(object? value, string? formatString) -> string?
 virtual Refit.DefaultUrlParameterFormatter.Format(object? value, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string?

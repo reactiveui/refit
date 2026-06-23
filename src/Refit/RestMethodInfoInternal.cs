@@ -58,7 +58,7 @@ internal class RestMethodInfoInternal
 
         MultipartBoundary = GetMultipartBoundary(methodInfo, IsMultipart);
 
-        VerifyUrlPathIsSane(RelativePath);
+        VerifyUrlPathIsSane(RelativePath, RefitSettings.UrlResolution);
 
         var (returnType, returnResultType, deserializedResultType) = DetermineReturnTypeInfo(methodInfo);
         ReturnType = returnType;
@@ -68,7 +68,7 @@ internal class RestMethodInfoInternal
 
         // Exclude cancellation token parameters from this list
         ParameterInfoArray = GetNonCancellationTokenParameters(methodInfo.GetParameters());
-        (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray);
+        (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray, RefitSettings.AllowUnmatchedRouteParameters);
         BodyParameterInfo = FindBodyParameter(ParameterInfoArray, IsMultipart, hma.Method);
         AuthorizeParameterInfo = FindAuthorizationParameter(ParameterInfoArray);
 
@@ -317,14 +317,16 @@ internal class RestMethodInfoInternal
 
     /// <summary>Verifies that the relative URL path is well formed and free of injection characters.</summary>
     /// <param name="relativePath">The relative URL path to validate.</param>
-    private static void VerifyUrlPathIsSane(string relativePath)
+    /// <param name="urlResolution">The URL resolution mode; the leading-slash requirement is relaxed under <see cref="UrlResolutionMode.Rfc3986"/>.</param>
+    private static void VerifyUrlPathIsSane(string relativePath, UrlResolutionMode urlResolution)
     {
         if (string.IsNullOrEmpty(relativePath))
         {
             return;
         }
 
-        if (!relativePath.StartsWith("/", StringComparison.Ordinal))
+        if (urlResolution == UrlResolutionMode.RefitLegacy
+            && !relativePath.StartsWith("/", StringComparison.Ordinal))
         {
             throw new ArgumentException(
                 $"URL path {relativePath} must start with '/' and be of the form '/foo/bar/baz'");
@@ -343,6 +345,7 @@ internal class RestMethodInfoInternal
     /// <summary>Builds the route parameter map and the ordered URL fragments for the relative path.</summary>
     /// <param name="relativePath">The relative URL path template.</param>
     /// <param name="parameterInfo">The array of method parameters.</param>
+    /// <param name="allowUnmatchedRouteParameters">When true, a placeholder with no matching argument is left in the path verbatim instead of throwing.</param>
     /// <returns>A tuple containing the parameter map and the ordered list of URL fragments.</returns>
     [SuppressMessage(
         "Major Code Smell",
@@ -356,7 +359,8 @@ internal class RestMethodInfoInternal
     private static (Dictionary<int, RestMethodParameterInfo> Map, List<ParameterFragment> Fragments)
         BuildParameterMap(
             string relativePath,
-            ParameterInfo[] parameterInfo)
+            ParameterInfo[] parameterInfo,
+            bool allowUnmatchedRouteParameters)
     {
         var ret = new Dictionary<int, RestMethodParameterInfo>();
 
@@ -428,6 +432,12 @@ internal class RestMethodInfoInternal
             else if (objectParamValidationDict.TryGetValue(name, out var value1) && !isRoundTripping)
             {
                 AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1);
+            }
+            else if (allowUnmatchedRouteParameters)
+            {
+                // Leave the unmatched placeholder in the URL verbatim (including its braces) so the
+                // caller can resolve it later, e.g. inside a DelegatingHandler.
+                fragmentList.Add(ParameterFragment.Constant(match.Value));
             }
             else
             {
@@ -734,6 +744,7 @@ internal class RestMethodInfoInternal
                 returnType.GetGenericTypeDefinition() == typeof(Task<>)
                 || returnType.GetGenericTypeDefinition() == typeof(ValueTask<>)
                 || returnType.GetGenericTypeDefinition() == typeof(IObservable<>)
+                || returnType.GetGenericTypeDefinition() == typeof(IAsyncEnumerable<>)
             )
         )
         {

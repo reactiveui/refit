@@ -99,8 +99,8 @@ public partial class RestServiceIntegrationTests
 
         await fixture.PostJsonLines(
             [
-                new JsonLineRecord { Id = "124", Name = "Stark Industries" },
-                new JsonLineRecord { Id = "125", Name = "Acme Corp" }
+                new() { Id = "124", Name = "Stark Industries" },
+                new() { Id = "125", Name = "Acme Corp" }
             ]);
 
         mockHttp.VerifyNoOutstandingExpectation();

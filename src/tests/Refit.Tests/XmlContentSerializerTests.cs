@@ -161,7 +161,7 @@ public class XmlContentSerializerTests
 
         var readerOnly = new XmlReaderWriterSettings(readerSettings);
         var writerOnly = new XmlReaderWriterSettings(writerSettings);
-        var both = new XmlReaderWriterSettings(new XmlReaderSettings(), new XmlWriterSettings());
+        var both = new XmlReaderWriterSettings(new(), new());
 
         await Assert.That(readerOnly.ReaderSettings).IsSameReferenceAs(readerSettings);
         await Assert.That(readerOnly.ReaderSettings.Async).IsTrue();
