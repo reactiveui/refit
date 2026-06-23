@@ -17,29 +17,36 @@ public interface IApiResponse : IDisposable
     HttpContentHeaders? ContentHeaders { get; }
 
     /// <summary>Gets a value indicating whether the request was successful.</summary>
+    /// <remarks>
+    /// A successful status code does not imply a response body. Per RFC 9110 a 204 (No Content),
+    /// a 304 (Not Modified), a response to HEAD, or any 2xx with zero-length content carries no
+    /// content, so this intentionally does not narrow <see cref="ContentHeaders"/>. Use
+    /// <see cref="IApiResponse{T}.IsSuccessfulWithContent"/> or <see cref="IApiResponse{T}.HasContent"/>
+    /// when you need deserialized content.
+    /// </remarks>
     [MemberNotNullWhen(true, nameof(Headers))]
-    [MemberNotNullWhen(true, nameof(ContentHeaders))]
     [MemberNotNullWhen(true, nameof(StatusCode))]
     [MemberNotNullWhen(true, nameof(Version))]
-    [MemberNotNullWhen(false, nameof(Error))]
     bool IsSuccessStatusCode { get; }
 
     /// <summary>
     /// Gets a value indicating whether the request was successful and there wasn't any other error (for example, during content deserialization).
     /// </summary>
+    /// <remarks>
+    /// "No error" is not "has content": a 2xx with a <c>null</c> or empty body deserializes to
+    /// <c>null</c> without an error, so this does not narrow content. Use
+    /// <see cref="IApiResponse{T}.IsSuccessfulWithContent"/> or <see cref="IApiResponse{T}.HasContent"/>
+    /// when you need deserialized content.
+    /// </remarks>
     [MemberNotNullWhen(true, nameof(Headers))]
-    [MemberNotNullWhen(true, nameof(ContentHeaders))]
     [MemberNotNullWhen(true, nameof(StatusCode))]
     [MemberNotNullWhen(true, nameof(Version))]
-    [MemberNotNullWhen(false, nameof(Error))]
     bool IsSuccessful { get; }
 
     /// <summary>Gets a value indicating whether a response was received from the server.</summary>
     [MemberNotNullWhen(true, nameof(Headers))]
-    [MemberNotNullWhen(true, nameof(ContentHeaders))]
     [MemberNotNullWhen(true, nameof(StatusCode))]
     [MemberNotNullWhen(true, nameof(Version))]
-    [MemberNotNullWhen(false, nameof(Error))]
     bool IsReceived { get; }
 
     /// <summary>Gets the HTTP response status code.</summary>
@@ -57,6 +64,9 @@ public interface IApiResponse : IDisposable
     /// <summary>Gets the exception object in case of unsuccessful request or response.</summary>
     /// <remarks>
     /// <see cref="HasRequestError"/> and <see cref="HasResponseError"/> methods can be used to check the type of error.
+    /// An unsuccessful response is not guaranteed to carry an error (for example, a non-2xx response
+    /// constructed without one), so a failed state does not narrow this to non-null. Null-check it, or
+    /// use <see cref="HasRequestError"/> / <see cref="HasResponseError"/> for null-safe typed access.
     /// </remarks>
     [SuppressMessage(
         "Naming",

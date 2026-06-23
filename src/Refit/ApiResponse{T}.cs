@@ -70,6 +70,10 @@ public sealed class ApiResponse<T>(
     [MemberNotNullWhen(true, nameof(Content))]
     public bool HasContent => Content is not null;
 
+    /// <summary>Gets a value indicating whether the request was successful and deserialized <see cref="Content"/> is available.</summary>
+    [MemberNotNullWhen(true, nameof(Content))]
+    public bool IsSuccessfulWithContent => IsSuccessful && HasContent;
+
     /// <summary>Gets the Refit settings used to send the request.</summary>
     public RefitSettings Settings { get; } = settings;
 
@@ -79,32 +83,22 @@ public sealed class ApiResponse<T>(
     /// <summary>Gets the HTTP response content headers as defined in RFC 2616.</summary>
     public HttpContentHeaders? ContentHeaders => response?.Content?.Headers;
 
-    /// <summary>Gets a value indicating whether the request was successful.</summary>
+    /// <inheritdoc />
     [MemberNotNullWhen(true, nameof(Headers))]
-    [MemberNotNullWhen(true, nameof(ContentHeaders))]
     [MemberNotNullWhen(true, nameof(StatusCode))]
     [MemberNotNullWhen(true, nameof(Version))]
-    [MemberNotNullWhen(false, nameof(Error))]
     public bool IsSuccessStatusCode => response?.IsSuccessStatusCode ?? false;
 
-    /// <summary>
-    /// Gets a value indicating whether the request was successful and there wasn't any other error (for example, during content deserialization).
-    /// </summary>
+    /// <inheritdoc />
     [MemberNotNullWhen(true, nameof(Headers))]
-    [MemberNotNullWhen(true, nameof(Content))]
-    [MemberNotNullWhen(true, nameof(ContentHeaders))]
     [MemberNotNullWhen(true, nameof(StatusCode))]
     [MemberNotNullWhen(true, nameof(Version))]
-    [MemberNotNullWhen(false, nameof(Error))]
     public bool IsSuccessful => IsSuccessStatusCode && Error is null;
 
     /// <inheritdoc />
     [MemberNotNullWhen(true, nameof(Headers))]
-    [MemberNotNullWhen(true, nameof(Content))]
-    [MemberNotNullWhen(true, nameof(ContentHeaders))]
     [MemberNotNullWhen(true, nameof(StatusCode))]
     [MemberNotNullWhen(true, nameof(Version))]
-    [MemberNotNullWhen(false, nameof(Error))]
     public bool IsReceived => response is not null;
 
     /// <summary>Gets the reason phrase which typically is sent by the server together with the status code.</summary>

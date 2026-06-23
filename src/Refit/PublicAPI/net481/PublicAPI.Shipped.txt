@@ -64,6 +64,7 @@ Refit.ApiResponse<T>.HasResponseError(out Refit.ApiException? error) -> bool
 Refit.ApiResponse<T>.Headers.get -> System.Net.Http.Headers.HttpResponseHeaders?
 Refit.ApiResponse<T>.IsReceived.get -> bool
 Refit.ApiResponse<T>.IsSuccessful.get -> bool
+Refit.ApiResponse<T>.IsSuccessfulWithContent.get -> bool
 Refit.ApiResponse<T>.IsSuccessStatusCode.get -> bool
 Refit.ApiResponse<T>.ReasonPhrase.get -> string?
 Refit.ApiResponse<T>.RequestMessage.get -> System.Net.Http.HttpRequestMessage!
@@ -149,6 +150,7 @@ Refit.IApiResponse.StatusCode.get -> System.Net.HttpStatusCode?
 Refit.IApiResponse<T>
 Refit.IApiResponse<T>.Content.get -> T?
 Refit.IApiResponse<T>.HasContent.get -> bool
+Refit.IApiResponse<T>.IsSuccessfulWithContent.get -> bool
 Refit.IApiResponse.Version.get -> System.Version?
 Refit.IFormUrlEncodedParameterFormatter
 Refit.IFormUrlEncodedParameterFormatter.Format(object? value, string? formatString) -> string?
