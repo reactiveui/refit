@@ -118,7 +118,7 @@ internal static class RequestExecutionHelpers
             }
 
             response = sendResult.Response!;
-            content = response.Content ?? new StringContent(string.Empty);
+            content = EnsureResponseContent(response);
             disposeResponse = options.ShouldDisposeResponse;
 
             var exception = typeof(T) != typeof(HttpResponseMessage)
@@ -222,6 +222,12 @@ internal static class RequestExecutionHelpers
         request.Headers.Authorization = new(auth.Scheme, token);
     }
 
+    /// <summary>Returns the response content, substituting empty content when the response has none.</summary>
+    /// <param name="response">The response whose content is read.</param>
+    /// <returns>The response content, or empty content when none is present.</returns>
+    internal static HttpContent EnsureResponseContent(HttpResponseMessage response) =>
+        response.Content ?? new StringContent(string.Empty);
+
     /// <summary>Sends the request and streams its body, throwing on HTTP errors and disposing the request when done.</summary>
     /// <typeparam name="T">The element type yielded to the caller.</typeparam>
     /// <param name="client">The HTTP client to send with.</param>
@@ -261,7 +267,7 @@ internal static class RequestExecutionHelpers
                 throw exception;
             }
 
-            var content = response.Content ?? new StringContent(string.Empty);
+            var content = EnsureResponseContent(response);
             var format = DetectStreamingFormat(content);
 
 #if NET6_0_OR_GREATER

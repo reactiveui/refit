@@ -192,6 +192,60 @@ public class StreamingResponseTests
         await Assert.That(ids).IsEquivalentTo([1, 2, 3]);
     }
 
+    /// <summary>Verifies disposing a JSON array stream after one item cleans up the enumerator.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task JsonArrayStreamDisposesEnumeratorEarly()
+    {
+        var fixture = CreateFixture("application/json", "[{\"id\":1},{\"id\":2},{\"id\":3}]");
+
+        await using var enumerator = fixture.GetArray().GetAsyncEnumerator();
+
+        await Assert.That(await enumerator.MoveNextAsync()).IsTrue();
+        await Assert.That(enumerator.Current!.Id).IsEqualTo(1);
+    }
+
+    /// <summary>Verifies disposing a JSON Lines stream after one item returns the pooled reader buffer.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task JsonLinesStreamDisposesEnumeratorEarly()
+    {
+        var fixture = CreateFixture(
+            "application/x-ndjson",
+            "{\"id\":1}\n{\"id\":2}\n{\"id\":3}\n",
+            new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
+
+        await using var enumerator = fixture.GetLines().GetAsyncEnumerator();
+
+        await Assert.That(await enumerator.MoveNextAsync()).IsTrue();
+        await Assert.That(enumerator.Current!.Id).IsEqualTo(1);
+    }
+
+    /// <summary>Verifies a response with no content type is treated as a JSON array.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StreamsJsonArrayWhenResponseHasNoContentType()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        _ = mockHttp
+            .When("*")
+            .Respond(_ => new(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent("[{\"id\":7}]"u8.ToArray()),
+            });
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var fixture = RestService.For<IStreamingApi>("http://foo", settings);
+
+        var ids = new List<int>();
+        await foreach (var item in fixture.GetArray())
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([7]);
+    }
+
     /// <summary>Verifies the reflection path links the method cancellation token for a dynamic route.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

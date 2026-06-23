@@ -924,6 +924,67 @@ public class GeneratedRequestRunnerTests
         await Assert.That(exception!.Message).IsEqualTo("BaseAddress must be set on the HttpClient instance");
     }
 
+    /// <summary>Verifies BuildRelativeUri throws when the legacy mode has no base address.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRelativeUriThrowsWhenBaseAddressMissing()
+    {
+        using var client = new HttpClient();
+
+        await Assert
+            .That(() => GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy))
+            .ThrowsExactly<InvalidOperationException>();
+    }
+
+    /// <summary>Verifies BuildRelativeUri prepends the base path under legacy resolution.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRelativeUriPrependsBasePathInLegacyMode()
+    {
+        using var client = new HttpClient { BaseAddress = new("http://foo/api/") };
+
+        var uri = GeneratedRequestRunner.BuildRelativeUri(client, "/x", UrlResolutionMode.RefitLegacy);
+
+        await Assert.That(uri.OriginalString).IsEqualTo("/api/x");
+    }
+
+    /// <summary>Verifies BuildRelativeUri emits the relative path verbatim under RFC 3986 resolution.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRelativeUriEmitsRelativePathInRfcMode()
+    {
+        using var client = new HttpClient();
+
+        var uri = GeneratedRequestRunner.BuildRelativeUri(client, "x", UrlResolutionMode.Rfc3986);
+
+        await Assert.That(uri.OriginalString).IsEqualTo("x");
+    }
+
+    /// <summary>Verifies EnsureResponseContent substitutes empty content when the response has none.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task EnsureResponseContentSubstitutesEmptyWhenNull()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = null };
+
+        var content = RequestExecutionHelpers.EnsureResponseContent(response);
+
+        await Assert.That(await content.ReadAsStringAsync()).IsEqualTo(string.Empty);
+    }
+
+    /// <summary>Verifies EnsureResponseContent returns the existing content untouched.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task EnsureResponseContentReturnsExistingContent()
+    {
+        var original = new StringContent("hi");
+        using var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = original };
+
+        var content = RequestExecutionHelpers.EnsureResponseContent(response);
+
+        await Assert.That(ReferenceEquals(content, original)).IsTrue();
+    }
+
     /// <summary>Creates settings backed by the test serializer.</summary>
     /// <param name="serializer">The serializer to assign, or null for a recording serializer.</param>
     /// <returns>The configured settings.</returns>

@@ -553,8 +553,9 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     private T? DeserializeLine<T>(byte[] buffer, int start, int length)
     {
+        // DeserializeLine is only called for non-blank lines, so the span is never empty here.
         var span = new ReadOnlySpan<byte>(buffer, start, length);
-        if (span.Length > 0 && span[span.Length - 1] == (byte)'\r')
+        if (span[span.Length - 1] == (byte)'\r')
         {
             span = span.Slice(0, span.Length - 1);
         }
