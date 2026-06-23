@@ -94,16 +94,7 @@ internal static class RequestExecutionHelpers
         var disposeResponse = true;
         try
         {
-            if (options.BufferBody && request.Content is not null)
-            {
-                await request.Content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            if (options.ApplyAuthorizationHeader)
-            {
-                await AddAuthorizationHeaderFromGetterAsync(request, settings, cancellationToken)
-                    .ConfigureAwait(false);
-            }
+            await PrepareRequestAsync(request, settings, options, cancellationToken).ConfigureAwait(false);
 
             var sendResult = await SendOrCaptureExceptionAsync<T, TBody>(
                     client,
@@ -227,6 +218,32 @@ internal static class RequestExecutionHelpers
     /// <returns>The response content, or empty content when none is present.</returns>
     internal static HttpContent EnsureResponseContent(HttpResponseMessage response) =>
         response.Content ?? new StringContent(string.Empty);
+
+    /// <summary>Buffers the request body and applies the authorization header when the options request it.</summary>
+    /// <param name="request">The request message to prepare.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="options">The send and response-processing options.</param>
+    /// <param name="cancellationToken">A token to cancel the request.</param>
+    /// <returns>A task that completes once the request has been prepared.</returns>
+    private static async Task PrepareRequestAsync(
+        HttpRequestMessage request,
+        RefitSettings settings,
+        RequestExecutionOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (options.BufferBody && request.Content is not null)
+        {
+            await request.Content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        if (!options.ApplyAuthorizationHeader)
+        {
+            return;
+        }
+
+        await AddAuthorizationHeaderFromGetterAsync(request, settings, cancellationToken)
+            .ConfigureAwait(false);
+    }
 
     /// <summary>Sends the request and streams its body, throwing on HTTP errors and disposing the request when done.</summary>
     /// <typeparam name="T">The element type yielded to the caller.</typeparam>
