@@ -8,8 +8,8 @@
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
   <ItemGroup>
-    <!-- Linked internal helpers shared with Refit (one internal copy per assembly, no InternalsVisibleTo). -->
-    <Compile Include="..\Shared\UniqueName.cs" Link="Shared\UniqueName.cs" />
+    <!-- Linked internal helpers shared with Refit (one internal copy per assembly, no InternalsVisibleTo).
+         UniqueName is public on Refit, so it is consumed from the Refit reference rather than compiled here. -->
     <Compile Include="..\Shared\AuthenticatedHttpClientHandler.cs" Link="Shared\AuthenticatedHttpClientHandler.cs" />
   </ItemGroup>
   <ItemGroup>

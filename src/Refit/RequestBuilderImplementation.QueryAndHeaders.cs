@@ -375,13 +375,24 @@ namespace Refit
             CollectionFormat? collectionFormat)
         {
             var obj = propertyInfo.GetValue(@object);
-            if (obj is null || ShouldSkipQueryProperty(propertyInfo, parameterInfo))
+            if (ShouldSkipQueryProperty(propertyInfo, parameterInfo))
             {
                 return;
             }
 
             var queryAttribute = propertyInfo.GetCustomAttribute<QueryAttribute>();
             var key = BuildPropertyQueryKey(propertyInfo, queryAttribute);
+
+            if (obj is null)
+            {
+                // Null properties are skipped unless the property opts in via [Query(SerializeNull = true)].
+                if (queryAttribute?.SerializeNull == true)
+                {
+                    kvps.Add(new(key, string.Empty));
+                }
+
+                return;
+            }
 
             if (!TryFormatQueryPropertyValue(queryAttribute, obj, out var formattedObj))
             {

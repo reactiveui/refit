@@ -249,6 +249,58 @@ public static class GeneratedRequestRunner
             : new FormUrlEncodedContent(FormValueMultimap.Create(body, settings));
     }
 
+    /// <summary>Serializes a generated URL-encoded request body using source-generated field descriptors.</summary>
+    /// <typeparam name="TBody">The declared body type.</typeparam>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="body">The body value.</param>
+    /// <param name="fields">The compile-time field descriptors for the body type.</param>
+    /// <returns>The HTTP content for the URL-encoded body.</returns>
+    /// <remarks>
+    /// The reflection-free path runs only when the configured content serializer resolves field names purely
+    /// from attributes the generator already inlined (the built-in <see cref="SystemTextJsonContentSerializer"/>).
+    /// For any other serializer the field-name hook may need the runtime <see cref="System.Reflection.PropertyInfo"/>,
+    /// so this falls back to the reflection-based <see cref="FormValueMultimap"/>.
+    /// </remarks>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
+    public static HttpContent CreateUrlEncodedBodyContent<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
+        TBody>(
+        RefitSettings settings,
+        TBody body,
+        FormField<TBody>[] fields)
+    {
+        if (body is HttpContent httpContent)
+        {
+            return httpContent;
+        }
+
+        if (body is Stream stream)
+        {
+            return new StreamContent(stream);
+        }
+
+        if (body is string stringBody)
+        {
+            return new StringContent(
+                StringHelpers.EscapeDataString(stringBody),
+                Encoding.UTF8,
+                "application/x-www-form-urlencoded");
+        }
+
+        // The descriptor path only matches the reflection path when the serializer resolves field names from
+        // attributes the generator already inlined (the built-in System.Text.Json serializer); otherwise fall back.
+        var useDescriptors = body is not null and not System.Collections.IDictionary
+            && settings.ContentSerializer is SystemTextJsonContentSerializer;
+
+        return new FormUrlEncodedContent(
+            useDescriptors
+                ? FormValueMultimap.CreateFromFields(body, fields, settings)
+                : FormValueMultimap.Create(body, settings));
+    }
+
     /// <summary>Sets, replaces, or removes a generated request header.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="name">The header name.</param>

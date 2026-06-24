@@ -53,6 +53,13 @@ public sealed class QueryAttribute : Attribute
     /// </summary>
     public bool TreatAsString { get; set; }
 
+    /// <summary>
+    /// Gets or sets a value indicating whether a <see langword="null"/> property value should still be
+    /// serialized (as an empty value, e.g. <c>key=</c>) instead of being omitted. By default null
+    /// properties are skipped; set this to <see langword="true"/> on a property whose null must be sent.
+    /// </summary>
+    public bool SerializeNull { get; set; }
+
     /// <summary>Gets the value used to customize the name of either the query parameter pair or of the form field when form encoding.</summary>
     /// <seealso cref="Prefix"/>
     public string Delimiter { get; } = ".";

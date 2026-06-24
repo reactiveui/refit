@@ -525,4 +525,34 @@ public partial class RestServiceIntegrationTests
         await Assert.That(resp.Args["LastName"]).IsEqualTo("Rambo");
         await Assert.That(resp.Args["Addr_Zip"]).IsEqualTo("9999");
     }
+
+    /// <summary>Verifies an object URL-encoded body flows through generated reflection-free form fields.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task PostGeneratedUrlEncodedFormUsesFieldDescriptors()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Post, "http://foo/form")
+            .WithFormData("user_name", "bob")
+            .WithFormData("pwd", "secret")
+            .WithFormData("Plain", "x")
+            .WithFormData("Nullable", string.Empty)
+            .Respond("application/json", "\"ok\"");
+
+        var fixture = RestService.For<IGeneratedFormApi>("http://foo", settings);
+
+        _ = await fixture.PostForm(
+            new GeneratedFormData
+            {
+                UserName = "bob",
+                Password = "secret",
+                Plain = "x",
+                Nullable = null,
+            });
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
 }

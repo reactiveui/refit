@@ -1,6 +1,8 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
@@ -328,6 +330,9 @@ internal static partial class Parser
             }
 
             var bodyInfo = ParseBodyAttribute(attribute);
+            var formFields = bodyInfo.SerializationMethod == "UrlEncoded"
+                ? TryBuildFormFields(parameter.Type)
+                : null;
             bodyParameter = new(
                     parameter.MetadataName,
                     parameterType,
@@ -336,7 +341,10 @@ internal static partial class Parser
                     string.Empty,
                     string.Empty,
                     bodyInfo.SerializationMethod,
-                bodyInfo.BufferMode);
+                bodyInfo.BufferMode)
+            {
+                FormFields = formFields,
+            };
             return true;
         }
 
@@ -350,6 +358,198 @@ internal static partial class Parser
             string.Empty,
             BodyBufferMode.None);
         return false;
+    }
+
+    /// <summary>Builds reflection-free form field descriptors for a URL-encoded body type.</summary>
+    /// <param name="bodyType">The declared body type.</param>
+    /// <returns>The field descriptors, or <see langword="null"/> when the type is not eligible for the descriptor path.</returns>
+    private static ImmutableEquatableArray<FormFieldModel>? TryBuildFormFields(ITypeSymbol bodyType)
+    {
+        if (!IsFormFieldEligibleType(bodyType))
+        {
+            return null;
+        }
+
+        var fields = new List<FormFieldModel>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (var current = bodyType;
+            current is not null && current.SpecialType != SpecialType.System_Object;
+            current = current.BaseType)
+        {
+            foreach (var member in current.GetMembers())
+            {
+                if (member is IPropertySymbol property && IsReadableFormProperty(property) && seen.Add(property.Name))
+                {
+                    fields.Add(BuildFormFieldModel(property));
+                }
+            }
+        }
+
+        return ImmutableEquatableArrayFactory.FromList(fields);
+    }
+
+    /// <summary>Determines whether a property contributes a readable public instance form field.</summary>
+    /// <param name="property">The property to inspect.</param>
+    /// <returns><see langword="true"/> when the property is read through a public instance getter.</returns>
+    private static bool IsReadableFormProperty(IPropertySymbol property) =>
+        !property.IsStatic
+        && !property.IsIndexer
+        && property.DeclaredAccessibility == Accessibility.Public
+        && property.GetMethod is { DeclaredAccessibility: Accessibility.Public };
+
+    /// <summary>Determines whether a body type can be flattened to form fields without reflection.</summary>
+    /// <param name="type">The declared body type.</param>
+    /// <returns><see langword="true"/> when descriptor-based flattening matches the reflection path.</returns>
+    private static bool IsFormFieldEligibleType(ITypeSymbol type) =>
+        type.TypeKind is not (TypeKind.Interface or TypeKind.TypeParameter or TypeKind.Dynamic
+            or TypeKind.Array or TypeKind.Pointer or TypeKind.Error)
+        && type.SpecialType is not (SpecialType.System_String or SpecialType.System_Object)
+        && type is not INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
+
+        // Dictionaries and other enumerables flow through the reflection path, which special-cases them.
+        && !ImplementsEnumerable(type);
+
+    /// <summary>Determines whether a type implements the non-generic <see cref="System.Collections.IEnumerable"/>.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns><see langword="true"/> when the type is enumerable.</returns>
+    private static bool ImplementsEnumerable(ITypeSymbol type)
+    {
+        if (type.SpecialType == SpecialType.System_Collections_IEnumerable)
+        {
+            return true;
+        }
+
+        foreach (var contract in type.AllInterfaces)
+        {
+            if (contract.SpecialType == SpecialType.System_Collections_IEnumerable)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Builds the form field descriptor for one body property.</summary>
+    /// <param name="property">The property to describe.</param>
+    /// <returns>The field descriptor.</returns>
+    private static FormFieldModel BuildFormFieldModel(IPropertySymbol property)
+    {
+        string? aliasName = null;
+        string? jsonName = null;
+        var query = default(QueryFormData);
+
+        foreach (var attribute in property.GetAttributes())
+        {
+            var attributeName = attribute.AttributeClass?.ToDisplayString();
+            if (attributeName == "Refit.AliasAsAttribute")
+            {
+                aliasName = GetFirstStringArgument(attribute);
+            }
+            else if (attributeName == "System.Text.Json.Serialization.JsonPropertyNameAttribute")
+            {
+                jsonName = GetFirstStringArgument(attribute);
+            }
+            else if (attributeName == "Refit.QueryAttribute")
+            {
+                query = ParseFormQueryAttribute(attribute);
+            }
+        }
+
+        var prefixSegment = string.IsNullOrWhiteSpace(query.Prefix) ? null : query.Prefix + query.Delimiter;
+        return new(
+            property.Name,
+            aliasName ?? jsonName,
+            prefixSegment,
+            query.Format,
+            query.CollectionFormatValue,
+            query.SerializeNull);
+    }
+
+    /// <summary>Reads the first string constructor argument from an attribute.</summary>
+    /// <param name="attribute">The attribute to inspect.</param>
+    /// <returns>The first string argument, or <see langword="null"/>.</returns>
+    private static string? GetFirstStringArgument(AttributeData attribute)
+    {
+        foreach (var argument in attribute.ConstructorArguments)
+        {
+            if (argument.Value is string value)
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Parses the form-relevant members of a <c>[Query]</c> attribute applied to a property.</summary>
+    /// <param name="attribute">The query attribute data.</param>
+    /// <returns>The parsed form query data.</returns>
+    private static QueryFormData ParseFormQueryAttribute(AttributeData attribute) =>
+        ApplyQueryNamedArguments(attribute, ParseQueryConstructorArguments(attribute));
+
+    /// <summary>Parses the constructor arguments of a <c>[Query]</c> attribute.</summary>
+    /// <param name="attribute">The query attribute data.</param>
+    /// <returns>The form query data carried by the constructor arguments.</returns>
+    private static QueryFormData ParseQueryConstructorArguments(AttributeData attribute)
+    {
+        var delimiter = ".";
+        string? prefix = null;
+        string? format = null;
+        int? collectionFormatValue = null;
+        var stringArguments = 0;
+
+        foreach (var argument in attribute.ConstructorArguments)
+        {
+            if (argument.Type?.ToDisplayString() == "Refit.CollectionFormat" && argument.Value is int constructorCollectionFormat)
+            {
+                collectionFormatValue = constructorCollectionFormat;
+            }
+            else if (argument.Value is string stringValue)
+            {
+                if (stringArguments == 0)
+                {
+                    delimiter = stringValue;
+                }
+                else if (stringArguments == 1)
+                {
+                    prefix = stringValue;
+                }
+                else
+                {
+                    format = stringValue;
+                }
+
+                stringArguments++;
+            }
+        }
+
+        return new(delimiter, prefix, format, collectionFormatValue, false);
+    }
+
+    /// <summary>Applies the named arguments of a <c>[Query]</c> attribute over constructor-supplied data.</summary>
+    /// <param name="attribute">The query attribute data.</param>
+    /// <param name="data">The data parsed from constructor arguments.</param>
+    /// <returns>The form query data with named arguments applied.</returns>
+    private static QueryFormData ApplyQueryNamedArguments(AttributeData attribute, QueryFormData data)
+    {
+        foreach (var named in attribute.NamedArguments)
+        {
+            if (named.Key == "Format" && named.Value.Value is string formatValue)
+            {
+                data = data with { Format = formatValue };
+            }
+            else if (named.Key == "CollectionFormat" && named.Value.Value is int namedCollectionFormat)
+            {
+                data = data with { CollectionFormatValue = namedCollectionFormat };
+            }
+            else if (named.Key == "SerializeNull" && named.Value.Value is bool serializeNullValue)
+            {
+                data = data with { SerializeNull = serializeNullValue };
+            }
+        }
+
+        return data;
     }
 
     /// <summary>Tries to parse a dynamic header parameter.</summary>
@@ -622,6 +822,19 @@ internal static partial class Parser
     private readonly record struct BodyAttributeInfo(
         string SerializationMethod,
         BodyBufferMode BufferMode);
+
+    /// <summary>Form-relevant data parsed from a <c>[Query]</c> attribute on a body property.</summary>
+    /// <param name="Delimiter">The delimiter combined with the prefix.</param>
+    /// <param name="Prefix">The field name prefix, if any.</param>
+    /// <param name="Format">The value format, if any.</param>
+    /// <param name="CollectionFormatValue">The explicit collection format value, if any.</param>
+    /// <param name="SerializeNull">Whether null values are serialized as empty fields.</param>
+    private readonly record struct QueryFormData(
+        string Delimiter,
+        string? Prefix,
+        string? Format,
+        int? CollectionFormatValue,
+        bool SerializeNull);
 
     /// <summary>Parsed return-type data for generated requests.</summary>
     /// <param name="ResultType">The method result type.</param>

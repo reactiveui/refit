@@ -8,6 +8,30 @@ namespace Refit.Generator;
 /// <summary>Emits inline request-construction source for generated Refit method implementations.</summary>
 internal static partial class Emitter
 {
+    /// <summary>The base member name for a cached form field descriptor array.</summary>
+    private const string FormFieldsVariableName = "______formFields";
+
+    /// <summary>The opening of a generated <c>FormField</c> construction.</summary>
+    private const string FormFieldNew = "new global::Refit.FormField<";
+
+    /// <summary>The getter lambda opening between the body type and the property name.</summary>
+    private const string FormFieldGetterOpen = ">(static body => (object?)body.@";
+
+    /// <summary>The separator before the quoted CLR property name argument.</summary>
+    private const string FormFieldNameOpen = ", \"";
+
+    /// <summary>The separator after the quoted CLR property name argument.</summary>
+    private const string FormFieldNameClose = "\", ";
+
+    /// <summary>The separator between generated arguments.</summary>
+    private const string ArgumentSeparator = ", ";
+
+    /// <summary>The closing of a generated <c>FormField</c> construction including the trailing element separator.</summary>
+    private const string FormFieldClose = "),\n";
+
+    /// <summary>The cast prefix for an explicit collection format value.</summary>
+    private const string CollectionFormatCast = "(global::Refit.CollectionFormat)";
+
     /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
@@ -31,7 +55,7 @@ internal static partial class Emitter
     {
         if (interfaceModel.GeneratedRequestBuilding && methodModel.Request.CanGenerateInline)
         {
-            return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel, settingsFieldName);
+            return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel, settingsFieldName, uniqueNames);
         }
 
         var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
@@ -71,12 +95,14 @@ internal static partial class Emitter
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <returns>The generated inline method implementation.</returns>
     private static string BuildInlineRefitMethod(
         MethodModel methodModel,
         InterfaceModel interfaceModel,
         bool isTopLevel,
-        string settingsFieldName)
+        string settingsFieldName,
+        UniqueNameBuilder uniqueNames)
     {
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         var request = methodModel.Request;
@@ -88,7 +114,8 @@ internal static partial class Emitter
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
         var requestUriExpression =
             $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(request.Path)}, {settingsLocal}.UrlResolution)";
-        var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter, requestLocal, settingsLocal);
+        var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
+        var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter, requestLocal, settingsLocal, formFieldsFieldName);
         var headerSource = BuildInlineHeaders(request, requestLocal);
         var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
         var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal);
@@ -96,7 +123,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
+            {{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
             {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
@@ -111,18 +138,27 @@ internal static partial class Emitter
     /// <param name="bodyParameter">The body parameter model.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="formFieldsFieldName">The cached form field descriptor array name, or null to use the reflection path.</param>
     /// <returns>The generated content assignment.</returns>
-    private static string BuildInlineContent(RequestParameterModel bodyParameter, string requestLocal, string settingsLocal)
+    private static string BuildInlineContent(RequestParameterModel bodyParameter, string requestLocal, string settingsLocal, string? formFieldsFieldName)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         if (bodyParameter.BodySerializationMethod == "UrlEncoded")
         {
-            return $$"""
-                {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
-                {{bodyIndent}}    {{settingsLocal}},
-                {{bodyIndent}}    @{{bodyParameter.Name}});
+            return formFieldsFieldName is not null
+                ? $$"""
+                    {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
+                    {{bodyIndent}}    {{settingsLocal}},
+                    {{bodyIndent}}    @{{bodyParameter.Name}},
+                    {{bodyIndent}}    {{formFieldsFieldName}});
 
-                """;
+                    """
+                : $$"""
+                    {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
+                    {{bodyIndent}}    {{settingsLocal}},
+                    {{bodyIndent}}    @{{bodyParameter.Name}});
+
+                    """;
         }
 
         if (bodyParameter.BodySerializationMethod == "JsonLines")
@@ -147,6 +183,109 @@ internal static partial class Emitter
 
             """;
     }
+
+    /// <summary>Builds the cached form field descriptor array declaration for a URL-encoded body, if eligible.</summary>
+    /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <returns>The generated field declaration and its name, or empty values when the reflection path is used.</returns>
+    private static (string Source, string? FieldName) BuildFormFieldsField(
+        RequestParameterModel? bodyParameter,
+        UniqueNameBuilder uniqueNames)
+    {
+        if (bodyParameter?.FormFields is not { Count: > 0 } formFields)
+        {
+            return (string.Empty, null);
+        }
+
+        var fields = formFields.AsArray();
+        var bodyType = bodyParameter.Type;
+        var fieldName = uniqueNames.New(FormFieldsVariableName);
+        var elementIndent = Indent(MethodBodyIndentation);
+
+        var elementsLength = 0;
+        for (var i = 0; i < fields.Length; i++)
+        {
+            elementsLength += MeasureFormFieldElement(fields[i], bodyType, elementIndent.Length);
+        }
+
+        var elements = CreateGeneratedString(
+            elementsLength,
+            (fields, bodyType, elementIndent),
+            static (destination, state) =>
+            {
+                var position = 0;
+                var (elementFields, type, indent) = state;
+                for (var i = 0; i < elementFields.Length; i++)
+                {
+                    var field = elementFields[i];
+                    AppendText(destination, indent, ref position);
+                    AppendText(destination, FormFieldNew, ref position);
+                    AppendText(destination, type, ref position);
+                    AppendText(destination, FormFieldGetterOpen, ref position);
+                    AppendText(destination, field.PropertyName, ref position);
+                    AppendText(destination, FormFieldNameOpen, ref position);
+                    AppendText(destination, field.PropertyName, ref position);
+                    AppendText(destination, FormFieldNameClose, ref position);
+                    AppendLiteralOrNull(destination, field.ExplicitName, ref position);
+                    AppendText(destination, ArgumentSeparator, ref position);
+                    AppendLiteralOrNull(destination, field.PrefixSegment, ref position);
+                    AppendText(destination, ArgumentSeparator, ref position);
+                    AppendLiteralOrNull(destination, field.Format, ref position);
+                    AppendText(destination, ArgumentSeparator, ref position);
+                    if (field.CollectionFormatValue is { } collectionFormatValue)
+                    {
+                        AppendText(destination, CollectionFormatCast, ref position);
+                        AppendInt32(destination, collectionFormatValue, ref position);
+                    }
+                    else
+                    {
+                        AppendText(destination, NullLiteral, ref position);
+                    }
+
+                    AppendText(destination, ArgumentSeparator, ref position);
+                    AppendText(destination, field.SerializeNull ? TrueLiteral : FalseLiteral, ref position);
+                    AppendText(destination, FormFieldClose, ref position);
+                }
+            });
+
+        var memberIndent = Indent(MethodMemberIndentation);
+        var source = $$"""
+
+
+            {{memberIndent}}/// <summary>Cached form field descriptors used to serialize the URL-encoded request body without reflection.</summary>
+            {{memberIndent}}private static readonly global::Refit.FormField<{{bodyType}}>[] {{fieldName}} = new global::Refit.FormField<{{bodyType}}>[]
+            {{memberIndent}}{
+            {{elements}}{{memberIndent}}};
+            """;
+        return (source, fieldName);
+    }
+
+    /// <summary>Measures the rendered length of one generated form field element line.</summary>
+    /// <param name="field">The form field descriptor.</param>
+    /// <param name="bodyType">The fully-qualified body type.</param>
+    /// <param name="indentLength">The element indentation length.</param>
+    /// <returns>The number of characters the rendered element occupies.</returns>
+    private static int MeasureFormFieldElement(FormFieldModel field, string bodyType, int indentLength) =>
+        indentLength
+        + FormFieldNew.Length
+        + bodyType.Length
+        + FormFieldGetterOpen.Length
+        + field.PropertyName.Length
+        + FormFieldNameOpen.Length
+        + field.PropertyName.Length
+        + FormFieldNameClose.Length
+        + LiteralOrNullLength(field.ExplicitName)
+        + ArgumentSeparator.Length
+        + LiteralOrNullLength(field.PrefixSegment)
+        + ArgumentSeparator.Length
+        + LiteralOrNullLength(field.Format)
+        + ArgumentSeparator.Length
+        + (field.CollectionFormatValue is { } collectionFormatValue
+            ? CollectionFormatCast.Length + Int32Length(collectionFormatValue)
+            : NullLiteral.Length)
+        + ArgumentSeparator.Length
+        + (field.SerializeNull ? TrueLiteral.Length : FalseLiteral.Length)
+        + FormFieldClose.Length;
 
     /// <summary>Builds the return statement for an inline generated Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>

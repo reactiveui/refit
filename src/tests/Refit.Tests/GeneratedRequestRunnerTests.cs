@@ -178,6 +178,132 @@ public class GeneratedRequestRunnerTests
         await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("Name=Ada");
     }
 
+    /// <summary>Verifies the descriptor overload uses generated field metadata for the built-in JSON serializer.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentWithFieldsUsesDescriptorsForSystemTextJson()
+    {
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+        var body = new DeclaredFormBody { Name = "Ada" };
+        var fields = new[]
+        {
+            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", "renamed", null, null, null, false)
+        };
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
+
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("renamed=from-getter");
+    }
+
+    /// <summary>Verifies the descriptor overload falls back to reflection for a custom content serializer.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentWithFieldsFallsBackForCustomSerializer()
+    {
+        var settings = CreateSettings();
+        var body = new DeclaredFormBody { Name = "Ada" };
+        var fields = new[]
+        {
+            new FormField<DeclaredFormBody>(static _ => "from-getter", "Name", "renamed", null, null, null, false)
+        };
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
+
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("Name=Ada");
+    }
+
+    /// <summary>Verifies the descriptor overload routes dictionaries through the reflection path.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentWithFieldsHandlesDictionary()
+    {
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+        var body = new Dictionary<string, object> { ["a"] = "1" };
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, []);
+
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("a=1");
+    }
+
+    /// <summary>Verifies the descriptor overload escapes string bodies and skips descriptors.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentWithFieldsEscapesStringBodies()
+    {
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, "url&string", []);
+
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("url%26string");
+    }
+
+    /// <summary>Verifies the descriptor overload serializes null fields and collections per metadata.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentWithFieldsSerializesNullsAndCollections()
+    {
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+        var body = new DeclaredFormBody();
+        var fields = new[]
+        {
+            new FormField<DeclaredFormBody>(static _ => null, "Note", "note", null, null, null, serializeNull: true),
+            new FormField<DeclaredFormBody>(static _ => new List<string> { "a", "b" }, "Roles", "roles", null, null, CollectionFormat.Multi, false),
+            new FormField<DeclaredFormBody>(static _ => null, "Skip", "skip", null, null, null, serializeNull: false)
+        };
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
+
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("note=&roles=a&roles=b");
+    }
+
+    /// <summary>Verifies the descriptor overload applies a precomputed prefix segment to the field name.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateUrlEncodedBodyContentWithFieldsAppliesPrefixSegment()
+    {
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+        var body = new DeclaredFormBody { Name = "v" };
+        var fields = new[]
+        {
+            new FormField<DeclaredFormBody>(static b => b.Name, "Name", null, "pre-", null, null, false)
+        };
+
+        var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
+
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("pre-Name=v");
+    }
+
+    /// <summary>Verifies the descriptor path and the reflection path produce identical form output.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DescriptorAndReflectionFormPathsProduceIdenticalOutput()
+    {
+        var body = new ParityFormBody
+        {
+            WebPropertyId = "UA-1",
+            Plain = "p",
+            Note = null,
+            Roles = ["x", "y"]
+        };
+        var fields = new[]
+        {
+            new FormField<ParityFormBody>(static b => b.WebPropertyId, "WebPropertyId", "tid", null, null, null, false),
+            new FormField<ParityFormBody>(static b => b.Plain, "Plain", null, null, null, null, false),
+            new FormField<ParityFormBody>(static b => b.Note, "Note", null, null, null, null, serializeNull: true),
+            new FormField<ParityFormBody>(static b => b.Roles, "Roles", null, null, null, CollectionFormat.Multi, false)
+        };
+
+        // SystemTextJson takes the generated descriptor path; the recording serializer forces the reflection path.
+        var descriptor = await GeneratedRequestRunner
+            .CreateUrlEncodedBodyContent(new RefitSettings(new SystemTextJsonContentSerializer()), body, fields)
+            .ReadAsStringAsync();
+        var reflection = await GeneratedRequestRunner
+            .CreateUrlEncodedBodyContent(CreateSettings(), body, fields)
+            .ReadAsStringAsync();
+
+        await Assert.That(descriptor).IsEqualTo(reflection);
+    }
+
     /// <summary>Verifies that unsupported body serialization modes are rejected.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -1123,6 +1249,25 @@ public class GeneratedRequestRunnerTests
     {
         /// <summary>Gets or sets a derived-only value.</summary>
         public string? Hidden { get; set; }
+    }
+
+    /// <summary>Form model used to compare the descriptor and reflection serialization paths.</summary>
+    private sealed class ParityFormBody
+    {
+        /// <summary>Gets or sets the aliased property.</summary>
+        [AliasAs("tid")]
+        public string? WebPropertyId { get; set; }
+
+        /// <summary>Gets or sets a plain property.</summary>
+        public string? Plain { get; set; }
+
+        /// <summary>Gets or sets a property serialized even when null.</summary>
+        [Query(SerializeNull = true)]
+        public string? Note { get; set; }
+
+        /// <summary>Gets or sets a multi-value collection property.</summary>
+        [Query(CollectionFormat.Multi)]
+        public List<string>? Roles { get; set; }
     }
 
     /// <summary>Simple deserialized response model for generated runtime tests.</summary>

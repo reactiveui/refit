@@ -20,4 +20,11 @@ internal sealed record RequestParameterModel(
     string HeaderName,
     string PropertyKey,
     string BodySerializationMethod,
-    BodyBufferMode BodyBufferMode);
+    BodyBufferMode BodyBufferMode)
+{
+    /// <summary>
+    /// Gets the reflection-free form field descriptors for a URL-encoded body, or <see langword="null"/> when the
+    /// body type is not eligible and the reflection-based form path must be used.
+    /// </summary>
+    public ImmutableEquatableArray<FormFieldModel>? FormFields { get; init; }
+}
