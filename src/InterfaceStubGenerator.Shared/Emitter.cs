@@ -778,17 +778,21 @@ internal static partial class Emitter
     /// <param name="returnPrefix">The return statement prefix.</param>
     /// <param name="returnType">The generated return type.</param>
     /// <param name="configureAwait">The generated configure-await suffix.</param>
+    /// <param name="funcLocal">The generated request-func local name.</param>
+    /// <param name="argumentsLocal">The generated arguments-array local name.</param>
     /// <returns>The generated return statement.</returns>
     private static string BuildRefitReturnStatement(
         MethodModel methodModel,
         string returnPrefix,
         string returnType,
-        string configureAwait)
+        string configureAwait,
+        string funcLocal,
+        string argumentsLocal)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         return methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid
-            ? $"{bodyIndent}refitFunc(this.Client, refitArguments);\n"
-            : $"{bodyIndent}{returnPrefix}({returnType})refitFunc(this.Client, refitArguments){configureAwait};\n";
+            ? $"{bodyIndent}{funcLocal}(this.Client, {argumentsLocal});\n"
+            : $"{bodyIndent}{returnPrefix}({returnType}){funcLocal}(this.Client, {argumentsLocal}){configureAwait};\n";
     }
 
     /// <summary>Concatenates populated source fragments without allocating a trimmed array.</summary>

@@ -78,6 +78,27 @@ public partial class RestServiceIntegrationTests
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
+    /// <summary>Verifies a body parameter named like a generated local variable still works (issue #2161).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task PostBodyNamedLikeGeneratedLocalToRequestBin()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+            .WithContent("payload")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+        await fixture.PostBodyNamedLikeGeneratedLocal("payload");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
     /// <summary>Verifies a collection body is sent as JSON Lines (newline-delimited JSON).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

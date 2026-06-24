@@ -190,6 +190,30 @@ public class GeneratedRequestBuildingTests
         await Assert.That(errorMessages).IsEqualTo(string.Empty);
     }
 
+    /// <summary>Verifies a parameter named like a generated local does not collide (issue #2161).</summary>
+    /// <param name="parameterName">A parameter name matching a generated local variable.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("refitSettings")]
+    [Arguments("refitRequest")]
+    [Arguments("refitArguments")]
+    [Arguments("refitRequestBuilder")]
+    [Arguments("refitFunc")]
+    public async Task ParameterNamedLikeGeneratedLocalCompiles(string parameterName)
+    {
+        var body = $$"""
+            [Post("/todos")]
+            Task<string> CreateAsync([Body] string {{parameterName}});
+            """;
+
+        foreach (var generatedRequestBuilding in new bool?[] { true, false })
+        {
+            var errors = Fixture.GenerateErrorsForBody(body, generatedRequestBuilding);
+            var errorMessages = string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString()));
+            await Assert.That(errorMessages).IsEqualTo(string.Empty);
+        }
+    }
+
     /// <summary>Verifies static headers are emitted into inline request construction.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

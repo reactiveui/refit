@@ -34,6 +34,11 @@ internal static partial class Emitter
             return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel, settingsFieldName);
         }
 
+        var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
+        var argumentsLocal = locals.New("refitArguments");
+        var requestBuilderLocal = locals.New("refitRequestBuilder");
+        var funcLocal = locals.New("refitFunc");
+
         var (typeParameterFieldSource, cachedTypeParameterFieldName) = BuildTypeParameterField(
             methodModel,
             uniqueNames);
@@ -43,16 +48,18 @@ internal static partial class Emitter
         var lookupName = StripExplicitInterfacePrefix(methodModel.Name);
         var typeParameterExpression = BuildTypeParameterExpression(methodModel.Parameters, cachedTypeParameterFieldName);
         var genericTypesArgument = BuildGenericTypesArgument(methodModel);
-        var returnStatement = BuildRefitReturnStatement(methodModel, @return, returnType, configureAwait);
+        var returnStatement = BuildRefitReturnStatement(methodModel, @return, returnType, configureAwait, funcLocal, argumentsLocal);
         var methodIndent = Indent(MethodMemberIndentation);
         var bodyIndent = Indent(MethodBodyIndentation);
+        var requestBuilderInit =
+            $"{requestBuilderFieldName} ?? throw new global::System.InvalidOperationException(\"This generated Refit method requires a request builder.\")";
 
         return typeParameterFieldSource
             + BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable, isAsync)
             + $$"""
-                {{bodyIndent}}var refitArguments = {{BuildArgumentsArrayLiteral(methodModel)}};
-                {{bodyIndent}}var refitRequestBuilder = {{requestBuilderFieldName}} ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                {{bodyIndent}}var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("{{lookupName}}", {{typeParameterExpression}}{{genericTypesArgument}} );
+                {{bodyIndent}}var {{argumentsLocal}} = {{BuildArgumentsArrayLiteral(methodModel)}};
+                {{bodyIndent}}var {{requestBuilderLocal}} = {{requestBuilderInit}};
+                {{bodyIndent}}var {{funcLocal}} = {{requestBuilderLocal}}.BuildRestResultFuncForMethod("{{lookupName}}", {{typeParameterExpression}}{{genericTypesArgument}} );
 
                 {{returnStatement}}{{methodIndent}}}
 
@@ -73,24 +80,27 @@ internal static partial class Emitter
     {
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         var request = methodModel.Request;
+        var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
+        var settingsLocal = locals.New("refitSettings");
+        var requestLocal = locals.New("refitRequest");
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
-        var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter);
+        var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
         var requestUriExpression =
-            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(request.Path)}, refitSettings.UrlResolution)";
-        var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter);
-        var headerSource = BuildInlineHeaders(request);
-        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel);
-        var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression);
+            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(request.Path)}, {settingsLocal}.UrlResolution)";
+        var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter, requestLocal, settingsLocal);
+        var headerSource = BuildInlineHeaders(request, requestLocal);
+        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
+        var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal);
         var methodIndent = Indent(MethodMemberIndentation);
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var refitSettings = {{settingsFieldName}};
-            {{bodyIndent}}var refitRequest = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
+            {{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
+            {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
-            {{bodyIndent}}refitRequest.Version = refitSettings.Version;
-            {{bodyIndent}}refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+            {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
+            {{bodyIndent}}{{requestLocal}}.VersionPolicy = {{settingsLocal}}.VersionPolicy;
             {{bodyIndent}}#endif
             {{contentSource}}{{headerSource}}{{requestPropertySource}}{{returnSource}}{{methodIndent}}}
 
@@ -99,15 +109,17 @@ internal static partial class Emitter
 
     /// <summary>Builds request content assignment for an inline generated method.</summary>
     /// <param name="bodyParameter">The body parameter model.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated content assignment.</returns>
-    private static string BuildInlineContent(RequestParameterModel bodyParameter)
+    private static string BuildInlineContent(RequestParameterModel bodyParameter, string requestLocal, string settingsLocal)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         if (bodyParameter.BodySerializationMethod == "UrlEncoded")
         {
             return $$"""
-                {{bodyIndent}}refitRequest.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
-                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
+                {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    @{{bodyParameter.Name}});
 
                 """;
@@ -116,19 +128,19 @@ internal static partial class Emitter
         if (bodyParameter.BodySerializationMethod == "JsonLines")
         {
             return $$"""
-                {{bodyIndent}}refitRequest.Content = global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<{{bodyParameter.Type}}>(
-                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<{{bodyParameter.Type}}>(
+                {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    @{{bodyParameter.Name}});
 
                 """;
         }
 
-        var streamBodyExpression = BuildStreamBodyExpression(bodyParameter);
+        var streamBodyExpression = BuildStreamBodyExpression(bodyParameter, settingsLocal);
         var serializationMethodExpression = BuildBodySerializationMethodExpression(bodyParameter);
 
         return $$"""
-            {{bodyIndent}}refitRequest.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<{{bodyParameter.Type}}>(
-            {{bodyIndent}}    refitSettings,
+            {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<{{bodyParameter.Type}}>(
+            {{bodyIndent}}    {{settingsLocal}},
             {{bodyIndent}}    @{{bodyParameter.Name}},
             {{bodyIndent}}    {{serializationMethodExpression}},
             {{bodyIndent}}    {{streamBodyExpression}});
@@ -141,12 +153,16 @@ internal static partial class Emitter
     /// <param name="request">The parsed request model.</param>
     /// <param name="bufferBodyExpression">The expression indicating whether request content should be buffered.</param>
     /// <param name="cancellationTokenExpression">The cancellation token expression.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated return statement.</returns>
     private static string BuildInlineReturn(
         MethodModel methodModel,
         RequestModel request,
         string bufferBodyExpression,
-        string cancellationTokenExpression)
+        string cancellationTokenExpression,
+        string requestLocal,
+        string settingsLocal)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
@@ -154,8 +170,8 @@ internal static partial class Emitter
             return $$"""
                 {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendVoidAsync(
                 {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    refitRequest,
-                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    {{requestLocal}},
+                {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    {{bufferBodyExpression}},
                 {{bodyIndent}}    {{cancellationTokenExpression}});
 
@@ -167,8 +183,8 @@ internal static partial class Emitter
             return $$"""
                 {{bodyIndent}}return global::Refit.GeneratedRequestRunner.StreamAsync<{{request.ResultType}}>(
                 {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    refitRequest,
-                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    {{requestLocal}},
+                {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    {{cancellationTokenExpression}});
 
                 """;
@@ -178,8 +194,8 @@ internal static partial class Emitter
             ? $$"""
                 {{bodyIndent}}return new {{methodModel.ReturnType}}(global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
                 {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    refitRequest,
-                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    {{requestLocal}},
+                {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
                 {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
                 {{bodyIndent}}    {{bufferBodyExpression}},
@@ -189,8 +205,8 @@ internal static partial class Emitter
             : $$"""
                 {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
                 {{bodyIndent}}    this.Client,
-                {{bodyIndent}}    refitRequest,
-                {{bodyIndent}}    refitSettings,
+                {{bodyIndent}}    {{requestLocal}},
+                {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
                 {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
                 {{bodyIndent}}    {{bufferBodyExpression}},
@@ -201,8 +217,9 @@ internal static partial class Emitter
 
     /// <summary>Builds static and dynamic header application for an inline generated method.</summary>
     /// <param name="request">The parsed request model.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
     /// <returns>The generated header statements.</returns>
-    private static string BuildInlineHeaders(RequestModel request)
+    private static string BuildInlineHeaders(RequestModel request, string requestLocal)
     {
         var parts = new string[request.StaticHeaders.Count + request.Parameters.Count];
         var count = 0;
@@ -210,7 +227,7 @@ internal static partial class Emitter
         foreach (var header in request.StaticHeaders)
         {
             parts[count++] =
-                $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, {ToCSharpStringLiteral(header.Name)}, {ToNullableCSharpStringLiteral(header.Value)});\n";
+                $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(header.Name)}, {ToNullableCSharpStringLiteral(header.Value)});\n";
         }
 
         foreach (var parameter in request.Parameters)
@@ -220,14 +237,14 @@ internal static partial class Emitter
                 case RequestParameterKind.Header:
                     {
                         parts[count++] =
-                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, {ToCSharpStringLiteral(parameter.HeaderName)}, {BuildHeaderValueExpression(parameter)});\n";
+                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(parameter.HeaderName)}, {BuildHeaderValueExpression(parameter)});\n";
                         continue;
                     }
 
                 case RequestParameterKind.HeaderCollection:
                     {
                         parts[count++] =
-                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddHeaderCollection(refitRequest, @{parameter.Name});\n";
+                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddHeaderCollection({requestLocal}, @{parameter.Name});\n";
                         break;
                     }
             }
@@ -250,16 +267,20 @@ internal static partial class Emitter
     /// <summary>Builds request-option/property application for an inline generated method.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated request option/property statements.</returns>
     private static string BuildInlineRequestProperties(
         RequestModel request,
-        InterfaceModel interfaceModel)
+        InterfaceModel interfaceModel,
+        string requestLocal,
+        string settingsLocal)
     {
         var parts = new string[1 + interfaceModel.Properties.Count + request.Parameters.Count];
         var count = 0;
         var bodyIndent = Indent(MethodBodyIndentation);
         parts[count++] =
-            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof({interfaceModel.InterfaceDisplayName}));\n";
+            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions({requestLocal}, {settingsLocal}, typeof({interfaceModel.InterfaceDisplayName}));\n";
 
         foreach (var property in interfaceModel.Properties)
         {
@@ -270,7 +291,7 @@ internal static partial class Emitter
 
             parts[count++] =
                 $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{property.Type}>"
-                + $"(refitRequest, {ToCSharpStringLiteral(property.RequestPropertyKey)}, "
+                + $"({requestLocal}, {ToCSharpStringLiteral(property.RequestPropertyKey)}, "
                 + $"{BuildPropertyAccessExpression(property)});\n";
         }
 
@@ -279,11 +300,27 @@ internal static partial class Emitter
             if (parameter.Kind == RequestParameterKind.Property)
             {
                 parts[count++] =
-                    $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{parameter.Type}>(refitRequest, {ToCSharpStringLiteral(parameter.PropertyKey)}, @{parameter.Name});\n";
+                    $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{parameter.Type}>({requestLocal}, {ToCSharpStringLiteral(parameter.PropertyKey)}, @{parameter.Name});\n";
             }
         }
 
         return ConcatParts(parts, count);
+    }
+
+    /// <summary>Creates a name builder reserved with a method's parameter names so generated locals never collide with them.</summary>
+    /// <param name="parameters">The method parameters whose names must be avoided.</param>
+    /// <returns>A <see cref="UniqueNameBuilder"/> seeded with the parameter names.</returns>
+    private static UniqueNameBuilder CreateMethodLocalNameBuilder(ImmutableEquatableArray<ParameterModel> parameters)
+    {
+        var builder = new UniqueNameBuilder();
+        var names = new List<string>(parameters.Count);
+        foreach (var parameter in parameters)
+        {
+            names.Add(parameter.MetadataName);
+        }
+
+        builder.Reserve(names);
+        return builder;
     }
 
     /// <summary>Finds the first request parameter of the given kind.</summary>

@@ -222,22 +222,27 @@ public static class GeneratorComponentTests
         [Test]
         public async Task BodyExpressionHelpers_HandleBufferModes()
         {
+            const string settings = "refitSettings";
             var settingsBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Settings);
             var bufferedBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Buffered);
             var streamingBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Streaming);
             var noneBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.None);
             var urlEncodedBody = CreateBody("UrlEncoded", BodyBufferMode.Streaming);
 
-            await Assert.That(Emitter.BuildBufferBodyExpression(null)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody)).IsEqualTo("refitSettings.Buffered");
-            await Assert.That(Emitter.BuildBufferBodyExpression(bufferedBody)).IsEqualTo(TrueLiteral);
-            await Assert.That(Emitter.BuildBufferBodyExpression(streamingBody)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildBufferBodyExpression(noneBody)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(settingsBody)).IsEqualTo("!refitSettings.Buffered");
-            await Assert.That(Emitter.BuildStreamBodyExpression(bufferedBody)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(streamingBody)).IsEqualTo(TrueLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(noneBody)).IsEqualTo(FalseLiteral);
-            await Assert.That(Emitter.BuildStreamBodyExpression(urlEncodedBody)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildBufferBodyExpression(null, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody, settings)).IsEqualTo($"{settings}.Buffered");
+            await Assert.That(Emitter.BuildBufferBodyExpression(bufferedBody, settings)).IsEqualTo(TrueLiteral);
+            await Assert.That(Emitter.BuildBufferBodyExpression(streamingBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildBufferBodyExpression(noneBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildStreamBodyExpression(settingsBody, settings)).IsEqualTo($"!{settings}.Buffered");
+            await Assert.That(Emitter.BuildStreamBodyExpression(bufferedBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildStreamBodyExpression(streamingBody, settings)).IsEqualTo(TrueLiteral);
+            await Assert.That(Emitter.BuildStreamBodyExpression(noneBody, settings)).IsEqualTo(FalseLiteral);
+            await Assert.That(Emitter.BuildStreamBodyExpression(urlEncodedBody, settings)).IsEqualTo(FalseLiteral);
+
+            // With a different settings local name, the expression follows it (collision-avoidance threading).
+            await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody, "renamed")).IsEqualTo("renamed.Buffered");
+            await Assert.That(Emitter.BuildStreamBodyExpression(settingsBody, "renamed")).IsEqualTo("!renamed.Buffered");
         }
 
         /// <summary>Verifies property access and global-prefix helpers.</summary>
