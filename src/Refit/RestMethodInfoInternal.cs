@@ -347,14 +347,6 @@ internal class RestMethodInfoInternal
     /// <param name="parameterInfo">The array of method parameters.</param>
     /// <param name="allowUnmatchedRouteParameters">When true, a placeholder with no matching argument is left in the path verbatim instead of throwing.</param>
     /// <returns>A tuple containing the parameter map and the ordered list of URL fragments.</returns>
-    [SuppressMessage(
-        "Major Code Smell",
-        "S3776:Cognitive Complexity of methods should not be too high",
-        Justification = "Request route parsing has several validation branches that are clearer kept together.")]
-    [SuppressMessage(
-        "Major Code Smell",
-        "S1541:Methods and properties should not be too complex",
-        Justification = "Request route parsing has several validation branches that are clearer kept together.")]
     [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
     private static (Dictionary<int, RestMethodParameterInfo> Map, List<ParameterFragment> Fragments)
         BuildParameterMap(
@@ -373,12 +365,67 @@ internal class RestMethodInfoInternal
                 : (ret, [ParameterFragment.Constant(relativePath)]);
         }
 
+        var paramValidationDict = BuildParamValidationDict(parameterInfo);
+        var objectParamValidationDict = BuildObjectParamValidationDict(parameterInfo);
+
+        var fragmentList = new List<ParameterFragment>();
+        var index = 0;
+
+        for (var i = 0; i < parameterizedParts.Count; i++)
+        {
+            var match = parameterizedParts[i];
+
+            // Add constant value from given http path
+            if (match.Index != index)
+            {
+                fragmentList.Add(ParameterFragment.Constant(relativePath.Substring(index, match.Index - index)));
+            }
+
+            index = match.Index + match.Length;
+
+            AddFragmentForMatch(
+                relativePath,
+                parameterInfo,
+                ret,
+                fragmentList,
+                (paramValidationDict, objectParamValidationDict),
+                match,
+                allowUnmatchedRouteParameters);
+        }
+
+        if (index >= relativePath.Length)
+        {
+            return (ret, fragmentList);
+        }
+
+        // Add trailing string.
+        var trailingConstant = relativePath[index..];
+        fragmentList.Add(ParameterFragment.Constant(trailingConstant));
+
+        return (ret, fragmentList);
+    }
+
+    /// <summary>Builds a lookup of lower-cased URL parameter names to their declaring method parameter.</summary>
+    /// <param name="parameterInfo">The array of method parameters.</param>
+    /// <returns>A map of URL parameter names to method parameters.</returns>
+    private static Dictionary<string, ParameterInfo> BuildParamValidationDict(ParameterInfo[] parameterInfo)
+    {
         var paramValidationDict = new Dictionary<string, ParameterInfo>(parameterInfo.Length);
         for (var i = 0; i < parameterInfo.Length; i++)
         {
             paramValidationDict[GetUrlNameForParameter(parameterInfo[i]).ToLowerInvariant()] = parameterInfo[i];
         }
 
+        return paramValidationDict;
+    }
+
+    /// <summary>Builds a lookup of lower-cased "parameter.property" names to the parameter/property pair that can bind them.</summary>
+    /// <param name="parameterInfo">The array of method parameters.</param>
+    /// <returns>A map of nested property names to their parameter/property pair.</returns>
+    [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
+    private static Dictionary<string, Tuple<ParameterInfo, PropertyInfo>> BuildObjectParamValidationDict(
+        ParameterInfo[] parameterInfo)
+    {
         // If the parameter is a class, build a dictionary for all of its potential bound properties.
         var objectParamValidationDict = new Dictionary<string, Tuple<ParameterInfo, PropertyInfo>>();
         for (var i = 0; i < parameterInfo.Length; i++)
@@ -400,62 +447,55 @@ internal class RestMethodInfoInternal
             }
         }
 
-        var fragmentList = new List<ParameterFragment>();
-        var index = 0;
+        return objectParamValidationDict;
+    }
 
-        for (var i = 0; i < parameterizedParts.Count; i++)
+    /// <summary>Resolves a single parameterized URL fragment against the parameter maps and appends the result.</summary>
+    /// <param name="relativePath">The relative URL path template.</param>
+    /// <param name="parameterInfo">The array of method parameters.</param>
+    /// <param name="ret">The parameter map being built.</param>
+    /// <param name="fragmentList">The fragment list being built.</param>
+    /// <param name="validation">The lookups of directly matched parameter names and nested object-property names.</param>
+    /// <param name="match">The parameterized URL match being resolved.</param>
+    /// <param name="allowUnmatchedRouteParameters">When true, an unmatched placeholder is left in the path verbatim instead of throwing.</param>
+    private static void AddFragmentForMatch(
+        string relativePath,
+        ParameterInfo[] parameterInfo,
+        Dictionary<int, RestMethodParameterInfo> ret,
+        List<ParameterFragment> fragmentList,
+        (Dictionary<string, ParameterInfo> Param, Dictionary<string, Tuple<ParameterInfo, PropertyInfo>> Object) validation,
+        Match match,
+        bool allowUnmatchedRouteParameters)
+    {
+        var rawName = match.Groups[1].Value.ToLowerInvariant();
+        var isRoundTripping = rawName.StartsWith("**", StringComparison.Ordinal);
+        var name = isRoundTripping ? rawName[2..] : rawName;
+
+        if (validation.Param.TryGetValue(name, out var value))
         {
-            var match = parameterizedParts[i];
-
-            // Add constant value from given http path
-            if (match.Index != index)
-            {
-                fragmentList.Add(ParameterFragment.Constant(relativePath.Substring(index, match.Index - index)));
-            }
-
-            index = match.Index + match.Length;
-
-            var rawName = match.Groups[1].Value.ToLowerInvariant();
-            var isRoundTripping = rawName.StartsWith("**", StringComparison.Ordinal);
-            var name = isRoundTripping ? rawName[2..] : rawName;
-
-            if (paramValidationDict.TryGetValue(name, out var value))
-            {
-                AddStandardParameter(
-                    relativePath,
-                    parameterInfo,
-                    ret,
-                    fragmentList,
-                    new(rawName, name, isRoundTripping),
-                    value);
-            }
-            else if (objectParamValidationDict.TryGetValue(name, out var value1) && !isRoundTripping)
-            {
-                AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1);
-            }
-            else if (allowUnmatchedRouteParameters)
-            {
-                // Leave the unmatched placeholder in the URL verbatim (including its braces) so the
-                // caller can resolve it later, e.g. inside a DelegatingHandler.
-                fragmentList.Add(ParameterFragment.Constant(match.Value));
-            }
-            else
-            {
-                throw new ArgumentException(
-                    $"URL {relativePath} has parameter {rawName}, but no method parameter matches");
-            }
+            AddStandardParameter(
+                relativePath,
+                parameterInfo,
+                ret,
+                fragmentList,
+                new(rawName, name, isRoundTripping),
+                value);
         }
-
-        if (index >= relativePath.Length)
+        else if (validation.Object.TryGetValue(name, out var value1) && !isRoundTripping)
         {
-            return (ret, fragmentList);
+            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1);
         }
-
-        // Add trailing string.
-        var trailingConstant = relativePath[index..];
-        fragmentList.Add(ParameterFragment.Constant(trailingConstant));
-
-        return (ret, fragmentList);
+        else if (allowUnmatchedRouteParameters)
+        {
+            // Leave the unmatched placeholder in the URL verbatim (including its braces) so the
+            // caller can resolve it later, e.g. inside a DelegatingHandler.
+            fragmentList.Add(ParameterFragment.Constant(match.Value));
+        }
+        else
+        {
+            throw new ArgumentException(
+                $"URL {relativePath} has parameter {rawName}, but no method parameter matches");
+        }
     }
 
     /// <summary>Adds a standard (directly matched) route parameter to the parameter map and fragment list.</summary>
@@ -663,10 +703,6 @@ internal class RestMethodInfoInternal
     /// <param name="targetInterface">The interface type that declares the method.</param>
     /// <param name="methodInfo">The reflected method information.</param>
     /// <returns>A map of header names to header values.</returns>
-    [SuppressMessage(
-        "Major Code Smell",
-        "S3776:Cognitive Complexity of methods should not be too high",
-        Justification = "Header precedence is order-sensitive and easier to audit in one method.")]
     private static Dictionary<string, string?> ParseHeaders(
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.Interfaces)] Type targetInterface,
         MethodInfo methodInfo)
@@ -678,36 +714,43 @@ internal class RestMethodInfoInternal
             var interfaces = targetInterface.GetInterfaces();
             for (var i = interfaces.Length - 1; i >= 0; i--)
             {
-                var attributes = interfaces[i].GetTypeInfo().GetCustomAttributes(true);
-                for (var j = attributes.Length - 1; j >= 0; j--)
-                {
-                    if (attributes[j] is HeadersAttribute headersAttribute)
-                    {
-                        AddHeaders(headersAttribute, ref ret);
-                    }
-                }
+                AddHeadersFromAttributes(interfaces[i].GetTypeInfo().GetCustomAttributes(true), reverse: true, ref ret);
             }
 
-            var declaringAttributes = targetInterface.GetTypeInfo().GetCustomAttributes(true);
-            for (var i = 0; i < declaringAttributes.Length; i++)
+            AddHeadersFromAttributes(targetInterface.GetTypeInfo().GetCustomAttributes(true), reverse: false, ref ret);
+        }
+
+        AddHeadersFromAttributes(methodInfo.GetCustomAttributes(true), reverse: false, ref ret);
+
+        return ret ?? EmptyDictionary<string, string?>.Get();
+    }
+
+    /// <summary>Adds every <see cref="HeadersAttribute"/> found in the supplied attributes to the header map.</summary>
+    /// <param name="attributes">The attributes to scan.</param>
+    /// <param name="reverse">When true, scans the attributes from last to first so earlier declarations take precedence.</param>
+    /// <param name="ret">The header map being built, created lazily on first use.</param>
+    private static void AddHeadersFromAttributes(object[] attributes, bool reverse, ref Dictionary<string, string?>? ret)
+    {
+        if (reverse)
+        {
+            for (var i = attributes.Length - 1; i >= 0; i--)
             {
-                if (declaringAttributes[i] is HeadersAttribute headersAttribute)
+                if (attributes[i] is HeadersAttribute headersAttribute)
                 {
                     AddHeaders(headersAttribute, ref ret);
                 }
             }
+
+            return;
         }
 
-        var methodAttributes = methodInfo.GetCustomAttributes(true);
-        for (var i = 0; i < methodAttributes.Length; i++)
+        for (var i = 0; i < attributes.Length; i++)
         {
-            if (methodAttributes[i] is HeadersAttribute headersAttribute)
+            if (attributes[i] is HeadersAttribute headersAttribute)
             {
                 AddHeaders(headersAttribute, ref ret);
             }
         }
-
-        return ret ?? EmptyDictionary<string, string?>.Get();
     }
 
     /// <summary>Builds the map of parameter indexes to header names.</summary>
@@ -819,6 +862,34 @@ internal class RestMethodInfoInternal
     private static Regex ParameterRegex() => _parameterRegexValue;
 #endif
 
+    /// <summary>Scans the parameters for an explicit <see cref="BodyAttribute"/>.</summary>
+    /// <param name="parameterArray">The array of method parameters.</param>
+    /// <returns>The first body attribute and its index, and whether more than one parameter carries one.</returns>
+    private static (BodyAttribute? Attribute, int Index, bool HasMultiple) FindBodyAttribute(
+        ParameterInfo[] parameterArray)
+    {
+        BodyAttribute? bodyAttribute = null;
+        var bodyParameterIndex = -1;
+        for (var i = 0; i < parameterArray.Length; i++)
+        {
+            var attribute = parameterArray[i].GetCustomAttribute<BodyAttribute>(true);
+            if (attribute is null)
+            {
+                continue;
+            }
+
+            if (bodyAttribute is not null)
+            {
+                return (bodyAttribute, bodyParameterIndex, true);
+            }
+
+            bodyAttribute = attribute;
+            bodyParameterIndex = i;
+        }
+
+        return (bodyAttribute, bodyParameterIndex, false);
+    }
+
     /// <summary>Builds the map of parameter indexes to multipart attachment names.</summary>
     /// <returns>A map of parameter indexes to attachment name pairs.</returns>
     private Dictionary<int, Tuple<string, string>> BuildAttachmentNameMap()
@@ -893,10 +964,6 @@ internal class RestMethodInfoInternal
     /// <param name="isMultipart">A value indicating whether the request is multipart.</param>
     /// <param name="method">The HTTP method of the request.</param>
     /// <returns>The body parameter information, or null when there is no body parameter.</returns>
-    [SuppressMessage(
-        "Major Code Smell",
-        "S1541:Methods and properties should not be too complex",
-        Justification = "Body parameter inference mirrors the documented precedence rules.")]
     private Tuple<BodySerializationMethod, bool, int>? FindBodyParameter(
         ParameterInfo[] parameterArray,
         bool isMultipart,
@@ -906,26 +973,7 @@ internal class RestMethodInfoInternal
         // 1) [Body] attribute
         // 2) POST/PUT/PATCH: Reference type other than string
         // 3) If there are two reference types other than string, without the body attribute, throw
-        BodyAttribute? bodyAttribute = null;
-        var bodyParameterIndex = -1;
-        var hasMultipleBodyParameters = false;
-        for (var i = 0; i < parameterArray.Length; i++)
-        {
-            var attribute = parameterArray[i].GetCustomAttribute<BodyAttribute>(true);
-            if (attribute is null)
-            {
-                continue;
-            }
-
-            if (bodyAttribute is not null)
-            {
-                hasMultipleBodyParameters = true;
-                break;
-            }
-
-            bodyAttribute = attribute;
-            bodyParameterIndex = i;
-        }
+        var (bodyAttribute, bodyParameterIndex, hasMultipleBodyParameters) = FindBodyAttribute(parameterArray);
 
         // multipart requests may not contain a body, implicit or explicit
         if (isMultipart)
