@@ -78,6 +78,27 @@ public partial class RestServiceIntegrationTests
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
+    /// <summary>Verifies a body parameter named like a generated local variable still works (issue #2161).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task PostBodyNamedLikeGeneratedLocalToRequestBin()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+            .WithContent("payload")
+            .Respond(HttpStatusCode.OK);
+
+        var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+        await fixture.PostBodyNamedLikeGeneratedLocal("payload");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
     /// <summary>Verifies a collection body is sent as JSON Lines (newline-delimited JSON).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -503,5 +524,35 @@ public partial class RestServiceIntegrationTests
         await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
         await Assert.That(resp.Args["LastName"]).IsEqualTo("Rambo");
         await Assert.That(resp.Args["Addr_Zip"]).IsEqualTo("9999");
+    }
+
+    /// <summary>Verifies an object URL-encoded body flows through generated reflection-free form fields.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task PostGeneratedUrlEncodedFormUsesFieldDescriptors()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Post, "http://foo/form")
+            .WithFormData("user_name", "bob")
+            .WithFormData("pwd", "secret")
+            .WithFormData("Plain", "x")
+            .WithFormData("Nullable", string.Empty)
+            .Respond("application/json", "\"ok\"");
+
+        var fixture = RestService.For<IGeneratedFormApi>("http://foo", settings);
+
+        _ = await fixture.PostForm(
+            new GeneratedFormData
+            {
+                UserName = "bob",
+                Password = "secret",
+                Plain = "x",
+                Nullable = null,
+            });
+
+        mockHttp.VerifyNoOutstandingExpectation();
     }
 }

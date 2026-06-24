@@ -60,6 +60,12 @@ public interface IRequestBin
     [Post("/big")]
     Task PostBig(BigObject big);
 
+    /// <summary>Posts a body whose parameter name collides with a generated local variable (issue #2161).</summary>
+    /// <param name="refitSettings">A body parameter deliberately named like a generated local.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Post("/foo")]
+    Task PostBodyNamedLikeGeneratedLocal([Body] string refitSettings);
+
     /// <summary>Posts a collection serialized as JSON Lines (newline-delimited JSON).</summary>
     /// <param name="records">The records to post, one JSON document per line.</param>
     /// <returns>A task that completes when the request finishes.</returns>

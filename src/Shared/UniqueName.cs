@@ -5,8 +5,12 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Refit;
 
-/// <summary>Builds the unique generated type name for a Refit interface.</summary>
-internal static class UniqueName
+/// <summary>
+/// Builds the unique generated type name for a Refit interface. This matches the name Refit uses when
+/// registering a client with <c>IHttpClientFactory</c>, so it can be used to resolve or configure that
+/// same named client (for example <c>services.AddHttpClient(UniqueName.ForType&lt;T&gt;())</c>).
+/// </summary>
+public static class UniqueName
 {
     /// <summary>Builds the unique name for the generated implementation of the given interface type.</summary>
     /// <typeparam name="T">The Refit interface type.</typeparam>

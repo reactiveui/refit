@@ -89,6 +89,40 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
                 settings,
                 GetCachedProperties(source));
 
+    /// <summary>Creates a form value map from source-generated field descriptors, avoiding reflection.</summary>
+    /// <typeparam name="TBody">The declared body type.</typeparam>
+    /// <param name="body">The body instance to flatten into form entries.</param>
+    /// <param name="fields">The compile-time field descriptors for the body type.</param>
+    /// <param name="settings">The Refit settings controlling formatting.</param>
+    /// <returns>The created form value map.</returns>
+    internal static FormValueMultimap CreateFromFields<TBody>(
+        TBody body,
+        FormField<TBody>[] fields,
+        RefitSettings settings)
+    {
+        var map = new FormValueMultimap(null, settings, null);
+        for (var i = 0; i < fields.Length; i++)
+        {
+            var field = fields[i];
+            var value = field.Getter(body);
+            var fieldName = field.ResolveFieldName(map._urlParameterKeyFormatter);
+
+            if (value is null)
+            {
+                if (field.SerializeNull)
+                {
+                    map.Add(fieldName, string.Empty);
+                }
+
+                continue;
+            }
+
+            map.AppendValue(fieldName, value, field.Format, field.CollectionFormat, settings);
+        }
+
+        return map;
+    }
+
     /// <summary>Resolves the cached readable public properties for the given source type.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns>The cached readable public properties.</returns>
@@ -129,7 +163,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <summary>Formats and joins a collection-valued form field without LINQ adapters.</summary>
     /// <param name="enumerable">The collection to format.</param>
     /// <param name="delimiter">The delimiter between formatted values.</param>
-    /// <param name="attrib">The query attribute, if any.</param>
+    /// <param name="format">The value format string, if any.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
     /// <returns>The joined formatted value.</returns>
     [SuppressMessage(
@@ -139,7 +173,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     private static string JoinFormattedValues(
         IEnumerable enumerable,
         string delimiter,
-        QueryAttribute? attrib,
+        string? format,
         RefitSettings settings)
     {
         var enumerator = enumerable.GetEnumerator();
@@ -151,11 +185,11 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             }
 
             var builder = new ValueStringBuilder(stackalloc char[256]);
-            builder.Append(settings.FormUrlEncodedParameterFormatter.Format(enumerator.Current, attrib?.Format));
+            builder.Append(settings.FormUrlEncodedParameterFormatter.Format(enumerator.Current, format));
             while (enumerator.MoveNext())
             {
                 builder.Append(delimiter);
-                builder.Append(settings.FormUrlEncodedParameterFormatter.Format(enumerator.Current, attrib?.Format));
+                builder.Append(settings.FormUrlEncodedParameterFormatter.Format(enumerator.Current, format));
             }
 
             return builder.ToString();
@@ -196,46 +230,67 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         {
             var property = properties[i];
             var value = property.GetValue(source, null);
-            if (value is null)
-            {
-                continue;
-            }
-
-            var fieldName = GetFieldNameForProperty(property);
 
             // see if there's a query attribute
             var attrib = property.GetCustomAttribute<QueryAttribute>(true);
 
-            // add strings/non enumerable properties
-            if (value is not IEnumerable enumerable || value is string)
+            if (value is null)
             {
-                Add(
-                    fieldName,
-                    settings.FormUrlEncodedParameterFormatter.Format(value, attrib?.Format));
+                if (attrib?.SerializeNull == true)
+                {
+                    Add(GetFieldNameForProperty(property), string.Empty);
+                }
+
                 continue;
             }
 
-            var collectionFormat =
-                attrib?.IsCollectionFormatSpecified == true
-                    ? attrib.CollectionFormat
-                    : settings.CollectionFormat;
+            var fieldName = GetFieldNameForProperty(property);
+            var collectionFormat = attrib?.IsCollectionFormatSpecified == true
+                ? attrib.CollectionFormat
+                : (CollectionFormat?)null;
 
-            AddCollection(fieldName, enumerable, value, attrib, collectionFormat, settings);
+            AppendValue(fieldName, value, attrib?.Format, collectionFormat, settings);
         }
+    }
+
+    /// <summary>Adds a non-null property or descriptor value, choosing scalar or collection handling.</summary>
+    /// <param name="fieldName">The resolved form field name.</param>
+    /// <param name="value">The non-null value to add.</param>
+    /// <param name="format">The value format string, if any.</param>
+    /// <param name="explicitCollectionFormat">The explicit collection format, or <see langword="null"/> to use the settings default.</param>
+    /// <param name="settings">The Refit settings controlling formatting.</param>
+    private void AppendValue(
+        string? fieldName,
+        object value,
+        string? format,
+        CollectionFormat? explicitCollectionFormat,
+        RefitSettings settings)
+    {
+        // add strings/non enumerable properties
+        if (value is not IEnumerable enumerable || value is string)
+        {
+            Add(
+                fieldName,
+                settings.FormUrlEncodedParameterFormatter.Format(value, format));
+            return;
+        }
+
+        var collectionFormat = explicitCollectionFormat ?? settings.CollectionFormat;
+        AddCollection(fieldName, enumerable, value, format, collectionFormat, settings);
     }
 
     /// <summary>Adds a collection-valued property using the resolved collection format.</summary>
     /// <param name="fieldName">The resolved form field name.</param>
     /// <param name="enumerable">The enumerable value.</param>
     /// <param name="value">The original property value.</param>
-    /// <param name="attrib">The query attribute, if any.</param>
+    /// <param name="format">The value format string, if any.</param>
     /// <param name="collectionFormat">The resolved collection format.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
     private void AddCollection(
-        string fieldName,
+        string? fieldName,
         IEnumerable enumerable,
         object value,
-        QueryAttribute? attrib,
+        string? format,
         CollectionFormat collectionFormat,
         RefitSettings settings)
     {
@@ -249,7 +304,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
                         fieldName,
                         settings.FormUrlEncodedParameterFormatter.Format(
                             item,
-                            attrib?.Format));
+                            format));
                 }
 
                 break;
@@ -262,7 +317,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
             {
                 var delimiter = GetDelimiter(collectionFormat);
 
-                Add(fieldName, JoinFormattedValues(enumerable, delimiter, attrib, settings));
+                Add(fieldName, JoinFormattedValues(enumerable, delimiter, format, settings));
                 break;
             }
 
@@ -272,7 +327,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
                     fieldName,
                     settings.FormUrlEncodedParameterFormatter.Format(
                         value,
-                        attrib?.Format));
+                        format));
                 break;
             }
         }

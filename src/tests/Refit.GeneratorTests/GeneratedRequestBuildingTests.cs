@@ -190,6 +190,30 @@ public class GeneratedRequestBuildingTests
         await Assert.That(errorMessages).IsEqualTo(string.Empty);
     }
 
+    /// <summary>Verifies a parameter named like a generated local does not collide (issue #2161).</summary>
+    /// <param name="parameterName">A parameter name matching a generated local variable.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("refitSettings")]
+    [Arguments("refitRequest")]
+    [Arguments("refitArguments")]
+    [Arguments("refitRequestBuilder")]
+    [Arguments("refitFunc")]
+    public async Task ParameterNamedLikeGeneratedLocalCompiles(string parameterName)
+    {
+        var body = $$"""
+            [Post("/todos")]
+            Task<string> CreateAsync([Body] string {{parameterName}});
+            """;
+
+        foreach (var generatedRequestBuilding in new bool?[] { true, false })
+        {
+            var errors = Fixture.GenerateErrorsForBody(body, generatedRequestBuilding);
+            var errorMessages = string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString()));
+            await Assert.That(errorMessages).IsEqualTo(string.Empty);
+        }
+    }
+
     /// <summary>Verifies static headers are emitted into inline request construction.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -859,5 +883,138 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).Contains("global::IBaseApi.GetBase()");
         await Assert.That(generated).Contains("void global::System.IDisposable.Dispose()");
         await Assert.That(generated).DoesNotContain("global::IBaseApi.Helper");
+    }
+
+    /// <summary>Verifies a URL-encoded form body emits reflection-free generated field descriptors.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UrlEncodedFormBodyEmitsGeneratedFieldDescriptors()
+    {
+        const string source =
+            """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using System.Text.Json.Serialization;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public class LoginForm
+            {
+                [AliasAs("user_name")]
+                public string UserName { get; set; }
+
+                [JsonPropertyName("pwd")]
+                public string Password { get; set; }
+
+                [Query(SerializeNull = true)]
+                public string Note { get; set; }
+
+                [Query(CollectionFormat.Multi)]
+                public List<string> Roles { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Post("/login")]
+                Task Login([Body(BodySerializationMethod.UrlEncoded)] LoginForm form);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(
+            "global::Refit.FormField<global::RefitGeneratorTest.LoginForm>[]");
+        await Assert.That(generated).Contains(
+            "static body => (object?)body.@UserName");
+        await Assert.That(generated).Contains("\"user_name\"");
+        await Assert.That(generated).Contains("\"pwd\"");
+        await Assert.That(generated).Contains("(global::Refit.CollectionFormat)");
+        await Assert.That(generated).Contains(
+            "global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<global::RefitGeneratorTest.LoginForm>(");
+    }
+
+    /// <summary>Verifies a string-typed form body keeps the reflection-based content path.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UrlEncodedStringBodyKeepsReflectionContentPath()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [Post("/login")]
+            Task Login([Body(BodySerializationMethod.UrlEncoded)] string form);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains(
+            "global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<string>(");
+        await Assert.That(generated).DoesNotContain("global::Refit.FormField<");
+    }
+
+    /// <summary>Verifies non-flattenable form body types keep the reflection-based content path.</summary>
+    /// <param name="bodyType">The ineligible body type expression.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("object")]
+    [Arguments("System.Collections.Generic.Dictionary<string, string>")]
+    [Arguments("System.Collections.Generic.List<string>")]
+    [Arguments("int[]")]
+    [Arguments("System.IDisposable")]
+    public async Task UrlEncodedIneligibleBodyKeepsReflectionContentPath(string bodyType)
+    {
+        var generated = Fixture.GenerateForBody(
+            $$"""
+            [Post("/x")]
+            Task Post([Body(BodySerializationMethod.UrlEncoded)] {{bodyType}} body);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).Contains(
+            "global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<");
+        await Assert.That(generated).DoesNotContain("global::Refit.FormField<");
+    }
+
+    /// <summary>Verifies form field descriptors include inherited properties and apply the query prefix.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UrlEncodedFormBodyEmitsInheritedAndPrefixedFieldDescriptors()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public class BaseForm
+            {
+                public string BaseValue { get; set; }
+            }
+
+            public class DerivedForm : BaseForm
+            {
+                [Query("-", "secret")]
+                public string Token { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Post("/login")]
+                Task Login([Body(BodySerializationMethod.UrlEncoded)] DerivedForm form);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains("static body => (object?)body.@Token");
+        await Assert.That(generated).Contains("static body => (object?)body.@BaseValue");
+        await Assert.That(generated).Contains("\"secret-\"");
     }
 }

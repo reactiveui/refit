@@ -12,6 +12,15 @@ internal static partial class Emitter
     /// <summary>The generated literal for <see langword="false"/>.</summary>
     private const string FalseLiteral = "false";
 
+    /// <summary>The C# null keyword literal.</summary>
+    private const string NullLiteral = "null";
+
+    /// <summary>The number of quote characters wrapping a C# string literal.</summary>
+    private const int StringLiteralQuoteLength = 2;
+
+    /// <summary>The radix used when rendering decimal integers.</summary>
+    private const int DecimalRadix = 10;
+
     /// <summary>The generated literal for <see langword="true"/>.</summary>
     private const string TrueLiteral = "true";
 
@@ -778,17 +787,21 @@ internal static partial class Emitter
     /// <param name="returnPrefix">The return statement prefix.</param>
     /// <param name="returnType">The generated return type.</param>
     /// <param name="configureAwait">The generated configure-await suffix.</param>
+    /// <param name="funcLocal">The generated request-func local name.</param>
+    /// <param name="argumentsLocal">The generated arguments-array local name.</param>
     /// <returns>The generated return statement.</returns>
     private static string BuildRefitReturnStatement(
         MethodModel methodModel,
         string returnPrefix,
         string returnType,
-        string configureAwait)
+        string configureAwait,
+        string funcLocal,
+        string argumentsLocal)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         return methodModel.ReturnTypeMetadata == ReturnTypeInfo.SyncVoid
-            ? $"{bodyIndent}refitFunc(this.Client, refitArguments);\n"
-            : $"{bodyIndent}{returnPrefix}({returnType})refitFunc(this.Client, refitArguments){configureAwait};\n";
+            ? $"{bodyIndent}{funcLocal}(this.Client, {argumentsLocal});\n"
+            : $"{bodyIndent}{returnPrefix}({returnType}){funcLocal}(this.Client, {argumentsLocal}){configureAwait};\n";
     }
 
     /// <summary>Concatenates populated source fragments without allocating a trimmed array.</summary>
@@ -856,6 +869,169 @@ internal static partial class Emitter
     /// <param name="level">The indentation level.</param>
     /// <returns>The generated indentation.</returns>
     private static string Indent(int level) => new(' ', level * CharsPerIndentation);
+
+    /// <summary>Gets the two-character escape sequence for a C# string-literal character, or null when none is needed.</summary>
+    /// <param name="character">The character to escape.</param>
+    /// <returns>The interned escape sequence, or <see langword="null"/> when the character is emitted verbatim.</returns>
+    private static string? EscapeSequence(char character) =>
+        character switch
+        {
+            '\\' => "\\\\",
+            '"' => "\\\"",
+            '\0' => "\\0",
+            '\a' => "\\a",
+            '\b' => "\\b",
+            '\f' => "\\f",
+            '\n' => "\\n",
+            '\r' => "\\r",
+            '\t' => "\\t",
+            '\v' => "\\v",
+            _ => null
+        };
+
+    /// <summary>Computes the rendered length of a C# string literal or the <c>null</c> keyword.</summary>
+    /// <param name="value">The value to quote, or <see langword="null"/>.</param>
+    /// <returns>The number of characters the rendered expression occupies.</returns>
+    private static int LiteralOrNullLength(string? value)
+    {
+        if (value is null)
+        {
+            return NullLiteral.Length;
+        }
+
+        var length = StringLiteralQuoteLength;
+        foreach (var character in value)
+        {
+            length += EscapeSequence(character) is null ? 1 : StringLiteralQuoteLength;
+        }
+
+        return length;
+    }
+
+    /// <summary>Computes the rendered decimal length of a 32-bit integer.</summary>
+    /// <param name="value">The value to render.</param>
+    /// <returns>The number of characters the decimal rendering occupies.</returns>
+    private static int Int32Length(int value)
+    {
+        var length = value < 0 ? 1 : 0;
+        var magnitude = value < 0 ? -(long)value : value;
+        do
+        {
+            length++;
+            magnitude /= DecimalRadix;
+        }
+        while (magnitude > 0);
+
+        return length;
+    }
+
+#if NETSTANDARD2_0
+    /// <summary>Writes a C# string literal or the <c>null</c> keyword into a generated string buffer.</summary>
+    /// <param name="destination">The target character buffer.</param>
+    /// <param name="value">The value to quote, or <see langword="null"/>.</param>
+    /// <param name="position">The current write position.</param>
+    private static void AppendLiteralOrNull(char[] destination, string? value, ref int position)
+    {
+        if (value is null)
+        {
+            AppendText(destination, NullLiteral, ref position);
+            return;
+        }
+
+        destination[position++] = '"';
+        foreach (var character in value)
+        {
+            var escape = EscapeSequence(character);
+            if (escape is null)
+            {
+                destination[position++] = character;
+            }
+            else
+            {
+                AppendText(destination, escape, ref position);
+            }
+        }
+
+        destination[position++] = '"';
+    }
+
+    /// <summary>Writes the decimal rendering of a 32-bit integer into a generated string buffer.</summary>
+    /// <param name="destination">The target character buffer.</param>
+    /// <param name="value">The value to render.</param>
+    /// <param name="position">The current write position.</param>
+    private static void AppendInt32(char[] destination, int value, ref int position)
+    {
+        var end = position + Int32Length(value);
+        var write = end;
+        var magnitude = value < 0 ? -(long)value : value;
+        do
+        {
+            destination[--write] = (char)('0' + (int)(magnitude % DecimalRadix));
+            magnitude /= DecimalRadix;
+        }
+        while (magnitude > 0);
+
+        if (value < 0)
+        {
+            destination[position] = '-';
+        }
+
+        position = end;
+    }
+#else
+    /// <summary>Writes a C# string literal or the <c>null</c> keyword into a generated string buffer.</summary>
+    /// <param name="destination">The target character span.</param>
+    /// <param name="value">The value to quote, or <see langword="null"/>.</param>
+    /// <param name="position">The current write position.</param>
+    private static void AppendLiteralOrNull(Span<char> destination, string? value, ref int position)
+    {
+        if (value is null)
+        {
+            AppendText(destination, NullLiteral, ref position);
+            return;
+        }
+
+        destination[position++] = '"';
+        foreach (var character in value)
+        {
+            var escape = EscapeSequence(character);
+            if (escape is null)
+            {
+                destination[position++] = character;
+            }
+            else
+            {
+                AppendText(destination, escape, ref position);
+            }
+        }
+
+        destination[position++] = '"';
+    }
+
+    /// <summary>Writes the decimal rendering of a 32-bit integer into a generated string buffer.</summary>
+    /// <param name="destination">The target character span.</param>
+    /// <param name="value">The value to render.</param>
+    /// <param name="position">The current write position.</param>
+    private static void AppendInt32(Span<char> destination, int value, ref int position)
+    {
+        var end = position + Int32Length(value);
+        var write = end;
+        var magnitude = value < 0 ? -(long)value : value;
+        do
+        {
+            destination[--write] = (char)('0' + (int)(magnitude % DecimalRadix));
+            magnitude /= DecimalRadix;
+        }
+        while (magnitude > 0);
+
+        if (value < 0)
+        {
+            destination[position] = '-';
+        }
+
+        position = end;
+    }
+#endif
 
 #if NETSTANDARD2_0
     /// <summary>Creates a generated string using a pre-sized buffer.</summary>

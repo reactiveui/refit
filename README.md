@@ -1014,6 +1014,30 @@ public class SomeObject
 **NOTE:** This use of `AliasAs` applies to querystring parameters and form body posts, but not to response objects; for
 aliasing fields on response objects, you'll still need to use `[JsonProperty("full-property-name")]`.
 
+##### Sending `null` values
+
+By default, a property whose value is `null` is omitted from the form body (and from object querystrings). To send
+an explicit empty value (`key=`) for a `null` property instead of omitting it, set `SerializeNull` on its `[Query]`
+attribute:
+
+```csharp
+public class Measurement
+{
+    [Query(SerializeNull = true)]
+    public string? Note { get; set; }
+}
+
+// With Note = null, serialized as: ...&Note=
+```
+
+##### Reflection-free form serialization
+
+When generated request building is enabled (the default), Refit's source generator emits the form-field flattening
+for strongly-typed bodies at compile time, so no reflection is used at request time. This applies when the body is a
+concrete class or struct serialized with the built-in `SystemTextJsonContentSerializer`. Bodies typed as `object`,
+an `IDictionary`, a collection, or serialized with a custom `IHttpContentSerializer` fall back to the reflection-based
+path, which remains fully supported and produces identical output.
+
 ### Setting request headers
 
 #### Static headers
@@ -1814,6 +1838,14 @@ services.AddRefitClient<IWebApi>(provider => new RefitSettings() { /* configure 
 
 Note that some of the properties of `RefitSettings` will be ignored because the `HttpClient` and `HttpClientHandlers`
 will be managed by the `HttpClientFactory` instead of Refit.
+
+Refit registers each client with `IHttpClientFactory` under a deterministic name. You can compute that same name with
+`UniqueName.ForType<T>()`, for example to configure the underlying named `HttpClient` directly:
+
+```csharp
+services.AddHttpClient(UniqueName.ForType<IWebApi>())
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+```
 
 You can then get the api interface using constructor injection:
 

@@ -18,26 +18,28 @@ internal static partial class Emitter
 
     /// <summary>Builds the request-body buffering expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter, if any.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The buffering expression.</returns>
-    internal static string BuildBufferBodyExpression(RequestParameterModel? bodyParameter) =>
+    internal static string BuildBufferBodyExpression(RequestParameterModel? bodyParameter, string settingsLocal) =>
         bodyParameter is null
             ? FalseLiteral
             : bodyParameter.BodyBufferMode switch
             {
-                BodyBufferMode.Settings => "refitSettings.Buffered",
+                BodyBufferMode.Settings => $"{settingsLocal}.Buffered",
                 BodyBufferMode.Buffered => TrueLiteral,
                 _ => FalseLiteral
             };
 
     /// <summary>Builds the serialized-body streaming expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The streaming expression.</returns>
-    internal static string BuildStreamBodyExpression(RequestParameterModel bodyParameter) =>
+    internal static string BuildStreamBodyExpression(RequestParameterModel bodyParameter, string settingsLocal) =>
         bodyParameter.BodySerializationMethod == "UrlEncoded"
             ? FalseLiteral
             : bodyParameter.BodyBufferMode switch
             {
-                BodyBufferMode.Settings => "!refitSettings.Buffered",
+                BodyBufferMode.Settings => $"!{settingsLocal}.Buffered",
                 BodyBufferMode.Buffered => FalseLiteral,
                 BodyBufferMode.Streaming => TrueLiteral,
                 _ => FalseLiteral
