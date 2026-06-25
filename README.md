@@ -1942,6 +1942,28 @@ var settings = new RefitSettings(
 var api = RestService.For<ITodoApi>("https://api.example.com", settings);
 ```
 
+#### Generated-only client registration with `IHttpClientFactory`
+
+`AddRefitClient<T>` is annotated with `RequiresUnreferencedCode` because it can fall back to the reflection-based
+registration path. For Native AoT or trimmed applications that rely on the source generator, use
+`AddRefitGeneratedClient<T>` (from `Refit.HttpClientFactory`) instead. It registers the client through
+`IHttpClientFactory` and `RestService.ForGenerated<T>`, so there is no reflection fallback and no
+`RequiresUnreferencedCode` warning, while the usual `IHttpClientBuilder` configuration (base address, message handlers,
+resilience pipelines) still applies:
+
+```csharp
+services.AddRefitGeneratedClient<IWebApi>()
+        .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.example.com"));
+
+// optionally with settings, a settings factory resolved from the container, or a custom HttpClient name
+services.AddRefitGeneratedClient<IWebApi>(settings);
+services.AddRefitGeneratedClient<IWebApi>(provider => new RefitSettings { /* configure settings */ });
+services.AddRefitGeneratedClient<IWebApi>(settings, "my-named-client");
+```
+
+If no source-generated client exists for the interface, resolving it throws an `InvalidOperationException` that points
+you back to the generator output - the registration never silently falls back to reflection.
+
 If a generated Refit client cannot be found at runtime, Refit now explicitly points you back to the source
 generator/build output and recommends generated clients plus source-generated `System.Text.Json` metadata for Native AoT
 scenarios.

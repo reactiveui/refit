@@ -244,6 +244,28 @@ public sealed class ApiExceptionTests
         await Assert.That(() => new ValidationApiException("message", null!))
             .ThrowsExactly<ArgumentNullException>();
 
+    /// <summary>Verifies the problem+json media type is detected case-insensitively per RFC 7231 (#1702).</summary>
+    /// <param name="mediaType">The problem details media type with varied casing.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("application/problem+json")]
+    [Arguments("application/PROBLEM+JSON")]
+    [Arguments("Application/Problem+Json")]
+    public async Task CreateDetectsProblemJsonMediaTypeCaseInsensitively(string mediaType)
+    {
+        using var response = CreateErrorResponse(
+            "{\"type\":\"about:blank\",\"title\":\"Bad Request\",\"status\":400}",
+            mediaType);
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        await Assert.That(exception).IsTypeOf<ValidationApiException>();
+    }
+
     /// <summary>Creates an error response with an attached request.</summary>
     /// <param name="content">The response content.</param>
     /// <param name="mediaType">The optional media type.</param>

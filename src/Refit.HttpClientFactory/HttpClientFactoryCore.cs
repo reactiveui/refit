@@ -261,6 +261,40 @@ internal static class HttpClientFactoryCore
         return builder;
     }
 
+    /// <summary>Registers a strongly typed, source-generated Refit client without any reflection fallback.</summary>
+    /// <typeparam name="T">The Refit interface type to register.</typeparam>
+    /// <param name="services">The service collection to register into.</param>
+    /// <param name="settings">A factory that produces the Refit settings, or null.</param>
+    /// <param name="httpClientName">A name for the underlying HTTP client, or null.</param>
+    /// <returns>The HTTP client builder for further configuration.</returns>
+    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+    internal static IHttpClientBuilder AddRefitGeneratedClientCore<T>(
+        IServiceCollection services,
+        Func<IServiceProvider, RefitSettings?>? settings,
+        string? httpClientName)
+        where T : class
+    {
+        ArgumentExceptionHelper.ThrowIfNull(services);
+
+        // register settings
+        _ = services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
+
+        // create HttpClientBuilder
+        var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>());
+
+        // configure the primary handler from the supplied settings (or fall back to the default)
+        _ = builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+            CreateInnerHandlerIfProvided(
+                serviceProvider.GetRequiredService<SettingsFor<T>>().Settings)
+            ?? new HttpClientHandler());
+
+        // add typed client backed by the source generator only; throws clearly if no generated client exists
+        return builder.AddTypedClient((client, serviceProvider) =>
+            RestService.ForGenerated<T>(
+                client,
+                serviceProvider.GetRequiredService<SettingsFor<T>>().Settings ?? new RefitSettings()));
+    }
+
     /// <summary>Resolves and caches the open generic <see cref="RequestBuilder.ForType{T}(RefitSettings?)"/> method.</summary>
     /// <returns>The open generic <c>RequestBuilder.ForType</c> method definition.</returns>
     [RequiresUnreferencedCode("Resolving RequestBuilder.ForType by reflection requires method metadata to be available at runtime.")]

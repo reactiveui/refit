@@ -111,6 +111,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Polyfills\NotNullAttribute.cs" Link="Polyfills\NotNullAttribute.cs"/>
   </ItemGroup>
 
+  <!-- net8.0 has every other shim natively but lacks OverloadResolutionPriority (added in net9.0).
+       The net4* leg already pulls this in via the Polyfills\*.cs glob above. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <Compile Include="$(MSBuildThisFileDirectory)Polyfills\OverloadResolutionPriorityAttribute.cs" Link="Polyfills\OverloadResolutionPriorityAttribute.cs"/>
+  </ItemGroup>
+
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4')) or '$(TargetFramework)' == 'netstandard2.0'">
     <Using Include="Refit.Internal.ArgumentExceptionHelper" Alias="ArgumentExceptionHelper"/>
     <Using Include="Refit.Internal.ArgumentOutOfRangeExceptionHelper" Alias="ArgumentOutOfRangeExceptionHelper"/>

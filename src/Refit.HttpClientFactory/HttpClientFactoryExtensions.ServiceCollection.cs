@@ -87,9 +87,7 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="refitInterfaceType">The type of the Refit interface.</param>
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-#if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-#endif
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         public IHttpClientBuilder AddRefitClient(
@@ -112,9 +110,7 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-#if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-#endif
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         public IHttpClientBuilder AddRefitClient(
@@ -205,9 +201,7 @@ public static partial class HttpClientFactoryExtensions
         /// <typeparam name="T">The type of the Refit interface.</typeparam>
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-#if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-#endif
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
@@ -231,9 +225,7 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-#if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-#endif
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddRefitClient<
@@ -337,9 +329,7 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="serviceKey">A key used to associate with the specific Refit client instance.</param>
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-#if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-#endif
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient(
@@ -367,9 +357,7 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-#if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-#endif
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         [RequiresDynamicCode(RequiresDynamicCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient(
@@ -480,9 +468,7 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="serviceKey">A key used to associate with the specific Refit client instance.</param>
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-#if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-#endif
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
@@ -512,9 +498,7 @@ public static partial class HttpClientFactoryExtensions
         /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
         /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
         /// <returns>The HTTP client builder for chaining.</returns>
-#if NET9_0_OR_GREATER
         [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
-#endif
         [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
         [RequiresUnreferencedCode(RequiresUnreferencedCodeMessage)]
         public IHttpClientBuilder AddKeyedRefitClient<
@@ -535,6 +519,100 @@ public static partial class HttpClientFactoryExtensions
             return HttpClientFactoryCore.AddKeyedRefitClientCore<T>(
                 services,
                 serviceKey,
+                settingsAction,
+                httpClientName);
+        }
+
+        /// <summary>
+        /// Adds a source-generated Refit client to the dependency injection container without any reflection
+        /// fallback, making it safe for Native AOT and trimming. The client is built through
+        /// <c>RestService.ForGenerated&lt;T&gt;</c>; if no generated implementation exists for <typeparamref name="T"/>,
+        /// resolving the client throws an <see cref="InvalidOperationException"/>. The usual HttpClientFactory
+        /// features (base address, handlers, resilience pipelines) remain available on the returned builder.
+        /// </summary>
+        /// <typeparam name="T">The type of the Refit interface.</typeparam>
+        /// <returns>The HTTP client builder for chaining.</returns>
+        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        public IHttpClientBuilder AddRefitGeneratedClient<T>()
+            where T : class
+        {
+            ArgumentExceptionHelper.ThrowIfNull(services);
+
+            return HttpClientFactoryCore.AddRefitGeneratedClientCore<T>(
+                services,
+                static _ => null,
+                null);
+        }
+
+        /// <summary>Adds a source-generated Refit client to the dependency injection container without any reflection fallback.</summary>
+        /// <typeparam name="T">The type of the Refit interface.</typeparam>
+        /// <param name="settings">The settings used to configure the instance.</param>
+        /// <returns>The HTTP client builder for chaining.</returns>
+        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        public IHttpClientBuilder AddRefitGeneratedClient<T>(RefitSettings? settings)
+            where T : class
+        {
+            ArgumentExceptionHelper.ThrowIfNull(services);
+
+            return HttpClientFactoryCore.AddRefitGeneratedClientCore<T>(
+                services,
+                _ => settings,
+                null);
+        }
+
+        /// <summary>Adds a source-generated Refit client to the dependency injection container without any reflection fallback.</summary>
+        /// <typeparam name="T">The type of the Refit interface.</typeparam>
+        /// <param name="settings">The settings used to configure the instance.</param>
+        /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
+        /// <returns>The HTTP client builder for chaining.</returns>
+        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        public IHttpClientBuilder AddRefitGeneratedClient<T>(
+            RefitSettings? settings,
+            string? httpClientName)
+            where T : class
+        {
+            ArgumentExceptionHelper.ThrowIfNull(services);
+
+            return HttpClientFactoryCore.AddRefitGeneratedClientCore<T>(
+                services,
+                _ => settings,
+                httpClientName);
+        }
+
+        /// <summary>Adds a source-generated Refit client to the dependency injection container without any reflection fallback.</summary>
+        /// <typeparam name="T">The type of the Refit interface.</typeparam>
+        /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
+        /// <returns>The HTTP client builder for chaining.</returns>
+        [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
+        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        public IHttpClientBuilder AddRefitGeneratedClient<T>(
+            Func<IServiceProvider, RefitSettings?>? settingsAction)
+            where T : class
+        {
+            ArgumentExceptionHelper.ThrowIfNull(services);
+
+            return HttpClientFactoryCore.AddRefitGeneratedClientCore<T>(
+                services,
+                settingsAction,
+                null);
+        }
+
+        /// <summary>Adds a source-generated Refit client to the dependency injection container without any reflection fallback.</summary>
+        /// <typeparam name="T">The type of the Refit interface.</typeparam>
+        /// <param name="settingsAction">An action used to configure the Refit settings from the service provider.</param>
+        /// <param name="httpClientName">Allows the name of the underlying HttpClient to be changed.</param>
+        /// <returns>The HTTP client builder for chaining.</returns>
+        [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
+        [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "The Refit interface type is intentionally specified explicitly by callers.")]
+        public IHttpClientBuilder AddRefitGeneratedClient<T>(
+            Func<IServiceProvider, RefitSettings?>? settingsAction,
+            string? httpClientName)
+            where T : class
+        {
+            ArgumentExceptionHelper.ThrowIfNull(services);
+
+            return HttpClientFactoryCore.AddRefitGeneratedClientCore<T>(
+                services,
                 settingsAction,
                 httpClientName);
         }

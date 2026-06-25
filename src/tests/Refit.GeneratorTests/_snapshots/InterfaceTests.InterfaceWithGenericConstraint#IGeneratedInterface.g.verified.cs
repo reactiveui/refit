@@ -15,7 +15,7 @@ namespace Refit.Implementation
         /// <typeparam name="T3">The generated interface type parameter.</typeparam>
         /// <typeparam name="T4">The generated interface type parameter.</typeparam>
         /// <typeparam name="T5">The generated interface type parameter.</typeparam>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("InterfaceStubGeneratorV2", "11.0.0.0")]
+        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("InterfaceStubGeneratorV2", "12.0.0.0")]
         [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         [global::System.Diagnostics.DebuggerNonUserCode]
         [global::RefitInternalGenerated.PreserveAttribute]
