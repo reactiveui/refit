@@ -994,6 +994,51 @@ public class HttpClientFactoryExtensionsTests
         await Assert.That(recordingHandler.AuthorizationParameter).IsEqualTo("keyed-token");
     }
 
+    /// <summary>Verifies the generated-only DI helper resolves a source-generated client and injects the supplied settings (#2170).</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task AddRefitGeneratedClientResolvesGeneratedImplementation()
+    {
+        RestService.RegisterGeneratedSettingsFactory<IGeneratedSettingsFactoryApi>(
+            static (client, settings) => new GeneratedSettingsFactoryApiClient(client, settings));
+
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
+        var serviceCollection = new ServiceCollection();
+        var builder = serviceCollection.AddRefitGeneratedClient<IGeneratedSettingsFactoryApi>(settings);
+        _ = builder.ConfigureHttpClient(c => c.BaseAddress = new("http://generated/"));
+
+        await Assert.That(serviceCollection).Contains(
+            z => z.ServiceType == typeof(SettingsFor<IGeneratedSettingsFactoryApi>));
+
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        var resolved = serviceProvider.GetRequiredService<IGeneratedSettingsFactoryApi>();
+
+        var generated = await Assert.That(resolved).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+        await Assert.That(generated!.Settings).IsSameReferenceAs(settings);
+        await Assert.That(generated.Client.BaseAddress).IsEqualTo(new Uri("http://generated/"));
+    }
+
+    /// <summary>Verifies the settings-factory overload of the generated-only DI helper resolves settings from the provider (#2170).</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task AddRefitGeneratedClientUsesSettingsFactoryFromProvider()
+    {
+        RestService.RegisterGeneratedSettingsFactory<IGeneratedSettingsFactoryApi>(
+            static (client, settings) => new GeneratedSettingsFactoryApiClient(client, settings));
+
+        var serializer = new SystemTextJsonContentSerializer();
+        var serviceCollection = new ServiceCollection();
+        _ = serviceCollection.AddSingleton(new ClientOptions { Serializer = serializer });
+        _ = serviceCollection.AddRefitGeneratedClient<IGeneratedSettingsFactoryApi>(
+            provider => new RefitSettings(provider.GetRequiredService<ClientOptions>().Serializer!));
+
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        var resolved = serviceProvider.GetRequiredService<IGeneratedSettingsFactoryApi>();
+
+        var generated = await Assert.That(resolved).IsTypeOf<GeneratedSettingsFactoryApiClient>();
+        await Assert.That(generated!.Settings.ContentSerializer).IsSameReferenceAs(serializer);
+    }
+
     /// <summary>Invokes the non-generic shared AddRefitClientCore method.</summary>
     /// <param name="services">The services argument.</param>
     /// <param name="refitInterfaceType">The interface type argument.</param>
