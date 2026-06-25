@@ -7,7 +7,7 @@
 namespace Refit.Implementation
 {
     /// <summary>Registers generated Refit factories for interfaces discovered at compile time.</summary>
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("InterfaceStubGeneratorV2", "11.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("InterfaceStubGeneratorV2", "12.0.0.0")]
     [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
     [global::System.Diagnostics.DebuggerNonUserCode]
     [global::RefitInternalGenerated.PreserveAttribute]
