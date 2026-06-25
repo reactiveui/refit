@@ -272,7 +272,7 @@ public class ApiException : ApiExceptionBase
                 response
                     .Content.Headers?.ContentType
                     ?.MediaType
-                    ?.Equals("application/problem+json", StringComparison.Ordinal) ?? false
+                    ?.Equals("application/problem+json", StringComparison.OrdinalIgnoreCase) ?? false
             )
             {
                 exception = await ValidationApiException
