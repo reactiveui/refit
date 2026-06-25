@@ -11,6 +11,7 @@ namespace System.Runtime.CompilerServices;
 /// frameworks honor <c>[OverloadResolutionPriority]</c> the same way net9.0+ does.
 /// </summary>
 /// <param name="priority">The relative priority; higher values win during overload resolution.</param>
+[System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 [AttributeUsage(
     AttributeTargets.Method | AttributeTargets.Constructor | AttributeTargets.Property,
     AllowMultiple = false,
