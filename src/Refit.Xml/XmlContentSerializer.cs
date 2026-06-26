@@ -15,7 +15,7 @@ namespace Refit;
 /// <remarks>
 /// Initializes a new instance of the <see cref="XmlContentSerializer"/> class.
 /// </remarks>
-public class XmlContentSerializer : IHttpContentSerializer
+public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentDeserializer
 {
     /// <summary>Explains why the trimming warning is suppressed for XML reflection.</summary>
     private const string XmlReflectionTrimmingJustification =
@@ -100,6 +100,29 @@ public class XmlContentSerializer : IHttpContentSerializer
         using var input = new StringReader(
             await content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
 
+        using var reader = XmlReader.Create(
+            input,
+            _settings.XmlReaderWriterSettings.ReaderSettings);
+        return (T?)xmlSerializer.Deserialize(reader);
+    }
+
+    /// <inheritdoc/>
+    [UnconditionalSuppressMessage("Trimming", "IL2026:RequiresUnreferencedCode", Justification = XmlReflectionTrimmingJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", Justification = XmlReflectionAotJustification)]
+    [SuppressMessage("Major Code Smell", "S4018:Generic methods should provide type parameters", Justification = "Type parameter selected explicitly by callers.")]
+    public T? DeserializeFromString<T>(string content)
+    {
+        var xmlSerializer = _serializerCache.GetOrAdd(
+            typeof(T),
+            t =>
+                new(
+                    t,
+                    _settings.XmlAttributeOverrides,
+                    [],
+                    null,
+                    _settings.XmlDefaultNamespace));
+
+        using var input = new StringReader(content);
         using var reader = XmlReader.Create(
             input,
             _settings.XmlReaderWriterSettings.ReaderSettings);

@@ -119,6 +119,17 @@ public class RefitSettings
     public bool Buffered { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether the request body is captured as a string before sending so it can be
+    /// read from <see cref="ApiExceptionBase.RequestContent"/> when a request fails (defaults to false).
+    /// </summary>
+    /// <remarks>
+    /// By default <see cref="HttpClient"/> disposes the request content once the request is sent, so the body cannot
+    /// be read back from the exception (see issue #1189). Enabling this buffers the body into memory before sending;
+    /// avoid it for large or streamed uploads.
+    /// </remarks>
+    public bool CaptureRequestContent { get; set; }
+
+    /// <summary>
     /// Gets or sets a value indicating whether a route placeholder with no matching method argument is allowed.
     /// When false (the default) Refit throws while building the method; when true the unmatched <c>{token}</c> is
     /// left in the URL verbatim so it can be rewritten later, for example inside a <see cref="DelegatingHandler"/>.

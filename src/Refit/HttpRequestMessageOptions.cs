@@ -11,4 +11,7 @@ public static class HttpRequestMessageOptions
 
     /// <summary>Gets the property key for the rest method info of the top-level interface.</summary>
     public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
+
+    /// <summary>Gets the property key under which the captured request body string is stored for <see cref="ApiExceptionBase.RequestContent"/>.</summary>
+    public static string RequestContent { get; } = "Refit.RequestContent";
 }

@@ -1,1 +1,2 @@
 #nullable enable
+Refit.NewtonsoftJsonContentSerializer.DeserializeFromString<T>(string! content) -> T?

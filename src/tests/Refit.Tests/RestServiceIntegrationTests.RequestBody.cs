@@ -555,4 +555,81 @@ public partial class RestServiceIntegrationTests
 
         mockHttp.VerifyNoOutstandingExpectation();
     }
+
+    /// <summary>Verifies opt-in request content capture exposes the sent body on the thrown ApiException (#1189).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CaptureRequestContentExposesSentBodyOnApiException()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => mockHttp,
+            CaptureRequestContent = true,
+        };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+            .Respond(HttpStatusCode.BadRequest, "application/json", "{\"error\":\"bad\"}");
+
+        var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+        var exception = await Assert
+            .That(() => fixture.PostRawStringJson("hello"))
+            .ThrowsExactly<ApiException>();
+
+        await Assert.That(exception!.HasRequestContent).IsTrue();
+        await Assert.That(exception.RequestContent).IsEqualTo("\"hello\"");
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    /// <summary>Verifies request content capture also works on the non-void response path (#1189).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CaptureRequestContentExposesSentBodyOnNonVoidResponse()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => mockHttp,
+            CaptureRequestContent = true,
+        };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+            .Respond(HttpStatusCode.BadRequest, "application/json", "{\"error\":\"bad\"}");
+
+        var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+        var exception = await Assert
+            .That(() => (Task)fixture.PostNonVoidReturnBodyBuffered(new { name = "bob" }))
+            .ThrowsExactly<ApiException>();
+
+        await Assert.That(exception!.HasRequestContent).IsTrue();
+        await Assert.That(exception.RequestContent).Contains("bob");
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    /// <summary>Verifies request content is not captured when the opt-in setting is left disabled (#1189).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequestContentNotCapturedByDefault()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Post, "http://httpbin.org/foo")
+            .Respond(HttpStatusCode.BadRequest, "application/json", "{\"error\":\"bad\"}");
+
+        var fixture = RestService.For<IRequestBin>("http://httpbin.org/", settings);
+
+        var exception = await Assert
+            .That(() => fixture.PostRawStringJson("hello"))
+            .ThrowsExactly<ApiException>();
+
+        await Assert.That(exception!.HasRequestContent).IsFalse();
+        await Assert.That(exception.RequestContent).IsNull();
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
 }

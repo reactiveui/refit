@@ -17,3 +17,14 @@ Refit.FormField<TBody>.PrefixSegment.get -> string?
 Refit.FormField<TBody>.ResolveFieldName(Refit.IUrlParameterKeyFormatter! urlParameterKeyFormatter) -> string?
 Refit.FormField<TBody>.SerializeNull.get -> bool
 static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings! settings, TBody body, Refit.FormField<TBody>![]! fields) -> System.Net.Http.HttpContent!
+Refit.ApiException.GetContentAs<T>() -> T?
+Refit.ApiException.TryGetContentAs<T>(out T? content) -> bool
+Refit.ApiExceptionBase.RequestContent.get -> string?
+Refit.ApiExceptionBase.RequestContent.set -> void
+Refit.ISynchronousContentDeserializer
+Refit.ISynchronousContentDeserializer.DeserializeFromString<T>(string! content) -> T?
+Refit.RefitSettings.CaptureRequestContent.get -> bool
+Refit.RefitSettings.CaptureRequestContent.set -> void
+static Refit.HttpRequestMessageOptions.RequestContent.get -> string!
+Refit.ApiExceptionBase.HasRequestContent.get -> bool
+Refit.SystemTextJsonContentSerializer.DeserializeFromString<T>(string! content) -> T?

@@ -266,6 +266,131 @@ public sealed class ApiExceptionTests
         await Assert.That(exception).IsTypeOf<ValidationApiException>();
     }
 
+    /// <summary>Verifies the synchronous GetContentAs deserializes the buffered error body (#1591).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous content helper.")]
+    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous content helper.")]
+    public async Task SyncGetContentAsDeserializesContent()
+    {
+        using var response = CreateErrorResponse("{\"Value\":42}");
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        var model = exception.GetContentAs<ResponseModel>();
+
+        await Assert.That(model!.Value).IsEqualTo(42);
+    }
+
+    /// <summary>Verifies the synchronous GetContentAs returns default when there is no body (#1591).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [SuppressMessage("Usage", "CA1849:Call async methods when in an async method", Justification = "This test intentionally covers the synchronous content helper.")]
+    [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous content helper.")]
+    public async Task SyncGetContentAsReturnsDefaultWhenNoContent()
+    {
+        using var response = CreateErrorResponse(" ");
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        await Assert.That(exception.GetContentAs<ResponseModel>()).IsNull();
+    }
+
+    /// <summary>Verifies TryGetContentAs returns the value inside an exception filter (#1591).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SyncTryGetContentAsReturnsTrueAndValue()
+    {
+        using var response = CreateErrorResponse("{\"Value\":42}");
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        var ok = exception.TryGetContentAs<ResponseModel>(out var model);
+
+        await Assert.That(ok).IsTrue();
+        await Assert.That(model!.Value).IsEqualTo(42);
+    }
+
+    /// <summary>Verifies TryGetContentAs returns false for missing or malformed content (#1591).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SyncTryGetContentAsReturnsFalseForMissingOrInvalidContent()
+    {
+        using var empty = CreateErrorResponse(" ");
+        using var invalid = CreateErrorResponse("not json");
+        var emptyException = await ApiException.Create(empty.RequestMessage!, HttpMethod.Get, empty, new());
+        var invalidException = await ApiException.Create(invalid.RequestMessage!, HttpMethod.Get, invalid, new());
+
+        await Assert.That(emptyException.TryGetContentAs<ResponseModel>(out var missing)).IsFalse();
+        await Assert.That(missing).IsNull();
+        await Assert.That(invalidException.TryGetContentAs<ResponseModel>(out var broken)).IsFalse();
+        await Assert.That(broken).IsNull();
+    }
+
+    /// <summary>Verifies the synchronous helpers behave when the serializer lacks sync support (#1591).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SyncGetContentAsWithoutSyncSerializerSupport()
+    {
+        using var response = CreateErrorResponse("{\"Value\":42}");
+        var settings = new RefitSettings(new AsyncOnlySerializer());
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            settings);
+
+        await Assert.That(exception.TryGetContentAs<ResponseModel>(out _)).IsFalse();
+        await Assert.That(exception.GetContentAs<ResponseModel>)
+            .ThrowsExactly<NotSupportedException>();
+    }
+
+    /// <summary>Verifies opt-in request content capture is surfaced on the exception (#1189).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequestContentCapturedWhenOptionPresent()
+    {
+        using var response = CreateErrorResponse("{}");
+        GeneratedRequestRunner.AddRequestProperty(
+            response.RequestMessage!,
+            HttpRequestMessageOptions.RequestContent,
+            "{\"sent\":true}");
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        await Assert.That(exception.HasRequestContent).IsTrue();
+        await Assert.That(exception.RequestContent).IsEqualTo("{\"sent\":true}");
+    }
+
+    /// <summary>Verifies request content is absent when capture was not requested (#1189).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequestContentAbsentWhenNotCaptured()
+    {
+        using var response = CreateErrorResponse("{}");
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        await Assert.That(exception.HasRequestContent).IsFalse();
+        await Assert.That(exception.RequestContent).IsNull();
+    }
+
     /// <summary>Creates an error response with an attached request.</summary>
     /// <param name="content">The response content.</param>
     /// <param name="mediaType">The optional media type.</param>
@@ -346,6 +471,28 @@ public sealed class ApiExceptionTests
             : base(message, httpMethod, content, statusCode, reasonPhrase, headers, refitSettings)
         {
         }
+    }
+
+    /// <summary>A serializer that only supports asynchronous deserialization (no sync capability).</summary>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Mirrors the explicit type parameters of the wrapped IHttpContentSerializer contract.")]
+    private sealed class AsyncOnlySerializer : IHttpContentSerializer
+    {
+        /// <summary>The wrapped serializer that does the real work.</summary>
+        private readonly SystemTextJsonContentSerializer _inner = new();
+
+        /// <inheritdoc />
+        public HttpContent ToHttpContent<T>(T item) => _inner.ToHttpContent(item);
+
+        /// <inheritdoc />
+        public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
+            _inner.FromHttpContentAsync<T>(content, cancellationToken);
+
+        /// <inheritdoc />
+        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) =>
+            _inner.GetFieldNameForProperty(propertyInfo);
     }
 
     /// <summary>Response model used by content deserialization tests.</summary>

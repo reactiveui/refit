@@ -46,6 +46,8 @@ internal static class RequestExecutionHelpers
             await request.Content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
         }
 
+        await CaptureRequestContentAsync(request, settings, cancellationToken).ConfigureAwait(false);
+
         if (applyAuthorizationHeader)
         {
             await AddAuthorizationHeaderFromGetterAsync(request, settings, cancellationToken)
@@ -213,6 +215,38 @@ internal static class RequestExecutionHelpers
         request.Headers.Authorization = new(auth.Scheme, token);
     }
 
+    /// <summary>
+    /// Buffers the request body into a string before sending and stashes it on the request options so a failed
+    /// request can expose it via <see cref="ApiExceptionBase.RequestContent"/> (#1189). No-op unless
+    /// <see cref="RefitSettings.CaptureRequestContent"/> is enabled and the request has content.
+    /// </summary>
+    /// <param name="request">The request whose body should be captured.</param>
+    /// <param name="settings">The Refit settings controlling capture.</param>
+    /// <param name="cancellationToken">A token to cancel the read.</param>
+    /// <returns>A task that completes once the body has been captured.</returns>
+    internal static async Task CaptureRequestContentAsync(
+        HttpRequestMessage request,
+        RefitSettings settings,
+        CancellationToken cancellationToken)
+    {
+        if (!settings.CaptureRequestContent || request.Content is null)
+        {
+            return;
+        }
+
+#if NET6_0_OR_GREATER
+        var captured = await request.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+#else
+        _ = cancellationToken;
+        var captured = await request.Content.ReadAsStringAsync().ConfigureAwait(false);
+#endif
+
+        GeneratedRequestRunner.AddRequestProperty(
+            request,
+            HttpRequestMessageOptions.RequestContent,
+            captured);
+    }
+
     /// <summary>Returns the response content, substituting empty content when the response has none.</summary>
     /// <param name="response">The response whose content is read.</param>
     /// <returns>The response content, or empty content when none is present.</returns>
@@ -235,6 +269,8 @@ internal static class RequestExecutionHelpers
         {
             await request.Content.LoadIntoBufferAsync(cancellationToken).ConfigureAwait(false);
         }
+
+        await CaptureRequestContentAsync(request, settings, cancellationToken).ConfigureAwait(false);
 
         if (!options.ApplyAuthorizationHeader)
         {

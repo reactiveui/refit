@@ -1,1 +1,2 @@
 #nullable enable
+Refit.XmlContentSerializer.DeserializeFromString<T>(string! content) -> T?
