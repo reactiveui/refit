@@ -1,10 +1,10 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System;
-using System.Collections.Generic;
+
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -13,6 +13,9 @@ namespace Refit.Generator;
 /// <content>Request parsing helpers for the Refit source generator.</content>
 internal static partial class Parser
 {
+    /// <summary>A replacement block is an alphanumeric string surrounded by { and }.</summary>
+    private static readonly Regex replacementBlockRegex = new("{([a-zA-Z0-9]+)}");
+
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
@@ -34,8 +37,9 @@ internal static partial class Parser
 
         var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass);
         var path = GetHttpPath(httpMethodAttribute);
+        var pathParameters = ExtractPathParameterPlaceholderNames(path);
         var returnTypes = GetRequestReturnTypes(methodSymbol);
-        var parameters = ParseRequestParameters(methodSymbol.Parameters, out var parameterEligibility);
+        var parameters = ParseRequestParameters(methodSymbol.Parameters, pathParameters.ToImmutableHashSet(), out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
         var canGenerateInline =
@@ -43,7 +47,6 @@ internal static partial class Parser
             && returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
             && methodSymbol.TypeParameters.Length == 0
             && httpMethod.Length > 0
-            && IsConstantPathSupported(path)
             && IsSupportedInlineBody(parameters)
             && !HasUnsupportedInlineRequestMetadata(methodSymbol);
 
@@ -57,6 +60,20 @@ internal static partial class Parser
             canGenerateInline,
             staticHeaders,
             parameters);
+
+        static HashSet<string> ExtractPathParameterPlaceholderNames(string path)
+        {
+            var regex = replacementBlockRegex;
+            var matches = regex.Matches(path);
+            var paramNames = new HashSet<string>();
+
+            foreach (Match match in matches)
+            {
+                _ = paramNames.Add(match.Groups[1].Value);
+            }
+
+            return paramNames;
+        }
     }
 
     /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
@@ -213,10 +230,12 @@ internal static partial class Parser
 
     /// <summary>Parses request parameter bindings for the conservative initial inline path.</summary>
     /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterNames">The placeholder names in the URL.</param>
     /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
     /// <returns>The parsed request parameter models.</returns>
     private static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
         in ImmutableArray<IParameterSymbol> parameters,
+        in ImmutableHashSet<string> parameterNames,
         out bool canGenerateInline)
     {
         if (parameters.Length == 0)
@@ -233,7 +252,8 @@ internal static partial class Parser
 
         for (var i = 0; i < parameters.Length; i++)
         {
-            var parsedParameter = ParseRequestParameter(parameters[i]);
+            var hasPlaceholder = parameterNames.Contains(parameters[i].Name);
+            var parsedParameter = ParseRequestParameter(parameters[i], hasPlaceholder);
             requestParameters[i] = parsedParameter.Parameter;
             bodyCount += parsedParameter.BodyCount;
             cancellationTokenCount += parsedParameter.CancellationTokenCount;
@@ -251,8 +271,9 @@ internal static partial class Parser
 
     /// <summary>Parses one request parameter binding.</summary>
     /// <param name="parameter">The parameter to parse.</param>
+    /// <param name="hasPlaceholder">Whether the parameter has a placeholder in the URL template.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter)
+    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, bool hasPlaceholder)
     {
         var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var canBeNull = CanBeNull(parameter.Type, parameter.NullableAnnotation);
@@ -294,8 +315,13 @@ internal static partial class Parser
                 1);
         }
 
-        return TryParsePropertyParameter(parameter, parameterType, out var propertyParameter)
-            ? new(propertyParameter, true, 0, 0, 0)
+        if (TryParsePropertyParameter(parameter, parameterType, out var propertyParameter))
+        {
+            return new(propertyParameter, true, 0, 0, 0);
+        }
+
+        return hasPlaceholder
+            ? new(PathRequestParameter(parameter, parameterType), true, 0, 0, 0)
             : new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
     }
 
@@ -679,6 +705,23 @@ internal static partial class Parser
             parameter.MetadataName,
             parameterType,
             RequestParameterKind.Unsupported,
+            CanBeNull(parameter.Type, parameter.NullableAnnotation),
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            BodyBufferMode.None);
+
+    /// <summary>Builds a path request parameter model.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type.</param>
+    /// <returns>The path request model.</returns>
+    private static RequestParameterModel PathRequestParameter(
+        IParameterSymbol parameter,
+        string parameterType) =>
+        new(
+            parameter.MetadataName,
+            parameterType,
+            RequestParameterKind.Path,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,
             string.Empty,

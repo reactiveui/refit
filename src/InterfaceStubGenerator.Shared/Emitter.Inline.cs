@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace Refit.Generator;
 
@@ -112,8 +113,26 @@ internal static partial class Emitter
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
+
+        // Build path
+        var parametersSb = new StringBuilder();
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind is RequestParameterKind.Path)
+            {
+                _ = parametersSb.Append(", ").Append('(').Append(ToCSharpStringLiteral(parameter.Name)).Append(", ").Append(parameter.Name);
+                if (parameter.Type != "string")
+                {
+                    _ = parametersSb.Append(".ToString()");
+                }
+
+                _ = parametersSb.Append(')');
+            }
+        }
+
+        var pathExpression = $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}{parametersSb})";
         var requestUriExpression =
-            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(request.Path)}, {settingsLocal}.UrlResolution)";
+            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {pathExpression}, {settingsLocal}.UrlResolution)";
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
         var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter, requestLocal, settingsLocal, formFieldsFieldName);
         var headerSource = BuildInlineHeaders(request, requestLocal);

@@ -33,6 +33,25 @@ public static class GeneratedRequestRunner
         return new(basePath + relativePath, UriKind.Relative);
     }
 
+    /// <summary>Builds the request path for a generated request from a template.</summary>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="uriParams">The replacement uri parameters.</param>
+    /// <returns>A path with all the placeholder parameters in the path template replaced.</returns>
+    public static string BuildRequestPath(string relativePathTemplate, params ReadOnlySpan<(string key, string value)> uriParams)
+    {
+        var path = relativePathTemplate;
+        foreach (var (key, value) in uriParams)
+        {
+#if NETCOREAPP2_0_OR_GREATER || NETSTANDARD2_1
+            path = path.Replace($"{{{key}}}", value, StringComparison.Ordinal);
+#else
+            path = path.Replace($"{{{key}}}", value);
+#endif
+        }
+
+        return path;
+    }
+
     /// <summary>Sends a generated request with no response body, throwing on HTTP errors.</summary>
     /// <param name="client">The HTTP client to send with.</param>
     /// <param name="request">The generated request message.</param>

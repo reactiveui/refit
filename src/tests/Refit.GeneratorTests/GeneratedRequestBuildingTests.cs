@@ -1017,4 +1017,30 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).Contains("static body => (object?)body.@BaseValue");
         await Assert.That(generated).Contains("\"secret-\"");
     }
+
+    /// <summary>Verifies that path parameters are supported by the source generator.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EmitsInlineConstructionForPathParameters()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/a/{aVal}?b={bVal}")]
+                Task Sample(int aVal, string bVal);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}?b={bVal}", ("aVal", aVal.ToString()), ("bVal", bVal))""");
+    }
 }
