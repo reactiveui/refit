@@ -14,7 +14,7 @@ namespace Refit.Generator;
 internal static partial class Parser
 {
     /// <summary>A replacement block is an alphanumeric string surrounded by { and }.</summary>
-    private static readonly Regex replacementBlockRegex = new("{([a-zA-Z0-9]+)}");
+    private static readonly Regex replacementBlockRegex = new("/{([a-zA-Z0-9]+)}");
 
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
@@ -47,6 +47,7 @@ internal static partial class Parser
             && returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
             && methodSymbol.TypeParameters.Length == 0
             && httpMethod.Length > 0
+            && IsPathSupported(path)
             && IsSupportedInlineBody(parameters)
             && !HasUnsupportedInlineRequestMetadata(methodSymbol);
 
@@ -63,8 +64,9 @@ internal static partial class Parser
 
         static HashSet<string> ExtractPathParameterPlaceholderNames(string path)
         {
+            var queryStart = path.IndexOf('?');
             var regex = replacementBlockRegex;
-            var matches = regex.Matches(path);
+            var matches = regex.Matches(queryStart < 0 ? path : path[0..queryStart]);
             var paramNames = new HashSet<string>();
 
             foreach (Match match in matches)

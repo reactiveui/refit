@@ -37,15 +37,30 @@ public static class GeneratedRequestRunner
     /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
     /// <param name="uriParams">The replacement uri parameters.</param>
     /// <returns>A path with all the placeholder parameters in the path template replaced.</returns>
-    public static string BuildRequestPath(string relativePathTemplate, params ReadOnlySpan<(string key, string value)> uriParams)
+    public static string BuildRequestPath(string relativePathTemplate, params ReadOnlySpan<(string key, string? value)> uriParams)
     {
         var path = relativePathTemplate;
         foreach (var (key, value) in uriParams)
         {
+            var isEmpty = string.IsNullOrEmpty(value);
+            var toReplace = $"{{{key}}}";
+            var index = path.IndexOf(toReplace, StringComparison.Ordinal);
+            var isPathParam = index > 0 && toReplace[index - 1] == '/';
+            if (!isPathParam)
+            {
+                continue;
+            }
+
+            if (isEmpty)
+            {
+                toReplace = $"/{{{key}}}";
+            }
+
+            var replacement = isEmpty ? string.Empty : value;
 #if NETCOREAPP2_0_OR_GREATER || NETSTANDARD2_1
-            path = path.Replace($"{{{key}}}", value, StringComparison.Ordinal);
+            path = path.Replace(toReplace, replacement, StringComparison.Ordinal);
 #else
-            path = path.Replace($"{{{key}}}", value);
+            path = path.Replace(toReplace, replacement);
 #endif
         }
 

@@ -38,17 +38,32 @@ namespace Refit.Implementation
                 _settings = requestBuilder.Settings;
             }
 
-
-            /// <summary>Cached parameter type array for the generated Get method.</summary>
-            private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] { typeof(int) };
-            /// <inheritdoc />
-            public async global::System.Threading.Tasks.Task<string> Get(int @user)
+            /// <summary>Initializes a new instance of the RefitGeneratorTestIGeneratedClient class for generated-only execution.</summary>
+            /// <param name="client">The HTTP client used by the generated implementation.</param>
+            /// <param name="settings">The settings used by the generated implementation.</param>
+            public RefitGeneratorTestIGeneratedClient(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
             {
-                var refitArguments = new object[] { @user };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("Get", ______typeParameters );
-
-                return await ((global::System.Threading.Tasks.Task<string>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
+                Client = client;
+                _settings = settings;
+            }
+            /// <inheritdoc />
+            public global::System.Threading.Tasks.Task<string> Get(int @user)
+            {
+                var refitSettings = _settings;
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", ("user", user.ToString())), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
+                return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
+                    this.Client,
+                    refitRequest,
+                    refitSettings,
+                    false,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
         }
     }

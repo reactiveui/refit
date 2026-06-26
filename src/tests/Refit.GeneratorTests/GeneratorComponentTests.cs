@@ -602,13 +602,13 @@ public static class GeneratorComponentTests
             await Assert.That(Parser.NormalizeConstantPathForInline("/path?")).IsEqualTo(SimplePath);
             await Assert.That(Parser.NormalizeConstantPathForInline("/path?& \t =drop")).IsEqualTo(SimplePath);
             await Assert.That(Parser.NormalizeConstantPathForInline("/path?one=1&&two=2#fragment")).IsEqualTo("/path?one=1&two=2");
-            await Assert.That(Parser.IsConstantPathSupported(string.Empty)).IsTrue();
-            await Assert.That(Parser.IsConstantPathSupported(SimplePath)).IsTrue();
-            await Assert.That(Parser.IsConstantPathSupported("relative")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/{id}")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/id}")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/line\nbreak")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/line\rbreak")).IsFalse();
+            await Assert.That(Parser.IsPathSupported(string.Empty)).IsTrue();
+            await Assert.That(Parser.IsPathSupported(SimplePath)).IsTrue();
+            await Assert.That(Parser.IsPathSupported("relative")).IsFalse();
+            await Assert.That(Parser.IsPathSupported("/{id}")).IsTrue();
+            await Assert.That(Parser.IsPathSupported("/id}")).IsFalse();
+            await Assert.That(Parser.IsPathSupported("/line\nbreak")).IsFalse();
+            await Assert.That(Parser.IsPathSupported("/line\rbreak")).IsFalse();
             await Assert.That(Parser.IsWhiteSpace(" \t", 0, WhitespaceLength)).IsTrue();
             await Assert.That(Parser.IsWhiteSpace(" a", 0, WhitespaceLength)).IsFalse();
         }

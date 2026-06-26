@@ -1,6 +1,6 @@
 #nullable enable
 Refit.UniqueName
-static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, params System.ReadOnlySpan<(string! key, string! value)> uriParams) -> string!
+static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, params System.ReadOnlySpan<(string! key, string? value)> uriParams) -> string!
 static Refit.UniqueName.ForType<T>() -> string!
 static Refit.UniqueName.ForType<T>(object? serviceKey) -> string!
 static Refit.UniqueName.ForType(System.Type! refitInterfaceType) -> string!

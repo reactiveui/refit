@@ -453,9 +453,6 @@ public class GeneratedRequestBuildingTests
             [Get("relative")]
             Task<string> Relative();
 
-            [Get("/users/{id}")]
-            Task<string> Templated(int id);
-
             [Get("/bad\r\npath")]
             Task<string> ControlCharacters();
 
@@ -1032,8 +1029,8 @@ public class GeneratedRequestBuildingTests
 
             public interface IGeneratedClient
             {
-                [Get("/a/{aVal}?b={bVal}")]
-                Task Sample(int aVal, string bVal);
+                [Get("/a/{aVal}")]
+                Task Sample(int aVal);
             }
             """;
 
@@ -1041,6 +1038,32 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}?b={bVal}", ("aVal", aVal.ToString()), ("bVal", bVal))""");
+        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}", ("aVal", aVal.ToString()))""");
+    }
+
+    /// <summary>Verifies that path parameters are supported by the source generator.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UsesFallbackForQueryParameters()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/a?b={bVal}")]
+                Task Sample(string bVal);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain("GeneratedRequestRunner.BuildRequestPath(");
     }
 }

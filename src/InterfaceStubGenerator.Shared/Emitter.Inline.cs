@@ -123,6 +123,11 @@ internal static partial class Emitter
                 _ = parametersSb.Append(", ").Append('(').Append(ToCSharpStringLiteral(parameter.Name)).Append(", ").Append(parameter.Name);
                 if (parameter.Type != "string")
                 {
+                    if (parameter.CanBeNull)
+                    {
+                        _ = parametersSb.Append('?');
+                    }
+
                     _ = parametersSb.Append(".ToString()");
                 }
 
@@ -130,7 +135,9 @@ internal static partial class Emitter
             }
         }
 
-        var pathExpression = $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}{parametersSb})";
+        var pathExpression = parametersSb.Length > 0
+            ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}{parametersSb})"
+            : ToCSharpStringLiteral(request.Path);
         var requestUriExpression =
             $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {pathExpression}, {settingsLocal}.UrlResolution)";
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
