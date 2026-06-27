@@ -82,7 +82,7 @@ public interface IApiResponse : IDisposable
         "CA1716:Identifiers should not match keywords",
         Justification = "By Design")]
     bool HasRequestError(
-        [MaybeNullWhen(false)] out ApiRequestException? error);
+        [NotNullWhen(true)] out ApiRequestException? error);
 
     /// <summary>Checks if the call failed due to an unsuccessful response from the server.</summary>
     /// <param name="error">The <see cref="ApiException"/> object in case of unsuccessful response.</param>
@@ -92,6 +92,6 @@ public interface IApiResponse : IDisposable
         "CA1716:Identifiers should not match keywords",
         Justification = "By Design")]
     bool HasResponseError(
-        [MaybeNullWhen(false)]
+        [NotNullWhen(true)]
         out ApiException? error);
 }
