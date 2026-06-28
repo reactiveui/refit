@@ -256,7 +256,10 @@ public class ApiException : ApiExceptionBase
             response.ReasonPhrase,
             response.Headers,
             refitSettings,
-            innerException);
+            innerException)
+        {
+            RequestContent = GetCapturedRequestContent(message)
+        };
 
         if (response.Content is null)
         {
@@ -308,10 +311,98 @@ public class ApiException : ApiExceptionBase
                 .ConfigureAwait(false)
             : default;
 
+    /// <summary>
+    /// Synchronously deserializes the buffered response content as <typeparamref name="T"/>. The content is already
+    /// a string, so this can run inside an exception filter where awaiting is not allowed by the CLR (#1591).
+    /// </summary>
+    /// <typeparam name="T">Type to deserialize the content to.</typeparam>
+    /// <returns>The deserialized content, or <see langword="default"/> when there is no content.</returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the configured <see cref="IHttpContentSerializer"/> does not implement
+    /// <see cref="ISynchronousContentDeserializer"/>.
+    /// </exception>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    public T? GetContentAs<T>()
+    {
+        if (!HasContent)
+        {
+            return default;
+        }
+
+        if (RefitSettings.ContentSerializer is not ISynchronousContentDeserializer synchronousDeserializer)
+        {
+            throw new NotSupportedException(
+                $"The configured content serializer '{RefitSettings.ContentSerializer.GetType()}' does not "
+                + $"implement {nameof(ISynchronousContentDeserializer)}; use {nameof(GetContentAsAsync)} instead.");
+        }
+
+        return synchronousDeserializer.DeserializeFromString<T>(Content!);
+    }
+
+    /// <summary>
+    /// Attempts to synchronously deserialize the buffered response content as <typeparamref name="T"/> without
+    /// throwing, making it usable from an exception filter:
+    /// <c>catch (ApiException ex) when (ex.TryGetContentAs&lt;Error&gt;(out var error))</c> (#1591).
+    /// </summary>
+    /// <typeparam name="T">Type to deserialize the content to.</typeparam>
+    /// <param name="content">The deserialized content when this returns <see langword="true"/>; otherwise <see langword="default"/>.</param>
+    /// <returns>
+    /// <see langword="true"/> when the content was present and deserialized to a non-null value; otherwise <see langword="false"/>.
+    /// </returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [SuppressMessage(
+        "Major Code Smell",
+        "CA1031:Do not catch general exception types",
+        Justification = "Try-pattern peek into an error body must never throw; any failure simply yields false.")]
+    public bool TryGetContentAs<T>(out T? content)
+    {
+        content = default;
+        if (!HasContent || RefitSettings.ContentSerializer is not ISynchronousContentDeserializer synchronousDeserializer)
+        {
+            return false;
+        }
+
+        try
+        {
+            content = synchronousDeserializer.DeserializeFromString<T>(Content!);
+        }
+        catch (Exception)
+        {
+            content = default;
+            return false;
+        }
+
+        return content is not null;
+    }
+
     /// <summary>Builds the exception message from the status code and reason phrase.</summary>
     /// <param name="statusCode">The HTTP status code.</param>
     /// <param name="reasonPhrase">The reason phrase.</param>
     /// <returns>The formatted exception message.</returns>
     private static string CreateMessage(HttpStatusCode statusCode, string? reasonPhrase) =>
         $"Response status code does not indicate success: {(int)statusCode} ({reasonPhrase}).";
+
+    /// <summary>Reads the request body string captured before sending, if request-content capture was enabled.</summary>
+    /// <param name="request">The request message that carries the captured content option.</param>
+    /// <returns>The captured request content, or <see langword="null"/> when none was captured.</returns>
+    private static string? GetCapturedRequestContent(HttpRequestMessage request)
+    {
+#if NET6_0_OR_GREATER
+        return request.Options.TryGetValue(
+            new HttpRequestOptionsKey<string>(HttpRequestMessageOptions.RequestContent),
+            out var captured)
+            ? captured
+            : null;
+#else
+        return request.Properties.TryGetValue(HttpRequestMessageOptions.RequestContent, out var captured)
+            ? captured as string
+            : null;
+#endif
+    }
 }

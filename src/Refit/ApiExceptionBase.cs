@@ -77,6 +77,17 @@ public abstract class ApiExceptionBase : Exception
     /// <summary>Gets the HTTP Request message used to send the request.</summary>
     public HttpRequestMessage RequestMessage { get; }
 
+    /// <summary>
+    /// Gets the request body content as a string, captured before sending. This is only populated when
+    /// <see cref="RefitSettings.CaptureRequestContent"/> is enabled; otherwise the request content has
+    /// already been disposed by <see cref="HttpClient"/> and cannot be read from <see cref="RequestMessage"/>.
+    /// </summary>
+    public string? RequestContent { get; protected set; }
+
+    /// <summary>Gets a value indicating whether the captured request content is available.</summary>
+    [MemberNotNullWhen(true, nameof(RequestContent))]
+    public bool HasRequestContent => !string.IsNullOrEmpty(RequestContent);
+
     /// <summary>Gets the Refit settings used to send the request.</summary>
     public RefitSettings RefitSettings { get; }
 }

@@ -25,7 +25,7 @@ namespace Refit;
 /// </remarks>
 /// <param name="jsonSerializerOptions">The serialization options to use for the current instance.</param>
 public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSerializerOptions)
-    : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer
+    : IHttpContentSerializer, IStreamingContentSerializer, ISynchronousContentSerializer, ISynchronousContentDeserializer
 {
     /// <summary>Justification shared by the reflection-fallback trim/AOT suppressions.</summary>
     private const string ReflectionFallbackJustification =
@@ -159,6 +159,22 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
             : await FromHttpContentReflectionAsync<T>(content, cancellationToken).ConfigureAwait(false);
 #else
         return await FromHttpContentReflectionAsync<T>(content, cancellationToken).ConfigureAwait(false);
+#endif
+    }
+
+    /// <inheritdoc/>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameter for inference",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    public T? DeserializeFromString<T>(string content)
+    {
+#if NET8_0_OR_GREATER
+        return jsonSerializerOptions.TypeInfoResolver is not null
+            ? JsonSerializer.Deserialize(content, GetJsonTypeInfo<T>())
+            : DeserializeFromStringReflection<T>(content);
+#else
+        return DeserializeFromStringReflection<T>(content);
 #endif
     }
 
@@ -582,4 +598,17 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     private T? DeserializeLineReflection<T>(ReadOnlySpan<byte> utf8Json) =>
         JsonSerializer.Deserialize<T>(utf8Json, jsonSerializerOptions);
 #endif
+
+    /// <summary>Deserializes a buffered string using reflection-based metadata.</summary>
+    /// <typeparam name="T">The type to deserialize.</typeparam>
+    /// <param name="content">The buffered content string.</param>
+    /// <returns>The deserialized value.</returns>
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = ReflectionFallbackJustification)]
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = ReflectionFallbackJustification)]
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameter for inference",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    private T? DeserializeFromStringReflection<T>(string content) =>
+        JsonSerializer.Deserialize<T>(content, jsonSerializerOptions);
 }

@@ -1,20 +1,2 @@
 #nullable enable
-Refit.UniqueName
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, params (string! key, string? value)[]! uriParams) -> string!
-static Refit.UniqueName.ForType<T>() -> string!
-static Refit.UniqueName.ForType<T>(object? serviceKey) -> string!
-static Refit.UniqueName.ForType(System.Type! refitInterfaceType) -> string!
-static Refit.UniqueName.ForType(System.Type! refitInterfaceType, object? serviceKey) -> string!
-Refit.QueryAttribute.SerializeNull.get -> bool
-Refit.QueryAttribute.SerializeNull.set -> void
-Refit.FormField<TBody>
-Refit.FormField<TBody>.ClrName.get -> string!
-Refit.FormField<TBody>.CollectionFormat.get -> Refit.CollectionFormat?
-Refit.FormField<TBody>.ExplicitName.get -> string?
-Refit.FormField<TBody>.Format.get -> string?
-Refit.FormField<TBody>.FormField(System.Func<TBody, object?>! getter, string! clrName, string? explicitName, string? prefixSegment, string? format, Refit.CollectionFormat? collectionFormat, bool serializeNull) -> void
-Refit.FormField<TBody>.Getter.get -> System.Func<TBody, object?>!
-Refit.FormField<TBody>.PrefixSegment.get -> string?
-Refit.FormField<TBody>.ResolveFieldName(Refit.IUrlParameterKeyFormatter! urlParameterKeyFormatter) -> string?
-Refit.FormField<TBody>.SerializeNull.get -> bool
-static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.RefitSettings! settings, TBody body, Refit.FormField<TBody>![]! fields) -> System.Net.Http.HttpContent!

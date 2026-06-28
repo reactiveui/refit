@@ -79,6 +79,8 @@ services
 * [Handling exceptions](#handling-exceptions)
     * [When returning Task&lt;IApiResponse&gt;, Task&lt;IApiResponse&lt;T&gt;&gt;, or Task&lt;ApiResponse&lt;T&gt;&gt;](#when-returning-taskiapiresponse-taskiapiresponset-or-taskapiresponset)
     * [When returning Task&lt;T&gt;](#when-returning-taskt)
+    * [Inspecting the error body synchronously](#inspecting-the-error-body-synchronously)
+    * [Reading the request body that was sent](#reading-the-request-body-that-was-sent)
     * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
     * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
 
@@ -2068,6 +2070,60 @@ catch (ApiException exception)
 }
 // ...
 ```
+
+#### Inspecting the error body synchronously
+
+`ApiException` exposes `GetContentAsAsync<T>()` to deserialize the error body, but it cannot be awaited inside an
+exception filter (`catch ... when ...`), which the CLR requires to be synchronous. Because the body is already
+buffered into the `Content` string, you can deserialize it synchronously with `GetContentAs<T>()` or the
+non-throwing `TryGetContentAs<T>(out T? content)`. This lets you route to a specific handler only when the error
+body matches a well-known shape, and fall through to a generic handler otherwise:
+
+```csharp
+try
+{
+    var result = await awesomeApi.GetFooAsync("bar");
+}
+catch (ApiException exception) when (exception.TryGetContentAs<Error>(out var error))
+{
+    // handle the strongly-typed `error` here
+}
+catch (ApiException exception)
+{
+    // generic handling when the body was missing or not an `Error`
+}
+```
+
+`TryGetContentAs<T>` returns `false` (and never throws) when there is no content, the content does not deserialize,
+or the configured serializer cannot deserialize synchronously. `GetContentAs<T>` returns `default` when there is no
+content and throws `NotSupportedException` when the configured `IHttpContentSerializer` does not implement
+`ISynchronousContentDeserializer`. The built-in `SystemTextJsonContentSerializer`, `NewtonsoftJsonContentSerializer`,
+and `XmlContentSerializer` all implement it; a custom serializer can opt in by implementing
+`ISynchronousContentDeserializer`.
+
+#### Reading the request body that was sent
+
+By default `HttpClient` disposes the request content once a request is sent, so the body cannot be read back from
+`ApiException.RequestMessage.Content`. Set `RefitSettings.CaptureRequestContent = true` to buffer the request body
+into a string before sending and expose it on `ApiExceptionBase.RequestContent`:
+
+```csharp
+var settings = new RefitSettings { CaptureRequestContent = true };
+var awesomeApi = RestService.For<IAwesomeApi>("https://api.example.com", settings);
+
+try
+{
+    await awesomeApi.PostFooAsync(payload);
+}
+catch (ApiException exception) when (exception.HasRequestContent)
+{
+    // exception.RequestContent holds exactly what Refit sent on the wire
+    logger.LogError("Failed request body: {Body}", exception.RequestContent);
+}
+```
+
+`CaptureRequestContent` defaults to `false` because it buffers the entire body into memory; avoid it for large or
+streamed uploads. When it is disabled, `HasRequestContent` is `false` and `RequestContent` is `null`.
 
 #### Providing a custom `ExceptionFactory`
 
