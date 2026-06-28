@@ -547,6 +547,22 @@ public static class GeneratedRequestRunner
             propertyInfo.PropertyType) ?? string.Empty));
     }
 
+    /// <summary>
+    /// Runtime check for unmatched route support.
+    /// </summary>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="exceptionMessage">Error message for when an unmatched placeholder is not supported.</param>
+    public static void UnmatchedRouteParameterGuard(
+        RefitSettings settings,
+        string exceptionMessage
+    )
+    {
+        if (!settings.AllowUnmatchedRouteParameters)
+        {
+            throw new ArgumentException(exceptionMessage);
+        }
+    }
+
     /// <summary>Serializes a non-special body value through the configured content serializer.</summary>
     /// <typeparam name="TBody">The declared body type.</typeparam>
     /// <param name="settings">The Refit settings to use.</param>

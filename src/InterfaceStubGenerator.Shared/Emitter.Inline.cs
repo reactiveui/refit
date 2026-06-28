@@ -175,15 +175,16 @@ internal static partial class Emitter
 
         var paramValidationDict = BuildParamValidationDict(methodModel.Parameters);
         var objectParamValidationDict = new Dictionary<string, SubPropertyModel>();
-        // foreach (var property in methodModel.SubProperties)
-        // {
-        //     // I would prefer to use ToDictionary here, but if I remove this check we have duplicate keys
-        //     // I don't know what is causing so many duplicate keys
-        //     if(!objectParamValidationDict.ContainsKey(property.LowerCaseAccessName))
-        //     {
-        //         objectParamValidationDict.Add(property.LowerCaseAccessName, property);
-        //     }
-        // }
+        foreach (var property in methodModel.SubProperties)
+        {
+            // I would prefer to use ToDictionary here, but if I remove this check we have a duplicate key error
+            // This causes 800 tests to fail
+            // I don't know what is causing so many duplicate keys
+            if(!objectParamValidationDict.ContainsKey(property.LowerCaseAccessName))
+            {
+                objectParamValidationDict.Add(property.LowerCaseAccessName, property);
+            }
+        }
 
         var valueStringBuilderLocal = locals.New("valueStringBuilder");
 
@@ -284,11 +285,14 @@ internal static partial class Emitter
         }
         else
         {
-            data.UnmatchedRouteParameterError =
-                $"URL {relativePath} has parameter {rawName}, but no method parameter matches";
+            var bodyIndent = Indent(MethodBodyIndentation);
+            
+            // need to make this a csharp safe string
+            var unmatchedRouteParameterError = ToCSharpStringLiteral($"URL {relativePath} has parameter {rawName}, but no method parameter matches");
+            _ = data.Constructor.AppendLine($"{bodyIndent}global::Refit.GeneratedRequestRunner.UnmatchedRouteParameterGuard({settingsLocal}, {unmatchedRouteParameterError});");
 
             // need to add tests and pass valueStringBuilder local
-            _ = data.Constructor.AppendLine($"valueStringBuilder.Append({ToCSharpStringLiteral(match.Value)});");
+            _ = data.Constructor.AppendLine($"{bodyIndent}valueStringBuilder.Append({ToCSharpStringLiteral(match.Value)});");
         }
     }
 
@@ -308,16 +312,15 @@ internal static partial class Emitter
         ParameterModel value)
     {
         var paramType = value.Type;
+        var bodyIndent = Indent(MethodBodyIndentation);
         if (isRoundTripping && paramType != "string")
         {
-            data.ThrowException =
+            _ = data.Constructor.AppendLine(
             $"""
-             throw new ArgumentException("URL {relativePath} has round-tripping parameter {value.MetadataName}, but the type of matched method parameter is {paramType}. It must be a string.);
-             """;
+             {bodyIndent}throw new ArgumentException("URL {relativePath} has round-tripping parameter {value.MetadataName}, but the type of matched method parameter is {paramType}. It must be a string.);
+             """);
             return;
         }
-        
-        var bodyIndent = Indent(MethodBodyIndentation);
 
         // need to add indent and valueStringName, and settings
         // need to add parameterinfo nonsense here
