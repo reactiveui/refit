@@ -22,4 +22,16 @@ public interface INativeAotApi
     /// <returns>The service status response.</returns>
     [Get("/status")]
     Task<ApiResponse<ServiceStatus>> GetStatusAsync();
+    
+    /// <summary>Gets the service status.</summary>
+    /// <returns>The service status response.</returns>
+    [Get("/status/{id}")]
+    Task<ApiResponse<ServiceStatus>> GettererStatusAsync(int id);
+    
+    /// <summary>Gets the service status.</summary>
+    /// <returns>The service status response.</returns>
+    [Get("/status/{doer.id}")]
+    Task<ApiResponse<ServiceStatus>> ObjectStatusAsync(Doer doer);
+
+    public record Doer(int id);
 }

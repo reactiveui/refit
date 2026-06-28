@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -406,6 +407,144 @@ public static class GeneratedRequestRunner
 #else
         request.Properties[key] = value;
 #endif
+    }
+    
+    private static Dictionary<(Type, string, string), ParameterInfo> _parameterCache = new ();
+
+    private static ParameterInfo GetParameterInfo([
+        DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type type,
+        string methodName,
+        string parameterName)
+    {
+        var cacheKey = (type, methodName, parameterName);
+
+        if (_parameterCache.TryGetValue(cacheKey, out var cachedParameter))
+        {
+            return cachedParameter;
+        }
+        
+        var method = type.GetMethod(methodName, 
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+        if (method == null)
+        {
+            throw new NotImplementedException();
+        }
+
+        ParameterInfo? parameter = null;
+        foreach (var p in method.GetParameters())
+        {
+            if (string.Equals(p.Name, parameterName, StringComparison.Ordinal))
+            {
+                parameter = p;
+                break;
+            }
+        }
+
+        if (parameter == null)
+        {
+            throw new NotImplementedException();
+        }
+        
+        _parameterCache.Add(cacheKey, parameter);
+        return parameter;
+    }
+    
+     public static void AddStandardParameter(
+                ref ValueStringBuilder vsb,
+                object value,
+                bool roundTripping,
+                RefitSettings settings,
+                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type parentClass,
+                string callerMethod,
+                string parameterName
+               )
+    {
+        var parameterInfo = GetParameterInfo(parentClass, callerMethod, parameterName);
+
+        if (!roundTripping)
+        {
+            vsb.Append(StringHelpers.EscapeDataString(
+                settings.UrlParameterFormatter.Format(
+                    value,
+                    parameterInfo!,
+                    parameterInfo!.ParameterType) ?? string.Empty));
+            return;
+        }
+
+        // If round tripping, format each path segment independently.
+        var paramValue = (string)value;
+        var sectionStart = 0;
+        for (var i = 0; i <= paramValue.Length; i++)
+        {
+            if (i != paramValue.Length && paramValue[i] != '/')
+            {
+                continue;
+            }
+
+            if (sectionStart > 0)
+            {
+                vsb.Append('/');
+            }
+
+            var section = paramValue.Substring(sectionStart, i - sectionStart);
+            vsb.Append(
+                StringHelpers.EscapeDataString(
+                    settings.UrlParameterFormatter.Format(
+                        section,
+                        parameterInfo!,
+                        parameterInfo!.ParameterType) ?? string.Empty));
+            sectionStart = i + 1;
+        }
+    }
+     
+    private static Dictionary<(Type, string), PropertyInfo> _propertyCache = new ();
+
+    private static PropertyInfo GetPropertyInfo([
+            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type type,
+        string propertyName)
+    {
+        var cacheKey = (type, propertyName);
+
+        if (_propertyCache.TryGetValue(cacheKey, out var cachedParameter))
+        {
+            return cachedParameter;
+        }
+        
+        var property = type.GetProperty(propertyName, 
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+        if (property == null)
+        {
+            throw new NotImplementedException();
+        }
+
+        _propertyCache.Add(cacheKey, property);
+        return property;
+    }
+
+    /// <summary>Appends an object-property-bound path fragment.</summary>
+    /// <param name="vsb">The path builder to append to.</param>
+    /// <param name="value">The parameter property value to be appended.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="classType">The parameters type.</param>
+    /// <param name="propertyName">The name of the property to be appended.</param>
+    public static void AppendObjectPropertyFragment(
+        ref ValueStringBuilder vsb,
+        object value,
+        RefitSettings settings,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods |
+                                    DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        Type classType,
+        string propertyName
+    )
+    {
+        var propertyInfo = GetPropertyInfo(classType, propertyName);
+        
+        vsb.Append(StringHelpers.EscapeDataString(settings.UrlParameterFormatter.Format(
+            value,
+            propertyInfo,
+            propertyInfo.PropertyType) ?? string.Empty));
     }
 
     /// <summary>Serializes a non-special body value through the configured content serializer.</summary>

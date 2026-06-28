@@ -32,8 +32,6 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the path is supported.</returns>
     internal static bool IsConstantPathSupported(string path) =>
         (path.Length == 0 || path[0] == '/')
-        && path.IndexOf('{') < 0
-        && path.IndexOf('}') < 0
         && path.IndexOf('\\') < 0
         && path.IndexOf('\r') < 0
         && path.IndexOf('\n') < 0;

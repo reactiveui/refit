@@ -5,11 +5,13 @@ namespace Refit.Generator;
 
 /// <summary>Describes a method parameter for the source generator.</summary>
 /// <param name="MetadataName">The parameter's metadata name.</param>
+/// <param name="AliasAs">The parameter's optional alias.</param>
 /// <param name="Type">The parameter's type name.</param>
 /// <param name="Annotation">A value indicating whether the parameter is nullable-annotated.</param>
 /// <param name="IsGeneric">A value indicating whether the parameter type is a generic type parameter.</param>
 internal sealed record ParameterModel(
     string MetadataName,
+    string? AliasAs,
     string Type,
     bool Annotation,
     bool IsGeneric);

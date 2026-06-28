@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Refit.Generator;
 
@@ -31,6 +33,23 @@ internal static partial class Emitter
 
     /// <summary>The cast prefix for an explicit collection format value.</summary>
     private const string CollectionFormatCast = "(global::Refit.CollectionFormat)";
+
+    #if NET7_0_OR_GREATER
+    /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
+    /// <returns>The parameter matching regular expression.</returns>
+    [GeneratedRegex("{(([^/?\\r\\n])*?)}")]
+    private static partial Regex ParameterRegex();
+    #else
+    /// <summary>The compiled regular expression that matches URL path parameters.</summary>
+    private static readonly Regex _parameterRegexValue = new(
+        "{(([^/?\\r\\n])*?)}",
+        RegexOptions.Compiled,
+        TimeSpan.FromSeconds(1));
+
+    /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
+    /// <returns>The parameter matching regular expression.</returns>
+    private static Regex ParameterRegex() => _parameterRegexValue;
+    #endif
 
     /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
@@ -112,8 +131,9 @@ internal static partial class Emitter
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
+        var requestUriData = BuildRequestUri(methodModel, locals, settingsLocal);
         var requestUriExpression =
-            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(request.Path)}, {settingsLocal}.UrlResolution)";
+            requestUriData.RequestUriExpression!;
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
         var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter, requestLocal, settingsLocal, formFieldsFieldName);
         var headerSource = BuildInlineHeaders(request, requestLocal);
@@ -123,7 +143,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
+            {{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};{{requestUriData.Constructor.ToString()}}
             {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
@@ -133,6 +153,201 @@ internal static partial class Emitter
 
             """;
     }
+
+    private static BuildUriData BuildRequestUri(
+        MethodModel methodModel,
+        UniqueNameBuilder locals,
+        string settingsLocal)
+    {
+        var relativePath = methodModel.Request.Path;
+        var bodyIndent = Indent(MethodBodyIndentation);
+
+        // might have to be relative path, not sure what the difference is 
+        var parameterizedParts = ParameterRegex().Matches(relativePath);
+
+        var data = new BuildUriData();
+
+        if (parameterizedParts.Count == 0)
+        {
+            data.RequestUriExpression = $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(relativePath)}, {settingsLocal}.UrlResolution)";
+            return data;
+        }
+
+        var paramValidationDict = BuildParamValidationDict(methodModel.Parameters);
+        var objectParamValidationDict = new Dictionary<string, SubPropertyModel>();
+        // foreach (var property in methodModel.SubProperties)
+        // {
+        //     // I would prefer to use ToDictionary here, but if I remove this check we have duplicate keys
+        //     // I don't know what is causing so many duplicate keys
+        //     if(!objectParamValidationDict.ContainsKey(property.LowerCaseAccessName))
+        //     {
+        //         objectParamValidationDict.Add(property.LowerCaseAccessName, property);
+        //     }
+        // }
+
+        var valueStringBuilderLocal = locals.New("valueStringBuilder");
+
+        var sb = data.Constructor;
+        _ = sb.AppendLine();
+        _ = sb.AppendLine($"{bodyIndent}var {valueStringBuilderLocal} = new global::Refit.ValueStringBuilder(stackalloc char[256]);");
+
+        var index = 0;
+
+        for (var i = 0; i < parameterizedParts.Count; i++)
+        {
+            var match = parameterizedParts[i];
+
+            // Add constant value from given http path
+            if (match.Index != index)
+            {
+                _ = sb.AppendLine($"{bodyIndent}{valueStringBuilderLocal}.Append({ToCSharpStringLiteral(relativePath.Substring(index, match.Index - index))});");
+            }
+
+            index = match.Index + match.Length;
+
+            AddFragmentForMatch(
+                relativePath,
+                settingsLocal,
+                methodModel,
+                data,
+                paramValidationDict,
+                objectParamValidationDict,
+                match);
+        }
+
+        data.RequestUriExpression = $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {valueStringBuilderLocal}.ToString(), {settingsLocal}.UrlResolution)";
+
+        if (index >= relativePath.Length)
+        {
+            return data;
+        }
+
+        // Add trailing string.
+        var trailingConstant = relativePath[index..];
+        _ = sb.AppendLine($"{bodyIndent}{valueStringBuilderLocal}.Append({ToCSharpStringLiteral(trailingConstant)});");
+
+        return data;
+    }
+
+    /// <summary>Builds a lookup of lower-cased URL parameter names to their declaring method parameter.</summary>
+    /// <param name="parameters">The array of method parameters.</param>
+    /// <returns>A map of URL parameter names to method parameters.</returns>
+    private static Dictionary<string, ParameterModel> BuildParamValidationDict(ImmutableEquatableArray<ParameterModel> parameters)
+    {
+        var paramValidationDict = new Dictionary<string, ParameterModel>(parameters.Count);
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            paramValidationDict[GetUrlNameForParameter(parameters[i]).ToLowerInvariant()] = parameters[i];
+        }
+
+        return paramValidationDict;
+    }
+
+    /// <summary>Resolves a single parameterized URL fragment against the parameter maps and appends the result.</summary>
+    /// <param name="relativePath">The relative URL path template.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="data">The fragment list being built.</param>
+    /// <param name="param">The lookups of directly matched parameter names.</param>
+    /// <param name="objectProperty">The lookups of nested object-property names.</param>
+    /// <param name="match">The parameterized URL match being resolved.</param>
+    private static void AddFragmentForMatch(
+        string relativePath,
+        string settingsLocal,
+        MethodModel methodModel,
+        BuildUriData data,
+        Dictionary<string, ParameterModel> param,
+        Dictionary<string, SubPropertyModel> objectProperty,
+        Match match)
+    {
+        var rawName = match.Groups[1].Value.ToLowerInvariant();
+        var isRoundTripping = rawName.StartsWith("**", StringComparison.Ordinal);
+        var name = isRoundTripping ? rawName[2..] : rawName;
+
+        if (param.TryGetValue(name, out var value))
+        {
+            AddStandardParameter(
+                relativePath,
+                settingsLocal,
+                methodModel,
+                data,
+                isRoundTripping,
+                value);
+        }
+        else if (objectProperty.TryGetValue(name, out var value1) && !isRoundTripping)
+        {
+            AddObjectPropertyParameter(
+                settingsLocal,
+                methodModel,
+                data,
+                value1);
+        }
+        else
+        {
+            data.UnmatchedRouteParameterError =
+                $"URL {relativePath} has parameter {rawName}, but no method parameter matches";
+
+            // need to add tests and pass valueStringBuilder local
+            _ = data.Constructor.AppendLine($"valueStringBuilder.Append({ToCSharpStringLiteral(match.Value)});");
+        }
+    }
+
+    /// <summary>Adds a standard (directly matched) route parameter to the route.</summary>
+    /// <param name="relativePath">The relative URL path template.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="data">The fragment list being built.</param>
+    /// <param name="isRoundTripping">The parsed parameter name details from the URL template.</param>
+    /// <param name="value">The matched method parameter.</param>
+    private static void AddStandardParameter(
+        string relativePath,
+        string settingsLocal,
+        MethodModel methodModel,
+        BuildUriData data,
+        bool isRoundTripping,
+        ParameterModel value)
+    {
+        var paramType = value.Type;
+        if (isRoundTripping && paramType != "string")
+        {
+            data.ThrowException =
+            $"""
+             throw new ArgumentException("URL {relativePath} has round-tripping parameter {value.MetadataName}, but the type of matched method parameter is {paramType}. It must be a string.);
+             """;
+            return;
+        }
+        
+        var bodyIndent = Indent(MethodBodyIndentation);
+
+        // need to add indent and valueStringName, and settings
+        // need to add parameterinfo nonsense here
+        // Could use CallerMember here
+        _ = data.Constructor.AppendLine(
+            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, {value.MetadataName}, {(isRoundTripping ? "true" : "false")}, {settingsLocal}, typeof({methodModel.ContainingType}), {ToCSharpStringLiteral(methodModel.Name)}, {ToCSharpStringLiteral(value.MetadataName)});");
+    }
+    
+    /// <summary>Adds a object property route parameter to the route.</summary>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="data">The fragment list being built.</param>
+    /// <param name="subProperty">The matching sub property.</param>
+    private static void AddObjectPropertyParameter(
+        string settingsLocal,
+        MethodModel methodModel,
+        BuildUriData data,
+        SubPropertyModel subProperty)
+    {
+        var bodyIndent = Indent(MethodBodyIndentation);
+
+        // need to add indent and valueStringName, and settings
+        _ = data.Constructor.AppendLine(
+            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AppendObjectPropertyFragment(ref valueStringBuilder, {subProperty.AccessExpression}, {settingsLocal}, typeof({subProperty.ParameterType}), {ToCSharpStringLiteral(subProperty.Property)});");
+    }
+
+    /// <summary>Gets the URL name to use for a parameter, honoring any alias attribute.</summary>
+    /// <param name="parameterModel">The parameter whose URL name is resolved.</param>
+    /// <returns>The aliased or declared parameter name.</returns>
+    private static string GetUrlNameForParameter(ParameterModel parameterModel) => parameterModel.AliasAs ?? parameterModel.MetadataName;
 
     /// <summary>Builds request content assignment for an inline generated method.</summary>
     /// <param name="bodyParameter">The body parameter model.</param>
@@ -504,5 +719,13 @@ internal static partial class Emitter
             ? "Serialized"
             : bodyParameter.BodySerializationMethod;
         return $"global::Refit.BodySerializationMethod.{serializationMethod}";
+    }
+
+    private sealed class BuildUriData
+    {
+        public string? RequestUriExpression { get; set; }
+        public StringBuilder Constructor { get; } = new();
+        public string? UnmatchedRouteParameterError { get; set; }
+        public string? ThrowException { get; set; }
     }
 }

@@ -319,6 +319,7 @@ public static class GeneratorComponentTests
                 RequestModel.Empty,
                 ImmutableEquatableArray<ParameterModel>.Empty,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
+                ImmutableEquatableArray<SubPropertyModel>.Empty,
                 false);
 
             var source = Emitter.BuildMethodOpening(method, true, true, supportsNullable: true, isAsync: true);
@@ -369,8 +370,8 @@ public static class GeneratorComponentTests
         {
             var parameters = new ImmutableEquatableArray<ParameterModel>(
                 [
-                    new("first", StringTypeName, false, false),
-                    new("second", "global::System.Int32", false, false)
+                    new("first", null, StringTypeName, false, false),
+                    new("second", null, "global::System.Int32", false, false)
                 ]);
 
             await Assert.That(Emitter.BuildParameterTypeListForTesting(ImmutableEquatableArray<ParameterModel>.Empty))
@@ -552,6 +553,7 @@ public static class GeneratorComponentTests
                     ImmutableEquatableArray<RequestParameterModel>.Empty),
                 ImmutableEquatableArray<ParameterModel>.Empty,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
+                ImmutableEquatableArray<SubPropertyModel>.Empty,
                 false);
 
         /// <summary>Parses a method declaration for syntax helper tests.</summary>

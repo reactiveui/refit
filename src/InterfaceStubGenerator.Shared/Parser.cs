@@ -829,6 +829,7 @@ internal static partial class Parser
             RequestModel.Empty,
             parameters,
             constraints,
+            ImmutableEquatableArrayFactory.Empty<SubPropertyModel>(),
             isExplicit);
     }
 
@@ -878,6 +879,68 @@ internal static partial class Parser
         return ImmutableEquatableArrayFactory.FromArray(constraints);
     }
 
+    /// <summary>Builds the constraint models for a set of type parameters.</summary>
+    /// <param name="parameters">The parameters to parse.</param>
+    /// <returns>The constraint models for the type parameters.</returns>
+    private static ImmutableEquatableArray<SubPropertyModel> GenerateSubProperties(
+        in ImmutableArray<IParameterSymbol> parameters
+        )
+    {
+        if (parameters.Length == 0)
+        {
+            return ImmutableEquatableArrayFactory.Empty<SubPropertyModel>();
+        }
+
+        var subProperties = new List<SubPropertyModel>();
+        foreach (var parameter in parameters)
+        {
+            foreach (var property in GetPublicProperties(parameter.Type))
+            {
+                var key = $"{parameter.Name}.{GetMemberAlias(property)}".ToLowerInvariant();
+                
+                // some of these fields are redundant key can be constructed when dictionary is created (might not account for @ symbols)
+                subProperties.Add(new(key, $"{parameter.Name}.{property.Name}", parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), property.Name));
+            }
+        }
+
+        return ImmutableEquatableArrayFactory.FromList(subProperties);
+    }
+    
+    /// <summary>Gets public properties from.</summary>
+    /// <param name="typeSymbol">The parameter to parse.</param>
+    /// <returns>The parsed parameter models.</returns>
+    private static IEnumerable<IPropertySymbol> GetPublicProperties(
+        ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol.TypeKind != TypeKind.Class)
+        {
+            yield break;
+        }
+
+        var currentType = typeSymbol;
+
+        while (currentType != null && currentType.SpecialType != SpecialType.System_Object)
+        {
+            var publicReadableProps = currentType.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(p => 
+                    // Property itself must be public
+                    p.DeclaredAccessibility == Accessibility.Public && 
+                    // Property must have a getter
+                    p.GetMethod != null && 
+                    // The getter itself must be public (not private/protected)
+                    p.GetMethod.DeclaredAccessibility == Accessibility.Public);
+
+            foreach (var properties in publicReadableProps)
+            {
+                yield return properties;
+            }
+
+            currentType = currentType.BaseType;
+        }
+    }
+
+    
     /// <summary>Builds the constraint model for a single type parameter.</summary>
     /// <param name="typeParameter">The type parameter to parse.</param>
     /// <param name="isOverrideOrExplicitImplementation">Whether the member is an override or explicit implementation.</param>
@@ -951,7 +1014,29 @@ internal static partial class Parser
         var paramType = param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var isGeneric = ContainsTypeParameter(param.Type);
 
-        return new(param.MetadataName, paramType, annotation, isGeneric);
+        return new(param.MetadataName, GetMemberAlias(param), paramType, annotation, isGeneric);
+    }
+
+    /// <summary>Gets the optional parameter alias.</summary>
+    /// <param name="symbol">The symbol to inspect.</param>
+    /// <returns>The parameter alias, or null when the parameter does not have an alias.</returns>
+    [ExcludeFromCodeCoverage]
+    private static string? GetMemberAlias(ISymbol symbol)
+    {
+        foreach (var attribute in symbol.GetAttributes())
+        {
+            if (attribute.AttributeClass?.ToDisplayString() != "Refit.AliasAsAttribute")
+            {
+                continue;
+            }
+
+            var arguments = attribute.ConstructorArguments;
+            return arguments.Length > 0 && arguments[0].Value is string { Length: > 0 } key
+                ? key
+                : null;
+        }
+
+        return null;
     }
 
     /// <summary>Builds parameter models from a fixed Roslyn parameter array.</summary>
@@ -1045,6 +1130,7 @@ internal static partial class Parser
 
         var isExplicit = explicitImpl is not null;
         var constraints = GenerateConstraints(methodSymbol.TypeParameters, isExplicit || !isImplicitInterface);
+        var subProperties = GenerateSubProperties(methodSymbol.Parameters);
 
         return new(
             methodSymbol.Name,
@@ -1055,6 +1141,7 @@ internal static partial class Parser
             request,
             parameters,
             constraints,
+            subProperties,
             isExplicit);
     }
 

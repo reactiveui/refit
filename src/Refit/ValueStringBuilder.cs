@@ -10,7 +10,7 @@ namespace Refit;
 
 // From https://github/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/ValueStringBuilder.cs
 /// <summary>A stack-allocated string builder that grows using pooled buffers.</summary>
-internal ref struct ValueStringBuilder
+public ref struct ValueStringBuilder
 {
     /// <summary>The pooled array currently backing the builder, if one has been rented.</summary>
     private char[]? _arrayToReturnToPool;

@@ -24,6 +24,9 @@
 
   <ItemGroup>
     <Compile Include="..\InterfaceStubGenerator.Shared\**\*.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Update="..\InterfaceStubGenerator.Shared\Models\SubPropertyModel.cs">
+      <Link>InterfaceStubGenerator.Shared\Models\SubPropertyModel.cs</Link>
+    </Compile>
   </ItemGroup>
 
   <Target Name="SetBuildVer" AfterTargets="GetBuildVersion" BeforeTargets="SetCloudBuildVersionVars;SetCloudBuildNumberWithVersion">

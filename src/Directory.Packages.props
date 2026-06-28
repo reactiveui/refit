@@ -43,9 +43,9 @@
   </ItemGroup>
 
   <ItemGroup Label="Analyzers">
-    <PackageVersion Include="StyleSharp.Analyzers" Version="3.13.4"/>
-    <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913"/>
+<!--    <PackageVersion Include="StyleSharp.Analyzers" Version="3.13.4"/>-->
+<!--    <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>-->
+<!--    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913"/>-->
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.0.0-1.25277.114"/>
   </ItemGroup>
