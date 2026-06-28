@@ -107,7 +107,7 @@ Refit currently supports the following platforms and modern .NET targets:
 
 #### Breaking changes in V12.x
 
-Refit 12.0 is a large release centred on a near-complete rewrite of request building. The source generator now builds
+Refit 12.0 is a large release centered on a near-complete rewrite of request building. The source generator now builds
 eligible HTTP requests inline at compile time instead of going through the reflection request-builder pipeline, with the
 reflection path kept as a fallback for shapes that cannot be generated inline.
 
@@ -834,7 +834,7 @@ var otherApi = RestService.For<IOtherApi>("https://api.example.com",
     )});
 ```
 
-Property serialization/deserialization can be customised using Json.NET's
+Property serialization/deserialization can be customized using Json.NET's
 JsonProperty attribute:
 
 ```csharp
@@ -922,7 +922,7 @@ var gitHubApi = RestService.For<IXmlApi>("https://www.w3.org/XML",
     });
 ```
 
-Property serialization/deserialization can be customised using attributes found in the _System.Xml.Serialization_
+Property serialization/deserialization can be customized using attributes found in the _System.Xml.Serialization_
 namespace:
 
 ```csharp
