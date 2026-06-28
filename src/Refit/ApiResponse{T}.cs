@@ -147,7 +147,7 @@ public sealed class ApiResponse<T>(
         "CA1716:Identifiers should not match keywords",
         Justification = "By Design")]
     public bool HasRequestError(
-        [MaybeNullWhen(false)] out ApiRequestException? error)
+        [NotNullWhen(true)] out ApiRequestException? error)
     {
         error = Error as ApiRequestException;
         return error is not null;
@@ -159,7 +159,7 @@ public sealed class ApiResponse<T>(
         "CA1716:Identifiers should not match keywords",
         Justification = "By Design")]
     public bool HasResponseError(
-        [MaybeNullWhen(false)]
+        [NotNullWhen(true)]
         out ApiException? error)
     {
         error = Error as ApiException;
