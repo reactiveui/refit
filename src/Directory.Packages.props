@@ -69,7 +69,7 @@
   <ItemGroup Label="Test Stack">
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)"/>
     <PackageVersion Include="Verify.TUnit" Version="31.20.0"/>
-    <PackageVersion Include="Verify.DiffPlex" Version="3.2.0"/>
+    <PackageVersion Include="Verify.DiffPlex" Version="3.3.0"/>
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0"/>
     <PackageVersion Include="Moq" Version="4.20.72"/>
