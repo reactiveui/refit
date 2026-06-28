@@ -5,3 +5,4 @@ Refit.NewtonsoftJsonContentSerializer.GetFieldNameForProperty(System.Reflection.
 Refit.NewtonsoftJsonContentSerializer.NewtonsoftJsonContentSerializer() -> void
 Refit.NewtonsoftJsonContentSerializer.NewtonsoftJsonContentSerializer(Newtonsoft.Json.JsonSerializerSettings? jsonSerializerSettings) -> void
 Refit.NewtonsoftJsonContentSerializer.ToHttpContent<T>(T item) -> System.Net.Http.HttpContent!
+Refit.NewtonsoftJsonContentSerializer.DeserializeFromString<T>(string! content) -> T?
