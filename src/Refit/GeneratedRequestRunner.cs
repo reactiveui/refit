@@ -37,34 +37,92 @@ public static class GeneratedRequestRunner
     /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
     /// <param name="uriParams">The replacement uri parameters.</param>
     /// <returns>A path with all the placeholder parameters in the path template replaced.</returns>
-    public static string BuildRequestPath(string relativePathTemplate, params ReadOnlySpan<(string key, string? value)> uriParams)
+    /// <exception cref="InvalidOperationException">A URI template parameter is not available in the provided parameter array.</exception>
+    public static string BuildRequestPath(string relativePathTemplate, params (string key, string? value)[] uriParams)
     {
-        var path = relativePathTemplate;
-        foreach (var (key, value) in uriParams)
+        var pathSpan = relativePathTemplate.AsSpan();
+        var i = pathSpan.IndexOf('{');
+        if (i < 0)
         {
-            var isEmpty = string.IsNullOrEmpty(value);
-            var toReplace = $"{{{key}}}";
-            var index = path.IndexOf(toReplace, StringComparison.Ordinal);
-            var isPathParam = index > 0 && toReplace[index - 1] == '/';
-            if (!isPathParam)
-            {
-                continue;
-            }
-
-            if (isEmpty)
-            {
-                toReplace = $"/{{{key}}}";
-            }
-
-            var replacement = isEmpty ? string.Empty : value;
-#if NETCOREAPP2_0_OR_GREATER || NETSTANDARD2_1
-            path = path.Replace(toReplace, replacement, StringComparison.Ordinal);
-#else
-            path = path.Replace(toReplace, replacement);
-#endif
+            return relativePathTemplate;
         }
 
-        return path;
+        using var sb = new ValueStringBuilder(1024);
+        sb.Append(pathSpan[..i]);
+        var j = i + pathSpan[i..].IndexOfAny('}', '/');
+        var cache = new Dictionary<string, string?>(uriParams.Length);
+
+        while (i >= 0 && j > i)
+        {
+            if (pathSpan[j] == '}')
+            {
+                var foundKey = pathSpan[(i + 1)..j];
+                var exists = TryGetParamValue(uriParams, cache, foundKey, out var value);
+
+                if (exists)
+                {
+                    sb.Append(value ?? string.Empty);
+                }
+                else
+                {
+                    var key = foundKey.ToString();
+                    throw new InvalidOperationException($"No parameter found for template key {key}");
+                }
+
+                ++j;
+            }
+            else
+            {
+                sb.Append(pathSpan[i..j]);
+            }
+
+            var i2 = pathSpan[j..].IndexOf('{');
+            if (i2 < 0)
+            {
+                break;
+            }
+
+            i = j;
+            sb.Append(pathSpan[i..(i + i2)]);
+            i += i2;
+            j = i + pathSpan[i..].IndexOfAny('}', '/');
+        }
+
+        if (j < pathSpan.Length)
+        {
+            sb.Append(pathSpan[j..]);
+        }
+
+        return sb.ToString();
+
+        static bool TryGetParamValue((string key, string? value)[] uriParams, Dictionary<string, string?> cache, in ReadOnlySpan<char> paramName, out string? value)
+        {
+            #if NET9_0_OR_GREATER
+            var lookup = cache.GetAlternateLookup<ReadOnlySpan<char>>();
+            var found = lookup.TryGetValue(paramName, out value);
+            #else
+            var found = cache.TryGetValue(paramName.ToString(), out value);
+            #endif
+            if (found)
+            {
+                return found;
+            }
+
+            foreach (var (key, v) in uriParams)
+            {
+                if (!paramName.Equals(key, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                cache.Add(key, v);
+                value = v;
+                found = true;
+                break;
+            }
+
+            return found;
+        }
     }
 
     /// <summary>Sends a generated request with no response body, throwing on HTTP errors.</summary>

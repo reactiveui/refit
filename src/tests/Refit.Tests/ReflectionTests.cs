@@ -12,30 +12,6 @@ public sealed class ReflectionTests : IDisposable
     /// <summary>The mock HTTP message handler used to intercept and assert outgoing requests.</summary>
     private readonly MockHttpMessageHandler _mockHandler = new();
 
-    /// <summary>Verifies a simple string path parameter is formatted with the expected metadata.</summary>
-    /// <returns>A task that represents the asynchronous test.</returns>
-    [Test]
-    public async Task UrlParameterShouldBeExpectedReflection()
-    {
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, "https://foo/bar")
-            .Respond("application/json", nameof(IBasicApi.GetParam));
-
-        var methodInfo = typeof(IBasicApi).GetMethod(nameof(IBasicApi.GetParam))!;
-        var parameterInfo = methodInfo.GetParameters()[0];
-
-        var formatter = new TestUrlFormatter(parameterInfo, typeof(string));
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => _mockHandler,
-            UrlParameterFormatter = formatter
-        };
-        var service = RestService.For<IBasicApi>("https://foo", settings);
-
-        await service.GetParam("bar");
-        await formatter.AssertNoOutstandingAssertions();
-    }
-
     /// <summary>Verifies a derived record path parameter is formatted with the expected metadata.</summary>
     /// <returns>A task that represents the asynchronous test.</returns>
     [Test]

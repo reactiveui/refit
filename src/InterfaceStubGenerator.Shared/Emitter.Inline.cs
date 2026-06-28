@@ -115,28 +115,10 @@ internal static partial class Emitter
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
 
         // Build path
-        var parametersSb = new StringBuilder();
-        foreach (var parameter in request.Parameters)
-        {
-            if (parameter.Kind is RequestParameterKind.Path)
-            {
-                _ = parametersSb.Append(", ").Append('(').Append(ToCSharpStringLiteral(parameter.Name)).Append(", ").Append(parameter.Name);
-                if (parameter.Type != "string")
-                {
-                    if (parameter.CanBeNull)
-                    {
-                        _ = parametersSb.Append('?');
-                    }
+        var parameters = GetParametersArg(request);
 
-                    _ = parametersSb.Append(".ToString()");
-                }
-
-                _ = parametersSb.Append(')');
-            }
-        }
-
-        var pathExpression = parametersSb.Length > 0
-            ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}{parametersSb})"
+        var pathExpression = parameters.Length > 0
+            ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}{parameters})"
             : ToCSharpStringLiteral(request.Path);
         var requestUriExpression =
             $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {pathExpression}, {settingsLocal}.UrlResolution)";
@@ -158,6 +140,33 @@ internal static partial class Emitter
             {{contentSource}}{{headerSource}}{{requestPropertySource}}{{returnSource}}{{methodIndent}}}
 
             """;
+
+        static string GetParametersArg(RequestModel request)
+        {
+            var parametersSb = new StringBuilder();
+            foreach (var parameter in request.Parameters)
+            {
+                if (parameter.Kind is not RequestParameterKind.Path)
+                {
+                    continue;
+                }
+
+                _ = parametersSb.Append(", ").Append('(').Append(ToCSharpStringLiteral(parameter.Name)).Append(", ").Append(parameter.Name);
+                if (parameter.Type != "string")
+                {
+                    if (parameter.CanBeNull)
+                    {
+                        _ = parametersSb.Append('?');
+                    }
+
+                    _ = parametersSb.Append(".ToString()");
+                }
+
+                _ = parametersSb.Append(')');
+            }
+
+            return parametersSb.ToString();
+        }
     }
 
     /// <summary>Builds request content assignment for an inline generated method.</summary>

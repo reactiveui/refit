@@ -4,7 +4,6 @@
 
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -13,9 +12,6 @@ namespace Refit.Generator;
 /// <content>Request parsing helpers for the Refit source generator.</content>
 internal static partial class Parser
 {
-    /// <summary>A replacement block is an alphanumeric string surrounded by { and }.</summary>
-    private static readonly Regex replacementBlockRegex = new("/{([a-zA-Z0-9]+)}");
-
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
@@ -64,14 +60,33 @@ internal static partial class Parser
 
         static HashSet<string> ExtractPathParameterPlaceholderNames(string path)
         {
-            var queryStart = path.IndexOf('?');
-            var regex = replacementBlockRegex;
-            var matches = regex.Matches(queryStart < 0 ? path : path[0..queryStart]);
-            var paramNames = new HashSet<string>();
+            var pathSpan = path.AsSpan();
 
-            foreach (Match match in matches)
+            var i = pathSpan.IndexOf('{');
+            if (i < 0)
             {
-                _ = paramNames.Add(match.Groups[1].Value);
+                return [];
+            }
+
+            var paramNames = new HashSet<string>();
+            var j = i + pathSpan[i..].IndexOfAny('}', '/');
+            while (i < pathSpan.Length && j > i)
+            {
+                if (pathSpan[j] == '}')
+                {
+                    var paramName = pathSpan[(i + 1)..j];
+                    _ = paramNames.Add(paramName.ToString());
+                }
+
+                var i2 = pathSpan[j..].IndexOf('{');
+                if (i2 < 0)
+                {
+                    break;
+                }
+
+                i = j;
+                i += i2;
+                j = i + pathSpan[i..].IndexOfAny('}', '/');
             }
 
             return paramNames;
@@ -254,8 +269,11 @@ internal static partial class Parser
 
         for (var i = 0; i < parameters.Length; i++)
         {
-            var hasPlaceholder = parameterNames.Contains(parameters[i].Name);
-            var parsedParameter = ParseRequestParameter(parameters[i], hasPlaceholder);
+            var parameter = parameters[i];
+            var aliasAttr = parameter.GetAttributes().FirstOrDefault(static a => a.AttributeClass?.Name == "Refit.AliasAsAttribute");
+            var name = aliasAttr?.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? parameter.Name;
+            var hasPlaceholder = parameterNames.Contains(name);
+            var parsedParameter = ParseRequestParameter(parameter, hasPlaceholder);
             requestParameters[i] = parsedParameter.Parameter;
             bodyCount += parsedParameter.BodyCount;
             cancellationTokenCount += parsedParameter.CancellationTokenCount;
@@ -322,9 +340,58 @@ internal static partial class Parser
             return new(propertyParameter, true, 0, 0, 0);
         }
 
-        return hasPlaceholder
+        return hasPlaceholder && IsSimpleType(parameter.Type)
             ? new(PathRequestParameter(parameter, parameterType), true, 0, 0, 0)
             : new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
+
+        static bool IsSimpleType(ITypeSymbol type)
+        {
+            var underlyingType = GetUnderlyingType(type);
+            return underlyingType.Name.Equals("string", StringComparison.OrdinalIgnoreCase)
+                   || IsInt(underlyingType)
+                   || IsLong(underlyingType)
+                   || IsShort(underlyingType)
+                   || IsUInt(underlyingType)
+                   || IsULong(underlyingType)
+                   || IsUShort(underlyingType)
+                   || underlyingType.Name.Equals("char", StringComparison.OrdinalIgnoreCase)
+                   || IsBoolean(underlyingType)
+                   || IsByte(underlyingType);
+
+            static bool IsBoolean(ITypeSymbol type) =>
+                type.Name.Equals("bool", StringComparison.OrdinalIgnoreCase)
+                || type.Name.Equals("Boolean", StringComparison.OrdinalIgnoreCase);
+            static bool IsByte(ITypeSymbol type) =>
+                type.Name.Equals("byte", StringComparison.OrdinalIgnoreCase)
+                || type.Name.Equals("sbyte", StringComparison.OrdinalIgnoreCase);
+            static bool IsInt(ITypeSymbol type) =>
+                type.Name.Equals("int", StringComparison.OrdinalIgnoreCase)
+                || type.Name.Equals("Int32", StringComparison.OrdinalIgnoreCase);
+            static bool IsUInt(ITypeSymbol type) =>
+                type.Name.Equals("uint", StringComparison.OrdinalIgnoreCase)
+                || type.Name.Equals("UInt32", StringComparison.OrdinalIgnoreCase);
+            static bool IsLong(ITypeSymbol type) =>
+                type.Name.Equals("long", StringComparison.OrdinalIgnoreCase)
+                || type.Name.Equals("Int64", StringComparison.OrdinalIgnoreCase);
+            static bool IsULong(ITypeSymbol type) =>
+                type.Name.Equals("ulong", StringComparison.OrdinalIgnoreCase)
+                || type.Name.Equals("UInt64", StringComparison.OrdinalIgnoreCase);
+            static bool IsShort(ITypeSymbol type) =>
+                type.Name.Equals("short", StringComparison.OrdinalIgnoreCase)
+                || type.Name.Equals("Int16", StringComparison.OrdinalIgnoreCase);
+            static bool IsUShort(ITypeSymbol type) =>
+                type.Name.Equals("ushort", StringComparison.OrdinalIgnoreCase)
+                || type.Name.Equals("UInt16", StringComparison.OrdinalIgnoreCase);
+
+            static ITypeSymbol GetUnderlyingType(ITypeSymbol type)
+            {
+                return type is INamedTypeSymbol s && s.IsGenericType &&
+                       string.Equals(s.ContainingNamespace.Name, "System", StringComparison.Ordinal) &&
+                       string.Equals(s.Name, "Nullable", StringComparison.Ordinal)
+                    ? s.TypeArguments.Single()
+                    : type;
+            }
+        }
     }
 
     /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
