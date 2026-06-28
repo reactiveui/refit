@@ -123,6 +123,19 @@ public class SerializedContentNewtonsoftTests
         await Assert.That(result!.Name).IsEqualTo("Road Runner");
     }
 
+    /// <summary>Verifies the synchronous DeserializeFromString reads a value from a buffered string (#1591).</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task NewtonsoftJsonContentSerializer_DeserializeFromString_ReadsValue()
+    {
+        var serializer = new NewtonsoftJsonContentSerializer();
+
+        var result = serializer.DeserializeFromString<User>("{\"name\":\"Road Runner\"}");
+
+        await Assert.That(result).IsNotNull();
+        await Assert.That(result!.Name).IsEqualTo("Road Runner");
+    }
+
     /// <summary>Verifies that the Newtonsoft content serializer returns the default value for null content.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]

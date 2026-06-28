@@ -14,7 +14,7 @@ namespace Refit;
 /// </remarks>
 /// <param name="jsonSerializerSettings">The serialization settings to use for the current instance</param>
 public sealed class NewtonsoftJsonContentSerializer(
-    JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer
+    JsonSerializerSettings? jsonSerializerSettings) : IHttpContentSerializer, ISynchronousContentDeserializer
 {
     /// <summary>The number of characters consumed by a leading and trailing quote pair around a charset value.</summary>
     private const int QuotePairLength = 2;
@@ -93,6 +93,22 @@ public sealed class NewtonsoftJsonContentSerializer(
             }
         }
     }
+
+    /// <inheritdoc/>
+    [UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026:Members annotated with RequiresUnreferencedCodeAttribute may break when trimming",
+        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
+    [UnconditionalSuppressMessage(
+        "AOT",
+        "IL3050:Calling members annotated with RequiresDynamicCodeAttribute may break when AOT compiling",
+        Justification = "Interface method is unannotated on net8.0+ so cannot propagate; Newtonsoft path is documented as unsuitable for trimmed/AOT apps.")]
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Implements ISynchronousContentDeserializer.DeserializeFromString<T>; the type parameter is the deserialization target and cannot be inferred from arguments.")]
+    public T? DeserializeFromString<T>(string content) =>
+        JsonConvert.DeserializeObject<T>(content, _jsonSerializerSettings.Value);
 
     /// <summary>
     /// Calculates what the field name should be for the given property. This may be affected by custom attributes the serializer understands.

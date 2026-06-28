@@ -795,6 +795,38 @@ public partial class SerializedContentTests
         await Assert.That(resolver.RequestedTypes).Contains(typeof(User));
     }
 
+    /// <summary>Verifies the synchronous DeserializeFromString uses source-generated metadata when provided (#1591).</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DeserializeFromString_UsesSourceGeneratedMetadata()
+    {
+        var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+        {
+            TypeInfoResolver = resolver
+        };
+        var serializer = new SystemTextJsonContentSerializer(options);
+
+        var roundTrip = serializer.DeserializeFromString<User>("{\"name\":\"Road Runner\"}");
+
+        await Assert.That(roundTrip).IsNotNull();
+        await Assert.That(roundTrip!.Name).IsEqualTo("Road Runner");
+        await Assert.That(resolver.RequestedTypes).Contains(typeof(User));
+    }
+
+    /// <summary>Verifies the synchronous DeserializeFromString uses reflection metadata by default (#1591).</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task SystemTextJsonContentSerializer_DeserializeFromString_UsesReflectionByDefault()
+    {
+        var serializer = new SystemTextJsonContentSerializer();
+
+        var roundTrip = serializer.DeserializeFromString<User>("{\"name\":\"Road Runner\"}");
+
+        await Assert.That(roundTrip).IsNotNull();
+        await Assert.That(roundTrip!.Name).IsEqualTo("Road Runner");
+    }
+
     /// <summary>Verifies that RestService can use source-generated System.Text.Json metadata.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]

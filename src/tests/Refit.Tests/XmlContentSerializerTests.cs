@@ -111,6 +111,18 @@ public class XmlContentSerializerTests
         await Assert.That(dto?.Identifier).IsEqualTo("123");
     }
 
+    /// <summary>Verifies the synchronous DeserializeFromString reads a DTO from XML (#1591).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DeserializeFromStringReadsDto()
+    {
+        var sut = new XmlContentSerializer(new XmlContentSerializerSettings { XmlNamespaces = new() });
+
+        var dto = sut.DeserializeFromString<Dto>("<Dto><Identifier>123</Identifier></Dto>");
+
+        await Assert.That(dto?.Identifier).IsEqualTo("123");
+    }
+
     /// <summary>Verifies the declared XML encoding matches the configured writer settings.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
