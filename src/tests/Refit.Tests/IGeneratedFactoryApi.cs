@@ -19,4 +19,10 @@ public interface IGeneratedFactoryApi
     /// <returns>A task that completes when the request finishes.</returns>
     [Get("/generated/{id}")]
     Task GetById(string id);
+
+    /// <summary>Gets the generated endpoint with a query parameter.</summary>
+    /// <param name="id">The generated endpoint identifier.</param>
+    /// <returns>A task that completes when the request finishes.</returns>
+    [Get("/generated")]
+    Task GetQuery(string id);
 }

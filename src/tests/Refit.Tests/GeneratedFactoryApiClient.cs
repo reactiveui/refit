@@ -24,4 +24,7 @@ internal sealed class GeneratedFactoryApiClient(HttpClient client, IRequestBuild
 
     /// <inheritdoc/>
     public Task GetById(string id) => Task.CompletedTask;
+
+    /// <inheritdoc/>
+    public Task GetQuery(string id) => Task.CompletedTask;
 }
