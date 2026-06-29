@@ -228,72 +228,7 @@ internal static partial class Parser
             // values as an array typed constant for supported Refit metadata.
         }
     }
-    
-    /// <summary>Builds the constraint models for a set of type parameters.</summary>
-    /// <param name="parameters">The parameters to parse.</param>
-    /// <returns>The constraint models for the type parameters.</returns>
-    private static Dictionary<string, (IParameterSymbol, IPropertySymbol)> GenerateSubProperties(
-        in ImmutableArray<IParameterSymbol> parameters
-        )
-    {
-        if (parameters.Length == 0)
-        {
-            return new();
-        }
 
-        var objectParamValidationDict = new Dictionary<string, (IParameterSymbol, IPropertySymbol)>();
-        foreach (var parameter in parameters)
-        {
-            foreach (var property in GetPublicProperties(parameter.Type))
-            {
-                var key = $"{parameter.Name}.{GetMemberAlias(property)}".ToLowerInvariant();
-
-                if (!objectParamValidationDict.ContainsKey(key))
-                {
-                    // some of these fields are redundant key can be constructed when dictionary is created (might not account for @ symbols)
-                    // subProperties.Add(new(key, $"{parameter.Name}.{property.Name}", parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), property.Name));
-                    objectParamValidationDict.Add(key, (parameter, property));
-                }
-            }
-        }
-
-        return objectParamValidationDict;
-    }
-    
-    /// <summary>Gets public properties from.</summary>
-    /// <param name="typeSymbol">The parameter to parse.</param>
-    /// <returns>The parsed parameter models.</returns>
-    private static IEnumerable<IPropertySymbol> GetPublicProperties(
-        ITypeSymbol typeSymbol)
-    {
-        if (typeSymbol.TypeKind != TypeKind.Class)
-        {
-            yield break;
-        }
-
-        var currentType = typeSymbol;
-
-        while (currentType != null && currentType.SpecialType != SpecialType.System_Object)
-        {
-            var publicReadableProps = currentType.GetMembers()
-                .OfType<IPropertySymbol>()
-                .Where(p => 
-                    // Property itself must be public
-                    p.DeclaredAccessibility == Accessibility.Public && 
-                    // Property must have a getter
-                    p.GetMethod != null && 
-                    // The getter itself must be public (not private/protected)
-                    p.GetMethod.DeclaredAccessibility == Accessibility.Public);
-
-            foreach (var properties in publicReadableProps)
-            {
-                yield return properties;
-            }
-
-            currentType = currentType.BaseType;
-        }
-    }
-    
      private static (HashSet<IParameterSymbol> Map, ImmutableEquatableArray<RouteFragmentModel> Fragments) ParseParameterMap(
          string relativePath,
          IMethodSymbol method,
@@ -314,7 +249,7 @@ internal static partial class Parser
         var fragmentList = new List<RouteFragmentModel>();
 
         var paramValidationDict = BuildParamValidationDict(method.Parameters);
-        var objectParamValidationDict = GenerateSubProperties(method.Parameters);
+        var objectParamValidationDict = BuildObjectParamValidationDict(method.Parameters);
 
         var index = 0;
 
@@ -365,12 +300,77 @@ internal static partial class Parser
 
         return paramValidationDict;
     }
+    
+    
+    /// <summary>Builds the constraint models for a set of type parameters.</summary>
+    /// <param name="parameters">The parameters to parse.</param>
+    /// <returns>The constraint models for the type parameters.</returns>
+    private static Dictionary<string, (IParameterSymbol, IPropertySymbol)> BuildObjectParamValidationDict(
+        in ImmutableArray<IParameterSymbol> parameters
+        )
+    {
+        if (parameters.Length == 0)
+        {
+            return new();
+        }
+
+        var objectParamValidationDict = new Dictionary<string, (IParameterSymbol, IPropertySymbol)>();
+        foreach (var parameter in parameters)
+        {
+            foreach (var property in GetPublicProperties(parameter.Type))
+            {
+                var key = $"{parameter.Name}.{GetMemberAlias(property)}".ToLowerInvariant();
+
+                if (!objectParamValidationDict.ContainsKey(key))
+                {
+                    // some of these fields are redundant key can be constructed when dictionary is created (might not account for @ symbols)
+                    // subProperties.Add(new(key, $"{parameter.Name}.{property.Name}", parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), property.Name));
+                    objectParamValidationDict.Add(key, (parameter, property));
+                }
+            }
+        }
+
+        return objectParamValidationDict;
+    }
+
+    /// <summary>Gets public properties from.</summary>
+    /// <param name="typeSymbol">The parameter to parse.</param>
+    /// <returns>The parsed parameter models.</returns>
+    private static IEnumerable<IPropertySymbol> GetPublicProperties(
+        ITypeSymbol typeSymbol)
+    {
+        if (typeSymbol.TypeKind != TypeKind.Class)
+        {
+            yield break;
+        }
+
+        var currentType = typeSymbol;
+
+        while (currentType != null && currentType.SpecialType != SpecialType.System_Object)
+        {
+            var publicReadableProps = currentType.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(p => 
+                    // Property itself must be public
+                    p.DeclaredAccessibility == Accessibility.Public && 
+                    // Property must have a getter
+                    p.GetMethod != null && 
+                    // The getter itself must be public (not private/protected)
+                    p.GetMethod.DeclaredAccessibility == Accessibility.Public);
+
+            foreach (var properties in publicReadableProps)
+            {
+                yield return properties;
+            }
+
+            currentType = currentType.BaseType;
+        }
+    }
 
     /// <summary>Resolves a single parameterized URL fragment against the parameter maps and appends the result.</summary>
     /// <param name="relativePath">The relative URL path template.</param>
     /// <param name="parameters">The generated settings local name.</param>
     /// <param name="ret">The parameter map being built.</param>
-    /// <param name="method">The method being parsed.</param>
     /// <param name="fragmentList">The fragment list being built.</param>
     /// <param name="param">The lookups of directly matched parameter names.</param>
     /// <param name="objectProperty">The lookups of nested object-property names.</param>
