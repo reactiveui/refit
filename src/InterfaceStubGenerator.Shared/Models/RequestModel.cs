@@ -22,7 +22,8 @@ internal sealed record RequestModel(
     bool ShouldDisposeResponse,
     bool CanGenerateInline,
     ImmutableEquatableArray<HeaderModel> StaticHeaders,
-    ImmutableEquatableArray<RequestParameterModel> Parameters)
+    ImmutableEquatableArray<RequestParameterModel> Parameters,
+    ImmutableEquatableArray<SubPropertyModel> SubProperties)
 {
     /// <summary>Gets an empty model used for non-Refit method placeholders.</summary>
     public static RequestModel Empty { get; } = new(
@@ -34,5 +35,6 @@ internal sealed record RequestModel(
         true,
         false,
         ImmutableEquatableArray<HeaderModel>.Empty,
-        ImmutableEquatableArray<RequestParameterModel>.Empty);
+        ImmutableEquatableArray<RequestParameterModel>.Empty, 
+        ImmutableEquatableArray<SubPropertyModel>.Empty);
 }

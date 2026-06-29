@@ -175,7 +175,7 @@ internal static partial class Emitter
 
         var paramValidationDict = BuildParamValidationDict(methodModel.Parameters);
         var objectParamValidationDict = new Dictionary<string, SubPropertyModel>();
-        foreach (var property in methodModel.SubProperties)
+        foreach (var property in methodModel.Request.SubProperties)
         {
             // I would prefer to use ToDictionary here, but if I remove this check we have a duplicate key error
             // This causes 800 tests to fail
@@ -728,7 +728,5 @@ internal static partial class Emitter
     {
         public string? RequestUriExpression { get; set; }
         public StringBuilder Constructor { get; } = new();
-        public string? UnmatchedRouteParameterError { get; set; }
-        public string? ThrowException { get; set; }
     }
 }

@@ -23,5 +23,4 @@ internal sealed record MethodModel(
     RequestModel Request,
     ImmutableEquatableArray<ParameterModel> Parameters,
     ImmutableEquatableArray<TypeConstraint> Constraints,
-    ImmutableEquatableArray<SubPropertyModel> SubProperties,
     bool IsExplicitInterface);

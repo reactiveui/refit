@@ -319,7 +319,6 @@ public static class GeneratorComponentTests
                 RequestModel.Empty,
                 ImmutableEquatableArray<ParameterModel>.Empty,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
-                ImmutableEquatableArray<SubPropertyModel>.Empty,
                 false);
 
             var source = Emitter.BuildMethodOpening(method, true, true, supportsNullable: true, isAsync: true);
@@ -550,10 +549,10 @@ public static class GeneratorComponentTests
                     true,
                     canGenerateInline,
                     ImmutableEquatableArray<HeaderModel>.Empty,
-                    ImmutableEquatableArray<RequestParameterModel>.Empty),
+                    ImmutableEquatableArray<RequestParameterModel>.Empty,
+                    ImmutableEquatableArray<SubPropertyModel>.Empty),
                 ImmutableEquatableArray<ParameterModel>.Empty,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
-                ImmutableEquatableArray<SubPropertyModel>.Empty,
                 false);
 
         /// <summary>Parses a method declaration for syntax helper tests.</summary>
