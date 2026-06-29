@@ -410,22 +410,7 @@ public static class GeneratedRequestRunner
 #endif
     }
 
-    /// <summary>Adds one pre-boxed configured request property or option value.</summary>
-    /// <param name="request">The request to modify.</param>
-    /// <param name="key">The property key.</param>
-    /// <param name="value">The pre-boxed property value.</param>
-    private static void AddBoxedRequestProperty(HttpRequestMessage request, string key, object value)
-    {
-#if NET6_0_OR_GREATER
-        request.Options.Set(new(key), value);
-#else
-        request.Properties[key] = value;
-#endif
-    }
-
-    /// <summary>
     /// <summary>Appends a parameter to the route, round-tripping segments when required.</summary>
-    /// </summary>
     /// <param name="vsb">The path builder to append to.</param>
     /// <param name="value">The argument value to be added.</param>
     /// <param name="roundTripping">If the fragment is round tripping.</param>
@@ -490,11 +475,9 @@ public static class GeneratedRequestRunner
         ref ValueStringBuilder vsb,
         object value,
         RefitSettings settings,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods |
-                                    DynamicallyAccessedMemberTypes.NonPublicMethods)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
         Type classType,
-        string propertyName
-    )
+        string propertyName)
     {
         var propertyInfo = GetPropertyInfo(classType, propertyName);
 
@@ -517,6 +500,19 @@ public static class GeneratedRequestRunner
         }
 
         throw new ArgumentException(exceptionMessage);
+    }
+
+    /// <summary>Adds one pre-boxed configured request property or option value.</summary>
+    /// <param name="request">The request to modify.</param>
+    /// <param name="key">The property key.</param>
+    /// <param name="value">The pre-boxed property value.</param>
+    private static void AddBoxedRequestProperty(HttpRequestMessage request, string key, object value)
+    {
+#if NET6_0_OR_GREATER
+        request.Options.Set(new(key), value);
+#else
+        request.Properties[key] = value;
+#endif
     }
 
     /// <summary>Serializes a non-special body value through the configured content serializer.</summary>
@@ -590,10 +586,8 @@ public static class GeneratedRequestRunner
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
     private static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
-    
-    /// <summary>
-    /// Retrieves the <see cref="ParameterInfo"/> for a specified method parameter, utilizing an internal cache to optimize subsequent lookups.
-    /// </summary>
+
+    /// <summary>Retrieves the <see cref="ParameterInfo"/> for a specified method parameter, utilizing an internal cache to optimize subsequent lookups.</summary>
     /// <param name="type">The <see cref="Type"/> that contains the method.</param>
     /// <param name="methodName">The name of the method to reflect upon.</param>
     /// <param name="parameterName">The name of the parameter to retrieve.</param>
@@ -613,14 +607,15 @@ public static class GeneratedRequestRunner
 
         var method = type.GetMethod(
             methodName,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static) ?? throw new UnreachableException($"Method '{methodName}' was not found on type '{type.Name}'.");
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                     ?? throw new UnreachableException($"Method '{methodName}' was not found on type '{type.Name}'.");
 
         ParameterInfo? parameter = null;
-        foreach (var p in method.GetParameters())
+        foreach (var parameterInfo in method.GetParameters())
         {
-            if (string.Equals(p.Name, parameterName, StringComparison.Ordinal))
+            if (string.Equals(parameterInfo.Name, parameterName, StringComparison.Ordinal))
             {
-                parameter = p;
+                parameter = parameterInfo;
                 break;
             }
         }
@@ -633,10 +628,8 @@ public static class GeneratedRequestRunner
         _parameterCache.Add(cacheKey, parameter);
         return parameter;
     }
-    
-    /// <summary>
-    /// Retrieves the <see cref="PropertyInfo"/> for a specified property, utilizing an internal cache to optimize subsequent lookups.
-    /// </summary>
+
+    /// <summary>Retrieves the <see cref="PropertyInfo"/> for a specified property, utilizing an internal cache to optimize subsequent lookups.</summary>
     /// <param name="type">The <see cref="Type"/> that contains the property.</param>
     /// <param name="propertyName">The name of the property to retrieve.</param>
     /// <returns>The <see cref="PropertyInfo"/> matching the specified criteria.</returns>
@@ -652,12 +645,8 @@ public static class GeneratedRequestRunner
             return cachedParameter;
         }
 
-        var property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public );
-
-        if (property is null)
-        {
-            throw new UnreachableException($"Property '{propertyName}' was not found on type '{type.Name}'.");
-        }
+        var property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)
+            ?? throw new UnreachableException($"Property '{propertyName}' was not found on type '{type.Name}'.");
 
         _propertyCache.Add(cacheKey, property);
         return property;
