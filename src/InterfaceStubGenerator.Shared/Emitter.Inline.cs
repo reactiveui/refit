@@ -153,6 +153,74 @@ internal static partial class Emitter
 
             """;
     }
+    
+    private static BuildUriData BuildRequestUri1(
+        MethodModel methodModel,
+        ImmutableEquatableArray<RouteFragmentModel> routeFragments,
+        UniqueNameBuilder locals,
+        string settingsLocal)
+    {
+        var relativePath = methodModel.Request.Path;
+        var bodyIndent = Indent(MethodBodyIndentation);
+
+        var data = new BuildUriData();
+
+        if (routeFragments.Count == 0)
+        {
+            data.RequestUriExpression = $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(relativePath)}, {settingsLocal}.UrlResolution)";
+            return data;
+        }
+
+        var valueStringBuilderLocal = locals.New("valueStringBuilder");
+        
+        var sb = data.Constructor;
+        _ = sb.AppendLine();
+        _ = sb.AppendLine($"{bodyIndent}var {valueStringBuilderLocal} = new global::Refit.ValueStringBuilder(stackalloc char[256]);");
+
+        foreach (var fragment in routeFragments)
+        {
+            switch (fragment)
+            {
+                case RouteFragmentModel.Constant constant:
+                    _ = sb.AppendLine($"{bodyIndent}{valueStringBuilderLocal}.Append({ToCSharpStringLiteral(constant.Value)});");
+                    break;
+                case RouteFragmentModel.UnmatchedRouteGuard unmatchedRouteGuard:
+                    {
+                        // need to make this a csharp safe string
+                        var unmatchedRouteParameterError = ToCSharpStringLiteral($"URL {relativePath} has parameter {unmatchedRouteGuard.RawName}, but no method parameter matches");
+                        _ = sb.AppendLine($"{bodyIndent}global::Refit.GeneratedRequestRunner.UnmatchedRouteParameterGuard({settingsLocal}, {unmatchedRouteParameterError});");
+                        break;
+                    }
+                case RouteFragmentModel.StandardParameter standardParameter:
+                    // need to add indent and valueStringName, and settings
+                    // need to add parameterinfo nonsense here
+                    // Could use CallerMember here
+                    // Use nameof()
+                    _ = sb.AppendLine(
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, {standardParameter.MetadataName}, {(standardParameter.IsRoundTripping ? "true" : "false")}, {settingsLocal}, typeof({methodModel.ContainingType}), {ToCSharpStringLiteral(methodModel.Name)}, {ToCSharpStringLiteral(standardParameter.MetadataName)});");
+                    break;
+                case RouteFragmentModel.ObjectAccess objectAccess:
+                    // use nameof for property
+                    _ = data.Constructor.AppendLine(
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AppendObjectPropertyFragment(ref valueStringBuilder, {objectAccess.AccessExpression}, {settingsLocal}, typeof({objectAccess.ParameterType}), {ToCSharpStringLiteral(objectAccess.Property)});");
+                    break;
+                case RouteFragmentModel.RoundTripNotStringError roundTripNotStringError:
+                    {
+                        _ = data.Constructor.AppendLine(
+                            $"""
+                             {bodyIndent}throw new ArgumentException("URL {relativePath} has round-tripping parameter {roundTripNotStringError.MetadataName}, but the type of matched method parameter is {roundTripNotStringError.ParamType}. It must be a string.);
+                             """);
+                        break;
+                    }
+                default:
+                    throw new NotImplementedException(nameof(RouteFragmentModel));
+            }
+        }
+
+        data.RequestUriExpression = $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {valueStringBuilderLocal}.ToString(), {settingsLocal}.UrlResolution)";
+
+        return data;
+    }
 
     private static BuildUriData BuildRequestUri(
         MethodModel methodModel,
@@ -175,16 +243,16 @@ internal static partial class Emitter
 
         var paramValidationDict = BuildParamValidationDict(methodModel.Parameters);
         var objectParamValidationDict = new Dictionary<string, SubPropertyModel>();
-        foreach (var property in methodModel.Request.SubProperties)
-        {
-            // I would prefer to use ToDictionary here, but if I remove this check we have a duplicate key error
-            // This causes 800 tests to fail
-            // I don't know what is causing so many duplicate keys
-            if(!objectParamValidationDict.ContainsKey(property.LowerCaseAccessName))
-            {
-                objectParamValidationDict.Add(property.LowerCaseAccessName, property);
-            }
-        }
+        // foreach (var property in methodModel.Request.SubProperties)
+        // {
+        //     // I would prefer to use ToDictionary here, but if I remove this check we have a duplicate key error
+        //     // This causes 800 tests to fail
+        //     // I don't know what is causing so many duplicate keys
+        //     if(!objectParamValidationDict.ContainsKey(property.LowerCaseAccessName))
+        //     {
+        //         objectParamValidationDict.Add(property.LowerCaseAccessName, property);
+        //     }
+        // }
 
         var valueStringBuilderLocal = locals.New("valueStringBuilder");
 

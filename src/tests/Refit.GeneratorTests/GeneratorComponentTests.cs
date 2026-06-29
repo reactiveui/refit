@@ -549,8 +549,7 @@ public static class GeneratorComponentTests
                     true,
                     canGenerateInline,
                     ImmutableEquatableArray<HeaderModel>.Empty,
-                    ImmutableEquatableArray<RequestParameterModel>.Empty,
-                    ImmutableEquatableArray<SubPropertyModel>.Empty),
+                    ImmutableEquatableArray<RequestParameterModel>.Empty),
                 ImmutableEquatableArray<ParameterModel>.Empty,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
                 false);

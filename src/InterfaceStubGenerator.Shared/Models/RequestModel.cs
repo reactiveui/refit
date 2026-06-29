@@ -12,7 +12,6 @@ namespace Refit.Generator;
 /// <param name="ShouldDisposeResponse">Whether the response should be disposed by the shared runner.</param>
 /// <param name="CanGenerateInline">Whether this method is eligible for generated request construction.</param>
 /// <param name="StaticHeaders">The static headers parsed from inherited interfaces, the declaring interface, and the method.</param>
-/// <param name="Parameters">The parsed request parameter bindings.</param>
 internal sealed record RequestModel(
     string HttpMethod,
     string Path,
@@ -22,8 +21,7 @@ internal sealed record RequestModel(
     bool ShouldDisposeResponse,
     bool CanGenerateInline,
     ImmutableEquatableArray<HeaderModel> StaticHeaders,
-    ImmutableEquatableArray<RequestParameterModel> Parameters,
-    ImmutableEquatableArray<SubPropertyModel> SubProperties)
+    ImmutableEquatableArray<RequestParameterModel> Parameters)
 {
     /// <summary>Gets an empty model used for non-Refit method placeholders.</summary>
     public static RequestModel Empty { get; } = new(
@@ -35,6 +33,5 @@ internal sealed record RequestModel(
         true,
         false,
         ImmutableEquatableArray<HeaderModel>.Empty,
-        ImmutableEquatableArray<RequestParameterModel>.Empty, 
-        ImmutableEquatableArray<SubPropertyModel>.Empty);
+        ImmutableEquatableArray<RequestParameterModel>.Empty);
 }

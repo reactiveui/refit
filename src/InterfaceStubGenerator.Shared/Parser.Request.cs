@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -13,6 +14,23 @@ namespace Refit.Generator;
 /// <content>Request parsing helpers for the Refit source generator.</content>
 internal static partial class Parser
 {
+#if NET7_0_OR_GREATER
+    /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
+    /// <returns>The parameter matching regular expression.</returns>
+    [GeneratedRegex("{(([^/?\\r\\n])*?)}")]
+    private static partial Regex ParameterRegex();
+#else
+    /// <summary>The compiled regular expression that matches URL path parameters.</summary>
+    private static readonly Regex _parameterRegexValue = new(
+        "{(([^/?\\r\\n])*?)}",
+        RegexOptions.Compiled,
+        TimeSpan.FromSeconds(1));
+
+    /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
+    /// <returns>The parameter matching regular expression.</returns>
+    private static Regex ParameterRegex() => _parameterRegexValue;
+#endif
+    
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
@@ -37,7 +55,6 @@ internal static partial class Parser
         var returnTypes = GetRequestReturnTypes(methodSymbol);
         var parameters = ParseRequestParameters(methodSymbol.Parameters, out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
-        var subProperties = GenerateSubProperties(methodSymbol.Parameters);
 
         var canGenerateInline =
             parameterEligibility
@@ -57,8 +74,7 @@ internal static partial class Parser
             returnTypes.DisposeResponse,
             canGenerateInline,
             staticHeaders,
-            parameters,
-            subProperties);
+            parameters);
     }
 
     /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
@@ -216,28 +232,32 @@ internal static partial class Parser
     /// <summary>Builds the constraint models for a set of type parameters.</summary>
     /// <param name="parameters">The parameters to parse.</param>
     /// <returns>The constraint models for the type parameters.</returns>
-    private static ImmutableEquatableArray<SubPropertyModel> GenerateSubProperties(
+    private static Dictionary<string, (IParameterSymbol, IPropertySymbol)> GenerateSubProperties(
         in ImmutableArray<IParameterSymbol> parameters
         )
     {
         if (parameters.Length == 0)
         {
-            return ImmutableEquatableArrayFactory.Empty<SubPropertyModel>();
+            return new();
         }
 
-        var subProperties = new List<SubPropertyModel>();
+        var objectParamValidationDict = new Dictionary<string, (IParameterSymbol, IPropertySymbol)>();
         foreach (var parameter in parameters)
         {
             foreach (var property in GetPublicProperties(parameter.Type))
             {
                 var key = $"{parameter.Name}.{GetMemberAlias(property)}".ToLowerInvariant();
-                
-                // some of these fields are redundant key can be constructed when dictionary is created (might not account for @ symbols)
-                subProperties.Add(new(key, $"{parameter.Name}.{property.Name}", parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), property.Name));
+
+                if (!objectParamValidationDict.ContainsKey(key))
+                {
+                    // some of these fields are redundant key can be constructed when dictionary is created (might not account for @ symbols)
+                    // subProperties.Add(new(key, $"{parameter.Name}.{property.Name}", parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), property.Name));
+                    objectParamValidationDict.Add(key, (parameter, property));
+                }
             }
         }
 
-        return ImmutableEquatableArrayFactory.FromList(subProperties);
+        return objectParamValidationDict;
     }
     
     /// <summary>Gets public properties from.</summary>
@@ -273,6 +293,166 @@ internal static partial class Parser
             currentType = currentType.BaseType;
         }
     }
+    
+     private static (HashSet<IParameterSymbol> Map, ImmutableEquatableArray<RouteFragmentModel> Fragments) ParseParameterMap(
+         string relativePath,
+         IMethodSymbol method,
+         ImmutableArray<IParameterSymbol> parameters)
+    {
+        var ret = new HashSet<IParameterSymbol>(SymbolEqualityComparer.Default);
+            
+        // might have to be relative path, not sure what the difference is 
+        var parameterizedParts = ParameterRegex().Matches(relativePath);
+
+        if (parameterizedParts.Count == 0)
+        {
+            return string.IsNullOrEmpty(relativePath)
+                ? (ret, ImmutableEquatableArray<RouteFragmentModel>.Empty)
+                : (ret, ImmutableEquatableArrayFactory.FromArray<RouteFragmentModel>([new RouteFragmentModel.Constant(relativePath)]));
+        }
+        
+        var fragmentList = new List<RouteFragmentModel>();
+
+        var paramValidationDict = BuildParamValidationDict(method.Parameters);
+        var objectParamValidationDict = GenerateSubProperties(method.Parameters);
+
+        var index = 0;
+
+        for (var i = 0; i < parameterizedParts.Count; i++)
+        {
+            var match = parameterizedParts[i];
+
+            // Add constant value from given http path
+            if (match.Index != index)
+            {
+                fragmentList.Add(new RouteFragmentModel.Constant(relativePath.Substring(index, match.Index - index)));
+            }
+
+            index = match.Index + match.Length;
+
+            AddFragmentForMatch(
+                relativePath,
+                method.Parameters,
+                ret,
+                fragmentList,
+                paramValidationDict,
+                objectParamValidationDict,
+                match);
+        }
+
+        if (index >= relativePath.Length)
+        {
+            return (ret, ImmutableEquatableArrayFactory.FromList(fragmentList));
+        }
+
+        // Add trailing string.
+        var trailingConstant = relativePath[index..];
+        fragmentList.Add(new RouteFragmentModel.Constant(trailingConstant));
+
+        return (ret, ImmutableEquatableArrayFactory.FromList(fragmentList));
+    }
+
+    /// <summary>Builds a lookup of lower-cased URL parameter names to their declaring method parameter.</summary>
+    /// <param name="parameters">The array of method parameters.</param>
+    /// <returns>A map of URL parameter names to method parameters.</returns>
+    private static Dictionary<string, IParameterSymbol> BuildParamValidationDict(ImmutableArray<IParameterSymbol> parameters)
+    {
+        var paramValidationDict = new Dictionary<string, IParameterSymbol>(parameters.Length);
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            paramValidationDict[GetUrlNameForParameter(parameters[i]).ToLowerInvariant()] = parameters[i];
+        }
+
+        return paramValidationDict;
+    }
+
+    /// <summary>Resolves a single parameterized URL fragment against the parameter maps and appends the result.</summary>
+    /// <param name="relativePath">The relative URL path template.</param>
+    /// <param name="parameters">The generated settings local name.</param>
+    /// <param name="ret">The parameter map being built.</param>
+    /// <param name="method">The method being parsed.</param>
+    /// <param name="fragmentList">The fragment list being built.</param>
+    /// <param name="param">The lookups of directly matched parameter names.</param>
+    /// <param name="objectProperty">The lookups of nested object-property names.</param>
+    /// <param name="match">The parameterized URL match being resolved.</param>
+    private static void AddFragmentForMatch(
+        string relativePath,
+        ImmutableArray<IParameterSymbol> parameters,
+        HashSet<IParameterSymbol> ret,
+        List<RouteFragmentModel> fragmentList,
+        Dictionary<string, IParameterSymbol> param,
+        Dictionary<string, (IParameterSymbol, IPropertySymbol)>objectProperty,
+        Match match)
+    {
+        var rawName = match.Groups[1].Value.ToLowerInvariant();
+        var isRoundTripping = rawName.StartsWith("**", StringComparison.Ordinal);
+        var name = isRoundTripping ? rawName[2..] : rawName;
+
+        if (param.TryGetValue(name, out var value))
+        {
+            AddStandardParameter(
+                ret,
+                fragmentList,
+                isRoundTripping,
+                value);
+        }
+        else if (objectProperty.TryGetValue(name, out var value1) && !isRoundTripping)
+        {
+            AddObjectPropertyParameter(
+                value1.Item1,
+                ret,
+                fragmentList,
+                value1.Item2);
+        }
+        else
+        {
+            fragmentList.Add(new RouteFragmentModel.UnmatchedRouteGuard(rawName));
+            fragmentList.Add(new RouteFragmentModel.Constant(match.Value));
+        }
+    }
+
+    /// <summary>Adds a standard (directly matched) route parameter to the parameter map and fragment list.</summary>
+    /// <param name="ret">The parameter map being built.</param>
+    /// <param name="fragmentList">The fragment list being built.</param>
+    /// <param name="isRoundTripping">The parsed parameter name details from the URL template.</param>
+    /// <param name="value">The matched method parameter.</param>
+    private static void AddStandardParameter(
+        HashSet<IParameterSymbol> ret,
+        List<RouteFragmentModel> fragmentList,
+        bool isRoundTripping,
+        IParameterSymbol value)
+    {
+        var paramType = value.Type;
+        if (isRoundTripping && paramType.SpecialType != SpecialType.System_String)
+        {
+            fragmentList.Add(new RouteFragmentModel.RoundTripNotStringError(value.MetadataName, paramType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            return;
+        }
+
+        ret.Add(value);
+        fragmentList.Add(new RouteFragmentModel.StandardParameter(value.MetadataName, isRoundTripping));
+    }
+    
+    /// <summary>Adds an object-property route parameter to the parameter map and fragment list.</summary>
+    /// <param name="parameter">The corresponding method parameter.</param>
+    /// <param name="ret">The parameter map being built.</param>
+    /// <param name="fragmentList">The fragment list being built.</param>
+    /// <param name="property">The matched property symbol.</param>
+    private static void AddObjectPropertyParameter(
+        IParameterSymbol parameter,
+        HashSet<IParameterSymbol> ret,
+        List<RouteFragmentModel> fragmentList,
+        IPropertySymbol property)
+    {
+        ret.Add(parameter);
+        // perhaps this should be parameter metadata name
+        fragmentList.Add(new RouteFragmentModel.ObjectAccess($"{parameter.Name}.{property.Name}", parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), property.Name));
+    }
+
+    /// <summary>Gets the URL name to use for a parameter, honoring any alias attribute.</summary>
+    /// <param name="parameter">The parameter whose URL name is resolved.</param>
+    /// <returns>The aliased or declared parameter name.</returns>
+    private static string GetUrlNameForParameter(IParameterSymbol parameter) => GetMemberAlias(parameter) ?? parameter.MetadataName;
 
     /// <summary>Parses request parameter bindings for the conservative initial inline path.</summary>
     /// <param name="parameters">The method parameters.</param>

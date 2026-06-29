@@ -8,3 +8,20 @@ internal sealed record SubPropertyModel(
     string AccessExpression,
     string ParameterType,
     string Property);
+
+
+// Fragment
+// Constant
+// Standard,
+// Object Property
+// Unmatched
+// Error when not string and round tripping
+
+internal record RouteFragmentModel
+{
+    internal record Constant(string Value) : RouteFragmentModel;
+    internal record ObjectAccess(string AccessExpression, string ParameterType, string Property) : RouteFragmentModel;
+    internal record StandardParameter(string MetadataName, bool IsRoundTripping) : RouteFragmentModel;
+    internal record UnmatchedRouteGuard(string RawName) : RouteFragmentModel;
+    internal record RoundTripNotStringError(string MetadataName, string ParamType) : RouteFragmentModel;
+}
