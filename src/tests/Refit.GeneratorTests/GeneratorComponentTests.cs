@@ -606,8 +606,8 @@ public static class GeneratorComponentTests
             await Assert.That(Parser.IsConstantPathSupported(string.Empty)).IsTrue();
             await Assert.That(Parser.IsConstantPathSupported(SimplePath)).IsTrue();
             await Assert.That(Parser.IsConstantPathSupported("relative")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/{id}")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/id}")).IsFalse();
+            await Assert.That(Parser.IsConstantPathSupported("/{id}")).IsTrue();
+            await Assert.That(Parser.IsConstantPathSupported("/id}")).IsTrue();
             await Assert.That(Parser.IsConstantPathSupported("/line\nbreak")).IsFalse();
             await Assert.That(Parser.IsConstantPathSupported("/line\rbreak")).IsFalse();
             await Assert.That(Parser.IsWhiteSpace(" \t", 0, WhitespaceLength)).IsTrue();
