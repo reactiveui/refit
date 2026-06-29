@@ -297,7 +297,7 @@ internal static partial class Parser
         var paramValidationDict = new Dictionary<string, IParameterSymbol>(parameters.Length);
         for (var i = 0; i < parameters.Length; i++)
         {
-            paramValidationDict[GetUrlNameForParameter(parameters[i]).ToLowerInvariant()] = parameters[i];
+            paramValidationDict[GetUrlNameForSymbol(parameters[i]).ToLowerInvariant()] = parameters[i];
         }
 
         return paramValidationDict;
@@ -321,7 +321,7 @@ internal static partial class Parser
         {
             foreach (var property in GetPublicProperties(parameter.Type))
             {
-                var key = $"{parameter.Name}.{GetMemberAlias(property)}".ToLowerInvariant();
+                var key = $"{parameter.Name}.{GetUrlNameForSymbol(property)}".ToLowerInvariant();
 
                 if (!objectParamValidationDict.ContainsKey(key))
                 {
@@ -451,10 +451,10 @@ internal static partial class Parser
         fragmentList.Add(new RouteFragmentModel.ObjectAccess($"{parameter.Name}.{property.Name}", parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), property.Name));
     }
 
-    /// <summary>Gets the URL name to use for a parameter, honoring any alias attribute.</summary>
-    /// <param name="parameter">The parameter whose URL name is resolved.</param>
+    /// <summary>Gets the URL name to use for a symbol, honoring any alias attribute.</summary>
+    /// <param name="symbol">The symbol whose URL name is resolved.</param>
     /// <returns>The aliased or declared parameter name.</returns>
-    private static string GetUrlNameForParameter(IParameterSymbol parameter) => GetMemberAlias(parameter) ?? parameter.MetadataName;
+    private static string GetUrlNameForSymbol(ISymbol symbol) => GetMemberAlias(symbol) ?? symbol.MetadataName;
 
     /// <summary>Parses request parameter bindings for the conservative initial inline path.</summary>
     /// <param name="parameters">The method parameters.</param>
