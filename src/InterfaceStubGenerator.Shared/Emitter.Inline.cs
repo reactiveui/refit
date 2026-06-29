@@ -190,7 +190,7 @@ internal static partial class Emitter
                     {
                         _ = data.Constructor.AppendLine(
                             $"""
-                             {bodyIndent}throw new ArgumentException("URL {relativePath} has round-tripping parameter {roundTripNotStringError.MetadataName}, but the type of matched method parameter is {roundTripNotStringError.ParamType}. It must be a string.);
+                             {bodyIndent}throw new ArgumentException("URL {relativePath} has round-tripping parameter {roundTripNotStringError.MetadataName}, but the type of matched method parameter is {roundTripNotStringError.ParamType}. It must be a string.");
                              """);
                         break;
                     }

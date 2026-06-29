@@ -1,6 +1,8 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -14,6 +16,10 @@ public static class GeneratedRequestRunner
 {
     /// <summary>The underlying value of the obsolete <c>BodySerializationMethod.Json</c> member.</summary>
     private const int ObsoleteJsonBodySerializationMethodValue = 1;
+
+    private static readonly Dictionary<(Type ParentType, string Property), PropertyInfo> _propertyCache = new ();
+
+    private static readonly Dictionary<(Type, string, string), ParameterInfo> _parameterCache = new ();
 
     /// <summary>Builds the relative request URI for a generated request, joining the client base address with the method path.</summary>
     /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
@@ -408,57 +414,15 @@ public static class GeneratedRequestRunner
         request.Properties[key] = value;
 #endif
     }
-    
-    private static Dictionary<(Type, string, string), ParameterInfo> _parameterCache = new ();
 
-    private static ParameterInfo GetParameterInfo([
-        DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type type,
-        string methodName,
-        string parameterName)
-    {
-        var cacheKey = (type, methodName, parameterName);
-
-        if (_parameterCache.TryGetValue(cacheKey, out var cachedParameter))
-        {
-            return cachedParameter;
-        }
-        
-        var method = type.GetMethod(methodName, 
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-
-        if (method == null)
-        {
-            throw new NotImplementedException();
-        }
-
-        ParameterInfo? parameter = null;
-        foreach (var p in method.GetParameters())
-        {
-            if (string.Equals(p.Name, parameterName, StringComparison.Ordinal))
-            {
-                parameter = p;
-                break;
-            }
-        }
-
-        if (parameter == null)
-        {
-            throw new NotImplementedException();
-        }
-        
-        _parameterCache.Add(cacheKey, parameter);
-        return parameter;
-    }
-    
-     public static void AddStandardParameter(
+    public static void AddStandardParameter(
                 ref ValueStringBuilder vsb,
                 object value,
                 bool roundTripping,
                 RefitSettings settings,
                 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type parentClass,
                 string callerMethod,
-                string parameterName
-               )
+                string parameterName)
     {
         var parameterInfo = GetParameterInfo(parentClass, callerMethod, parameterName);
 
@@ -497,31 +461,6 @@ public static class GeneratedRequestRunner
             sectionStart = i + 1;
         }
     }
-     
-    private static Dictionary<(Type, string), PropertyInfo> _propertyCache = new ();
-
-    private static PropertyInfo GetPropertyInfo([
-            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type type,
-        string propertyName)
-    {
-        var cacheKey = (type, propertyName);
-
-        if (_propertyCache.TryGetValue(cacheKey, out var cachedParameter))
-        {
-            return cachedParameter;
-        }
-        
-        var property = type.GetProperty(propertyName, 
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-
-        if (property == null)
-        {
-            throw new NotImplementedException();
-        }
-
-        _propertyCache.Add(cacheKey, property);
-        return property;
-    }
 
     /// <summary>Appends an object-property-bound path fragment.</summary>
     /// <param name="vsb">The path builder to append to.</param>
@@ -540,27 +479,26 @@ public static class GeneratedRequestRunner
     )
     {
         var propertyInfo = GetPropertyInfo(classType, propertyName);
-        
+
         vsb.Append(StringHelpers.EscapeDataString(settings.UrlParameterFormatter.Format(
             value,
             propertyInfo,
             propertyInfo.PropertyType) ?? string.Empty));
     }
 
-    /// <summary>
-    /// Runtime check for unmatched route support.
-    /// </summary>
+    /// <summary>Runtime check for unmatched route support.</summary>
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="exceptionMessage">Error message for when an unmatched placeholder is not supported.</param>
     public static void UnmatchedRouteParameterGuard(
         RefitSettings settings,
-        string exceptionMessage
-    )
+        string exceptionMessage)
     {
-        if (!settings.AllowUnmatchedRouteParameters)
+        if (settings.AllowUnmatchedRouteParameters)
         {
-            throw new ArgumentException(exceptionMessage);
+            return;
         }
+
+        throw new ArgumentException(exceptionMessage);
     }
 
     /// <summary>Serializes a non-special body value through the configured content serializer.</summary>
@@ -634,4 +572,64 @@ public static class GeneratedRequestRunner
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
     private static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
+    
+    private static ParameterInfo GetParameterInfo(
+        [
+            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type type,
+        string methodName,
+        string parameterName)
+    {
+        var cacheKey = (type, methodName, parameterName);
+
+        if (_parameterCache.TryGetValue(cacheKey, out var cachedParameter))
+        {
+            return cachedParameter;
+        }
+
+        var method = type.GetMethod(
+            methodName,
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static) ?? throw new UnreachableException();
+
+        ParameterInfo? parameter = null;
+        foreach (var p in method.GetParameters())
+        {
+            if (string.Equals(p.Name, parameterName, StringComparison.Ordinal))
+            {
+                parameter = p;
+                break;
+            }
+        }
+
+        if (parameter is null)
+        {
+            throw new NotImplementedException();
+        }
+
+        _parameterCache.Add(cacheKey, parameter);
+        return parameter;
+    }
+    
+    private static PropertyInfo GetPropertyInfo(
+        [
+            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type type,
+        string propertyName)
+    {
+        var cacheKey = (type, propertyName);
+
+        if (_propertyCache.TryGetValue(cacheKey, out var cachedParameter))
+        {
+            return cachedParameter;
+        }
+
+        var property = type.GetProperty(propertyName,
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+
+        if (property is null)
+        {
+            throw new NotImplementedException();
+        }
+
+        _propertyCache.Add(cacheKey, property);
+        return property;
+    }
 }
