@@ -45,7 +45,7 @@ internal static partial class Parser
         {
             return RequestModel.Empty;
         }
-
+        
         var httpMethodAttribute = FindHttpMethodAttribute(
             methodSymbol,
             context.HttpMethodBaseAttributeSymbol)!;
@@ -53,7 +53,8 @@ internal static partial class Parser
         var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass);
         var path = GetHttpPath(httpMethodAttribute);
         var returnTypes = GetRequestReturnTypes(methodSymbol);
-        var parameters = ParseRequestParameters(methodSymbol.Parameters, out var parameterEligibility);
+        var (routeParameterMap, fragmentPath) = ParseParameterRouteMap(path, methodSymbol, methodSymbol.Parameters);
+        var parameters = ParseRequestParameters(methodSymbol.Parameters, routeParameterMap, out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
         var canGenerateInline =
@@ -229,7 +230,7 @@ internal static partial class Parser
         }
     }
 
-     private static (HashSet<IParameterSymbol> Map, ImmutableEquatableArray<RouteFragmentModel> Fragments) ParseParameterMap(
+     private static (HashSet<IParameterSymbol> Map, ImmutableEquatableArray<RouteFragmentModel> Fragments) ParseParameterRouteMap(
          string relativePath,
          IMethodSymbol method,
          ImmutableArray<IParameterSymbol> parameters)
@@ -456,10 +457,12 @@ internal static partial class Parser
 
     /// <summary>Parses request parameter bindings for the conservative initial inline path.</summary>
     /// <param name="parameters">The method parameters.</param>
+    /// <param name="routeParameterMap">Set of parameters that are use in the route.</param>
     /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
     /// <returns>The parsed request parameter models.</returns>
     private static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
         in ImmutableArray<IParameterSymbol> parameters,
+        HashSet<IParameterSymbol> routeParameterMap,
         out bool canGenerateInline)
     {
         if (parameters.Length == 0)
@@ -476,7 +479,7 @@ internal static partial class Parser
 
         for (var i = 0; i < parameters.Length; i++)
         {
-            var parsedParameter = ParseRequestParameter(parameters[i]);
+            var parsedParameter = ParseRequestParameter(parameters[i], routeParameterMap);
             requestParameters[i] = parsedParameter.Parameter;
             bodyCount += parsedParameter.BodyCount;
             cancellationTokenCount += parsedParameter.CancellationTokenCount;
@@ -494,8 +497,10 @@ internal static partial class Parser
 
     /// <summary>Parses one request parameter binding.</summary>
     /// <param name="parameter">The parameter to parse.</param>
+    /// <param name="routeParameterMap">Set of parameters that are use in the route.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter)
+    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter,
+        HashSet<IParameterSymbol> routeParameterMap)
     {
         var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var canBeNull = CanBeNull(parameter.Type, parameter.NullableAnnotation);
@@ -537,9 +542,19 @@ internal static partial class Parser
                 1);
         }
 
-        return TryParsePropertyParameter(parameter, parameterType, out var propertyParameter)
-            ? new(propertyParameter, true, 0, 0, 0)
-            : new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
+        if (TryParsePropertyParameter(parameter, parameterType, out var propertyParameter))
+        {
+            return new(propertyParameter, true, 0, 0, 0);
+        }
+
+        if (routeParameterMap.Contains(parameter))
+        {
+            return new(propertyParameter, true, 0, 0, 0);
+        }
+        else
+        {
+            return new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
+        }
     }
 
     /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
