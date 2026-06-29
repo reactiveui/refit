@@ -125,7 +125,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};{{requestUriData.Constructor.ToString()}}
+            {{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};{{requestUriData.ConstructorStatement.ToString().TrimEnd(Environment.NewLine).ToString()}}
             {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
@@ -155,7 +155,7 @@ internal static partial class Emitter
 
         var valueStringBuilderLocal = locals.New("valueStringBuilder");
         
-        var sb = data.Constructor;
+        var sb = data.ConstructorStatement;
         _ = sb.AppendLine();
         _ = sb.AppendLine($"{bodyIndent}var {valueStringBuilderLocal} = new global::Refit.ValueStringBuilder(stackalloc char[256]);");
 
@@ -183,12 +183,12 @@ internal static partial class Emitter
                     break;
                 case RouteFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property
-                    _ = data.Constructor.AppendLine(
+                    _ = sb.AppendLine(
                         $"{bodyIndent}global::Refit.GeneratedRequestRunner.AppendObjectPropertyFragment(ref valueStringBuilder, {objectAccess.AccessExpression}, {settingsLocal}, typeof({objectAccess.ParameterType}), {ToCSharpStringLiteral(objectAccess.Property)});");
                     break;
                 case RouteFragmentModel.RoundTripNotStringError roundTripNotStringError:
                     {
-                        _ = data.Constructor.AppendLine(
+                        _ = sb.AppendLine(
                             $"""
                              {bodyIndent}throw new ArgumentException("URL {relativePath} has round-tripping parameter {roundTripNotStringError.MetadataName}, but the type of matched method parameter is {roundTripNotStringError.ParamType}. It must be a string.");
                              """);
@@ -579,6 +579,6 @@ internal static partial class Emitter
     private sealed class BuildUriData
     {
         public string? RequestUriExpression { get; set; }
-        public StringBuilder Constructor { get; } = new();
+        public StringBuilder ConstructorStatement { get; } = new();
     }
 }

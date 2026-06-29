@@ -17,9 +17,17 @@ public static class GeneratedRequestRunner
     /// <summary>The underlying value of the obsolete <c>BodySerializationMethod.Json</c> member.</summary>
     private const int ObsoleteJsonBodySerializationMethodValue = 1;
 
+    /// <summary>
+    /// An internal cache that maps a composite key of a parent <see cref="Type"/> and a property name 
+    /// to its corresponding <see cref="PropertyInfo"/>, avoiding redundant reflection overhead.
+    /// </summary>
     private static readonly Dictionary<(Type ParentType, string Property), PropertyInfo> _propertyCache = new ();
 
-    private static readonly Dictionary<(Type, string, string), ParameterInfo> _parameterCache = new ();
+    /// <summary>
+    /// An internal cache that maps a composite key of a parent <see cref="Type"/>, a method name, and a parameter name 
+    /// to its corresponding <see cref="ParameterInfo"/>, avoiding redundant reflection overhead.
+    /// </summary>
+    private static readonly Dictionary<(Type ParentType, string MethodName, string ParameterName), ParameterInfo> _parameterCache = new ();
 
     /// <summary>Builds the relative request URI for a generated request, joining the client base address with the method path.</summary>
     /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
@@ -415,6 +423,16 @@ public static class GeneratedRequestRunner
 #endif
     }
 
+    /// <summary>
+    /// <summary>Appends a parameter to the route, round-tripping segments when required.</summary>
+    /// </summary>
+    /// <param name="vsb">The path builder to append to.</param>
+    /// <param name="value">The argument value to be added.</param>
+    /// <param name="roundTripping">If the fragment is round tripping.</param>
+    /// <param name="settings">The Refit settings controlling formatting.</param>
+    /// <param name="parentClass">Type of callind methods class, used to get ParameterInfo.</param>
+    /// <param name="callerMethod">Name of the calling method, used to get ParameterInfo.</param>
+    /// <param name="parameterName">Name of the parameter to be appended, used to get the ParameterInfo.</param>
     public static void AddStandardParameter(
                 ref ValueStringBuilder vsb,
                 object value,
@@ -462,7 +480,7 @@ public static class GeneratedRequestRunner
         }
     }
 
-    /// <summary>Appends an object-property-bound path fragment.</summary>
+    /// <summary>Appends an object-property to the route.</summary>
     /// <param name="vsb">The path builder to append to.</param>
     /// <param name="value">The parameter property value to be appended.</param>
     /// <param name="settings">The Refit settings to use.</param>
@@ -573,6 +591,13 @@ public static class GeneratedRequestRunner
     /// <returns>The sanitized value.</returns>
     private static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
     
+    /// <summary>
+    /// Retrieves the <see cref="ParameterInfo"/> for a specified method parameter, utilizing an internal cache to optimize subsequent lookups.
+    /// </summary>
+    /// <param name="type">The <see cref="Type"/> that contains the method.</param>
+    /// <param name="methodName">The name of the method to reflect upon.</param>
+    /// <param name="parameterName">The name of the parameter to retrieve.</param>
+    /// <returns>The <see cref="ParameterInfo"/> matching the specified criteria.</returns>
     private static ParameterInfo GetParameterInfo(
         [
             DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type type,
@@ -588,7 +613,7 @@ public static class GeneratedRequestRunner
 
         var method = type.GetMethod(
             methodName,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static) ?? throw new UnreachableException();
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static) ?? throw new UnreachableException($"Method '{methodName}' was not found on type '{type.Name}'.");
 
         ParameterInfo? parameter = null;
         foreach (var p in method.GetParameters())
@@ -602,13 +627,19 @@ public static class GeneratedRequestRunner
 
         if (parameter is null)
         {
-            throw new NotImplementedException();
+            throw new UnreachableException($"Parameter '{parameterName}' was not found on method '{methodName}'.");
         }
 
         _parameterCache.Add(cacheKey, parameter);
         return parameter;
     }
     
+    /// <summary>
+    /// Retrieves the <see cref="PropertyInfo"/> for a specified property, utilizing an internal cache to optimize subsequent lookups.
+    /// </summary>
+    /// <param name="type">The <see cref="Type"/> that contains the property.</param>
+    /// <param name="propertyName">The name of the property to retrieve.</param>
+    /// <returns>The <see cref="PropertyInfo"/> matching the specified criteria.</returns>
     private static PropertyInfo GetPropertyInfo(
         [
             DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]Type type,
@@ -621,12 +652,11 @@ public static class GeneratedRequestRunner
             return cachedParameter;
         }
 
-        var property = type.GetProperty(propertyName,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+        var property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public );
 
         if (property is null)
         {
-            throw new NotImplementedException();
+            throw new UnreachableException($"Property '{propertyName}' was not found on type '{type.Name}'.");
         }
 
         _propertyCache.Add(cacheKey, property);
