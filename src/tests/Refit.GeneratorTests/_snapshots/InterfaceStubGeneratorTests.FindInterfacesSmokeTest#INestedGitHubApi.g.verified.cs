@@ -45,7 +45,6 @@ namespace Refit.Implementation
                 var valueStringBuilder = new global::Refit.ValueStringBuilder(stackalloc char[256]);
                 valueStringBuilder.Append("/users/");
                 global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, userName, false, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi), "GetUser", "userName");
-
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
@@ -97,7 +96,6 @@ namespace Refit.Implementation
                 valueStringBuilder.Append("/orgs/");
                 global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, orgName, false, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi), "GetOrgMembers", "orgName");
                 valueStringBuilder.Append("/members");
-
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;

@@ -53,7 +53,6 @@ namespace Refit.Implementation
                 var valueStringBuilder = new global::Refit.ValueStringBuilder(stackalloc char[256]);
                 valueStringBuilder.Append("/users/");
                 global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, user, false, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient), "Get", "user");
-
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
