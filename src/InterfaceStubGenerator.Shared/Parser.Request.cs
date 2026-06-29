@@ -303,6 +303,7 @@ internal static partial class Parser
                 new(
                     parameter.MetadataName,
                     parameterType,
+                    parameter.GetAttributes(),
                     RequestParameterKind.CancellationToken,
                     canBeNull,
                     string.Empty,
@@ -431,6 +432,7 @@ internal static partial class Parser
             bodyParameter = new(
                     parameter.MetadataName,
                     parameterType,
+                    parameter.GetAttributes(),
                     RequestParameterKind.Body,
                     CanBeNull(parameter.Type, parameter.NullableAnnotation),
                     string.Empty,
@@ -446,6 +448,7 @@ internal static partial class Parser
         bodyParameter = new(
             parameter.MetadataName,
             parameterType,
+            parameter.GetAttributes(),
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,
@@ -674,6 +677,7 @@ internal static partial class Parser
             headerParameter = new(
                 parameter.MetadataName,
                 parameterType,
+                parameter.GetAttributes(),
                 RequestParameterKind.Header,
                 CanBeNull(parameter.Type, parameter.NullableAnnotation),
                 headerName.Trim(),
@@ -709,6 +713,7 @@ internal static partial class Parser
                 headerCollectionParameter = new(
                     parameter.MetadataName,
                     parameterType,
+                    parameter.GetAttributes(),
                     RequestParameterKind.HeaderCollection,
                     CanBeNull(parameter.Type, parameter.NullableAnnotation),
                     string.Empty,
@@ -750,6 +755,7 @@ internal static partial class Parser
             propertyParameter = new(
                 parameter.MetadataName,
                 parameterType,
+                parameter.GetAttributes(),
                 RequestParameterKind.Property,
                 CanBeNull(parameter.Type, parameter.NullableAnnotation),
                 string.Empty,
@@ -773,6 +779,7 @@ internal static partial class Parser
         new(
             parameter.MetadataName,
             parameterType,
+            parameter.GetAttributes(),
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,
@@ -790,6 +797,7 @@ internal static partial class Parser
         new(
             parameter.MetadataName,
             parameterType,
+            parameter.GetAttributes(),
             RequestParameterKind.Path,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,

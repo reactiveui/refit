@@ -1,2 +1,7 @@
 #nullable enable
+Refit.GeneratedParameterAttributeProvider
+Refit.GeneratedParameterAttributeProvider.GeneratedParameterAttributeProvider(System.Collections.Generic.Dictionary<System.Type!, object![]!>! attributes) -> void
+Refit.GeneratedParameterAttributeProvider.GetCustomAttributes(bool inherit) -> object![]!
+Refit.GeneratedParameterAttributeProvider.GetCustomAttributes(System.Type! attributeType, bool inherit) -> object![]!
+Refit.GeneratedParameterAttributeProvider.IsDefined(System.Type! attributeType, bool inherit) -> bool
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, params (string! key, string? value)[]! uriParams) -> string!

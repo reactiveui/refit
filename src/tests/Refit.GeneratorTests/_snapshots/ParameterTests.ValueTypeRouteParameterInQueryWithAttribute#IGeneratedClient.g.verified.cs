@@ -46,20 +46,20 @@ namespace Refit.Implementation
                 Client = client;
                 _settings = settings;
             }
-            /// <summary>Cached attribute provider for the generated Get method's user parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>() {{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute() } }});
+            /// <summary>Cached attribute provider for the generated Find method's q parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______qAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>() {{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute()} }});
 
             /// <inheritdoc />
-            public global::System.Threading.Tasks.Task<string> Get(string @user)
+            public global::System.Threading.Tasks.Task<string[]> Find(string? @q)
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", ("user", _settings.UrlParameterFormatter.Format(user, ______userAttributeProvider, typeof(string)))), refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/todos?q={q}", ("q", _settings.UrlParameterFormatter.Format(q, ______qAttributeProvider, typeof(string)))), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;
                 #endif
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
-                return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
+                return global::Refit.GeneratedRequestRunner.SendAsync<string[], string[]>(
                     this.Client,
                     refitRequest,
                     refitSettings,

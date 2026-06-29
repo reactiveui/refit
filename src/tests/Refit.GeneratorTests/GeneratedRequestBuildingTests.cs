@@ -1038,13 +1038,13 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}", ("aVal", aVal.ToString()))""");
+        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}", ("aVal""");
     }
 
     /// <summary>Verifies that path parameters are supported by the source generator.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task UsesFallbackForQueryParameters()
+    public async Task UsesGeneratedRequestBuilderForTemplatedQueryParameters()
     {
         const string source =
             """
@@ -1056,6 +1056,32 @@ public class GeneratedRequestBuildingTests
             public interface IGeneratedClient
             {
                 [Get("/a?b={bVal}")]
+                Task Sample(string bVal);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains("GeneratedRequestRunner.BuildRequestPath(");
+    }
+
+    /// <summary>Verifies that path parameters are supported by the source generator.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UsesFallbackForNonTemplatedQueryParameters()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/a")]
                 Task Sample(string bVal);
             }
             """;

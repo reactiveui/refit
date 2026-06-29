@@ -3,6 +3,9 @@
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using SymbolDisplayFormat = Microsoft.CodeAnalysis.SymbolDisplayFormat;
 
 namespace Refit.Generator;
 
@@ -115,7 +118,20 @@ internal static partial class Emitter
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
 
         // Build path
-        var parameters = GetParametersArg(request);
+        var parameterInfoNames = GetParameterInfoUniqueNames(request, uniqueNames);
+        var parameters = GetParametersArg(request, parameterInfoNames);
+        var paramInfoSb = new StringBuilder();
+
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind is RequestParameterKind.CancellationToken)
+            {
+                continue;
+            }
+
+            var parameterName = parameterInfoNames[parameter.Name];
+            BuildParameterInfoField(parameter, methodModel.DeclaredMethod, parameterName, paramInfoSb);
+        }
 
         var pathExpression = parameters.Length > 0
             ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}{parameters})"
@@ -131,7 +147,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
+            {{paramInfoSb}}{{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
             {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
@@ -141,7 +157,132 @@ internal static partial class Emitter
 
             """;
 
-        static string GetParametersArg(RequestModel request)
+        static string GetParameterInfoFieldName(string parameterName, UniqueNameBuilder uniqueNames) =>
+            uniqueNames.New($"______{parameterName}AttributeProvider");
+
+        static StringBuilder AppendSeparator(int i, StringBuilder sb, string separator = ", ")
+        {
+            return i <= 0 ? sb : sb.Append(separator);
+        }
+        static StringBuilder AppendJoining(string value, int i, StringBuilder sb, string separator = ", ")
+        {
+            return AppendSeparator(i, sb, separator).Append(value);
+        }
+
+        static string ConstantValueToString(TypedConstant arg)
+        {
+            var result = string.Empty;
+
+            if (!arg.IsNull)
+            {
+                result = arg.Kind switch
+                {
+                    TypedConstantKind.Enum =>
+                        $"({arg.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}){arg.Value!}",
+                    TypedConstantKind.Primitive => SymbolDisplay.FormatPrimitive(arg.Value!, true, false) ?? string.Empty,
+                    TypedConstantKind.Type =>
+                        $"typeof({arg.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})",
+                    TypedConstantKind.Array =>
+                        $"new[] {{ {string.Join(", ", arg.Values.Select(ConstantValueToString))} }}",
+                    _ => throw new NotSupportedException($"The type {arg.Kind} is not supported.")
+                };
+            }
+
+            return result.Length > 0 ? result : "null";
+        }
+        static void AppendAttributeValue(AttributeData attribute, StringBuilder sb0)
+        {
+            var typeName = attribute.AttributeClass!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            _ = sb0.Append("new ").Append(typeName).Append('(');
+            var i = 0;
+
+            foreach (var arg in attribute.ConstructorArguments)
+            {
+                _ = AppendJoining(ConstantValueToString(arg), i++, sb0);
+            }
+
+            _ = sb0.Append(')');
+            if (attribute.NamedArguments.Length < 1)
+            {
+                return;
+            }
+
+            i = 0;
+            _ = sb0.Append("{ ");
+            foreach (var arg in attribute.NamedArguments)
+            {
+                _ = AppendSeparator(i++, sb0);
+                _ = sb0.Append(arg.Key).Append(" = ").Append(ConstantValueToString(arg.Value));
+            }
+
+            _ = sb0.Append(" }");
+        }
+        static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, StringBuilder sb)
+        {
+            // Build the initializer.
+            var memberIndent = Indent(MethodMemberIndentation);
+            Dictionary<string, List<AttributeData>> grouped = new();
+
+            foreach (var attribute in parameter.Attributes)
+            {
+                var attributeClass = attribute.AttributeClass;
+                if (attributeClass is null)
+                {
+                    continue;
+                }
+
+                var key = $"typeof({attributeClass.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
+                if (grouped.TryGetValue(key, out var groupedAttributes))
+                {
+                    groupedAttributes.Add(attribute);
+                }
+                else
+                {
+                    grouped.Add(key, [attribute]);
+                }
+            }
+
+            const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
+            _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
+                .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
+                .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ")
+                .Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("() {");
+            var i = 0;
+            if (grouped.Count < 1)
+            {
+                _ = sb.Append("{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute() } }");
+            }
+            else
+            {
+                foreach (var kv in grouped)
+                {
+                    _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
+                    foreach (var arg in kv.Value)
+                    {
+                        AppendAttributeValue(arg, sb);
+                    }
+
+                    _ = sb.Append("} }");
+                }
+            }
+
+            _ = sb.AppendLine("});");
+        }
+
+        static Dictionary<string, string> GetParameterInfoUniqueNames(
+            RequestModel request,
+            UniqueNameBuilder uniqueNames)
+        {
+            var dict = new Dictionary<string, string>();
+            foreach (var parameter in request.Parameters)
+            {
+                var parameterInfoFieldName = GetParameterInfoFieldName(parameter.Name, uniqueNames);
+                dict.Add(parameter.Name, parameterInfoFieldName);
+            }
+
+            return dict;
+        }
+        static string GetParametersArg(RequestModel request, Dictionary<string, string> uniqueNameLookup)
         {
             var parametersSb = new StringBuilder();
             foreach (var parameter in request.Parameters)
@@ -151,16 +292,15 @@ internal static partial class Emitter
                     continue;
                 }
 
-                _ = parametersSb.Append(", ").Append('(').Append(ToCSharpStringLiteral(parameter.Name)).Append(", ").Append(parameter.Name);
-                if (parameter.Type != "string")
-                {
-                    if (parameter.CanBeNull)
-                    {
-                        _ = parametersSb.Append('?');
-                    }
-
-                    _ = parametersSb.Append(".ToString()");
-                }
+                _ = parametersSb.Append(", ").Append('(').Append(ToCSharpStringLiteral(parameter.Name)).Append(", ");
+                var parameterInfoFieldName = uniqueNameLookup[parameter.Name];
+                _ = parametersSb.Append("_settings.UrlParameterFormatter.Format(")
+                    .Append(parameter.Name)
+                    .Append(", ")
+                    .Append(parameterInfoFieldName)
+                    .Append(", ")
+                    .Append("typeof(").Append(parameter.Type).Append(')')
+                    .Append(')');
 
                 _ = parametersSb.Append(')');
             }

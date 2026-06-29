@@ -32,20 +32,16 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the path is supported.</returns>
     internal static bool IsPathSupported(string path)
     {
-        var queryStart = path.IndexOf('?');
-        var querySegment = queryStart < 0 ? ReadOnlySpan<char>.Empty : path.AsSpan(queryStart + 1);
         return (path.Length == 0 || path[0] == '/')
-        && IsPathTemplateValid(path)
-        && querySegment.IndexOf('{') < 0
-        && querySegment.IndexOf('}') < 0
-        && path.IndexOf('\\') < 0
-        && path.IndexOf('\r') < 0
-        && path.IndexOf('\n') < 0;
+            && IsPathTemplateValid(path)
+            && path.IndexOf('\\') < 0
+            && path.IndexOf('\r') < 0
+            && path.IndexOf('\n') < 0;
 
         static bool IsPathTemplateValid(ReadOnlySpan<char> path)
         {
-            int openingBraces = 0;
-            int closingBraces = 0;
+            var openingBraces = 0;
+            var closingBraces = 0;
 
             foreach (var c in path)
             {
