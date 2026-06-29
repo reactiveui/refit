@@ -3,20 +3,9 @@
 // See the LICENSE file in the project root for full license information.
 namespace Refit.Generator;
 
-internal sealed record SubPropertyModel(
-    string LowerCaseAccessName,
-    string AccessExpression,
-    string ParameterType,
-    string Property);
-
-
-// Fragment
-// Constant
-// Standard,
-// Object Property
-// Unmatched
-// Error when not string and round tripping
-
+/// <summary>
+/// Union data type representing dynamic route parameter value.
+/// </summary>
 internal record RouteFragmentModel
 {
     internal record Constant(string Value) : RouteFragmentModel;
