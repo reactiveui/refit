@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -21,13 +22,13 @@ public static class GeneratedRequestRunner
     /// An internal cache that maps a composite key of a parent <see cref="Type"/> and a property name 
     /// to its corresponding <see cref="PropertyInfo"/>, avoiding redundant reflection overhead.
     /// </summary>
-    private static readonly Dictionary<(Type ParentType, string Property), PropertyInfo> _propertyCache = new ();
+    private static readonly ConcurrentDictionary<(Type ParentType, string Property), PropertyInfo> _propertyCache = new ();
 
     /// <summary>
     /// An internal cache that maps a composite key of a parent <see cref="Type"/>, a method name, and a parameter name 
     /// to its corresponding <see cref="ParameterInfo"/>, avoiding redundant reflection overhead.
     /// </summary>
-    private static readonly Dictionary<(Type ParentType, string MethodName, string ParameterName), ParameterInfo> _parameterCache = new ();
+    private static readonly ConcurrentDictionary<(Type ParentType, string MethodName, string ParameterName), ParameterInfo> _parameterCache = new ();
 
     /// <summary>Builds the relative request URI for a generated request, joining the client base address with the method path.</summary>
     /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
@@ -625,7 +626,7 @@ public static class GeneratedRequestRunner
             throw new UnreachableException($"Parameter '{parameterName}' was not found on method '{methodName}'.");
         }
 
-        _parameterCache.Add(cacheKey, parameter);
+        _parameterCache.TryAdd(cacheKey, parameter);
         return parameter;
     }
 
@@ -648,7 +649,7 @@ public static class GeneratedRequestRunner
         var property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)
             ?? throw new UnreachableException($"Property '{propertyName}' was not found on type '{type.Name}'.");
 
-        _propertyCache.Add(cacheKey, property);
+        _propertyCache.TryAdd(cacheKey, property);
         return property;
     }
 }
