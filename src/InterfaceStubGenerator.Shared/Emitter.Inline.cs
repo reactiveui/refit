@@ -131,7 +131,7 @@ internal static partial class Emitter
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
-        var requestUriData = BuildRequestUri(methodModel, locals, settingsLocal);
+        var requestUriData = BuildRequestUri1(methodModel, locals, settingsLocal);
         var requestUriExpression =
             requestUriData.RequestUriExpression!;
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
@@ -156,16 +156,16 @@ internal static partial class Emitter
     
     private static BuildUriData BuildRequestUri1(
         MethodModel methodModel,
-        ImmutableEquatableArray<RouteFragmentModel> routeFragments,
         UniqueNameBuilder locals,
         string settingsLocal)
     {
         var relativePath = methodModel.Request.Path;
+        var routeFragments = methodModel.Request.RouteFragments;
         var bodyIndent = Indent(MethodBodyIndentation);
 
         var data = new BuildUriData();
 
-        if (routeFragments.Count == 0)
+        if (routeFragments.Count == 0 || (routeFragments.Count == 1 && routeFragments[0] is RouteFragmentModel.Constant))
         {
             data.RequestUriExpression = $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(relativePath)}, {settingsLocal}.UrlResolution)";
             return data;

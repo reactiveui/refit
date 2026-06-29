@@ -75,7 +75,8 @@ internal static partial class Parser
             returnTypes.DisposeResponse,
             canGenerateInline,
             staticHeaders,
-            parameters);
+            parameters,
+            fragmentPath);
     }
 
     /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
