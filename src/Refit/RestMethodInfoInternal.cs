@@ -854,7 +854,7 @@ internal class RestMethodInfoInternal
 #if NET7_0_OR_GREATER
     /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>
     /// <returns>The parameter matching regular expression.</returns>
-    [GeneratedRegex("{(([^/?\\r\\n])*?)}")]
+    [GeneratedRegex("{(([^/?\\r\\n])*?)}", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
     private static partial Regex ParameterRegex();
 #else
     /// <summary>Gets the compiled regular expression that matches URL path parameters.</summary>

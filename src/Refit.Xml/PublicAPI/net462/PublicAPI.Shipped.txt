@@ -25,3 +25,5 @@ Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlReaderSettin
 Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlReaderSettings! readerSettings, System.Xml.XmlWriterSettings! writerSettings) -> void
 Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlWriterSettings! writerSettings) -> void
 Refit.XmlContentSerializer.DeserializeFromString<T>(string! content) -> T?
+Refit.XmlReaderWriterSettings.AllowDtdProcessing.get -> bool
+Refit.XmlReaderWriterSettings.AllowDtdProcessing.set -> void

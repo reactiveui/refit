@@ -937,6 +937,38 @@ public class GeneratedRequestBuildingTests
             "global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<global::RefitGeneratorTest.LoginForm>(");
     }
 
+    /// <summary>Verifies special characters in a form field alias are escaped in the generated descriptor literal.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UrlEncodedFormBodyEscapesSpecialCharactersInFieldNames()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public class QuotedForm
+            {
+                [AliasAs("a\"b\\c")]
+                public string Value { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Post("/login")]
+                Task Login([Body(BodySerializationMethod.UrlEncoded)] QuotedForm form);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains("\"a\\\"b\\\\c\"");
+    }
+
     /// <summary>Verifies a string-typed form body keeps the reflection-based content path.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

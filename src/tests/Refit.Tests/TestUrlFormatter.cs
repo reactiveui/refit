@@ -44,7 +44,7 @@ public class TestUrlFormatter : IUrlParameterFormatter
     /// <returns>The string representation of the value.</returns>
     public string? Format(object? value, ICustomAttributeProvider attributeProvider, Type type)
     {
-        if (!Equals(attributeProvider, _expectedAttributeProviders[_index]))
+        if (!SameMetadata(attributeProvider, _expectedAttributeProviders[_index]))
         {
             throw new InvalidOperationException(
                 $"Unexpected attribute provider at index {_index}.");
@@ -66,4 +66,26 @@ public class TestUrlFormatter : IUrlParameterFormatter
         await Assert.That(_index).IsEqualTo(_expectedAttributeProviders.Length);
         await Assert.That(_index).IsEqualTo(_expectedTypes.Length);
     }
+
+    /// <summary>
+    /// Compares two attribute providers by stable metadata identity rather than reference.
+    /// The runtime's reflection cache can evict and return a different <see cref="ParameterInfo"/>
+    /// (or <see cref="MemberInfo"/>) instance for the same member under memory pressure, so a
+    /// reference comparison is unreliable across separate reflection lookups.
+    /// </summary>
+    /// <param name="actual">The attribute provider received by the formatter.</param>
+    /// <param name="expected">The attribute provider the test expects.</param>
+    /// <returns><see langword="true"/> if both describe the same metadata element.</returns>
+    private static bool SameMetadata(ICustomAttributeProvider actual, ICustomAttributeProvider expected) =>
+        ReferenceEquals(actual, expected)
+            || (actual, expected) switch
+            {
+                (ParameterInfo a, ParameterInfo b) =>
+                    a.Position == b.Position
+                    && a.Member.MetadataToken == b.Member.MetadataToken
+                    && a.Member.Module == b.Member.Module,
+                (MemberInfo a, MemberInfo b) =>
+                    a.MetadataToken == b.MetadataToken && a.Module == b.Module,
+                _ => Equals(actual, expected),
+            };
 }

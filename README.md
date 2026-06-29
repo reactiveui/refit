@@ -40,6 +40,7 @@ services
 
 * [Sponsors](#sponsors)
 * [Where does this work?](#where-does-this-work)
+    * [Breaking changes in V13.x](#breaking-changes-in-v13x)
     * [Breaking changes in V12.x](#breaking-changes-in-v12x)
     * [Breaking changes in 11.x](#breaking-changes-in-11x)
     * [Breaking changes in 6.x](#breaking-changes-in-6x)
@@ -102,6 +103,34 @@ Refit currently supports the following platforms and modern .NET targets:
 * Uno Platform
 
 ### SDK Requirements
+
+### V13.x.x
+
+#### Breaking changes in V13.x
+
+Refit 13 hardens the default security posture from a security audit. The new behavior is safe by default; the changes
+below only affect code that previously relied on the less-secure defaults.
+
+* **XML responses no longer process DTDs.** `XmlContentSerializer` now forces `DtdProcessing.Prohibit` and clears the
+  `XmlResolver` on every read, blocking XML External Entity (XXE) and entity-expansion ("billion laughs") attacks. If
+  you were deserializing trusted XML that depends on a DTD or external entities, that content will now throw. We
+  **strongly recommend against re-enabling DTD processing**, but if your XML comes from a fully trusted source you can
+  opt out via the obsolete `XmlReaderWriterSettings.AllowDtdProcessing` flag (marked `[Obsolete]` deliberately, so it
+  surfaces a compiler warning) - you must also configure `DtdProcessing`/`XmlResolver` yourself on `ReaderSettings`.
+  Prefer pre-processing untrusted documents instead.
+* **Newtonsoft.Json no longer inherits an unsafe global `TypeNameHandling`.** When you do not pass explicit
+  `JsonSerializerSettings`, `NewtonsoftJsonContentSerializer` now forces `TypeNameHandling.None` even if
+  `JsonConvert.DefaultSettings` configured a different value, closing a known remote-code-execution gadget vector on
+  response bodies. If you genuinely need polymorphic (`$type`) deserialization, opt in explicitly by passing your own
+  `JsonSerializerSettings` (ideally constrained with a `SerializationBinder`).
+
+The release also adds two opt-in, non-breaking knobs on `RefitSettings` for hardening exception handling:
+
+* `RefitSettings.ExceptionRedactor` — a hook invoked before an `ApiException` propagates, so you can scrub the
+  `Authorization` header, request/response bodies, and `Set-Cookie` before they reach logging or telemetry pipelines
+  that serialize exceptions.
+* `RefitSettings.MaxExceptionContentLength` — caps how many characters of an error response body are read into
+  `ApiException.Content`, bounding memory use against hostile or oversized error responses. Defaults to unbounded.
 
 ### V12.x.x
 

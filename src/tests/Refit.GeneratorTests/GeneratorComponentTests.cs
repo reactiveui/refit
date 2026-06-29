@@ -209,12 +209,63 @@ public static class GeneratorComponentTests
         {
             var builder = new StringBuilder();
 
-            foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', 'x' })
+            foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\u0085', '\u2028', '\u2029', 'x' })
             {
                 Emitter.AppendEscapedCharacter(builder, value);
             }
 
-            await Assert.That(builder.ToString()).IsEqualTo(@"\\\""\0\a\b\f\n\r\t\vx");
+            await Assert.That(builder.ToString()).IsEqualTo(@"\\\""\0\a\b\f\n\r\t\v\u0085\u2028\u2029x");
+        }
+
+        /// <summary>Verifies the string-literal escape lookup for special, line-terminator, and verbatim characters.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task EscapeSequence_ReturnsEscapesForSpecialCharactersAndNullOtherwise()
+        {
+            await Assert.That(Emitter.EscapeSequence('\\')).IsEqualTo(@"\\");
+            await Assert.That(Emitter.EscapeSequence('"')).IsEqualTo("\\\"");
+            await Assert.That(Emitter.EscapeSequence('\0')).IsEqualTo(@"\0");
+            await Assert.That(Emitter.EscapeSequence('\a')).IsEqualTo(@"\a");
+            await Assert.That(Emitter.EscapeSequence('\b')).IsEqualTo(@"\b");
+            await Assert.That(Emitter.EscapeSequence('\f')).IsEqualTo(@"\f");
+            await Assert.That(Emitter.EscapeSequence('\n')).IsEqualTo(@"\n");
+            await Assert.That(Emitter.EscapeSequence('\r')).IsEqualTo(@"\r");
+            await Assert.That(Emitter.EscapeSequence('\t')).IsEqualTo(@"\t");
+            await Assert.That(Emitter.EscapeSequence('\v')).IsEqualTo(@"\v");
+            await Assert.That(Emitter.EscapeSequence('\u0085')).IsEqualTo(@"\u0085");
+            await Assert.That(Emitter.EscapeSequence('\u2028')).IsEqualTo(@"\u2028");
+            await Assert.That(Emitter.EscapeSequence('\u2029')).IsEqualTo(@"\u2029");
+            await Assert.That(Emitter.EscapeSequence('x')).IsNull();
+        }
+
+        /// <summary>Verifies the rendered length of a quoted literal accounts for escapes and the null keyword.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task LiteralOrNullLength_AccountsForEscapesAndNull()
+        {
+            const int NullLength = 4;
+            const int PlainQuotedLength = 5;
+
+            // '"' wrapper (2) + 'a' (1) + '"' escape (2) + U+2028 escape (6) = 11.
+            const int EscapedLength = 11;
+
+            await Assert.That(Emitter.LiteralOrNullLength(null)).IsEqualTo(NullLength);
+            await Assert.That(Emitter.LiteralOrNullLength("abc")).IsEqualTo(PlainQuotedLength);
+            await Assert.That(Emitter.LiteralOrNullLength("a\"\u2028")).IsEqualTo(EscapedLength);
+        }
+
+        /// <summary>Verifies the decimal length helper for zero, single-digit, and multi-digit values.</summary>
+        /// <returns>A task representing the asynchronous test.</returns>
+        [Test]
+        public async Task Int32Length_HandlesZeroAndMultipleDigits()
+        {
+            const int SingleDigit = 1;
+            const int ThreeDigits = 3;
+            const int PositiveThreeDigitValue = 123;
+
+            await Assert.That(Emitter.Int32Length(0)).IsEqualTo(SingleDigit);
+            await Assert.That(Emitter.Int32Length(SingleDigit)).IsEqualTo(SingleDigit);
+            await Assert.That(Emitter.Int32Length(PositiveThreeDigitValue)).IsEqualTo(ThreeDigits);
         }
 
         /// <summary>Verifies body buffering and streaming expressions for all supported modes.</summary>
@@ -752,7 +803,7 @@ public static class GeneratorComponentTests
         {
             var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
                 .Split(Path.PathSeparator)
-                .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path));
+                .Select(Fixture.GetMetadataReference);
 
             return CSharpCompilation.Create(
                 "TypeSymbolTests",
