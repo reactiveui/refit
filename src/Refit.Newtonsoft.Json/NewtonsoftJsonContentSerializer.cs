@@ -20,11 +20,26 @@ public sealed class NewtonsoftJsonContentSerializer(
     private const int QuotePairLength = 2;
 
     /// <summary>The <see cref="Lazy{T}"/> instance providing the JSON serialization settings to use</summary>
+    /// <remarks>
+    /// When the caller does not supply explicit settings, any settings inherited from
+    /// <see cref="JsonConvert.DefaultSettings"/> have <see cref="TypeNameHandling"/> forced to
+    /// <see cref="TypeNameHandling.None"/>. A globally configured non-<see cref="TypeNameHandling.None"/>
+    /// value would otherwise let an attacker-controlled HTTP response body drive polymorphic type
+    /// resolution (a known remote-code-execution gadget vector). Callers who genuinely need
+    /// polymorphic deserialization must opt in by passing their own <see cref="JsonSerializerSettings"/>.
+    /// </remarks>
     private readonly Lazy<JsonSerializerSettings> _jsonSerializerSettings =
         new(() =>
-            jsonSerializerSettings
-            ?? JsonConvert.DefaultSettings?.Invoke()
-            ?? new JsonSerializerSettings());
+        {
+            if (jsonSerializerSettings is not null)
+            {
+                return jsonSerializerSettings;
+            }
+
+            var settings = JsonConvert.DefaultSettings?.Invoke() ?? new JsonSerializerSettings();
+            settings.TypeNameHandling = TypeNameHandling.None;
+            return settings;
+        });
 
     /// <summary>Initializes a new instance of the <see cref="NewtonsoftJsonContentSerializer"/> class.</summary>
     public NewtonsoftJsonContentSerializer()

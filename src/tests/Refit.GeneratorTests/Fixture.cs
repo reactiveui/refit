@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -20,6 +21,14 @@ public static class Fixture
 {
     /// <summary>The runtime data key containing framework assemblies available to the current test host.</summary>
     private const string TrustedPlatformAssemblies = "TRUSTED_PLATFORM_ASSEMBLIES";
+
+    /// <summary>
+    /// Caches metadata references by assembly path. The framework reference closure (~169 assemblies) is
+    /// identical for every test, so materializing it once per process — instead of per test — keeps a single
+    /// shared copy of the metadata in memory and avoids re-reading every PE file on each call.
+    /// </summary>
+    private static readonly ConcurrentDictionary<string, MetadataReference> _metadataReferenceCache =
+        new(StringComparer.Ordinal);
 
     /// <summary>The metadata reference for the Refit assembly with documentation.</summary>
     private static readonly MetadataReference _refitAssembly = MetadataReference.CreateFromFile(
@@ -316,7 +325,7 @@ public static class Fixture
         var references = new List<MetadataReference>(referencePaths.Count + 1);
         foreach (var referencePath in referencePaths)
         {
-            references.Add(MetadataReference.CreateFromFile(referencePath));
+            references.Add(GetMetadataReference(referencePath));
         }
 
         references.Add(_refitAssembly);
@@ -326,6 +335,12 @@ public static class Fixture
             references,
             new(OutputKind.DynamicallyLinkedLibrary));
     }
+
+    /// <summary>Returns a process-wide cached metadata reference for the assembly at the given path.</summary>
+    /// <param name="path">The assembly file path.</param>
+    /// <returns>A shared <see cref="MetadataReference"/> for the path, created once and reused across tests.</returns>
+    public static MetadataReference GetMetadataReference(string path) =>
+        _metadataReferenceCache.GetOrAdd(path, static p => MetadataReference.CreateFromFile(p));
 
     /// <summary>Gets the assemblies referenced when compiling generated code.</summary>
     /// <returns>The distinct, non-dynamic assemblies to reference.</returns>

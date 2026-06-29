@@ -159,3 +159,14 @@ dotnet run --project "tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" -f
 - Keep changes scoped. Do not rewrite unrelated files while touching generator/runtime paths.
 - Prefer focused tests that compile or execute the real generated output when changing source generator behavior.
 
+---
+
+## Public API tracking
+
+The runtime projects use the public-API analyzer, so every public/protected member is recorded under `src/Refit/PublicAPI/<tfm>/`.
+
+- New public surface goes in `PublicAPI.Unshipped.txt` for each affected TFM while you iterate.
+- **Before opening a PR, move those new entries from `PublicAPI.Unshipped.txt` into the matching `PublicAPI.Shipped.txt` (and reset each unshipped file to just `#nullable enable`).** This repo ships almost immediately after merge, so unshipped API is promoted as part of the change rather than left pending.
+- For behavior changes or public API additions, also add a breaking-changes note to the README.
+- Shipped entries are assumed to be carried forward; you do not need to call them out separately in the PR.
+

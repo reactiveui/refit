@@ -870,61 +870,6 @@ internal static partial class Emitter
     /// <returns>The generated indentation.</returns>
     private static string Indent(int level) => new(' ', level * CharsPerIndentation);
 
-    /// <summary>Gets the two-character escape sequence for a C# string-literal character, or null when none is needed.</summary>
-    /// <param name="character">The character to escape.</param>
-    /// <returns>The interned escape sequence, or <see langword="null"/> when the character is emitted verbatim.</returns>
-    private static string? EscapeSequence(char character) =>
-        character switch
-        {
-            '\\' => "\\\\",
-            '"' => "\\\"",
-            '\0' => "\\0",
-            '\a' => "\\a",
-            '\b' => "\\b",
-            '\f' => "\\f",
-            '\n' => "\\n",
-            '\r' => "\\r",
-            '\t' => "\\t",
-            '\v' => "\\v",
-            _ => null
-        };
-
-    /// <summary>Computes the rendered length of a C# string literal or the <c>null</c> keyword.</summary>
-    /// <param name="value">The value to quote, or <see langword="null"/>.</param>
-    /// <returns>The number of characters the rendered expression occupies.</returns>
-    private static int LiteralOrNullLength(string? value)
-    {
-        if (value is null)
-        {
-            return NullLiteral.Length;
-        }
-
-        var length = StringLiteralQuoteLength;
-        foreach (var character in value)
-        {
-            length += EscapeSequence(character) is null ? 1 : StringLiteralQuoteLength;
-        }
-
-        return length;
-    }
-
-    /// <summary>Computes the rendered decimal length of a 32-bit integer.</summary>
-    /// <param name="value">The value to render.</param>
-    /// <returns>The number of characters the decimal rendering occupies.</returns>
-    private static int Int32Length(int value)
-    {
-        var length = value < 0 ? 1 : 0;
-        var magnitude = value < 0 ? -(long)value : value;
-        do
-        {
-            length++;
-            magnitude /= DecimalRadix;
-        }
-        while (magnitude > 0);
-
-        return length;
-    }
-
 #if NETSTANDARD2_0
     /// <summary>Writes a C# string literal or the <c>null</c> keyword into a generated string buffer.</summary>
     /// <param name="destination">The target character buffer.</param>
@@ -955,26 +900,20 @@ internal static partial class Emitter
         destination[position++] = '"';
     }
 
-    /// <summary>Writes the decimal rendering of a 32-bit integer into a generated string buffer.</summary>
+    /// <summary>Writes the decimal rendering of a non-negative 32-bit integer into a generated string buffer.</summary>
     /// <param name="destination">The target character buffer.</param>
-    /// <param name="value">The value to render.</param>
+    /// <param name="value">The non-negative value to render (callers only pass <c>CollectionFormat</c> values).</param>
     /// <param name="position">The current write position.</param>
     private static void AppendInt32(char[] destination, int value, ref int position)
     {
         var end = position + Int32Length(value);
         var write = end;
-        var magnitude = value < 0 ? -(long)value : value;
         do
         {
-            destination[--write] = (char)('0' + (int)(magnitude % DecimalRadix));
-            magnitude /= DecimalRadix;
+            destination[--write] = (char)('0' + (value % DecimalRadix));
+            value /= DecimalRadix;
         }
-        while (magnitude > 0);
-
-        if (value < 0)
-        {
-            destination[position] = '-';
-        }
+        while (value > 0);
 
         position = end;
     }
@@ -1008,26 +947,20 @@ internal static partial class Emitter
         destination[position++] = '"';
     }
 
-    /// <summary>Writes the decimal rendering of a 32-bit integer into a generated string buffer.</summary>
+    /// <summary>Writes the decimal rendering of a non-negative 32-bit integer into a generated string buffer.</summary>
     /// <param name="destination">The target character span.</param>
-    /// <param name="value">The value to render.</param>
+    /// <param name="value">The non-negative value to render (callers only pass <c>CollectionFormat</c> values).</param>
     /// <param name="position">The current write position.</param>
     private static void AppendInt32(Span<char> destination, int value, ref int position)
     {
         var end = position + Int32Length(value);
         var write = end;
-        var magnitude = value < 0 ? -(long)value : value;
         do
         {
-            destination[--write] = (char)('0' + (int)(magnitude % DecimalRadix));
-            magnitude /= DecimalRadix;
+            destination[--write] = (char)('0' + (value % DecimalRadix));
+            value /= DecimalRadix;
         }
-        while (magnitude > 0);
-
-        if (value < 0)
-        {
-            destination[position] = '-';
-        }
+        while (value > 0);
 
         position = end;
     }

@@ -130,8 +130,72 @@ internal static partial class Emitter
             '\r' => builder.Append(@"\r"),
             '\t' => builder.Append(@"\t"),
             '\v' => builder.Append(@"\v"),
+
+            // Line terminators that would break out of a regular C# string literal (CS1010).
+            '\u0085' => builder.Append(@"\u0085"),
+            '\u2028' => builder.Append(@"\u2028"),
+            '\u2029' => builder.Append(@"\u2029"),
             _ => builder.Append(character)
         };
+
+    /// <summary>Gets the escape sequence for a C# string-literal character, or null when none is needed.</summary>
+    /// <param name="character">The character to escape.</param>
+    /// <returns>The escape sequence, or <see langword="null"/> when the character is emitted verbatim.</returns>
+    internal static string? EscapeSequence(char character) =>
+        character switch
+        {
+            '\\' => @"\\",
+            '"' => "\\\"",
+            '\0' => @"\0",
+            '\a' => @"\a",
+            '\b' => @"\b",
+            '\f' => @"\f",
+            '\n' => @"\n",
+            '\r' => @"\r",
+            '\t' => @"\t",
+            '\v' => @"\v",
+
+            // Characters C# treats as line terminators inside a regular string literal (CS1010).
+            '\u0085' => @"\u0085",
+            '\u2028' => @"\u2028",
+            '\u2029' => @"\u2029",
+            _ => null
+        };
+
+    /// <summary>Computes the rendered length of a C# string literal or the <c>null</c> keyword.</summary>
+    /// <param name="value">The value to quote, or <see langword="null"/>.</param>
+    /// <returns>The number of characters the rendered expression occupies.</returns>
+    internal static int LiteralOrNullLength(string? value)
+    {
+        if (value is null)
+        {
+            return NullLiteral.Length;
+        }
+
+        var length = StringLiteralQuoteLength;
+        foreach (var character in value)
+        {
+            length += EscapeSequence(character) is { Length: var escapeLength } ? escapeLength : 1;
+        }
+
+        return length;
+    }
+
+    /// <summary>Computes the rendered decimal length of a non-negative 32-bit integer.</summary>
+    /// <param name="value">The non-negative value to render (callers only pass <c>CollectionFormat</c> values).</param>
+    /// <returns>The number of characters the decimal rendering occupies.</returns>
+    internal static int Int32Length(int value)
+    {
+        var length = 0;
+        do
+        {
+            length++;
+            value /= DecimalRadix;
+        }
+        while (value > 0);
+
+        return length;
+    }
 
     /// <summary>Strips an explicit interface prefix from a method name (e.g. <c>IFoo.Bar</c> becomes <c>Bar</c>).</summary>
     /// <param name="name">The method name to normalize.</param>
