@@ -26,7 +26,15 @@ public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[
     public object[] GetCustomAttributes(bool inherit) => _allAttributesCache.Value;
 
     /// <inheritdoc/>
-    public object[] GetCustomAttributes(Type attributeType, bool inherit) => attributes[attributeType];
+    public object[] GetCustomAttributes(Type attributeType, bool inherit)
+    {
+        if (attributeType is null)
+        {
+            throw new ArgumentNullException(nameof(attributeType));
+        }
+
+        return attributes.TryGetValue(attributeType, out var matches) ? matches : [];
+    }
 
     /// <inheritdoc/>
     public bool IsDefined(Type attributeType, bool inherit) => attributes.ContainsKey(attributeType);
