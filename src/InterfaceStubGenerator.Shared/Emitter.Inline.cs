@@ -124,7 +124,7 @@ internal static partial class Emitter
 
         foreach (var parameter in request.Parameters)
         {
-            if (parameter.Kind is RequestParameterKind.CancellationToken)
+            if (parameter.Kind is not RequestParameterKind.Path)
             {
                 continue;
             }
