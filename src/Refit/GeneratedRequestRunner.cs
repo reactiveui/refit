@@ -426,9 +426,10 @@ public static class GeneratedRequestRunner
                 RefitSettings settings,
                 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type parentClass,
                 string callerMethod,
-                string parameterName)
+                string parameterName,
+                Type[] typeParameters)
     {
-        var parameterInfo = GetParameterInfo(parentClass, callerMethod, parameterName);
+        var parameterInfo = GetParameterInfo(parentClass, callerMethod, parameterName, typeParameters);
 
         if (!roundTripping)
         {
@@ -597,7 +598,8 @@ public static class GeneratedRequestRunner
         [
             DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type type,
         string methodName,
-        string parameterName)
+        string parameterName,
+        Type[] typeParameters)
     {
         var cacheKey = (type, methodName, parameterName);
 
@@ -608,7 +610,8 @@ public static class GeneratedRequestRunner
 
         var method = type.GetMethod(
             methodName,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static,
+            typeParameters)
                      ?? throw new UnreachableException($"Method '{methodName}' was not found on type '{type.Name}'.");
 
         ParameterInfo? parameter = null;

@@ -107,13 +107,20 @@ internal static partial class Emitter
     {
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         var request = methodModel.Request;
+        var (typeParameterFieldSource, cachedTypeParameterFieldName) = BuildTypeParameterField(
+            methodModel,
+            uniqueNames);
+        typeParameterFieldSource = IsConstantRoute(methodModel.Request.RouteFragments) ? "" : typeParameterFieldSource;
+        cachedTypeParameterFieldName = IsConstantRoute(methodModel.Request.RouteFragments) ? "" : cachedTypeParameterFieldName;
+        
+        var typeParameterExpression = BuildTypeParameterExpression(methodModel.Parameters, cachedTypeParameterFieldName);
         var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
         var settingsLocal = locals.New("refitSettings");
         var requestLocal = locals.New("refitRequest");
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
-        var requestUriData = BuildRequestUri1(methodModel, locals, settingsLocal);
+        var requestUriData = BuildRequestUri(methodModel, locals, settingsLocal, typeParameterExpression);
         var requestUriExpression =
             requestUriData.RequestUriExpression!;
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
@@ -125,7 +132,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};{{requestUriData.ConstructorStatement.ToString().TrimEnd(Environment.NewLine).ToString()}}
+            {{typeParameterFieldSource}}{{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};{{requestUriData.ConstructorStatement.ToString().TrimEnd(Environment.NewLine).ToString()}}
             {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
@@ -136,10 +143,11 @@ internal static partial class Emitter
             """;
     }
     
-    private static BuildUriData BuildRequestUri1(
+    private static BuildUriData BuildRequestUri(
         MethodModel methodModel,
         UniqueNameBuilder locals,
-        string settingsLocal)
+        string settingsLocal,
+        string typeParameterExpression)
     {
         var relativePath = methodModel.Request.Path;
         var routeFragments = methodModel.Request.RouteFragments;
@@ -147,7 +155,7 @@ internal static partial class Emitter
 
         var data = new BuildUriData();
 
-        if (routeFragments.Count == 0 || (routeFragments.Count == 1 && routeFragments[0] is RouteFragmentModel.Constant))
+        if (IsConstantRoute(routeFragments))
         {
             data.RequestUriExpression = $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(relativePath)}, {settingsLocal}.UrlResolution)";
             return data;
@@ -179,12 +187,12 @@ internal static partial class Emitter
                     // Could use CallerMember here
                     // Use nameof()
                     _ = sb.AppendLine(
-                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, {standardParameter.MetadataName}, {(standardParameter.IsRoundTripping ? "true" : "false")}, {settingsLocal}, typeof({methodModel.ContainingType}), {ToCSharpStringLiteral(methodModel.Name)}, {ToCSharpStringLiteral(standardParameter.MetadataName)});");
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddStandardParameter(ref {valueStringBuilderLocal}, @{standardParameter.MetadataName}, {(standardParameter.IsRoundTripping ? "true" : "false")}, {settingsLocal}, typeof({methodModel.ContainingType}), {ToCSharpStringLiteral(methodModel.Name)}, {ToCSharpStringLiteral(standardParameter.MetadataName)}, {typeParameterExpression});");
                     break;
                 case RouteFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property
                     _ = sb.AppendLine(
-                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AppendObjectPropertyFragment(ref valueStringBuilder, {objectAccess.AccessExpression}, {settingsLocal}, typeof({objectAccess.ParameterType}), {ToCSharpStringLiteral(objectAccess.Property)});");
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AppendObjectPropertyFragment(ref {valueStringBuilderLocal}, @{objectAccess.AccessExpression}, {settingsLocal}, typeof({objectAccess.ParameterType}), {ToCSharpStringLiteral(objectAccess.Property)});");
                     break;
                 case RouteFragmentModel.RoundTripNotStringError roundTripNotStringError:
                     {
@@ -203,6 +211,11 @@ internal static partial class Emitter
 
         return data;
     }
+
+    /// <summary>Determines if a route is constant.</summary>
+    /// <param name="routeFragments">Collection of route fragments.</param>
+    /// <returns>True if the path is constant.</returns>
+    private static bool IsConstantRoute(ImmutableEquatableArray<RouteFragmentModel> routeFragments) => routeFragments.Count == 0 || (routeFragments.Count == 1 && routeFragments[0] is RouteFragmentModel.Constant);
 
     /// <summary>Builds request content assignment for an inline generated method.</summary>
     /// <param name="bodyParameter">The body parameter model.</param>
