@@ -23,6 +23,8 @@ public sealed class ApiExceptionTests
             .ThrowsExactly<ArgumentException>();
         await Assert.That(() => (Task)ApiException.Create("message", request, HttpMethod.Get, null!, new()))
             .ThrowsExactly<ArgumentNullException>();
+        await Assert.That(() => (Task)ApiException.Create(request, HttpMethod.Get, null!, new(), null))
+            .ThrowsExactly<ArgumentNullException>();
     }
 
     /// <summary>Verifies ApiException factory handles absent and unreadable content without hiding the original response error.</summary>
@@ -391,6 +393,143 @@ public sealed class ApiExceptionTests
         await Assert.That(exception.RequestContent).IsNull();
     }
 
+    /// <summary>Verifies the error body is truncated to the configured maximum length.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MaxExceptionContentLengthTruncatesErrorBody()
+    {
+        using var response = CreateErrorResponse(new string('a', 10_000));
+        var settings = new RefitSettings { MaxExceptionContentLength = 128 };
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            settings);
+
+        await Assert.That(exception.Content!.Length).IsEqualTo(128);
+    }
+
+    /// <summary>Verifies an unset maximum length leaves the error body intact.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MaxExceptionContentLengthUnsetReadsFullBody()
+    {
+        using var response = CreateErrorResponse(new string('a', 10_000));
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        await Assert.That(exception.Content!.Length).IsEqualTo(10_000);
+    }
+
+    /// <summary>Verifies a zero maximum length yields an empty error body.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MaxExceptionContentLengthZeroReturnsEmptyContent()
+    {
+        using var response = CreateErrorResponse(new string('a', 100));
+        var settings = new RefitSettings { MaxExceptionContentLength = 0 };
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            settings);
+
+        await Assert.That(exception.Content).IsEqualTo(string.Empty);
+    }
+
+    /// <summary>Verifies the error body is still read when the response carries no content type.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateReadsContentWhenContentTypeMissing()
+    {
+        using var response = CreateErrorResponse("{\"Value\":1}");
+        response.Content!.Headers.ContentType = null;
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        await Assert.That(exception).IsTypeOf<ApiException>();
+        await Assert.That(exception.Content).IsEqualTo("{\"Value\":1}");
+    }
+
+    /// <summary>Verifies the error body is read when the content read genuinely suspends asynchronously.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateReadsContentThatCompletesAsynchronously()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            RequestMessage = new(HttpMethod.Get, "https://example.test"),
+            Content = new AsyncReadContent("{\"Value\":7}")
+        };
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            new());
+
+        await Assert.That(exception.Content).IsEqualTo("{\"Value\":7}");
+    }
+
+    /// <summary>Verifies a problem+json body is built into a validation exception even when the serializer suspends asynchronously.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CreateBuildsValidationExceptionWhenSerializerCompletesAsynchronously()
+    {
+        using var response = CreateErrorResponse("{\"title\":\"invalid\"}", "application/problem+json");
+        var settings = new RefitSettings(new AsyncYieldingSerializer());
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            settings);
+
+        await Assert.That(exception).IsTypeOf<ValidationApiException>();
+    }
+
+    /// <summary>Verifies the redaction hook can scrub credentials and bodies before the exception propagates.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ExceptionRedactorScrubsSensitiveData()
+    {
+        using var response = CreateErrorResponse("{\"secret\":\"value\"}");
+        response.RequestMessage!.Headers.Authorization = new("Bearer", "super-secret-token");
+        GeneratedRequestRunner.AddRequestProperty(
+            response.RequestMessage!,
+            HttpRequestMessageOptions.RequestContent,
+            "{\"password\":\"hunter2\"}");
+        var settings = new RefitSettings
+        {
+            ExceptionRedactor = ex =>
+            {
+                ex.RequestMessage.Headers.Authorization = null;
+                ex.RequestContent = "[redacted]";
+                ((ApiException)ex).Content = "[redacted]";
+            }
+        };
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            settings);
+
+        await Assert.That(exception.RequestMessage.Headers.Authorization).IsNull();
+        await Assert.That(exception.RequestContent).IsEqualTo("[redacted]");
+        await Assert.That(exception.Content).IsEqualTo("[redacted]");
+    }
+
     /// <summary>Creates an error response with an attached request.</summary>
     /// <param name="content">The response content.</param>
     /// <param name="mediaType">The optional media type.</param>
@@ -409,6 +548,31 @@ public sealed class ApiExceptionTests
         }
 
         return response;
+    }
+
+    /// <summary>Content whose read genuinely suspends, forcing the asynchronous completion path when the exception reads the body.</summary>
+    private sealed class AsyncReadContent : HttpContent
+    {
+        /// <summary>The UTF-8 payload bytes.</summary>
+        private readonly byte[] _payload;
+
+        /// <summary>Initializes a new instance of the <see cref="AsyncReadContent"/> class.</summary>
+        /// <param name="payload">The string payload.</param>
+        public AsyncReadContent(string payload) => _payload = System.Text.Encoding.UTF8.GetBytes(payload);
+
+        /// <inheritdoc />
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            await Task.Yield();
+            await stream.WriteAsync(_payload.AsMemory()).ConfigureAwait(false);
+        }
+
+        /// <inheritdoc />
+        protected override bool TryComputeLength(out long length)
+        {
+            length = _payload.Length;
+            return true;
+        }
     }
 
     /// <summary>Content that throws when read as a string.</summary>
@@ -489,6 +653,31 @@ public sealed class ApiExceptionTests
         /// <inheritdoc />
         public Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default) =>
             _inner.FromHttpContentAsync<T>(content, cancellationToken);
+
+        /// <inheritdoc />
+        public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) =>
+            _inner.GetFieldNameForProperty(propertyInfo);
+    }
+
+    /// <summary>A serializer that genuinely suspends before delegating, forcing the async deserialization path.</summary>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Mirrors the explicit type parameters of the wrapped IHttpContentSerializer contract.")]
+    private sealed class AsyncYieldingSerializer : IHttpContentSerializer
+    {
+        /// <summary>The wrapped serializer that does the real work.</summary>
+        private readonly SystemTextJsonContentSerializer _inner = new();
+
+        /// <inheritdoc />
+        public HttpContent ToHttpContent<T>(T item) => _inner.ToHttpContent(item);
+
+        /// <inheritdoc />
+        public async Task<T?> FromHttpContentAsync<T>(HttpContent content, CancellationToken cancellationToken = default)
+        {
+            await Task.Yield();
+            return await _inner.FromHttpContentAsync<T>(content, cancellationToken).ConfigureAwait(false);
+        }
 
         /// <inheritdoc />
         public string? GetFieldNameForProperty(System.Reflection.PropertyInfo propertyInfo) =>

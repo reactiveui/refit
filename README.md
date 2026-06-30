@@ -40,8 +40,10 @@ services
 
 * [Sponsors](#sponsors)
 * [Where does this work?](#where-does-this-work)
-    * [Breaking changes in 6.x](#breaking-changes-in-6x)
+    * [Breaking changes in V13.x](#breaking-changes-in-v13x)
+    * [Breaking changes in V12.x](#breaking-changes-in-v12x)
     * [Breaking changes in 11.x](#breaking-changes-in-11x)
+    * [Breaking changes in 6.x](#breaking-changes-in-6x)
 * [Source generation](#source-generation)
     * [Generated-only client creation](#generated-only-client-creation)
     * [Generated request building](#generated-request-building)
@@ -102,9 +104,86 @@ Refit currently supports the following platforms and modern .NET targets:
 
 ### SDK Requirements
 
+### V13.x.x
+
+#### Breaking changes in V13.x
+
+Refit 13 hardens the default security posture from a security audit. The new behavior is safe by default; the changes
+below only affect code that previously relied on the less-secure defaults.
+
+* **XML responses no longer process DTDs.** `XmlContentSerializer` now forces `DtdProcessing.Prohibit` and clears the
+  `XmlResolver` on every read, blocking XML External Entity (XXE) and entity-expansion ("billion laughs") attacks. If
+  you were deserializing trusted XML that depends on a DTD or external entities, that content will now throw. We
+  **strongly recommend against re-enabling DTD processing**, but if your XML comes from a fully trusted source you can
+  opt out via the obsolete `XmlReaderWriterSettings.AllowDtdProcessing` flag (marked `[Obsolete]` deliberately, so it
+  surfaces a compiler warning) - you must also configure `DtdProcessing`/`XmlResolver` yourself on `ReaderSettings`.
+  Prefer pre-processing untrusted documents instead.
+* **Newtonsoft.Json no longer inherits an unsafe global `TypeNameHandling`.** When you do not pass explicit
+  `JsonSerializerSettings`, `NewtonsoftJsonContentSerializer` now forces `TypeNameHandling.None` even if
+  `JsonConvert.DefaultSettings` configured a different value, closing a known remote-code-execution gadget vector on
+  response bodies. If you genuinely need polymorphic (`$type`) deserialization, opt in explicitly by passing your own
+  `JsonSerializerSettings` (ideally constrained with a `SerializationBinder`).
+
+The release also adds two opt-in, non-breaking knobs on `RefitSettings` for hardening exception handling:
+
+* `RefitSettings.ExceptionRedactor` — a hook invoked before an `ApiException` propagates, so you can scrub the
+  `Authorization` header, request/response bodies, and `Set-Cookie` before they reach logging or telemetry pipelines
+  that serialize exceptions.
+* `RefitSettings.MaxExceptionContentLength` — caps how many characters of an error response body are read into
+  `ApiException.Content`, bounding memory use against hostile or oversized error responses. Defaults to unbounded.
+
+### V12.x.x
+
+#### Breaking changes in V12.x
+
+Refit 12.0 is a large release centered on a near-complete rewrite of request building. The source generator now builds
+eligible HTTP requests inline at compile time instead of going through the reflection request-builder pipeline, with the
+reflection path kept as a fallback for shapes that cannot be generated inline.
+
+Two breaking changes are called out for migration:
+
+* `IApiResponse<T>` no longer shadows base interface members. The `new`-shadowed `Error`, `ContentHeaders`,
+  `IsSuccessStatusCode`, and `IsSuccessful` members were removed from the generic interface. Source that reads these
+  members still binds to the inherited base members, but assemblies compiled against v8-v11 should be recompiled.
+  If you used `IsSuccessful` to narrow `Content` to non-null on an `IApiResponse<T>` value, use `HasContent` or
+  `IsSuccessfulWithContent` instead.
+* The default `System.Text.Json` serializer now reads numbers from JSON strings by setting
+  `JsonNumberHandling.AllowReadingFromString`. To opt back out, set `NumberHandling = JsonNumberHandling.Strict` on
+  your `JsonSerializerOptions`.
+
+See the [Refit 12.0.0 release notes](https://github.com/reactiveui/refit/releases/tag/v12.0.0) for the full release
+details.
+
+### V11.x.x
+
+#### Breaking changes in 11.x
+
+Refit 11 introduces `ApiRequestException` to represent requests that fail before receiving a response from the server.
+This exception will now wrap previous exceptions such as `HttpRequestException` and `TaskCanceledException` when they
+occur during request execution.
+
+* If you were not wrapping responses with `IApiResponse` and were catching these exceptions directly, you will need to
+  update your code to catch `ApiRequestException` instead.
+* If you were wrapping responses with `IApiResponse`, these exceptions will no longer be thrown and will instead be
+  captured in the `IApiResponse.Error` property.
+  You can use the new `IApiResponse.HasRequestError(out var apiRequestException)` method to safely check and retrieve
+  the `ApiRequestException` instance.
+
+The `IApiResponse.Error` property's type has also changed to `ApiExceptionBase`, which is the new base class for
+`ApiException` and `ApiRequestException`.
+If your code accessed members specific to `ApiException` (i.e. anything related to the response from the server), you
+can use the new `IApiResponse.HasResponseError(out var apiException)` method to safely check and retrieve the
+`ApiException` instance.
+
+All response-related properties of `IApiResponse` are now nullable.
+The new `IApiResponse.IsReceived` property can be used to check if a response was received from the server, and will
+mark those properties as non-null.
+The original `IApiResponse.IsSuccessful` and `IApiResponse.IsSuccessStatusCode` properties can still be used to check if
+the response was received and is successful.
+
 ### Updates in 8.0.x
 
-Fixes for some issues experienced, this lead to some breaking changes.
+Fixes for some issues experienced, this led to some breaking changes.
 See [Releases](https://github.com/reactiveui/refit/releases) for full details.
 
 ### V6.x.x
@@ -137,33 +216,6 @@ Refit 6.3 splits out the XML serialization via `XmlContentSerializer` into a sep
 is to reduce the dependency size when using Refit with Web Assembly (WASM) applications. If you require XML, add a
 reference
 to `Refit.Xml`.
-
-### V11.x.x
-
-#### Breaking changes in 11.x
-
-Refit 11 introduces `ApiRequestException` to represent requests that fail before receiving a response from the server.
-This exception will now wrap previous exceptions such as `HttpRequestException` and `TaskCanceledException` when they
-occur during request execution.
-
-* If you were not wrapping responses with `IApiResponse` and were catching these exceptions directly, you will need to
-  update your code to catch `ApiRequestException` instead.
-* If you were wrapping responses with `IApiResponse`, these exceptions will no longer be thrown and will instead be
-  captured in the `IApiResponse.Error` property.
-  You can use the new `IApiResponse.HasRequestError(out var apiRequestException)` method to safely check and retrieve
-  the `ApiRequestException` instance.
-
-The `IApiResponse.Error` property's type has also changed to `ApiExceptionBase`, which is the new base class for
-`ApiException` and `ApiRequestException`.
-If your code accessed members specific to `ApiException` (i.e. anything related to the response from the server), you
-can use the new `IApiResponse.HasResponseError(out var apiException)` method to safely check and retrieve the
-`ApiException` instance.
-
-All response-related properties of `IApiResponse` are now nullable.
-The new `IApiResponse.IsReceived` property can be used to check if a response was received from the server, and will
-mark those properties as non-null.
-The original `IApiResponse.IsSuccessful` and `IApiResponse.IsSuccessStatusCode` properties can still be used to check if
-the response was received and is successful.
 
 ### Source generation
 
@@ -812,7 +864,7 @@ var otherApi = RestService.For<IOtherApi>("https://api.example.com",
     )});
 ```
 
-Property serialization/deserialization can be customised using Json.NET's
+Property serialization/deserialization can be customized using Json.NET's
 JsonProperty attribute:
 
 ```csharp
@@ -900,7 +952,7 @@ var gitHubApi = RestService.For<IXmlApi>("https://www.w3.org/XML",
     });
 ```
 
-Property serialization/deserialization can be customised using attributes found in the _System.Xml.Serialization_
+Property serialization/deserialization can be customized using attributes found in the _System.Xml.Serialization_
 namespace:
 
 ```csharp

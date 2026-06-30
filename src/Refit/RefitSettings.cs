@@ -126,8 +126,45 @@ public class RefitSettings
     /// By default <see cref="HttpClient"/> disposes the request content once the request is sent, so the body cannot
     /// be read back from the exception (see issue #1189). Enabling this buffers the body into memory before sending;
     /// avoid it for large or streamed uploads.
+    /// <para>
+    /// Security note: the captured body frequently contains credentials or PII (for example login, token-refresh, or
+    /// payment payloads) and is exposed as a public property on the thrown exception. Use
+    /// <see cref="ExceptionRedactor"/> to scrub it before the exception reaches a logging or telemetry pipeline that
+    /// serializes exception objects.
+    /// </para>
     /// </remarks>
     public bool CaptureRequestContent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum number of characters of an error response body that are read into
+    /// <see cref="ApiException.Content"/> (defaults to <see langword="null"/>, meaning unbounded).
+    /// </summary>
+    /// <remarks>
+    /// Error responses are read with <see cref="HttpCompletionOption.ResponseHeadersRead"/>, so
+    /// <see cref="HttpClient.MaxResponseContentBufferSize"/> does not apply. A hostile or oversized error body can
+    /// therefore drive unbounded memory allocation while constructing the <see cref="ApiException"/>. Set a limit to
+    /// bound that read; the body is truncated to the first <c>value</c> characters.
+    /// </remarks>
+    public int? MaxExceptionContentLength { get; set; }
+
+    /// <summary>
+    /// Gets or sets a hook invoked just before an <see cref="ApiExceptionBase"/> is returned, allowing sensitive data
+    /// to be scrubbed before the exception propagates (defaults to <see langword="null"/>).
+    /// </summary>
+    /// <remarks>
+    /// An <see cref="ApiException"/> retains the live request (including the <c>Authorization</c> header and any secret
+    /// <c>[Header]</c> values), the optionally captured request body, and the raw response headers (including
+    /// <c>Set-Cookie</c>) and body. Logging and telemetry libraries that serialize exceptions by walking properties
+    /// will capture all of it. Use this hook to remove or mask those values, for example:
+    /// <code>
+    /// settings.ExceptionRedactor = ex =>
+    /// {
+    ///     ex.RequestMessage.Headers.Authorization = null;
+    ///     if (ex is ApiException api) api.Content = null;
+    /// };
+    /// </code>
+    /// </remarks>
+    public Action<ApiExceptionBase>? ExceptionRedactor { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether a route placeholder with no matching method argument is allowed.
