@@ -75,14 +75,25 @@ public abstract class ApiExceptionBase : Exception
     public Uri? Uri => RequestMessage.RequestUri;
 
     /// <summary>Gets the HTTP Request message used to send the request.</summary>
+    /// <remarks>
+    /// This is the live request and still carries its headers, including the <c>Authorization</c> header (bearer
+    /// token, basic credentials, or API key) and any secret <c>[Header]</c>/<c>[HeaderCollection]</c> values.
+    /// <see cref="Exception.ToString"/> does not print them, but property-walking serializers (structured logging,
+    /// telemetry) will. Use <see cref="RefitSettings.ExceptionRedactor"/> to scrub them before the exception
+    /// propagates.
+    /// </remarks>
     public HttpRequestMessage RequestMessage { get; }
 
     /// <summary>
-    /// Gets the request body content as a string, captured before sending. This is only populated when
+    /// Gets or sets the request body content as a string, captured before sending. This is only populated when
     /// <see cref="RefitSettings.CaptureRequestContent"/> is enabled; otherwise the request content has
     /// already been disposed by <see cref="HttpClient"/> and cannot be read from <see cref="RequestMessage"/>.
     /// </summary>
-    public string? RequestContent { get; protected set; }
+    /// <remarks>
+    /// When populated this is the raw, unredacted request body and frequently contains credentials or PII. The setter
+    /// is accessible so <see cref="RefitSettings.ExceptionRedactor"/> can scrub it before the exception propagates.
+    /// </remarks>
+    public string? RequestContent { get; set; }
 
     /// <summary>Gets a value indicating whether the captured request content is available.</summary>
     [MemberNotNullWhen(true, nameof(RequestContent))]

@@ -185,6 +185,52 @@ public class XmlContentSerializerTests
         await Assert.That(() => both.WriterSettings = null!).ThrowsExactly<ArgumentNullException>();
     }
 
+    /// <summary>Verifies DTD processing is forced off and the resolver cleared even when the caller opts into parsing (XXE hardening).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReaderSettingsAlwaysProhibitDtdAndClearResolver()
+    {
+        var settings = new XmlReaderWriterSettings(
+            new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Parse,
+                XmlResolver = new XmlUrlResolver()
+            });
+
+        await Assert.That(settings.ReaderSettings.DtdProcessing).IsEqualTo(DtdProcessing.Prohibit);
+    }
+
+    /// <summary>Verifies the obsolete opt-out leaves caller-configured DTD processing intact.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AllowDtdProcessingOptOutHonorsCallerSettings()
+    {
+        var settings = new XmlReaderWriterSettings(
+            new XmlReaderSettings { DtdProcessing = DtdProcessing.Parse });
+#pragma warning disable CS0618 // Intentionally exercising the obsolete XXE opt-out.
+        settings.AllowDtdProcessing = true;
+#pragma warning restore CS0618
+
+        await Assert.That(settings.ReaderSettings.DtdProcessing).IsEqualTo(DtdProcessing.Parse);
+    }
+
+    /// <summary>Verifies a payload carrying an external entity (XXE) is rejected rather than resolved.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DeserializeRejectsExternalEntityPayload()
+    {
+        var sut = new XmlContentSerializer(new XmlContentSerializerSettings { XmlNamespaces = new() });
+        const string xxe =
+            "<?xml version=\"1.0\"?>"
+            + "<!DOCTYPE Dto [ <!ENTITY xxe SYSTEM \"file:///etc/passwd\"> ]>"
+            + "<Dto><Identifier>&xxe;</Identifier></Dto>";
+
+        // XmlSerializer wraps the underlying "DTD is prohibited" XmlException in an InvalidOperationException.
+        var exception = await Assert.That(() => sut.FromHttpContentAsync<Dto>(new StringContent(xxe)))
+            .ThrowsExactly<InvalidOperationException>();
+        await Assert.That(exception!.InnerException).IsTypeOf<XmlException>();
+    }
+
     /// <summary>Builds a populated <see cref="Dto"/> instance for the tests.</summary>
     /// <returns>A new <see cref="Dto"/>.</returns>
     [System.Diagnostics.CodeAnalysis.SuppressMessage(

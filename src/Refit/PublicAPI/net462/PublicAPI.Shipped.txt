@@ -427,3 +427,8 @@ Refit.RefitSettings.CaptureRequestContent.set -> void
 static Refit.HttpRequestMessageOptions.RequestContent.get -> string!
 Refit.ApiExceptionBase.HasRequestContent.get -> bool
 Refit.SystemTextJsonContentSerializer.DeserializeFromString<T>(string! content) -> T?
+Refit.ApiException.Content.set -> void
+Refit.RefitSettings.ExceptionRedactor.get -> System.Action<Refit.ApiExceptionBase!>?
+Refit.RefitSettings.ExceptionRedactor.set -> void
+Refit.RefitSettings.MaxExceptionContentLength.get -> int?
+Refit.RefitSettings.MaxExceptionContentLength.set -> void

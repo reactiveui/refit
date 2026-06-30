@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Net;
 using System.Net.Http.Headers;
 
@@ -143,13 +144,22 @@ public class ApiException : ApiExceptionBase
     public string? ReasonPhrase { get; }
 
     /// <summary>Gets the HTTP response headers.</summary>
+    /// <remarks>
+    /// These are the raw, unredacted response headers and may contain sensitive values such as <c>Set-Cookie</c>.
+    /// Anything that serializes this exception (structured logging, telemetry) will capture them; scrub with
+    /// <see cref="RefitSettings.ExceptionRedactor"/> if that is a concern.
+    /// </remarks>
     public HttpResponseHeaders Headers { get; }
 
     /// <summary>Gets the HTTP response content headers as defined in RFC 2616.</summary>
     public HttpContentHeaders? ContentHeaders { get; protected set; }
 
-    /// <summary>Gets the HTTP Response content as string.</summary>
-    public string? Content { get; private set; }
+    /// <summary>Gets or sets the HTTP response content as a string.</summary>
+    /// <remarks>
+    /// This is the raw, unredacted response body. The setter exists so that
+    /// <see cref="RefitSettings.ExceptionRedactor"/> can scrub it before the exception propagates.
+    /// </remarks>
+    public string? Content { get; set; }
 
     /// <summary>Gets a value indicating whether the response has content.</summary>
     [MemberNotNullWhen(true, nameof(Content))]
@@ -187,12 +197,17 @@ public class ApiException : ApiExceptionBase
         RefitSettings refitSettings,
         Exception? innerException)
     {
-        if (response?.IsSuccessStatusCode == true)
+        if (response is null)
+        {
+            throw new ArgumentNullException(nameof(response));
+        }
+
+        if (response.IsSuccessStatusCode)
         {
             throw new ArgumentException("Response is successful, cannot create an ApiException.", nameof(response));
         }
 
-        var exceptionMessage = CreateMessage(response!.StatusCode, response.ReasonPhrase);
+        var exceptionMessage = CreateMessage(response.StatusCode, response.ReasonPhrase);
         return Create(
             exceptionMessage,
             message,
@@ -261,39 +276,39 @@ public class ApiException : ApiExceptionBase
             RequestContent = GetCapturedRequestContent(message)
         };
 
-        if (response.Content is null)
+        if (response.Content is not null)
         {
-            return exception;
-        }
-
-        try
-        {
-            exception.ContentHeaders = response.Content.Headers;
-            exception.Content = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-
-            if (
-                response
-                    .Content.Headers?.ContentType
-                    ?.MediaType
-                    ?.Equals("application/problem+json", StringComparison.OrdinalIgnoreCase) ?? false
-            )
+            try
             {
-                exception = await ValidationApiException
-                    .CreateAsync(exception)
+                exception.ContentHeaders = response.Content.Headers;
+                exception.Content = await ReadContentCappedAsync(
+                        response.Content,
+                        refitSettings.MaxExceptionContentLength)
                     .ConfigureAwait(false);
+
+                // Content.Headers is never null on a real HttpContent, so only the ContentType/MediaType
+                // null cases are meaningful here and both are exercised by the tests.
+                var mediaType = response.Content.Headers.ContentType?.MediaType;
+                if (mediaType?.Equals("application/problem+json", StringComparison.OrdinalIgnoreCase) ?? false)
+                {
+                    exception = await ValidationApiException
+                        .CreateAsync(exception)
+                        .ConfigureAwait(false);
+                }
+
+                response.Content.Dispose();
             }
+            catch (Exception readException)
+            {
+                _ = readException;
 
-            response.Content.Dispose();
-        }
-        catch (Exception readException)
-        {
-            _ = readException;
-
-            // NB: We're already handling an exception at this point,
-            // so we want to make sure we don't throw another one
-            // that hides the real error.
+                // NB: We're already handling an exception at this point,
+                // so we want to make sure we don't throw another one
+                // that hides the real error.
+            }
         }
 
+        refitSettings.ExceptionRedactor?.Invoke(exception);
         return exception;
     }
 
@@ -379,6 +394,47 @@ public class ApiException : ApiExceptionBase
         }
 
         return content is not null;
+    }
+
+    /// <summary>Reads the response body as a string, bounding the number of characters when a limit is configured.</summary>
+    /// <param name="content">The response content to read.</param>
+    /// <param name="maxChars">The maximum number of characters to read, or <see langword="null"/> for unbounded.</param>
+    /// <returns>The (possibly truncated) response body.</returns>
+    private static async Task<string> ReadContentCappedAsync(HttpContent content, int? maxChars)
+    {
+        if (maxChars is not { } limit)
+        {
+            return await content.ReadAsStringAsync().ConfigureAwait(false);
+        }
+
+        if (limit <= 0)
+        {
+            return string.Empty;
+        }
+
+        var stream = await content.ReadAsStreamAsync().ConfigureAwait(false);
+#if NET6_0_OR_GREATER
+        await using var streamScope = stream.ConfigureAwait(false);
+#else
+        using var streamScope = stream;
+#endif
+        using var reader = new StreamReader(stream);
+        var buffer = new char[limit];
+        var total = 0;
+        while (total < limit)
+        {
+            var read = await reader
+                .ReadBlockAsync(buffer, total, limit - total)
+                .ConfigureAwait(false);
+            if (read == 0)
+            {
+                break;
+            }
+
+            total += read;
+        }
+
+        return new string(buffer, 0, total);
     }
 
     /// <summary>Builds the exception message from the status code and reason phrase.</summary>
