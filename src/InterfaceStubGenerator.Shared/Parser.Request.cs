@@ -270,8 +270,8 @@ internal static partial class Parser
         for (var i = 0; i < parameters.Length; i++)
         {
             var parameter = parameters[i];
-            var aliasAttr = parameter.GetAttributes().FirstOrDefault(static a => a.AttributeClass?.Name == "Refit.AliasAsAttribute");
-            var name = aliasAttr?.ConstructorArguments.FirstOrDefault().Value?.ToString() ?? parameter.Name;
+            var aliasAttr = parameter.GetAttributes().FirstOrDefault(static a => a.AttributeClass?.ToDisplayString() == "Refit.AliasAsAttribute");
+            var name = aliasAttr is not null ? GetFirstStringArgument(aliasAttr) ?? parameter.Name : parameter.Name;
             var hasPlaceholder = parameterNames.Contains(name);
             var parsedParameter = ParseRequestParameter(parameter, hasPlaceholder);
             requestParameters[i] = parsedParameter.Parameter;
@@ -345,53 +345,37 @@ internal static partial class Parser
             ? new(PathRequestParameter(parameter, parameterType), true, 0, 0, 0)
             : new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
 
+        [SuppressMessage(
+            "Maintainability",
+            "SST1442: Functions should keep branching complexity low",
+            Justification = "There are a lot of simple types supported and matching on them is a simple pattern match")]
         static bool IsSimpleType(ITypeSymbol type)
         {
             var underlyingType = GetUnderlyingType(type);
-            return underlyingType.Name.Equals("string", StringComparison.OrdinalIgnoreCase)
-                   || IsInt(underlyingType)
-                   || IsLong(underlyingType)
-                   || IsShort(underlyingType)
-                   || IsUInt(underlyingType)
-                   || IsULong(underlyingType)
-                   || IsUShort(underlyingType)
-                   || underlyingType.Name.Equals("char", StringComparison.OrdinalIgnoreCase)
-                   || IsBoolean(underlyingType)
-                   || IsByte(underlyingType);
 
-            static bool IsBoolean(ITypeSymbol type) =>
-                type.Name.Equals("bool", StringComparison.OrdinalIgnoreCase)
-                || type.Name.Equals("Boolean", StringComparison.OrdinalIgnoreCase);
-            static bool IsByte(ITypeSymbol type) =>
-                type.Name.Equals("byte", StringComparison.OrdinalIgnoreCase)
-                || type.Name.Equals("sbyte", StringComparison.OrdinalIgnoreCase);
-            static bool IsInt(ITypeSymbol type) =>
-                type.Name.Equals("int", StringComparison.OrdinalIgnoreCase)
-                || type.Name.Equals("Int32", StringComparison.OrdinalIgnoreCase);
-            static bool IsUInt(ITypeSymbol type) =>
-                type.Name.Equals("uint", StringComparison.OrdinalIgnoreCase)
-                || type.Name.Equals("UInt32", StringComparison.OrdinalIgnoreCase);
-            static bool IsLong(ITypeSymbol type) =>
-                type.Name.Equals("long", StringComparison.OrdinalIgnoreCase)
-                || type.Name.Equals("Int64", StringComparison.OrdinalIgnoreCase);
-            static bool IsULong(ITypeSymbol type) =>
-                type.Name.Equals("ulong", StringComparison.OrdinalIgnoreCase)
-                || type.Name.Equals("UInt64", StringComparison.OrdinalIgnoreCase);
-            static bool IsShort(ITypeSymbol type) =>
-                type.Name.Equals("short", StringComparison.OrdinalIgnoreCase)
-                || type.Name.Equals("Int16", StringComparison.OrdinalIgnoreCase);
-            static bool IsUShort(ITypeSymbol type) =>
-                type.Name.Equals("ushort", StringComparison.OrdinalIgnoreCase)
-                || type.Name.Equals("UInt16", StringComparison.OrdinalIgnoreCase);
+            return IsGuid(underlyingType) || IsDateTimeOffset(underlyingType) ||
+                   underlyingType.SpecialType is SpecialType.System_String or SpecialType.System_DateTime
+                       or SpecialType.System_Int32
+                       or SpecialType.System_Int64
+                       or SpecialType.System_Int16
+                       or SpecialType.System_Enum
+                       or SpecialType.System_UInt32 or SpecialType.System_UInt64
+                       or SpecialType.System_UInt16 or SpecialType.System_Char or SpecialType.System_Boolean
+                       or SpecialType.System_Byte or SpecialType.System_Decimal or SpecialType.System_Double
+                       or SpecialType.System_Single;
 
             static ITypeSymbol GetUnderlyingType(ITypeSymbol type)
             {
-                return type is INamedTypeSymbol s && s.IsGenericType &&
-                       string.Equals(s.ContainingNamespace.Name, "System", StringComparison.Ordinal) &&
-                       string.Equals(s.Name, "Nullable", StringComparison.Ordinal)
-                    ? s.TypeArguments.Single()
+                return type is INamedTypeSymbol
+                {
+                    OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
+                } nullable
+                    ? nullable.TypeArguments[0]
                     : type;
             }
+
+            static bool IsGuid(ITypeSymbol type) => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is "System.Guid";
+            static bool IsDateTimeOffset(ITypeSymbol type) => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is "System.DateTimeOffset";
         }
     }
 
