@@ -19,3 +19,25 @@ jobs:
             minverMinimumMajorMinor: '10.2'
         secrets:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    # PR metadata consumed by the fork-PR SonarCloud flow (see sonarcloud-fork.yml).
+    save-pr-metadata:
+        if: github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        steps:
+            - name: Write PR metadata
+              env:
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  PR_BASE: ${{ github.event.pull_request.base.ref }}
+              run: |
+                  mkdir -p pr-meta
+                  printf '%s' "$PR_NUMBER" > pr-meta/number
+                  printf '%s' "$PR_BASE" > pr-meta/base
+            - name: Upload PR metadata
+              uses: actions/upload-artifact@v7
+              with:
+                  name: pr-number
+                  path: pr-meta/
+                  retention-days: 1
