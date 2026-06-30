@@ -246,14 +246,11 @@ internal static partial class Emitter
             _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
                 .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
                 .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ")
-                .Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("() {");
+                .Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("()");
             var i = 0;
-            if (grouped.Count < 1)
+            if (grouped.Count > 0)
             {
-                _ = sb.Append("{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute() } }");
-            }
-            else
-            {
+                _ = sb.Append(" {");
                 foreach (var kv in grouped)
                 {
                     _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
@@ -264,9 +261,11 @@ internal static partial class Emitter
 
                     _ = sb.Append("} }");
                 }
+
+                _ = sb.Append('}');
             }
 
-            _ = sb.AppendLine("});");
+            _ = sb.AppendLine(");");
         }
 
         static Dictionary<string, string> GetParameterInfoUniqueNames(
@@ -276,6 +275,11 @@ internal static partial class Emitter
             var dict = new Dictionary<string, string>();
             foreach (var parameter in request.Parameters)
             {
+                if (parameter.Kind is not RequestParameterKind.Path)
+                {
+                    continue;
+                }
+
                 var parameterInfoFieldName = GetParameterInfoFieldName(parameter.Name, uniqueNames);
                 dict.Add(parameter.Name, parameterInfoFieldName);
             }

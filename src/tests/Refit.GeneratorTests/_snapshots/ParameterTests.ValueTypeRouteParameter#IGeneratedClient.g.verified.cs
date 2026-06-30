@@ -47,7 +47,7 @@ namespace Refit.Implementation
                 _settings = settings;
             }
             /// <summary>Cached attribute provider for the generated Get method's user parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>() {{ typeof(global::Refit.QueryAttribute), new object[] { new global::Refit.QueryAttribute() } }});
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>());
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<string> Get(int @user)
