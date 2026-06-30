@@ -20,9 +20,7 @@ jobs:
         secrets:
             CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-    # Fork PRs cannot run SonarCloud directly (no access to SONAR_TOKEN). Record
-    # the PR number + base branch so the trusted, workflow_run-triggered
-    # SonarCloud (fork PRs) workflow can decorate the correct pull request.
+    # PR metadata consumed by the fork-PR SonarCloud flow (see sonarcloud-fork.yml).
     save-pr-metadata:
         if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
