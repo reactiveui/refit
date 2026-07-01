@@ -59,7 +59,7 @@ public static class GeneratedRequestRunner
             sb.Append(pathSpan[pos..startIdx]);
             if (value is not null)
             {
-                sb.Append(value);
+                sb.Append(StringHelpers.EscapeDataString(value));
             }
 
             pos = endIdx;
