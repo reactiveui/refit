@@ -936,6 +936,28 @@ public partial class RestServiceIntegrationTests
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
+    /// <summary>Verifies a decimal query parameter is formatted correctly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithDecimalGenerated()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Get, "http://foo/withDecimal")
+            .WithExactQueryString([new("value", "3.456")])
+            .Respond("application/json", "Ok");
+
+        var fixture = RestService.For<IApiWithDecimal>("http://foo", settings);
+
+        const decimal val = 3.456M;
+
+        _ = await fixture.GetWithDecimalGenerated(val);
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
     /// <summary>Opens the embedded test resource at the given relative path as a stream.</summary>
     /// <param name="relativeFilePath">The path of the embedded resource relative to the assembly root.</param>
     /// <returns>A stream over the matching embedded resource.</returns>

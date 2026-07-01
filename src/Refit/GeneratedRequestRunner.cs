@@ -35,10 +35,13 @@ public static class GeneratedRequestRunner
 
     /// <summary>Builds the request path for a generated request from a template.</summary>
     /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
     /// <param name="uriParams">The replacement uri parameters.</param>
     /// <returns>A path with all the placeholder parameters in the path template replaced.</returns>
-    /// <exception cref="InvalidOperationException">A URI template parameter is not available in the provided parameter array.</exception>
-    public static string BuildRequestPath(string relativePathTemplate, params (string key, string? value)[] uriParams)
+    /// <exception cref="ArgumentException">
+    /// A URI template parameter is not available in the provided parameter array and unmatched URL parameters aren't allowed.
+    /// </exception>
+    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter, params (string key, string? value)[] uriParams)
     {
         var pathSpan = relativePathTemplate.AsSpan();
         var i = pathSpan.IndexOf('{');
@@ -47,26 +50,32 @@ public static class GeneratedRequestRunner
             return relativePathTemplate;
         }
 
-        using var sb = new ValueStringBuilder(1024);
+        using var sb = new ValueStringBuilder(stackalloc char[256]);
         sb.Append(pathSpan[..i]);
         var j = i + pathSpan[i..].IndexOfAny('}', '/');
-        var cache = new Dictionary<string, string?>(uriParams.Length);
 
         while (i >= 0 && j > i)
         {
             if (pathSpan[j] == '}')
             {
                 var foundKey = pathSpan[(i + 1)..j];
-                var exists = TryGetParamValue(uriParams, cache, foundKey, out var value);
+                var exists = TryGetParamValue(uriParams, foundKey, out var value);
 
                 if (exists)
                 {
                     sb.Append(value ?? string.Empty);
                 }
+                else if (allowUnmatchedParameter)
+                {
+                    sb.Append('{');
+                    sb.Append(foundKey);
+                    sb.Append('}');
+                }
                 else
                 {
                     var key = foundKey.ToString();
-                    throw new InvalidOperationException($"No parameter found for template key {key}");
+                    throw new ArgumentException(
+                        $"URL {nameof(relativePathTemplate)} has parameter {key}, but no method parameter matches");
                 }
 
                 ++j;
@@ -95,27 +104,17 @@ public static class GeneratedRequestRunner
 
         return sb.ToString();
 
-        static bool TryGetParamValue((string key, string? value)[] uriParams, Dictionary<string, string?> cache, in ReadOnlySpan<char> paramName, out string? value)
+        static bool TryGetParamValue((string key, string? value)[] uriParams, in ReadOnlySpan<char> paramName, out string? value)
         {
-            #if NET9_0_OR_GREATER
-            var lookup = cache.GetAlternateLookup<ReadOnlySpan<char>>();
-            var found = lookup.TryGetValue(paramName, out value);
-            #else
-            var found = cache.TryGetValue(paramName.ToString(), out value);
-            #endif
-            if (found)
-            {
-                return found;
-            }
-
+            var found = false;
+            value = null;
             foreach (var (key, v) in uriParams)
             {
-                if (!paramName.Equals(key, StringComparison.Ordinal))
+                if (!paramName.Equals(key, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
 
-                cache.Add(key, v);
                 value = v;
                 found = true;
                 break;

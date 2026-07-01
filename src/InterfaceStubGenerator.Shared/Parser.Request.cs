@@ -35,7 +35,7 @@ internal static partial class Parser
         var path = GetHttpPath(httpMethodAttribute);
         var pathParameters = ExtractPathParameterPlaceholderNames(path);
         var returnTypes = GetRequestReturnTypes(methodSymbol);
-        var parameters = ParseRequestParameters(methodSymbol.Parameters, pathParameters.ToImmutableHashSet(), out var parameterEligibility);
+        var parameters = ParseRequestParameters(methodSymbol.Parameters, pathParameters.ToImmutableHashSet(pathParameters.Comparer), out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
         var canGenerateInline =
@@ -68,7 +68,7 @@ internal static partial class Parser
                 return [];
             }
 
-            var paramNames = new HashSet<string>();
+            var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var j = i + pathSpan[i..].IndexOfAny('}', '/');
             while (i < pathSpan.Length && j > i)
             {

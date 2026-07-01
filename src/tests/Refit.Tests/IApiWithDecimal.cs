@@ -14,4 +14,10 @@ public interface IApiWithDecimal
     /// <returns>The response body as a string.</returns>
     [Get("/withDecimal")]
     Task<string> GetWithDecimal(decimal value);
+
+    /// <summary>Gets a response sending a decimal query value.</summary>
+    /// <param name="value">The decimal value to send.</param>
+    /// <returns>The response body as a string.</returns>
+    [Get("/withDecimal?value={value}")]
+    Task<string> GetWithDecimalGenerated(decimal value);
 }

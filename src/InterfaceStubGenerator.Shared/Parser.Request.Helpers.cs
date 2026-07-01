@@ -38,7 +38,7 @@ internal static partial class Parser
             && path.IndexOf('\r') < 0
             && path.IndexOf('\n') < 0;
 
-        static bool IsPathTemplateValid(ReadOnlySpan<char> path)
+        static bool IsPathTemplateValid(in ReadOnlySpan<char> path)
         {
             var openingBraces = 0;
             var closingBraces = 0;

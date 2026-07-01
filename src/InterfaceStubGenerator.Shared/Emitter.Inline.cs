@@ -134,7 +134,7 @@ internal static partial class Emitter
         }
 
         var pathExpression = parameters.Length > 0
-            ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}{parameters})"
+            ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}, {settingsLocal}.AllowUnmatchedRouteParameters{parameters})"
             : ToCSharpStringLiteral(request.Path);
         var requestUriExpression =
             $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {pathExpression}, {settingsLocal}.UrlResolution)";

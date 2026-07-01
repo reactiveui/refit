@@ -1114,13 +1114,14 @@ public class GeneratedRequestRunnerTests
     /// <summary>Verifies BuildRequestPath returns a path with substituted parameters.</summary>
     /// <param name="expectedResult">The expected result.</param>
     /// <param name="path">The templated path.</param>
+    /// <param name="allowUnmatchedRouteParameters">Whether unmatched route parameters are supported.</param>
     /// <param name="uriParams">The URI parameters.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     [InstanceMethodDataSource(typeof(GeneratedRequestRunnerTestsDataSources), nameof(GeneratedRequestRunnerTestsDataSources.BuildRequestPathReplacesParametersData))]
-    public async Task BuildRequestPathReplacesParameters(string expectedResult, string path, params (string key, string? value)[] uriParams)
+    public async Task BuildRequestPathReplacesParameters(string expectedResult, string path, bool allowUnmatchedRouteParameters, params (string key, string? value)[] uriParams)
     {
-        var result = GeneratedRequestRunner.BuildRequestPath(path, uriParams);
+        var result = GeneratedRequestRunner.BuildRequestPath(path, allowUnmatchedRouteParameters, uriParams);
 
         await Assert.That(result).EqualTo(expectedResult);
     }
@@ -1128,7 +1129,7 @@ public class GeneratedRequestRunnerTests
     /// <summary>Verifies BuildRequestPath fails when a parameter is not provided.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task BuildRequestPathFailsOnParameterNotFound() => await Assert.That(() => GeneratedRequestRunner.BuildRequestPath("/user/{id}")).Throws<InvalidOperationException>();
+    public async Task BuildRequestPathFailsOnParameterNotFound() => await Assert.That(() => GeneratedRequestRunner.BuildRequestPath("/user/{id}", false)).Throws<ArgumentException>();
 
     /// <summary>Creates settings backed by the test serializer.</summary>
     /// <param name="serializer">The serializer to assign, or null for a recording serializer.</param>
@@ -1150,12 +1151,17 @@ public class GeneratedRequestRunnerTests
     {
         /// <summary>Data source for the <see cref="BuildRequestPathReplacesParameters"/> test.</summary>
         /// <returns>Test data.</returns>
-        internal static IEnumerable<TestDataRow<(string expectedResult, string path, (string key, string? value)[] uriParams)>> BuildRequestPathReplacesParametersData()
+        internal static
+            IEnumerable<TestDataRow<(string expectedResult, string path, bool allowUnmatchedRouteParameters, (string key
+                ,
+                string? value)[] uriParams)>> BuildRequestPathReplacesParametersData()
         {
-            yield return new(("/users/20", "/users/{id}", [("id", "20")]));
-            yield return new(("/users/20/orders", "/users/{id}/orders", [("id", "20")]));
-            yield return new(("/users/", "/users/{id}", [("id", null)]));
-            yield return new(("/foo/row_2/col_2", "/foo/row_{idx}/col_{idx}", [("idx", "2")]));
+            yield return new(("/users/20", "/users/{id}", false, [("id", "20")]));
+            yield return new(("/users/20", "/users/{id}", true, [("id", "20")]));
+            yield return new(("/users/20/orders", "/users/{id}/orders", false, [("id", "20")]));
+            yield return new(("/users/", "/users/{id}", false, [("id", null)]));
+            yield return new(("/foo/row_2/col_2", "/foo/row_{idx}/col_{idx}", false, [("idx", "2")]));
+            yield return new(("/users/{id}", "/users/{id}", true, []));
         }
     }
 
