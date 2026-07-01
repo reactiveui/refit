@@ -291,6 +291,18 @@ public sealed class StubHttpCoverageTests
         await Assert.That(async () => _ = await invoker.SendAsync(request, default)).ThrowsExactly<InvalidOperationException>();
     }
 
+    /// <summary>Verifies a query matcher treats a null request URI as an empty query (wildcard template, no URI).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task NullUriEvaluatesQueryAsEmpty()
+    {
+        var handler = new StubHttp { { new RouteMatcher { Template = "*", Query = [("a", "1")] }, Reply.Status(HttpStatusCode.OK) } };
+        using var invoker = new HttpMessageInvoker(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, (Uri?)null);
+
+        await Assert.That(async () => _ = await invoker.SendAsync(request, default)).ThrowsExactly<InvalidOperationException>();
+    }
+
     /// <summary>Verifies a body that cannot be buffered is skipped for capture without failing the request.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
