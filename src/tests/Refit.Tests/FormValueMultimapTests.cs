@@ -403,9 +403,15 @@ public class FormValueMultimapTests
     /// <summary>Test fixture with an unsupported collection format value.</summary>
     public class ObjectWithUnknownCollectionFormat
     {
+        /// <summary>An unsupported <see cref="CollectionFormat"/> value used to exercise the unknown-format path.</summary>
+        private const int UnknownCollectionFormat = 123;
+
+        /// <summary>The second sample value in the values collection.</summary>
+        private const int SecondValue = 2;
+
         /// <summary>Gets the values collection.</summary>
-        [Query((CollectionFormat)123)]
-        public int[] Values { get; } = [1, 2];
+        [Query((CollectionFormat)UnknownCollectionFormat)]
+        public int[] Values { get; } = [1, SecondValue];
     }
 
     /// <summary>Test fixture whose properties have non-public getters to verify they are excluded.</summary>

@@ -11,6 +11,36 @@ namespace Refit.Tests;
 /// <summary>Tests for the generated request runtime helper.</summary>
 public class GeneratedRequestRunnerTests
 {
+    /// <summary>Relative request path shared by the generated-runner fixtures.</summary>
+    private const string RelativeResourcePath = "/resource";
+
+    /// <summary>Header name used by the header-assignment tests.</summary>
+    private const string TestHeaderName = "X-Test";
+
+    /// <summary>Sample body value for the unsupported serialization-mode test.</summary>
+    private const int UnsupportedModeBodyValue = 42;
+
+    /// <summary>Out-of-range value cast to an unsupported serialization mode.</summary>
+    private const int UnsupportedSerializationMode = 123;
+
+    /// <summary>Expected serialize call count for the serialized-body-modes test.</summary>
+    private const int ExpectedSerializeCallCount = 3;
+
+    /// <summary>Typed request option value stored and asserted by the request-property test.</summary>
+    private const int RequestPropertyValue = 42;
+
+    /// <summary>Configured request option value applied by the request-options test.</summary>
+    private const int ConfiguredOptionValue = 42;
+
+    /// <summary>Deserialized result value used by the successful-response tests.</summary>
+    private const int DeserializedResultValue = 42;
+
+    /// <summary>Deserialized result value used by the successful API-response test.</summary>
+    private const int SuccessResultValue = 123;
+
+    /// <summary>Deserialized result value used by the buffering-failure test.</summary>
+    private const int BufferedResultValue = 321;
+
     /// <summary>Verifies that already-created HTTP content is reused directly.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -93,7 +123,7 @@ public class GeneratedRequestRunnerTests
         await Assert.That(await defaultContent.ReadAsStringAsync()).IsEqualTo("serialized:42");
         await Assert.That(await serializedContent.ReadAsStringAsync()).IsEqualTo("serialized:serialized");
         await Assert.That(await legacyJsonContent.ReadAsStringAsync()).IsEqualTo("serialized:legacy-json");
-        await Assert.That(serializer.SerializeCallCount).IsEqualTo(3);
+        await Assert.That(serializer.SerializeCallCount).IsEqualTo(ExpectedSerializeCallCount);
     }
 
     /// <summary>Verifies that streaming serialized bodies are copied through push-stream content.</summary>
@@ -315,8 +345,8 @@ public class GeneratedRequestRunnerTests
             .That(
                 () => GeneratedRequestRunner.CreateBodyContent(
                     settings,
-                    new { Value = 42 },
-                    (BodySerializationMethod)123,
+                    new { Value = UnsupportedModeBodyValue },
+                    (BodySerializationMethod)UnsupportedSerializationMode,
                     streamBody: false))
             .ThrowsExactly<ArgumentOutOfRangeException>();
     }
@@ -326,16 +356,16 @@ public class GeneratedRequestRunnerTests
     [Test]
     public async Task SetHeaderReplacesRemovesAndSanitizesHeaders()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
-        GeneratedRequestRunner.SetHeader(request, "X-Test", "first");
-        GeneratedRequestRunner.SetHeader(request, "X-Test", "second\r\nvalue");
+        GeneratedRequestRunner.SetHeader(request, TestHeaderName, "first");
+        GeneratedRequestRunner.SetHeader(request, TestHeaderName, "second\r\nvalue");
 
-        await Assert.That(request.Headers.GetValues("X-Test")).IsCollectionEqualTo(["secondvalue"]);
+        await Assert.That(request.Headers.GetValues(TestHeaderName)).IsCollectionEqualTo(["secondvalue"]);
 
-        GeneratedRequestRunner.SetHeader(request, "X-Test", null);
+        GeneratedRequestRunner.SetHeader(request, TestHeaderName, null);
 
-        await Assert.That(request.Headers.Contains("X-Test")).IsFalse();
+        await Assert.That(request.Headers.Contains(TestHeaderName)).IsFalse();
     }
 
     /// <summary>Verifies that content headers create placeholder content for methods that can carry bodies.</summary>
@@ -343,7 +373,7 @@ public class GeneratedRequestRunnerTests
     [Test]
     public async Task SetHeaderUsesContentHeadersForContentHeaderNames()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath);
 
         GeneratedRequestRunner.SetHeader(request, "Content-Language", "en-US");
 
@@ -356,7 +386,7 @@ public class GeneratedRequestRunnerTests
     [Test]
     public async Task SetHeaderReplacesExistingContentHeaders()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/resource")
+        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath)
         {
             Content = new StringContent("body")
         };
@@ -372,7 +402,7 @@ public class GeneratedRequestRunnerTests
     [Test]
     public async Task AddHeaderCollectionIgnoresNullAndReplacesExistingHeaders()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var headers = new Dictionary<string, string>
         {
             ["X-First"] = "one",
@@ -392,16 +422,16 @@ public class GeneratedRequestRunnerTests
     [Test]
     public async Task AddRequestPropertyStoresTypedRequestOption()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
-        GeneratedRequestRunner.AddRequestProperty<int>(request, "number", 42);
+        GeneratedRequestRunner.AddRequestProperty<int>(request, "number", RequestPropertyValue);
 
 #if NET6_0_OR_GREATER
         await Assert.That(request.Options.TryGetValue(new HttpRequestOptionsKey<int>("number"), out var value))
             .IsTrue();
-        await Assert.That(value).IsEqualTo(42);
+        await Assert.That(value).IsEqualTo(RequestPropertyValue);
 #else
-        await Assert.That(request.Properties["number"]).IsEqualTo(42);
+        await Assert.That(request.Properties["number"]).IsEqualTo(RequestPropertyValue);
 #endif
     }
 
@@ -410,12 +440,12 @@ public class GeneratedRequestRunnerTests
     [Test]
     public async Task AddConfiguredRequestOptionsAddsConfiguredValuesAndInterfaceType()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = new RefitSettings(new RecordingContentSerializer())
         {
             HttpRequestMessageOptions = new()
             {
-                ["configured"] = 42
+                ["configured"] = ConfiguredOptionValue
             }
         };
 
@@ -430,7 +460,7 @@ public class GeneratedRequestRunnerTests
                     new HttpRequestOptionsKey<object>("configured"),
                     out var configuredValue))
             .IsTrue();
-        await Assert.That(configuredValue).IsEqualTo(42);
+        await Assert.That(configuredValue).IsEqualTo(ConfiguredOptionValue);
         await Assert.That(
                 request.Options.TryGetValue(
                     new HttpRequestOptionsKey<Type>(HttpRequestMessageOptions.InterfaceType),
@@ -438,7 +468,7 @@ public class GeneratedRequestRunnerTests
             .IsTrue();
         await Assert.That(interfaceType).IsEqualTo(typeof(GeneratedRequestRunnerTests));
 #else
-        await Assert.That(request.Properties["configured"]).IsEqualTo(42);
+        await Assert.That(request.Properties["configured"]).IsEqualTo(ConfiguredOptionValue);
         await Assert.That(request.Properties[HttpRequestMessageOptions.InterfaceType])
             .IsEqualTo(typeof(GeneratedRequestRunnerTests));
 #endif
@@ -456,7 +486,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("accepted")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/resource")
+        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath)
         {
             Content = new StringContent("body")
         };
@@ -486,7 +516,7 @@ public class GeneratedRequestRunnerTests
     public async Task SendVoidAsyncRequiresBaseAddress()
     {
         using var client = new HttpClient(new CapturingHandler());
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var exception = await Assert
             .That(
@@ -514,7 +544,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("response")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings(serializer);
 
         var result = await GeneratedRequestRunner.SendAsync<string, string>(
@@ -542,7 +572,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("buffered")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Post, "/resource")
+        using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath)
         {
             Content = new StringContent("request-body")
         };
@@ -574,7 +604,7 @@ public class GeneratedRequestRunnerTests
         };
         var handler = new CapturingHandler((_, _) => Task.FromResult(response));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings();
         var exceptionFactoryCalled = false;
         settings.ExceptionFactory = _ =>
@@ -609,7 +639,7 @@ public class GeneratedRequestRunnerTests
                     Content = responseContent
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var result = await GeneratedRequestRunner.SendAsync<HttpContent, HttpContent>(
             client,
@@ -635,7 +665,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("streamed-response")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var result = await GeneratedRequestRunner.SendAsync<Stream, Stream>(
             client,
@@ -657,7 +687,7 @@ public class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer
         {
-            DeserializedValue = new GeneratedResult(42)
+            DeserializedValue = new GeneratedResult(DeserializedResultValue)
         };
         var handler = new CapturingHandler(
             (_, _) => Task.FromResult(
@@ -666,7 +696,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("{\"value\":42}")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var result = await GeneratedRequestRunner.SendAsync<GeneratedResult, GeneratedResult>(
             client,
@@ -677,7 +707,7 @@ public class GeneratedRequestRunnerTests
             bufferBody: false,
             CancellationToken.None);
 
-        await Assert.That(result).IsEqualTo(new(42));
+        await Assert.That(result).IsEqualTo(new(DeserializedResultValue));
         await Assert.That(serializer.DeserializeCallCount).IsEqualTo(1);
     }
 
@@ -688,7 +718,7 @@ public class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer
         {
-            DeserializedValue = new GeneratedResult(42)
+            DeserializedValue = new GeneratedResult(DeserializedResultValue)
         };
         var handler = new CapturingHandler(
             (_, _) => Task.FromResult(
@@ -697,7 +727,7 @@ public class GeneratedRequestRunnerTests
                     Content = new ByteArrayContent([])
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var result = await GeneratedRequestRunner.SendAsync<GeneratedResult, GeneratedResult>(
             client,
@@ -725,7 +755,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("bad")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings();
         settings.ExceptionFactory = _ => Task.FromResult<Exception?>(exception);
 
@@ -752,7 +782,7 @@ public class GeneratedRequestRunnerTests
         var handler = new CapturingHandler(
             (_, _) => throw new HttpRequestException("network failure"));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var result = await GeneratedRequestRunner.SendAsync<ApiResponse<string>, string>(
             client,
@@ -776,7 +806,7 @@ public class GeneratedRequestRunnerTests
         var handler = new CapturingHandler(
             (_, _) => throw new HttpRequestException("network failure"));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var exception = await Assert
             .That(
@@ -800,7 +830,7 @@ public class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer
         {
-            DeserializedValue = new GeneratedResult(123)
+            DeserializedValue = new GeneratedResult(SuccessResultValue)
         };
         var handler = new CapturingHandler(
             (_, _) => Task.FromResult(
@@ -809,7 +839,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("{\"value\":123}")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var result = await GeneratedRequestRunner.SendAsync<ApiResponse<GeneratedResult>, GeneratedResult>(
             client,
@@ -821,7 +851,7 @@ public class GeneratedRequestRunnerTests
             CancellationToken.None);
 
         await Assert.That(result!.IsSuccessful).IsTrue();
-        await Assert.That(result.Content).IsEqualTo(new(123));
+        await Assert.That(result.Content).IsEqualTo(new(SuccessResultValue));
         await Assert.That(serializer.DeserializeCallCount).IsEqualTo(1);
     }
 
@@ -832,7 +862,7 @@ public class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer
         {
-            DeserializedValue = new GeneratedResult(123)
+            DeserializedValue = new GeneratedResult(SuccessResultValue)
         };
         var handler = new CapturingHandler(
             (_, _) => Task.FromResult(
@@ -841,7 +871,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("bad")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings(serializer);
 
         var result = await GeneratedRequestRunner.SendAsync<ApiResponse<GeneratedResult>, GeneratedResult>(
@@ -875,7 +905,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("bad")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings(serializer);
         settings.DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null);
 
@@ -909,7 +939,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("bad")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var replacement = new InvalidOperationException("replacement");
         var settings = CreateSettings(serializer);
         settings.DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(replacement);
@@ -945,7 +975,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("bad")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var thrown = await Assert
             .That(
@@ -979,7 +1009,7 @@ public class GeneratedRequestRunnerTests
                     Content = new StringContent("cancelled")
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         using var tokenSource = new CancellationTokenSource();
         await tokenSource.CancelAsync();
 
@@ -1003,7 +1033,7 @@ public class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer
         {
-            DeserializedValue = new GeneratedResult(321)
+            DeserializedValue = new GeneratedResult(BufferedResultValue)
         };
         var handler = new CapturingHandler(
             (_, _) => Task.FromResult(
@@ -1012,7 +1042,7 @@ public class GeneratedRequestRunnerTests
                     Content = new ThrowingLoadContent()
                 }));
         using var client = CreateClient(handler);
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var result = await GeneratedRequestRunner.SendAsync<GeneratedResult, GeneratedResult>(
             client,
@@ -1023,7 +1053,7 @@ public class GeneratedRequestRunnerTests
             bufferBody: false,
             CancellationToken.None);
 
-        await Assert.That(result).IsEqualTo(new(321));
+        await Assert.That(result).IsEqualTo(new(BufferedResultValue));
         await Assert.That(serializer.DeserializeCallCount).IsEqualTo(1);
     }
 
@@ -1033,7 +1063,7 @@ public class GeneratedRequestRunnerTests
     public async Task SendAsyncRequiresBaseAddress()
     {
         using var client = new HttpClient(new CapturingHandler());
-        using var request = new HttpRequestMessage(HttpMethod.Get, "/resource");
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
         var exception = await Assert
             .That(

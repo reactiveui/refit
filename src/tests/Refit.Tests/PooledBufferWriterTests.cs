@@ -11,6 +11,24 @@ namespace Refit.Tests;
 [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "These tests intentionally exercise the synchronous Stream overrides.")]
 public class PooledBufferWriterTests
 {
+    /// <summary>A sample byte marker with the value two.</summary>
+    private const byte MarkerByteTwo = 2;
+
+    /// <summary>A sample byte marker with the value three.</summary>
+    private const byte MarkerByteThree = 3;
+
+    /// <summary>A sample byte marker with the value ten.</summary>
+    private const byte MarkerByteTen = 10;
+
+    /// <summary>A sample byte marker with the value twenty.</summary>
+    private const byte MarkerByteTwenty = 20;
+
+    /// <summary>The number of bytes in a two-byte sample buffer.</summary>
+    private const int TwoByteCount = 2;
+
+    /// <summary>The number of bytes in a three-byte sample buffer.</summary>
+    private const int ThreeByteCount = 3;
+
     /// <summary>Verifies written bytes are preserved when the writer grows beyond its initial rented buffer.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -19,11 +37,11 @@ public class PooledBufferWriterTests
         using var writer = new PooledBufferWriter();
         var first = writer.GetSpan(PooledBufferWriter.DefaultSize);
         first[0] = 1;
-        first[PooledBufferWriter.DefaultSize - 1] = 2;
+        first[PooledBufferWriter.DefaultSize - 1] = MarkerByteTwo;
         writer.Advance(PooledBufferWriter.DefaultSize);
 
         var second = writer.GetSpan(1);
-        second[0] = 3;
+        second[0] = MarkerByteThree;
         writer.Advance(1);
 
         await using var stream = writer.DetachStream();
@@ -33,8 +51,8 @@ public class PooledBufferWriterTests
 
         await Assert.That(read).IsEqualTo(buffer.Length);
         await Assert.That(buffer[0]).IsEqualTo((byte)1);
-        await Assert.That(buffer[PooledBufferWriter.DefaultSize - 1]).IsEqualTo((byte)2);
-        await Assert.That(buffer[PooledBufferWriter.DefaultSize]).IsEqualTo((byte)3);
+        await Assert.That(buffer[PooledBufferWriter.DefaultSize - 1]).IsEqualTo(MarkerByteTwo);
+        await Assert.That(buffer[PooledBufferWriter.DefaultSize]).IsEqualTo(MarkerByteThree);
     }
 
     /// <summary>Verifies zero-sized span and memory requests still reserve at least one byte.</summary>
@@ -69,14 +87,14 @@ public class PooledBufferWriterTests
     {
         using var writer = new PooledBufferWriter();
         var span = writer.GetSpan(2);
-        span[0] = 10;
-        span[1] = 20;
-        writer.Advance(2);
+        span[0] = MarkerByteTen;
+        span[1] = MarkerByteTwenty;
+        writer.Advance(TwoByteCount);
 
         await using var stream = writer.DetachStream();
 
-        await Assert.That(stream.ReadByte()).IsEqualTo(10);
-        await Assert.That(stream.ReadByte()).IsEqualTo(20);
+        await Assert.That(stream.ReadByte()).IsEqualTo(MarkerByteTen);
+        await Assert.That(stream.ReadByte()).IsEqualTo(MarkerByteTwenty);
         await Assert.That(stream.ReadByte()).IsEqualTo(-1);
     }
 
@@ -91,7 +109,7 @@ public class PooledBufferWriterTests
 
         await Assert.That(() => stream.Read(buffer, -1, 1)).ThrowsExactly<ArgumentOutOfRangeException>();
         await Assert.That(() => stream.Read(buffer, 0, -1)).ThrowsExactly<ArgumentOutOfRangeException>();
-        await Assert.That(() => stream.Read(buffer, 1, 2)).ThrowsExactly<ArgumentException>();
+        await Assert.That(() => stream.Read(buffer, 1, TwoByteCount)).ThrowsExactly<ArgumentException>();
     }
 
     /// <summary>Verifies detached stream metadata and partial reads.</summary>
@@ -110,12 +128,12 @@ public class PooledBufferWriterTests
         var thirdRead = await stream.ReadAsync(buffer, 0, buffer.Length);
         await stream.FlushAsync();
 
-        await Assert.That(stream.Length).IsEqualTo(3);
-        await Assert.That(firstRead).IsEqualTo(2);
+        await Assert.That(stream.Length).IsEqualTo(ThreeByteCount);
+        await Assert.That(firstRead).IsEqualTo(TwoByteCount);
         await Assert.That(secondRead).IsEqualTo(1);
         await Assert.That(thirdRead).IsEqualTo(0);
-        await Assert.That(stream.Position).IsEqualTo(3);
-        await Assert.That(buffer[0]).IsEqualTo((byte)3);
+        await Assert.That(stream.Position).IsEqualTo(ThreeByteCount);
+        await Assert.That(buffer[0]).IsEqualTo(MarkerByteThree);
     }
 
     /// <summary>Verifies unsupported stream operations throw <see cref="NotSupportedException"/>.</summary>
@@ -145,11 +163,13 @@ public class PooledBufferWriterTests
         using var cancellationTokenSource = new CancellationTokenSource();
         await cancellationTokenSource.CancelAsync();
 
+        const int copyBufferSize = 81_920;
+
         await Assert.That(() => stream.FlushAsync(cancellationTokenSource.Token))
             .ThrowsExactly<TaskCanceledException>();
-        await Assert.That(() => stream.ReadAsync(new byte[3], 0, 3, cancellationTokenSource.Token))
+        await Assert.That(() => stream.ReadAsync(new byte[ThreeByteCount], 0, ThreeByteCount, cancellationTokenSource.Token))
             .ThrowsExactly<TaskCanceledException>();
-        await Assert.That(() => stream.CopyToAsync(Stream.Null, 81_920, cancellationTokenSource.Token))
+        await Assert.That(() => stream.CopyToAsync(Stream.Null, copyBufferSize, cancellationTokenSource.Token))
             .ThrowsExactly<OperationCanceledException>();
     }
 
@@ -193,18 +213,20 @@ public class PooledBufferWriterTests
         using var writer = CreateWriter(1, 2, 3);
         await using var stream = writer.DetachStream();
         var buffer = new byte[4];
+        const int thirdElementIndex = 2;
+        const int fourthElementIndex = 3;
 
         var firstRead = stream.Read(buffer.AsSpan(0, 2));
         var secondRead = await stream.ReadAsync(buffer.AsMemory(2, 2));
         var thirdRead = stream.Read(buffer);
 
-        await Assert.That(firstRead).IsEqualTo(2);
+        await Assert.That(firstRead).IsEqualTo(TwoByteCount);
         await Assert.That(secondRead).IsEqualTo(1);
         await Assert.That(thirdRead).IsEqualTo(0);
         await Assert.That(buffer[0]).IsEqualTo((byte)1);
-        await Assert.That(buffer[1]).IsEqualTo((byte)2);
-        await Assert.That(buffer[2]).IsEqualTo((byte)3);
-        await Assert.That(buffer[3]).IsEqualTo((byte)0);
+        await Assert.That(buffer[1]).IsEqualTo(MarkerByteTwo);
+        await Assert.That(buffer[thirdElementIndex]).IsEqualTo(MarkerByteThree);
+        await Assert.That(buffer[fourthElementIndex]).IsEqualTo((byte)0);
     }
 #endif
 
@@ -228,7 +250,7 @@ public class PooledBufferWriterTests
         var memory = writer.GetMemory();
         memory.Span[0] = 1;
         var span = writer.GetSpan();
-        span[0] = 2;
+        span[0] = MarkerByteTwo;
 
         return (memory.Length, span.Length);
     }

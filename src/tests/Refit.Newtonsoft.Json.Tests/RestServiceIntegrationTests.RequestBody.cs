@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
@@ -18,26 +18,22 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task CanGetDataOutOfErrorResponses()
     {
-        var mockHttp = new MockHttpMessageHandler();
-
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => mockHttp,
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "https://api.github.com/give-me-some-404-action", Reusable = true },
+                Reply.Json("{'message': 'Not Found', 'documentation_url': 'http://foo/bar'}", HttpStatusCode.NotFound)
+            },
+        };
+
+        var fixture = handler.CreateClient<IGitHubApi>("https://api.github.com", new RefitSettings
+        {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
                 new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
-        };
-
-        _ = mockHttp
-            .When(HttpMethod.Get, "https://api.github.com/give-me-some-404-action")
-            .Respond(
-                HttpStatusCode.NotFound,
-                "application/json",
-                "{'message': 'Not Found', 'documentation_url': 'http://foo/bar'}");
-
-        var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+        });
         try
         {
             await fixture.NothingToSeeHere();
@@ -58,26 +54,22 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ErrorsFromApiReturnErrorContent()
     {
-        var mockHttp = new MockHttpMessageHandler();
-
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => mockHttp,
+            {
+                Route.Post("https://api.github.com/users"),
+                Reply.Json("{ 'errors': [ 'error1', 'message' ]}", HttpStatusCode.BadRequest)
+            },
+        };
+
+        var fixture = handler.CreateClient<IGitHubApi>("https://api.github.com", new RefitSettings
+        {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
                 new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
-        };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Post, "https://api.github.com/users")
-            .Respond(
-                HttpStatusCode.BadRequest,
-                "application/json",
-                "{ 'errors': [ 'error1', 'message' ]}");
-
-        var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+        });
 
         var result = await Assert.That(
             () => (Task)fixture.CreateUser(new() { Name = "foo" })).ThrowsExactly<ApiException>();
@@ -89,7 +81,7 @@ public partial class RestServiceIntegrationTests
         await Assert.That(errors!.Errors).Contains("error1");
         await Assert.That(errors.Errors).Contains("message");
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies error content is returned in an API response when a request fails.</summary>
@@ -97,26 +89,22 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ErrorsFromApiReturnErrorContentWhenApiResponse()
     {
-        var mockHttp = new MockHttpMessageHandler();
-
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => mockHttp,
+            {
+                Route.Post("https://api.github.com/users"),
+                Reply.Json("{ 'errors': [ 'error1', 'message' ]}", HttpStatusCode.BadRequest)
+            },
+        };
+
+        var fixture = handler.CreateClient<IGitHubApi>("https://api.github.com", new RefitSettings
+        {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
                 new()
                 {
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
-        };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Post, "https://api.github.com/users")
-            .Respond(
-                HttpStatusCode.BadRequest,
-                "application/json",
-                "{ 'errors': [ 'error1', 'message' ]}");
-
-        var fixture = RestService.For<IGitHubApi>("https://api.github.com", settings);
+        });
 
         using var response = await fixture.CreateUserWithMetadata(new() { Name = "foo" });
         await Assert.That(response.IsSuccessStatusCode).IsFalse();
@@ -129,6 +117,6 @@ public partial class RestServiceIntegrationTests
         await Assert.That(errors!.Errors).Contains("error1");
         await Assert.That(errors.Errors).Contains("message");
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 }

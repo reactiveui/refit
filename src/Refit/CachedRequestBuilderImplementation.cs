@@ -29,7 +29,8 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
     internal ConcurrentDictionary<
         MethodTableKey,
         Func<HttpClient, object[], object?>
-    > MethodDictionary { get; } = new();
+    > MethodDictionary
+    { get; } = new();
 
     /// <inheritdoc/>
     [RequiresUnreferencedCode("Building request delegates from reflected method metadata requires generic method metadata to be available at runtime.")]

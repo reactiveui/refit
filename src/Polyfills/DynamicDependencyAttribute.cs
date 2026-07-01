@@ -6,6 +6,7 @@
 namespace System.Diagnostics.CodeAnalysis;
 
 /// <summary>Polyfill of the DynamicDependency attribute for older target frameworks.</summary>
+[ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Constructor | AttributeTargets.Method, AllowMultiple = true)]
 internal sealed class DynamicDependencyAttribute : Attribute
 {

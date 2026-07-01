@@ -69,7 +69,7 @@ internal static class EnumHelpers
     /// <typeparam name="TEnum">The enum type.</typeparam>
     internal static class Info<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
-        TEnum>
+    TEnum>
         where TEnum : struct, Enum
     {
         /// <summary>The enum backing type used when reading and writing undefined numeric values.</summary>

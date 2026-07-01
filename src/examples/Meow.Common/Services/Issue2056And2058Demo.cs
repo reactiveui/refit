@@ -16,7 +16,8 @@ public static class Issue2056And2058Demo
     public static async Task RunAsync()
     {
         using var httpClient = new HttpClient(
-            new CustomerIdHeaderHandler(new DemoBackendHandler())) { BaseAddress = new("https://demo.local") };
+            new CustomerIdHeaderHandler(new DemoBackendHandler()))
+        { BaseAddress = new("https://demo.local") };
 
         var api = RestService.For<IIssueDemoApi>(
             httpClient,

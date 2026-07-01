@@ -603,21 +603,21 @@ namespace Refit
             switch (restMethod.BodyParameterInfo.Item1)
             {
                 case BodySerializationMethod.UrlEncoded:
-                {
-                    ret.Content = param is string str
-                        ? new StringContent(
-                            StringHelpers.EscapeDataString(str),
-                            Encoding.UTF8,
-                            "application/x-www-form-urlencoded")
-                        : new FormUrlEncodedContent(new FormValueMultimap(param, _settings));
-                    break;
-                }
+                    {
+                        ret.Content = param is string str
+                            ? new StringContent(
+                                StringHelpers.EscapeDataString(str),
+                                Encoding.UTF8,
+                                "application/x-www-form-urlencoded")
+                            : new FormUrlEncodedContent(new FormValueMultimap(param, _settings));
+                        break;
+                    }
 
                 case BodySerializationMethod.JsonLines:
-                {
-                    ret.Content = new JsonLinesContent(AsJsonLinesSequence(param), _serializer);
-                    break;
-                }
+                    {
+                        ret.Content = new JsonLinesContent(AsJsonLinesSequence(param), _serializer);
+                        break;
+                    }
 
                 // BodySerializationMethod.Json is obsolete, but the reflection path must still
                 // accept legacy [Body(BodySerializationMethod.Json)] usage from compiled callers.
@@ -625,10 +625,10 @@ namespace Refit
 #pragma warning disable CS0618 // Required for legacy BodySerializationMethod.Json compatibility.
                 case BodySerializationMethod.Default or BodySerializationMethod.Json or BodySerializationMethod.Serialized:
 #pragma warning restore CS0618 // Compatibility switch complete; re-enable obsolete warnings.
-                {
-                    AddSerializedBodyToRequest(restMethod, param, ret);
-                    break;
-                }
+                    {
+                        AddSerializedBodyToRequest(restMethod, param, ret);
+                        break;
+                    }
             }
         }
 

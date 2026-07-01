@@ -11,17 +11,50 @@ namespace Refit.Tests;
 /// <summary>Tests for API exception factory and validation exception edge cases.</summary>
 public sealed class ApiExceptionTests
 {
+    /// <summary>The example request URI reused across the exception tests.</summary>
+    private const string ExampleUri = "https://example.test";
+
+    /// <summary>The problem-details media type reused across the validation tests.</summary>
+    private const string ProblemJsonMediaType = "application/problem+json";
+
+    /// <summary>The message literal reused across the constructor tests.</summary>
+    private const string MessageText = "message";
+
+    /// <summary>The redaction placeholder value.</summary>
+    private const string RedactedText = "[redacted]";
+
+    /// <summary>A JSON error body that deserializes to <see cref="ResponseModel"/>.</summary>
+    private const string ValueJson = "{\"Value\":42}";
+
+    /// <summary>The deserialized value asserted by the content-helper tests.</summary>
+    private const int ExpectedValue = 42;
+
+    /// <summary>The problem-details status code asserted by the validation tests.</summary>
+    private const int ExpectedStatusCode = 400;
+
+    /// <summary>The integer extension value asserted by the validation tests.</summary>
+    private const int ExpectedIntegerExtension = 123;
+
+    /// <summary>The fractional extension value asserted by the validation tests.</summary>
+    private const double ExpectedFractionExtension = 12.5;
+
+    /// <summary>The configured maximum exception content length.</summary>
+    private const int MaxContentLength = 128;
+
+    /// <summary>The length of the oversized error body used by the truncation tests.</summary>
+    private const int LongBodyLength = 10_000;
+
     /// <summary>Verifies ApiException factory guard clauses.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task CreateRejectsSuccessfulOrMissingResponses()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var success = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
 
         await Assert.That(() => (Task)ApiException.Create(request, HttpMethod.Get, success, new()))
             .ThrowsExactly<ArgumentException>();
-        await Assert.That(() => (Task)ApiException.Create("message", request, HttpMethod.Get, null!, new()))
+        await Assert.That(() => (Task)ApiException.Create(MessageText, request, HttpMethod.Get, null!, new()))
             .ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => (Task)ApiException.Create(request, HttpMethod.Get, null!, new(), null))
             .ThrowsExactly<ArgumentNullException>();
@@ -32,7 +65,7 @@ public sealed class ApiExceptionTests
     [Test]
     public async Task CreateHandlesMissingAndUnreadableContent()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var noContentResponse = new HttpResponseMessage(HttpStatusCode.BadGateway)
         {
             RequestMessage = request,
@@ -64,7 +97,7 @@ public sealed class ApiExceptionTests
     [Test]
     public async Task ConstructorsAndContentHelpersPreserveContext()
     {
-        using var response = CreateErrorResponse("{\"Value\":42}");
+        using var response = CreateErrorResponse(ValueJson);
         var settings = new RefitSettings();
         var exception = await ApiException.Create(
             response.RequestMessage!,
@@ -92,7 +125,7 @@ public sealed class ApiExceptionTests
         var model = await exception.GetContentAsAsync<ResponseModel>();
         var missing = await emptyDerived.GetContentAsAsync<ResponseModel>();
 
-        await Assert.That(model!.Value).IsEqualTo(42);
+        await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
         await Assert.That(missing).IsNull();
         await Assert.That(derived.Message).IsEqualTo("custom");
         await Assert.That(derived.StatusCode).IsEqualTo(HttpStatusCode.Conflict);
@@ -105,10 +138,10 @@ public sealed class ApiExceptionTests
     public async Task ValidationApiExceptionConstructorsAndCreateGuards()
     {
         var inner = new InvalidOperationException("inner");
-        var messageOnly = new ValidationApiException("message");
-        var withInner = new ValidationApiException("message", inner);
+        var messageOnly = new ValidationApiException(MessageText);
+        var withInner = new ValidationApiException(MessageText, inner);
 
-        await Assert.That(messageOnly.Message).IsEqualTo("message");
+        await Assert.That(messageOnly.Message).IsEqualTo(MessageText);
         await Assert.That(withInner.InnerException).IsSameReferenceAs(inner);
         await Assert.That(() => ValidationApiException.Create(null!))
             .ThrowsExactly<ArgumentNullException>();
@@ -132,7 +165,7 @@ public sealed class ApiExceptionTests
     {
         using var response = CreateErrorResponse(
             "{\"title\":\"invalid\",\"status\":400,\"errors\":{\"Name\":[\"Required\"]}}",
-            "application/problem+json");
+            ProblemJsonMediaType);
         var apiException = await ApiException.Create(
             response.RequestMessage!,
             HttpMethod.Get,
@@ -143,7 +176,7 @@ public sealed class ApiExceptionTests
 
         await Assert.That(validationException.Content).IsNotNull();
         await Assert.That(validationException.Content!.Title).IsEqualTo("invalid");
-        await Assert.That(validationException.Content.Status).IsEqualTo(400);
+        await Assert.That(validationException.Content.Status).IsEqualTo(ExpectedStatusCode);
         await Assert.That(validationException.Content.Errors["Name"][0]).IsEqualTo("Required");
     }
 
@@ -175,7 +208,7 @@ public sealed class ApiExceptionTests
               "metadata": { "nested": "value" }
             }
             """,
-            "application/problem+json");
+            ProblemJsonMediaType);
         var apiException = await ApiException.Create(
             response.RequestMessage!,
             HttpMethod.Get,
@@ -192,10 +225,10 @@ public sealed class ApiExceptionTests
         await Assert.That(validationException.Content.Errors["Count"][0]).IsEqualTo("42");
         await Assert.That((bool)validationException.Content.Extensions["enabled"]).IsTrue();
         await Assert.That((bool)validationException.Content.Extensions["disabled"]).IsFalse();
-        await Assert.That(validationException.Content.Extensions["integer"]).IsEqualTo(123L);
-        await Assert.That(validationException.Content.Extensions["fraction"]).IsEqualTo(12.5);
+        await Assert.That(validationException.Content.Extensions["integer"]).IsEqualTo((long)ExpectedIntegerExtension);
+        await Assert.That(validationException.Content.Extensions["fraction"]).IsEqualTo(ExpectedFractionExtension);
         await Assert.That(validationException.Content.Extensions["timestamp"]).IsTypeOf<DateTime>();
-        await Assert.That(validationException.Content.Extensions["message"]).IsEqualTo("hello");
+        await Assert.That(validationException.Content.Extensions[MessageText]).IsEqualTo("hello");
         await Assert.That(validationException.Content.Extensions["metadata"]).IsTypeOf<JsonElement>();
     }
 
@@ -208,7 +241,7 @@ public sealed class ApiExceptionTests
     {
         using var response = CreateErrorResponse(
             "{\"title\":\"invalid\",\"errors\":\"not-an-object\"}",
-            "application/problem+json");
+            ProblemJsonMediaType);
         var apiException = await ApiException.Create(
             response.RequestMessage!,
             HttpMethod.Get,
@@ -228,7 +261,7 @@ public sealed class ApiExceptionTests
     [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous compatibility factory.")]
     public async Task ValidationApiExceptionCreateRejectsNonObjectProblemDetails()
     {
-        using var response = CreateErrorResponse("[1,2,3]", "application/problem+json");
+        using var response = CreateErrorResponse("[1,2,3]", ProblemJsonMediaType);
         var apiException = await ApiException.Create(
             response.RequestMessage!,
             HttpMethod.Get,
@@ -243,14 +276,14 @@ public sealed class ApiExceptionTests
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task ValidationApiExceptionInnerConstructorRejectsNullInnerException() =>
-        await Assert.That(() => new ValidationApiException("message", null!))
+        await Assert.That(() => new ValidationApiException(MessageText, null!))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies the problem+json media type is detected case-insensitively per RFC 7231 (#1702).</summary>
     /// <param name="mediaType">The problem details media type with varied casing.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments("application/problem+json")]
+    [Arguments(ProblemJsonMediaType)]
     [Arguments("application/PROBLEM+JSON")]
     [Arguments("Application/Problem+Json")]
     public async Task CreateDetectsProblemJsonMediaTypeCaseInsensitively(string mediaType)
@@ -275,7 +308,7 @@ public sealed class ApiExceptionTests
     [SuppressMessage("Major Code Smell", "S6966:Awaitable method should be used", Justification = "This test intentionally covers the synchronous content helper.")]
     public async Task SyncGetContentAsDeserializesContent()
     {
-        using var response = CreateErrorResponse("{\"Value\":42}");
+        using var response = CreateErrorResponse(ValueJson);
         var exception = await ApiException.Create(
             response.RequestMessage!,
             HttpMethod.Get,
@@ -284,7 +317,7 @@ public sealed class ApiExceptionTests
 
         var model = exception.GetContentAs<ResponseModel>();
 
-        await Assert.That(model!.Value).IsEqualTo(42);
+        await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
     }
 
     /// <summary>Verifies the synchronous GetContentAs returns default when there is no body (#1591).</summary>
@@ -309,7 +342,7 @@ public sealed class ApiExceptionTests
     [Test]
     public async Task SyncTryGetContentAsReturnsTrueAndValue()
     {
-        using var response = CreateErrorResponse("{\"Value\":42}");
+        using var response = CreateErrorResponse(ValueJson);
         var exception = await ApiException.Create(
             response.RequestMessage!,
             HttpMethod.Get,
@@ -319,7 +352,7 @@ public sealed class ApiExceptionTests
         var ok = exception.TryGetContentAs<ResponseModel>(out var model);
 
         await Assert.That(ok).IsTrue();
-        await Assert.That(model!.Value).IsEqualTo(42);
+        await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
     }
 
     /// <summary>Verifies TryGetContentAs returns false for missing or malformed content (#1591).</summary>
@@ -343,7 +376,7 @@ public sealed class ApiExceptionTests
     [Test]
     public async Task SyncGetContentAsWithoutSyncSerializerSupport()
     {
-        using var response = CreateErrorResponse("{\"Value\":42}");
+        using var response = CreateErrorResponse(ValueJson);
         var settings = new RefitSettings(new AsyncOnlySerializer());
         var exception = await ApiException.Create(
             response.RequestMessage!,
@@ -398,8 +431,8 @@ public sealed class ApiExceptionTests
     [Test]
     public async Task MaxExceptionContentLengthTruncatesErrorBody()
     {
-        using var response = CreateErrorResponse(new string('a', 10_000));
-        var settings = new RefitSettings { MaxExceptionContentLength = 128 };
+        using var response = CreateErrorResponse(new string('a', LongBodyLength));
+        var settings = new RefitSettings { MaxExceptionContentLength = MaxContentLength };
 
         var exception = await ApiException.Create(
             response.RequestMessage!,
@@ -407,7 +440,7 @@ public sealed class ApiExceptionTests
             response,
             settings);
 
-        await Assert.That(exception.Content!.Length).IsEqualTo(128);
+        await Assert.That(exception.Content!.Length).IsEqualTo(MaxContentLength);
     }
 
     /// <summary>Verifies an unset maximum length leaves the error body intact.</summary>
@@ -415,7 +448,7 @@ public sealed class ApiExceptionTests
     [Test]
     public async Task MaxExceptionContentLengthUnsetReadsFullBody()
     {
-        using var response = CreateErrorResponse(new string('a', 10_000));
+        using var response = CreateErrorResponse(new string('a', LongBodyLength));
 
         var exception = await ApiException.Create(
             response.RequestMessage!,
@@ -423,7 +456,7 @@ public sealed class ApiExceptionTests
             response,
             new());
 
-        await Assert.That(exception.Content!.Length).IsEqualTo(10_000);
+        await Assert.That(exception.Content!.Length).IsEqualTo(LongBodyLength);
     }
 
     /// <summary>Verifies a zero maximum length yields an empty error body.</summary>
@@ -468,7 +501,7 @@ public sealed class ApiExceptionTests
     {
         using var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            RequestMessage = new(HttpMethod.Get, "https://example.test"),
+            RequestMessage = new(HttpMethod.Get, ExampleUri),
             Content = new AsyncReadContent("{\"Value\":7}")
         };
 
@@ -486,7 +519,7 @@ public sealed class ApiExceptionTests
     [Test]
     public async Task CreateBuildsValidationExceptionWhenSerializerCompletesAsynchronously()
     {
-        using var response = CreateErrorResponse("{\"title\":\"invalid\"}", "application/problem+json");
+        using var response = CreateErrorResponse("{\"title\":\"invalid\"}", ProblemJsonMediaType);
         var settings = new RefitSettings(new AsyncYieldingSerializer());
 
         var exception = await ApiException.Create(
@@ -514,8 +547,8 @@ public sealed class ApiExceptionTests
             ExceptionRedactor = ex =>
             {
                 ex.RequestMessage.Headers.Authorization = null;
-                ex.RequestContent = "[redacted]";
-                ((ApiException)ex).Content = "[redacted]";
+                ex.RequestContent = RedactedText;
+                ((ApiException)ex).Content = RedactedText;
             }
         };
 
@@ -526,8 +559,8 @@ public sealed class ApiExceptionTests
             settings);
 
         await Assert.That(exception.RequestMessage.Headers.Authorization).IsNull();
-        await Assert.That(exception.RequestContent).IsEqualTo("[redacted]");
-        await Assert.That(exception.Content).IsEqualTo("[redacted]");
+        await Assert.That(exception.RequestContent).IsEqualTo(RedactedText);
+        await Assert.That(exception.Content).IsEqualTo(RedactedText);
     }
 
     /// <summary>Creates an error response with an attached request.</summary>
@@ -538,7 +571,7 @@ public sealed class ApiExceptionTests
     {
         var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            RequestMessage = new(HttpMethod.Get, "https://example.test"),
+            RequestMessage = new(HttpMethod.Get, ExampleUri),
             Content = new StringContent(content)
         };
 

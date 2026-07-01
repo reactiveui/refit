@@ -9,6 +9,24 @@ namespace Refit.Tests;
 /// <summary>Tests for <see cref="RestMethodInfoInternal"/> header-collection and property parsing.</summary>
 public partial class RestMethodInfoTests
 {
+    /// <summary>The Authorization header name asserted across the dynamic header collection tests.</summary>
+    private const string AuthorizationHeader = "Authorization";
+
+    /// <summary>The dynamic request property key asserted across the property parsing tests.</summary>
+    private const string SomePropertyKey = "SomeProperty";
+
+    /// <summary>Zero-based parameter index two, used as a map key and header-collection position.</summary>
+    private const int ParameterIndexTwo = 2;
+
+    /// <summary>Zero-based parameter index three, used as a property map key.</summary>
+    private const int ParameterIndexThree = 3;
+
+    /// <summary>The expected query parameter count for the header-collection query tests.</summary>
+    private const int ExpectedQueryParameterCount = 2;
+
+    /// <summary>The expected header count for the dynamic header collection test.</summary>
+    private const int ExpectedHeaderCount = 4;
+
     /// <summary>Verifies a dynamic header collection is parsed and merged with hardcoded headers.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -31,8 +49,8 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.PropertyParameterMap).IsEmpty();
         await Assert.That(fixture.BodyParameterInfo).IsNull();
 
-        await Assert.That(fixture.Headers.ContainsKey("Authorization")).IsTrue().Because("Headers include Authorization header");
-        await Assert.That(fixture.Headers["Authorization"]).IsEqualTo("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==");
+        await Assert.That(fixture.Headers.ContainsKey(AuthorizationHeader)).IsTrue().Because("Headers include Authorization header");
+        await Assert.That(fixture.Headers[AuthorizationHeader]).IsEqualTo("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==");
         await Assert.That(fixture.Headers.ContainsKey("Accept")).IsTrue().Because("Headers include Accept header");
         await Assert.That(fixture.Headers["Accept"]).IsEqualTo("application/json");
         await Assert.That(fixture.Headers.ContainsKey("User-Agent")).IsTrue().Because("Headers include User-Agent header");
@@ -40,7 +58,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.Headers.ContainsKey("Api-Version")).IsTrue().Because("Headers include Api-Version header");
         await Assert.That(fixture.Headers["Api-Version"]).IsEqualTo("1");
 
-        await Assert.That(fixture.Headers.Count).IsEqualTo(4);
+        await Assert.That(fixture.Headers.Count).IsEqualTo(ExpectedHeaderCount);
         await Assert.That(fixture.HasHeaderCollection).IsTrue();
         await Assert.That(fixture.HeaderCollectionAt(1)).IsTrue();
     }
@@ -67,7 +85,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.AuthorizeParameterInfo).IsNull();
 
         await Assert.That(fixture.HasHeaderCollection).IsTrue();
-        await Assert.That(fixture.HeaderCollectionAt(2)).IsTrue();
+        await Assert.That(fixture.HeaderCollectionAt(ParameterIndexTwo)).IsTrue();
     }
 
     /// <summary>Verifies a dynamic header collection works without a body for put, post and patch.</summary>
@@ -118,7 +136,7 @@ public partial class RestMethodInfoTests
 
         await Assert.That(fixture.HasHeaderCollection).IsTrue();
         await Assert.That(fixture.HeaderCollectionAt(1)).IsTrue();
-        await Assert.That(fixture.BodyParameterInfo!.Item3).IsEqualTo(2);
+        await Assert.That(fixture.BodyParameterInfo!.Item3).IsEqualTo(ParameterIndexTwo);
     }
 
     /// <summary>Verifies a dynamic header collection works alongside an authorize parameter.</summary>
@@ -142,7 +160,7 @@ public partial class RestMethodInfoTests
 
         await Assert.That(fixture.AuthorizeParameterInfo).IsNotNull();
         await Assert.That(fixture.HasHeaderCollection).IsTrue();
-        await Assert.That(fixture.HeaderCollectionAt(2)).IsTrue();
+        await Assert.That(fixture.HeaderCollectionAt(ParameterIndexTwo)).IsTrue();
     }
 
     /// <summary>Verifies a dynamic header collection works alongside a dynamic header in either order.</summary>
@@ -165,9 +183,9 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.BodyParameterInfo).IsNull();
 
         await Assert.That(fixture.HeaderParameterMap).HasSingleItem();
-        await Assert.That(fixture.HeaderParameterMap[1]).IsEqualTo("Authorization");
+        await Assert.That(fixture.HeaderParameterMap[1]).IsEqualTo(AuthorizationHeader);
         await Assert.That(fixture.HasHeaderCollection).IsTrue();
-        await Assert.That(fixture.HeaderCollectionAt(2)).IsTrue();
+        await Assert.That(fixture.HeaderCollectionAt(ParameterIndexTwo)).IsTrue();
 
         input = typeof(IRestMethodInfoTests);
         fixture = new(
@@ -187,7 +205,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.BodyParameterInfo).IsNull();
 
         await Assert.That(fixture.HeaderParameterMap).HasSingleItem();
-        await Assert.That(fixture.HeaderParameterMap[2]).IsEqualTo("Authorization");
+        await Assert.That(fixture.HeaderParameterMap[ParameterIndexTwo]).IsEqualTo(AuthorizationHeader);
         await Assert.That(fixture.HasHeaderCollection).IsTrue();
         await Assert.That(fixture.HeaderCollectionAt(1)).IsTrue();
     }
@@ -236,7 +254,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.PropertyParameterMap).IsEmpty();
         await Assert.That(fixture.BodyParameterInfo).IsNull();
 
-        await Assert.That(fixture.QueryParameterMap[2]).IsEqualTo("baz");
+        await Assert.That(fixture.QueryParameterMap[ParameterIndexTwo]).IsEqualTo("baz");
         await Assert.That(fixture.HasHeaderCollection).IsTrue();
         await Assert.That(fixture.HeaderCollectionAt(1)).IsTrue();
     }
@@ -273,9 +291,9 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.BodyParameterInfo).IsNull();
         await Assert.That(fixture.AuthorizeParameterInfo).IsNull();
 
-        await Assert.That(fixture.QueryParameterMap.Count).IsEqualTo(2);
+        await Assert.That(fixture.QueryParameterMap.Count).IsEqualTo(ExpectedQueryParameterCount);
         await Assert.That(fixture.QueryParameterMap[1]).IsEqualTo("id");
-        await Assert.That(fixture.QueryParameterMap[2]).IsEqualTo("someArray");
+        await Assert.That(fixture.QueryParameterMap[ParameterIndexTwo]).IsEqualTo("someArray");
 
         await Assert.That(fixture.PropertyParameterMap).HasSingleItem();
 
@@ -320,7 +338,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.HeaderParameterMap).IsEmpty();
         await Assert.That(fixture.BodyParameterInfo).IsNull();
 
-        await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo("SomeProperty");
+        await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo(SomePropertyKey);
     }
 
     /// <summary>Verifies a dynamic request property works alongside a body.</summary>
@@ -345,7 +363,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.AuthorizeParameterInfo).IsNull();
         await Assert.That(fixture.HasHeaderCollection).IsFalse();
 
-        await Assert.That(fixture.PropertyParameterMap[2]).IsEqualTo("SomeProperty");
+        await Assert.That(fixture.PropertyParameterMap[ParameterIndexTwo]).IsEqualTo(SomePropertyKey);
     }
 
     /// <summary>Verifies multiple dynamic request properties work alongside a body.</summary>
@@ -371,8 +389,8 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.AuthorizeParameterInfo).IsNull();
         await Assert.That(fixture.HasHeaderCollection).IsFalse();
 
-        await Assert.That(fixture.PropertyParameterMap[2]).IsEqualTo("SomeProperty");
-        await Assert.That(fixture.PropertyParameterMap[3]).IsEqualTo("SomeOtherProperty");
+        await Assert.That(fixture.PropertyParameterMap[ParameterIndexTwo]).IsEqualTo(SomePropertyKey);
+        await Assert.That(fixture.PropertyParameterMap[ParameterIndexThree]).IsEqualTo("SomeOtherProperty");
     }
 
     /// <summary>Verifies a dynamic request property works without a body for put, post and patch.</summary>
@@ -396,7 +414,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.AuthorizeParameterInfo).IsNull();
         await Assert.That(fixture.HasHeaderCollection).IsFalse();
 
-        await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo("SomeProperty");
+        await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo(SomePropertyKey);
     }
 
     /// <summary>Verifies a dynamic request property works with an inferred body for put, post and patch.</summary>
@@ -420,8 +438,8 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.AuthorizeParameterInfo).IsNull();
         await Assert.That(fixture.HasHeaderCollection).IsFalse();
 
-        await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo("SomeProperty");
-        await Assert.That(fixture.BodyParameterInfo!.Item3).IsEqualTo(2);
+        await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo(SomePropertyKey);
+        await Assert.That(fixture.BodyParameterInfo!.Item3).IsEqualTo(ParameterIndexTwo);
     }
 
     /// <summary>Verifies dynamic request properties without keys default the key to the parameter name.</summary>
@@ -446,7 +464,7 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.BodyParameterInfo).IsNull();
 
         await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo("someValue");
-        await Assert.That(fixture.PropertyParameterMap[2]).IsEqualTo("someOtherValue");
+        await Assert.That(fixture.PropertyParameterMap[ParameterIndexTwo]).IsEqualTo("someOtherValue");
     }
 
     /// <summary>Verifies dynamic request properties with duplicate keys do not throw.</summary>
@@ -470,8 +488,8 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.HeaderParameterMap).IsEmpty();
         await Assert.That(fixture.BodyParameterInfo).IsNull();
 
-        await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo("SomeProperty");
-        await Assert.That(fixture.PropertyParameterMap[2]).IsEqualTo("SomeProperty");
+        await Assert.That(fixture.PropertyParameterMap[1]).IsEqualTo(SomePropertyKey);
+        await Assert.That(fixture.PropertyParameterMap[ParameterIndexTwo]).IsEqualTo(SomePropertyKey);
     }
 
     /// <summary>Verifies value-type body parameters do not throw when buffered.</summary>
@@ -650,7 +668,7 @@ public partial class RestMethodInfoTests
                             IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam)));
 
         await Assert.That(fixture.HttpMethod.Method).IsEqualTo("GET");
-        await Assert.That(fixture.QueryParameterMap.Count).IsEqualTo(2);
+        await Assert.That(fixture.QueryParameterMap.Count).IsEqualTo(ExpectedQueryParameterCount);
         await Assert.That(fixture.HeaderParameterMap).HasSingleItem();
         await Assert.That(fixture.PropertyParameterMap).HasSingleItem();
     }

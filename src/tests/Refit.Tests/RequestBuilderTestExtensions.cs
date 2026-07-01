@@ -13,20 +13,20 @@ internal static class RequestBuilderTestExtensions
         /// <summary>Builds a factory that produces the request message for a method.</summary>
         /// <param name="methodName">The name of the interface method to build a request for.</param>
         /// <param name="baseAddress">The base address used by the test HTTP client.</param>
-        /// <returns>A factory that maps a parameter array to the produced request message.</returns>
-        public Func<object[], HttpRequestMessage> BuildRequestFactoryForMethod(
+        /// <returns>A factory that maps a parameter array to a task producing the request message.</returns>
+        public Func<object[], Task<HttpRequestMessage>> BuildRequestFactoryForMethod(
             string methodName,
             string baseAddress = "http://api/")
         {
             var factory = builder.BuildRestResultFuncForMethod(methodName);
             var testHttpMessageHandler = new TestHttpMessageHandler();
 
-            return paramList =>
+            return async paramList =>
             {
                 var task = (Task)factory(
                     new(testHttpMessageHandler) { BaseAddress = new(baseAddress) },
                     paramList)!;
-                task.Wait();
+                await task;
                 return testHttpMessageHandler.RequestMessage!;
             };
         }
@@ -35,8 +35,8 @@ internal static class RequestBuilderTestExtensions
         /// <param name="methodName">The name of the interface method to invoke.</param>
         /// <param name="returnContent">Optional response content the handler returns.</param>
         /// <param name="baseAddress">The base address used by the test HTTP client.</param>
-        /// <returns>A factory that maps a parameter array to the handler that observed the request.</returns>
-        public Func<object[], TestHttpMessageHandler> RunRequest(
+        /// <returns>A factory that maps a parameter array to a task producing the handler that observed the request.</returns>
+        public Func<object[], Task<TestHttpMessageHandler>> RunRequest(
             string methodName,
             string? returnContent = null,
             string baseAddress = "http://api/")
@@ -48,16 +48,16 @@ internal static class RequestBuilderTestExtensions
                 testHttpMessageHandler.Content = new StringContent(returnContent);
             }
 
-            return paramList =>
+            return async paramList =>
             {
                 var task = (Task)factory(
                     new(testHttpMessageHandler) { BaseAddress = new(baseAddress) },
                     paramList)!;
                 try
                 {
-                    task.Wait();
+                    await task;
                 }
-                catch (AggregateException e) when (e.InnerException is TaskCanceledException) { }
+                catch (TaskCanceledException) { }
 
                 return testHttpMessageHandler;
             };

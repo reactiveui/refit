@@ -1,8 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- Interop test project: isolates the Moq-based mock/proxy behaviour tests for IApiResponse<T>.
-       Moq is being removed from the main suites; these tests pin the proxy-interop contract
-       (the #1933 new-shadow regression and mock-safe narrowing) and are the only place Moq lives. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>$(RefitTestTargets)</TargetFrameworks>
@@ -12,11 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Versions are managed centrally in src/Directory.Packages.props. -->
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
-    <PackageReference Include="Moq" />
     <PackageReference Include="TUnit" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\Refit.Testing\Refit.Testing.csproj" />
   </ItemGroup>
 
 </Project>

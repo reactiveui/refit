@@ -99,7 +99,7 @@ internal static class HttpClientFactoryCore
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(
+    T>(
         IServiceCollection services,
         Func<IServiceProvider, RefitSettings?>? settings,
         string? httpClientName)
@@ -215,7 +215,7 @@ internal static class HttpClientFactoryCore
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(
+    T>(
         IServiceCollection services,
         object? serviceKey,
         Func<IServiceProvider, RefitSettings?>? settings,

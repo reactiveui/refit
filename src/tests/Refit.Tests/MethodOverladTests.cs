@@ -2,34 +2,44 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Tests that Refit dispatches correctly across overloaded interface methods.</summary>
 public class MethodOverladTests
 {
+    /// <summary>The base address of the overloaded httpbin service.</summary>
+    private const string BaseUrl = "https://httpbin.org/";
+
+    /// <summary>The httpbin GET endpoint URL exercised by the generic overloads.</summary>
+    private const string GetUrl = "https://httpbin.org/get";
+
+    /// <summary>The query parameter name exercised by the generic overloads.</summary>
+    private const string ParamKey = "param";
+
     /// <summary>Verifies that non-generic <c>Get</c> overloads resolve to the correct request.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task BasicMethodOverloadTest()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(BaseUrl),
+                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = "text/html" }
+            },
+            {
+                Route.Get("https://httpbin.org/status/403"),
+                Reply.Status(HttpStatusCode.Forbidden)
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/")
-            .Respond(HttpStatusCode.OK, "text/html", "OK");
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/status/403")
-            .Respond(HttpStatusCode.Forbidden);
-
-        var fixture = RestService.For<IUseOverloadedMethods>("https://httpbin.org/", settings);
+        var fixture = handler.CreateClient<IUseOverloadedMethods>(BaseUrl);
         var plainText = await fixture.Get();
 
         var resp = await fixture.Get(403);
@@ -43,17 +53,15 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest1()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(BaseUrl),
+                new StubResponse { Status = HttpStatusCode.OK, Text = "OK", ContentType = "text/html" }
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/")
-            .Respond(HttpStatusCode.OK, "text/html", "OK");
-
-        var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(
-            "https://httpbin.org/",
-            settings);
+        var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
         var plainText = await fixture.Get();
 
         await Assert.That(!string.IsNullOrWhiteSpace(plainText)).IsTrue();
@@ -64,17 +72,15 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest2()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://httpbin.org/status/403"),
+                Reply.Status(HttpStatusCode.Forbidden)
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/status/403")
-            .Respond(HttpStatusCode.Forbidden);
-
-        var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(
-            "https://httpbin.org/",
-            settings);
+        var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
         var resp = await fixture.Get(403);
 
@@ -86,18 +92,15 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest3()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = GetUrl, Query = [("someVal", "201")] },
+                Reply.Json("some-T-value")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/get")
-            .WithQueryString("someVal", "201")
-            .Respond("application/json", "some-T-value");
-
-        var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(
-            "https://httpbin.org/",
-            settings);
+        var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
         var result = await fixture.Get<string>(201);
 
@@ -109,25 +112,19 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest4()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = GetUrl, Query = [(ParamKey, "foo")], Headers = [("X-Refit", "99")] },
+                Reply.Json("{\"url\": \"https://httpbin.org/get\", \"args\": {\"param\": \"foo\"}}")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/get")
-            .WithHeaders("X-Refit", "99")
-            .WithQueryString("param", "foo")
-            .Respond(
-                "application/json",
-                "{\"url\": \"https://httpbin.org/get\", \"args\": {\"param\": \"foo\"}}");
-
-        var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(
-            "https://httpbin.org/",
-            settings);
+        var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
         var result = await fixture.Get("foo", 99);
 
-        await Assert.That(result.Args!["param"]).IsEqualTo("foo");
+        await Assert.That(result.Args![ParamKey]).IsEqualTo("foo");
     }
 
     /// <summary>Verifies the generic <c>Get</c> overload with header and parameter types swapped.</summary>
@@ -135,25 +132,19 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest5()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = GetUrl, Query = [(ParamKey, "99")], Headers = [("X-Refit", "foo")] },
+                Reply.Json("{\"url\": \"https://httpbin.org/get\", \"args\": {\"param\": \"99\"}}")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/get")
-            .WithHeaders("X-Refit", "foo")
-            .WithQueryString("param", "99")
-            .Respond(
-                "application/json",
-                "{\"url\": \"https://httpbin.org/get\", \"args\": {\"param\": \"99\"}}");
-
-        var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(
-            "https://httpbin.org/",
-            settings);
+        var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
         var result = await fixture.Get(99, "foo");
 
-        await Assert.That(result.Args!["param"]).IsEqualTo("99");
+        await Assert.That(result.Args![ParamKey]).IsEqualTo("99");
     }
 
     /// <summary>Verifies the two-type-argument generic <c>Get</c> overload.</summary>
@@ -161,18 +152,15 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest6()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = GetUrl, Query = [("input", "99")] },
+                Reply.Json("generic-output")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/get")
-            .WithQueryString("input", "99")
-            .Respond("application/json", "generic-output");
-
-        var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(
-            "https://httpbin.org/",
-            settings);
+        var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
         var result = await fixture.Get<string, int>(99);
 
@@ -184,22 +172,24 @@ public class MethodOverladTests
     [Test]
     public async Task GenericMethodOverloadTest7()
     {
-        var mockHttp = new MockHttpMessageHandler();
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher
+                {
+                    Method = HttpMethod.Get,
+                    Template = GetUrl,
+                    Query = [.. new Dictionary<string, string> { { "input1", "str" }, { "input2", "3" } }.Select(kv => (kv.Key, kv.Value))],
+                },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        var fixture = handler.CreateClient<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(BaseUrl);
 
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "https://httpbin.org/get")
-            .WithQueryString(
-                new Dictionary<string, string> { { "input1", "str" }, { "input2", "3" } })
-            .Respond("application/json", "Ok");
+        const int secondInput = 3;
+        await fixture.Get<string, int>("str", secondInput);
 
-        var fixture = RestService.For<IUseOverloadedGenericMethods<HttpBinGet, string, int>>(
-            "https://httpbin.org/",
-            settings);
-
-        await fixture.Get<string, int>("str", 3);
-
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 }

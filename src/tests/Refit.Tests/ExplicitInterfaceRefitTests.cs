@@ -4,13 +4,28 @@
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for explicit interface implementations and the synchronous Refit pipeline.</summary>
 public class ExplicitInterfaceRefitTests
 {
+    /// <summary>Value returned by the stubbed remote <c>/bar</c> endpoint.</summary>
+    private const int RemoteBarValue = 41;
+
+    /// <summary>Result of the default <see cref="IFoo.Bar"/> implementation, which adds one to the remote value.</summary>
+    private const int DefaultImplementationBarResult = RemoteBarValue + 1;
+
+    /// <summary>Base address for the stubbed API.</summary>
+    private const string BaseUrl = "http://foo";
+
+    /// <summary>Fully qualified URL of the resource endpoint.</summary>
+    private const string ResourceUrl = BaseUrl + "/resource";
+
+    /// <summary>Plain text content returned by the stubbed responses.</summary>
+    private const string HelloContent = "hello";
+
     /// <summary>A simple interface whose member is reused by explicit-implementation fixtures.</summary>
     public interface IFoo
     {
@@ -83,19 +98,19 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task DefaultInterfaceImplementation_calls_internal_refit_method()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/bar")
-            .Respond("application/json", "41");
-
-        var fixture = RestService.For<IInternalFoo>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("http://foo/bar"),
+                Reply.Json("41")
+            },
+        };
+        var fixture = handler.CreateClient<IInternalFoo>(BaseUrl);
 
         var result = ((IFoo)fixture).Bar();
-        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(result).IsEqualTo(DefaultImplementationBarResult);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies an explicit interface member carrying a Refit attribute is invoked.</summary>
@@ -103,19 +118,19 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Explicit_interface_member_with_refit_attribute_is_invoked()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/bar")
-            .Respond("application/json", "41");
-
-        var fixture = RestService.For<IRemoteFoo2>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("http://foo/bar"),
+                Reply.Json("41")
+            },
+        };
+        var fixture = handler.CreateClient<IRemoteFoo2>(BaseUrl);
 
         var result = ((IFoo)fixture).Bar();
-        await Assert.That(result).IsEqualTo(41);
+        await Assert.That(result).IsEqualTo(RemoteBarValue);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous string method throws an <see cref="ApiException"/> on an error response.</summary>
@@ -123,19 +138,19 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_throws_ApiException_on_error_response()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond(HttpStatusCode.NotFound);
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Status(HttpStatusCode.NotFound)
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         var ex = await Assert.That(fixture.GetString).ThrowsExactly<ApiException>();
         await Assert.That(ex!.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous method returning <see cref="HttpResponseMessage"/> bypasses the exception factory.</summary>
@@ -143,20 +158,20 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_HttpResponseMessage_without_running_ExceptionFactory()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond(HttpStatusCode.NotFound);
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Status(HttpStatusCode.NotFound)
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         // Should not throw even for a 404 – caller owns the response
         using var resp = fixture.GetHttpResponseMessage();
         await Assert.That(resp.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous method returning <see cref="HttpContent"/> does not dispose the response.</summary>
@@ -164,21 +179,21 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_HttpContent_without_disposing_response()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond("text/plain", "hello");
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Text(HelloContent, "text/plain")
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         var content = fixture.GetHttpContent();
         await Assert.That(content).IsNotNull();
         var text = await content.ReadAsStringAsync();
-        await Assert.That(text).IsEqualTo("hello");
+        await Assert.That(text).IsEqualTo(HelloContent);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous method returning a <see cref="Stream"/> does not dispose the response.</summary>
@@ -186,21 +201,21 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_Stream_without_disposing_response()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond("text/plain", "hello");
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Text(HelloContent, "text/plain")
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         await using var stream = fixture.GetStream();
         await Assert.That(stream).IsNotNull();
         using var reader = new StreamReader(stream);
-        await Assert.That(await reader.ReadToEndAsync()).IsEqualTo("hello");
+        await Assert.That(await reader.ReadToEndAsync()).IsEqualTo(HelloContent);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous method returning <see cref="IApiResponse{T}"/> reports an error on a bad status.</summary>
@@ -208,14 +223,14 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_IApiResponse_with_error_on_bad_status()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond(HttpStatusCode.InternalServerError);
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Status(HttpStatusCode.InternalServerError)
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         using var apiResp = fixture.GetApiResponse();
         await Assert.That(apiResp.IsSuccessStatusCode).IsFalse();
@@ -223,7 +238,7 @@ public class ExplicitInterfaceRefitTests
         await Assert.That(apiResp.HasResponseError(out var error)).IsTrue();
         await Assert.That(error!.StatusCode).IsEqualTo(HttpStatusCode.InternalServerError);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous method returning <see cref="IApiResponse{T}"/> carries content on success.</summary>
@@ -231,25 +246,25 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_IApiResponse_with_content_on_success()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond("application/json", "\"hello\"");
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Json("\"hello\"")
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         using var apiResp = fixture.GetApiResponse();
         await Assert.That(apiResp.IsSuccessStatusCode).IsTrue();
         await Assert.That(apiResp.Error).IsNull();
         await Assert.That(apiResp.RequestMessage!.Method).IsEqualTo(HttpMethod.Get);
-        await Assert.That(apiResp.RequestMessage.RequestUri?.ToString()).IsEqualTo("http://foo/resource");
+        await Assert.That(apiResp.RequestMessage.RequestUri?.ToString()).IsEqualTo(ResourceUrl);
 
         // The string branch reads the raw stream (no JSON unwrapping), same as the async path
         await Assert.That(apiResp.Content).IsEqualTo("\"hello\"");
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous method returning a raw <see cref="IApiResponse"/> succeeds on a good status.</summary>
@@ -257,22 +272,22 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_method_returns_raw_IApiResponse_on_success()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond("text/plain", "hello");
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Text(HelloContent, "text/plain")
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         using var apiResp = fixture.GetRawApiResponse();
         await Assert.That(apiResp.IsSuccessStatusCode).IsTrue();
         await Assert.That(apiResp.Error).IsNull();
         await Assert.That(apiResp.RequestMessage!.Method).IsEqualTo(HttpMethod.Get);
-        await Assert.That(apiResp.RequestMessage.RequestUri?.ToString()).IsEqualTo("http://foo/resource");
+        await Assert.That(apiResp.RequestMessage.RequestUri?.ToString()).IsEqualTo(ResourceUrl);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous void method throws an <see cref="ApiException"/> on an error response.</summary>
@@ -280,44 +295,36 @@ public class ExplicitInterfaceRefitTests
     [Test]
     public async Task Sync_void_method_throws_ApiException_on_error_response()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond(HttpStatusCode.BadRequest);
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Status(HttpStatusCode.BadRequest)
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         var ex = await Assert.That(fixture.DoVoid).ThrowsExactly<ApiException>();
         await Assert.That(ex!.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a synchronous void method completes without throwing on a successful response.</summary>
     [Test]
     public void Sync_void_method_succeeds_on_ok_response()
     {
-        var mockHttp = new SyncCapableMockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/resource")
-            .Respond(HttpStatusCode.OK);
-
-        var fixture = RestService.For<ISyncPipelineApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(ResourceUrl),
+                Reply.Status(HttpStatusCode.OK)
+            },
+        };
+        var fixture = handler.CreateClient<ISyncPipelineApi>(BaseUrl);
 
         fixture.DoVoid(); // should not throw
 
-        mockHttp.VerifyNoOutstandingExpectation();
-    }
-
-    /// <summary>Mock HTTP handler that also supports the synchronous <see cref="HttpMessageHandler.Send"/> path.</summary>
-    internal sealed class SyncCapableMockHttpMessageHandler : MockHttpMessageHandler
-    {
-        /// <inheritdoc/>
-        protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            SendAsync(request, cancellationToken).GetAwaiter().GetResult();
+        handler.VerifyAllCalled();
     }
 }

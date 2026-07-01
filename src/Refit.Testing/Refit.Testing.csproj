@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Product>Refit Testing ($(TargetFramework))</Product>
+    <PackageDescription>Testing helpers for Refit clients: a declarative HttpMessageHandler that stubs responses and verifies the requests your Refit interfaces make.</PackageDescription>
+    <PackageTags>refit;rest;http;api-client;testing;test;mock;httpclient;httpmessagehandler</PackageTags>
+    <TargetFrameworks>$(RefitShippingTargets)</TargetFrameworks>
+    <IsTrimmable>true</IsTrimmable>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Shared\HttpContentExtensions.cs" Link="Shared\HttpContentExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Refit\Refit.csproj" />
+  </ItemGroup>
+</Project>

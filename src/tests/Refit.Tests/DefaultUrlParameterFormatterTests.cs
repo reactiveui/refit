@@ -13,6 +13,12 @@ namespace Refit.Tests;
     Justification = "These tests intentionally exercise DateTime formatting; the asserted output and DTO property types are DateTime-specific.")]
 public class DefaultUrlParameterFormatterTests
 {
+    /// <summary>A general date format registered for the DateTime formatter tests.</summary>
+    private const string GeneralDateFormat = "yyyy-MM-dd";
+
+    /// <summary>The base address used when building request URIs.</summary>
+    private const string BaseUrl = "http://api";
+
     /// <summary>Flags enum used to exercise combined and undefined enum formatting.</summary>
     [Flags]
     private enum SampleFlags
@@ -98,7 +104,7 @@ public class DefaultUrlParameterFormatterTests
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
-        urlParameterFormatter.AddFormat<DateTime>("yyyy-MM-dd");
+        urlParameterFormatter.AddFormat<DateTime>(GeneralDateFormat);
 
         var output = urlParameterFormatter.Format(
             parameters.DateTimeWithAttributeFormatYear,
@@ -119,7 +125,7 @@ public class DefaultUrlParameterFormatterTests
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
-        urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>("yyyy-MM-dd");
+        urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>(GeneralDateFormat);
 
         var output = urlParameterFormatter.Format(
             parameters.DateTimeWithAttributeFormatYear,
@@ -140,8 +146,8 @@ public class DefaultUrlParameterFormatterTests
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
-        urlParameterFormatter.AddFormat<DateTime>("yyyy-MM-dd");
-        urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>("yyyy-MM-dd");
+        urlParameterFormatter.AddFormat<DateTime>(GeneralDateFormat);
+        urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>(GeneralDateFormat);
 
         var output = urlParameterFormatter.Format(
             parameters.DateTimeWithAttributeFormatYear,
@@ -204,7 +210,7 @@ public class DefaultUrlParameterFormatterTests
         };
 
         var urlParameterFormatter = new DefaultUrlParameterFormatter();
-        urlParameterFormatter.AddFormat<DateTime>("yyyy-MM-dd");
+        urlParameterFormatter.AddFormat<DateTime>(GeneralDateFormat);
         urlParameterFormatter.AddFormat<DefaultUrlParameterFormatterTestRequest, DateTime>("yyyy");
 
         var output = urlParameterFormatter.Format(
@@ -233,8 +239,8 @@ public class DefaultUrlParameterFormatterTests
             DateTime = new DateTime(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified),
         };
 
-        var output = factory([parameters]);
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var output = await factory([parameters]);
+        var uri = new Uri(new(BaseUrl), output.RequestUri!);
 
         await Assert.That(uri.Query).IsEqualTo(
             "?DateTime=2023");
@@ -262,8 +268,8 @@ public class DefaultUrlParameterFormatterTests
             ],
         };
 
-        var output = factory([parameters]);
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var output = await factory([parameters]);
+        var uri = new Uri(new(BaseUrl), output.RequestUri!);
 
         await Assert.That(uri.Query).IsEqualTo(
             "?DateTimeCollection=2023%2C2024");
@@ -291,8 +297,8 @@ public class DefaultUrlParameterFormatterTests
             },
         };
 
-        var output = factory([parameters]);
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var output = await factory([parameters]);
+        var uri = new Uri(new(BaseUrl), output.RequestUri!);
 
         await Assert.That(uri.Query).IsEqualTo(
             "?DateTimeDictionary.1=2023&DateTimeDictionary.2=2024");
@@ -320,8 +326,8 @@ public class DefaultUrlParameterFormatterTests
             },
         };
 
-        var output = factory([parameters]);
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var output = await factory([parameters]);
+        var uri = new Uri(new(BaseUrl), output.RequestUri!);
 
         await Assert.That(uri.Query).IsEqualTo(
             "?DateTimeKeyedDictionary.2023=1&DateTimeKeyedDictionary.2024=2");

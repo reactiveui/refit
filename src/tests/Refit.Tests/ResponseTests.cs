@@ -12,34 +12,51 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Refit.Buffers;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Tests covering response deserialization, error handling, and exception hydration behavior.</summary>
-public sealed class ResponseTests : IDisposable
+public sealed class ResponseTests
 {
+    /// <summary>Base address shared by the response-handling fixtures.</summary>
+    private const string BaseAddress = "http://api";
+
+    /// <summary>Endpoint URL for the alias test operation.</summary>
+    private const string AliasTestUrl = BaseAddress + "/aliasTest";
+
+    /// <summary>Endpoint URL for the API response test operation.</summary>
+    private const string GetApiResponseTestObjectUrl = BaseAddress + "/GetApiResponseTestObject";
+
+    /// <summary>Media type used for RFC 7807 problem-details responses.</summary>
+    private const string ProblemJsonMediaType = "application/problem+json";
+
+    /// <summary>Expected problem-details detail value.</summary>
+    private const string DetailValue = "detail";
+
+    /// <summary>Expected problem-details instance value.</summary>
+    private const string InstanceValue = "instance";
+
+    /// <summary>Expected problem-details title value.</summary>
+    private const string TitleValue = "title";
+
+    /// <summary>First validation error field key.</summary>
+    private const string FieldOneKey = "Field1";
+
+    /// <summary>Second validation error field key.</summary>
+    private const string FieldTwoKey = "Field2";
+
+    /// <summary>Plain-text body used by the empty-content fixtures.</summary>
+    private const string HelloWorldContent = "Hello world";
+
+    /// <summary>Expected number of hydrated problem-details extensions.</summary>
+    private const int ExpectedExtensionsCount = 2;
+
     /// <summary>Problem detail entries for the first validation problem fixture.</summary>
     private static readonly string[] _field1Problems = ["Problem1"];
 
     /// <summary>Problem detail entries for the second validation problem fixture.</summary>
     private static readonly string[] _field2Problems = ["Problem2"];
-
-    /// <summary>The mock HTTP handler backing the test fixture.</summary>
-    private readonly MockHttpMessageHandler _mockHandler;
-
-    /// <summary>The Refit service under test.</summary>
-    private readonly IMyAliasService _fixture;
-
-    /// <summary>Initializes a new instance of the <see cref="ResponseTests"/> class.</summary>
-    public ResponseTests()
-    {
-        _mockHandler = new();
-
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => _mockHandler };
-
-        _fixture = RestService.For<IMyAliasService>("http://api", settings);
-    }
 
     /// <summary>Refit service used to exercise alias and response handling.</summary>
     public interface IMyAliasService
@@ -70,13 +87,16 @@ public sealed class ResponseTests : IDisposable
     [Test]
     public async Task JsonPropertyCanBeUsedToAliasFieldNamesInResponses()
     {
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, "http://api/aliasTest")
-            .Respond(
-                "application/json",
-                "{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}");
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.Json("{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}")
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var result = await _fixture.GetTestObject();
+        var result = await fixture.GetTestObject();
 
         await Assert.That(result!.ShortNameForJsonProperty).IsEqualTo("World");
     }
@@ -89,13 +109,16 @@ public sealed class ResponseTests : IDisposable
     [Test]
     public async Task AliasAsCannotBeUsedToAliasFieldNamesInResponses()
     {
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, "http://api/aliasTest")
-            .Respond(
-                "application/json",
-                "{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}");
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.Json("{\"FIELD_WE_SHOULD_SHORTEN_WITH_ALIAS_AS\": \"Hello\", \"FIELD_WE_SHOULD_SHORTEN_WITH_JSON_PROPERTY\": \"World\"}")
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var result = await _fixture.GetTestObject();
+        var result = await fixture.GetTestObject();
 
         await Assert.That(result!.ShortNameForAlias).IsNull();
     }
@@ -107,15 +130,15 @@ public sealed class ResponseTests : IDisposable
     {
         var expectedContent = new ProblemDetails
         {
-            Detail = "detail",
+            Detail = DetailValue,
             Errors =
             {
-                { "Field1", _field1Problems },
-                { "Field2", _field2Problems }
+                { FieldOneKey, _field1Problems },
+                { FieldTwoKey, _field2Problems }
             },
-            Instance = "instance",
+            Instance = InstanceValue,
             Status = 1,
-            Title = "title",
+            Title = TitleValue,
             Type = "type"
         };
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
@@ -123,17 +146,24 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent(JsonSerializer.Serialize(expectedContent))
         };
         expectedResponse.Content.Headers.ContentType =
-            new("application/problem+json");
-        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+            new(ProblemJsonMediaType);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
+        var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
         await Assert.That(actualException!.Content).IsNotNull();
-        await Assert.That(actualException.Content!.Detail).IsEqualTo("detail");
-        await Assert.That(actualException.Content.Errors["Field1"][0]).IsEqualTo("Problem1");
-        await Assert.That(actualException.Content.Errors["Field2"][0]).IsEqualTo("Problem2");
-        await Assert.That(actualException.Content.Instance).IsEqualTo("instance");
+        await Assert.That(actualException.Content!.Detail).IsEqualTo(DetailValue);
+        await Assert.That(actualException.Content.Errors[FieldOneKey][0]).IsEqualTo("Problem1");
+        await Assert.That(actualException.Content.Errors[FieldTwoKey][0]).IsEqualTo("Problem2");
+        await Assert.That(actualException.Content.Instance).IsEqualTo(InstanceValue);
         await Assert.That(actualException.Content.Status).IsEqualTo(1);
-        await Assert.That(actualException.Content.Title).IsEqualTo("title");
+        await Assert.That(actualException.Content.Title).IsEqualTo(TitleValue);
         await Assert.That(actualException.Content.Type).IsEqualTo("type");
     }
 
@@ -145,26 +175,33 @@ public sealed class ResponseTests : IDisposable
     [Test]
     public async Task ValidationApiExceptionPropagatesContentHeaders()
     {
-        var expectedContent = new ProblemDetails { Detail = "detail", Title = "title" };
+        var expectedContent = new ProblemDetails { Detail = DetailValue, Title = TitleValue };
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
             Content = new StringContent(JsonSerializer.Serialize(expectedContent))
         };
         expectedResponse.Content.Headers.ContentType = new(
-            "application/problem+json");
-        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+            ProblemJsonMediaType);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
+        var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
 
         await Assert.That(actualException!.ContentHeaders).IsNotNull();
         await Assert.That(actualException.ContentHeaders!.ContentType?.MediaType).IsEqualTo(
-            "application/problem+json");
+            ProblemJsonMediaType);
     }
 
     /// <summary>
     /// #1197: ValidationApiException must deserialize ProblemDetails with the configured
     /// IHttpContentSerializer instead of a hardcoded System.Text.Json instance. A
-    /// case-sensitive serializer is used here, so the camelCase "detail" key must not map
+    /// case-sensitive serializer is used here, so the camelCase DetailValue key must not map
     /// to the PascalCase Detail property the way the old camelCase/case-insensitive
     /// hardcoded options would have.
     /// </summary>
@@ -172,25 +209,23 @@ public sealed class ResponseTests : IDisposable
     [Test]
     public async Task ValidationApiExceptionUsesConfiguredContentSerializer()
     {
-        var localHandler = new MockHttpMessageHandler();
-        var settings = new RefitSettings(
-            new SystemTextJsonContentSerializer(
-                new() { PropertyNameCaseInsensitive = false }))
-        {
-            HttpMessageHandlerFactory = () => localHandler
-        };
-
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
             Content = new StringContent("{\"Title\":\"mapped\",\"detail\":\"unmapped\"}")
         };
         expectedResponse.Content.Headers.ContentType = new(
-            "application/problem+json");
-        _ = localHandler
-            .Expect(HttpMethod.Get, "http://api/aliasTest")
-            .Respond(req => expectedResponse);
+            ProblemJsonMediaType);
 
-        var localFixture = RestService.For<IMyAliasService>("http://api", settings);
+        var localHandler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var localFixture = localHandler.CreateClient<IMyAliasService>(BaseAddress, new RefitSettings(
+            new SystemTextJsonContentSerializer(
+                new() { PropertyNameCaseInsensitive = false })));
 
         var actualException = await Assert.That(localFixture.GetTestObject).ThrowsExactly<ValidationApiException>();
 
@@ -206,15 +241,15 @@ public sealed class ResponseTests : IDisposable
     {
         var expectedContent = new ProblemDetails
         {
-            Detail = "detail",
+            Detail = DetailValue,
             Errors =
             {
-                { "Field1", _field1Problems },
-                { "Field2", _field2Problems }
+                { FieldOneKey, _field1Problems },
+                { FieldTwoKey, _field2Problems }
             },
-            Instance = "instance",
+            Instance = InstanceValue,
             Status = 1,
-            Title = "title",
+            Title = TitleValue,
             Type = "type"
         };
 
@@ -224,21 +259,26 @@ public sealed class ResponseTests : IDisposable
         };
 
         expectedResponse.Content.Headers.ContentType =
-            new("application/problem+json");
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
-            .Respond(req => expectedResponse);
+            new(ProblemJsonMediaType);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(GetApiResponseTestObjectUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        using var response = await _fixture.GetApiResponseTestObject();
+        using var response = await fixture.GetApiResponseTestObject();
         var actualException = await Assert.That(() => (Task)response!.EnsureSuccessStatusCodeAsync()).ThrowsExactly<ValidationApiException>();
 
         await Assert.That(actualException!.Content).IsNotNull();
-        await Assert.That(actualException.Content!.Detail).IsEqualTo("detail");
-        await Assert.That(actualException.Content.Errors["Field1"][0]).IsEqualTo("Problem1");
-        await Assert.That(actualException.Content.Errors["Field2"][0]).IsEqualTo("Problem2");
-        await Assert.That(actualException.Content.Instance).IsEqualTo("instance");
+        await Assert.That(actualException.Content!.Detail).IsEqualTo(DetailValue);
+        await Assert.That(actualException.Content.Errors[FieldOneKey][0]).IsEqualTo("Problem1");
+        await Assert.That(actualException.Content.Errors[FieldTwoKey][0]).IsEqualTo("Problem2");
+        await Assert.That(actualException.Content.Instance).IsEqualTo(InstanceValue);
         await Assert.That(actualException.Content.Status).IsEqualTo(1);
-        await Assert.That(actualException.Content.Title).IsEqualTo("title");
+        await Assert.That(actualException.Content.Title).IsEqualTo(TitleValue);
         await Assert.That(actualException.Content.Type).IsEqualTo("type");
     }
 
@@ -252,11 +292,16 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent("Invalid JSON")
         };
 
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
-            .Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(GetApiResponseTestObjectUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        using var response = await _fixture.GetApiResponseTestObject();
+        using var response = await fixture.GetApiResponseTestObject();
 
         await Assert.That(response!.IsReceived).IsTrue();
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
@@ -274,11 +319,16 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent("Invalid JSON")
         };
 
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
-            .Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(GetApiResponseTestObjectUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        using var response = await _fixture.GetApiResponseTestObject();
+        using var response = await fixture.GetApiResponseTestObject();
         await response!.EnsureSuccessStatusCodeAsync();
 
         await Assert.That(response.IsReceived).IsTrue();
@@ -297,11 +347,16 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent("Invalid JSON")
         };
 
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, "http://api/GetApiResponseTestObject")
-            .Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(GetApiResponseTestObjectUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        using var response = await _fixture.GetApiResponseTestObject();
+        using var response = await fixture.GetApiResponseTestObject();
         var actualException = await Assert.That(() => (Task)response!.EnsureSuccessfulAsync()).ThrowsExactly<ApiException>();
 
         await Assert.That(response!.IsReceived).IsTrue();
@@ -317,10 +372,10 @@ public sealed class ResponseTests : IDisposable
     public async Task WhenProblemDetailsResponseContainsExtensions_ShouldHydrateExtensions()
     {
         var expectedContent = new ProblemDetailsWithExtensions(
-            Detail: "detail",
-            Instance: "instance",
+            Detail: DetailValue,
+            Instance: InstanceValue,
             Status: 1,
-            Title: "title",
+            Title: TitleValue,
             Type: "type",
             Foo: "bar",
             Baz: 123.5d);
@@ -331,20 +386,29 @@ public sealed class ResponseTests : IDisposable
         };
 
         expectedResponse.Content.Headers.ContentType =
-            new("application/problem+json");
-        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+            new(ProblemJsonMediaType);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+            {
+                Route.Get("http://api/soloyolo"),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/soloyolo").Respond(req => expectedResponse);
-
-        var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
+        var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
         await Assert.That(actualException!.Content).IsNotNull();
-        await Assert.That(actualException.Content!.Detail).IsEqualTo("detail");
-        await Assert.That(actualException.Content.Instance).IsEqualTo("instance");
+        await Assert.That(actualException.Content!.Detail).IsEqualTo(DetailValue);
+        await Assert.That(actualException.Content.Instance).IsEqualTo(InstanceValue);
         await Assert.That(actualException.Content.Status).IsEqualTo(1);
-        await Assert.That(actualException.Content.Title).IsEqualTo("title");
+        await Assert.That(actualException.Content.Title).IsEqualTo(TitleValue);
         await Assert.That(actualException.Content.Type).IsEqualTo("type");
 
-        await Assert.That(actualException.Content.Extensions).Count().IsEqualTo(2);
+        await Assert.That(actualException.Content.Extensions).Count().IsEqualTo(ExpectedExtensionsCount);
         var items = actualException.Content.Extensions.ToList();
         await Assert.That(items[0]).IsEqualTo(
             new(nameof(expectedContent.Foo), expectedContent.Foo));
@@ -361,13 +425,6 @@ public sealed class ResponseTests : IDisposable
         {
             ShortNameForAlias = nameof(WithNonSeekableStream_UsingSystemTextJsonContentSerializer),
             ShortNameForJsonProperty = nameof(TestAliasObject)
-        };
-
-        var localHandler = new MockHttpMessageHandler();
-
-        var settings = new RefitSettings(new SystemTextJsonContentSerializer())
-        {
-            HttpMessageHandlerFactory = () => localHandler
         };
 
         using var utf8BufferWriter = new PooledBufferWriter();
@@ -402,11 +459,16 @@ public sealed class ResponseTests : IDisposable
         expectedResponse.Content.Headers.ContentType = new("application/json");
         expectedResponse.StatusCode = HttpStatusCode.OK;
 
-        _ = localHandler
-            .Expect(HttpMethod.Get, "http://api/aliasTest")
-            .Respond(req => expectedResponse);
+        var localHandler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
-        var localFixture = RestService.For<IMyAliasService>("http://api", settings);
+        var localFixture = RestService.For<IMyAliasService>(BaseAddress, localHandler.ToSettings(settings));
 
         var result = await localFixture.GetTestObject();
 
@@ -427,12 +489,6 @@ public sealed class ResponseTests : IDisposable
         // longer re-read it and Content ended up null.
         const string rawBody = "{ this is not valid json";
 
-        var localHandler = new MockHttpMessageHandler();
-        var settings = new RefitSettings(new SystemTextJsonContentSerializer())
-        {
-            HttpMessageHandlerFactory = () => localHandler
-        };
-
         await using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
         var bytes = Encoding.UTF8.GetBytes(rawBody);
         await contentStream.WriteAsync(bytes);
@@ -444,11 +500,16 @@ public sealed class ResponseTests : IDisposable
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
-        _ = localHandler
-            .Expect(HttpMethod.Get, "http://api/aliasTest")
-            .Respond(req => expectedResponse);
+        var localHandler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
-        var localFixture = RestService.For<IMyAliasService>("http://api", settings);
+        var localFixture = RestService.For<IMyAliasService>(BaseAddress, localHandler.ToSettings(settings));
 
         var actualException = await Assert.That(localFixture.GetTestObject).ThrowsExactly<ApiException>();
 
@@ -469,12 +530,6 @@ public sealed class ResponseTests : IDisposable
         const string xml =
             "<XmlResponse><Identifier>abc-123</Identifier></XmlResponse>";
 
-        var localHandler = new MockHttpMessageHandler();
-        var settings = new RefitSettings(new XmlContentSerializer())
-        {
-            HttpMessageHandlerFactory = () => localHandler
-        };
-
         await using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
         var bytes = Encoding.UTF8.GetBytes(xml);
         await contentStream.WriteAsync(bytes);
@@ -486,11 +541,16 @@ public sealed class ResponseTests : IDisposable
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
-        _ = localHandler
-            .Expect(HttpMethod.Get, "http://api/xmlTest")
-            .Respond(req => expectedResponse);
+        var localHandler = new StubHttp
+        {
+            {
+                Route.Get("http://api/xmlTest"),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var settings = new RefitSettings(new XmlContentSerializer());
 
-        var localFixture = RestService.For<IXmlResponseService>("http://api", settings);
+        var localFixture = RestService.For<IXmlResponseService>(BaseAddress, localHandler.ToSettings(settings));
 
         var result = await localFixture.GetXmlObject();
 
@@ -505,16 +565,23 @@ public sealed class ResponseTests : IDisposable
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            Content = new StringContent("Hello world")
+            Content = new StringContent(HelloWorldContent)
         };
         expectedResponse.Content.Headers.Clear();
 
-        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ApiException>();
+        var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ApiException>();
 
         await Assert.That(actualException!.Content).IsNotNull();
-        await Assert.That(actualException.Content).IsEqualTo("Hello world");
+        await Assert.That(actualException.Content).IsEqualTo(HelloWorldContent);
     }
 
     /// <summary>Verifies that a Bad Request with empty content surfaces through the ApiResponse error.</summary>
@@ -524,21 +591,26 @@ public sealed class ResponseTests : IDisposable
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            Content = new StringContent("Hello world")
+            Content = new StringContent(HelloWorldContent)
         };
         expectedResponse.Content.Headers.Clear();
 
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetApiResponseTestObject)}")
-            .Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetApiResponseTestObject)}"),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var apiResponse = await _fixture.GetApiResponseTestObject();
+        var apiResponse = await fixture.GetApiResponseTestObject();
 
         await Assert.That(apiResponse).IsNotNull();
         await Assert.That(apiResponse!.Error).IsNotNull();
         await Assert.That(apiResponse.HasResponseError(out var error)).IsTrue();
         await Assert.That(error!.Content).IsNotNull();
-        await Assert.That(error.Content).IsEqualTo("Hello world");
+        await Assert.That(error.Content).IsEqualTo(HelloWorldContent);
     }
 
     /// <summary>Verifies that a Bad Request with string content surfaces through the IApiResponse error.</summary>
@@ -548,21 +620,26 @@ public sealed class ResponseTests : IDisposable
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            Content = new StringContent("Hello world")
+            Content = new StringContent(HelloWorldContent)
         };
         expectedResponse.Content.Headers.Clear();
 
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetIApiResponse)}")
-            .Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetIApiResponse)}"),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var apiResponse = await _fixture.GetIApiResponse();
+        var apiResponse = await fixture.GetIApiResponse();
 
         await Assert.That(apiResponse).IsNotNull();
         await Assert.That(apiResponse.Error).IsNotNull();
         await Assert.That(apiResponse.HasResponseError(out var error)).IsTrue();
         await Assert.That(error!.Content).IsNotNull();
-        await Assert.That(error.Content).IsEqualTo("Hello world");
+        await Assert.That(error.Content).IsEqualTo(HelloWorldContent);
     }
 
     /// <summary>Verifies that a Bad Request with string content surfaces through the ValueTask IApiResponse error.</summary>
@@ -572,21 +649,26 @@ public sealed class ResponseTests : IDisposable
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.BadRequest)
         {
-            Content = new StringContent("Hello world")
+            Content = new StringContent(HelloWorldContent)
         };
         expectedResponse.Content.Headers.Clear();
 
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetValueTaskIApiResponse)}")
-            .Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetValueTaskIApiResponse)}"),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var apiResponse = await _fixture.GetValueTaskIApiResponse();
+        var apiResponse = await fixture.GetValueTaskIApiResponse();
 
         await Assert.That(apiResponse).IsNotNull();
         await Assert.That(apiResponse.Error).IsNotNull();
         await Assert.That(apiResponse.HasResponseError(out var error)).IsTrue();
         await Assert.That(error!.Content).IsNotNull();
-        await Assert.That(error.Content).IsEqualTo("Hello world");
+        await Assert.That(error.Content).IsEqualTo(HelloWorldContent);
     }
 
     /// <summary>Verifies that ValidationApiException hydrates the base ApiException Content.</summary>
@@ -596,10 +678,10 @@ public sealed class ResponseTests : IDisposable
     {
         var expectedProblemDetails = new ProblemDetails
         {
-            Detail = "detail",
-            Instance = "instance",
+            Detail = DetailValue,
+            Instance = InstanceValue,
             Status = 1,
-            Title = "title",
+            Title = TitleValue,
             Type = "type"
         };
         var expectedContent = JsonSerializer.Serialize(expectedProblemDetails);
@@ -608,10 +690,17 @@ public sealed class ResponseTests : IDisposable
             Content = new StringContent(expectedContent)
         };
         expectedResponse.Content.Headers.ContentType = new(
-            "application/problem+json");
-        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+            ProblemJsonMediaType);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
+        var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ValidationApiException>();
         var actualBaseException = actualException as ApiException;
         await Assert.That(actualBaseException!.Content).IsEqualTo(expectedContent);
     }
@@ -628,9 +717,16 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(AliasTestUrl),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var actualException = await Assert.That(_fixture.GetTestObject).ThrowsExactly<ApiException>();
+        var actualException = await Assert.That(fixture.GetTestObject).ThrowsExactly<ApiException>();
 
         await Assert.That(actualException!.InnerException).IsTypeOf<JsonException>();
         await Assert.That(actualException.Content).IsNotNull();
@@ -649,11 +745,16 @@ public sealed class ResponseTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, $"http://api/{nameof(_fixture.GetApiResponseTestObject)}")
-            .Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get($"{BaseAddress}/{nameof(IMyAliasService.GetApiResponseTestObject)}"),
+                Reply.From(req => expectedResponse)
+            },
+        };
+        var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
-        var apiResponse = await _fixture.GetApiResponseTestObject();
+        var apiResponse = await fixture.GetApiResponseTestObject();
 
         await Assert.That(apiResponse!.Error).IsNotNull();
         await Assert.That(apiResponse.Error!.InnerException).IsTypeOf<JsonException>();
@@ -676,9 +777,6 @@ public sealed class ResponseTests : IDisposable
 
         await Assert.That(ex!.Message).Contains("RequestMessage", StringComparison.Ordinal);
     }
-
-    /// <summary>Releases the resources used by the test fixture.</summary>
-    public void Dispose() => _mockHandler.Dispose();
 
     /// <summary>Problem-details payload carrying extension members for the extension-hydration test.</summary>
     /// <param name="Detail">The problem detail.</param>

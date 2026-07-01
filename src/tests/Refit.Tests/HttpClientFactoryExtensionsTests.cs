@@ -13,8 +13,41 @@ using Microsoft.Extensions.Options;
 namespace Refit.Tests;
 
 /// <summary>Tests for the Refit HttpClientFactory dependency-injection extension methods.</summary>
-public class HttpClientFactoryExtensionsTests
+public partial class HttpClientFactoryExtensionsTests
 {
+    /// <summary>The service key used for keyed Refit registrations under test.</summary>
+    private const string ServiceKey = "service-key";
+
+    /// <summary>The HTTP client name used for named Refit registrations under test.</summary>
+    private const string ServiceClientName = "service-client";
+
+    /// <summary>The service key used to distinguish keyed from non-keyed registrations.</summary>
+    private const string KeyedKey = "keyed";
+
+    /// <summary>The name used for the generic settings registration under test.</summary>
+    private const string GenericSettingsName = "generic-settings";
+
+    /// <summary>The name used for the generic factory registration under test.</summary>
+    private const string GenericFactoryName = "generic-factory";
+
+    /// <summary>The name used for the type settings registration under test.</summary>
+    private const string TypeSettingsName = "type-settings";
+
+    /// <summary>The name used for the type factory registration under test.</summary>
+    private const string TypeFactoryName = "type-factory";
+
+    /// <summary>The service key used for the keyed type registration without settings.</summary>
+    private const string TypeNoneKey = "type-none";
+
+    /// <summary>The service key used for keyed HTTP client builder registrations under test.</summary>
+    private const string BuilderKey = "builder-key";
+
+    /// <summary>The HTTP client name used when validating builder argument checks.</summary>
+    private const string BuilderValidationClientName = "builder-validation";
+
+    /// <summary>The name of a pre-registered HTTP client honored by the generated Refit client.</summary>
+    private const string MyHttpClientName = "MyHttpClient";
+
     /// <summary>Verifies that generic Refit clients registered for different interfaces receive unique client names.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -35,22 +68,22 @@ public class HttpClientFactoryExtensionsTests
     {
         var serviceCollection = new ServiceCollection();
         _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
-        _ = serviceCollection.AddKeyedRefitClient<IFooWithOtherAttribute>("keyed");
+        _ = serviceCollection.AddKeyedRefitClient<IFooWithOtherAttribute>(KeyedKey);
 
         var serviceProvider = serviceCollection.BuildServiceProvider();
         var nonKeyedService = serviceProvider.GetService<IFooWithOtherAttribute>();
-        var keyedService = serviceProvider.GetKeyedService<IFooWithOtherAttribute>("keyed");
+        var keyedService = serviceProvider.GetKeyedService<IFooWithOtherAttribute>(KeyedKey);
 
         await Assert.That(nonKeyedService).IsNotNull();
         await Assert.That(keyedService).IsNotNull();
         await Assert.That(keyedService).IsNotSameReferenceAs(nonKeyedService);
 
         var nonKeyedSettings = serviceProvider.GetService<SettingsFor<IFooWithOtherAttribute>>();
-        var keyedSettings = serviceProvider.GetKeyedService<SettingsFor<IFooWithOtherAttribute>>("keyed");
+        var keyedSettings = serviceProvider.GetKeyedService<SettingsFor<IFooWithOtherAttribute>>(KeyedKey);
         await Assert.That(keyedSettings).IsNotSameReferenceAs(nonKeyedSettings);
 
         var nonKeyedRequestBuilder = serviceProvider.GetService<IRequestBuilder<IFooWithOtherAttribute>>();
-        var keyedRequestBuilder = serviceProvider.GetKeyedService<IRequestBuilder<IFooWithOtherAttribute>>("keyed");
+        var keyedRequestBuilder = serviceProvider.GetKeyedService<IRequestBuilder<IFooWithOtherAttribute>>(KeyedKey);
         await Assert.That(keyedRequestBuilder).IsNotSameReferenceAs(nonKeyedRequestBuilder);
     }
 
@@ -194,19 +227,19 @@ public class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
 
         var builder = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
-            "service-key",
+            ServiceKey,
             settings,
-            "service-client");
+            ServiceClientName);
 
-        await Assert.That(builder.Name).IsEqualTo("service-client");
+        await Assert.That(builder.Name).IsEqualTo(ServiceClientName);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("service-key")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(ServiceKey)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(contentSerializer);
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<IRequestBuilder<IFooWithOtherAttribute>>("service-key"))
+            serviceProvider.GetRequiredKeyedService<IRequestBuilder<IFooWithOtherAttribute>>(ServiceKey))
             .IsNotNull();
     }
 
@@ -221,18 +254,18 @@ public class HttpClientFactoryExtensionsTests
 
         var builder = services.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
-            "service-key",
+            ServiceKey,
             serviceProvider => new()
             {
                 ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
             },
-            "service-client");
+            ServiceClientName);
 
-        await Assert.That(builder.Name).IsEqualTo("service-client");
+        await Assert.That(builder.Name).IsEqualTo(ServiceClientName);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("service-key")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(ServiceKey)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(
             serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer);
@@ -248,11 +281,11 @@ public class HttpClientFactoryExtensionsTests
         var settings = new RefitSettings { ContentSerializer = contentSerializer };
         var services = new ServiceCollection();
 
-        _ = services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "service-key", settings);
+        _ = services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), ServiceKey, settings);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("service-key")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(ServiceKey)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(contentSerializer);
     }
@@ -265,179 +298,12 @@ public class HttpClientFactoryExtensionsTests
     {
         IServiceCollection services = new ServiceCollection();
 
-        await Assert.That(() => services.AddRefitClient(null!)).ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), null!))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddKeyedRefitClient<IFooWithOtherAttribute>(null!))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddKeyedRefitClient<IFooWithOtherAttribute>(null!, new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient<IFooWithOtherAttribute>(
-                    null!,
-                    static _ => null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddKeyedRefitClient(null!, "service-key"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddRefitClient(null!, new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddRefitClient(null!, new RefitSettings(), "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddRefitClient(
-                    null!,
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddRefitClient(
-                    null!,
-                    (Func<IServiceProvider, RefitSettings?>?)null,
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    null!,
-                    new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    null!,
-                    new RefitSettings(),
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    null!,
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    null!,
-                    (Func<IServiceProvider, RefitSettings?>?)null,
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    null!,
-                    "service-key",
-                    new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    null!,
-                    "service-key",
-                    new RefitSettings(),
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    null!,
-                    "service-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    null!,
-                    "service-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null,
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        var keyedTypeBuilder = services.AddKeyedRefitClient(
-            typeof(IFooWithOtherAttribute),
-            "service-key",
-            (Func<IServiceProvider, RefitSettings?>?)null);
-        await Assert.That(keyedTypeBuilder).IsNotNull();
+        await AssertValidServicesRejectNullInterfaceAndSettings(services);
+        await AssertValidServicesRejectNullKeyedInterface(services);
 
         services = null!;
-        await Assert.That(() => services.AddRefitClient(typeof(IFooWithOtherAttribute)))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddRefitClient<IFooWithOtherAttribute>())
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddRefitClient(typeof(IFooWithOtherAttribute), new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    new RefitSettings(),
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    (Func<IServiceProvider, RefitSettings?>?)null,
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddRefitClient<IFooWithOtherAttribute>(new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddRefitClient<IFooWithOtherAttribute>(new RefitSettings(), "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddRefitClient<IFooWithOtherAttribute>(
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddRefitClient<IFooWithOtherAttribute>(
-                    (Func<IServiceProvider, RefitSettings?>?)null,
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "service-key"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    "service-key",
-                    new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    "service-key",
-                    new RefitSettings(),
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    "service-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    "service-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null,
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddKeyedRefitClient<IFooWithOtherAttribute>("service-key"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => services.AddKeyedRefitClient<IFooWithOtherAttribute>("service-key", new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient<IFooWithOtherAttribute>(
-                    "service-key",
-                    new RefitSettings(),
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient<IFooWithOtherAttribute>(
-                    "service-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => services.AddKeyedRefitClient<IFooWithOtherAttribute>(
-                    "service-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null,
-                    "service-client"))
-            .ThrowsExactly<ArgumentNullException>();
+        await AssertNullServicesRejectTypeAndGenericOverloads(services);
+        await AssertNullServicesRejectKeyedOverloads(services);
     }
 
     /// <summary>Verifies service-collection overloads that accept client names pass those names through.</summary>
@@ -449,23 +315,23 @@ public class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
         var settings = new RefitSettings();
 
-        var genericSettings = services.AddRefitClient<IFooWithOtherAttribute>(settings, "generic-settings");
+        var genericSettings = services.AddRefitClient<IFooWithOtherAttribute>(settings, GenericSettingsName);
         var genericFactory = services.AddRefitClient<IFooWithOtherAttribute>(
             static _ => new(),
-            "generic-factory");
+            GenericFactoryName);
         var typeSettings = services.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             settings,
-            "type-settings");
+            TypeSettingsName);
         var typeFactory = services.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             static _ => new(),
-            "type-factory");
+            TypeFactoryName);
 
-        await Assert.That(genericSettings.Name).IsEqualTo("generic-settings");
-        await Assert.That(genericFactory.Name).IsEqualTo("generic-factory");
-        await Assert.That(typeSettings.Name).IsEqualTo("type-settings");
-        await Assert.That(typeFactory.Name).IsEqualTo("type-factory");
+        await Assert.That(genericSettings.Name).IsEqualTo(GenericSettingsName);
+        await Assert.That(genericFactory.Name).IsEqualTo(GenericFactoryName);
+        await Assert.That(typeSettings.Name).IsEqualTo(TypeSettingsName);
+        await Assert.That(typeFactory.Name).IsEqualTo(TypeFactoryName);
     }
 
     /// <summary>Verifies remaining keyed service-collection overloads register keyed services and settings.</summary>
@@ -482,20 +348,20 @@ public class HttpClientFactoryExtensionsTests
 
         var genericNoSettings = services.AddKeyedRefitClient<IFooWithOtherAttribute>("generic-none");
         _ = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
-            "generic-settings",
+            GenericSettingsName,
             new RefitSettings { ContentSerializer = genericSettingsSerializer });
         var genericNamedSettings = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-settings-named",
             new RefitSettings(),
             "generic-settings-client");
         _ = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
-            "generic-factory",
+            GenericFactoryName,
             static _ => new());
         var genericNamedFactory = services.AddKeyedRefitClient<IFooWithOtherAttribute>(
             "generic-factory-named",
             _ => new() { ContentSerializer = genericFactorySerializer },
             "generic-factory-client");
-        _ = services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "type-none");
+        _ = services.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), TypeNoneKey);
         var typeNamedSettings = services.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             "type-settings-named",
@@ -503,7 +369,7 @@ public class HttpClientFactoryExtensionsTests
             "type-settings-client");
         _ = services.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
-            "type-factory",
+            TypeFactoryName,
             _ => new() { ContentSerializer = typeFactorySerializer });
 
         await Assert.That(genericNoSettings.Name).IsNotNull();
@@ -513,7 +379,7 @@ public class HttpClientFactoryExtensionsTests
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("generic-settings")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(GenericSettingsName)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(genericSettingsSerializer);
         await Assert.That(
@@ -525,13 +391,13 @@ public class HttpClientFactoryExtensionsTests
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(typeNamedSerializer);
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("type-factory")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(TypeFactoryName)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(typeFactorySerializer);
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<IRequestBuilder<IFooWithOtherAttribute>>("type-none"))
+            serviceProvider.GetRequiredKeyedService<IRequestBuilder<IFooWithOtherAttribute>>(TypeNoneKey))
             .IsNotNull();
-        await Assert.That(serviceProvider.GetRequiredKeyedService<IFooWithOtherAttribute>("type-none")).IsNotNull();
+        await Assert.That(serviceProvider.GetRequiredKeyedService<IFooWithOtherAttribute>(TypeNoneKey)).IsNotNull();
     }
 
     /// <summary>Verifies the <see cref="IHttpClientBuilder"/> generic overload keeps the existing named client and registers Refit services.</summary>
@@ -647,15 +513,15 @@ public class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
         var builder = services.AddHttpClient("builder-keyed");
 
-        var returnedBuilder = builder.AddKeyedRefitClient<IFooWithOtherAttribute>("builder-key");
+        var returnedBuilder = builder.AddKeyedRefitClient<IFooWithOtherAttribute>(BuilderKey);
 
         await Assert.That(returnedBuilder.Name).IsEqualTo("builder-keyed");
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
-            serviceProvider.GetKeyedService<IFooWithOtherAttribute>("builder-key")).IsNotNull();
+            serviceProvider.GetKeyedService<IFooWithOtherAttribute>(BuilderKey)).IsNotNull();
         await Assert.That(
-            serviceProvider.GetKeyedService<SettingsFor<IFooWithOtherAttribute>>("builder-key")).IsNotNull();
+            serviceProvider.GetKeyedService<SettingsFor<IFooWithOtherAttribute>>(BuilderKey)).IsNotNull();
     }
 
     /// <summary>Verifies the <see cref="IHttpClientBuilder"/> keyed generic settings overload stores the supplied settings.</summary>
@@ -668,11 +534,11 @@ public class HttpClientFactoryExtensionsTests
         var services = new ServiceCollection();
         var builder = services.AddHttpClient("builder-keyed-settings");
 
-        _ = builder.AddKeyedRefitClient<IFooWithOtherAttribute>("builder-key", settings);
+        _ = builder.AddKeyedRefitClient<IFooWithOtherAttribute>(BuilderKey, settings);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("builder-key")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(BuilderKey)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(contentSerializer);
     }
@@ -689,7 +555,7 @@ public class HttpClientFactoryExtensionsTests
 
         _ = builder.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
-            "builder-key",
+            BuilderKey,
             serviceProvider => new()
             {
                 ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
@@ -697,7 +563,7 @@ public class HttpClientFactoryExtensionsTests
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("builder-key")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(BuilderKey)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(
             serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer);
@@ -709,95 +575,12 @@ public class HttpClientFactoryExtensionsTests
     [SuppressMessage("Usage", "CA2263:Prefer generic overload", Justification = "Test intentionally exercises the non-generic Type overload.")]
     public async Task HttpClientBuilderOverloadsValidateRequiredArguments()
     {
-        IHttpClientBuilder builder = new ServiceCollection().AddHttpClient("builder-validation");
+        IHttpClientBuilder builder = new ServiceCollection().AddHttpClient(BuilderValidationClientName);
 
-        await Assert.That(() => builder.AddRefitClient(null!)).ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), null!))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddKeyedRefitClient<IFooWithOtherAttribute>(null!))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddKeyedRefitClient<IFooWithOtherAttribute>(null!, new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddKeyedRefitClient<IFooWithOtherAttribute>(
-                    null!,
-                    static _ => null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddKeyedRefitClient(null!, "builder-key"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddRefitClient(null!, new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddRefitClient(
-                    null!,
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    null!,
-                    new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    null!,
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddKeyedRefitClient(
-                    null!,
-                    "builder-key",
-                    new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddKeyedRefitClient(
-                    null!,
-                    "builder-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
+        await AssertValidBuilderRejectsNullArguments(builder);
 
         builder = null!;
-        await Assert.That(() => builder.AddRefitClient(typeof(IFooWithOtherAttribute)))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddRefitClient<IFooWithOtherAttribute>())
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddRefitClient(typeof(IFooWithOtherAttribute), new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddRefitClient<IFooWithOtherAttribute>(new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddRefitClient<IFooWithOtherAttribute>(
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "builder-key"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    "builder-key",
-                    new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddKeyedRefitClient(
-                    typeof(IFooWithOtherAttribute),
-                    "builder-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddKeyedRefitClient<IFooWithOtherAttribute>("builder-key"))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => builder.AddKeyedRefitClient<IFooWithOtherAttribute>("builder-key", new RefitSettings()))
-            .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(
-                () => builder.AddKeyedRefitClient<IFooWithOtherAttribute>(
-                    "builder-key",
-                    (Func<IServiceProvider, RefitSettings?>?)null))
-            .ThrowsExactly<ArgumentNullException>();
+        await AssertNullBuilderRejectsAllOverloads(builder);
     }
 
     /// <summary>Verifies the remaining <see cref="IHttpClientBuilder"/> overloads register Refit services on the existing builder.</summary>
@@ -817,13 +600,13 @@ public class HttpClientFactoryExtensionsTests
         _ = builder.AddRefitClient(
             typeof(IFooWithOtherAttribute),
             new RefitSettings { ContentSerializer = typeSettingsSerializer });
-        var keyedTypeBuilder = builder.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), "type-none");
+        var keyedTypeBuilder = builder.AddKeyedRefitClient(typeof(IFooWithOtherAttribute), TypeNoneKey);
         _ = builder.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
-            "type-settings",
+            TypeSettingsName,
             new RefitSettings { ContentSerializer = keyedTypeSettingsSerializer });
         _ = builder.AddKeyedRefitClient<IFooWithOtherAttribute>(
-            "generic-factory",
+            GenericFactoryName,
             _ => new() { ContentSerializer = keyedGenericFactorySerializer });
 
         await Assert.That(typeBuilder.Name).IsEqualTo("builder-matrix");
@@ -835,15 +618,15 @@ public class HttpClientFactoryExtensionsTests
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(typeSettingsSerializer);
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("type-settings")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(TypeSettingsName)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(keyedTypeSettingsSerializer);
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>("generic-factory")
+            serviceProvider.GetRequiredKeyedService<SettingsFor<IFooWithOtherAttribute>>(GenericFactoryName)
                 .Settings!
                 .ContentSerializer).IsSameReferenceAs(keyedGenericFactorySerializer);
         await Assert.That(
-            serviceProvider.GetRequiredKeyedService<IRequestBuilder<IFooWithOtherAttribute>>("type-none"))
+            serviceProvider.GetRequiredKeyedService<IRequestBuilder<IFooWithOtherAttribute>>(TypeNoneKey))
             .IsNotNull();
     }
 
@@ -860,8 +643,8 @@ public class HttpClientFactoryExtensionsTests
                 && method.GetGenericArguments().Length == 1
                 && method.GetParameters() is
                 [
-                    { ParameterType: var servicesType },
-                    { ParameterType: var settingsType }
+                { ParameterType: var servicesType },
+                { ParameterType: var settingsType }
                 ]
                 && servicesType == typeof(IServiceCollection)
                 && settingsType == typeof(RefitSettings));
@@ -881,9 +664,9 @@ public class HttpClientFactoryExtensionsTests
                 && !method.IsGenericMethodDefinition
                 && method.GetParameters() is
                 [
-                    { ParameterType: var servicesType },
-                    { ParameterType: var refitInterfaceType },
-                    { ParameterType: var settingsType }
+                { ParameterType: var servicesType },
+                { ParameterType: var refitInterfaceType },
+                { ParameterType: var settingsType }
                 ]
                 && servicesType == typeof(IServiceCollection)
                 && refitInterfaceType == typeof(Type)
@@ -900,20 +683,20 @@ public class HttpClientFactoryExtensionsTests
         var baseUri = new Uri("https://0:1337");
         var services = new ServiceCollection();
 
-        _ = services.AddHttpClient("MyHttpClient", client =>
+        _ = services.AddHttpClient(MyHttpClientName, client =>
         {
             client.BaseAddress = baseUri;
             client.DefaultRequestHeaders.Add("X-Powered-By", Environment.OSVersion.VersionString);
         });
-        var refitBuilder = services.AddRefitClient<IGitHubApi>(settingsAction: null, "MyHttpClient");
+        var refitBuilder = services.AddRefitClient<IGitHubApi>(settingsAction: null, MyHttpClientName);
 
         var sp = services.BuildServiceProvider();
         var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-        var httpClient = httpClientFactory.CreateClient("MyHttpClient");
+        var httpClient = httpClientFactory.CreateClient(MyHttpClientName);
 
         var gitHubApi = sp.GetRequiredService<IGitHubApi>();
 
-        await Assert.That(refitBuilder.Name).IsEqualTo("MyHttpClient");
+        await Assert.That(refitBuilder.Name).IsEqualTo(MyHttpClientName);
         await Assert.That(gitHubApi).IsNotNull();
         await Assert.That(httpClient.BaseAddress).IsEqualTo(baseUri);
         await Assert.That(httpClient.DefaultRequestHeaders).Contains(

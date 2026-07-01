@@ -240,7 +240,7 @@ public class XmlContentSerializerTests
     private static Dto BuildDto() =>
         new()
         {
-            CreatedOn = DateTime.UtcNow,
+            CreatedOn = DateTime.UnixEpoch,
             Identifier = Guid.NewGuid().ToString(),
             Name = "Test Dto Object"
         };

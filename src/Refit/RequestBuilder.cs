@@ -37,7 +37,7 @@ public static class RequestBuilder
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(RefitSettings? settings) =>
+    T>(RefitSettings? settings) =>
         _platformRequestBuilderFactory.Create<T>(settings);
 
     /// <summary>Creates a request builder for the specified type, enabling construction of requests against its members.</summary>
@@ -54,7 +54,7 @@ public static class RequestBuilder
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>() =>
+    T>() =>
         _platformRequestBuilderFactory.Create<T>(null);
 
     /// <summary>Creates an implementation of the specified Refit interface for making HTTP requests.</summary>

@@ -47,32 +47,32 @@ public sealed class RefitInterfaceCodeFixProvider : CodeFixProvider
             switch (diagnostic.Id)
             {
                 case DiagnosticIds.InvalidRouteBackslash:
-                {
-                    context.RegisterCodeFix(
-                        CodeAction.Create(
-                            UseForwardSlashesTitle,
-                            cancellationToken => UseForwardSlashesAsync(
-                                context.Document,
-                                diagnostic,
-                                cancellationToken),
-                            UseForwardSlashesTitle),
-                        diagnostic);
-                    break;
-                }
+                    {
+                        context.RegisterCodeFix(
+                            CodeAction.Create(
+                                UseForwardSlashesTitle,
+                                cancellationToken => UseForwardSlashesAsync(
+                                    context.Document,
+                                    diagnostic,
+                                    cancellationToken),
+                                UseForwardSlashesTitle),
+                            diagnostic);
+                        break;
+                    }
 
                 case DiagnosticIds.InvalidHeaderCollectionParameter:
-                {
-                    context.RegisterCodeFix(
-                        CodeAction.Create(
-                            UseHeaderCollectionTypeTitle,
-                            cancellationToken => UseHeaderCollectionTypeAsync(
-                                context.Document,
-                                diagnostic,
-                                cancellationToken),
-                            UseHeaderCollectionTypeTitle),
-                        diagnostic);
-                    break;
-                }
+                    {
+                        context.RegisterCodeFix(
+                            CodeAction.Create(
+                                UseHeaderCollectionTypeTitle,
+                                cancellationToken => UseHeaderCollectionTypeAsync(
+                                    context.Document,
+                                    diagnostic,
+                                    cancellationToken),
+                                UseHeaderCollectionTypeTitle),
+                            diagnostic);
+                        break;
+                    }
             }
         }
 

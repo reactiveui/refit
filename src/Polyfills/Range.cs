@@ -14,6 +14,7 @@ namespace System;
     "Design",
     "CA2225:Operator overloads have named alternates",
     Justification = "Compiler-required polyfill matching the BCL System.Range shape for C# range syntax.")]
+[Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal readonly struct Range : IEquatable<Range>
 {
     /// <summary>Initializes a new instance of the <see cref="Range"/> struct.</summary>

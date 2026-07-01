@@ -227,7 +227,7 @@ public static class GeneratedRequestRunner
         Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
     public static HttpContent CreateUrlEncodedBodyContent<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        TBody>(
+    TBody>(
         RefitSettings settings,
         TBody body)
     {
@@ -267,7 +267,7 @@ public static class GeneratedRequestRunner
         Justification = "Generated callers specify the declared body type for AOT-safe form property discovery.")]
     public static HttpContent CreateUrlEncodedBodyContent<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        TBody>(
+    TBody>(
         RefitSettings settings,
         TBody body,
         FormField<TBody>[] fields)

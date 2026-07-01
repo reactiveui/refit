@@ -19,7 +19,7 @@ internal class RequestBuilderFactory : IRequestBuilderFactory
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(RefitSettings? settings) =>
+    T>(RefitSettings? settings) =>
         new CachedRequestBuilderImplementation<T>(
             new RequestBuilderImplementation<T>(settings));
 

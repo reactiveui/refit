@@ -12,6 +12,7 @@ namespace System.Diagnostics.CodeAnalysis;
     AttributeTargets.All,
     AllowMultiple = true,
     Inherited = false)]
+[ExcludeFromCodeCoverage]
 internal sealed class UnconditionalSuppressMessageAttribute(string category, string checkId) : Attribute
 {
     /// <summary>Gets the category for the suppressed diagnostic.</summary>

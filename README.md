@@ -4,9 +4,9 @@
 
 [![Build](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml/badge.svg)](https://github.com/reactiveui/refit/actions/workflows/ci-build.yml) [![codecov](https://codecov.io/github/reactiveui/refit/branch/main/graph/badge.svg?token=2guEgHsDU2)](https://codecov.io/github/reactiveui/refit)
 
-|         | Refit                                                                                       | Refit.HttpClientFactory                                                                                                         | Refit.Newtonsoft.Json                                                                                                       |
-|---------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| *NuGet* | [![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/) | [![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/) | [![NuGet](https://img.shields.io/nuget/v/Refit.Newtonsoft.Json.svg)](https://www.nuget.org/packages/Refit.Newtonsoft.Json/) |
+|         | Refit                                                                                       | Refit.HttpClientFactory                                                                                                         | Refit.Newtonsoft.Json                                                                                                       | Refit.Testing                                                                                                    |
+|---------|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| *NuGet* | [![NuGet](https://img.shields.io/nuget/v/Refit.svg)](https://www.nuget.org/packages/Refit/) | [![NuGet](https://img.shields.io/nuget/v/Refit.HttpClientFactory.svg)](https://www.nuget.org/packages/Refit.HttpClientFactory/) | [![NuGet](https://img.shields.io/nuget/v/Refit.Newtonsoft.Json.svg)](https://www.nuget.org/packages/Refit.Newtonsoft.Json/) | [![NuGet](https://img.shields.io/nuget/v/Refit.Testing.svg)](https://www.nuget.org/packages/Refit.Testing/) |
 
 Refit is a library heavily inspired by Square's
 [Retrofit](http://square.github.io/retrofit) library, and it turns your REST
@@ -35,6 +35,10 @@ services
     .AddRefitClient<IGitHubApi>()
     .ConfigureHttpClient(c => c.BaseAddress = new Uri("https://api.github.com"));
 ```
+
+To test the clients you build with Refit, the [`Refit.Testing`](https://www.nuget.org/packages/Refit.Testing) package
+lets you stub responses and verify requests with a declarative route table — see
+[Testing your Refit clients](#testing-your-refit-clients).
 
 # Table of Contents
 
@@ -85,6 +89,7 @@ services
     * [Reading the request body that was sent](#reading-the-request-body-that-was-sent)
     * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
     * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
+* [Testing your Refit clients](#testing-your-refit-clients)
 
 ### Sponsors
 
@@ -131,6 +136,16 @@ The release also adds two opt-in, non-breaking knobs on `RefitSettings` for hard
   that serialize exceptions.
 * `RefitSettings.MaxExceptionContentLength` — caps how many characters of an error response body are read into
   `ApiException.Content`, bounding memory use against hostile or oversized error responses. Defaults to unbounded.
+
+#### New in V13.x
+
+* **`Refit.Testing`** — a new first-party package for testing Refit clients without a mocking library or a live
+  server. You describe expected calls as a route table (`Route` → `Reply`) and point a real client at it via
+  `StubHttp.CreateClient<T>(...)`. Route templates mirror your interface attributes, typed replies (`Reply.With<T>`)
+  are serialized with the client's own serializer, and the sent request body can be read back as a typed object with
+  `LastRequestBodyAsync<T>()`. It also includes `NetworkBehavior` for seeded latency/fault injection and
+  `StubApiResponse<T>` for unit-testing code that consumes `IApiResponse<T>`. See
+  [Testing your Refit clients](#testing-your-refit-clients).
 
 ### V12.x.x
 
@@ -2214,3 +2229,35 @@ For users of [Serilog](https://serilog.net), you can enrich the logging of `ApiE
 [Serilog.Exceptions.Refit](https://www.nuget.org/packages/Serilog.Exceptions.Refit) NuGet package. Details of how to
 integrate this package into your applications can be
 found [here](https://github.com/RehanSaeed/Serilog.Exceptions#serilogexceptionsrefit).
+
+### Testing your Refit clients
+
+The first-party [`Refit.Testing`](https://www.nuget.org/packages/Refit.Testing) package lets you test the Refit
+clients your app depends on without a mocking library or a live server. You describe the calls you expect as a
+**route table** — each entry pairs a `Route` (which request to match) with a `Reply` (what to send back) — and point
+a real Refit client at it:
+
+```csharp
+using Refit.Testing;
+
+var http = new StubHttp
+{
+    { Route.Get("/users/{id}"), Reply.With(new User(7, "octocat")) },
+    { Route.Post("/users"),     Reply.Status(HttpStatusCode.Created) },
+};
+
+var api = http.CreateClient<IGitHubApi>("https://api.github.com");
+
+var user = await api.GetUser(7);
+
+// assert the body your client sent, as a typed object:
+var sent = await http.LastRequestBodyAsync<NewUser>();
+await http.VerifyAllCalledAsync();
+```
+
+Because the handler is Refit-aware, route templates mirror your `[Get("/users/{id}")]` attributes, `Reply.With<T>`
+serializes with the client's own serializer (no hand-written JSON), and you can read the sent request body back as a
+typed object. It also ships `NetworkBehavior` for seeded latency/fault injection and `StubApiResponse<T>` for
+unit-testing code that consumes `IApiResponse<T>` directly.
+
+See the [testing guide](docs/testing.md) for the full walkthrough.
