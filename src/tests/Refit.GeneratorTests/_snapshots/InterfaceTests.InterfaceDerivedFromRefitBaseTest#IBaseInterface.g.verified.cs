@@ -10,7 +10,6 @@ namespace Refit.Implementation
     internal partial class Generated
     {
         /// <summary>Generated Refit implementation for global::RefitGeneratorTest.IBaseInterface.</summary>
-        [global::System.CodeDom.Compiler.GeneratedCodeAttribute("InterfaceStubGeneratorV2", "12.0.0.0")]
         [global::System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
         [global::System.Diagnostics.DebuggerNonUserCode]
         [global::RefitInternalGenerated.PreserveAttribute]
