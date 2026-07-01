@@ -1,0 +1,35 @@
+name: SonarCloud (fork PRs)
+
+# SonarCloud analysis for fork PRs. See workflow-common-sonarcloud-fork.yml in
+# reactiveui/actions-common for how and why this works.
+
+on:
+    workflow_run:
+        workflows: [ "Build" ]
+        types: [ completed ]
+
+permissions:
+    contents: read
+    actions: read
+
+jobs:
+    sonarcloud-fork:
+        # Only successful fork-PR builds (same-repo PRs use sonarcloud.yml).
+        if: >-
+            github.event.workflow_run.event == 'pull_request' &&
+            github.event.workflow_run.conclusion == 'success' &&
+            github.event.workflow_run.head_repository.full_name != github.repository
+        uses: reactiveui/actions-common/.github/workflows/workflow-common-sonarcloud-fork.yml@main
+        with:
+            srcFolder: src
+            solutionFile: Refit.slnx
+            minverMinimumMajorMinor: '10.2'
+            sonarProjectKey: reactiveui_refit
+            sonarOrganization: reactiveui
+            sonarExclusions: '**/tests/**,**/benchmarks/**,**/examples/**,**/TestResults/**'
+            sonarCoverageExclusions: '**/tests/**,**/benchmarks/**,**/examples/**,**/*Tests/**,**/*Tests.cs,**/Generated/**,**/*.g.cs'
+            sonarCpdExclusions: '**/tests/**,**/benchmarks/**,**/examples/**'
+            sonarTestExclusions: '**/tests/**,**/benchmarks/**,**/examples/**'
+            testTimeout: '15m'
+        secrets:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
