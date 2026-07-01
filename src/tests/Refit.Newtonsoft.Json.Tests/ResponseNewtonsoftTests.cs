@@ -7,16 +7,13 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Response error-handling tests that exercise the Newtonsoft content serializer.</summary>
-public sealed class ResponseNewtonsoftTests : IDisposable
+public sealed class ResponseNewtonsoftTests
 {
-    /// <summary>The mock HTTP handler backing the test fixture.</summary>
-    private readonly MockHttpMessageHandler _mockHandler = new();
-
     /// <summary>Refit service used to exercise alias and response handling.</summary>
     public interface IMyAliasService
     {
@@ -36,14 +33,6 @@ public sealed class ResponseNewtonsoftTests : IDisposable
     [Test]
     public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiException()
     {
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => _mockHandler,
-            ContentSerializer = new NewtonsoftJsonContentSerializer()
-        };
-
-        var newtonSoftFixture = RestService.For<IMyAliasService>("http://api", settings);
-
         const string nonJsonResponse = "bad response";
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -51,7 +40,18 @@ public sealed class ResponseNewtonsoftTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _ = _mockHandler.Expect(HttpMethod.Get, "http://api/aliasTest").Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("http://api/aliasTest"),
+                Reply.From(req => expectedResponse)
+            },
+        };
+
+        var newtonSoftFixture = handler.CreateClient<IMyAliasService>("http://api", new RefitSettings
+        {
+            ContentSerializer = new NewtonsoftJsonContentSerializer()
+        });
 
         var actualException = await Assert.That(newtonSoftFixture.GetTestObject).ThrowsExactly<ApiException>();
 
@@ -65,14 +65,6 @@ public sealed class ResponseNewtonsoftTests : IDisposable
     [Test]
     public async Task WithNonJsonResponseUsingNewtonsoftJsonContentSerializer_ShouldReturnApiResponse()
     {
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => _mockHandler,
-            ContentSerializer = new NewtonsoftJsonContentSerializer()
-        };
-
-        var newtonSoftFixture = RestService.For<IMyAliasService>("http://api", settings);
-
         const string nonJsonResponse = "bad response";
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
         {
@@ -80,9 +72,18 @@ public sealed class ResponseNewtonsoftTests : IDisposable
         };
         expectedResponse.Content.Headers.Clear();
 
-        _ = _mockHandler
-            .Expect(HttpMethod.Get, $"http://api/{nameof(IMyAliasService.GetApiResponseTestObject)}")
-            .Respond(req => expectedResponse);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get($"http://api/{nameof(IMyAliasService.GetApiResponseTestObject)}"),
+                Reply.From(req => expectedResponse)
+            },
+        };
+
+        var newtonSoftFixture = handler.CreateClient<IMyAliasService>("http://api", new RefitSettings
+        {
+            ContentSerializer = new NewtonsoftJsonContentSerializer()
+        });
 
         var apiResponse = await newtonSoftFixture.GetApiResponseTestObject();
 
@@ -92,7 +93,4 @@ public sealed class ResponseNewtonsoftTests : IDisposable
         await Assert.That(error!.Content).IsNotNull();
         await Assert.That(error.Content).IsEqualTo(nonJsonResponse);
     }
-
-    /// <summary>Disposes the mock HTTP handler.</summary>
-    public void Dispose() => _mockHandler.Dispose();
 }

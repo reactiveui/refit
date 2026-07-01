@@ -10,6 +10,12 @@ namespace Refit.Tests;
 /// <summary>Tests for the cached request builder implementation.</summary>
 public class CachedRequestBuilderTests
 {
+    /// <summary>Expected cache entry and build count after two distinct method invocations.</summary>
+    private const int ExpectedTwoEntries = 2;
+
+    /// <summary>Expected cache entry and build count after three distinct method invocations.</summary>
+    private const int ExpectedThreeEntries = 3;
+
     /// <summary>Verifies the cached builder throws when constructed with a null inner builder.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -44,15 +50,15 @@ public class CachedRequestBuilderTests
         await Assert.That(innerBuilder.BuildCount).IsEqualTo(1);
 
         _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IGeneralRequests.MultiParameter), [typeof(string), typeof(string)]);
-        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(2);
-        await Assert.That(innerBuilder.BuildCount).IsEqualTo(2);
+        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(ExpectedTwoEntries);
+        await Assert.That(innerBuilder.BuildCount).IsEqualTo(ExpectedTwoEntries);
 
         _ = requestBuilder.BuildRestResultFuncForMethod(
             nameof(IGeneralRequests.SingleGenericMultiParameter),
             [typeof(string), typeof(string), typeof(string)],
             [typeof(string)]);
-        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(3);
-        await Assert.That(innerBuilder.BuildCount).IsEqualTo(3);
+        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(ExpectedThreeEntries);
+        await Assert.That(innerBuilder.BuildCount).IsEqualTo(ExpectedThreeEntries);
     }
 
     /// <summary>Verifies repeated identical requests do not create duplicate cache entries.</summary>
@@ -86,8 +92,8 @@ public class CachedRequestBuilderTests
         await Assert.That(requestBuilder.MethodDictionary).HasSingleItem();
 
         _ = requestBuilder.BuildRestResultFuncForMethod(nameof(IDuplicateNames.SingleParameter), [typeof(int)]);
-        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(2);
-        await Assert.That(innerBuilder.BuildCount).IsEqualTo(2);
+        await Assert.That(requestBuilder.MethodDictionary.Count).IsEqualTo(ExpectedTwoEntries);
+        await Assert.That(innerBuilder.BuildCount).IsEqualTo(ExpectedTwoEntries);
     }
 
     /// <summary>Request-builder test double that records how many functions the cache asks it to build.</summary>

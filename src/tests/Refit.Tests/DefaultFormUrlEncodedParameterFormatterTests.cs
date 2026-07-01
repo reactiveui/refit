@@ -9,6 +9,9 @@ namespace Refit.Tests;
 /// <summary>Tests for <see cref="DefaultFormUrlEncodedParameterFormatter"/>.</summary>
 public class DefaultFormUrlEncodedParameterFormatterTests
 {
+    /// <summary>An enum value that is not defined on <see cref="FormEnum"/>.</summary>
+    private const int UndefinedEnumValue = 999;
+
     /// <summary>Enum used to verify enum-member formatting and undefined enum fallback.</summary>
     private enum FormEnum
     {
@@ -39,6 +42,6 @@ public class DefaultFormUrlEncodedParameterFormatterTests
 
         await Assert.That(formatter.Format(FormEnum.Custom, null)).IsEqualTo("custom-value");
         await Assert.That(formatter.Format(FormEnum.Plain, null)).IsEqualTo("Plain");
-        await Assert.That(formatter.Format((FormEnum)999, null)).IsEqualTo("999");
+        await Assert.That(formatter.Format((FormEnum)UndefinedEnumValue, null)).IsEqualTo("999");
     }
 }

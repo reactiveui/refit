@@ -132,7 +132,7 @@ public interface IDummyHttpApi
     [Get("/foo/bar/{id}")]
     Task<string> FetchSomeStuffWithPropertyAndQuery(
         int id,
-        [Property("SomeProperty")] [Query] string someValue);
+        [Property("SomeProperty")][Query] string someValue);
 
     /// <summary>Gets some stuff by id with an authorization header supplied dynamically.</summary>
     /// <param name="id">The identifier of the resource to fetch.</param>

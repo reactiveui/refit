@@ -7,19 +7,49 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for interface methods returning <see cref="IAsyncEnumerable{T}"/>.</summary>
 public class StreamingResponseTests
 {
+    /// <summary>The media type used for JSON array streaming responses.</summary>
+    private const string JsonMediaType = "application/json";
+
+    /// <summary>The base address used by the streaming test clients.</summary>
+    private const string BaseUrl = "http://foo";
+
+    /// <summary>Expected element id value 2 in streamed payloads.</summary>
+    private const int ExpectedId2 = 2;
+
+    /// <summary>Expected element id value 3 in streamed payloads.</summary>
+    private const int ExpectedId3 = 3;
+
+    /// <summary>Expected element id value 4 in streamed payloads.</summary>
+    private const int ExpectedId4 = 4;
+
+    /// <summary>Expected element id value 5 in streamed payloads.</summary>
+    private const int ExpectedId5 = 5;
+
+    /// <summary>Expected element id value 7 in streamed payloads.</summary>
+    private const int ExpectedId7 = 7;
+
+    /// <summary>Expected element id value 8 in streamed payloads.</summary>
+    private const int ExpectedId8 = 8;
+
+    /// <summary>Expected element id value 10 in streamed payloads.</summary>
+    private const int ExpectedId10 = 10;
+
+    /// <summary>Expected element id value 20 in streamed payloads.</summary>
+    private const int ExpectedId20 = 20;
+
     /// <summary>Verifies a JSON array response is streamed element by element.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task StreamsJsonArrayElements()
     {
-        var fixture = CreateFixture("application/json", "[{\"id\":1},{\"id\":2},{\"id\":3}]");
+        var fixture = CreateFixture(JsonMediaType, "[{\"id\":1},{\"id\":2},{\"id\":3}]");
 
         var ids = new List<int>();
         await foreach (var item in fixture.GetArray())
@@ -27,7 +57,7 @@ public class StreamingResponseTests
             ids.Add(item!.Id);
         }
 
-        await Assert.That(ids).IsEquivalentTo([1, 2, 3]);
+        await Assert.That(ids).IsEquivalentTo([1, ExpectedId2, ExpectedId3]);
     }
 
     /// <summary>Verifies streaming works through the reflection (non-inline) path for a dynamic route.</summary>
@@ -35,7 +65,7 @@ public class StreamingResponseTests
     [Test]
     public async Task StreamsViaReflectionPathForDynamicRoute()
     {
-        var fixture = CreateFixture("application/json", "[{\"id\":4},{\"id\":5}]");
+        var fixture = CreateFixture(JsonMediaType, "[{\"id\":4},{\"id\":5}]");
 
         var ids = new List<int>();
         await foreach (var item in fixture.GetGroupArray("g1"))
@@ -43,7 +73,7 @@ public class StreamingResponseTests
             ids.Add(item!.Id);
         }
 
-        await Assert.That(ids).IsEquivalentTo([4, 5]);
+        await Assert.That(ids).IsEquivalentTo([ExpectedId4, ExpectedId5]);
     }
 
     /// <summary>Verifies a newline-delimited JSON response is streamed line by line.</summary>
@@ -59,7 +89,7 @@ public class StreamingResponseTests
             ids.Add(item!.Id);
         }
 
-        await Assert.That(ids).IsEquivalentTo([1, 2, 3]);
+        await Assert.That(ids).IsEquivalentTo([1, ExpectedId2, ExpectedId3]);
     }
 
     /// <summary>Verifies the alternate JSON Lines media type is also streamed line by line.</summary>
@@ -75,7 +105,7 @@ public class StreamingResponseTests
             ids.Add(item!.Id);
         }
 
-        await Assert.That(ids).IsEquivalentTo([10, 20]);
+        await Assert.That(ids).IsEquivalentTo([ExpectedId10, ExpectedId20]);
     }
 
     /// <summary>Verifies an HTTP error response throws when the stream is enumerated.</summary>
@@ -83,10 +113,15 @@ public class StreamingResponseTests
     [Test]
     public async Task ErrorResponseThrowsOnEnumeration()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp.When("*").Respond(HttpStatusCode.InternalServerError);
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IStreamingApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Template = "*", Reusable = true },
+                Reply.Status(HttpStatusCode.InternalServerError)
+            },
+        };
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
+        var fixture = RestService.For<IStreamingApi>(BaseUrl, settings);
 
         await Assert
             .That(async () =>
@@ -104,19 +139,19 @@ public class StreamingResponseTests
     [Test]
     public async Task NonStreamingSerializerThrowsNotSupported()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .When("*")
-            .Respond(_ => new(HttpStatusCode.OK)
+        var handler = new StubHttp
+        {
             {
-                Content = new StringContent("[{\"id\":1}]", System.Text.Encoding.UTF8, "application/json"),
-            });
+                new RouteMatcher { Template = "*", Reusable = true },
+                Reply.Content(new StringContent("[{\"id\":1}]", System.Text.Encoding.UTF8, JsonMediaType))
+            },
+        };
 
         var settings = new RefitSettings(new NonStreamingContentSerializer())
         {
-            HttpMessageHandlerFactory = () => mockHttp,
+            HttpMessageHandlerFactory = () => handler,
         };
-        var fixture = RestService.For<IStreamingApi>("http://foo", settings);
+        var fixture = RestService.For<IStreamingApi>(BaseUrl, settings);
 
         await Assert
             .That(async () =>
@@ -134,7 +169,7 @@ public class StreamingResponseTests
     [Test]
     public async Task HonorsCancellationToken()
     {
-        var fixture = CreateFixture("application/json", "[{\"id\":1},{\"id\":2},{\"id\":3}]");
+        var fixture = CreateFixture(JsonMediaType, "[{\"id\":1},{\"id\":2},{\"id\":3}]");
 
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
@@ -156,7 +191,7 @@ public class StreamingResponseTests
     public async Task StreamsJsonArrayWithSourceGenContext()
     {
         var fixture = CreateFixture(
-            "application/json",
+            JsonMediaType,
             "[{\"id\":1},{\"id\":2}]",
             new SystemTextJsonContentSerializer(StreamingJsonContext.Default.Options));
 
@@ -166,7 +201,7 @@ public class StreamingResponseTests
             ids.Add(item!.Id);
         }
 
-        await Assert.That(ids).IsEquivalentTo([1, 2]);
+        await Assert.That(ids).IsEquivalentTo([1, ExpectedId2]);
     }
 
     /// <summary>Verifies the source-gen JSON Lines path handles CRLF endings, a line larger than the read buffer, and a final line with no trailing newline.</summary>
@@ -189,7 +224,7 @@ public class StreamingResponseTests
             ids.Add(item!.Id);
         }
 
-        await Assert.That(ids).IsEquivalentTo([1, 2, 3]);
+        await Assert.That(ids).IsEquivalentTo([1, ExpectedId2, ExpectedId3]);
     }
 
     /// <summary>Verifies disposing a JSON array stream after one item cleans up the enumerator.</summary>
@@ -197,7 +232,7 @@ public class StreamingResponseTests
     [Test]
     public async Task JsonArrayStreamDisposesEnumeratorEarly()
     {
-        var fixture = CreateFixture("application/json", "[{\"id\":1},{\"id\":2},{\"id\":3}]");
+        var fixture = CreateFixture(JsonMediaType, "[{\"id\":1},{\"id\":2},{\"id\":3}]");
 
         await using var enumerator = fixture.GetArray().GetAsyncEnumerator();
 
@@ -226,16 +261,16 @@ public class StreamingResponseTests
     [Test]
     public async Task StreamsJsonArrayWhenResponseHasNoContentType()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .When("*")
-            .Respond(_ => new(HttpStatusCode.OK)
+        var handler = new StubHttp
+        {
             {
-                Content = new ByteArrayContent("[{\"id\":7}]"u8.ToArray()),
-            });
+                new RouteMatcher { Template = "*", Reusable = true },
+                Reply.Content(new ByteArrayContent("[{\"id\":7}]"u8.ToArray()))
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IStreamingApi>("http://foo", settings);
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
+        var fixture = RestService.For<IStreamingApi>(BaseUrl, settings);
 
         var ids = new List<int>();
         await foreach (var item in fixture.GetArray())
@@ -243,7 +278,7 @@ public class StreamingResponseTests
             ids.Add(item!.Id);
         }
 
-        await Assert.That(ids).IsEquivalentTo([7]);
+        await Assert.That(ids).IsEquivalentTo([ExpectedId7]);
     }
 
     /// <summary>Verifies the reflection path links the method cancellation token for a dynamic route.</summary>
@@ -251,7 +286,7 @@ public class StreamingResponseTests
     [Test]
     public async Task StreamsViaReflectionPathWithCancellationToken()
     {
-        var fixture = CreateFixture("application/json", "[{\"id\":8}]");
+        var fixture = CreateFixture(JsonMediaType, "[{\"id\":8}]");
 
         var ids = new List<int>();
         await foreach (var item in fixture.GetGroupArrayCancellable("g1", CancellationToken.None))
@@ -259,7 +294,7 @@ public class StreamingResponseTests
             ids.Add(item!.Id);
         }
 
-        await Assert.That(ids).IsEquivalentTo([8]);
+        await Assert.That(ids).IsEquivalentTo([ExpectedId8]);
     }
 
     /// <summary>Creates a streaming fixture backed by a mock handler returning the given payload.</summary>
@@ -269,16 +304,16 @@ public class StreamingResponseTests
     /// <returns>The streaming API fixture.</returns>
     private static IStreamingApi CreateFixture(string mediaType, string payload, IHttpContentSerializer? serializer = null)
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .When("*")
-            .Respond(_ => new(HttpStatusCode.OK)
+        var handler = new StubHttp
+        {
             {
-                Content = new StringContent(payload, System.Text.Encoding.UTF8, mediaType),
-            });
+                new RouteMatcher { Template = "*", Reusable = true },
+                Reply.Content(new StringContent(payload, System.Text.Encoding.UTF8, mediaType))
+            },
+        };
 
         var settings = serializer is null ? new RefitSettings() : new RefitSettings(serializer);
-        settings.HttpMessageHandlerFactory = () => mockHttp;
-        return RestService.For<IStreamingApi>("http://foo", settings);
+        settings.HttpMessageHandlerFactory = () => handler;
+        return RestService.For<IStreamingApi>(BaseUrl, settings);
     }
 }

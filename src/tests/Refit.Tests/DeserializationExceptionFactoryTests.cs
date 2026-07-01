@@ -3,13 +3,19 @@
 // See the LICENSE file in the project root for full license information.
 using System.Net;
 using System.Net.Http;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for the <see cref="RefitSettings.DeserializationExceptionFactory"/> behavior.</summary>
 public class DeserializationExceptionFactoryTests
 {
+    /// <summary>The base address for the test service.</summary>
+    private const string BaseUrl = "http://api";
+
+    /// <summary>The stub endpoint URL that returns a deserialized result.</summary>
+    private const string GetWithResultUrl = "http://api/get-with-result";
+
     /// <summary>Refit fixture interface returning a deserialized integer result.</summary>
     public interface IMyService
     {
@@ -24,22 +30,19 @@ public class DeserializationExceptionFactoryTests
     [Test]
     public async Task NoDeserializationExceptionFactory_WithSuccessfulDeserialization()
     {
-        var handler = new MockHttpMessageHandler();
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-        };
-
         const int intContent = 123;
-        _ = handler
-            .Expect(HttpMethod.Get, "http://api/get-with-result")
-            .Respond(HttpStatusCode.OK, new StringContent($"{intContent}"));
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(GetWithResultUrl),
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") }
+            },
+        };
+        var fixture = handler.CreateClient<IMyService>(BaseUrl);
 
         var result = await fixture.GetWithResult();
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
 
         await Assert.That(result).IsEqualTo(intContent);
     }
@@ -49,22 +52,19 @@ public class DeserializationExceptionFactoryTests
     [Test]
     public async Task NoDeserializationExceptionFactory_WithUnsuccessfulDeserialization()
     {
-        var handler = new MockHttpMessageHandler();
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => handler,
+            {
+                Route.Get(GetWithResultUrl),
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("non-int-result") }
+            },
         };
-
-        _ = handler
-            .Expect(HttpMethod.Get, "http://api/get-with-result")
-            .Respond(HttpStatusCode.OK, new StringContent("non-int-result"));
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = handler.CreateClient<IMyService>(BaseUrl);
 
         var thrownException = await Assert.That(fixture.GetWithResult).ThrowsExactly<ApiException>();
         await Assert.That(thrownException!.Message).IsEqualTo("An error occured deserializing the response.");
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a factory returning null leaves a successful deserialization unaffected.</summary>
@@ -72,23 +72,22 @@ public class DeserializationExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichReturnsNull_WithSuccessfulDeserialization()
     {
-        var handler = new MockHttpMessageHandler();
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null)
-        };
-
         const int intContent = 123;
-        _ = handler
-            .Expect(HttpMethod.Get, "http://api/get-with-result")
-            .Respond(HttpStatusCode.OK, new StringContent($"{intContent}"));
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(GetWithResultUrl),
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") }
+            },
+        };
+        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
+        {
+            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null)
+        });
 
         var result = await fixture.GetWithResult();
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
 
         await Assert.That(result).IsEqualTo(intContent);
     }
@@ -98,22 +97,21 @@ public class DeserializationExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichReturnsNull_WithUnsuccessfulDeserialization()
     {
-        var handler = new MockHttpMessageHandler();
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => handler,
-            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null)
+            {
+                Route.Get(GetWithResultUrl),
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("non-int-result") }
+            },
         };
-
-        _ = handler
-            .Expect(HttpMethod.Get, "http://api/get-with-result")
-            .Respond(HttpStatusCode.OK, new StringContent("non-int-result"));
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
+        {
+            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null)
+        });
 
         var result = await fixture.GetWithResult();
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
 
         await Assert.That(result).IsEqualTo(default);
     }
@@ -123,24 +121,23 @@ public class DeserializationExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichReturnsException_WithUnsuccessfulDeserialization()
     {
-        var handler = new MockHttpMessageHandler();
         var exception = new InvalidOperationException("Unsuccessful Deserialization Exception");
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => handler,
-            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(exception)
+            {
+                Route.Get(GetWithResultUrl),
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("non-int-result") }
+            },
         };
-
-        _ = handler
-            .Expect(HttpMethod.Get, "http://api/get-with-result")
-            .Respond(HttpStatusCode.OK, new StringContent("non-int-result"));
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
+        {
+            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(exception)
+        });
 
         var thrownException = await Assert.That(fixture.GetWithResult).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrownException).IsEqualTo(exception);
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a configured exception factory does not affect a successful deserialization.</summary>
@@ -148,24 +145,23 @@ public class DeserializationExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichReturnsException_WithSuccessfulDeserialization()
     {
-        var handler = new MockHttpMessageHandler();
         var exception = new InvalidOperationException("Unsuccessful Deserialization Exception");
-        var settings = new RefitSettings
-        {
-            HttpMessageHandlerFactory = () => handler,
-            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(exception)
-        };
-
         const int intContent = 123;
-        _ = handler
-            .Expect(HttpMethod.Get, "http://api/get-with-result")
-            .Respond(HttpStatusCode.OK, new StringContent($"{intContent}"));
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get(GetWithResultUrl),
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent($"{intContent}") }
+            },
+        };
+        var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
+        {
+            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(exception)
+        });
 
         var result = await fixture.GetWithResult();
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
 
         await Assert.That(result).IsEqualTo(intContent);
     }

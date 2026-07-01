@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Linked internal helper shared with Refit (one internal copy per assembly, no InternalsVisibleTo). -->
     <Compile Include="..\Shared\HttpContentExtensions.cs" Link="Shared\HttpContentExtensions.cs"/>
   </ItemGroup>
   <ItemGroup>

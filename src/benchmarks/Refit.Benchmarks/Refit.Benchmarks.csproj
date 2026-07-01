@@ -3,8 +3,6 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>$(RefitBenchmarkTargets)</TargetFrameworks>
     <IsPackable>false</IsPackable>
-    <!-- Benchmarks are console apps that intentionally exercise Refit's reflection-based APIs and
-         are never trimmed/AOT-published, so the trim/AOT analyzers do not apply here. -->
     <IsAotCompatible>false</IsAotCompatible>
     <EnableAotAnalyzer>false</EnableAotAnalyzer>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>

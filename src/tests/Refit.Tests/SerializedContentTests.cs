@@ -23,6 +23,42 @@ public partial class SerializedContentTests
     /// <summary>The base address used when creating Refit clients for these tests.</summary>
     private const string BaseAddress = "https://api/";
 
+    /// <summary>The JSON media type used for serialized request and response content.</summary>
+    private const string JsonMediaType = "application/json";
+
+    /// <summary>A sample name reused across serialization round-trip assertions.</summary>
+    private const string RoadRunnerName = "Road Runner";
+
+    /// <summary>A sample weapon name reused across polymorphic body serialization assertions.</summary>
+    private const string PhotonName = "Photon";
+
+    /// <summary>The expected inferred integral value for object-value inference tests.</summary>
+    private const long ExpectedIntegralValue = 42L;
+
+    /// <summary>The expected inferred floating-point value for object-value inference tests.</summary>
+    private const double ExpectedFloatingPointValue = 42.5;
+
+    /// <summary>The expected identifier parsed from a numeric JSON string.</summary>
+    private const int ExpectedId = 123;
+
+    /// <summary>The expected amount parsed from a numeric JSON string.</summary>
+    private const decimal ExpectedAmount = 9.99m;
+
+    /// <summary>The expected year component of the inferred date value.</summary>
+    private const int ExpectedYear = 2024;
+
+    /// <summary>The expected day component of the inferred date value.</summary>
+    private const int ExpectedDay = 2;
+
+    /// <summary>The expected hour component of the inferred date value.</summary>
+    private const int ExpectedHour = 3;
+
+    /// <summary>The expected minute component of the inferred date value.</summary>
+    private const int ExpectedMinute = 4;
+
+    /// <summary>The expected second component of the inferred date value.</summary>
+    private const int ExpectedSecond = 5;
+
 #if NET9_0_OR_GREATER
     /// <summary>Status enum used to verify JsonStringEnumMemberName handling.</summary>
     public enum EnumMemberNameStatus
@@ -286,7 +322,7 @@ public partial class SerializedContentTests
 
         await Assert.That(json.Headers.ContentType).IsNotNull();
         await Assert.That(json.Headers.ContentType!.CharSet).IsEqualTo("utf-8");
-        await Assert.That(json.Headers.ContentType.MediaType).IsEqualTo("application/json");
+        await Assert.That(json.Headers.ContentType.MediaType).IsEqualTo(JsonMediaType);
     }
 
     /// <summary>Verifies that the System.Text.Json content serializer returns the JsonPropertyName for a property.</summary>
@@ -377,7 +413,7 @@ public partial class SerializedContentTests
             """{"value":42}""",
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<long>()).IsEqualTo(42L);
+        await Assert.That(await Assert.That(result!.Value).IsTypeOf<long>()).IsEqualTo(ExpectedIntegralValue);
     }
 
     /// <summary>Verifies that floating-point JSON object values are inferred as <see cref="double"/>.</summary>
@@ -389,7 +425,7 @@ public partial class SerializedContentTests
             """{"value":42.5}""",
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<double>()).IsEqualTo(42.5);
+        await Assert.That(await Assert.That(result!.Value).IsTypeOf<double>()).IsEqualTo(ExpectedFloatingPointValue);
     }
 
     /// <summary>Verifies the default options read numeric properties from JSON strings.</summary>
@@ -401,8 +437,8 @@ public partial class SerializedContentTests
             """{"id":"123","amount":"9.99"}""",
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
-        await Assert.That(result!.Id).IsEqualTo(123);
-        await Assert.That(result.Amount).IsEqualTo(9.99m);
+        await Assert.That(result!.Id).IsEqualTo(ExpectedId);
+        await Assert.That(result.Amount).IsEqualTo(ExpectedAmount);
     }
 
     /// <summary>Verifies the default options still write numbers as JSON numbers, not strings.</summary>
@@ -454,7 +490,7 @@ public partial class SerializedContentTests
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(await Assert.That(result!.Value).IsTypeOf<DateTime>())
-            .IsEqualTo(new(2024, 1, 2, 3, 4, 5, DateTimeKind.Utc));
+            .IsEqualTo(new(ExpectedYear, 1, ExpectedDay, ExpectedHour, ExpectedMinute, ExpectedSecond, DateTimeKind.Utc));
     }
 
     /// <summary>Verifies that string JSON object values are inferred as <see cref="string"/>.</summary>
@@ -466,7 +502,7 @@ public partial class SerializedContentTests
             """{"value":"Road Runner"}""",
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
-        await Assert.That(await Assert.That(result!.Value).IsTypeOf<string>()).IsEqualTo("Road Runner");
+        await Assert.That(await Assert.That(result!.Value).IsTypeOf<string>()).IsEqualTo(RoadRunnerName);
     }
 
     /// <summary>Verifies that nested JSON object values are deserialized as <see cref="JsonElement"/>.</summary>
@@ -523,7 +559,7 @@ public partial class SerializedContentTests
         };
 
         var json = SystemTextJsonSerializer.Serialize(
-            new ObjectValueContainer { Value = "Road Runner" },
+            new ObjectValueContainer { Value = RoadRunnerName },
             options);
 
         await Assert.That(json).IsEqualTo("""{"value":"Road Runner"}""");
@@ -780,7 +816,7 @@ public partial class SerializedContentTests
         var serializer = new SystemTextJsonContentSerializer(options);
         var model = new User
         {
-            Name = "Road Runner",
+            Name = RoadRunnerName,
             Company = "ACME",
             CreatedAt = "1949-09-17"
         };
@@ -810,7 +846,7 @@ public partial class SerializedContentTests
         var roundTrip = serializer.DeserializeFromString<User>("{\"name\":\"Road Runner\"}");
 
         await Assert.That(roundTrip).IsNotNull();
-        await Assert.That(roundTrip!.Name).IsEqualTo("Road Runner");
+        await Assert.That(roundTrip!.Name).IsEqualTo(RoadRunnerName);
         await Assert.That(resolver.RequestedTypes).Contains(typeof(User));
     }
 
@@ -824,7 +860,7 @@ public partial class SerializedContentTests
         var roundTrip = serializer.DeserializeFromString<User>("{\"name\":\"Road Runner\"}");
 
         await Assert.That(roundTrip).IsNotNull();
-        await Assert.That(roundTrip!.Name).IsEqualTo("Road Runner");
+        await Assert.That(roundTrip!.Name).IsEqualTo(RoadRunnerName);
     }
 
     /// <summary>Verifies that RestService can use source-generated System.Text.Json metadata.</summary>
@@ -847,7 +883,7 @@ public partial class SerializedContentTests
                         Content = new StringContent(
                             "{\"name\":\"Road Runner\",\"company\":\"ACME\",\"createdAt\":\"1949-09-17\"}",
                             Encoding.UTF8,
-                            "application/json")
+                            JsonMediaType)
                     }))
         };
 
@@ -855,7 +891,7 @@ public partial class SerializedContentTests
         var user = await api.GetUser("roadrunner");
 
         await Assert.That(user).IsNotNull();
-        await Assert.That(user.Name).IsEqualTo("Road Runner");
+        await Assert.That(user.Name).IsEqualTo(RoadRunnerName);
         await Assert.That(user.Company).IsEqualTo("ACME");
         await Assert.That(user.CreatedAt).IsEqualTo("1949-09-17");
         await Assert.That(resolver.RequestedTypes).Contains(typeof(User));
@@ -879,13 +915,13 @@ public partial class SerializedContentTests
                 serializedBody = await request.Content!.ReadAsStringAsync();
                 return new(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
                 };
             })
         };
 
         var api = RestService.For<IPolymorphicRequestApi>(BaseAddress, settings);
-        await api.CreateWeapon(new LaserWeaponRequest { Name = "Photon" });
+        await api.CreateWeapon(new LaserWeaponRequest { Name = PhotonName });
 
         await Assert.That(serializedBody).IsNotNull();
         await Assert.That(serializedBody).Contains("\"$type\":\"laser\"");
@@ -928,13 +964,13 @@ public partial class SerializedContentTests
                 serializedBody = await request.Content!.ReadAsStringAsync();
                 return new(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
                 };
             })
         };
 
         var api = RestService.For<IResolverPolymorphicRequestApi>(BaseAddress, settings);
-        await api.CreateWeapon(new ResolverLaserWeaponRequest { Name = "Photon" });
+        await api.CreateWeapon(new ResolverLaserWeaponRequest { Name = PhotonName });
 
         await Assert.That(serializedBody).IsNotNull();
         await Assert.That(serializedBody).Contains("\"$type\":\"laser\"");
@@ -954,13 +990,13 @@ public partial class SerializedContentTests
                 serializedBody = await request.Content!.ReadAsStringAsync();
                 return new(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
                 };
             })
         };
 
         var api = RestService.For<IInterfaceRequestApi>(BaseAddress, settings);
-        await api.CreateWeapon(new InterfaceLaserWeaponRequest { Name = "Photon" });
+        await api.CreateWeapon(new InterfaceLaserWeaponRequest { Name = PhotonName });
 
         await Assert.That(serializedBody).IsNotNull();
         await Assert.That(serializedBody).IsEqualTo("""{"name":"Photon"}""");
@@ -984,13 +1020,13 @@ public partial class SerializedContentTests
                 serializedBody = await request.Content!.ReadAsStringAsync();
                 return new(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
                 };
             })
         };
 
         var api = RestService.For<IInterfaceRequestApi>(BaseAddress, settings);
-        await api.CreateWeapon(new InterfaceLaserWeaponRequest { Name = "Photon" });
+        await api.CreateWeapon(new InterfaceLaserWeaponRequest { Name = PhotonName });
 
         await Assert.That(serializedBody).IsNotNull();
         await Assert.That(serializedBody).IsEqualTo("""{"name":"Photon"}""");
@@ -1009,13 +1045,13 @@ public partial class SerializedContentTests
                 serializedBody = await request.Content!.ReadAsStringAsync();
                 return new(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
                 };
             })
         };
 
         var api = RestService.For<IAbstractRequestApi>(BaseAddress, settings);
-        await api.CreateWeapon(new AbstractLaserWeaponRequest { Name = "Photon" });
+        await api.CreateWeapon(new AbstractLaserWeaponRequest { Name = PhotonName });
 
         await Assert.That(serializedBody).IsNotNull();
         await Assert.That(serializedBody).IsEqualTo("""{"name":"Photon"}""");
@@ -1051,7 +1087,7 @@ public partial class SerializedContentTests
         var serialized = await content.ReadAsStringAsync();
 
         var roundTrip = await serializer.FromHttpContentAsync<Dictionary<CamelCaseEnum, string>>(
-            new StringContent(serialized, Encoding.UTF8, "application/json"));
+            new StringContent(serialized, Encoding.UTF8, JsonMediaType));
 
         await Assert.That(roundTrip).IsNotNull();
         await Assert.That(roundTrip![CamelCaseEnum.ValueOne]).IsEqualTo("first");
@@ -1093,7 +1129,7 @@ public partial class SerializedContentTests
             new EnumMemberNameEnvelope { Status = EnumMemberNameStatus.TotallyReady });
         var serialized = await content.ReadAsStringAsync();
         var roundTrip = await serializer.FromHttpContentAsync<EnumMemberNameEnvelope>(
-            new StringContent("{\"status\":\"totally-ready\"}", Encoding.UTF8, "application/json"));
+            new StringContent("{\"status\":\"totally-ready\"}", Encoding.UTF8, JsonMediaType));
 
         await Assert.That(serialized).Contains("totally-ready");
         await Assert.That(roundTrip).IsNotNull();
@@ -1116,7 +1152,7 @@ public partial class SerializedContentTests
                         Content = new StringContent(
                             "{\"status\":\"totally-ready\"}",
                             Encoding.UTF8,
-                            "application/json")
+                            JsonMediaType)
                     }))
         };
 
@@ -1139,7 +1175,7 @@ public partial class SerializedContentTests
                 serializedBody = await request.Content!.ReadAsStringAsync();
                 return new(HttpStatusCode.OK)
                 {
-                    Content = new StringContent("{}", Encoding.UTF8, "application/json")
+                    Content = new StringContent("{}", Encoding.UTF8, JsonMediaType)
                 };
             })
         };

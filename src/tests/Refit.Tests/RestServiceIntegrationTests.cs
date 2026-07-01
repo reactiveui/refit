@@ -11,13 +11,37 @@ using System.Net;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Integration tests that exercise <see cref="RestService"/> end to end against a mock HTTP handler.</summary>
 public partial class RestServiceIntegrationTests
 {
+    /// <summary>Base URL used by the mock HTTP handler exchanges.</summary>
+    private const string BaseUrl = "http://foo";
+
+    /// <summary>Base URL including a trailing slash.</summary>
+    private const string BaseUrlWithSlash = "http://foo/";
+
+    /// <summary>URL for the trailing-slash trimming endpoint.</summary>
+    private const string SomeEndpointUrl = "http://foo/someendpoint";
+
+    /// <summary>URL for the path-bound foos/bar endpoint.</summary>
+    private const string FoosBarBarNoneUrl = "http://foo/foos/1/bar/barNone";
+
+    /// <summary>Sample path-bound property value.</summary>
+    private const string BarNoneValue = "barNone";
+
+    /// <summary>Sample path-bound foo identifier.</summary>
+    private const int FooId = 22;
+
+    /// <summary>Second sample path-bound collection value.</summary>
+    private const int SecondFooValue = 23;
+
+    /// <summary>Sample large path-bound foo identifier.</summary>
+    private const int LargeFooId = 12_345;
+
     /// <summary>JSON serializer options that apply the camelCase property naming policy.</summary>
     private static readonly JsonSerializerOptions _camelCaseJsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -71,7 +95,7 @@ public partial class RestServiceIntegrationTests
             typeof(IGeneratedFactoryApi),
             static (client, builder) => new GeneratedFactoryApiClient(client, builder));
 
-        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
 
         var instance = RestService.For<IGeneratedFactoryApi>(client);
         var generated = await Assert.That(instance).IsTypeOf<GeneratedFactoryApiClient>();
@@ -89,7 +113,7 @@ public partial class RestServiceIntegrationTests
             typeof(IGeneratedFactoryApi),
             static (client, builder) => new GeneratedFactoryApiClient(client, builder));
 
-        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var instance = RestService.ForGenerated<IGeneratedFactoryApi>(client, settings);
@@ -110,7 +134,7 @@ public partial class RestServiceIntegrationTests
         RestService.RegisterGeneratedSettingsFactory<IGeneratedSettingsFactoryApi>(
             static (client, settings) => new GeneratedSettingsFactoryApiClient(client, settings));
 
-        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var instance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>(client, settings);
@@ -138,7 +162,7 @@ public partial class RestServiceIntegrationTests
 
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
-        var defaultSettingsInstance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>("http://foo/");
+        var defaultSettingsInstance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>(BaseUrlWithSlash);
         var explicitSettingsInstance = RestService.ForGenerated<IGeneratedSettingsFactoryApi>("http://bar/", settings);
         var typedInstance = RestService.ForGenerated(typeof(IGeneratedSettingsFactoryApi), "http://baz/", settings);
 
@@ -146,7 +170,7 @@ public partial class RestServiceIntegrationTests
         var explicitGenerated = await Assert.That(explicitSettingsInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
         var typedGenerated = await Assert.That(typedInstance).IsTypeOf<GeneratedSettingsFactoryApiClient>();
 
-        await Assert.That(defaultGenerated!.Client.BaseAddress).IsEqualTo(new("http://foo"));
+        await Assert.That(defaultGenerated!.Client.BaseAddress).IsEqualTo(new(BaseUrl));
         await Assert.That(explicitGenerated!.Client.BaseAddress).IsEqualTo(new("http://bar"));
         await Assert.That(explicitGenerated.Settings).IsSameReferenceAs(settings);
         await Assert.That(typedGenerated!.Client.BaseAddress).IsEqualTo(new("http://baz"));
@@ -163,7 +187,7 @@ public partial class RestServiceIntegrationTests
             typeof(IGeneratedTypeFactoryApi),
             static (client, builder) => new GeneratedTypeFactoryApiClient(client, builder));
 
-        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var instance = RestService.ForGenerated(typeof(IGeneratedTypeFactoryApi), client, settings);
@@ -265,7 +289,7 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ForGeneratedRequiresRegisteredFactory()
     {
-        using var client = new HttpClient { BaseAddress = new("http://foo") };
+        using var client = new HttpClient { BaseAddress = new(BaseUrl) };
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
 
         var exception = await Assert
@@ -280,17 +304,19 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task ValueTaskMethodsShouldWork()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp.Expect(HttpMethod.Get, "http://foo/value").Respond("text/plain", "test");
-
-        var fixture = RestService.For<IValueTaskApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("http://foo/value"),
+                Reply.Text("test", "text/plain")
+            },
+        };
+        var fixture = handler.CreateClient<IValueTaskApi>(BaseUrl);
 
         var result = await fixture.GetValue("value");
 
         await Assert.That(result).IsEqualTo("test");
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies an unmatched route placeholder is left in the URL verbatim when <see cref="RefitSettings.AllowUnmatchedRouteParameters"/> is set.</summary>
@@ -298,23 +324,33 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task UnmatchedRouteParameterIsLeftVerbatimWhenAllowed()
     {
-        var mockHttp = new MockHttpMessageHandler();
         Uri? captured = null;
-        _ = mockHttp
-            .When("*")
-            .Respond(request =>
+        var handler = new StubHttp
+        {
             {
-                captured = request.RequestUri;
-                return new(HttpStatusCode.OK) { Content = new StringContent("test") };
-            });
+                new RouteMatcher
+                {
+                    Template = "*",
+                    Reusable = true
+                },
+                Reply.From(request =>
+                {
+                    captured = request.RequestUri;
+                    return new(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent("test")
+                    };
+                })
+            },
+        };
 
         var settings = new RefitSettings
         {
             AllowUnmatchedRouteParameters = true,
-            HttpMessageHandlerFactory = () => mockHttp,
+            HttpMessageHandlerFactory = () => handler,
         };
 
-        var fixture = RestService.For<IUrlNoMatchingParameters>("http://foo", settings);
+        var fixture = RestService.For<IUrlNoMatchingParameters>(BaseUrl, settings);
 
         var result = await fixture.GetValue();
 
@@ -327,19 +363,21 @@ public partial class RestServiceIntegrationTests
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task UnmatchedRouteParameterStillThrowsByDefault() =>
-        await Assert.That(() => RestService.For<IUrlNoMatchingParameters>("http://foo")).ThrowsExactly<ArgumentException>();
+        await Assert.That(() => RestService.For<IUrlNoMatchingParameters>(BaseUrl)).ThrowsExactly<ArgumentException>();
 
     /// <summary>Verifies methods returning a <see cref="ValueTask{TResult}"/> of an API response work.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task ValueTaskApiResponseMethodsShouldWork()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp.Expect(HttpMethod.Get, "http://foo/value").Respond("text/plain", "test");
-
-        var fixture = RestService.For<IValueTaskApiResponseApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("http://foo/value"),
+                Reply.Text("test", "text/plain")
+            },
+        };
+        var fixture = handler.CreateClient<IValueTaskApiResponseApi>(BaseUrl);
 
         using var response = await fixture.GetValue("value");
 
@@ -347,7 +385,7 @@ public partial class RestServiceIntegrationTests
         await Assert.That(response.Content).IsEqualTo("test");
         await Assert.That(response.RequestMessage!.Method).IsEqualTo(HttpMethod.Get);
         await Assert.That(response.RequestMessage.RequestUri?.ToString()).IsEqualTo("http://foo/value");
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies content headers can be added to a POST with no body.</summary>
@@ -355,26 +393,25 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task CanAddContentHeadersToPostWithoutBody()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Post, "http://foo/nobody")
-
-            // The content length header is set automatically by the HttpContent instance,
-            // so checking the header as a string doesn't work
-            .With(r => r.Content?.Headers.ContentLength == 0)
-
-            // But we added content type ourselves, so this should work
-            .WithHeaders("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-            .WithContent(string.Empty)
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher
+                {
+                    Method = HttpMethod.Post,
+                    Template = "http://foo/nobody",
+                    Headers = [("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")],
+                    Body = string.Empty,
+                    Where = r => r.Content?.Headers.ContentLength == 0,
+                },
+                Reply.Json("Ok")
+            },
+        };
+        var fixture = handler.CreateClient<IBodylessApi>(BaseUrl);
 
         await fixture.Post();
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a GET with no parameters trims the trailing slash from the base URL.</summary>
@@ -382,17 +419,18 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNoParametersTest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/someendpoint")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo", settings);
+        var fixture = handler.CreateClient<ITrimTrailingForwardSlashApi>(BaseUrl);
 
         await fixture.Get();
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a no-content response deserializes to the default value.</summary>
@@ -400,16 +438,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNoContentResponseReturnsDefault()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp.Expect(HttpMethod.Get, "http://foo/values").Respond(HttpStatusCode.NoContent);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("http://foo/values"),
+                Reply.Status(HttpStatusCode.NoContent)
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<INoContentApi>("http://foo", settings);
+        var fixture = handler.CreateClient<INoContentApi>(BaseUrl);
 
         var result = await fixture.GetValues();
 
         await Assert.That(result).IsNull();
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a no-content API response carries null content.</summary>
@@ -417,18 +459,22 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNoContentApiResponseReturnsNullContent()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp.Expect(HttpMethod.Get, "http://foo/values").Respond(HttpStatusCode.NoContent);
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("http://foo/values"),
+                Reply.Status(HttpStatusCode.NoContent)
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<INoContentApi>("http://foo", settings);
+        var fixture = handler.CreateClient<INoContentApi>(BaseUrl);
 
         using var response = await fixture.GetValuesResponse();
 
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
         await Assert.That(response.Content).IsNull();
         await Assert.That(response.Error).IsNull();
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies the base address from an HttpClient matches the configured endpoint.</summary>
@@ -436,18 +482,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task BaseAddressFromHttpClientMatchesTest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/someendpoint")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var client = new HttpClient(mockHttp) { BaseAddress = new("http://foo") };
+        var client = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
 
         var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
         await fixture.Get();
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a trailing slash on the HttpClient base address is handled.</summary>
@@ -455,18 +503,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task BaseAddressWithTrailingSlashFromHttpClientMatchesTest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/someendpoint")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var client = new HttpClient(mockHttp) { BaseAddress = new("http://foo/") };
+        var client = new HttpClient(handler) { BaseAddress = new(BaseUrlWithSlash) };
 
         var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
         await fixture.Get();
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a request before fixture creation does not break trailing-slash handling.</summary>
@@ -474,24 +524,26 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task BaseAddressWithTrailingSlashCalledBeforeFromHttpClientMatchesTest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/firstRequest")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/someendpoint")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/firstRequest", ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var client = new HttpClient(mockHttp) { BaseAddress = new("http://foo/") };
+        var client = new HttpClient(handler) { BaseAddress = new(BaseUrlWithSlash) };
 
         _ = await client.GetAsync(new Uri("/firstRequest", UriKind.RelativeOrAbsolute));
 
         var fixture = RestService.For<ITrimTrailingForwardSlashApi>(client);
 
         await fixture.Get();
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a GET with no parameters works with a trailing slash in the base URL.</summary>
@@ -499,17 +551,18 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNoParametersTestTrailingSlashInBase()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/someendpoint")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = SomeEndpointUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<ITrimTrailingForwardSlashApi>("http://foo/", settings);
+        var fixture = handler.CreateClient<ITrimTrailingForwardSlashApi>(BaseUrlWithSlash);
 
         await fixture.Get();
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a path-bound object maps its properties into the path.</summary>
@@ -517,18 +570,19 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObject()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetFooBars(
-            new PathBoundObject { SomeProperty = 1, SomeProperty2 = "barNone" });
-        mockHttp.VerifyNoOutstandingExpectation();
+            new PathBoundObject { SomeProperty = 1, SomeProperty2 = BarNoneValue });
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a long path-bound value is mapped into the path.</summary>
@@ -536,19 +590,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithLongPathBoundObject()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var longPathString = string.Concat(Enumerable.Repeat("barNone", 1000));
-        _ = mockHttp
-            .Expect(HttpMethod.Get, $"http://foo/foos/12345/bar/{longPathString}")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var longPathString = string.Concat(Enumerable.Repeat(BarNoneValue, 1000));
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = $"http://foo/foos/12345/bar/{longPathString}", ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetFooBars(
-            new PathBoundObject { SomeProperty = 12_345, SomeProperty2 = longPathString });
-        mockHttp.VerifyNoOutstandingExpectation();
+            new PathBoundObject { SomeProperty = LargeFooId, SomeProperty2 = longPathString });
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies path tokens with different casing still bind to the object's properties.</summary>
@@ -556,18 +611,19 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectDifferentCasing()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetFooBarsWithDifferentCasing(
-            new() { SomeProperty = 1, SomeProperty2 = "barNone" });
-        mockHttp.VerifyNoOutstandingExpectation();
+            new() { SomeProperty = 1, SomeProperty2 = BarNoneValue });
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies an explicit parameter combines with a path-bound object.</summary>
@@ -575,19 +631,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndParameter()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/myId/22/bar/bart")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/myId/22/bar/bart", ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetBarsByFoo(
             "myId",
-            new() { SomeProperty = 22, SomeProperty2 = "bart" });
-        mockHttp.VerifyNoOutstandingExpectation();
+            new() { SomeProperty = FooId, SomeProperty2 = "bart" });
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies an explicit parameter takes precedence over a path-bound property.</summary>
@@ -595,19 +652,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndParameterParameterPrecedence()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/chooseMe/bar/barNone")
-            .WithExactQueryString([new("SomeProperty", "1")])
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/chooseMe/bar/barNone", ExactQueryParams = [("SomeProperty", "1")] },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetFooBars(
-            new() { SomeProperty = 1, SomeProperty2 = "barNone" },
+            new() { SomeProperty = 1, SomeProperty2 = BarNoneValue },
             "chooseMe");
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a derived path-bound object maps its properties into the path.</summary>
@@ -615,24 +673,24 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundDerivedObject()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/1/bar/test")
-            .WithExactQueryString(
-                [new("SomeProperty2", "barNone")])
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/1/bar/test", ExactQueryParams = [("SomeProperty2", BarNoneValue)] },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetFooBarsDerived(
             new()
             {
                 SomeProperty = 1,
-                SomeProperty2 = "barNone",
+                SomeProperty2 = BarNoneValue,
                 SomeProperty3 = "test"
             });
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a derived object passed as its base type does not duplicate the bound property.</summary>
@@ -643,27 +701,29 @@ public partial class RestServiceIntegrationTests
         // see https://github.com/reactiveui/refit/issues/1882: a property bound to the
         // path must not also be emitted as a query parameter when a derived instance is
         // passed for a base-typed parameter.
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/1/bar")
-            .WithExactQueryString(
-                [
-                    new("SomeProperty3", "test"),
-                    new("SomeProperty2", "barNone")
-                ])
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher
+                {
+                    Method = HttpMethod.Get,
+                    Template = "http://foo/foos/1/bar",
+                    ExactQueryParams = [("SomeProperty3", "test"), ("SomeProperty2", BarNoneValue)],
+                },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetBarsByFoo(
             new PathBoundDerivedObject
             {
                 SomeProperty = 1,
-                SomeProperty2 = "barNone",
+                SomeProperty2 = BarNoneValue,
                 SomeProperty3 = "test"
             });
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a path-bound object combines with an explicit query parameter.</summary>
@@ -671,19 +731,19 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndQueryParameter()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/22/bar")
-            .WithExactQueryString(
-                [new("SomeProperty2", "bart")])
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/22/bar", ExactQueryParams = [("SomeProperty2", "bart")] },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetBarsByFoo(
-            new() { SomeProperty = 22, SomeProperty2 = "bart" });
-        mockHttp.VerifyNoOutstandingExpectation();
+            new() { SomeProperty = FooId, SomeProperty2 = "bart" });
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a POST binds a path object alongside a body.</summary>
@@ -691,18 +751,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostFooBarPathBoundObject()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bart")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                Route.Post("http://foo/foos/22/bar/bart"),
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.PostFooBar(
-            new() { SomeProperty = 22, SomeProperty2 = "bart" },
+            new() { SomeProperty = FooId, SomeProperty2 = "bart" },
             new { });
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies path-bound collection values respect the configured URL formatter.</summary>
@@ -710,24 +772,27 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PathBoundObjectsRespectFormatter()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/22%2C23")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("http://foo/foos/22%2C23"),
+                Reply.Json("Ok")
+            },
+        };
 
         var settings = new RefitSettings
         {
-            HttpMessageHandlerFactory = () => mockHttp,
+            HttpMessageHandlerFactory = () => handler,
             UrlParameterFormatter = new TestEnumerableUrlParameterFormatter()
         };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = RestService.For<IApiBindPathToObject>(BaseUrl, settings);
 
         await fixture.GetFoos(
             new()
             {
-                Values = [22, 23]
+                Values = [FooId, SecondFooValue]
             });
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a path-bound object combines with a query property.</summary>
@@ -735,23 +800,24 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndQuery()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foos/1/bar/barNone")
-            .WithExactQueryString("SomeQuery=test")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = "SomeQuery=test" },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetFooBars(
             new PathBoundObjectWithQuery
             {
                 SomeProperty = 1,
-                SomeProperty2 = "barNone",
+                SomeProperty2 = BarNoneValue,
                 SomeQuery = "test"
             });
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a path-bound query property uses its custom format.</summary>
@@ -759,14 +825,15 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndQueryWithFormat()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/foo")
-            .WithExactQueryString("SomeQueryWithFormat=2020-03-05T13:55:00Z")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foo", ExactQuery = "SomeQueryWithFormat=2020-03-05T13:55:00Z" },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.GetBarsWithCustomQueryFormat(
             new()
@@ -774,7 +841,7 @@ public partial class RestServiceIntegrationTests
                 SomeQueryWithFormat = new DateTimeOffset(2020, 03, 05, 13, 55, 00, TimeSpan.Zero).UtcDateTime
             });
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a path-bound object combines with a query object body.</summary>
@@ -782,19 +849,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathBoundObjectAndQueryObject()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Post, "http://foo/foos/1/bar/barNone")
-            .WithExactQueryString("Property1=test&Property2=test2")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Post, Template = FoosBarBarNoneUrl, ExactQuery = "Property1=test&Property2=test2" },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await fixture.PostFooBar(
-            new() { SomeProperty = 1, SomeProperty2 = "barNone" },
+            new() { SomeProperty = 1, SomeProperty2 = BarNoneValue },
             new() { Property1 = "test", Property2 = "test2" });
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a multipart POST binds a path object and uploads a stream part.</summary>
@@ -802,20 +870,21 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostFooBarPathMultipart()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
-            .WithExactQueryString(string.Empty)
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         await fixture.PostFooBarStreamPart(
-            new PathBoundObject { SomeProperty = 22, SomeProperty2 = "bar" },
+            new PathBoundObject { SomeProperty = FooId, SomeProperty2 = "bar" },
             new(stream, "Test.pdf", "application/pdf"));
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a multipart POST binds a path-and-query object and uploads a stream part.</summary>
@@ -823,25 +892,26 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostFooBarPathQueryMultipart()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
-            .WithExactQueryString("SomeQuery=test")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = "SomeQuery=test" },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         await fixture.PostFooBarStreamPart(
             new PathBoundObjectWithQuery
             {
-                SomeProperty = 22,
+                SomeProperty = FooId,
                 SomeProperty2 = "bar",
                 SomeQuery = "test"
             },
             new(stream, "Test.pdf", "application/pdf"));
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a multipart POST binds a path object, query object, and stream part.</summary>
@@ -849,21 +919,22 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task PostFooBarPathQueryObjectMultipart()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .Expect(HttpMethod.Post, "http://foo/foos/22/bar/bar")
-            .WithExactQueryString("Property1=test&Property2=test2")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = "Property1=test&Property2=test2" },
+                Reply.Json("Ok")
+            },
+        };
 
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-        var fixture = RestService.For<IApiBindPathToObject>("http://foo", settings);
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
         await using var stream = GetTestFileStream("Test Files/Test.pdf");
         await fixture.PostFooBarStreamPart(
-            new() { SomeProperty = 22, SomeProperty2 = "bar" },
+            new() { SomeProperty = FooId, SomeProperty2 = "bar" },
             new() { Property1 = "test", Property2 = "test2" },
             new(stream, "Test.pdf", "application/pdf"));
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies content is not automatically added to a GET request.</summary>
@@ -871,23 +942,18 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task DoesntAddAutoAddContentToGetRequest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/nobody")
-
-            // We can't add HttpContent to a GET request,
-            // because HttpClient doesn't allow it and it will
-            // blow up at runtime
-            .With(r => r.Content is null)
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/nobody", Where = r => r.Content is null },
+                Reply.Json("Ok")
+            },
+        };
+        var fixture = handler.CreateClient<IBodylessApi>(BaseUrl);
 
         await fixture.Get();
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies content is not automatically added to a HEAD request.</summary>
@@ -895,23 +961,18 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task DoesntAddAutoAddContentToHeadRequest()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Head, "http://foo/nobody")
-
-            // We can't add HttpContent to a HEAD request,
-            // because HttpClient doesn't allow it and it will
-            // blow up at runtime
-            .With(r => r.Content is null)
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.For<IBodylessApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Head, Template = "http://foo/nobody", Where = r => r.Content is null },
+                Reply.Json("Ok")
+            },
+        };
+        var fixture = handler.CreateClient<IBodylessApi>(BaseUrl);
 
         await fixture.Head();
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a decimal query parameter is formatted correctly.</summary>
@@ -919,21 +980,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithDecimal()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/withDecimal")
-            .WithExactQueryString([new("value", "3.456")])
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.For<IApiWithDecimal>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [("value", "3.456")] },
+                Reply.Json("Ok")
+            },
+        };
+        var fixture = handler.CreateClient<IApiWithDecimal>(BaseUrl);
 
         const decimal val = 3.456M;
 
         _ = await fixture.GetWithDecimal(val);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Opens the embedded test resource at the given relative path as a stream.</summary>

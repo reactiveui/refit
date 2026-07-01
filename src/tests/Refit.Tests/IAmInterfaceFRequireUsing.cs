@@ -9,7 +9,7 @@ using Refit.Tests.SeparateNamespaceWithModel;
 namespace Refit.Tests;
 
 /// <summary>A Refit interface whose signature references a type requiring an extra using directive.</summary>
-public interface IAmInterfaceF_RequireUsing
+public interface IAmInterfaceFRequireUsing
 {
     /// <summary>Issues a GET request that returns a model requiring an additional using directive.</summary>
     /// <param name="guids">The identifiers to include in the request.</param>

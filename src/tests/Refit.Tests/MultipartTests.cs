@@ -23,6 +23,30 @@ public class MultipartTests
     /// <summary>The base address used by the multipart test clients.</summary>
     private const string BaseAddress = "https://api/";
 
+    /// <summary>The embedded test PDF resource path.</summary>
+    private const string TestFilePath = "Test Files/Test.pdf";
+
+    /// <summary>The PDF media type used by multipart parts.</summary>
+    private const string PdfMediaType = "application/pdf";
+
+    /// <summary>The JSON media type used by multipart parts.</summary>
+    private const string JsonMediaType = "application/json";
+
+    /// <summary>The multipart name used for stream parts.</summary>
+    private const string StreamName = "stream";
+
+    /// <summary>The multipart name used for file-info parts.</summary>
+    private const string FileInfosName = "fileInfos";
+
+    /// <summary>The multipart name used for object collection parts.</summary>
+    private const string TheObjectsName = "theObjects";
+
+    /// <summary>The file name used for stream parts.</summary>
+    private const string StreamPartFileName = "test-streampart.pdf";
+
+    /// <summary>The expected integer value uploaded in the mixed-types test.</summary>
+    private const int ExpectedIntValue = 42;
+
     /// <summary>Verifies a raw stream is uploaded as a single multipart part.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -36,18 +60,18 @@ public class MultipartTests
 
                 await Assert.That(parts).HasSingleItem();
 
-                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("stream");
-                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("stream");
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(StreamName);
+                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo(StreamName);
 
                 await using var str = await parts[0].ReadAsStreamAsync();
-                await using var src = GetTestFileStream("Test Files/Test.pdf");
+                await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
             }
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStream(stream);
     }
@@ -65,18 +89,18 @@ public class MultipartTests
 
                 await Assert.That(parts).HasSingleItem();
 
-                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("stream");
-                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("stream");
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(StreamName);
+                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo(StreamName);
 
                 await using var str = await parts[0].ReadAsStreamAsync();
-                await using var src = GetTestFileStream("Test Files/Test.pdf");
+                await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
             }
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
-        await using (var stream = GetTestFileStream("Test Files/Test.pdf"))
+        await using (var stream = GetTestFileStream(TestFilePath))
         {
             var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
             await fixture.UploadStreamWithCustomBoundary(stream);
@@ -106,14 +130,14 @@ public class MultipartTests
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("bytes");
                 await Assert.That(parts[0].Headers.ContentType).IsNull();
                 await using var str = await parts[0].ReadAsStreamAsync();
-                await using var src = GetTestFileStream("Test Files/Test.pdf");
+                await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
             }
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         using var reader = new BinaryReader(stream);
         var bytes = reader.ReadBytes((int)stream.Length);
 
@@ -126,7 +150,7 @@ public class MultipartTests
     [Test]
     public async Task MultipartUploadShouldWorkWithFileInfo()
     {
-        var fileName = Path.GetTempFileName();
+        var fileName = CreateTempFile();
         var name = Path.GetFileName(fileName);
 
         var handler = new MockHttpMessageHandler
@@ -137,20 +161,20 @@ public class MultipartTests
 
                 await Assert.That(parts.Count).IsEqualTo(3);
 
-                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("fileInfos");
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(FileInfosName);
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo(name);
                 await Assert.That(parts[0].Headers.ContentType).IsNull();
                 await using (var str = await parts[0].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream("Test Files/Test.pdf"))
+                await using (var src = GetTestFileStream(TestFilePath))
                 {
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
 
-                await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo("fileInfos");
+                await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo(FileInfosName);
                 await Assert.That(parts[1].Headers.ContentDisposition!.FileName).IsEqualTo(name);
                 await Assert.That(parts[1].Headers.ContentType).IsNull();
                 await using (var str = await parts[1].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream("Test Files/Test.pdf"))
+                await using (var src = GetTestFileStream(TestFilePath))
                 {
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
@@ -159,7 +183,7 @@ public class MultipartTests
                 await Assert.That(parts[2].Headers.ContentDisposition!.FileName).IsEqualTo(name);
                 await Assert.That(parts[2].Headers.ContentType).IsNull();
                 await using (var str = await parts[2].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream("Test Files/Test.pdf"))
+                await using (var src = GetTestFileStream(TestFilePath))
                 {
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
@@ -170,7 +194,7 @@ public class MultipartTests
 
         try
         {
-            await using var stream = GetTestFileStream("Test Files/Test.pdf");
+            await using var stream = GetTestFileStream(TestFilePath);
             await using var outStream = File.OpenWrite(fileName);
             await stream.CopyToAsync(outStream);
             await outStream.FlushAsync();
@@ -340,22 +364,22 @@ public class MultipartTests
 
                 await Assert.That(parts).HasSingleItem();
 
-                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("stream");
-                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("test-streampart.pdf");
-                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("application/pdf");
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(StreamName);
+                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo(StreamPartFileName);
+                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
 
                 await using var str = await parts[0].ReadAsStreamAsync();
-                await using var src = GetTestFileStream("Test Files/Test.pdf");
+                await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
             }
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
-            new(stream, "test-streampart.pdf", "application/pdf"));
+            new(stream, StreamPartFileName, PdfMediaType));
     }
 
     /// <summary>Verifies a stream part with a named multipart uses the supplied name.</summary>
@@ -372,21 +396,21 @@ public class MultipartTests
                 await Assert.That(parts).HasSingleItem();
 
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("test-stream");
-                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("test-streampart.pdf");
-                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("application/pdf");
+                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo(StreamPartFileName);
+                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
 
                 await using var str = await parts[0].ReadAsStreamAsync();
-                await using var src = GetTestFileStream("Test Files/Test.pdf");
+                await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
             }
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
-            new(stream, "test-streampart.pdf", "application/pdf", "test-stream"));
+            new(stream, StreamPartFileName, PdfMediaType, "test-stream"));
     }
 
     /// <summary>Verifies a stream part can be combined with query parameters.</summary>
@@ -403,23 +427,23 @@ public class MultipartTests
 
                 await Assert.That(parts).HasSingleItem();
 
-                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("stream");
-                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("test-streampart.pdf");
-                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("application/pdf");
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(StreamName);
+                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo(StreamPartFileName);
+                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
 
                 await using var str = await parts[0].ReadAsStreamAsync();
-                await using var src = GetTestFileStream("Test Files/Test.pdf");
+                await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
             }
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadStreamPart(
             new() { Property1 = "test", Property2 = "test2" },
-            new(stream, "test-streampart.pdf", "application/pdf"));
+            new(stream, StreamPartFileName, PdfMediaType));
     }
 
     /// <summary>Verifies a byte array part keeps its supplied alias, file name and content type.</summary>
@@ -439,23 +463,23 @@ public class MultipartTests
                 await Assert
                     .That(parts[0].Headers.ContentDisposition!.FileName)
                     .IsEqualTo("test-bytearraypart.pdf");
-                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("application/pdf");
+                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
 
                 await using var str = await parts[0].ReadAsStreamAsync();
-                await using var src = GetTestFileStream("Test Files/Test.pdf");
+                await using var src = GetTestFileStream(TestFilePath);
                 await Assert.That(StreamsEqual(src, str)).IsTrue();
             }
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         using var reader = new BinaryReader(stream);
         var bytes = reader.ReadBytes((int)stream.Length);
 
         var fixture = RestService.For<IRunscopeApi>(BaseAddress, settings);
         await fixture.UploadBytesPart(
-            new(bytes, "test-bytearraypart.pdf", "application/pdf"));
+            new(bytes, "test-bytearraypart.pdf", PdfMediaType));
     }
 
     /// <summary>Verifies a collection of file parts plus an extra part keep their names and content types.</summary>
@@ -463,7 +487,7 @@ public class MultipartTests
     [Test]
     public async Task MultipartUploadShouldWorkWithFileInfoPart()
     {
-        var fileName = Path.GetTempFileName();
+        var fileName = CreateTempFile();
 
         var handler = new MockHttpMessageHandler
         {
@@ -473,31 +497,31 @@ public class MultipartTests
 
                 await Assert.That(parts.Count).IsEqualTo(3);
 
-                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("fileInfos");
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(FileInfosName);
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("test-fileinfopart.pdf");
-                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("application/pdf");
+                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
                 await using (var str = await parts[0].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream("Test Files/Test.pdf"))
+                await using (var src = GetTestFileStream(TestFilePath))
                 {
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
 
-                await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo("fileInfos");
+                await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo(FileInfosName);
                 await Assert
                     .That(parts[1].Headers.ContentDisposition!.FileName)
                     .IsEqualTo("test-fileinfopart2.pdf");
                 await Assert.That(parts[1].Headers.ContentType).IsNull();
                 await using (var str = await parts[1].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream("Test Files/Test.pdf"))
+                await using (var src = GetTestFileStream(TestFilePath))
                 {
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
 
                 await Assert.That(parts[2].Headers.ContentDisposition!.Name).IsEqualTo("anotherFile");
                 await Assert.That(parts[2].Headers.ContentDisposition!.FileName).IsEqualTo("additionalfile.pdf");
-                await Assert.That(parts[2].Headers.ContentType!.MediaType).IsEqualTo("application/pdf");
+                await Assert.That(parts[2].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
                 await using (var str = await parts[2].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream("Test Files/Test.pdf"))
+                await using (var src = GetTestFileStream(TestFilePath))
                 {
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
@@ -508,7 +532,7 @@ public class MultipartTests
 
         try
         {
-            await using var stream = GetTestFileStream("Test Files/Test.pdf");
+            await using var stream = GetTestFileStream(TestFilePath);
             await using var outStream = File.OpenWrite(fileName);
             await stream.CopyToAsync(outStream);
             await outStream.FlushAsync();
@@ -520,16 +544,15 @@ public class MultipartTests
                     new(
                         new(fileName),
                         "test-fileinfopart.pdf",
-                        "application/pdf"),
+                        PdfMediaType),
                     new(
                         new(fileName),
-                        "test-fileinfopart2.pdf",
-                        contentType: null)
+                        "test-fileinfopart2.pdf")
                 ],
                 new(
                     new(fileName),
                     fileName: "additionalfile.pdf",
-                    contentType: "application/pdf"));
+                    contentType: PdfMediaType));
         }
         finally
         {
@@ -542,7 +565,7 @@ public class MultipartTests
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments(typeof(SystemTextJsonContentSerializer), "application/json")]
+    [Arguments(typeof(SystemTextJsonContentSerializer), JsonMediaType)]
     [Arguments(typeof(XmlContentSerializer), "application/xml")]
     public async Task MultipartUploadShouldWorkWithAnObject(
         Type contentSerializerType,
@@ -612,7 +635,7 @@ public class MultipartTests
     /// <param name="mediaType">The expected media type produced by the serializer.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments(typeof(SystemTextJsonContentSerializer), "application/json")]
+    [Arguments(typeof(SystemTextJsonContentSerializer), JsonMediaType)]
     [Arguments(typeof(XmlContentSerializer), "application/xml")]
     public async Task MultipartUploadShouldWorkWithObjects(
         Type contentSerializerType,
@@ -636,7 +659,7 @@ public class MultipartTests
 
                 await Assert.That(parts.Count).IsEqualTo(2);
 
-                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("theObjects");
+                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(TheObjectsName);
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsNull();
                 await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(mediaType);
                 var result0 = await serializer
@@ -645,7 +668,7 @@ public class MultipartTests
                 await Assert.That(result0!.Property1).IsEqualTo(model1.Property1);
                 await Assert.That(result0!.Property2).IsEqualTo(model1.Property2);
 
-                await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo("theObjects");
+                await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo(TheObjectsName);
                 await Assert.That(parts[1].Headers.ContentDisposition!.FileName).IsNull();
                 await Assert.That(parts[1].Headers.ContentType!.MediaType).IsEqualTo(mediaType);
                 var result1 = await serializer
@@ -671,7 +694,7 @@ public class MultipartTests
     [Test]
     public async Task MultipartUploadShouldWorkWithMixedTypes()
     {
-        var fileName = Path.GetTempFileName();
+        var fileName = CreateTempFile();
         var name = Path.GetFileName(fileName);
 
         var model1 = new ModelObject { Property1 = "M1.prop1", Property2 = "M1.prop2" };
@@ -682,78 +705,14 @@ public class MultipartTests
 
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
-            {
-                var parts = content.ToList();
-
-                await Assert.That(parts.Count).IsEqualTo(7);
-
-                await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("theObjects");
-                await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsNull();
-                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result0 = SystemTextJsonSerializer.Deserialize<ModelObject>(
-                    await parts[0].ReadAsStringAsync().ConfigureAwait(false),
-                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-                await Assert.That(result0!.Property1).IsEqualTo(model1.Property1);
-                await Assert.That(result0!.Property2).IsEqualTo(model1.Property2);
-
-                await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo("theObjects");
-                await Assert.That(parts[1].Headers.ContentDisposition!.FileName).IsNull();
-                await Assert.That(parts[1].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result1 = SystemTextJsonSerializer.Deserialize<ModelObject>(
-                    await parts[1].ReadAsStringAsync().ConfigureAwait(false),
-                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-                await Assert.That(result1!.Property1).IsEqualTo(model2.Property1);
-                await Assert.That(result1!.Property2).IsEqualTo(model2.Property2);
-
-                await Assert.That(parts[2].Headers.ContentDisposition!.Name).IsEqualTo("anotherModel");
-                await Assert.That(parts[2].Headers.ContentDisposition!.FileName).IsNull();
-                await Assert.That(parts[2].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result2 = SystemTextJsonSerializer.Deserialize<AnotherModel>(
-                    await parts[2].ReadAsStringAsync().ConfigureAwait(false),
-                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-                await Assert.That(result2!.Foos!.Length).IsEqualTo(2);
-                await Assert.That(result2!.Foos![0]).IsEqualTo("bar1");
-                await Assert.That(result2!.Foos![1]).IsEqualTo("bar2");
-
-                await Assert.That(parts[3].Headers.ContentDisposition!.Name).IsEqualTo("aFile");
-                await Assert.That(parts[3].Headers.ContentDisposition!.FileName).IsEqualTo(name);
-                await Assert.That(parts[3].Headers.ContentType).IsNull();
-                await using (var str = await parts[3].ReadAsStreamAsync())
-                await using (var src = GetTestFileStream("Test Files/Test.pdf"))
-                {
-                    await Assert.That(StreamsEqual(src, str)).IsTrue();
-                }
-
-                await Assert.That(parts[4].Headers.ContentDisposition!.Name).IsEqualTo("anEnum");
-                await Assert.That(parts[4].Headers.ContentDisposition!.FileName).IsNull();
-                await Assert.That(parts[4].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result4 = SystemTextJsonSerializer.Deserialize<AnEnum>(
-                    await parts[4].ReadAsStringAsync().ConfigureAwait(false),
-                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-                await Assert.That(result4).IsEqualTo(AnEnum.Val2);
-
-                await Assert.That(parts[5].Headers.ContentDisposition!.Name).IsEqualTo("aString");
-                await Assert.That(parts[5].Headers.ContentDisposition!.FileName).IsNull();
-                await Assert.That(parts[5].Headers.ContentType!.MediaType).IsEqualTo("text/plain");
-                await Assert.That(parts[5].Headers.ContentType!.CharSet).IsEqualTo("utf-8");
-                await Assert.That(await parts[5].ReadAsStringAsync()).IsEqualTo("frob");
-
-                await Assert.That(parts[6].Headers.ContentDisposition!.Name).IsEqualTo("anInt");
-                await Assert.That(parts[6].Headers.ContentDisposition!.FileName).IsNull();
-                await Assert.That(parts[6].Headers.ContentType!.MediaType).IsEqualTo("application/json");
-                var result6 = SystemTextJsonSerializer.Deserialize<int>(
-                    await parts[6].ReadAsStringAsync().ConfigureAwait(false),
-                    SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
-                await Assert.That(result6).IsEqualTo(42);
-            }
+            Asserts = content => AssertMixedParts(content, model1, model2, name)
         };
 
         var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
 
         try
         {
-            await using var stream = GetTestFileStream("Test Files/Test.pdf");
+            await using var stream = GetTestFileStream(TestFilePath);
             await using var outStream = File.OpenWrite(fileName);
             await stream.CopyToAsync(outStream);
             await outStream.FlushAsync();
@@ -766,7 +725,7 @@ public class MultipartTests
                 new(fileName),
                 AnEnum.Val2,
                 "frob",
-                42);
+                ExpectedIntValue);
         }
         finally
         {
@@ -813,7 +772,7 @@ public class MultipartTests
     [Test]
     public async Task MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName() =>
         await Assert
-            .That(() => _ = new ByteArrayPart([], null!, "application/pdf"))
+            .That(() => _ = new ByteArrayPart([], null!, PdfMediaType))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies the <see cref="FileInfoPart"/> constructor rejects a null file info.</summary>
@@ -821,7 +780,7 @@ public class MultipartTests
     [Test]
     public async Task FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo() =>
         await Assert
-            .That(() => _ = new FileInfoPart(null!, "file.pdf", "application/pdf"))
+            .That(() => _ = new FileInfoPart(null!, "file.pdf", PdfMediaType))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Loads an embedded test resource as a stream.</summary>
@@ -854,6 +813,95 @@ public class MultipartTests
                 $"Unable to find resource for path \"{relativeFilePath}\". Resource named \"{fullName}\" was not found in assembly.");
     }
 
+    /// <summary>Asserts the parts produced by the mixed-types multipart upload.</summary>
+    /// <param name="content">The multipart content observed by the handler.</param>
+    /// <param name="model1">The first expected model object.</param>
+    /// <param name="model2">The second expected model object.</param>
+    /// <param name="name">The expected file-part file name.</param>
+    /// <returns>A task representing the assertion work.</returns>
+    private static async Task AssertMixedParts(MultipartFormDataContent content, ModelObject model1, ModelObject model2, string name)
+    {
+        const int expectedPartCount = 7;
+        const int anotherModelPartIndex = 2;
+        const int filePartIndex = 3;
+        const int enumPartIndex = 4;
+        const int stringPartIndex = 5;
+        const int intPartIndex = 6;
+        const int expectedFooCount = 2;
+
+        var parts = content.ToList();
+
+        await Assert.That(parts.Count).IsEqualTo(expectedPartCount);
+
+        await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(TheObjectsName);
+        await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsNull();
+        await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(JsonMediaType);
+        var result0 = SystemTextJsonSerializer.Deserialize<ModelObject>(
+            await parts[0].ReadAsStringAsync().ConfigureAwait(false),
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        await Assert.That(result0!.Property1).IsEqualTo(model1.Property1);
+        await Assert.That(result0!.Property2).IsEqualTo(model1.Property2);
+
+        await Assert.That(parts[1].Headers.ContentDisposition!.Name).IsEqualTo(TheObjectsName);
+        await Assert.That(parts[1].Headers.ContentDisposition!.FileName).IsNull();
+        await Assert.That(parts[1].Headers.ContentType!.MediaType).IsEqualTo(JsonMediaType);
+        var result1 = SystemTextJsonSerializer.Deserialize<ModelObject>(
+            await parts[1].ReadAsStringAsync().ConfigureAwait(false),
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        await Assert.That(result1!.Property1).IsEqualTo(model2.Property1);
+        await Assert.That(result1!.Property2).IsEqualTo(model2.Property2);
+
+        await Assert.That(parts[anotherModelPartIndex].Headers.ContentDisposition!.Name).IsEqualTo("anotherModel");
+        await Assert.That(parts[anotherModelPartIndex].Headers.ContentDisposition!.FileName).IsNull();
+        await Assert.That(parts[anotherModelPartIndex].Headers.ContentType!.MediaType).IsEqualTo(JsonMediaType);
+        var result2 = SystemTextJsonSerializer.Deserialize<AnotherModel>(
+            await parts[anotherModelPartIndex].ReadAsStringAsync().ConfigureAwait(false),
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        await Assert.That(result2!.Foos!.Length).IsEqualTo(expectedFooCount);
+        await Assert.That(result2!.Foos![0]).IsEqualTo("bar1");
+        await Assert.That(result2!.Foos![1]).IsEqualTo("bar2");
+
+        await Assert.That(parts[filePartIndex].Headers.ContentDisposition!.Name).IsEqualTo("aFile");
+        await Assert.That(parts[filePartIndex].Headers.ContentDisposition!.FileName).IsEqualTo(name);
+        await Assert.That(parts[filePartIndex].Headers.ContentType).IsNull();
+        await using (var str = await parts[filePartIndex].ReadAsStreamAsync())
+        await using (var src = GetTestFileStream(TestFilePath))
+        {
+            await Assert.That(StreamsEqual(src, str)).IsTrue();
+        }
+
+        await Assert.That(parts[enumPartIndex].Headers.ContentDisposition!.Name).IsEqualTo("anEnum");
+        await Assert.That(parts[enumPartIndex].Headers.ContentDisposition!.FileName).IsNull();
+        await Assert.That(parts[enumPartIndex].Headers.ContentType!.MediaType).IsEqualTo(JsonMediaType);
+        var result4 = SystemTextJsonSerializer.Deserialize<AnEnum>(
+            await parts[enumPartIndex].ReadAsStringAsync().ConfigureAwait(false),
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        await Assert.That(result4).IsEqualTo(AnEnum.Val2);
+
+        await Assert.That(parts[stringPartIndex].Headers.ContentDisposition!.Name).IsEqualTo("aString");
+        await Assert.That(parts[stringPartIndex].Headers.ContentDisposition!.FileName).IsNull();
+        await Assert.That(parts[stringPartIndex].Headers.ContentType!.MediaType).IsEqualTo("text/plain");
+        await Assert.That(parts[stringPartIndex].Headers.ContentType!.CharSet).IsEqualTo("utf-8");
+        await Assert.That(await parts[stringPartIndex].ReadAsStringAsync()).IsEqualTo("frob");
+
+        await Assert.That(parts[intPartIndex].Headers.ContentDisposition!.Name).IsEqualTo("anInt");
+        await Assert.That(parts[intPartIndex].Headers.ContentDisposition!.FileName).IsNull();
+        await Assert.That(parts[intPartIndex].Headers.ContentType!.MediaType).IsEqualTo(JsonMediaType);
+        var result6 = SystemTextJsonSerializer.Deserialize<int>(
+            await parts[intPartIndex].ReadAsStringAsync().ConfigureAwait(false),
+            SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
+        await Assert.That(result6).IsEqualTo(ExpectedIntValue);
+    }
+
+    /// <summary>Creates an empty temporary file with a random, non-predictable name and returns its path.</summary>
+    /// <returns>The full path to the newly created temporary file.</returns>
+    private static string CreateTempFile()
+    {
+        var path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        File.Create(path).Dispose();
+        return path;
+    }
+
     /// <summary>Determines whether two streams contain identical byte content.</summary>
     /// <param name="a">The first stream to compare.</param>
     /// <param name="b">The second stream to compare.</param>
@@ -865,10 +913,8 @@ public class MultipartTests
             return true;
         }
 
-        if (a is null || b is null)
-        {
-            throw new ArgumentNullException(a is null ? "a" : "b");
-        }
+        ArgumentNullException.ThrowIfNull(a);
+        ArgumentNullException.ThrowIfNull(b);
 
         if (a.Length < b.Length)
         {

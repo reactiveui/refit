@@ -24,6 +24,7 @@ namespace System;
     "Style",
     "S1118:Utility classes should not have public constructors",
     Justification = "BCL-shaped mutable hash accumulator must be constructible.")]
+[Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal struct HashCode
 {
     /// <summary>The second prime multiplier.</summary>

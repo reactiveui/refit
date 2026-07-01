@@ -22,11 +22,12 @@ public sealed class ValueStringBuilderTests
     [Test]
     public async Task BuilderGrowsAndExposesRequestedSpans()
     {
+        const int expectedTextLength = 6;
         var (text, length, capacity, suffix, middle, terminator) = BuildSpanSummary();
 
         await Assert.That(text).IsEqualTo("abcdef");
-        await Assert.That(length).IsEqualTo(6);
-        await Assert.That(capacity).IsGreaterThanOrEqualTo(6);
+        await Assert.That(length).IsEqualTo(expectedTextLength);
+        await Assert.That(capacity).IsGreaterThanOrEqualTo(expectedTextLength);
         await Assert.That(suffix).IsEqualTo("cdef");
         await Assert.That(middle).IsEqualTo("bcd");
         await Assert.That(terminator).IsEqualTo('\0');
@@ -37,10 +38,11 @@ public sealed class ValueStringBuilderTests
     [Test]
     public async Task TryCopyToCopiesWhenDestinationHasEnoughRoom()
     {
+        const int expectedCharsWritten = 4;
         var (success, charsWritten, text) = TryCopyToLargeDestination();
 
         await Assert.That(success).IsTrue();
-        await Assert.That(charsWritten).IsEqualTo(4);
+        await Assert.That(charsWritten).IsEqualTo(expectedCharsWritten);
         await Assert.That(text).IsEqualTo("copy");
     }
 
@@ -60,10 +62,11 @@ public sealed class ValueStringBuilderTests
     [Test]
     public async Task PooledBuilderSupportsCapacityAndNullNoOps()
     {
+        const int minimumCapacity = 2;
         var (text, capacity) = BuildWithPooledInitialCapacity();
 
         await Assert.That(text).IsEqualTo("z");
-        await Assert.That(capacity).IsGreaterThanOrEqualTo(2);
+        await Assert.That(capacity).IsGreaterThanOrEqualTo(minimumCapacity);
     }
 
     /// <summary>Verifies less common growth and span termination paths.</summary>
@@ -71,10 +74,11 @@ public sealed class ValueStringBuilderTests
     [Test]
     public async Task BuilderCoversGrowthAndTerminationBranches()
     {
+        const int expectedTextLength = 13;
         var (text, length, terminated, first) = BuildThroughGrowthBranches();
 
         await Assert.That(text).IsEqualTo("yyxbcdefghijj");
-        await Assert.That(length).IsEqualTo(13);
+        await Assert.That(length).IsEqualTo(expectedTextLength);
         await Assert.That(terminated).IsEqualTo('\0');
         await Assert.That(first).IsEqualTo('y');
     }
@@ -94,14 +98,15 @@ public sealed class ValueStringBuilderTests
     [Test]
     public async Task TryGetSingleReportsEmptySingleAndMany()
     {
+        const int singleSampleValue = 42;
         var emptyState = Array.Empty<int>().TryGetSingle(out var emptyValue);
-        var singleState = new[] { 42 }.TryGetSingle(out var singleValue);
+        var singleState = new[] { singleSampleValue }.TryGetSingle(out var singleValue);
         var manyState = new[] { 1, 2 }.TryGetSingle(out var manyValue);
 
         await Assert.That(emptyState).IsEqualTo(EnumerablePeek.Empty);
         await Assert.That(emptyValue).IsEqualTo(0);
         await Assert.That(singleState).IsEqualTo(EnumerablePeek.Single);
-        await Assert.That(singleValue).IsEqualTo(42);
+        await Assert.That(singleValue).IsEqualTo(singleSampleValue);
         await Assert.That(manyState).IsEqualTo(EnumerablePeek.Many);
         await Assert.That(manyValue).IsEqualTo(0);
     }
@@ -155,6 +160,9 @@ public sealed class ValueStringBuilderTests
     /// <returns>The built string.</returns>
     private static string BuildInsertedString()
     {
+        const int insertPosition = 2;
+        const int repeatCount = 2;
+        const int exclamationCount = 3;
         var builder = new ValueStringBuilder(stackalloc char[4]);
         try
         {
@@ -163,9 +171,9 @@ public sealed class ValueStringBuilderTests
             builder.Append("cd".AsSpan());
             builder.AppendSpan(1)[0] = 'e';
             builder[1] = 'B';
-            builder.Insert(2, 'X', 2);
+            builder.Insert(insertPosition, 'X', repeatCount);
             builder.Insert(1, "b");
-            builder.Append('!', 3);
+            builder.Append('!', exclamationCount);
             return builder.ToString();
         }
         finally
@@ -266,14 +274,17 @@ public sealed class ValueStringBuilderTests
     /// <returns>The built text, length, terminator, and first character.</returns>
     private static (string Text, int Length, char Terminator, char First) BuildThroughGrowthBranches()
     {
+        const int ensuredCapacity = 4;
+        const int repeatCount = 2;
+        const int insertPosition = 3;
         var builder = new ValueStringBuilder(stackalloc char[1]);
         try
         {
             builder.Length = 0;
-            builder.EnsureCapacity(4);
+            builder.EnsureCapacity(ensuredCapacity);
             builder.Append('x');
-            builder.Insert(0, 'y', 2);
-            builder.Insert(3, "bcdef");
+            builder.Insert(0, 'y', repeatCount);
+            builder.Insert(insertPosition, "bcdef");
             builder.Append("ghij".AsSpan());
             builder.Append('k');
             builder.Length--;
@@ -311,11 +322,12 @@ public sealed class ValueStringBuilderTests
     /// <returns>The built text.</returns>
     private static string BuildInsertCharsGrowth()
     {
+        const int repeatCount = 2;
         var builder = new ValueStringBuilder(stackalloc char[1]);
         try
         {
             builder.Append('a');
-            builder.Insert(0, 'b', 2);
+            builder.Insert(0, 'b', repeatCount);
             return builder.ToString();
         }
         finally
@@ -362,11 +374,12 @@ public sealed class ValueStringBuilderTests
     /// <returns>The built text.</returns>
     private static string BuildAppendRepeatedCharGrowth()
     {
+        const int repeatCount = 2;
         var builder = new ValueStringBuilder(stackalloc char[1]);
         try
         {
             builder.Append('a');
-            builder.Append('b', 2);
+            builder.Append('b', repeatCount);
             return builder.ToString();
         }
         finally

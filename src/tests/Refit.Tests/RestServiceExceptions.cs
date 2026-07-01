@@ -7,12 +7,15 @@ namespace Refit.Tests;
 /// <summary>Tests that <see cref="RestService"/> throws for interfaces with invalid Refit definitions.</summary>
 public class RestServiceExceptions
 {
+    /// <summary>The base address supplied to each invalid interface under test.</summary>
+    private const string BaseAddress = "https://api.github.com";
+
     /// <summary>Verifies that declaring multiple cancellation tokens throws.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task ManyCancellationTokensShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IManyCancellationTokens>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IManyCancellationTokens>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("only contain a single CancellationToken", exception!);
     }
 
@@ -21,7 +24,7 @@ public class RestServiceExceptions
     [Test]
     public async Task ManyHeaderCollectionShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IManyHeaderCollections>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IManyHeaderCollections>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("Only one parameter can be a HeaderCollection parameter", exception!);
     }
 
@@ -30,7 +33,7 @@ public class RestServiceExceptions
     [Test]
     public async Task InvalidHeaderCollectionTypeShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IHeaderCollectionWrongType>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IHeaderCollectionWrongType>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("HeaderCollection parameter of type", exception!);
     }
 
@@ -39,7 +42,7 @@ public class RestServiceExceptions
     [Test]
     public async Task UrlDoesntStartWithSlashShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IDoesNotStartSlash>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IDoesNotStartSlash>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("must start with '/' and be of the form", exception!);
     }
 
@@ -48,7 +51,7 @@ public class RestServiceExceptions
     [Test]
     public async Task UrlContainsCrlfShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IUrlContainsCrlf>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IUrlContainsCrlf>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("must not contain CR or LF characters", exception!);
     }
 
@@ -57,7 +60,7 @@ public class RestServiceExceptions
     [Test]
     public async Task RoundTripParameterNotStringShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IRoundTripNotString>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IRoundTripNotString>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("has round-tripping parameter", exception!);
     }
 
@@ -66,7 +69,7 @@ public class RestServiceExceptions
     [Test]
     public async Task RoundTripWithLeadingWhitespaceShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IRoundTrippingLeadingWhitespace>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IRoundTrippingLeadingWhitespace>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("has parameter  **path, but no method parameter matches", exception!);
     }
 
@@ -75,7 +78,7 @@ public class RestServiceExceptions
     [Test]
     public async Task RoundTripWithTrailingWhitespaceShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IRoundTrippingTrailingWhitespace>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IRoundTrippingTrailingWhitespace>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("has parameter ** path, but no method parameter matches", exception!);
     }
 
@@ -84,7 +87,7 @@ public class RestServiceExceptions
     [Test]
     public async Task InvalidParamSubstitutionShouldThrow()
     {
-        var service = RestService.For<IInvalidParamSubstitution>("https://api.github.com");
+        var service = RestService.For<IInvalidParamSubstitution>(BaseAddress);
         await Assert.That(service).IsNotNull();
 
         await Assert.That(() => (Task)service.GetValue("throws")).ThrowsExactly<ApiException>();
@@ -95,7 +98,7 @@ public class RestServiceExceptions
     [Test]
     public async Task InvalidFragmentParamSubstitutionShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IInvalidFragmentParamSubstitution>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IInvalidFragmentParamSubstitution>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("but no method parameter matches", exception!);
     }
 
@@ -104,7 +107,7 @@ public class RestServiceExceptions
     [Test]
     public async Task UrlNoMatchingParameterShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IUrlNoMatchingParameters>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IUrlNoMatchingParameters>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("but no method parameter matches", exception!);
     }
 
@@ -113,7 +116,7 @@ public class RestServiceExceptions
     [Test]
     public async Task MultipartAndBodyShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IMultipartAndBody>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IMultipartAndBody>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("Multipart requests may not contain a Body parameter", exception!);
     }
 
@@ -122,7 +125,7 @@ public class RestServiceExceptions
     [Test]
     public async Task ManyBodyShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IManyBody>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IManyBody>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("Only one parameter can be a Body parameter", exception!);
     }
 
@@ -131,7 +134,7 @@ public class RestServiceExceptions
     [Test]
     public async Task ManyComplexTypesShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IManyComplexTypes>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IManyComplexTypes>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("Multiple complex types found. Specify one parameter as the body using BodyAttribute", exception!);
     }
 
@@ -140,7 +143,7 @@ public class RestServiceExceptions
     [Test]
     public async Task ManyAuthorizeAttributesShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IManyAuthorize>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IManyAuthorize>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("Only one parameter can be an Authorize parameter", exception!);
     }
 
@@ -149,7 +152,7 @@ public class RestServiceExceptions
     [Test]
     public async Task InvalidReturnTypeShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IInvalidReturnType>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IInvalidReturnType>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>", exception!);
     }
 
@@ -158,7 +161,7 @@ public class RestServiceExceptions
     [Test]
     public async Task InvalidRawApiResponseReturnTypeShouldThrow()
     {
-        var exception = await Assert.That(() => RestService.For<IInvalidReturnTypeIApiResponse>("https://api.github.com")).ThrowsExactly<ArgumentException>();
+        var exception = await Assert.That(() => RestService.For<IInvalidReturnTypeIApiResponse>(BaseAddress)).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("is invalid. All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>", exception!);
     }
 

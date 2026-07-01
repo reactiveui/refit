@@ -39,6 +39,7 @@
         <Project Path="tests/Refit.GeneratorTests/Refit.GeneratorTests.csproj" />
         <Project Path="tests/Refit.MockInterop.Tests/Refit.MockInterop.Tests.csproj" />
         <Project Path="tests/Refit.Newtonsoft.Json.Tests/Refit.Newtonsoft.Json.Tests.csproj" />
+        <Project Path="tests/Refit.Testing.Tests/Refit.Testing.Tests.csproj" />
         <Project Path="tests/Refit.Tests/Refit.Tests.csproj" />
     </Folder>
     <Project Path="InterfaceStubGenerator.Roslyn48/InterfaceStubGenerator.Roslyn48.csproj" />
@@ -50,6 +51,7 @@
     <Project Path="Refit.HttpClientFactory/Refit.HttpClientFactory.csproj" />
     <Project Path="Refit.NativeAotSmoke/Refit.NativeAotSmoke.csproj" />
     <Project Path="Refit.Newtonsoft.Json/Refit.Newtonsoft.Json.csproj" />
+    <Project Path="Refit.Testing/Refit.Testing.csproj" />
     <Project Path="Refit.Xml/Refit.Xml.csproj" />
     <Project Path="Refit/Refit.csproj" />
 </Solution>

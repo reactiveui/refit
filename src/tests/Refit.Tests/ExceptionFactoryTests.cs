@@ -5,13 +5,16 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for the <see cref="RefitSettings.ExceptionFactory"/> behavior.</summary>
 public class ExceptionFactoryTests
 {
+    /// <summary>The base address used for the fixture service.</summary>
+    private const string BaseAddress = "http://api";
+
     /// <summary>Refit fixture interface used to exercise the exception factory.</summary>
     public interface IMyService
     {
@@ -31,22 +34,21 @@ public class ExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichAlwaysReturnsNull_WithResult()
     {
-        var handler = new MockHttpMessageHandler();
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => handler,
-            ExceptionFactory = _ => Task.FromResult<Exception?>(null)
+            {
+                Route.Get("http://api/get-with-result"),
+                new StubResponse { Status = HttpStatusCode.NotFound, Content = new StringContent("error-result") }
+            },
         };
-
-        _ = handler
-            .Expect(HttpMethod.Get, "http://api/get-with-result")
-            .Respond(HttpStatusCode.NotFound, new StringContent("error-result"));
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
+        {
+            ExceptionFactory = _ => Task.FromResult<Exception?>(null)
+        });
 
         var result = await fixture.GetWithResult();
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
 
         await Assert.That(result).IsEqualTo("error-result");
     }
@@ -56,22 +58,21 @@ public class ExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichAlwaysReturnsNull_WithoutResult()
     {
-        var handler = new MockHttpMessageHandler();
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => handler,
-            ExceptionFactory = _ => Task.FromResult<Exception?>(null)
+            {
+                Route.Put("http://api/put-without-result"),
+                Reply.Status(HttpStatusCode.NotFound)
+            },
         };
-
-        _ = handler
-            .Expect(HttpMethod.Put, "http://api/put-without-result")
-            .Respond(HttpStatusCode.NotFound);
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
+        {
+            ExceptionFactory = _ => Task.FromResult<Exception?>(null)
+        });
 
         await fixture.PutWithoutResult();
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies that the factory-returned exception is thrown from a result-returning call.</summary>
@@ -79,24 +80,23 @@ public class ExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichAlwaysReturnsException_WithResult()
     {
-        var handler = new MockHttpMessageHandler();
         var exception = new InvalidOperationException("I like to fail");
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => handler,
-            ExceptionFactory = _ => Task.FromResult<Exception?>(exception)
+            {
+                Route.Get("http://api/get-with-result"),
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("success-result") }
+            },
         };
-
-        _ = handler
-            .Expect(HttpMethod.Get, "http://api/get-with-result")
-            .Respond(HttpStatusCode.OK, new StringContent("success-result"));
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
+        {
+            ExceptionFactory = _ => Task.FromResult<Exception?>(exception)
+        });
 
         var thrownException = await Assert.That(() => (Task)fixture.GetWithResult()).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrownException).IsEqualTo(exception);
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies that the factory-returned exception is thrown from a void call.</summary>
@@ -104,21 +104,22 @@ public class ExceptionFactoryTests
     [Test]
     public async Task ProvideFactoryWhichAlwaysReturnsException_WithoutResult()
     {
-        var handler = new MockHttpMessageHandler();
         var exception = new InvalidOperationException("I like to fail");
-        var settings = new RefitSettings
+        var handler = new StubHttp
         {
-            HttpMessageHandlerFactory = () => handler,
-            ExceptionFactory = _ => Task.FromResult<Exception?>(exception)
+            {
+                Route.Put("http://api/put-without-result"),
+                Reply.Status(HttpStatusCode.OK)
+            },
         };
-
-        _ = handler.Expect(HttpMethod.Put, "http://api/put-without-result").Respond(HttpStatusCode.OK);
-
-        var fixture = RestService.For<IMyService>("http://api", settings);
+        var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
+        {
+            ExceptionFactory = _ => Task.FromResult<Exception?>(exception)
+        });
 
         var thrownException = await Assert.That(fixture.PutWithoutResult).ThrowsExactly<InvalidOperationException>();
         await Assert.That(thrownException).IsEqualTo(exception);
 
-        handler.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 }

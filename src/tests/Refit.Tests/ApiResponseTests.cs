@@ -10,6 +10,12 @@ namespace Refit.Tests;
 /// <summary>Tests for direct <see cref="ApiResponse{T}"/> construction and error handling.</summary>
 public sealed class ApiResponseTests
 {
+    /// <summary>The example request URI reused across the response tests.</summary>
+    private const string ExampleUri = "https://example.test";
+
+    /// <summary>The expected length of the five-character body used by the narrowing tests.</summary>
+    private const int ExpectedContentLength = 5;
+
     /// <summary>Verifies the generic interface does not shadow base members, so a single setup is observed via the base interface.</summary>
     /// <param name="memberName">The member expected to be declared only on the non-generic interface.</param>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -46,7 +52,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task SuccessfulResponseHasContentAndPassesEnsureSuccess()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var httpResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
         using var response = new ApiResponse<string>(httpResponse, "body", new());
 
@@ -62,7 +68,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task UnsuccessfulResponseEnsureSuccessThrowsCapturedError()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var httpResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = request };
         var error = await ApiException.Create(request, HttpMethod.Get, httpResponse, new());
         using var response = new ApiResponse<string>(httpResponse, null, new(), error);
@@ -80,7 +86,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task EnsureSuccessfulAsyncReturnsOnSuccessAndThrowsOnFailure()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var okResponse = new HttpResponseMessage(HttpStatusCode.OK) { RequestMessage = request };
         using var success = new ApiResponse<string>(okResponse, "body", new());
 
@@ -102,7 +108,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task EnsureSuccessExtensionsRejectNullResponse()
     {
-        var nullResponse = (IApiResponse<string>)null!;
+        const IApiResponse<string> nullResponse = null!;
 
         await Assert
             .That(() => (Task)nullResponse.EnsureSuccessStatusCodeAsync())
@@ -117,7 +123,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task EnsureSuccessThrowsFallbackWhenNoErrorCaptured()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var badResponse = new HttpResponseMessage(HttpStatusCode.BadRequest) { RequestMessage = request };
         using var response = new ApiResponse<string>(badResponse, null, new());
 
@@ -143,7 +149,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task MissingResponseReportsUnavailableState()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var response = new ApiResponse<string>(request, null, null, new());
 
         await Assert.That(response.Content).IsNull();
@@ -188,7 +194,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task ErrorHelpersDistinguishRequestAndResponseErrors()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         var requestError = new ApiRequestException("failed", request, HttpMethod.Get, new());
         var innerRequestError = new ApiRequestException(
             request,
@@ -263,7 +269,7 @@ public sealed class ApiResponseTests
         await Assert.That(badWithContent.IsSuccessfulWithContent).IsFalse();
 
         // No response received -> not successful-with-content.
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var noResponse = new ApiResponse<string>(request, null, "body", new());
         await Assert.That(noResponse.IsSuccessfulWithContent).IsFalse();
     }
@@ -306,7 +312,7 @@ public sealed class ApiResponseTests
         if (response.IsSuccessfulWithContent)
         {
             // MemberNotNullWhen(true, nameof(Content)) flows here: Content is non-null without `!`.
-            await Assert.That(response.Content.Length).IsEqualTo(5);
+            await Assert.That(response.Content.Length).IsEqualTo(ExpectedContentLength);
         }
         else
         {
@@ -324,7 +330,7 @@ public sealed class ApiResponseTests
         if (response.HasContent)
         {
             // MemberNotNullWhen(true, nameof(Content)) flows here: Content is non-null without `!`.
-            await Assert.That(response.Content.Length).IsEqualTo(5);
+            await Assert.That(response.Content.Length).IsEqualTo(ExpectedContentLength);
         }
         else
         {
@@ -386,7 +392,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task NoContentSuccessHasNoContent()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var noContent = new HttpResponseMessage(HttpStatusCode.NoContent) { RequestMessage = request };
         using var response = new ApiResponse<string>(noContent, null, new());
 
@@ -404,7 +410,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task SuccessWithContentReportsContentPresent()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var noContentWithBody = new HttpResponseMessage(HttpStatusCode.NoContent) { RequestMessage = request };
         using var response = new ApiResponse<string>(noContentWithBody, "body", new());
 
@@ -418,7 +424,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task NotModifiedIsNotSuccessStatusCode()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         using var notModified = new HttpResponseMessage(HttpStatusCode.NotModified) { RequestMessage = request };
         using var response = new ApiResponse<string>(notModified, null, new());
 
@@ -433,7 +439,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task RequestErrorWithoutResponseIsNotReceived()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test");
+        using var request = new HttpRequestMessage(HttpMethod.Get, ExampleUri);
         var requestError = new ApiRequestException("failed", request, HttpMethod.Get, new());
         using var response = new ApiResponse<string>(request, null, "body", new(), requestError);
 
@@ -560,7 +566,7 @@ public sealed class ApiResponseTests
         else
         {
             // The explicit null check narrows Content here without `!`.
-            await Assert.That(ok.Content.Length).IsEqualTo(5);
+            await Assert.That(ok.Content.Length).IsEqualTo(ExpectedContentLength);
         }
 
         // The same guard correctly rejects a successful response that has no content.
@@ -583,7 +589,7 @@ public sealed class ApiResponseTests
         }
         else
         {
-            await Assert.That(ok.Content.Length).IsEqualTo(5);
+            await Assert.That(ok.Content.Length).IsEqualTo(ExpectedContentLength);
         }
 
         // The single-condition member equals the negation of the two-condition guard for every state.
@@ -650,7 +656,7 @@ public sealed class ApiResponseTests
         yield return new ApiResponse<string>(CreateResponse(HttpStatusCode.BadRequest, "x"), null, new());
 
         // no response received + content
-        yield return new ApiResponse<string>(new(HttpMethod.Get, "https://example.test"), null, "body", new());
+        yield return new ApiResponse<string>(new(HttpMethod.Get, ExampleUri), null, "body", new());
     }
 
     /// <summary>Creates an HTTP response message with an attached request.</summary>
@@ -660,7 +666,7 @@ public sealed class ApiResponseTests
     private static HttpResponseMessage CreateResponse(HttpStatusCode statusCode, string content) =>
         new(statusCode)
         {
-            RequestMessage = new(HttpMethod.Get, "https://example.test"),
+            RequestMessage = new(HttpMethod.Get, ExampleUri),
             Content = new StringContent(content)
         };
 }

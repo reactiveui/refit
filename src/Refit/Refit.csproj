@@ -15,8 +15,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Internal helpers shared across the Refit assemblies via linked source (one internal copy
-         per assembly) rather than InternalsVisibleTo. -->
     <Compile Include="..\Shared\UniqueName.cs" Link="Shared\UniqueName.cs"/>
     <Compile Include="..\Shared\HttpContentExtensions.cs" Link="Shared\HttpContentExtensions.cs"/>
     <Compile Include="..\Shared\AuthenticatedHttpClientHandler.cs" Link="Shared\AuthenticatedHttpClientHandler.cs"/>

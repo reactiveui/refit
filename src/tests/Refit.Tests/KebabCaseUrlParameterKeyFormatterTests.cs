@@ -57,7 +57,7 @@ public class KebabCaseUrlParameterKeyFormatterTests
             NotcamelCased = "value2"
         };
 
-        var output = factory([complexQuery]);
+        var output = await factory([complexQuery]);
         await Assert.That(output.RequestUri).IsNotNull();
         var uri = new Uri(new("http://api"), output.RequestUri!);
 

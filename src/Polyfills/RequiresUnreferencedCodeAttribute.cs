@@ -7,6 +7,7 @@ namespace System.Diagnostics.CodeAnalysis;
 
 /// <summary>Polyfill of the attribute that marks members whose use requires code that may be trimmed.</summary>
 /// <param name="message">The message describing why the code is required.</param>
+[ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Constructor | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Event, Inherited = false)]
 internal sealed class RequiresUnreferencedCodeAttribute(string message) : Attribute
 {
