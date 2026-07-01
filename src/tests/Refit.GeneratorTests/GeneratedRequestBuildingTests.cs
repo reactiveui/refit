@@ -1070,7 +1070,7 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}", ("aVal""");
+        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}", refitSettings.AllowUnmatchedRouteParameters, ("aVal", """);
     }
 
     /// <summary>Verifies that path parameters are supported by the source generator.</summary>
@@ -1096,7 +1096,7 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("GeneratedRequestRunner.BuildRequestPath(");
+        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a?b={bVal}", refitSettings.AllowUnmatchedRouteParameters, ("bVal", """);
     }
 
     /// <summary>Verifies that non-templated parameters are not supported by the source generator.</summary>

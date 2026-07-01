@@ -413,7 +413,9 @@ public partial class RestServiceIntegrationTests
 
         await Assert.That(result!.InnerException).IsNotNull();
         await Assert.That(result.InnerException).IsTypeOf<TaskCanceledException>();
-        await AssertStackTraceContains(nameof(IGitHubApi.GetOrgMembers), result.StackTrace);
+
+        // Source generated requests directly return the SendAsync task so won't contain the caller stack frame.
+        await AssertStackTraceContains(nameof(GeneratedRequestRunner.SendAsync), result.StackTrace);
     }
 
     /// <summary>Verifies cancellation before the response is read surfaces in the API response error.</summary>
