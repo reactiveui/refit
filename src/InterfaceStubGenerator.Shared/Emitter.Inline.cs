@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using SymbolDisplayFormat = Microsoft.CodeAnalysis.SymbolDisplayFormat;
 
 namespace Refit.Generator;
 
