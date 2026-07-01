@@ -753,7 +753,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IBasicApi>();
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IBasicApi.GetParam));
-        var output = factory([nameof(IBasicApi.GetParam)]);
+        var output = await factory([nameof(IBasicApi.GetParam)]);
 
         var uri = new Uri(new("http://api"), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo($"/{nameof(IBasicApi.GetParam)}");
