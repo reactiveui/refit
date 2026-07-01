@@ -50,10 +50,14 @@ public partial class GeneratedRequestRunnerTests
 
             yield return new(("/users/20", usersId, false, Bind(usersId, "20")));
             yield return new(("/users/20", usersId, true, Bind(usersId, "20")));
+            yield return new(("/users/20/", $"{usersId}/", true, Bind(usersId, "20")));
+            yield return new(("/users/20/foo{bar", $"{usersId}/foo{{bar", false, Bind(usersId, "20")));
+            yield return new(("/users/20/foo}{bar", $"{usersId}/foo}}{{bar", false, Bind(usersId, "20")));
             yield return new(("/users/20/orders", usersIdOrders, false, Bind(usersIdOrders, "20")));
             yield return new(("/users/", usersId, false, Bind(usersId, (string?)null)));
             yield return new(("/foo/row_2/col_2", rowCol, false, Bind(rowCol, "2", "2")));
             yield return new(("/users/{id}", usersId, true, []));
+            yield return new(("/users/%7B20%7D", usersId, true, Bind(usersId, "{20}")));
         }
 
         /// <summary>Builds parameter locations by scanning the template for <c>{placeholder}</c> spans.</summary>

@@ -69,13 +69,13 @@ public static class GeneratedRequestRunner
 
         var path = sb.ToString();
         var i = path.IndexOf('{');
-        if (i < 0)
+        if (i < 0 || allowUnmatchedParameter)
         {
             return path;
         }
 
-        var j = i + path.AsSpan(i).IndexOfAny('}', '/');
-        if (path[j] != '}' || allowUnmatchedParameter)
+        var j = path.AsSpan(i).IndexOfAny('}', '/');
+        if (j < 0 || path[j += i] != '}')
         {
             return path;
         }
