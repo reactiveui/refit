@@ -58,8 +58,10 @@ public partial class GeneratedParameterAttributeProviderTests
                 { typeof(AliasAsAttribute), [new AliasAsAttribute("foo")] }
             });
 
+        const int expectedCount = 2;
+
         var result = provider.GetCustomAttributes(false);
 
-        await Assert.That(result).IsNotEmpty().And.HasCountBetween(2, 2).And.ContainsOnly(o => o is QueryAttribute or AliasAsAttribute);
+        await Assert.That(result).IsNotEmpty().And.HasCountBetween(expectedCount, expectedCount).And.ContainsOnly(o => o is QueryAttribute or AliasAsAttribute);
     }
 }

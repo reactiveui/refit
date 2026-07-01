@@ -9,7 +9,7 @@ using System.Reflection;
 namespace Refit.Tests;
 
 /// <summary>Tests for the generated request runtime helper.</summary>
-public class GeneratedRequestRunnerTests
+public partial class GeneratedRequestRunnerTests
 {
     /// <summary>Relative request path shared by the generated-runner fixtures.</summary>
     private const string RelativeResourcePath = "/resource";
@@ -1141,33 +1141,6 @@ public class GeneratedRequestRunnerTests
         await Assert.That(ReferenceEquals(content, original)).IsTrue();
     }
 
-    /// <summary>Verifies BuildRequestPath returns a path with substituted parameters.</summary>
-    /// <param name="expectedResult">The expected result.</param>
-    /// <param name="path">The templated path.</param>
-    /// <param name="allowUnmatchedRouteParameters">Whether unmatched route parameters are supported.</param>
-    /// <param name="uriParams">The URI parameters.</param>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    [InstanceMethodDataSource(typeof(GeneratedRequestRunnerTestsDataSources), nameof(GeneratedRequestRunnerTestsDataSources.BuildRequestPathReplacesParametersData))]
-    public async Task BuildRequestPathReplacesParameters(string expectedResult, string path, bool allowUnmatchedRouteParameters, params ((int start, int end) location, string? value)[] uriParams)
-    {
-        var result = GeneratedRequestRunner.BuildRequestPath(path, allowUnmatchedRouteParameters, uriParams);
-
-        await Assert.That(result).EqualTo(expectedResult);
-    }
-
-    /// <summary>Verifies BuildRequestPath fails when a parameter is not provided.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task BuildRequestPathFailsOnParameterNotFound() =>
-        await Assert
-            .That(() =>
-            {
-                var result = GeneratedRequestRunner.BuildRequestPath("/user/{id}", false);
-                Console.WriteLine(result);
-            }).Throws<ArgumentException>()
-            .WithMessage("URL /user/{id} has parameter {id}, but no method parameter matches", StringComparison.Ordinal);
-
     /// <summary>Creates settings backed by the test serializer.</summary>
     /// <param name="serializer">The serializer to assign, or null for a recording serializer.</param>
     /// <returns>The configured settings.</returns>
@@ -1182,25 +1155,6 @@ public class GeneratedRequestRunnerTests
         {
             BaseAddress = new("https://api.example")
         };
-
-    /// <summary>Provides test data for <see cref="GeneratedRequestRunnerTests"/>.</summary>
-    internal static class GeneratedRequestRunnerTestsDataSources
-    {
-        /// <summary>Data source for the <see cref="BuildRequestPathReplacesParameters"/> test.</summary>
-        /// <returns>Test data.</returns>
-        internal static
-            IEnumerable<TestDataRow<(string expectedResult, string path, bool allowUnmatchedRouteParameters, ((int start, int end) location
-                ,
-                string? value)[] uriParams)>> BuildRequestPathReplacesParametersData()
-        {
-            yield return new(("/users/20", "/users/{id}", false, [((7, 11), "20")]));
-            yield return new(("/users/20", "/users/{id}", true, [((7, 11), "20")]));
-            yield return new(("/users/20/orders", "/users/{id}/orders", false, [((7, 11), "20")]));
-            yield return new(("/users/", "/users/{id}", false, [((7, 11), null)]));
-            yield return new(("/foo/row_2/col_2", "/foo/row_{idx}/col_{idx}", false, [((9, 14), "2"), ((19, 24), "2")]));
-            yield return new(("/users/{id}", "/users/{id}", true, []));
-        }
-    }
 
     /// <summary>Captures request details sent by generated response helpers.</summary>
     private sealed class CapturingHandler : HttpMessageHandler

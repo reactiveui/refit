@@ -11,9 +11,14 @@
     <Error Condition="$(PackageDescription) == '' or $(PackageDescription) == $(DefaultPackageDescription)" Text="The Nuget PackageDescription property needs to be set for the project. Currently : '$(PackageDescription)'"/>
   </Target>
 
-  <Target Name="RemoveReactiveUIPrimitivesR3BridgeAnalyzer" AfterTargets="ResolveLockFileAnalyzers">
+  <Target Name="RemoveReactiveUIPrimitivesR3BridgeAnalyzers"
+          AfterTargets="ResolvePackageAssets"
+          BeforeTargets="CoreCompile;Csc">
     <ItemGroup>
-      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'ReactiveUI.Primitives' and '%(Analyzer.Filename)%(Analyzer.Extension)' == 'ReactiveUI.Primitives.R3Bridge.Generator.dll'"/>
+      <ResolvedAnalyzers Remove="@(ResolvedAnalyzers)"
+                         Condition="'%(ResolvedAnalyzers.Filename)' == 'ReactiveUI.Primitives.R3Bridge.Generator'" />
+      <Analyzer Remove="@(Analyzer)"
+                Condition="'%(Analyzer.Filename)' == 'ReactiveUI.Primitives.R3Bridge.Generator'" />
     </ItemGroup>
   </Target>
 </Project>

@@ -2,9 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
-
 namespace Refit.Generator;
 
 /// <summary>Parsed request-binding metadata for one method parameter.</summary>
@@ -21,8 +18,8 @@ namespace Refit.Generator;
 internal sealed record RequestParameterModel(
     string Name,
     string Type,
-    ImmutableArray<(int start, int end)>? Locations,
-    ImmutableArray<AttributeData> Attributes,
+    ImmutableEquatableArray<(int start, int end)>? Locations,
+    ImmutableEquatableArray<ParameterAttributeModel> Attributes,
     RequestParameterKind Kind,
     bool CanBeNull,
     string HeaderName,
