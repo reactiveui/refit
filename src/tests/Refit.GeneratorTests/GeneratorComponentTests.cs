@@ -537,7 +537,7 @@ public static class GeneratorComponentTests
         /// <param name="bufferMode">The body buffer mode.</param>
         /// <returns>The request parameter model.</returns>
         private static RequestParameterModel CreateBody(string serializationMethod, BodyBufferMode bufferMode) =>
-            new("body", StringTypeName, [], RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, bufferMode);
+            new("body", StringTypeName, null, [], RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, bufferMode);
 
         /// <summary>Creates an interface property model.</summary>
         /// <param name="name">The property name.</param>
@@ -710,13 +710,13 @@ public static class GeneratorComponentTests
         /// <summary>Creates a non-body parameter model.</summary>
         /// <returns>The request parameter model.</returns>
         private static RequestParameterModel CreateHeaderParameter() =>
-            new("query", "string", [], RequestParameterKind.Header, true, string.Empty, string.Empty, string.Empty, BodyBufferMode.None);
+            new("query", "string", null, [], RequestParameterKind.Header, true, string.Empty, string.Empty, string.Empty, BodyBufferMode.None);
 
         /// <summary>Creates a body parameter model.</summary>
         /// <param name="serializationMethod">The serialization method name.</param>
         /// <returns>The request parameter model.</returns>
         private static RequestParameterModel CreateBody(string serializationMethod) =>
-            new("body", "string", [], RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, BodyBufferMode.Buffered);
+            new("body", "string", null, [], RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, BodyBufferMode.Buffered);
     }
 
     /// <summary>Tests for the <c>ITypeSymbol</c> generator extension helpers.</summary>

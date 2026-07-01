@@ -1119,7 +1119,7 @@ public class GeneratedRequestRunnerTests
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     [InstanceMethodDataSource(typeof(GeneratedRequestRunnerTestsDataSources), nameof(GeneratedRequestRunnerTestsDataSources.BuildRequestPathReplacesParametersData))]
-    public async Task BuildRequestPathReplacesParameters(string expectedResult, string path, bool allowUnmatchedRouteParameters, params (string key, string? value)[] uriParams)
+    public async Task BuildRequestPathReplacesParameters(string expectedResult, string path, bool allowUnmatchedRouteParameters, params ((int start, int end) location, string? value)[] uriParams)
     {
         var result = GeneratedRequestRunner.BuildRequestPath(path, allowUnmatchedRouteParameters, uriParams);
 
@@ -1129,7 +1129,14 @@ public class GeneratedRequestRunnerTests
     /// <summary>Verifies BuildRequestPath fails when a parameter is not provided.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task BuildRequestPathFailsOnParameterNotFound() => await Assert.That(() => GeneratedRequestRunner.BuildRequestPath("/user/{id}", false)).Throws<ArgumentException>();
+    public async Task BuildRequestPathFailsOnParameterNotFound() =>
+        await Assert
+            .That(() =>
+            {
+                var result = GeneratedRequestRunner.BuildRequestPath("/user/{id}", false);
+                Console.WriteLine(result);
+            }).Throws<ArgumentException>()
+            .WithMessage("URL /user/{id} has parameter {id}, but no method parameter matches", StringComparison.Ordinal);
 
     /// <summary>Creates settings backed by the test serializer.</summary>
     /// <param name="serializer">The serializer to assign, or null for a recording serializer.</param>
@@ -1152,15 +1159,15 @@ public class GeneratedRequestRunnerTests
         /// <summary>Data source for the <see cref="BuildRequestPathReplacesParameters"/> test.</summary>
         /// <returns>Test data.</returns>
         internal static
-            IEnumerable<TestDataRow<(string expectedResult, string path, bool allowUnmatchedRouteParameters, (string key
+            IEnumerable<TestDataRow<(string expectedResult, string path, bool allowUnmatchedRouteParameters, ((int start, int end) location
                 ,
                 string? value)[] uriParams)>> BuildRequestPathReplacesParametersData()
         {
-            yield return new(("/users/20", "/users/{id}", false, [("id", "20")]));
-            yield return new(("/users/20", "/users/{id}", true, [("id", "20")]));
-            yield return new(("/users/20/orders", "/users/{id}/orders", false, [("id", "20")]));
-            yield return new(("/users/", "/users/{id}", false, [("id", null)]));
-            yield return new(("/foo/row_2/col_2", "/foo/row_{idx}/col_{idx}", false, [("idx", "2")]));
+            yield return new(("/users/20", "/users/{id}", false, [((7, 11), "20")]));
+            yield return new(("/users/20", "/users/{id}", true, [((7, 11), "20")]));
+            yield return new(("/users/20/orders", "/users/{id}/orders", false, [((7, 11), "20")]));
+            yield return new(("/users/", "/users/{id}", false, [((7, 11), null)]));
+            yield return new(("/foo/row_2/col_2", "/foo/row_{idx}/col_{idx}", false, [((9, 14), "2"), ((19, 24), "2")]));
             yield return new(("/users/{id}", "/users/{id}", true, []));
         }
     }

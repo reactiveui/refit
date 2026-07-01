@@ -10,6 +10,7 @@ namespace Refit.Generator;
 /// <summary>Parsed request-binding metadata for one method parameter.</summary>
 /// <param name="Name">The parameter metadata name.</param>
 /// <param name="Type">The fully-qualified parameter type.</param>
+/// <param name="Locations">The parameter's location in the URL template string, when this is a path parameter.</param>
 /// <param name="Attributes">The parameter's attributes.</param>
 /// <param name="Kind">The generated request binding kind.</param>
 /// <param name="CanBeNull">Whether generated code must null-check the parameter before dereferencing.</param>
@@ -20,6 +21,7 @@ namespace Refit.Generator;
 internal sealed record RequestParameterModel(
     string Name,
     string Type,
+    ImmutableArray<(int start, int end)>? Locations,
     ImmutableArray<AttributeData> Attributes,
     RequestParameterKind Kind,
     bool CanBeNull,

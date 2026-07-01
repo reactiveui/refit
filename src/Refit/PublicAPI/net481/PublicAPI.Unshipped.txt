@@ -4,4 +4,4 @@ Refit.GeneratedParameterAttributeProvider.GeneratedParameterAttributeProvider(Sy
 Refit.GeneratedParameterAttributeProvider.GetCustomAttributes(bool inherit) -> object![]!
 Refit.GeneratedParameterAttributeProvider.GetCustomAttributes(System.Type! attributeType, bool inherit) -> object![]!
 Refit.GeneratedParameterAttributeProvider.IsDefined(System.Type! attributeType, bool inherit) -> bool
-static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, params (string! key, string? value)[]! uriParams) -> string!
+static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, params ((int startIdx, int endIdx) range, string? value)[]! uriParams) -> string!

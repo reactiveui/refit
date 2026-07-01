@@ -10,6 +10,7 @@ namespace Refit;
 
 // From https://github/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/ValueStringBuilder.cs
 /// <summary>A stack-allocated string builder that grows using pooled buffers.</summary>
+[DebuggerDisplay("{DebuggerDisplay,nq}")]
 internal ref struct ValueStringBuilder
 {
     /// <summary>The pooled array currently backing the builder, if one has been rented.</summary>
@@ -56,6 +57,11 @@ internal ref struct ValueStringBuilder
 
     /// <summary>Gets the underlying storage of the builder.</summary>
     public readonly Span<char> RawChars => _chars;
+
+    /// <summary>Gets the DebuggerDisplay attribute.</summary>
+    /// <remarks>ToString() clears the builder, so we need a side-effect free debugger display.</remarks>
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    private readonly string DebuggerDisplay => AsSpan().ToString();
 
     /// <summary>Gets a reference to the character at the specified index.</summary>
     /// <param name="index">The zero-based index of the character.</param>

@@ -958,6 +958,120 @@ public partial class RestServiceIntegrationTests
         mockHttp.VerifyNoOutstandingExpectation();
     }
 
+    /// <summary>Verifies a path parameter is formatted correctly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithPathParameterGenerated()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Get, "http://foo/bar")
+            .Respond("application/json", "Ok");
+
+        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+
+        _ = await fixture.GetPath("bar");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    /// <summary>Verifies a query parameter is formatted correctly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithQueryParameterGenerated()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Get, "http://foo/?q=bar")
+            .Respond("application/json", "Ok");
+
+        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+
+        _ = await fixture.GetQuery("bar");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    /// <summary>Verifies an aliased query parameter is formatted correctly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithAliasedQueryParameterGenerated()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Get, "http://foo/?q=bar")
+            .Respond("application/json", "Ok");
+
+        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+
+        _ = await fixture.GetQueryAlias("bar");
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    /// <summary>Verifies a URL with multiple query parameters is formatted correctly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithMultipleParametersGenerated()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Get, "http://foo/1/800x600/foo")
+            .Respond("application/json", "Ok");
+
+        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+
+        _ = await fixture.FetchSomethingWithMultipleParametersPerSegment(1, 800, 600);
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    /// <summary>Verifies a URL with multiple repeated query parameters is formatted correctly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithMultipleRepeatedParametersGenerated()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Get, "http://foo/1/300x300/foo")
+            .Respond("application/json", "Ok");
+
+        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+
+        _ = await fixture.FetchSomethingWithMultipleRepeatedParametersPerSegment(1, 300);
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
+    /// <summary>Verifies a URL with a nullable parameters is formatted correctly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithNullableParameterGenerated()
+    {
+        var mockHttp = new MockHttpMessageHandler();
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+
+        _ = mockHttp
+            .Expect(HttpMethod.Get, "http://foo/a//b")
+            .Respond("application/json", "Ok");
+
+        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+
+        _ = await fixture.GetNullableParam(null);
+
+        mockHttp.VerifyNoOutstandingExpectation();
+    }
+
     /// <summary>Opens the embedded test resource at the given relative path as a stream.</summary>
     /// <param name="relativeFilePath">The path of the embedded resource relative to the assembly root.</param>
     /// <returns>A stream over the matching embedded resource.</returns>

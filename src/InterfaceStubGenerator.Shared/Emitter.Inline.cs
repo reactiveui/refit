@@ -291,22 +291,25 @@ internal static partial class Emitter
             var parametersSb = new StringBuilder();
             foreach (var parameter in request.Parameters)
             {
-                if (parameter.Kind is not RequestParameterKind.Path)
+                if (parameter.Kind is not RequestParameterKind.Path || parameter.Locations is null)
                 {
                     continue;
                 }
 
-                _ = parametersSb.Append(", ").Append('(').Append(ToCSharpStringLiteral(parameter.Name)).Append(", ");
-                var parameterInfoFieldName = uniqueNameLookup[parameter.Name];
-                _ = parametersSb.Append("_settings.UrlParameterFormatter.Format(")
-                    .Append(parameter.Name)
-                    .Append(", ")
-                    .Append(parameterInfoFieldName)
-                    .Append(", ")
-                    .Append("typeof(").Append(parameter.Type).Append(')')
-                    .Append(')');
-
-                _ = parametersSb.Append(')');
+                var locations = parameter.Locations.Value;
+                foreach (var (start, end) in locations)
+                {
+                    _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ");
+                    var parameterInfoFieldName = uniqueNameLookup[parameter.Name];
+                    _ = parametersSb.Append("_settings.UrlParameterFormatter.Format(")
+                        .Append(parameter.Name)
+                        .Append(", ")
+                        .Append(parameterInfoFieldName)
+                        .Append(", ")
+                        .Append("typeof(").Append(parameter.Type).Append(')')
+                        .Append(')');
+                    _ = parametersSb.Append(')');
+                }
             }
 
             return parametersSb.ToString();

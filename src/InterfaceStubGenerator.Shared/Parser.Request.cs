@@ -33,9 +33,10 @@ internal static partial class Parser
 
         var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass);
         var path = GetHttpPath(httpMethodAttribute);
-        var pathParameters = ExtractPathParameterPlaceholderNames(path);
+        var normalizedPath = NormalizeConstantPathForInline(path);
+        var pathParameters = ExtractPathParameterPlaceholderNames(normalizedPath);
         var returnTypes = GetRequestReturnTypes(methodSymbol);
-        var parameters = ParseRequestParameters(methodSymbol.Parameters, pathParameters.ToImmutableHashSet(pathParameters.Comparer), out var parameterEligibility);
+        var parameters = ParseRequestParameters(methodSymbol.Parameters, pathParameters.ToImmutableDictionary(pathParameters.Comparer), out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
         var canGenerateInline =
@@ -49,7 +50,7 @@ internal static partial class Parser
 
         return new(
             httpMethod,
-            NormalizeConstantPathForInline(path),
+            normalizedPath,
             returnTypes.ResultType,
             returnTypes.DeserializedResultType,
             returnTypes.IsApiResponse,
@@ -58,7 +59,7 @@ internal static partial class Parser
             staticHeaders,
             parameters);
 
-        static HashSet<string> ExtractPathParameterPlaceholderNames(string path)
+        static Dictionary<string, List<(int start, int end)>> ExtractPathParameterPlaceholderNames(string path)
         {
             var pathSpan = path.AsSpan();
 
@@ -68,14 +69,22 @@ internal static partial class Parser
                 return [];
             }
 
-            var paramNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var paramNames = new Dictionary<string, List<(int, int)>>(StringComparer.OrdinalIgnoreCase);
             var j = i + pathSpan[i..].IndexOfAny('}', '/');
             while (i < pathSpan.Length && j > i)
             {
                 if (pathSpan[j] == '}')
                 {
-                    var paramName = pathSpan[(i + 1)..j];
-                    _ = paramNames.Add(paramName.ToString());
+                    var paramName = pathSpan[(i + 1)..j].ToString();
+                    var location = (i, j + 1);
+                    if (paramNames.TryGetValue(paramName, out var values))
+                    {
+                        values.Add(location);
+                    }
+                    else
+                    {
+                        paramNames[paramName] = [location];
+                    }
                 }
 
                 var i2 = pathSpan[j..].IndexOf('{');
@@ -247,12 +256,12 @@ internal static partial class Parser
 
     /// <summary>Parses request parameter bindings for the conservative initial inline path.</summary>
     /// <param name="parameters">The method parameters.</param>
-    /// <param name="parameterNames">The placeholder names in the URL.</param>
+    /// <param name="parameterLocations">The placeholder names in the URL with their locations.</param>
     /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
     /// <returns>The parsed request parameter models.</returns>
     private static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
         in ImmutableArray<IParameterSymbol> parameters,
-        in ImmutableHashSet<string> parameterNames,
+        in ImmutableDictionary<string, List<(int start, int end)>> parameterLocations,
         out bool canGenerateInline)
     {
         if (parameters.Length == 0)
@@ -272,8 +281,8 @@ internal static partial class Parser
             var parameter = parameters[i];
             var aliasAttr = parameter.GetAttributes().FirstOrDefault(static a => a.AttributeClass?.ToDisplayString() == "Refit.AliasAsAttribute");
             var name = aliasAttr is not null ? GetFirstStringArgument(aliasAttr) ?? parameter.Name : parameter.Name;
-            var hasPlaceholder = parameterNames.Contains(name);
-            var parsedParameter = ParseRequestParameter(parameter, hasPlaceholder);
+            _ = parameterLocations.TryGetValue(name, out var location);
+            var parsedParameter = ParseRequestParameter(parameter, location?.ToImmutableArray());
             requestParameters[i] = parsedParameter.Parameter;
             bodyCount += parsedParameter.BodyCount;
             cancellationTokenCount += parsedParameter.CancellationTokenCount;
@@ -291,9 +300,9 @@ internal static partial class Parser
 
     /// <summary>Parses one request parameter binding.</summary>
     /// <param name="parameter">The parameter to parse.</param>
-    /// <param name="hasPlaceholder">Whether the parameter has a placeholder in the URL template.</param>
+    /// <param name="locations">The parameter's locations in the URL template string. This is null if the parameter has no placeholder in the URL i.e. not a path parameter.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, bool hasPlaceholder)
+    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, ImmutableArray<(int start, int end)>? locations)
     {
         var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var canBeNull = CanBeNull(parameter.Type, parameter.NullableAnnotation);
@@ -303,6 +312,7 @@ internal static partial class Parser
                 new(
                     parameter.MetadataName,
                     parameterType,
+                    locations,
                     parameter.GetAttributes(),
                     RequestParameterKind.CancellationToken,
                     canBeNull,
@@ -341,8 +351,8 @@ internal static partial class Parser
             return new(propertyParameter, true, 0, 0, 0);
         }
 
-        return hasPlaceholder && IsSimpleType(parameter.Type)
-            ? new(PathRequestParameter(parameter, parameterType), true, 0, 0, 0)
+        return locations is {} l && IsSimpleType(parameter.Type)
+            ? new(PathRequestParameter(parameter, parameterType, l), true, 0, 0, 0)
             : new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
 
         [SuppressMessage(
@@ -416,6 +426,7 @@ internal static partial class Parser
             bodyParameter = new(
                     parameter.MetadataName,
                     parameterType,
+                    null,
                     parameter.GetAttributes(),
                     RequestParameterKind.Body,
                     CanBeNull(parameter.Type, parameter.NullableAnnotation),
@@ -432,6 +443,7 @@ internal static partial class Parser
         bodyParameter = new(
             parameter.MetadataName,
             parameterType,
+            null,
             parameter.GetAttributes(),
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
@@ -661,6 +673,7 @@ internal static partial class Parser
             headerParameter = new(
                 parameter.MetadataName,
                 parameterType,
+                null,
                 parameter.GetAttributes(),
                 RequestParameterKind.Header,
                 CanBeNull(parameter.Type, parameter.NullableAnnotation),
@@ -697,6 +710,7 @@ internal static partial class Parser
                 headerCollectionParameter = new(
                     parameter.MetadataName,
                     parameterType,
+                    null,
                     parameter.GetAttributes(),
                     RequestParameterKind.HeaderCollection,
                     CanBeNull(parameter.Type, parameter.NullableAnnotation),
@@ -739,6 +753,7 @@ internal static partial class Parser
             propertyParameter = new(
                 parameter.MetadataName,
                 parameterType,
+                null,
                 parameter.GetAttributes(),
                 RequestParameterKind.Property,
                 CanBeNull(parameter.Type, parameter.NullableAnnotation),
@@ -763,6 +778,7 @@ internal static partial class Parser
         new(
             parameter.MetadataName,
             parameterType,
+            null,
             parameter.GetAttributes(),
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
@@ -774,13 +790,16 @@ internal static partial class Parser
     /// <summary>Builds a path request parameter model.</summary>
     /// <param name="parameter">The parameter symbol.</param>
     /// <param name="parameterType">The parameter type.</param>
+    /// <param name="locations">The parameter's location in the URL.</param>
     /// <returns>The path request model.</returns>
     private static RequestParameterModel PathRequestParameter(
         IParameterSymbol parameter,
-        string parameterType) =>
+        string parameterType,
+        in ImmutableArray<(int start, int end)> locations) =>
         new(
             parameter.MetadataName,
             parameterType,
+            locations,
             parameter.GetAttributes(),
             RequestParameterKind.Path,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),

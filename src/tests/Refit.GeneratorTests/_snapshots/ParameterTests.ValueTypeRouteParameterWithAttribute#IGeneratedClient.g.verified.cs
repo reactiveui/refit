@@ -53,7 +53,7 @@ namespace Refit.Implementation
             public global::System.Threading.Tasks.Task<string> Get(int? @id)
             {
                 var refitSettings = _settings;
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/todos/{id}", refitSettings.AllowUnmatchedRouteParameters, ("id", _settings.UrlParameterFormatter.Format(id, ______idAttributeProvider, typeof(int?)))), refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/todos/{id}", refitSettings.AllowUnmatchedRouteParameters, ((7, 11), _settings.UrlParameterFormatter.Format(id, ______idAttributeProvider, typeof(int?)))), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;
