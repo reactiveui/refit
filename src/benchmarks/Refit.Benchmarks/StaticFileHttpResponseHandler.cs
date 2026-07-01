@@ -32,6 +32,7 @@ public class StaticFileHttpResponseHandler : HttpMessageHandler
         Task.FromResult(
             new HttpResponseMessage(_responseCode)
             {
-                RequestMessage = request, Content = new StringContent(_responsePayload)
+                RequestMessage = request,
+                Content = new StringContent(_responsePayload)
             });
 }

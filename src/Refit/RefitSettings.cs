@@ -79,7 +79,8 @@ public class RefitSettings
         HttpRequestMessage,
         CancellationToken,
         Task<string>
-    >? AuthorizationHeaderValueGetter { get; set; }
+    >? AuthorizationHeaderValueGetter
+    { get; set; }
 
     /// <summary>Gets or sets a custom inner HttpMessageHandler. Does not work if you supply an HttpClient instance.</summary>
     public Func<HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }

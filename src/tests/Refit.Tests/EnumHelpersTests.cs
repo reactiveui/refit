@@ -12,6 +12,9 @@ namespace Refit.Tests;
 /// <summary>Tests for enum formatting helpers used by serializers and form formatters.</summary>
 public sealed class EnumHelpersTests
 {
+    /// <summary>An enum value that is not defined on <see cref="MemberEnum"/>.</summary>
+    private const int UndefinedEnumValue = 999;
+
     /// <summary>Enum with an attributed member.</summary>
     private enum MemberEnum
     {
@@ -119,7 +122,7 @@ public sealed class EnumHelpersTests
     public async Task GetEnumMemberValueHandlesAttributeAndFallbackCases()
     {
         await Assert.That(EnumHelpers.GetEnumMemberValue(typeof(string), "value")).IsNull();
-        await Assert.That(EnumHelpers.GetEnumMemberValue(typeof(MemberEnum), (MemberEnum)999)).IsNull();
+        await Assert.That(EnumHelpers.GetEnumMemberValue(typeof(MemberEnum), (MemberEnum)UndefinedEnumValue)).IsNull();
         await Assert.That(EnumHelpers.GetEnumMemberValue(typeof(MemberEnum), MemberEnum.Plain)).IsNull();
         await Assert.That(EnumHelpers.GetEnumMemberValue(typeof(MemberEnum), MemberEnum.Custom)).IsEqualTo("custom-value");
     }

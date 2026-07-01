@@ -8,7 +8,7 @@ namespace Refit.Tests;
 
 /// <summary>A deliberately non-Refit generic interface used to verify the generator ignores interfaces without HTTP attributes.</summary>
 /// <typeparam name="T">The parameter type accepted by <see cref="DoSomething"/>.</typeparam>
-public interface IAmInterfaceEWithNoRefit<T>
+public interface IAmInterfaceEWithNoRefit<in T>
 {
     /// <summary>A non-Refit method accepting a parameter; intentionally has no HTTP attribute.</summary>
     /// <param name="parameter">An arbitrary parameter.</param>

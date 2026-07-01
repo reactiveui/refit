@@ -25,7 +25,6 @@
     <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>
 
-  <!-- Core runtime / serialization dependencies -->
   <ItemGroup Label="Core Runtime And Serialization">
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
   </ItemGroup>
@@ -35,7 +34,6 @@
     <PackageVersion Include="ReactiveUI.Primitives" Version="$(PrimitivesVersion)"/>
   </ItemGroup>
 
-  <!-- Build, versioning and analyzers -->
   <ItemGroup Label="Build And Versioning">
     <PackageVersion Include="MinVer" Version="7.0.0"/>
     <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="$(SourceLinkVersion)"/>
@@ -65,24 +63,19 @@
     <PackageVersion Include="System.Text.Json" Version="$(SystemTextJsonVersion)"/>
   </ItemGroup>
 
-  <!-- Test stack -->
   <ItemGroup Label="Test Stack">
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)"/>
     <PackageVersion Include="Verify.TUnit" Version="31.20.0"/>
     <PackageVersion Include="Verify.DiffPlex" Version="3.3.0"/>
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0"/>
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0"/>
-    <PackageVersion Include="Moq" Version="4.20.72"/>
-    <PackageVersion Include="RichardSzalay.MockHttp" Version="7.0.0"/>
   </ItemGroup>
 
-  <!-- Benchmarks -->
   <ItemGroup Label="Benchmarks">
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
     <PackageVersion Include="AutoFixture" Version="4.18.1"/>
   </ItemGroup>
 
-  <!-- Examples -->
   <ItemGroup Label="Examples">
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(AspNetVersion)"/>
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(AspNetVersion)"/>

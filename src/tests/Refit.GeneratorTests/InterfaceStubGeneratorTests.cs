@@ -65,6 +65,6 @@ public class InterfaceStubGeneratorTests
             Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
         var runtimeTestProjectDirectory = Path.GetFullPath(
             Path.Combine(generatorTestProjectDirectory, "..", "Refit.Tests"));
-        return Path.Combine([runtimeTestProjectDirectory, ..paths]);
+        return Path.Combine([runtimeTestProjectDirectory, .. paths]);
     }
 }

@@ -38,7 +38,6 @@
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
 
-    <!-- Emit source-generator output to obj/Generated so generated code is inspectable/diffable. -->
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>$(MSBuildProjectDirectory)/obj/Generated</CompilerGeneratedFilesOutputPath>
 
@@ -46,7 +45,7 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
-  <!-- Target Framework Monikers. EnableWindowsTargeting lets the netfx/Windows legs build anywhere. -->
+  <!-- Target Framework Monikers. -->
   <PropertyGroup>
     <RefitGeneratorTargets>netstandard2.0</RefitGeneratorTargets>
     <RefitFrameworkTargets>net462;net470;net471;net472;net48;net481</RefitFrameworkTargets>
@@ -63,7 +62,6 @@
     <TUnitAssertionsImplicitUsings>true</TUnitAssertionsImplicitUsings>
   </PropertyGroup>
 
-  <!-- AOT/trim analyzers on net8.0+ (netfx doesn't support them). -->
   <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
     <IsAotCompatible>true</IsAotCompatible>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
@@ -146,9 +144,6 @@
     <Using Include="System.Object" Alias="Lock"/>
   </ItemGroup>
 
-  <!-- MinVer (versioning) — replaces Nerdbank.GitVersioning. Floor at 10.2
-       so untagged builds produce 10.2.x-alpha.0.<height> until a v10.2.x
-       (or later) tag is reachable. -->
   <PropertyGroup>
     <SolutionDir Condition="'$(SolutionDir)' == ''">$(MSBuildThisFileDirectory)</SolutionDir>
   </PropertyGroup>

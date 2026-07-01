@@ -9,6 +9,15 @@ namespace Refit.Tests;
 /// <summary>Tests for <see cref="RequestBuilderImplementation{T}"/> request construction.</summary>
 public partial class RequestBuilderTests
 {
+    /// <summary>The base API address without a trailing slash used to resolve relative request URIs.</summary>
+    private const string ApiBaseUrl = "http://api";
+
+    /// <summary>The base API address with a trailing slash used as an <see cref="HttpClient.BaseAddress"/>.</summary>
+    private const string ApiBaseUrlWithSlash = ApiBaseUrl + "/";
+
+    /// <summary>The name of the cancellable GET method exercised by the cancellation tests.</summary>
+    private const string GetWithCancellationMethod = "GetWithCancellation";
+
     /// <summary>The integer array {1, 2, 3} used as query test data.</summary>
     private static readonly int[] _intArray123 = [1, 2, 3];
 
@@ -66,10 +75,10 @@ public partial class RequestBuilderTests
     public async Task MethodsShouldBeCancellableDefault()
     {
         var fixture = new RequestBuilderImplementation<ICancellableMethods>();
-        var factory = fixture.RunRequest("GetWithCancellation");
-        var output = factory([]);
+        var factory = fixture.RunRequest(GetWithCancellationMethod);
+        var output = await factory([]);
 
-        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -83,9 +92,9 @@ public partial class RequestBuilderTests
         var factory = fixture.RunRequest("GetWithNullableCancellation");
 
         using var cts = new CancellationTokenSource();
-        var output = factory([42, cts.Token]);
+        var output = await factory([42, cts.Token]);
 
-        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/42");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -101,7 +110,7 @@ public partial class RequestBuilderTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        var output = factory([42, cts.Token]);
+        var output = await factory([42, cts.Token]);
 
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsTrue();
     }
@@ -112,13 +121,13 @@ public partial class RequestBuilderTests
     public async Task MethodsShouldBeCancellableWithToken()
     {
         var fixture = new RequestBuilderImplementation<ICancellableMethods>();
-        var factory = fixture.RunRequest("GetWithCancellation");
+        var factory = fixture.RunRequest(GetWithCancellationMethod);
 
         using var cts = new CancellationTokenSource();
 
-        var output = factory([cts.Token]);
+        var output = await factory([cts.Token]);
 
-        var uri = new Uri(new("http://api"), output.RequestMessage!.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestMessage!.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo");
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsFalse();
     }
@@ -129,12 +138,12 @@ public partial class RequestBuilderTests
     public async Task MethodsShouldBeCancellableWithTokenDoesCancel()
     {
         var fixture = new RequestBuilderImplementation<ICancellableMethods>();
-        var factory = fixture.RunRequest("GetWithCancellation");
+        var factory = fixture.RunRequest(GetWithCancellationMethod);
 
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        var output = factory([cts.Token]);
+        var output = await factory([cts.Token]);
         await Assert.That(output.CancellationToken.IsCancellationRequested).IsTrue();
     }
 
@@ -157,7 +166,7 @@ public partial class RequestBuilderTests
         var factory = fixture.RunRequest("GetWithAuthorizationAndCancellation");
         using var cts = new CancellationTokenSource();
 
-        var output = factory([cts.Token]);
+        var output = await factory([cts.Token]);
 
         await Assert.That(observedCancellationToken).IsEqualTo(cts.Token);
         await Assert.That(output.RequestMessage!.Headers.Authorization?.ToString()).IsEqualTo("Bearer tokenValue");
@@ -181,7 +190,7 @@ public partial class RequestBuilderTests
                 factory(
                     new(testHttpMessageHandler)
                     {
-                        BaseAddress = new("http://api/")
+                        BaseAddress = new(ApiBaseUrlWithSlash)
                     },
                     [mpc])!;
         var result = await task;
@@ -214,7 +223,7 @@ public partial class RequestBuilderTests
                 factory(
                     new(testHttpMessageHandler)
                     {
-                        BaseAddress = new("http://api/")
+                        BaseAddress = new(ApiBaseUrlWithSlash)
                     },
                     [mpc])!;
         var result = await task;
@@ -232,7 +241,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IStreamApi.PostStream));
 
         await using var stream = new MemoryStream([1, 2, 3]);
-        var request = factory([stream]);
+        var request = await factory([stream]);
 
         await Assert.That(request.Content).IsTypeOf<StreamContent>();
     }
@@ -245,7 +254,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IRequestBin>();
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IRequestBin.PostJsonLines));
 
-        var request = factory(
+        var request = await factory(
         [
             new[]
             {
@@ -265,7 +274,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IRequestBin>();
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IRequestBin.PostJsonLinesSingle));
 
-        var request = factory([new JsonLineRecord { Id = "1", Name = "single" }]);
+        var request = await factory([new JsonLineRecord { Id = "1", Name = "single" }]);
 
         await Assert.That(request.Content).IsTypeOf<JsonLinesContent>();
     }
@@ -278,7 +287,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IRequestBin>();
         var factory = fixture.BuildRequestFactoryForMethod(nameof(IRequestBin.PostJsonLinesString));
 
-        var request = factory(["a line"]);
+        var request = await factory(["a line"]);
 
         await Assert.That(request.Content).IsTypeOf<JsonLinesContent>();
     }
@@ -305,7 +314,7 @@ public partial class RequestBuilderTests
                 factory(
                     new(testHttpMessageHandler)
                     {
-                        BaseAddress = new("http://api/")
+                        BaseAddress = new(ApiBaseUrlWithSlash)
                     },
                     ["test-file"])!;
         var result = await task;
@@ -333,7 +342,7 @@ public partial class RequestBuilderTests
             factory(
                 new(testHttpMessageHandler)
                 {
-                    BaseAddress = new("http://api/")
+                    BaseAddress = new(ApiBaseUrlWithSlash)
                 },
                 [])!;
 
@@ -363,7 +372,7 @@ public partial class RequestBuilderTests
                 factory(
                     new(testHttpMessageHandler)
                     {
-                        BaseAddress = new("http://api/")
+                        BaseAddress = new(ApiBaseUrlWithSlash)
                     },
                     ["test-file"])!;
         var result = await task;
@@ -385,7 +394,7 @@ public partial class RequestBuilderTests
             factory(
                 new(testHttpMessageHandler)
                 {
-                    BaseAddress = new("http://api/")
+                    BaseAddress = new(ApiBaseUrlWithSlash)
                 },
                 ["value"])!;
 
@@ -408,7 +417,7 @@ public partial class RequestBuilderTests
             factory(
                 new(testHttpMessageHandler)
                 {
-                    BaseAddress = new("http://api/")
+                    BaseAddress = new(ApiBaseUrlWithSlash)
                 },
                 ["value"])!;
 
@@ -426,7 +435,7 @@ public partial class RequestBuilderTests
     public async Task ObservableMethodsWithCancellationTokenShouldCancelWhenRequested()
     {
         var fixture = new RequestBuilderImplementation<IObservableCancellableMethods>();
-        var factory = fixture.BuildRestResultFuncForMethod("GetWithCancellation");
+        var factory = fixture.BuildRestResultFuncForMethod(GetWithCancellationMethod);
         var testHttpMessageHandler = new TestHttpMessageHandler();
 
         using var cts = new CancellationTokenSource();
@@ -436,7 +445,7 @@ public partial class RequestBuilderTests
             factory(
                 new(testHttpMessageHandler)
                 {
-                    BaseAddress = new("http://api/")
+                    BaseAddress = new(ApiBaseUrlWithSlash)
                 },
                 ["value", cts.Token])!;
 
@@ -509,9 +518,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithHardcodedQueryParameter");
-        var output = factory([6]);
+        var output = await factory([6]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf");
     }
 
@@ -523,9 +532,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithHardcodedAndOtherQueryParameters");
-        var output = factory([6, "foo"]);
+        var output = await factory([6, "foo"]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf&search_for=foo");
     }
 
@@ -537,9 +546,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.SomeApiThatUsesParameterMoreThanOnceInTheUrl));
-        var output = factory([6]);
+        var output = await factory([6]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/api/foo/6/file_6?query=6");
     }
 
@@ -560,9 +569,9 @@ public partial class RequestBuilderTests
 
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithRoundTrippingParam");
-        var output = factory([path, 1]);
+        var output = await factory([path, 1]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -577,10 +586,10 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("PostWithQueryStringParameters");
-        var output = factory(
+        var output = await factory(
             [new FileInfo(typeof(RequestBuilderTests).Assembly.Location), null!]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?name=");
     }
 
@@ -592,9 +601,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.QueryWithExplicitParameters));
-        var output = factory(["value1", "value2"]);
+        var output = await factory(["value1", "value2"]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/query?q1=value1&q2=value2");
     }
@@ -606,9 +615,9 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithQueryFormat");
-        var output = factory([6]);
+        var output = await factory([6]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6.0");
     }
 
@@ -620,9 +629,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithHardcodedAndOtherQueryParameters");
-        var output = factory([6, "push!=pull&push"]);
+        var output = await factory([6, "push!=pull&push"]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?baz=bamf&search_for=push%21%3Dpull%26push");
     }
@@ -635,9 +644,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = factory(["6 & 7/8", "test@example.com", "push!=pull"]);
+        var output = await factory(["6 & 7/8", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6%20%26%207%2F8/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -650,9 +659,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = factory(["6/6", "test@example.com", "push!=pull"]);
+        var output = await factory(["6/6", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6%2F6/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -665,9 +674,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithDoubleQuotesInUrl");
-        var output = factory([42]);
+        var output = await factory([42]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?q=app_metadata.id%3A%2242%22");
     }
@@ -685,9 +694,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             methodToTest);
-        var output = factory(["1"]);
+        var output = await factory(["1"]);
 
-        var uri = new Uri(new("http://api/"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrlWithSlash), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).EndsWith(constantChar);
         await Assert.That(uri.PathAndQuery).Contains(contains);
@@ -701,9 +710,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = factory(["6", "test@example.com", "push!=pull"]);
+        var output = await factory(["6", "test@example.com", "push!=pull"]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/void/6/path?a=test%40example.com&b=push%21%3Dpull");
     }
@@ -716,9 +725,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithNonFormattableQueryParams");
-        var output = factory([true, 'x']);
+        var output = await factory([true, 'x']);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?b=True&c=x");
     }
@@ -731,9 +740,9 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomethingWithMultipleParametersPerSegment");
-        var output = factory([6, 1024, 768]);
+        var output = await factory([6, 1024, 768]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/6/1024x768/foo");
     }
 

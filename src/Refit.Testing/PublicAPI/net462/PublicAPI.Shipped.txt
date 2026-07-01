@@ -1,0 +1,130 @@
+#nullable enable
+Refit.Testing.NetworkBehavior
+Refit.Testing.NetworkBehavior.CreateErrorResponse() -> System.Net.Http.HttpResponseMessage!
+Refit.Testing.NetworkBehavior.CreateFailure() -> System.Exception!
+Refit.Testing.NetworkBehavior.Delay.get -> System.TimeSpan
+Refit.Testing.NetworkBehavior.Delay.set -> void
+Refit.Testing.NetworkBehavior.ErrorPercent.get -> double
+Refit.Testing.NetworkBehavior.ErrorPercent.set -> void
+Refit.Testing.NetworkBehavior.ErrorStatusCode.get -> System.Net.HttpStatusCode
+Refit.Testing.NetworkBehavior.ErrorStatusCode.set -> void
+Refit.Testing.NetworkBehavior.FailureFactory.get -> System.Func<System.Exception!>!
+Refit.Testing.NetworkBehavior.FailureFactory.set -> void
+Refit.Testing.NetworkBehavior.FailurePercent.get -> double
+Refit.Testing.NetworkBehavior.FailurePercent.set -> void
+Refit.Testing.NetworkBehavior.NetworkBehavior() -> void
+Refit.Testing.NetworkBehavior.NetworkBehavior(int seed) -> void
+Refit.Testing.NetworkBehavior.NextDelay() -> System.TimeSpan
+Refit.Testing.NetworkBehavior.NextIsError() -> bool
+Refit.Testing.NetworkBehavior.NextIsFailure() -> bool
+Refit.Testing.NetworkBehavior.Variance.get -> double
+Refit.Testing.NetworkBehavior.Variance.set -> void
+Refit.Testing.Reply
+Refit.Testing.Route
+Refit.Testing.RouteMatcher
+Refit.Testing.RouteMatcher.Body.get -> string?
+Refit.Testing.RouteMatcher.Body.init -> void
+Refit.Testing.RouteMatcher.ExactQuery.get -> string?
+Refit.Testing.RouteMatcher.ExactQuery.init -> void
+Refit.Testing.RouteMatcher.ExactQueryParams.get -> (string! Key, string! Value)[]?
+Refit.Testing.RouteMatcher.ExactQueryParams.init -> void
+Refit.Testing.RouteMatcher.FormData.get -> (string! Key, string! Value)[]?
+Refit.Testing.RouteMatcher.FormData.init -> void
+Refit.Testing.RouteMatcher.Headers.get -> (string! Name, string! Value)[]?
+Refit.Testing.RouteMatcher.Headers.init -> void
+Refit.Testing.RouteMatcher.Method.get -> System.Net.Http.HttpMethod?
+Refit.Testing.RouteMatcher.Method.init -> void
+Refit.Testing.RouteMatcher.Query.get -> (string! Key, string! Value)[]?
+Refit.Testing.RouteMatcher.Query.init -> void
+Refit.Testing.RouteMatcher.Reusable.get -> bool
+Refit.Testing.RouteMatcher.Reusable.init -> void
+Refit.Testing.RouteMatcher.RouteMatcher() -> void
+Refit.Testing.RouteMatcher.Template.get -> string!
+Refit.Testing.RouteMatcher.Template.init -> void
+Refit.Testing.RouteMatcher.Where.get -> System.Func<System.Net.Http.HttpRequestMessage!, bool>?
+Refit.Testing.RouteMatcher.Where.init -> void
+Refit.Testing.RouteMatcher.WhereAsync.get -> System.Func<System.Net.Http.HttpRequestMessage!, System.Threading.Tasks.Task<bool>!>?
+Refit.Testing.RouteMatcher.WhereAsync.init -> void
+Refit.Testing.StubApiResponse<T>
+Refit.Testing.StubApiResponse<T>.Content.get -> T?
+Refit.Testing.StubApiResponse<T>.Content.init -> void
+Refit.Testing.StubApiResponse<T>.ContentHeaders.get -> System.Net.Http.Headers.HttpContentHeaders?
+Refit.Testing.StubApiResponse<T>.ContentHeaders.init -> void
+Refit.Testing.StubApiResponse<T>.Dispose() -> void
+Refit.Testing.StubApiResponse<T>.Error.get -> Refit.ApiExceptionBase?
+Refit.Testing.StubApiResponse<T>.Error.init -> void
+Refit.Testing.StubApiResponse<T>.HasContent.get -> bool
+Refit.Testing.StubApiResponse<T>.HasContent.init -> void
+Refit.Testing.StubApiResponse<T>.HasRequestError(out Refit.ApiRequestException? error) -> bool
+Refit.Testing.StubApiResponse<T>.HasResponseError(out Refit.ApiException? error) -> bool
+Refit.Testing.StubApiResponse<T>.Headers.get -> System.Net.Http.Headers.HttpResponseHeaders?
+Refit.Testing.StubApiResponse<T>.Headers.init -> void
+Refit.Testing.StubApiResponse<T>.IsReceived.get -> bool
+Refit.Testing.StubApiResponse<T>.IsReceived.init -> void
+Refit.Testing.StubApiResponse<T>.IsSuccessStatusCode.get -> bool
+Refit.Testing.StubApiResponse<T>.IsSuccessStatusCode.init -> void
+Refit.Testing.StubApiResponse<T>.IsSuccessful.get -> bool
+Refit.Testing.StubApiResponse<T>.IsSuccessful.init -> void
+Refit.Testing.StubApiResponse<T>.IsSuccessfulWithContent.get -> bool
+Refit.Testing.StubApiResponse<T>.IsSuccessfulWithContent.init -> void
+Refit.Testing.StubApiResponse<T>.ReasonPhrase.get -> string?
+Refit.Testing.StubApiResponse<T>.ReasonPhrase.init -> void
+Refit.Testing.StubApiResponse<T>.RequestMessage.get -> System.Net.Http.HttpRequestMessage?
+Refit.Testing.StubApiResponse<T>.RequestMessage.init -> void
+Refit.Testing.StubApiResponse<T>.StatusCode.get -> System.Net.HttpStatusCode?
+Refit.Testing.StubApiResponse<T>.StatusCode.init -> void
+Refit.Testing.StubApiResponse<T>.StubApiResponse() -> void
+Refit.Testing.StubApiResponse<T>.Version.get -> System.Version?
+Refit.Testing.StubApiResponse<T>.Version.init -> void
+Refit.Testing.StubHttp
+Refit.Testing.StubHttp.Add(Refit.Testing.RouteMatcher! route, Refit.Testing.StubResponse! response) -> void
+Refit.Testing.StubHttp.Behavior.get -> Refit.Testing.NetworkBehavior?
+Refit.Testing.StubHttp.Behavior.set -> void
+Refit.Testing.StubHttp.CreateClient<T>(string! hostUrl) -> T
+Refit.Testing.StubHttp.CreateClient<T>(string! hostUrl, Refit.RefitSettings! baseSettings) -> T
+Refit.Testing.StubHttp.CreateGeneratedClient<T>(string! hostUrl) -> T
+Refit.Testing.StubHttp.CreateGeneratedClient<T>(string! hostUrl, Refit.RefitSettings! baseSettings) -> T
+Refit.Testing.StubHttp.LastRequestBodyAsync<T>() -> System.Threading.Tasks.Task<T?>!
+Refit.Testing.StubHttp.RequestBodyAsync<T>(int index) -> System.Threading.Tasks.Task<T?>!
+Refit.Testing.StubHttp.Requests.get -> System.Collections.Generic.IReadOnlyList<System.Net.Http.HttpRequestMessage!>!
+Refit.Testing.StubHttp.StubHttp() -> void
+Refit.Testing.StubHttp.StubHttp(Refit.Testing.NetworkBehavior! behavior) -> void
+Refit.Testing.StubHttp.ToSettings() -> Refit.RefitSettings!
+Refit.Testing.StubHttp.ToSettings(Refit.RefitSettings! baseSettings) -> Refit.RefitSettings!
+Refit.Testing.StubHttp.VerifyAllCalled() -> void
+Refit.Testing.StubHttp.VerifyAllCalledAsync() -> System.Threading.Tasks.Task!
+Refit.Testing.StubHttp.VerifyAllCalledAsync(System.TimeSpan timeout) -> System.Threading.Tasks.Task!
+Refit.Testing.StubResponse
+Refit.Testing.StubResponse.Content.get -> System.Net.Http.HttpContent?
+Refit.Testing.StubResponse.Content.init -> void
+Refit.Testing.StubResponse.ContentType.get -> string?
+Refit.Testing.StubResponse.ContentType.init -> void
+Refit.Testing.StubResponse.Json.get -> string?
+Refit.Testing.StubResponse.Json.init -> void
+Refit.Testing.StubResponse.Responder.get -> System.Func<System.Net.Http.HttpRequestMessage!, System.Net.Http.HttpResponseMessage!>?
+Refit.Testing.StubResponse.Responder.init -> void
+Refit.Testing.StubResponse.ResponderAsync.get -> System.Func<System.Net.Http.HttpRequestMessage!, System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!>?
+Refit.Testing.StubResponse.ResponderAsync.init -> void
+Refit.Testing.StubResponse.Status.get -> System.Net.HttpStatusCode
+Refit.Testing.StubResponse.Status.init -> void
+Refit.Testing.StubResponse.StubResponse() -> void
+Refit.Testing.StubResponse.Text.get -> string?
+Refit.Testing.StubResponse.Text.init -> void
+static Refit.Testing.Reply.Content(System.Net.Http.HttpContent! body) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.From(System.Func<System.Net.Http.HttpRequestMessage!, System.Net.Http.HttpResponseMessage!>! responder) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.From(System.Func<System.Net.Http.HttpRequestMessage!, System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!>! responder) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.Json(string! body) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.Json(string! body, System.Net.HttpStatusCode status) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.Status(System.Net.HttpStatusCode statusCode) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.Text(string! body) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.Text(string! body, string! contentType) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.With<T>(T body) -> Refit.Testing.StubResponse!
+static Refit.Testing.Reply.With<T>(T body, System.Net.HttpStatusCode status) -> Refit.Testing.StubResponse!
+static Refit.Testing.Route.Any(string! template) -> Refit.Testing.RouteMatcher!
+static Refit.Testing.Route.Delete(string! template) -> Refit.Testing.RouteMatcher!
+static Refit.Testing.Route.For(System.Net.Http.HttpMethod! method, string! template) -> Refit.Testing.RouteMatcher!
+static Refit.Testing.Route.Get(string! template) -> Refit.Testing.RouteMatcher!
+static Refit.Testing.Route.Head(string! template) -> Refit.Testing.RouteMatcher!
+static Refit.Testing.Route.Patch(string! template) -> Refit.Testing.RouteMatcher!
+static Refit.Testing.Route.Post(string! template) -> Refit.Testing.RouteMatcher!
+static Refit.Testing.Route.Put(string! template) -> Refit.Testing.RouteMatcher!

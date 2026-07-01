@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Refit.Tests.SeparateNamespace;
 
 /// <summary>A Refit fixture interface that inherits from an interface declared in a separate file.</summary>
-public interface InheritedInterfacesInSeparateFileApi : IAmInterfaceF_RequireUsing
+public interface InheritedInterfacesInSeparateFileApi : IAmInterfaceFRequireUsing
 {
     /// <summary>Sends a GET request to the test endpoint.</summary>
     /// <param name="i">A test value supplied by the caller.</param>

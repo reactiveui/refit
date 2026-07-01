@@ -5,13 +5,16 @@
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using RichardSzalay.MockHttp;
+using Refit.Testing;
 
 namespace Refit.Tests;
 
 /// <summary>Tests for <see cref="RefitSettings.RequestBodySerialization"/> (synchronous fast-path body serialization).</summary>
 public class SynchronousBodySerializationTests
 {
+    /// <summary>The JSON media type expected on serialized request bodies.</summary>
+    private const string JsonMediaType = "application/json";
+
     /// <summary>Verifies the buffered mode serializes the body into a buffered JSON content with a Content-Length.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -19,7 +22,7 @@ public class SynchronousBodySerializationTests
     {
         var capture = await PostAsync(RequestBodySerializationMode.Buffered, api => api.PostItem(new() { Id = 42 }));
 
-        await Assert.That(capture.MediaType).IsEqualTo("application/json");
+        await Assert.That(capture.MediaType).IsEqualTo(JsonMediaType);
         await Assert.That(capture.ContentLength).IsNotNull();
         await Assert.That(capture.Body).Contains("42", StringComparison.Ordinal);
     }
@@ -31,7 +34,7 @@ public class SynchronousBodySerializationTests
     {
         var capture = await PostAsync(RequestBodySerializationMode.Buffered, api => api.PostItemReflected(new StreamItem { Id = 7 }));
 
-        await Assert.That(capture.MediaType).IsEqualTo("application/json");
+        await Assert.That(capture.MediaType).IsEqualTo(JsonMediaType);
         await Assert.That(capture.ContentLength).IsNotNull();
         await Assert.That(capture.Body).Contains("7", StringComparison.Ordinal);
     }
@@ -43,7 +46,7 @@ public class SynchronousBodySerializationTests
     {
         var capture = await PostAsync(RequestBodySerializationMode.Streamed, api => api.PostItem(new() { Id = 99 }));
 
-        await Assert.That(capture.MediaType).IsEqualTo("application/json");
+        await Assert.That(capture.MediaType).IsEqualTo(JsonMediaType);
         await Assert.That(capture.ContentLength).IsNull();
         await Assert.That(capture.Body).Contains("99", StringComparison.Ordinal);
     }
@@ -55,7 +58,7 @@ public class SynchronousBodySerializationTests
     {
         var capture = await PostAsync(RequestBodySerializationMode.Streamed, api => api.PostItemReflected(new StreamItem { Id = 13 }));
 
-        await Assert.That(capture.MediaType).IsEqualTo("application/json");
+        await Assert.That(capture.MediaType).IsEqualTo(JsonMediaType);
         await Assert.That(capture.ContentLength).IsNull();
         await Assert.That(capture.Body).Contains("13", StringComparison.Ordinal);
     }
@@ -101,20 +104,27 @@ public class SynchronousBodySerializationTests
         string? body = null;
         string? mediaType = null;
         long? contentLength = null;
-        var mockHttp = new MockHttpMessageHandler();
-        _ = mockHttp
-            .When("*")
-            .Respond(async request =>
+        var handler = new StubHttp
+        {
             {
-                mediaType = request.Content!.Headers.ContentType?.MediaType;
-                contentLength = request.Content!.Headers.ContentLength;
-                body = await request.Content!.ReadAsStringAsync();
-                return new HttpResponseMessage(HttpStatusCode.OK);
-            });
+                new RouteMatcher
+                {
+                    Template = "*",
+                    Reusable = true
+                },
+                Reply.From(async request =>
+                {
+                    mediaType = request.Content!.Headers.ContentType?.MediaType;
+                    contentLength = request.Content!.Headers.ContentLength;
+                    body = await request.Content!.ReadAsStringAsync();
+                    return new HttpResponseMessage(HttpStatusCode.OK);
+                })
+            },
+        };
 
         var settings = serializer is null ? new RefitSettings() : new RefitSettings(serializer);
         settings.RequestBodySerialization = mode;
-        settings.HttpMessageHandlerFactory = () => mockHttp;
+        settings.HttpMessageHandlerFactory = () => handler;
 
         var fixture = RestService.For<ISyncBodyApi>("http://foo", settings);
         await call(fixture);

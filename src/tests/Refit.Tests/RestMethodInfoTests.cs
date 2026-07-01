@@ -6,6 +6,12 @@ namespace Refit.Tests;
 /// <summary>Tests for <see cref="RestMethodInfoInternal"/> parameter and header parsing.</summary>
 public partial class RestMethodInfoTests
 {
+    /// <summary>The base address used to resolve relative request URIs in the query tests.</summary>
+    private const string BaseAddressUri = "http://api";
+
+    /// <summary>The User-Agent header name asserted across the header tests.</summary>
+    private const string UserAgentHeader = "User-Agent";
+
     /// <summary>Filter values used by path-bound object query tests.</summary>
     private static readonly string[] _filterValues = ["A", "B"];
 
@@ -120,9 +126,9 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.QueryWithCultureInfo));
 
-        var output = factory([new System.Globalization.CultureInfo("en-US")]);
+        var output = await factory([new System.Globalization.CultureInfo("en-US")]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?culture=en-US");
     }
@@ -138,9 +144,9 @@ public partial class RestMethodInfoTests
             nameof(IDummyHttpApi.FetchSomeStuff),
             baseAddress: "http://api/v1/");
 
-        var output = factory([42]);
+        var output = await factory([42]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
         await Assert.That(uri.AbsolutePath).IsEqualTo("/v1/foo/bar/42");
     }
@@ -155,7 +161,7 @@ public partial class RestMethodInfoTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "QueryWithOptionalParametersPathBoundObject");
-        var output = factory(
+        var output = await factory(
         [
             new DerivedPathBoundObject { SomeProperty = 123, SomeProperty2 = "test" },
             "title",
@@ -163,7 +169,7 @@ public partial class RestMethodInfoTests
             _filterValues
         ]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
     }
 
@@ -179,9 +185,9 @@ public partial class RestMethodInfoTests
 
         var param = new ComplexQueryObject { TestAlias1 = "one", TestAlias2 = "two" };
 
-        var output = factory([param]);
+        var output = await factory([param]);
 
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?test-query-alias=one&TestAlias2=two");
     }
@@ -203,7 +209,7 @@ public partial class RestMethodInfoTests
             InternalUseOnlyIgnoredBySystemTextJson = "nope"
         };
 
-        var output = factory([param]);
+        var output = await factory([param]);
 
         await Assert.That(output.RequestUri!.PathAndQuery).IsEqualTo("/foo?test-query-alias=one");
     }
@@ -223,7 +229,7 @@ public partial class RestMethodInfoTests
             EnumCollectionMulti = [TestEnum.A, TestEnum.B]
         };
 
-        var output = factory([param]);
+        var output = await factory([param]);
 
         await Assert.That(output.RequestUri!.PathAndQuery).IsEqualTo(
             "/foo?listOfEnumMulti=A&listOfEnumMulti=B");
@@ -244,7 +250,7 @@ public partial class RestMethodInfoTests
             ObjectCollectionMulti = [TestEnum.A, TestEnum.B]
         };
 
-        var output = factory([param]);
+        var output = await factory([param]);
 
         await Assert.That(output.RequestUri!.PathAndQuery).IsEqualTo(
             "/foo?ObjectCollectionMulti=A&ObjectCollectionMulti=B");
@@ -265,7 +271,7 @@ public partial class RestMethodInfoTests
             EnumCollectionCsv = [TestEnum.A, TestEnum.B]
         };
 
-        var output = factory([param]);
+        var output = await factory([param]);
 
         await Assert.That(output.RequestUri!.PathAndQuery).IsEqualTo("/foo?EnumCollectionCsv=A%2CB");
     }
@@ -285,7 +291,7 @@ public partial class RestMethodInfoTests
             ObjectCollectionCcv = [TestEnum.A, TestEnum.B]
         };
 
-        var output = factory([param]);
+        var output = await factory([param]);
 
         await Assert.That(output.RequestUri!.PathAndQuery).IsEqualTo("/foo?listOfObjectsCsv=A%2CB");
     }
@@ -300,8 +306,8 @@ public partial class RestMethodInfoTests
             nameof(IDummyHttpApi.ComplexTypeQueryWithInnerCollection));
 
         var param = new ComplexQueryObject { TestCollection = [1, 2, 3] };
-        var output = factory([param]);
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var output = await factory([param]);
+        var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?TestCollection=1%2C2%2C3");
     }
@@ -319,8 +325,8 @@ public partial class RestMethodInfoTests
         {
             EnumCollectionMulti = [TestEnum.A, TestEnum.B]
         };
-        var output = factory([param]);
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var output = await factory([param]);
+        var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?listOfEnumMulti=A&listOfEnumMulti=B");
     }
@@ -335,8 +341,8 @@ public partial class RestMethodInfoTests
             nameof(IDummyHttpApi.ComplexTypeQueryParameterLevelMulti));
 
         var param = new ComplexQueryObject { TestCollection = [1, 2, 3] };
-        var output = factory([param]);
-        var uri = new Uri(new("http://api"), output.RequestUri!);
+        var output = await factory([param]);
+        var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo?TestCollection=1&TestCollection=2&TestCollection=3");
     }
@@ -346,6 +352,7 @@ public partial class RestMethodInfoTests
     [Test]
     public async Task MultipleQueryAttributesWithNulls()
     {
+        const int expectedQueryParameterCount = 3;
         var input = typeof(IRestMethodInfoTests);
         var fixtureParams = new RestMethodInfoInternal(
             input,
@@ -353,7 +360,7 @@ public partial class RestMethodInfoTests
                 .GetMethods()
                 .First(x => x.Name == nameof(IRestMethodInfoTests.MultipleQueryAttributes)));
 
-        await Assert.That(fixtureParams.QueryParameterMap.Count).IsEqualTo(3);
+        await Assert.That(fixtureParams.QueryParameterMap.Count).IsEqualTo(expectedQueryParameterCount);
     }
 
     /// <summary>Verifies a method with a garbage path throws an argument exception.</summary>
@@ -639,6 +646,7 @@ public partial class RestMethodInfoTests
     [Test]
     public async Task HardcodedHeadersShouldWork()
     {
+        const int expectedHeaderCount = 3;
         var input = typeof(IRestMethodInfoTests);
         var fixture = new RestMethodInfoInternal(
             input,
@@ -655,11 +663,11 @@ public partial class RestMethodInfoTests
 
         await Assert.That(fixture.Headers.ContainsKey("Api-Version")).IsTrue().Because("Headers include Api-Version header");
         await Assert.That(fixture.Headers["Api-Version"]).IsEqualTo("2");
-        await Assert.That(fixture.Headers.ContainsKey("User-Agent")).IsTrue().Because("Headers include User-Agent header");
-        await Assert.That(fixture.Headers["User-Agent"]).IsEqualTo("RefitTestClient");
+        await Assert.That(fixture.Headers.ContainsKey(UserAgentHeader)).IsTrue().Because("Headers include User-Agent header");
+        await Assert.That(fixture.Headers[UserAgentHeader]).IsEqualTo("RefitTestClient");
         await Assert.That(fixture.Headers.ContainsKey("Accept")).IsTrue().Because("Headers include Accept header");
         await Assert.That(fixture.Headers["Accept"]).IsEqualTo("application/json");
-        await Assert.That(fixture.Headers.Count).IsEqualTo(3);
+        await Assert.That(fixture.Headers.Count).IsEqualTo(expectedHeaderCount);
     }
 
     /// <summary>Verifies dynamic headers are mapped and merged with hardcoded headers.</summary>
@@ -667,6 +675,7 @@ public partial class RestMethodInfoTests
     [Test]
     public async Task DynamicHeadersShouldWork()
     {
+        const int expectedHeaderCount = 2;
         var input = typeof(IRestMethodInfoTests);
         var fixture = new RestMethodInfoInternal(
             input,
@@ -681,9 +690,9 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.BodyParameterInfo).IsNull();
 
         await Assert.That(fixture.HeaderParameterMap[1]).IsEqualTo("Authorization");
-        await Assert.That(fixture.Headers.ContainsKey("User-Agent")).IsTrue().Because("Headers include User-Agent header");
-        await Assert.That(fixture.Headers["User-Agent"]).IsEqualTo("RefitTestClient");
-        await Assert.That(fixture.Headers.Count).IsEqualTo(2);
+        await Assert.That(fixture.Headers.ContainsKey(UserAgentHeader)).IsTrue().Because("Headers include User-Agent header");
+        await Assert.That(fixture.Headers[UserAgentHeader]).IsEqualTo("RefitTestClient");
+        await Assert.That(fixture.Headers.Count).IsEqualTo(expectedHeaderCount);
     }
 
     /// <summary>Verifies constructor guard and missing HTTP method branches.</summary>

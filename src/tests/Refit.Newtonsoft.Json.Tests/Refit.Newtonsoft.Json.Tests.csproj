@@ -6,9 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Deterministic>false</Deterministic>
     <IsPackable>false</IsPackable>
-    <!-- Mirrors Refit.Tests: the test host runs JIT and exercises Refit's reflection-based serialization. -->
     <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
-    <!-- This test assembly intentionally calls the reflection-based APIs that product assemblies annotate. -->
     <NoWarn>$(NoWarn);IL2026;IL2046;IL2067;IL2072;IL2075;IL2091;IL2109;IL3050;IL3051;RF003;RF004;RF005</NoWarn>
   </PropertyGroup>
 
@@ -30,15 +28,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Versions are managed centrally in src/Directory.Packages.props. -->
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
-    <PackageReference Include="Moq" />
     <PackageReference Include="ReactiveUI.Primitives" ExcludeAssets="analyzers" />
     <PackageReference Include="TUnit" />
-    <PackageReference Include="RichardSzalay.MockHttp" />
     <ProjectReference Include="..\..\Refit.HttpClientFactory\Refit.HttpClientFactory.csproj" />
     <ProjectReference Include="..\..\Refit.Newtonsoft.Json\Refit.Newtonsoft.Json.csproj" />
+    <ProjectReference Include="..\..\Refit.Testing\Refit.Testing.csproj" />
     <ProjectReference Include="..\..\Refit.Xml\Refit.Xml.csproj" />
     <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />

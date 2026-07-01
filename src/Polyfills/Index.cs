@@ -14,6 +14,7 @@ namespace System;
     "Design",
     "CA2225:Operator overloads have named alternates",
     Justification = "Compiler-required polyfill matching the BCL System.Index shape for C# index syntax.")]
+[Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
 internal readonly struct Index : IEquatable<Index>
 {
     /// <summary>Initializes a new instance of the <see cref="Index"/> struct.</summary>

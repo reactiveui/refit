@@ -7,6 +7,7 @@ namespace System.Diagnostics.CodeAnalysis;
 
 /// <summary>Polyfill marking members that require runtime code generation.</summary>
 /// <param name="message">A message describing the dynamic code requirement.</param>
+[ExcludeFromCodeCoverage]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Constructor | AttributeTargets.Method, Inherited = false)]
 internal sealed class RequiresDynamicCodeAttribute(string message) : Attribute
 {

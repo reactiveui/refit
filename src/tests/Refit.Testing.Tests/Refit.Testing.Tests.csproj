@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>$(RefitTestTargets)</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>false</Deterministic>
+    <IsPackable>false</IsPackable>
+    <JsonSerializerIsReflectionEnabledByDefault>true</JsonSerializerIsReflectionEnabledByDefault>
+    <NoWarn>$(NoWarn);IL2026;IL2046;IL2067;IL2072;IL2075;IL2091;IL2109;IL3050;IL3051;RF003;RF004;RF005</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="TUnit" />
+    <ProjectReference Include="..\..\Refit.Testing\Refit.Testing.csproj" />
+    <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+</Project>

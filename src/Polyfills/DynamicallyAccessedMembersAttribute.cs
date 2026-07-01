@@ -18,6 +18,7 @@ namespace System.Diagnostics.CodeAnalysis;
     AttributeTargets.ReturnValue |
     AttributeTargets.Struct,
     Inherited = false)]
+[ExcludeFromCodeCoverage]
 internal sealed class DynamicallyAccessedMembersAttribute(DynamicallyAccessedMemberTypes memberTypes) : Attribute
 {
     /// <summary>Gets the member types that are dynamically accessed.</summary>
