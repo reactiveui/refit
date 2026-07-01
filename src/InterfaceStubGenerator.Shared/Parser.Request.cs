@@ -5,6 +5,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Refit.Generator;
 
@@ -282,7 +283,7 @@ internal static partial class Parser
             var aliasAttr = parameter.GetAttributes().FirstOrDefault(static a => a.AttributeClass?.ToDisplayString() == "Refit.AliasAsAttribute");
             var name = aliasAttr is not null ? GetFirstStringArgument(aliasAttr) ?? parameter.Name : parameter.Name;
             _ = parameterLocations.TryGetValue(name, out var location);
-            var parsedParameter = ParseRequestParameter(parameter, location?.ToImmutableArray());
+            var parsedParameter = ParseRequestParameter(parameter, location?.ToImmutableEquatableArray());
             requestParameters[i] = parsedParameter.Parameter;
             bodyCount += parsedParameter.BodyCount;
             cancellationTokenCount += parsedParameter.CancellationTokenCount;
@@ -302,7 +303,7 @@ internal static partial class Parser
     /// <param name="parameter">The parameter to parse.</param>
     /// <param name="locations">The parameter's locations in the URL template string. This is null if the parameter has no placeholder in the URL i.e. not a path parameter.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, ImmutableArray<(int start, int end)>? locations)
+    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, ImmutableEquatableArray<(int start, int end)>? locations)
     {
         var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var canBeNull = CanBeNull(parameter.Type, parameter.NullableAnnotation);
@@ -313,7 +314,7 @@ internal static partial class Parser
                     parameter.MetadataName,
                     parameterType,
                     locations,
-                    parameter.GetAttributes(),
+                    BuildParameterAttributes(parameter),
                     RequestParameterKind.CancellationToken,
                     canBeNull,
                     string.Empty,
@@ -427,7 +428,7 @@ internal static partial class Parser
                     parameter.MetadataName,
                     parameterType,
                     null,
-                    parameter.GetAttributes(),
+                    BuildParameterAttributes(parameter),
                     RequestParameterKind.Body,
                     CanBeNull(parameter.Type, parameter.NullableAnnotation),
                     string.Empty,
@@ -444,7 +445,7 @@ internal static partial class Parser
             parameter.MetadataName,
             parameterType,
             null,
-            parameter.GetAttributes(),
+            BuildParameterAttributes(parameter),
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,
@@ -674,7 +675,7 @@ internal static partial class Parser
                 parameter.MetadataName,
                 parameterType,
                 null,
-                parameter.GetAttributes(),
+                BuildParameterAttributes(parameter),
                 RequestParameterKind.Header,
                 CanBeNull(parameter.Type, parameter.NullableAnnotation),
                 headerName.Trim(),
@@ -711,7 +712,7 @@ internal static partial class Parser
                     parameter.MetadataName,
                     parameterType,
                     null,
-                    parameter.GetAttributes(),
+                    BuildParameterAttributes(parameter),
                     RequestParameterKind.HeaderCollection,
                     CanBeNull(parameter.Type, parameter.NullableAnnotation),
                     string.Empty,
@@ -754,7 +755,7 @@ internal static partial class Parser
                 parameter.MetadataName,
                 parameterType,
                 null,
-                parameter.GetAttributes(),
+                BuildParameterAttributes(parameter),
                 RequestParameterKind.Property,
                 CanBeNull(parameter.Type, parameter.NullableAnnotation),
                 string.Empty,
@@ -779,7 +780,7 @@ internal static partial class Parser
             parameter.MetadataName,
             parameterType,
             null,
-            parameter.GetAttributes(),
+            BuildParameterAttributes(parameter),
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,
@@ -795,18 +796,86 @@ internal static partial class Parser
     private static RequestParameterModel PathRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
-        in ImmutableArray<(int start, int end)> locations) =>
+        ImmutableEquatableArray<(int start, int end)> locations) =>
         new(
             parameter.MetadataName,
             parameterType,
             locations,
-            parameter.GetAttributes(),
+            BuildParameterAttributes(parameter),
             RequestParameterKind.Path,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,
             string.Empty,
             string.Empty,
             BodyBufferMode.None);
+
+    /// <summary>
+    /// Flattens a parameter's attributes into value-typed models so the incremental generator cache holds no
+    /// Roslyn symbols. Attribute type names and argument expressions are precomputed for the emitter.
+    /// </summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <returns>The precomputed attribute models.</returns>
+    private static ImmutableEquatableArray<ParameterAttributeModel> BuildParameterAttributes(IParameterSymbol parameter)
+    {
+        var attributes = parameter.GetAttributes();
+        if (attributes.Length == 0)
+        {
+            return ImmutableEquatableArray<ParameterAttributeModel>.Empty;
+        }
+
+        var models = new List<ParameterAttributeModel>(attributes.Length);
+        foreach (var attribute in attributes)
+        {
+            if (attribute.AttributeClass is null)
+            {
+                continue;
+            }
+
+            var constructorArguments = new List<string>(attribute.ConstructorArguments.Length);
+            foreach (var argument in attribute.ConstructorArguments)
+            {
+                constructorArguments.Add(ConstantValueToString(argument));
+            }
+
+            var namedArguments = new List<NamedAttributeArgument>(attribute.NamedArguments.Length);
+            foreach (var named in attribute.NamedArguments)
+            {
+                namedArguments.Add(new(named.Key, ConstantValueToString(named.Value)));
+            }
+
+            models.Add(new(
+                attribute.AttributeClass.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                constructorArguments.ToImmutableEquatableArray(),
+                namedArguments.ToImmutableEquatableArray()));
+        }
+
+        return models.ToImmutableEquatableArray();
+    }
+
+    /// <summary>Renders a typed constant attribute argument as the C# source expression the emitter writes.</summary>
+    /// <param name="argument">The typed constant.</param>
+    /// <returns>The source expression, or <c>"null"</c> when the value is null.</returns>
+    private static string ConstantValueToString(TypedConstant argument)
+    {
+        var result = string.Empty;
+
+        if (!argument.IsNull)
+        {
+            result = argument.Kind switch
+            {
+                TypedConstantKind.Enum =>
+                    $"({argument.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}){argument.Value!}",
+                TypedConstantKind.Primitive => SymbolDisplay.FormatPrimitive(argument.Value!, true, false) ?? string.Empty,
+                TypedConstantKind.Type =>
+                    $"typeof({argument.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})",
+                TypedConstantKind.Array =>
+                    $"new[] {{ {string.Join(", ", argument.Values.Select(ConstantValueToString))} }}",
+                _ => throw new NotSupportedException($"The type {argument.Kind} is not supported.")
+            };
+        }
+
+        return result.Length > 0 ? result : "null";
+    }
 
     /// <summary>Determines whether generated code needs a null-safe dereference for a parameter value.</summary>
     /// <param name="type">The parameter type.</param>

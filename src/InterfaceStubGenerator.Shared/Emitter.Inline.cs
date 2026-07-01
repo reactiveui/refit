@@ -3,8 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using SymbolDisplayFormat = Microsoft.CodeAnalysis.SymbolDisplayFormat;
 
 namespace Refit.Generator;
@@ -169,50 +167,28 @@ internal static partial class Emitter
             return AppendSeparator(i, sb, separator).Append(value);
         }
 
-        static string ConstantValueToString(TypedConstant arg)
+        static void AppendAttributeValue(ParameterAttributeModel attribute, StringBuilder sb0)
         {
-            var result = string.Empty;
-
-            if (!arg.IsNull)
-            {
-                result = arg.Kind switch
-                {
-                    TypedConstantKind.Enum =>
-                        $"({arg.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}){arg.Value!}",
-                    TypedConstantKind.Primitive => SymbolDisplay.FormatPrimitive(arg.Value!, true, false) ?? string.Empty,
-                    TypedConstantKind.Type =>
-                        $"typeof({arg.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})",
-                    TypedConstantKind.Array =>
-                        $"new[] {{ {string.Join(", ", arg.Values.Select(ConstantValueToString))} }}",
-                    _ => throw new NotSupportedException($"The type {arg.Kind} is not supported.")
-                };
-            }
-
-            return result.Length > 0 ? result : "null";
-        }
-        static void AppendAttributeValue(AttributeData attribute, StringBuilder sb0)
-        {
-            var typeName = attribute.AttributeClass!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            _ = sb0.Append("new ").Append(typeName).Append('(');
+            _ = sb0.Append("new ").Append(attribute.TypeExpression).Append('(');
             var i = 0;
 
-            foreach (var arg in attribute.ConstructorArguments)
+            foreach (var argument in attribute.ConstructorArguments)
             {
-                _ = AppendJoining(ConstantValueToString(arg), i++, sb0);
+                _ = AppendJoining(argument, i++, sb0);
             }
 
             _ = sb0.Append(')');
-            if (attribute.NamedArguments.Length < 1)
+            if (attribute.NamedArguments.Count < 1)
             {
                 return;
             }
 
             i = 0;
             _ = sb0.Append("{ ");
-            foreach (var arg in attribute.NamedArguments)
+            foreach (var named in attribute.NamedArguments)
             {
                 _ = AppendSeparator(i++, sb0);
-                _ = sb0.Append(arg.Key).Append(" = ").Append(ConstantValueToString(arg.Value));
+                _ = sb0.Append(named.Name).Append(" = ").Append(named.ValueExpression);
             }
 
             _ = sb0.Append(" }");
@@ -221,17 +197,11 @@ internal static partial class Emitter
         {
             // Build the initializer.
             var memberIndent = Indent(MethodMemberIndentation);
-            Dictionary<string, List<AttributeData>> grouped = new();
+            Dictionary<string, List<ParameterAttributeModel>> grouped = new();
 
             foreach (var attribute in parameter.Attributes)
             {
-                var attributeClass = attribute.AttributeClass;
-                if (attributeClass is null)
-                {
-                    continue;
-                }
-
-                var key = $"typeof({attributeClass.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})";
+                var key = $"typeof({attribute.TypeExpression})";
                 if (grouped.TryGetValue(key, out var groupedAttributes))
                 {
                     groupedAttributes.Add(attribute);
@@ -296,7 +266,7 @@ internal static partial class Emitter
                     continue;
                 }
 
-                var locations = parameter.Locations.Value;
+                var locations = parameter.Locations;
                 foreach (var (start, end) in locations)
                 {
                     _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ");

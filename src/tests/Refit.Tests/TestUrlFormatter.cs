@@ -86,6 +86,29 @@ public class TestUrlFormatter : IUrlParameterFormatter
                     && a.Member.Module == b.Member.Module,
                 (MemberInfo a, MemberInfo b) =>
                     a.MetadataToken == b.MetadataToken && a.Module == b.Module,
-                _ => Equals(actual, expected),
+                _ => SameAttributes(actual, expected),
             };
+
+    /// <summary>
+    /// Compares two providers of different kinds by the attributes they expose. Generated request
+    /// building supplies a synthetic <see cref="GeneratedParameterAttributeProvider"/> instead of the
+    /// reflection <see cref="ParameterInfo"/>, so the formatter matches on the attribute metadata both
+    /// providers carry rather than on the concrete provider type.
+    /// </summary>
+    /// <param name="actual">The attribute provider received by the formatter.</param>
+    /// <param name="expected">The attribute provider the test expects.</param>
+    /// <returns><see langword="true"/> if both expose the same attribute types.</returns>
+    private static bool SameAttributes(ICustomAttributeProvider actual, ICustomAttributeProvider expected)
+    {
+        static string[] AttributeTypeNames(ICustomAttributeProvider provider)
+        {
+            var names = provider.GetCustomAttributes(false)
+                .Select(static attribute => attribute.GetType().FullName ?? string.Empty)
+                .ToArray();
+            Array.Sort(names, StringComparer.Ordinal);
+            return names;
+        }
+
+        return AttributeTypeNames(actual).SequenceEqual(AttributeTypeNames(expected));
+    }
 }

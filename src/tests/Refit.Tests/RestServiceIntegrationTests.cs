@@ -21,6 +21,9 @@ public partial class RestServiceIntegrationTests
     /// <summary>Base URL used by the mock HTTP handler exchanges.</summary>
     private const string BaseUrl = "http://foo";
 
+    /// <summary>Query key used by the decimal query-parameter exchanges.</summary>
+    private const string DecimalQueryKey = "value";
+
     /// <summary>Base URL including a trailing slash.</summary>
     private const string BaseUrlWithSlash = "http://foo/";
 
@@ -983,7 +986,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [("value", "3.456")] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [(DecimalQueryKey, "3.456")] },
                 Reply.Json("Ok")
             },
         };
@@ -1001,21 +1004,20 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithDecimalGenerated()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/withDecimal")
-            .WithExactQueryString([new("value", "3.456")])
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.For<IApiWithDecimal>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/withDecimal", ExactQueryParams = [(DecimalQueryKey, "3.456")] },
+                Reply.Json("Ok")
+            },
+        };
+        var fixture = handler.CreateClient<IApiWithDecimal>(BaseUrl);
 
         const decimal val = 3.456M;
 
         _ = await fixture.GetWithDecimalGenerated(val);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a path parameter is formatted correctly.</summary>
@@ -1023,18 +1025,15 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithPathParameterGenerated()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/bar")
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            { Route.Get("http://foo/bar"), Reply.Json("Ok") },
+        };
+        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetPath("bar");
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a query parameter is formatted correctly.</summary>
@@ -1042,18 +1041,18 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithQueryParameterGenerated()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/?q=bar")
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", ExactQueryParams = [("q", "bar")] },
+                Reply.Json("Ok")
+            },
+        };
+        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetQuery("bar");
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies an aliased query parameter is formatted correctly.</summary>
@@ -1061,18 +1060,18 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithAliasedQueryParameterGenerated()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/?q=bar")
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", ExactQueryParams = [("q", "bar")] },
+                Reply.Json("Ok")
+            },
+        };
+        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetQueryAlias("bar");
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a URL with multiple query parameters is formatted correctly.</summary>
@@ -1080,18 +1079,19 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithMultipleParametersGenerated()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        const int id = 1;
+        const int width = 800;
+        const int height = 600;
 
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/1/800x600/foo")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            { Route.Get("http://foo/1/800x600/foo"), Reply.Json("Ok") },
+        };
+        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
-        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+        _ = await fixture.FetchSomethingWithMultipleParametersPerSegment(id, width, height);
 
-        _ = await fixture.FetchSomethingWithMultipleParametersPerSegment(1, 800, 600);
-
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a URL with multiple repeated query parameters is formatted correctly.</summary>
@@ -1099,18 +1099,18 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithMultipleRepeatedParametersGenerated()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
+        const int id = 1;
+        const int size = 300;
 
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/1/300x300/foo")
-            .Respond("application/json", "Ok");
+        var handler = new StubHttp
+        {
+            { Route.Get("http://foo/1/300x300/foo"), Reply.Json("Ok") },
+        };
+        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
-        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+        _ = await fixture.FetchSomethingWithMultipleRepeatedParametersPerSegment(id, size);
 
-        _ = await fixture.FetchSomethingWithMultipleRepeatedParametersPerSegment(1, 300);
-
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Verifies a URL with a nullable parameters is formatted correctly.</summary>
@@ -1118,18 +1118,15 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithNullableParameterGenerated()
     {
-        var mockHttp = new MockHttpMessageHandler();
-        var settings = new RefitSettings { HttpMessageHandlerFactory = () => mockHttp };
-
-        _ = mockHttp
-            .Expect(HttpMethod.Get, "http://foo/a//b")
-            .Respond("application/json", "Ok");
-
-        var fixture = RestService.ForGenerated<IGeneratedParametersApi>("http://foo", settings);
+        var handler = new StubHttp
+        {
+            { Route.Get("http://foo/a//b"), Reply.Json("Ok") },
+        };
+        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetNullableParam(null);
 
-        mockHttp.VerifyNoOutstandingExpectation();
+        await handler.VerifyAllCalledAsync();
     }
 
     /// <summary>Opens the embedded test resource at the given relative path as a stream.</summary>
