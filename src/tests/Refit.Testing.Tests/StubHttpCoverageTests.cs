@@ -228,6 +228,57 @@ public sealed class StubHttpCoverageTests
         await Assert.That(api).IsNotNull();
     }
 
+    /// <summary>Verifies a body matcher treats a request with no content as an empty body.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task BodyMatcherTreatsMissingContentAsEmpty()
+    {
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = "/empty", Body = string.Empty }, Reply.Status(HttpStatusCode.OK) } };
+
+        var response = await SendAsync(handler, HttpMethod.Post, BaseUrl + "/empty");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    /// <summary>Verifies a header matcher finds a header carried on the request content.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task HeaderMatcherMatchesContentHeaders()
+    {
+        var content = new StringContent("x");
+        content.Headers.Add("Content-Language", "en");
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = "/h", Headers = [("Content-Language", "en")] }, Reply.Status(HttpStatusCode.OK) } };
+
+        var response = await SendAsync(handler, HttpMethod.Post, BaseUrl + "/h", content);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    /// <summary>Verifies a query token with no <c>=</c> is parsed as a key with an empty value.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task QueryTokenWithoutEqualsParsesEmptyValue()
+    {
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Get, Template = "/q", Query = [("flag", string.Empty)] }, Reply.Status(HttpStatusCode.OK) } };
+
+        var response = await SendAsync(handler, HttpMethod.Get, BaseUrl + "/q?flag&a=1");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    /// <summary>Verifies a captured body with no content type is deserialized via the default media type.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CapturesBodyWithoutContentType()
+    {
+        var handler = new StubHttp { { new RouteMatcher { Method = HttpMethod.Post, Template = "/raw" }, Reply.Status(HttpStatusCode.OK) } };
+
+        _ = await SendAsync(handler, HttpMethod.Post, BaseUrl + "/raw", new ByteArrayContent("{\"Login\":\"z\"}"u8.ToArray()));
+
+        var sent = await handler.RequestBodyAsync<NewUser>(0);
+        await Assert.That(sent!.Login).IsEqualTo("z");
+    }
+
     /// <summary>Verifies a request with no URI matches no route (exercised via <see cref="HttpMessageInvoker"/>, which allows it).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

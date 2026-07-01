@@ -22,7 +22,7 @@ internal interface IRequestBuilderFactory
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(RefitSettings? settings);
+        T>(RefitSettings? settings);
 
     /// <summary>Creates a request builder for the specified interface type.</summary>
     /// <param name="refitInterfaceType">The Refit interface type.</param>

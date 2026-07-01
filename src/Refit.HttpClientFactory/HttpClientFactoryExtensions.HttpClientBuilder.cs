@@ -84,7 +84,7 @@ public static partial class HttpClientFactoryExtensions
                 DynamicallyAccessedMemberTypes.Interfaces |
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>()
+            T>()
             where T : class
         {
             ArgumentExceptionHelper.ThrowIfNull(builder);
@@ -106,7 +106,7 @@ public static partial class HttpClientFactoryExtensions
                 DynamicallyAccessedMemberTypes.Interfaces |
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(RefitSettings? settings)
+            T>(RefitSettings? settings)
             where T : class
         {
             ArgumentExceptionHelper.ThrowIfNull(builder);
@@ -129,7 +129,7 @@ public static partial class HttpClientFactoryExtensions
                 DynamicallyAccessedMemberTypes.Interfaces |
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(Func<IServiceProvider, RefitSettings?>? settingsAction)
+            T>(Func<IServiceProvider, RefitSettings?>? settingsAction)
             where T : class
         {
             ArgumentExceptionHelper.ThrowIfNull(builder);
@@ -228,7 +228,7 @@ public static partial class HttpClientFactoryExtensions
                 DynamicallyAccessedMemberTypes.Interfaces |
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(object? serviceKey)
+            T>(object? serviceKey)
             where T : class
         {
             ArgumentExceptionHelper.ThrowIfNull(builder);
@@ -254,7 +254,7 @@ public static partial class HttpClientFactoryExtensions
                 DynamicallyAccessedMemberTypes.Interfaces |
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(
+            T>(
             object? serviceKey,
             RefitSettings? settings)
             where T : class
@@ -283,7 +283,7 @@ public static partial class HttpClientFactoryExtensions
                 DynamicallyAccessedMemberTypes.Interfaces |
                 DynamicallyAccessedMemberTypes.PublicMethods |
                 DynamicallyAccessedMemberTypes.NonPublicMethods)]
-        T>(
+            T>(
             object? serviceKey,
             Func<IServiceProvider, RefitSettings?>? settingsAction)
             where T : class

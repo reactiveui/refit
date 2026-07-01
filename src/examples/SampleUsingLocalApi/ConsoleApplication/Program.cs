@@ -48,45 +48,45 @@ internal static class Program
             switch (int.Parse(Console.ReadLine() ?? InvalidOption.ToString()))
             {
                 case GetWithNoParameterOption:
-                    {
-                        var result1 = await restApiService.GetWithNoParameterAsync().ConfigureAwait(false);
-                        Console.WriteLine(result1);
-                        break;
-                    }
+                {
+                    var result1 = await restApiService.GetWithNoParameterAsync().ConfigureAwait(false);
+                    Console.WriteLine(result1);
+                    break;
+                }
 
                 case GetWithParameterOption:
-                    {
-                        var result2 = await restApiService.GetWithParameterAsync(SampleId).ConfigureAwait(false);
-                        Console.WriteLine(result2);
-                        break;
-                    }
+                {
+                    var result2 = await restApiService.GetWithParameterAsync(SampleId).ConfigureAwait(false);
+                    Console.WriteLine(result2);
+                    break;
+                }
 
                 case PostOption:
-                    {
-                        var result3 = await restApiService.PostWithTestObjectAsync(new()).ConfigureAwait(false);
-                        Console.WriteLine(result3);
-                        break;
-                    }
+                {
+                    var result3 = await restApiService.PostWithTestObjectAsync(new()).ConfigureAwait(false);
+                    Console.WriteLine(result3);
+                    break;
+                }
 
                 case PutOption:
-                    {
-                        var result4 = await restApiService.PutWithParametersAsync(SampleId, new()).ConfigureAwait(false);
-                        Console.WriteLine(result4);
-                        break;
-                    }
+                {
+                    var result4 = await restApiService.PutWithParametersAsync(SampleId, new()).ConfigureAwait(false);
+                    Console.WriteLine(result4);
+                    break;
+                }
 
                 case DeleteOption:
-                    {
-                        var result5 = await restApiService.DeleteWithParametersAsync(DeleteId).ConfigureAwait(false);
-                        Console.WriteLine(result5);
-                        break;
-                    }
+                {
+                    var result5 = await restApiService.DeleteWithParametersAsync(DeleteId).ConfigureAwait(false);
+                    Console.WriteLine(result5);
+                    break;
+                }
 
                 default:
-                    {
-                        Console.WriteLine("Bhai Please Enter valid if you are really serious");
-                        break;
-                    }
+                {
+                    Console.WriteLine("Bhai Please Enter valid if you are really serious");
+                    break;
+                }
             }
         }
     }

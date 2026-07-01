@@ -346,10 +346,10 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     private static bool IsCancellationToken(ITypeSymbol type) =>
         type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
         == "global::System.Threading.CancellationToken" || (type is INamedTypeSymbol
-        {
-            OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
-            TypeArguments.Length: 1
-        } namedType
+                                                            {
+                                                                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
+                                                                TypeArguments.Length: 1
+                                                            } namedType
                                                             && namedType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                                                             == "global::System.Threading.CancellationToken");
 

@@ -194,7 +194,7 @@ public static class RestService
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(HttpClient client, IRequestBuilder<T> builder) => (T)For(typeof(T), client, builder);
+        T>(HttpClient client, IRequestBuilder<T> builder) => (T)For(typeof(T), client, builder);
 
     /// <summary>Generate a Refit implementation of the specified interface.</summary>
     /// <typeparam name="T">Interface to create the implementation for.</typeparam>
@@ -211,7 +211,7 @@ public static class RestService
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(HttpClient client, RefitSettings? settings)
+        T>(HttpClient client, RefitSettings? settings)
     {
         var requestBuilder = RequestBuilder.ForType<T>(settings);
 
@@ -232,7 +232,7 @@ public static class RestService
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(HttpClient client) => For<T>(client, (RefitSettings?)null);
+        T>(HttpClient client) => For<T>(client, (RefitSettings?)null);
 
     /// <summary>Generate a Refit implementation of the specified interface.</summary>
     /// <typeparam name="T">Interface to create the implementation for.</typeparam>
@@ -249,7 +249,7 @@ public static class RestService
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(string hostUrl, RefitSettings? settings)
+        T>(string hostUrl, RefitSettings? settings)
     {
         var client = CreateHttpClient(hostUrl, settings);
 
@@ -270,7 +270,7 @@ public static class RestService
             DynamicallyAccessedMemberTypes.Interfaces |
             DynamicallyAccessedMemberTypes.PublicMethods |
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
-    T>(string hostUrl) => For<T>(hostUrl, null);
+        T>(string hostUrl) => For<T>(hostUrl, null);
 
     /// <summary>Generate a Refit implementation of the specified interface.</summary>
     /// <param name="refitInterfaceType">Interface to create the implementation for.</param>

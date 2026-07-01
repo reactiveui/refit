@@ -79,7 +79,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <returns>The created form value map.</returns>
     internal static FormValueMultimap Create<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-    TSource>(
+        TSource>(
         TSource source,
         RefitSettings settings) =>
         source is null or IDictionary
@@ -139,7 +139,7 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
     /// <returns>The cached readable public properties.</returns>
     private static PropertyInfo[] GetCachedProperties<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-    TSource>(TSource source)
+        TSource>(TSource source)
     {
         _ = source;
 
@@ -297,39 +297,39 @@ internal sealed class FormValueMultimap : IEnumerable<KeyValuePair<string?, stri
         switch (collectionFormat)
         {
             case CollectionFormat.Multi:
+            {
+                foreach (var item in enumerable)
                 {
-                    foreach (var item in enumerable)
-                    {
-                        Add(
-                            fieldName,
-                            settings.FormUrlEncodedParameterFormatter.Format(
-                                item,
-                                format));
-                    }
-
-                    break;
+                    Add(
+                        fieldName,
+                        settings.FormUrlEncodedParameterFormatter.Format(
+                            item,
+                            format));
                 }
+
+                break;
+            }
 
             case CollectionFormat.Csv
                 or CollectionFormat.Ssv
                 or CollectionFormat.Tsv
                 or CollectionFormat.Pipes:
-                {
-                    var delimiter = GetDelimiter(collectionFormat);
+            {
+                var delimiter = GetDelimiter(collectionFormat);
 
-                    Add(fieldName, JoinFormattedValues(enumerable, delimiter, format, settings));
-                    break;
-                }
+                Add(fieldName, JoinFormattedValues(enumerable, delimiter, format, settings));
+                break;
+            }
 
             default:
-                {
-                    Add(
-                        fieldName,
-                        settings.FormUrlEncodedParameterFormatter.Format(
-                            value,
-                            format));
-                    break;
-                }
+            {
+                Add(
+                    fieldName,
+                    settings.FormUrlEncodedParameterFormatter.Format(
+                        value,
+                        format));
+                break;
+            }
         }
     }
 
