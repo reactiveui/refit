@@ -259,6 +259,7 @@ internal static partial class Emitter
         static string GetParametersArg(RequestModel request, Dictionary<string, string> uniqueNameLookup)
         {
             var parametersSb = new StringBuilder();
+            var pathLength = request.Path.Length;
             foreach (var parameter in request.Parameters)
             {
                 if (parameter.Kind is not RequestParameterKind.Path || parameter.Locations is null)
@@ -266,9 +267,10 @@ internal static partial class Emitter
                     continue;
                 }
 
-                var locations = parameter.Locations;
-                foreach (var (start, end) in locations)
+                foreach (var location in parameter.Locations)
                 {
+                    var start = location.Start.GetOffset(pathLength);
+                    var end = location.End.GetOffset(pathLength);
                     _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ");
                     var parameterInfoFieldName = uniqueNameLookup[parameter.Name];
                     _ = parametersSb.Append("_settings.UrlParameterFormatter.Format(")

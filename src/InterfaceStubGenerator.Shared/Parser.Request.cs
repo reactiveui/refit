@@ -60,7 +60,7 @@ internal static partial class Parser
             staticHeaders,
             parameters);
 
-        static Dictionary<string, List<(int start, int end)>> ExtractPathParameterPlaceholderNames(string path)
+        static Dictionary<string, List<Range>> ExtractPathParameterPlaceholderNames(string path)
         {
             var pathSpan = path.AsSpan();
 
@@ -70,14 +70,14 @@ internal static partial class Parser
                 return [];
             }
 
-            var paramNames = new Dictionary<string, List<(int, int)>>(StringComparer.OrdinalIgnoreCase);
+            var paramNames = new Dictionary<string, List<Range>>(StringComparer.OrdinalIgnoreCase);
             var j = i + pathSpan[i..].IndexOfAny('}', '/');
             while (i < pathSpan.Length && j > i)
             {
                 if (pathSpan[j] == '}')
                 {
                     var paramName = pathSpan[(i + 1)..j].ToString();
-                    var location = (i, j + 1);
+                    var location = new Range(i, j + 1);
                     if (paramNames.TryGetValue(paramName, out var values))
                     {
                         values.Add(location);
@@ -262,7 +262,7 @@ internal static partial class Parser
     /// <returns>The parsed request parameter models.</returns>
     private static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
         in ImmutableArray<IParameterSymbol> parameters,
-        in ImmutableDictionary<string, List<(int start, int end)>> parameterLocations,
+        in ImmutableDictionary<string, List<Range>> parameterLocations,
         out bool canGenerateInline)
     {
         if (parameters.Length == 0)
@@ -303,7 +303,7 @@ internal static partial class Parser
     /// <param name="parameter">The parameter to parse.</param>
     /// <param name="locations">The parameter's locations in the URL template string. This is null if the parameter has no placeholder in the URL i.e. not a path parameter.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, ImmutableEquatableArray<(int start, int end)>? locations)
+    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, ImmutableEquatableArray<Range>? locations)
     {
         var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var canBeNull = CanBeNull(parameter.Type, parameter.NullableAnnotation);
@@ -796,7 +796,7 @@ internal static partial class Parser
     private static RequestParameterModel PathRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
-        ImmutableEquatableArray<(int start, int end)> locations) =>
+        ImmutableEquatableArray<Range> locations) =>
         new(
             parameter.MetadataName,
             parameterType,

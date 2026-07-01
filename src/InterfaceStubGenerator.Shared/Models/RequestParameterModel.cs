@@ -18,7 +18,7 @@ namespace Refit.Generator;
 internal sealed record RequestParameterModel(
     string Name,
     string Type,
-    ImmutableEquatableArray<(int start, int end)>? Locations,
+    ImmutableEquatableArray<Range>? Locations,
     ImmutableEquatableArray<ParameterAttributeModel> Attributes,
     RequestParameterKind Kind,
     bool CanBeNull,
