@@ -20,6 +20,10 @@ public static class ModuleInitializer
         DerivePathInfo((file, _, type, method) =>
             new(Path.Combine(Path.GetDirectoryName(file) ?? AppContext.BaseDirectory, "_snapshots"), type.Name, method.Name));
 
+        // The generated GeneratedCodeAttribute stamps the generator assembly version, which is not stable
+        // across builds and CI. Scrub the line so snapshots stay version-independent.
+        VerifierSettings.ScrubLinesContaining("System.CodeDom.Compiler.GeneratedCodeAttribute");
+
         VerifySourceGenerators.Initialize();
         VerifyDiffPlex.Initialize(OutputType.Compact);
     }
