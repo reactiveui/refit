@@ -54,7 +54,7 @@ public static class GeneratedRequestRunner
         sb.Append(pathSpan[..i]);
         var j = i + pathSpan[i..].IndexOfAny('}', '/');
 
-        while (i >= 0 && j > i)
+        while (j > i)
         {
             if (pathSpan[j] == '}')
             {
