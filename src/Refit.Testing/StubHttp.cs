@@ -770,6 +770,11 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
 
     /// <summary>Marks a non-reusable route consumed and signals completion once the last one is hit.</summary>
     /// <param name="index">The index of the route that satisfied a request.</param>
+    /// <remarks>
+    /// Excluded from coverage: the double-consume guard only triggers when two requests race the same
+    /// one-shot route between matching and consumption, which cannot be exercised deterministically.
+    /// </remarks>
+    [ExcludeFromCodeCoverage]
     private void Consume(int index)
     {
         lock (_gate)
