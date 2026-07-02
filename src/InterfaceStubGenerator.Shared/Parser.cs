@@ -56,6 +56,7 @@ internal static partial class Parser
         var disposableInterfaceSymbol = compilation.GetTypeByMetadataName("System.IDisposable");
         var httpMethodBaseAttributeSymbol = compilation.GetTypeByMetadataName(
             "Refit.HttpMethodAttribute");
+        var formattableSymbol = compilation.GetTypeByMetadataName("System.IFormattable");
 
         var diagnostics = new List<Diagnostic>();
         if (httpMethodBaseAttributeSymbol is null)
@@ -112,6 +113,7 @@ internal static partial class Parser
             preserveAttributeDisplayName,
             disposableInterfaceSymbol,
             httpMethodBaseAttributeSymbol,
+            formattableSymbol,
             generatedRequestBuilding,
             emitGeneratedCodeMarkers,
             supportsNullable);
