@@ -1,7 +1,6 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Net.Http;
 using Refit.Testing;
 
 namespace Refit.Tests;
@@ -17,6 +16,15 @@ public sealed class ReflectionTests
 
     /// <summary>The query value exercised by the query parameter tests.</summary>
     private const string QueryValue = "queryValue";
+
+    /// <summary>A constant value to use as a route parameter.</summary>
+    private const string RouteValue = "Empty";
+
+    /// <summary>A constant value to use as a route parameter.</summary>
+    private const int IntegerValue = 10;
+
+    /// <summary>A constant value to use as a route parameter.</summary>
+    private const long LongValue = 10L;
 
     /// <summary>A Refit interface with many overloaded generic methods.</summary>
     public interface IGenericMethod
@@ -48,7 +56,7 @@ public sealed class ReflectionTests
 
     /// <summary>A generic Refit interface with many overloaded generic methods.</summary>
     /// <typeparam name="TInterface">Generic type of interface.</typeparam>
-    public interface IGenericMethodAndInterface<TInterface>
+    public interface IGenericMethodAndInterface<in TInterface>
     {
         /// <summary>Request with a generic route parameter.</summary>
         /// <param name="value1">Generic route parameter.</param>
@@ -65,13 +73,14 @@ public sealed class ReflectionTests
         [Get("/{value1}/{value2}")]
         Task GetGenericParameter<T1>(T1 value1, int value2);
 
+        // This should be renamed to GetGenericParameter once #2197 is fixed.
         /// <summary>Request with two generic route parameters.</summary>
         /// <param name="value1">First generic route parameter.</param>
         /// <param name="value2">Second generic route parameter.</param>
         /// <typeparam name="T1">Generic type of first route parameter.</typeparam>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}/{value2}")]
-        Task GetGenericParameter<T1>(T1 value1, TInterface value2);
+        Task GetClassGenericParameter<T1>(T1 value1, TInterface value2);
     }
 
     /// <summary>Verifies a simple string path parameter is formatted with the expected metadata.</summary>
@@ -348,8 +357,13 @@ public sealed class ReflectionTests
     [Test]
     public async Task OverloadedGenericParameterShouldBeExpectedReflection()
     {
-        _ = _mockHandler.Fallback
-            .Respond("application/json", nameof(IGenericMethod.GetGenericParameter));
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/Empty"),
+                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
+            },
+        };
 
         var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0)])!;
         var parameterInfo = methodInfo.MakeGenericMethod(typeof(string)).GetParameters()[0];
@@ -359,12 +373,12 @@ public sealed class ReflectionTests
             [typeof(string)]);
         var settings = new RefitSettings
         {
-            HttpMessageHandlerFactory = () => _mockHandler,
+            HttpMessageHandlerFactory = () => handler,
             UrlParameterFormatter = formatter
         };
-        var service = RestService.For<IGenericMethod>("https://foo", settings);
+        var service = RestService.For<IGenericMethod>(BaseUrl, settings);
 
-        await service.GetGenericParameter("Empty");
+        await service.GetGenericParameter(RouteValue);
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -373,8 +387,13 @@ public sealed class ReflectionTests
     [Test]
     public async Task OverloadedGenericParameterWithNonGenericShouldBeExpectedReflection()
     {
-        _ = _mockHandler.Fallback
-            .Respond("application/json", nameof(IGenericMethod.GetGenericParameter));
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/Empty/10"),
+                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
+            },
+        };
 
         var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0), typeof(int)])!.MakeGenericMethod(typeof(string));
         var parameterInfo1 = methodInfo.GetParameters()[0];
@@ -385,12 +404,12 @@ public sealed class ReflectionTests
             [typeof(string), typeof(int)]);
         var settings = new RefitSettings
         {
-            HttpMessageHandlerFactory = () => _mockHandler,
+            HttpMessageHandlerFactory = () => handler,
             UrlParameterFormatter = formatter
         };
-        var service = RestService.For<IGenericMethod>("https://foo", settings);
+        var service = RestService.For<IGenericMethod>(BaseUrl, settings);
 
-        await service.GetGenericParameter("Empty", 10);
+        await service.GetGenericParameter("Empty", IntegerValue);
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -399,8 +418,13 @@ public sealed class ReflectionTests
     [Test]
     public async Task OverloadedWithTwoGenericParameterShouldBeExpectedReflection()
     {
-        _ = _mockHandler.Fallback
-            .Respond("application/json", nameof(IGenericMethod.GetGenericParameter));
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/Empty/10"),
+                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
+            },
+        };
 
         var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 2, [Type.MakeGenericMethodParameter(0), Type.MakeGenericMethodParameter(1)])!;
         methodInfo = methodInfo.MakeGenericMethod(typeof(string), typeof(long));
@@ -412,12 +436,12 @@ public sealed class ReflectionTests
             [typeof(string), typeof(long)]);
         var settings = new RefitSettings
         {
-            HttpMessageHandlerFactory = () => _mockHandler,
+            HttpMessageHandlerFactory = () => handler,
             UrlParameterFormatter = formatter
         };
-        var service = RestService.For<IGenericMethod>("https://foo", settings);
+        var service = RestService.For<IGenericMethod>(BaseUrl, settings);
 
-        await service.GetGenericParameter("Empty", 10L);
+        await service.GetGenericParameter(RouteValue, LongValue);
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -426,8 +450,13 @@ public sealed class ReflectionTests
     [Test]
     public async Task GenericOverloadedInterfaceWithGenericParameterShouldBeExpectedReflection()
     {
-        _ = _mockHandler.Fallback
-            .Respond("application/json", nameof(IGenericMethodAndInterface<>.GetGenericParameter));
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/10"),
+                Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter))
+            },
+        };
 
         var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(nameof(IGenericMethodAndInterface<>.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0)])!;
         methodInfo = methodInfo.MakeGenericMethod(typeof(int));
@@ -438,12 +467,12 @@ public sealed class ReflectionTests
             [typeof(int)]);
         var settings = new RefitSettings
         {
-            HttpMessageHandlerFactory = () => _mockHandler,
+            HttpMessageHandlerFactory = () => handler,
             UrlParameterFormatter = formatter
         };
-        var service = RestService.For<IGenericMethodAndInterface<string>>("https://foo", settings);
+        var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
 
-        await service.GetGenericParameter(10);
+        await service.GetGenericParameter(IntegerValue);
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -452,8 +481,13 @@ public sealed class ReflectionTests
     [Test]
     public async Task GenericOverloadedInterfaceWithNonGenericShouldBeExpectedReflection()
     {
-        _ = _mockHandler.Fallback
-            .Respond("application/json", nameof(IGenericMethodAndInterface<>.GetGenericParameter));
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/10/10"),
+                Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter))
+            },
+        };
 
         var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(nameof(IGenericMethodAndInterface<>.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0), typeof(int)])!;
         methodInfo = methodInfo.MakeGenericMethod(typeof(long));
@@ -465,12 +499,12 @@ public sealed class ReflectionTests
             [typeof(long), typeof(int)]);
         var settings = new RefitSettings
         {
-            HttpMessageHandlerFactory = () => _mockHandler,
+            HttpMessageHandlerFactory = () => handler,
             UrlParameterFormatter = formatter
         };
-        var service = RestService.For<IGenericMethodAndInterface<string>>("https://foo", settings);
+        var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
 
-        await service.GetGenericParameter(10L, 10);
+        await service.GetGenericParameter(LongValue, IntegerValue);
         await formatter.AssertNoOutstandingAssertions();
     }
 
@@ -479,11 +513,16 @@ public sealed class ReflectionTests
     [Test]
     public async Task GenericOverloadedInterfaceWithTwoGenericParameterShouldBeExpectedReflection()
     {
-        _ = _mockHandler.Fallback
-            .Respond("application/json", nameof(IGenericMethodAndInterface<>.GetGenericParameter));
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/10/Empty"),
+                Reply.Json(nameof(IGenericMethodAndInterface<>.GetClassGenericParameter))
+            },
+        };
 
         var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(
-            nameof(IGenericMethodAndInterface<>.GetGenericParameter),
+            nameof(IGenericMethodAndInterface<>.GetClassGenericParameter),
             1,
             [Type.MakeGenericMethodParameter(0), typeof(string)])!;
         methodInfo = methodInfo.MakeGenericMethod(typeof(long));
@@ -495,15 +534,12 @@ public sealed class ReflectionTests
             [typeof(long), typeof(string)]);
         var settings = new RefitSettings
         {
-            HttpMessageHandlerFactory = () => _mockHandler,
+            HttpMessageHandlerFactory = () => handler,
             UrlParameterFormatter = formatter
         };
-        var service = RestService.For<IGenericMethodAndInterface<string>>("https://foo", settings);
+        var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
 
-        await service.GetGenericParameter(10L, "Empty");
+        await service.GetClassGenericParameter(LongValue, "Empty");
         await formatter.AssertNoOutstandingAssertions();
     }
-
-    /// <summary>Disposes the mock HTTP handler owned by the test.</summary>
-    public void Dispose() => _mockHandler?.Dispose();
 }
