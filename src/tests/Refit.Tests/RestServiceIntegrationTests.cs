@@ -1036,6 +1036,34 @@ public partial class RestServiceIntegrationTests
         await handler.VerifyAllCalledAsync();
     }
 
+    /// <summary>Verifies a DateOnly path parameter is formatted and substituted by the generated client.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithDateOnlyPathParameterGenerated()
+    {
+        Uri? captured = null;
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Template = "*", Reusable = true },
+                Reply.From(request =>
+                {
+                    captured = request.RequestUri;
+                    return new(HttpStatusCode.OK) { Content = new StringContent("Ok") };
+                })
+            },
+        };
+        var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
+
+        var date = new DateOnly(2024, 1, 2);
+        _ = await fixture.GetDateOnlyPath(date);
+
+        var expected = ((IFormattable)date).ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+        await Assert.That(captured).IsNotNull();
+        await Assert.That(Uri.UnescapeDataString(captured!.ToString()))
+            .IsEqualTo($"http://foo/events/{expected}");
+    }
+
     /// <summary>Verifies a query parameter is formatted correctly.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

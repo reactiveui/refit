@@ -45,4 +45,10 @@ public interface IGeneratedParametersApi
     /// <returns>The response body.</returns>
     [Get("/a/{value}/b")]
     Task<string> GetNullableParam(int? value);
+
+    /// <summary>Gets a value using a DateOnly path parameter.</summary>
+    /// <param name="date">The date path parameter.</param>
+    /// <returns>The response body.</returns>
+    [Get("/events/{date}")]
+    Task<string> GetDateOnlyPath(DateOnly date);
 }
