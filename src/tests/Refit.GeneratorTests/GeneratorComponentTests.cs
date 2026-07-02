@@ -537,7 +537,7 @@ public static class GeneratorComponentTests
         /// <param name="bufferMode">The body buffer mode.</param>
         /// <returns>The request parameter model.</returns>
         private static RequestParameterModel CreateBody(string serializationMethod, BodyBufferMode bufferMode) =>
-            new("body", StringTypeName, RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, bufferMode);
+            new("body", StringTypeName, null, ImmutableEquatableArray<ParameterAttributeModel>.Empty, RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, bufferMode);
 
         /// <summary>Creates an interface property model.</summary>
         /// <param name="name">The property name.</param>
@@ -653,13 +653,13 @@ public static class GeneratorComponentTests
             await Assert.That(Parser.NormalizeConstantPathForInline("/path?")).IsEqualTo(SimplePath);
             await Assert.That(Parser.NormalizeConstantPathForInline("/path?& \t =drop")).IsEqualTo(SimplePath);
             await Assert.That(Parser.NormalizeConstantPathForInline("/path?one=1&&two=2#fragment")).IsEqualTo("/path?one=1&two=2");
-            await Assert.That(Parser.IsConstantPathSupported(string.Empty)).IsTrue();
-            await Assert.That(Parser.IsConstantPathSupported(SimplePath)).IsTrue();
-            await Assert.That(Parser.IsConstantPathSupported("relative")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/{id}")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/id}")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/line\nbreak")).IsFalse();
-            await Assert.That(Parser.IsConstantPathSupported("/line\rbreak")).IsFalse();
+            await Assert.That(Parser.IsPathSupported(string.Empty)).IsTrue();
+            await Assert.That(Parser.IsPathSupported(SimplePath)).IsTrue();
+            await Assert.That(Parser.IsPathSupported("relative")).IsFalse();
+            await Assert.That(Parser.IsPathSupported("/{id}")).IsTrue();
+            await Assert.That(Parser.IsPathSupported("/id}")).IsFalse();
+            await Assert.That(Parser.IsPathSupported("/line\nbreak")).IsFalse();
+            await Assert.That(Parser.IsPathSupported("/line\rbreak")).IsFalse();
             await Assert.That(Parser.IsWhiteSpace(" \t", 0, WhitespaceLength)).IsTrue();
             await Assert.That(Parser.IsWhiteSpace(" a", 0, WhitespaceLength)).IsFalse();
         }
@@ -710,13 +710,23 @@ public static class GeneratorComponentTests
         /// <summary>Creates a non-body parameter model.</summary>
         /// <returns>The request parameter model.</returns>
         private static RequestParameterModel CreateHeaderParameter() =>
-            new("query", "string", RequestParameterKind.Header, true, string.Empty, string.Empty, string.Empty, BodyBufferMode.None);
+            new("query", "string", null, ImmutableEquatableArray<ParameterAttributeModel>.Empty, RequestParameterKind.Header, true, string.Empty, string.Empty, string.Empty, BodyBufferMode.None);
 
         /// <summary>Creates a body parameter model.</summary>
         /// <param name="serializationMethod">The serialization method name.</param>
         /// <returns>The request parameter model.</returns>
         private static RequestParameterModel CreateBody(string serializationMethod) =>
-            new("body", "string", RequestParameterKind.Body, false, string.Empty, string.Empty, serializationMethod, BodyBufferMode.Buffered);
+            new(
+                "body",
+                "string",
+                null,
+                ImmutableEquatableArray<ParameterAttributeModel>.Empty,
+                RequestParameterKind.Body,
+                false,
+                string.Empty,
+                string.Empty,
+                serializationMethod,
+                BodyBufferMode.Buffered);
     }
 
     /// <summary>Tests for the <c>ITypeSymbol</c> generator extension helpers.</summary>

@@ -745,4 +745,17 @@ public partial class RequestBuilderTests
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/6/1024x768/foo");
     }
+
+    /// <summary>Verifies a simple string path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task UrlParameterShouldWorkWithGeneratedCode()
+    {
+        var fixture = new RequestBuilderImplementation<IBasicApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IBasicApi.GetParam));
+        var output = await factory([nameof(IBasicApi.GetParam)]);
+
+        var uri = new Uri(new("http://api"), output.RequestUri!);
+        await Assert.That(uri.PathAndQuery).IsEqualTo($"/{nameof(IBasicApi.GetParam)}");
+    }
 }

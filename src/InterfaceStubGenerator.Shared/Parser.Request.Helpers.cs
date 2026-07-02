@@ -30,13 +30,49 @@ internal static partial class Parser
     /// <summary>Determines whether the initial inline emitter can use the path as a literal URI.</summary>
     /// <param name="path">The path to inspect.</param>
     /// <returns><see langword="true"/> when the path is supported.</returns>
-    internal static bool IsConstantPathSupported(string path) =>
-        (path.Length == 0 || path[0] == '/')
-        && path.IndexOf('{') < 0
-        && path.IndexOf('}') < 0
-        && path.IndexOf('\\') < 0
-        && path.IndexOf('\r') < 0
-        && path.IndexOf('\n') < 0;
+    internal static bool IsPathSupported(string path)
+    {
+        return (path.Length == 0 || path[0] == '/')
+            && IsPathTemplateValid(path)
+            && path.IndexOf('\\') < 0
+            && path.IndexOf('\r') < 0
+            && path.IndexOf('\n') < 0;
+
+        static bool IsPathTemplateValid(in ReadOnlySpan<char> path)
+        {
+            var openingBraces = 0;
+            var closingBraces = 0;
+
+            foreach (var c in path)
+            {
+                switch (c)
+                {
+                    case '/' when openingBraces != closingBraces:
+                        return false;
+                    case '/':
+                        {
+                            openingBraces = 0;
+                            closingBraces = 0;
+                            break;
+                        }
+
+                    case '{':
+                        {
+                            ++openingBraces;
+                            break;
+                        }
+
+                    case '}':
+                        {
+                            ++closingBraces;
+                            break;
+                        }
+                }
+            }
+
+            return openingBraces == closingBraces;
+        }
+    }
 
     /// <summary>Normalizes constant inline paths to match the reflection request builder URI cleanup.</summary>
     /// <param name="path">The source path from the HTTP method attribute.</param>

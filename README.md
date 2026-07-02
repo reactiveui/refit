@@ -296,6 +296,7 @@ Refit's generated-request runtime helpers.
 This default path reduces runtime reflection, method metadata lookup, object-array argument packing, and delegate
 construction for request shapes the generator can safely model. It currently covers common request features including:
 
+* parameters that appear in the path template
 * static `[Headers]`
 * dynamic `[Header]` parameters
 * `[HeaderCollection]` dictionaries

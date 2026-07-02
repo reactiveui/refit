@@ -28,9 +28,61 @@ public static class GeneratedRequestRunner
         }
 
         var basePath = client.BaseAddress?.AbsolutePath
-            ?? throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+                       ?? throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
         basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
         return new(basePath + relativePath, UriKind.Relative);
+    }
+
+    /// <summary>Builds the request path for a generated request from a template.</summary>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <param name="uriParams">The replacement uri parameters.</param>
+    /// <returns>A path with all the placeholder parameters in the path template replaced.</returns>
+    /// <exception cref="ArgumentException">
+    /// A URI template parameter is not available in the provided parameter array and unmatched URL parameters aren't allowed.
+    /// </exception>
+    public static string BuildRequestPath(
+        string relativePathTemplate,
+        bool allowUnmatchedParameter,
+        params ((int startIdx, int endIdx) range, string? value)[] uriParams)
+    {
+        if (uriParams.Length == 0 && allowUnmatchedParameter)
+        {
+            return relativePathTemplate;
+        }
+
+        var pathSpan = relativePathTemplate.AsSpan();
+        using var sb = new ValueStringBuilder(stackalloc char[256]);
+        var pos = 0;
+        foreach (var ((startIdx, endIdx), value) in uriParams)
+        {
+            sb.Append(pathSpan[pos..startIdx]);
+            if (value is not null)
+            {
+                sb.Append(StringHelpers.EscapeDataString(value));
+            }
+
+            pos = endIdx;
+        }
+
+        sb.Append(pathSpan[pos..]);
+
+        var path = sb.ToString();
+        var i = path.IndexOf('{');
+        if (i < 0 || allowUnmatchedParameter)
+        {
+            return path;
+        }
+
+        var j = path.AsSpan(i).IndexOfAny('}', '/');
+        if (j < 0 || path[j += i] != '}')
+        {
+            return path;
+        }
+
+        var key = path[(i + 1)..j];
+        throw new ArgumentException(
+            $"URL {relativePathTemplate} has parameter {{{key}}}, but no method parameter matches");
     }
 
     /// <summary>Sends a generated request with no response body, throwing on HTTP errors.</summary>
@@ -131,8 +183,8 @@ public static class GeneratedRequestRunner
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, cancellationToken);
         await foreach (var item in RequestExecutionHelpers
-            .StreamResponseAsync<T>(client, request, settings, true, linked.Token)
-            .ConfigureAwait(false))
+                           .StreamResponseAsync<T>(client, request, settings, true, linked.Token)
+                           .ConfigureAwait(false))
         {
             yield return item;
         }
@@ -293,7 +345,7 @@ public static class GeneratedRequestRunner
         // The descriptor path only matches the reflection path when the serializer resolves field names from
         // attributes the generator already inlined (the built-in System.Text.Json serializer); otherwise fall back.
         var useDescriptors = body is not null and not System.Collections.IDictionary
-            && settings.ContentSerializer is SystemTextJsonContentSerializer;
+                             && settings.ContentSerializer is SystemTextJsonContentSerializer;
 
         return new FormUrlEncodedContent(
             useDescriptors

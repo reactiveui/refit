@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace Refit.Generator;
 
@@ -112,8 +113,28 @@ internal static partial class Emitter
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
+
+        // Build path
+        var parameterInfoNames = GetParameterInfoUniqueNames(request, uniqueNames);
+        var parameters = GetParametersArg(request, parameterInfoNames);
+        var paramInfoSb = new StringBuilder();
+
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind is not RequestParameterKind.Path)
+            {
+                continue;
+            }
+
+            var parameterName = parameterInfoNames[parameter.Name];
+            BuildParameterInfoField(parameter, methodModel.DeclaredMethod, parameterName, paramInfoSb);
+        }
+
+        var pathExpression = parameters.Length > 0
+            ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}, {settingsLocal}.AllowUnmatchedRouteParameters{parameters})"
+            : ToCSharpStringLiteral(request.Path);
         var requestUriExpression =
-            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {ToCSharpStringLiteral(request.Path)}, {settingsLocal}.UrlResolution)";
+            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {pathExpression}, {settingsLocal}.UrlResolution)";
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
         var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter, requestLocal, settingsLocal, formFieldsFieldName);
         var headerSource = BuildInlineHeaders(request, requestLocal);
@@ -123,7 +144,7 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
-            {{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
+            {{paramInfoSb}}{{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
             {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
@@ -132,6 +153,138 @@ internal static partial class Emitter
             {{contentSource}}{{headerSource}}{{requestPropertySource}}{{returnSource}}{{methodIndent}}}
 
             """;
+
+        static string GetParameterInfoFieldName(string parameterName, UniqueNameBuilder uniqueNames) =>
+            uniqueNames.New($"______{parameterName}AttributeProvider");
+
+        static StringBuilder AppendSeparator(int i, StringBuilder sb, string separator = ", ")
+        {
+            return i <= 0 ? sb : sb.Append(separator);
+        }
+        static StringBuilder AppendJoining(string value, int i, StringBuilder sb, string separator = ", ")
+        {
+            return AppendSeparator(i, sb, separator).Append(value);
+        }
+
+        static void AppendAttributeValue(ParameterAttributeModel attribute, StringBuilder sb0)
+        {
+            _ = sb0.Append("new ").Append(attribute.TypeExpression).Append('(');
+            var i = 0;
+
+            foreach (var argument in attribute.ConstructorArguments)
+            {
+                _ = AppendJoining(argument, i++, sb0);
+            }
+
+            _ = sb0.Append(')');
+            if (attribute.NamedArguments.Count < 1)
+            {
+                return;
+            }
+
+            i = 0;
+            _ = sb0.Append("{ ");
+            foreach (var named in attribute.NamedArguments)
+            {
+                _ = AppendSeparator(i++, sb0);
+                _ = sb0.Append(named.Name).Append(" = ").Append(named.ValueExpression);
+            }
+
+            _ = sb0.Append(" }");
+        }
+        static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, StringBuilder sb)
+        {
+            // Build the initializer.
+            var memberIndent = Indent(MethodMemberIndentation);
+            Dictionary<string, List<ParameterAttributeModel>> grouped = new();
+
+            foreach (var attribute in parameter.Attributes)
+            {
+                var key = $"typeof({attribute.TypeExpression})";
+                if (grouped.TryGetValue(key, out var groupedAttributes))
+                {
+                    groupedAttributes.Add(attribute);
+                }
+                else
+                {
+                    grouped.Add(key, [attribute]);
+                }
+            }
+
+            const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
+            _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
+                .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
+                .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ")
+                .Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("()");
+            var i = 0;
+            if (grouped.Count > 0)
+            {
+                _ = sb.Append(" {");
+                foreach (var kv in grouped)
+                {
+                    _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
+                    foreach (var arg in kv.Value)
+                    {
+                        AppendAttributeValue(arg, sb);
+                    }
+
+                    _ = sb.Append("} }");
+                }
+
+                _ = sb.Append('}');
+            }
+
+            _ = sb.AppendLine(");");
+        }
+
+        static Dictionary<string, string> GetParameterInfoUniqueNames(
+            RequestModel request,
+            UniqueNameBuilder uniqueNames)
+        {
+            var dict = new Dictionary<string, string>();
+            foreach (var parameter in request.Parameters)
+            {
+                if (parameter.Kind is not RequestParameterKind.Path)
+                {
+                    continue;
+                }
+
+                var parameterInfoFieldName = GetParameterInfoFieldName(parameter.Name, uniqueNames);
+                dict.Add(parameter.Name, parameterInfoFieldName);
+            }
+
+            return dict;
+        }
+        static string GetParametersArg(RequestModel request, Dictionary<string, string> uniqueNameLookup)
+        {
+            var parametersSb = new StringBuilder();
+            var pathLength = request.Path.Length;
+            foreach (var parameter in request.Parameters)
+            {
+                if (parameter.Kind is not RequestParameterKind.Path || parameter.Locations is null)
+                {
+                    continue;
+                }
+
+                foreach (var location in parameter.Locations)
+                {
+                    var start = location.Start.GetOffset(pathLength);
+                    var end = location.End.GetOffset(pathLength);
+                    _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ");
+                    var parameterInfoFieldName = uniqueNameLookup[parameter.Name];
+                    _ = parametersSb.Append("_settings.UrlParameterFormatter.Format(")
+                        .Append(parameter.Name)
+                        .Append(", ")
+                        .Append(parameterInfoFieldName)
+                        .Append(", ")
+                        .Append("typeof(").Append(parameter.Type).Append(')')
+                        .Append(')');
+                    _ = parametersSb.Append(')');
+                }
+            }
+
+            return parametersSb.ToString();
+        }
     }
 
     /// <summary>Builds request content assignment for an inline generated method.</summary>

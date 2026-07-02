@@ -45,4 +45,34 @@ public class ParameterTests
             [Get("/users/{user}")]
             Task<string> Get(int? user);
             """);
+
+    /// <summary>Verifies generation for a nullable value-type route parameter.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public Task ValueTypeRouteParameterWithAttribute() =>
+        Fixture.VerifyForBody(
+            """
+            [Get("/todos/{id}")]
+            Task<string> Get([Query(Format = "00")]int? id);
+            """);
+
+    /// <summary>Verifies generation for a nullable value-type route parameter.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public Task ValueTypeRouteParameterInQueryWithAttribute() =>
+        Fixture.VerifyForBody(
+            """
+            [Get("/todos?q={q}")]
+            Task<string[]> Find([Query]string? q);
+            """);
+
+    /// <summary>Verifies generation for a nullable value-type route parameter.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public Task ValueTypeRouteParameterInQueryWithoutAttribute() =>
+        Fixture.VerifyForBody(
+            """
+            [Get("/todos?q={q}")]
+            Task<string[]> Find(string? q);
+            """);
 }

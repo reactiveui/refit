@@ -9,7 +9,7 @@ using System.Reflection;
 namespace Refit.Tests;
 
 /// <summary>Tests for the generated request runtime helper.</summary>
-public class GeneratedRequestRunnerTests
+public partial class GeneratedRequestRunnerTests
 {
     /// <summary>Relative request path shared by the generated-runner fixtures.</summary>
     private const string RelativeResourcePath = "/resource";

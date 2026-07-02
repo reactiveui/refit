@@ -1,11 +1,11 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System;
-using System.Collections.Generic;
+
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Refit.Generator;
 
@@ -34,8 +34,10 @@ internal static partial class Parser
 
         var httpMethod = GetHttpMethodName(httpMethodAttribute.AttributeClass);
         var path = GetHttpPath(httpMethodAttribute);
+        var normalizedPath = NormalizeConstantPathForInline(path);
+        var pathParameters = ExtractPathParameterPlaceholderNames(normalizedPath);
         var returnTypes = GetRequestReturnTypes(methodSymbol);
-        var parameters = ParseRequestParameters(methodSymbol.Parameters, out var parameterEligibility);
+        var parameters = ParseRequestParameters(methodSymbol.Parameters, pathParameters.ToImmutableDictionary(pathParameters.Comparer), out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
 
         var canGenerateInline =
@@ -43,13 +45,13 @@ internal static partial class Parser
             && returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
             && methodSymbol.TypeParameters.Length == 0
             && httpMethod.Length > 0
-            && IsConstantPathSupported(path)
+            && IsPathSupported(path)
             && IsSupportedInlineBody(parameters)
             && !HasUnsupportedInlineRequestMetadata(methodSymbol);
 
         return new(
             httpMethod,
-            NormalizeConstantPathForInline(path),
+            normalizedPath,
             returnTypes.ResultType,
             returnTypes.DeserializedResultType,
             returnTypes.IsApiResponse,
@@ -57,6 +59,48 @@ internal static partial class Parser
             canGenerateInline,
             staticHeaders,
             parameters);
+
+        static Dictionary<string, List<Range>> ExtractPathParameterPlaceholderNames(string path)
+        {
+            var pathSpan = path.AsSpan();
+
+            var i = pathSpan.IndexOf('{');
+            if (i < 0)
+            {
+                return [];
+            }
+
+            var paramNames = new Dictionary<string, List<Range>>(StringComparer.OrdinalIgnoreCase);
+            var j = i + pathSpan[i..].IndexOfAny('}', '/');
+            while (i < pathSpan.Length && j > i)
+            {
+                if (pathSpan[j] == '}')
+                {
+                    var paramName = pathSpan[(i + 1)..j].ToString();
+                    var location = new Range(i, j + 1);
+                    if (paramNames.TryGetValue(paramName, out var values))
+                    {
+                        values.Add(location);
+                    }
+                    else
+                    {
+                        paramNames[paramName] = [location];
+                    }
+                }
+
+                var i2 = pathSpan[j..].IndexOf('{');
+                if (i2 < 0)
+                {
+                    break;
+                }
+
+                i = j;
+                i += i2;
+                j = i + pathSpan[i..].IndexOfAny('}', '/');
+            }
+
+            return paramNames;
+        }
     }
 
     /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
@@ -213,10 +257,12 @@ internal static partial class Parser
 
     /// <summary>Parses request parameter bindings for the conservative initial inline path.</summary>
     /// <param name="parameters">The method parameters.</param>
+    /// <param name="parameterLocations">The placeholder names in the URL with their locations.</param>
     /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
     /// <returns>The parsed request parameter models.</returns>
     private static ImmutableEquatableArray<RequestParameterModel> ParseRequestParameters(
         in ImmutableArray<IParameterSymbol> parameters,
+        in ImmutableDictionary<string, List<Range>> parameterLocations,
         out bool canGenerateInline)
     {
         if (parameters.Length == 0)
@@ -233,7 +279,11 @@ internal static partial class Parser
 
         for (var i = 0; i < parameters.Length; i++)
         {
-            var parsedParameter = ParseRequestParameter(parameters[i]);
+            var parameter = parameters[i];
+            var aliasAttr = parameter.GetAttributes().FirstOrDefault(static a => a.AttributeClass?.ToDisplayString() == "Refit.AliasAsAttribute");
+            var name = aliasAttr is not null ? GetFirstStringArgument(aliasAttr) ?? parameter.Name : parameter.Name;
+            _ = parameterLocations.TryGetValue(name, out var location);
+            var parsedParameter = ParseRequestParameter(parameter, location?.ToImmutableEquatableArray());
             requestParameters[i] = parsedParameter.Parameter;
             bodyCount += parsedParameter.BodyCount;
             cancellationTokenCount += parsedParameter.CancellationTokenCount;
@@ -251,8 +301,9 @@ internal static partial class Parser
 
     /// <summary>Parses one request parameter binding.</summary>
     /// <param name="parameter">The parameter to parse.</param>
+    /// <param name="locations">The parameter's locations in the URL template string. This is null if the parameter has no placeholder in the URL i.e. not a path parameter.</param>
     /// <returns>The parsed parameter and eligibility counters.</returns>
-    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter)
+    private static ParsedRequestParameter ParseRequestParameter(IParameterSymbol parameter, ImmutableEquatableArray<Range>? locations)
     {
         var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var canBeNull = CanBeNull(parameter.Type, parameter.NullableAnnotation);
@@ -262,6 +313,8 @@ internal static partial class Parser
                 new(
                     parameter.MetadataName,
                     parameterType,
+                    locations,
+                    BuildParameterAttributes(parameter),
                     RequestParameterKind.CancellationToken,
                     canBeNull,
                     string.Empty,
@@ -294,9 +347,47 @@ internal static partial class Parser
                 1);
         }
 
-        return TryParsePropertyParameter(parameter, parameterType, out var propertyParameter)
-            ? new(propertyParameter, true, 0, 0, 0)
+        if (TryParsePropertyParameter(parameter, parameterType, out var propertyParameter))
+        {
+            return new(propertyParameter, true, 0, 0, 0);
+        }
+
+        return locations is {} l && IsSimpleType(parameter.Type)
+            ? new(PathRequestParameter(parameter, parameterType, l), true, 0, 0, 0)
             : new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
+
+        [SuppressMessage(
+            "Maintainability",
+            "SST1442: Functions should keep branching complexity low",
+            Justification = "There are a lot of simple types supported and matching on them is a simple pattern match")]
+        static bool IsSimpleType(ITypeSymbol type)
+        {
+            var underlyingType = GetUnderlyingType(type);
+
+            return IsGuid(underlyingType) || IsDateTimeOffset(underlyingType) ||
+                   underlyingType.SpecialType is SpecialType.System_String or SpecialType.System_DateTime
+                       or SpecialType.System_Int32
+                       or SpecialType.System_Int64
+                       or SpecialType.System_Int16
+                       or SpecialType.System_Enum
+                       or SpecialType.System_UInt32 or SpecialType.System_UInt64
+                       or SpecialType.System_UInt16 or SpecialType.System_Char or SpecialType.System_Boolean
+                       or SpecialType.System_Byte or SpecialType.System_Decimal or SpecialType.System_Double
+                       or SpecialType.System_Single;
+
+            static ITypeSymbol GetUnderlyingType(ITypeSymbol type)
+            {
+                return type is INamedTypeSymbol
+                {
+                    OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
+                } nullable
+                    ? nullable.TypeArguments[0]
+                    : type;
+            }
+
+            static bool IsGuid(ITypeSymbol type) => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is "System.Guid";
+            static bool IsDateTimeOffset(ITypeSymbol type) => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) is "System.DateTimeOffset";
+        }
     }
 
     /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
@@ -336,6 +427,8 @@ internal static partial class Parser
             bodyParameter = new(
                     parameter.MetadataName,
                     parameterType,
+                    null,
+                    BuildParameterAttributes(parameter),
                     RequestParameterKind.Body,
                     CanBeNull(parameter.Type, parameter.NullableAnnotation),
                     string.Empty,
@@ -351,6 +444,8 @@ internal static partial class Parser
         bodyParameter = new(
             parameter.MetadataName,
             parameterType,
+            null,
+            BuildParameterAttributes(parameter),
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,
@@ -579,6 +674,8 @@ internal static partial class Parser
             headerParameter = new(
                 parameter.MetadataName,
                 parameterType,
+                null,
+                BuildParameterAttributes(parameter),
                 RequestParameterKind.Header,
                 CanBeNull(parameter.Type, parameter.NullableAnnotation),
                 headerName.Trim(),
@@ -614,6 +711,8 @@ internal static partial class Parser
                 headerCollectionParameter = new(
                     parameter.MetadataName,
                     parameterType,
+                    null,
+                    BuildParameterAttributes(parameter),
                     RequestParameterKind.HeaderCollection,
                     CanBeNull(parameter.Type, parameter.NullableAnnotation),
                     string.Empty,
@@ -655,6 +754,8 @@ internal static partial class Parser
             propertyParameter = new(
                 parameter.MetadataName,
                 parameterType,
+                null,
+                BuildParameterAttributes(parameter),
                 RequestParameterKind.Property,
                 CanBeNull(parameter.Type, parameter.NullableAnnotation),
                 string.Empty,
@@ -678,12 +779,103 @@ internal static partial class Parser
         new(
             parameter.MetadataName,
             parameterType,
+            null,
+            BuildParameterAttributes(parameter),
             RequestParameterKind.Unsupported,
             CanBeNull(parameter.Type, parameter.NullableAnnotation),
             string.Empty,
             string.Empty,
             string.Empty,
             BodyBufferMode.None);
+
+    /// <summary>Builds a path request parameter model.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type.</param>
+    /// <param name="locations">The parameter's location in the URL.</param>
+    /// <returns>The path request model.</returns>
+    private static RequestParameterModel PathRequestParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        ImmutableEquatableArray<Range> locations) =>
+        new(
+            parameter.MetadataName,
+            parameterType,
+            locations,
+            BuildParameterAttributes(parameter),
+            RequestParameterKind.Path,
+            CanBeNull(parameter.Type, parameter.NullableAnnotation),
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            BodyBufferMode.None);
+
+    /// <summary>
+    /// Flattens a parameter's attributes into value-typed models so the incremental generator cache holds no
+    /// Roslyn symbols. Attribute type names and argument expressions are precomputed for the emitter.
+    /// </summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <returns>The precomputed attribute models.</returns>
+    private static ImmutableEquatableArray<ParameterAttributeModel> BuildParameterAttributes(IParameterSymbol parameter)
+    {
+        var attributes = parameter.GetAttributes();
+        if (attributes.Length == 0)
+        {
+            return ImmutableEquatableArray<ParameterAttributeModel>.Empty;
+        }
+
+        var models = new List<ParameterAttributeModel>(attributes.Length);
+        foreach (var attribute in attributes)
+        {
+            if (attribute.AttributeClass is null)
+            {
+                continue;
+            }
+
+            var constructorArguments = new List<string>(attribute.ConstructorArguments.Length);
+            foreach (var argument in attribute.ConstructorArguments)
+            {
+                constructorArguments.Add(ConstantValueToString(argument));
+            }
+
+            var namedArguments = new List<NamedAttributeArgument>(attribute.NamedArguments.Length);
+            foreach (var named in attribute.NamedArguments)
+            {
+                namedArguments.Add(new(named.Key, ConstantValueToString(named.Value)));
+            }
+
+            models.Add(new(
+                attribute.AttributeClass.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                constructorArguments.ToImmutableEquatableArray(),
+                namedArguments.ToImmutableEquatableArray()));
+        }
+
+        return models.ToImmutableEquatableArray();
+    }
+
+    /// <summary>Renders a typed constant attribute argument as the C# source expression the emitter writes.</summary>
+    /// <param name="argument">The typed constant.</param>
+    /// <returns>The source expression, or <c>"null"</c> when the value is null.</returns>
+    private static string ConstantValueToString(TypedConstant argument)
+    {
+        var result = string.Empty;
+
+        if (!argument.IsNull)
+        {
+            result = argument.Kind switch
+            {
+                TypedConstantKind.Enum =>
+                    $"({argument.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}){argument.Value!}",
+                TypedConstantKind.Primitive => SymbolDisplay.FormatPrimitive(argument.Value!, true, false) ?? string.Empty,
+                TypedConstantKind.Type =>
+                    $"typeof({argument.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})",
+                TypedConstantKind.Array =>
+                    $"new[] {{ {string.Join(", ", argument.Values.Select(ConstantValueToString))} }}",
+                _ => throw new NotSupportedException($"The type {argument.Kind} is not supported.")
+            };
+        }
+
+        return result.Length > 0 ? result : "null";
+    }
 
     /// <summary>Determines whether generated code needs a null-safe dereference for a parameter value.</summary>
     /// <param name="type">The parameter type.</param>
