@@ -18,6 +18,62 @@ public sealed class ReflectionTests
     /// <summary>The query value exercised by the query parameter tests.</summary>
     private const string QueryValue = "queryValue";
 
+    /// <summary>A Refit interface with many overloaded generic methods.</summary>
+    public interface IGenericMethod
+    {
+        /// <summary>Request with a generic route parameter.</summary>
+        /// <param name="value1">Generic route parameter.</param>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}")]
+        Task GetGenericParameter<T1>(T1 value1);
+
+        /// <summary>Request with a generic route parameter and additional parameter.</summary>
+        /// <param name="value1">Generic route parameter.</param>
+        /// <param name="value2">Integer route parameter.</param>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}/{value2}")]
+        Task GetGenericParameter<T1>(T1 value1, int value2);
+
+        /// <summary>Request with two generic route parameters.</summary>
+        /// <param name="value1">First generic route parameter.</param>
+        /// <param name="value2">Second generic route parameter.</param>
+        /// <typeparam name="T1">Generic type of first route parameter.</typeparam>
+        /// <typeparam name="T2">Generic type of second route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}/{value2}")]
+        Task GetGenericParameter<T1, T2>(T1 value1, T2 value2);
+    }
+
+    /// <summary>A generic Refit interface with many overloaded generic methods.</summary>
+    /// <typeparam name="TInterface">Generic type of interface.</typeparam>
+    public interface IGenericMethodAndInterface<TInterface>
+    {
+        /// <summary>Request with a generic route parameter.</summary>
+        /// <param name="value1">Generic route parameter.</param>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}")]
+        Task GetGenericParameter<T1>(T1 value1);
+
+        /// <summary>Request with a generic route parameter and additional parameter.</summary>
+        /// <param name="value1">Generic route parameter.</param>
+        /// <param name="value2">Integer route parameter.</param>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}/{value2}")]
+        Task GetGenericParameter<T1>(T1 value1, int value2);
+
+        /// <summary>Request with two generic route parameters.</summary>
+        /// <param name="value1">First generic route parameter.</param>
+        /// <param name="value2">Second generic route parameter.</param>
+        /// <typeparam name="T1">Generic type of first route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}/{value2}")]
+        Task GetGenericParameter<T1>(T1 value1, TInterface value2);
+    }
+
     /// <summary>Verifies a simple string path parameter is formatted with the expected metadata.</summary>
     /// <returns>A task that represents the asynchronous test.</returns>
     [Test]
@@ -286,4 +342,168 @@ public sealed class ReflectionTests
         await service.GetDictionaryQuery(dict);
         await formatter.AssertNoOutstandingAssertions();
     }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task OverloadedGenericParameterShouldBeExpectedReflection()
+    {
+        _ = _mockHandler.Fallback
+            .Respond("application/json", nameof(IGenericMethod.GetGenericParameter));
+
+        var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0)])!;
+        var parameterInfo = methodInfo.MakeGenericMethod(typeof(string)).GetParameters()[0];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo],
+            [typeof(string)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => _mockHandler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethod>("https://foo", settings);
+
+        await service.GetGenericParameter("Empty");
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task OverloadedGenericParameterWithNonGenericShouldBeExpectedReflection()
+    {
+        _ = _mockHandler.Fallback
+            .Respond("application/json", nameof(IGenericMethod.GetGenericParameter));
+
+        var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0), typeof(int)])!.MakeGenericMethod(typeof(string));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+        var parameterInfo2 = methodInfo.GetParameters()[1];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1, parameterInfo2],
+            [typeof(string), typeof(int)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => _mockHandler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethod>("https://foo", settings);
+
+        await service.GetGenericParameter("Empty", 10);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task OverloadedWithTwoGenericParameterShouldBeExpectedReflection()
+    {
+        _ = _mockHandler.Fallback
+            .Respond("application/json", nameof(IGenericMethod.GetGenericParameter));
+
+        var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 2, [Type.MakeGenericMethodParameter(0), Type.MakeGenericMethodParameter(1)])!;
+        methodInfo = methodInfo.MakeGenericMethod(typeof(string), typeof(long));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+        var parameterInfo2 = methodInfo.GetParameters()[1];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1, parameterInfo2],
+            [typeof(string), typeof(long)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => _mockHandler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethod>("https://foo", settings);
+
+        await service.GetGenericParameter("Empty", 10L);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task GenericOverloadedInterfaceWithGenericParameterShouldBeExpectedReflection()
+    {
+        _ = _mockHandler.Fallback
+            .Respond("application/json", nameof(IGenericMethodAndInterface<>.GetGenericParameter));
+
+        var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(nameof(IGenericMethodAndInterface<>.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0)])!;
+        methodInfo = methodInfo.MakeGenericMethod(typeof(int));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1],
+            [typeof(int)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => _mockHandler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethodAndInterface<string>>("https://foo", settings);
+
+        await service.GetGenericParameter(10);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task GenericOverloadedInterfaceWithNonGenericShouldBeExpectedReflection()
+    {
+        _ = _mockHandler.Fallback
+            .Respond("application/json", nameof(IGenericMethodAndInterface<>.GetGenericParameter));
+
+        var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(nameof(IGenericMethodAndInterface<>.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0), typeof(int)])!;
+        methodInfo = methodInfo.MakeGenericMethod(typeof(long));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+        var parameterInfo2 = methodInfo.GetParameters()[1];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1, parameterInfo2],
+            [typeof(long), typeof(int)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => _mockHandler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethodAndInterface<string>>("https://foo", settings);
+
+        await service.GetGenericParameter(10L, 10);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task GenericOverloadedInterfaceWithTwoGenericParameterShouldBeExpectedReflection()
+    {
+        _ = _mockHandler.Fallback
+            .Respond("application/json", nameof(IGenericMethodAndInterface<>.GetGenericParameter));
+
+        var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(
+            nameof(IGenericMethodAndInterface<>.GetGenericParameter),
+            1,
+            [Type.MakeGenericMethodParameter(0), typeof(string)])!;
+        methodInfo = methodInfo.MakeGenericMethod(typeof(long));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+        var parameterInfo2 = methodInfo.GetParameters()[1];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1, parameterInfo2],
+            [typeof(long), typeof(string)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => _mockHandler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethodAndInterface<string>>("https://foo", settings);
+
+        await service.GetGenericParameter(10L, "Empty");
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Disposes the mock HTTP handler owned by the test.</summary>
+    public void Dispose() => _mockHandler?.Dispose();
 }
