@@ -11,3 +11,8 @@ dotnet_diagnostic.CA1063.severity = none # Implement IDisposable correctly
 dotnet_diagnostic.CA1065.severity = none # Do not raise exceptions in unexpected locations
 dotnet_diagnostic.CA1812.severity = none # Avoid uninstantiated internal classes (test fixtures/DTOs)
 dotnet_diagnostic.CA2213.severity = none # Disposable fields should be disposed
+
+###################
+# SonarAnalyzer (S) — relaxed for test projects
+###################
+dotnet_diagnostic.S5332.severity = none # Using http protocol is insecure (test URLs are not real endpoints)
