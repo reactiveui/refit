@@ -5,8 +5,8 @@
   </PropertyGroup>
 
   <PropertyGroup Label="Shared Version Variables">
-    <PrimitivesVersion>5.8.0</PrimitivesVersion>
-    <TUnitVersion>1.57.0</TUnitVersion>
+    <PrimitivesVersion>6.0.0</PrimitivesVersion>
+    <TUnitVersion>1.58.0</TUnitVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
@@ -21,7 +21,7 @@
     <MicrosoftCodeAnalysisWorkspacesVersion>4.14.0</MicrosoftCodeAnalysisWorkspacesVersion>
 
     <SourceLinkVersion>10.0.300</SourceLinkVersion>
-    <ThreadingAnalyzersVersion>17.14.15</ThreadingAnalyzersVersion>
+    <ThreadingAnalyzersVersion>18.7.23</ThreadingAnalyzersVersion>
     <NetFrameworkReferenceAssembliesVersion>1.0.3</NetFrameworkReferenceAssembliesVersion>
   </PropertyGroup>
 
@@ -43,7 +43,7 @@
   <ItemGroup Label="Analyzers">
     <PackageVersion Include="StyleSharp.Analyzers" Version="3.13.4"/>
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>
-    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.27.0.140913"/>
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.28.0.143324"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.0.0-1.25277.114"/>
   </ItemGroup>
