@@ -1,7 +1,6 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Net.Http;
 using Refit.Testing;
 
 namespace Refit.Tests;
@@ -17,6 +16,72 @@ public sealed class ReflectionTests
 
     /// <summary>The query value exercised by the query parameter tests.</summary>
     private const string QueryValue = "queryValue";
+
+    /// <summary>A constant value to use as a route parameter.</summary>
+    private const string RouteValue = "Empty";
+
+    /// <summary>A constant value to use as a route parameter.</summary>
+    private const int IntegerValue = 10;
+
+    /// <summary>A constant value to use as a route parameter.</summary>
+    private const long LongValue = 10L;
+
+    /// <summary>A Refit interface with many overloaded generic methods.</summary>
+    public interface IGenericMethod
+    {
+        /// <summary>Request with a generic route parameter.</summary>
+        /// <param name="value1">Generic route parameter.</param>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}")]
+        Task GetGenericParameter<T1>(T1 value1);
+
+        /// <summary>Request with a generic route parameter and additional parameter.</summary>
+        /// <param name="value1">Generic route parameter.</param>
+        /// <param name="value2">Integer route parameter.</param>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}/{value2}")]
+        Task GetGenericParameter<T1>(T1 value1, int value2);
+
+        /// <summary>Request with two generic route parameters.</summary>
+        /// <param name="value1">First generic route parameter.</param>
+        /// <param name="value2">Second generic route parameter.</param>
+        /// <typeparam name="T1">Generic type of first route parameter.</typeparam>
+        /// <typeparam name="T2">Generic type of second route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}/{value2}")]
+        Task GetGenericParameter<T1, T2>(T1 value1, T2 value2);
+    }
+
+    /// <summary>A generic Refit interface with many overloaded generic methods.</summary>
+    /// <typeparam name="TInterface">Generic type of interface.</typeparam>
+    public interface IGenericMethodAndInterface<in TInterface>
+    {
+        /// <summary>Request with a generic route parameter.</summary>
+        /// <param name="value1">Generic route parameter.</param>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}")]
+        Task GetGenericParameter<T1>(T1 value1);
+
+        /// <summary>Request with a generic route parameter and additional parameter.</summary>
+        /// <param name="value1">Generic route parameter.</param>
+        /// <param name="value2">Integer route parameter.</param>
+        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}/{value2}")]
+        Task GetGenericParameter<T1>(T1 value1, int value2);
+
+        // This should be renamed to GetGenericParameter once #2197 is fixed.
+        /// <summary>Request with two generic route parameters.</summary>
+        /// <param name="value1">First generic route parameter.</param>
+        /// <param name="value2">Second generic route parameter.</param>
+        /// <typeparam name="T1">Generic type of first route parameter.</typeparam>
+        /// <returns>A task that completes when the request finishes.</returns>
+        [Get("/{value1}/{value2}")]
+        Task GetClassGenericParameter<T1>(T1 value1, TInterface value2);
+    }
 
     /// <summary>Verifies a simple string path parameter is formatted with the expected metadata.</summary>
     /// <returns>A task that represents the asynchronous test.</returns>
@@ -284,6 +349,197 @@ public sealed class ReflectionTests
 
         var dict = new Dictionary<string, object> { { "key0", 1 }, { "key1", 2 } };
         await service.GetDictionaryQuery(dict);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task OverloadedGenericParameterShouldBeExpectedReflection()
+    {
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/Empty"),
+                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
+            },
+        };
+
+        var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0)])!;
+        var parameterInfo = methodInfo.MakeGenericMethod(typeof(string)).GetParameters()[0];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo],
+            [typeof(string)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethod>(BaseUrl, settings);
+
+        await service.GetGenericParameter(RouteValue);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task OverloadedGenericParameterWithNonGenericShouldBeExpectedReflection()
+    {
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/Empty/10"),
+                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
+            },
+        };
+
+        var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0), typeof(int)])!.MakeGenericMethod(typeof(string));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+        var parameterInfo2 = methodInfo.GetParameters()[1];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1, parameterInfo2],
+            [typeof(string), typeof(int)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethod>(BaseUrl, settings);
+
+        await service.GetGenericParameter("Empty", IntegerValue);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task OverloadedWithTwoGenericParameterShouldBeExpectedReflection()
+    {
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/Empty/10"),
+                Reply.Json(nameof(IGenericMethod.GetGenericParameter))
+            },
+        };
+
+        var methodInfo = typeof(IGenericMethod).GetMethod(nameof(IGenericMethod.GetGenericParameter), 2, [Type.MakeGenericMethodParameter(0), Type.MakeGenericMethodParameter(1)])!;
+        methodInfo = methodInfo.MakeGenericMethod(typeof(string), typeof(long));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+        var parameterInfo2 = methodInfo.GetParameters()[1];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1, parameterInfo2],
+            [typeof(string), typeof(long)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethod>(BaseUrl, settings);
+
+        await service.GetGenericParameter(RouteValue, LongValue);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task GenericOverloadedInterfaceWithGenericParameterShouldBeExpectedReflection()
+    {
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/10"),
+                Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter))
+            },
+        };
+
+        var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(nameof(IGenericMethodAndInterface<>.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0)])!;
+        methodInfo = methodInfo.MakeGenericMethod(typeof(int));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1],
+            [typeof(int)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
+
+        await service.GetGenericParameter(IntegerValue);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task GenericOverloadedInterfaceWithNonGenericShouldBeExpectedReflection()
+    {
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/10/10"),
+                Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter))
+            },
+        };
+
+        var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(nameof(IGenericMethodAndInterface<>.GetGenericParameter), 1, [Type.MakeGenericMethodParameter(0), typeof(int)])!;
+        methodInfo = methodInfo.MakeGenericMethod(typeof(long));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+        var parameterInfo2 = methodInfo.GetParameters()[1];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1, parameterInfo2],
+            [typeof(long), typeof(int)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
+
+        await service.GetGenericParameter(LongValue, IntegerValue);
+        await formatter.AssertNoOutstandingAssertions();
+    }
+
+    /// <summary>Verifies an overloaded generic path parameter is formatted with the expected metadata.</summary>
+    /// <returns>A task that represents the asynchronous test.</returns>
+    [Test]
+    public async Task GenericOverloadedInterfaceWithTwoGenericParameterShouldBeExpectedReflection()
+    {
+        var handler = new StubHttp
+        {
+            {
+                Route.Get("https://foo/10/Empty"),
+                Reply.Json(nameof(IGenericMethodAndInterface<>.GetClassGenericParameter))
+            },
+        };
+
+        var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(
+            nameof(IGenericMethodAndInterface<>.GetClassGenericParameter),
+            1,
+            [Type.MakeGenericMethodParameter(0), typeof(string)])!;
+        methodInfo = methodInfo.MakeGenericMethod(typeof(long));
+        var parameterInfo1 = methodInfo.GetParameters()[0];
+        var parameterInfo2 = methodInfo.GetParameters()[1];
+
+        var formatter = new TestUrlFormatter(
+            [parameterInfo1, parameterInfo2],
+            [typeof(long), typeof(string)]);
+        var settings = new RefitSettings
+        {
+            HttpMessageHandlerFactory = () => handler,
+            UrlParameterFormatter = formatter
+        };
+        var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
+
+        await service.GetClassGenericParameter(LongValue, "Empty");
         await formatter.AssertNoOutstandingAssertions();
     }
 }
