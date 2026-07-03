@@ -12,6 +12,7 @@ namespace Refit.Generator;
 /// <param name="ShouldDisposeResponse">Whether the response should be disposed by the shared runner.</param>
 /// <param name="CanGenerateInline">Whether this method is eligible for generated request construction.</param>
 /// <param name="StaticHeaders">The static headers parsed from inherited interfaces, the declaring interface, and the method.</param>
+/// <param name="Parameters">The parsed request parameter bindings.</param>
 internal sealed record RequestModel(
     string HttpMethod,
     string Path,

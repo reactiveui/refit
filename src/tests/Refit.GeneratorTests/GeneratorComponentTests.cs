@@ -369,8 +369,8 @@ public static class GeneratorComponentTests
         {
             var parameters = new ImmutableEquatableArray<ParameterModel>(
                 [
-                    new("first", null, StringTypeName, false, false),
-                    new("second", null, "global::System.Int32", false, false)
+                    new("first", StringTypeName, false, false),
+                    new("second", "global::System.Int32", false, false)
                 ]);
 
             await Assert.That(Emitter.BuildParameterTypeListForTesting(ImmutableEquatableArray<ParameterModel>.Empty))

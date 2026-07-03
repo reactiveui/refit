@@ -210,7 +210,7 @@ internal static partial class Emitter
         var length = (parameterModels.Length - 1) * 2;
         for (var i = 0; i < parameterModels.Length; i++)
         {
-            var (metadataName, _, type, annotation, _) = parameterModels[i];
+            var (metadataName, type, annotation, _) = parameterModels[i];
             length += type.Length
                 + (supportsNullable && annotation ? NullableParameterExtraLength : ParameterExtraLength)
                 + metadataName.Length;
@@ -230,7 +230,7 @@ internal static partial class Emitter
                         AppendText(destination, ", ", ref position);
                     }
 
-                    var (metadataName, _, type, annotation, _) = models[i];
+                    var (metadataName, type, annotation, _) = models[i];
                     AppendText(destination, type, ref position);
                     if (emitNullableAnnotations && annotation)
                     {

@@ -12,7 +12,6 @@ namespace Refit.Generator;
 /// <param name="Request">The parsed request metadata for Refit methods.</param>
 /// <param name="Parameters">The method parameters.</param>
 /// <param name="Constraints">The generic type constraints for the method.</param>
-/// <param name="SubProperties">Sub properties of parameters that are classes.</param>
 /// <param name="IsExplicitInterface">A value indicating whether the method is an explicit interface implementation.</param>
 internal sealed record MethodModel(
     string Name,

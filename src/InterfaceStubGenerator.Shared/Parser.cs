@@ -951,7 +951,7 @@ internal static partial class Parser
         var paramType = param.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var isGeneric = ContainsTypeParameter(param.Type);
 
-        return new(param.MetadataName, GetMemberAlias(param), paramType, annotation, isGeneric);
+        return new(param.MetadataName, paramType, annotation, isGeneric);
     }
 
     /// <summary>Gets the optional parameter alias.</summary>
