@@ -427,9 +427,10 @@ public static class GeneratedRequestRunner
                 [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type parentClass,
                 string callerMethod,
                 string parameterName,
+                int genericCount,
                 Type[] typeParameters)
     {
-        var parameterInfo = GetParameterInfo(parentClass, callerMethod, parameterName, typeParameters);
+        var parameterInfo = GetParameterInfo(parentClass, callerMethod, parameterName, genericCount, typeParameters);
 
         if (!roundTripping)
         {
@@ -593,14 +594,18 @@ public static class GeneratedRequestRunner
     /// <param name="type">The <see cref="Type"/> that contains the method.</param>
     /// <param name="methodName">The name of the method to reflect upon.</param>
     /// <param name="parameterName">The name of the parameter to retrieve.</param>
+    /// <param name="genericCount">The number of generic type parameters of the method.</param>
+    /// <param name="typeParameters">The types of the parameters of the method.</param>
     /// <returns>The <see cref="ParameterInfo"/> matching the specified criteria.</returns>
     private static ParameterInfo GetParameterInfo(
         [
             DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type type,
         string methodName,
         string parameterName,
+        int genericCount,
         Type[] typeParameters)
     {
+        // need to update key.
         var cacheKey = (type, methodName, parameterName);
 
         if (_parameterCache.TryGetValue(cacheKey, out var cachedParameter))
@@ -610,7 +615,7 @@ public static class GeneratedRequestRunner
 
         var method = type.GetMethod(
             methodName,
-            BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static,
+            genericCount,
             typeParameters)
                      ?? throw new UnreachableException($"Method '{methodName}' was not found on type '{type.Name}'.");
 

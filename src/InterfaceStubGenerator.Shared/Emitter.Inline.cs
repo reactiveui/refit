@@ -187,7 +187,7 @@ internal static partial class Emitter
                     // Could use CallerMember here
                     // Use nameof()
                     _ = sb.AppendLine(
-                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddStandardParameter(ref {valueStringBuilderLocal}, @{standardParameter.MetadataName}, {(standardParameter.IsRoundTripping ? "true" : "false")}, {settingsLocal}, typeof({methodModel.ContainingType}), {ToCSharpStringLiteral(methodModel.Name)}, {ToCSharpStringLiteral(standardParameter.MetadataName)}, {typeParameterExpression});");
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddStandardParameter(ref {valueStringBuilderLocal}, @{standardParameter.MetadataName}, {(standardParameter.IsRoundTripping ? "true" : "false")}, {settingsLocal}, typeof({methodModel.ContainingType}), {ToCSharpStringLiteral(methodModel.Name)}, {ToCSharpStringLiteral(standardParameter.MetadataName)}, {methodModel.Constraints.Count}, {typeParameterExpression});");
                     break;
                 case RouteFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property
