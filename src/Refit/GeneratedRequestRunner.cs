@@ -411,26 +411,30 @@ public static class GeneratedRequestRunner
 #endif
     }
 
-    /// <summary>Appends a parameter to the route, round-tripping segments when required.</summary>
+    /// <summary>Adds a parameter to the route, round-tripping segments when required.</summary>
     /// <param name="vsb">The path builder to append to.</param>
     /// <param name="value">The argument value to be added.</param>
-    /// <param name="roundTripping">If the fragment is round tripping.</param>
     /// <param name="settings">The Refit settings controlling formatting.</param>
-    /// <param name="parentClass">Type of callind methods class, used to get ParameterInfo.</param>
-    /// <param name="callerMethod">Name of the calling method, used to get ParameterInfo.</param>
     /// <param name="parameterName">Name of the parameter to be appended, used to get the ParameterInfo.</param>
-    public static void AddStandardParameter(
+    /// <param name="typeParameters">The types of the parameters of the method.</param>
+    /// <param name="roundTripping">If the fragment is round tripping.</param>
+    /// <param name="genericCount">The number of generic type parameters of the method.</param>
+    /// <param name="callerMethod">Name of the calling method, used to get ParameterInfo.</param>
+    /// <typeparam name="TClass">Type of calling methods class, used to get ParameterInfo.</typeparam>
+    public static void AddRouteParameter<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]TClass>(
                 ref ValueStringBuilder vsb,
                 object value,
-                bool roundTripping,
                 RefitSettings settings,
-                [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type parentClass,
-                string callerMethod,
                 string parameterName,
-                int genericCount,
-                Type[] typeParameters)
+                Type[] typeParameters,
+                bool roundTripping = false,
+                int genericCount = 0,
+                [CallerMemberName]string callerMethod = ""
+                )
     {
-        var parameterInfo = GetParameterInfo(parentClass, callerMethod, parameterName, genericCount, typeParameters);
+        ArgumentException.ThrowIfNullOrWhiteSpace(callerMethod);
+        var parameterInfo = GetParameterInfo(typeof(TClass), callerMethod, parameterName, genericCount, typeParameters);
 
         if (!roundTripping)
         {
@@ -599,7 +603,7 @@ public static class GeneratedRequestRunner
     /// <returns>The <see cref="ParameterInfo"/> matching the specified criteria.</returns>
     private static ParameterInfo GetParameterInfo(
         [
-            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods)]Type type,
+            DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]Type type,
         string methodName,
         string parameterName,
         int genericCount,
