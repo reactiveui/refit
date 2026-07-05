@@ -194,7 +194,7 @@ internal static partial class Emitter
                 case RouteFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property
                     _ = sb.AppendLine(
-                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AppendObjectPropertyFragment(ref {valueStringBuilderLocal}, @{objectAccess.AccessExpression}, {settingsLocal}, typeof({objectAccess.ParameterType}), {ToCSharpStringLiteral(objectAccess.Property)});");
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRouteObjectProperty<{objectAccess.ParameterType}>(ref {valueStringBuilderLocal}, @{objectAccess.AccessExpression}, {settingsLocal}, {ToCSharpStringLiteral(objectAccess.Property)});");
                     break;
                 case RouteFragmentModel.RoundTripNotStringError roundTripNotStringError:
                     {

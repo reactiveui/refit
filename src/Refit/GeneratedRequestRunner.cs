@@ -472,21 +472,20 @@ public static class GeneratedRequestRunner
         }
     }
 
-    /// <summary>Appends an object-property to the route.</summary>
+    /// <summary>Adds an object-property to the route.</summary>
     /// <param name="vsb">The path builder to append to.</param>
     /// <param name="value">The parameter property value to be appended.</param>
     /// <param name="settings">The Refit settings to use.</param>
-    /// <param name="classType">The parameters type.</param>
     /// <param name="propertyName">The name of the property to be appended.</param>
-    public static void AppendObjectPropertyFragment(
+    /// <typeparam name="TParameter">Type of the parameter, used to get PropertyInfo.</typeparam>
+    public static void AddRouteObjectProperty<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]TParameter>(
         ref ValueStringBuilder vsb,
         object value,
         RefitSettings settings,
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
-        Type classType,
         string propertyName)
     {
-        var propertyInfo = GetPropertyInfo(classType, propertyName);
+        var propertyInfo = GetPropertyInfo(typeof(TParameter), propertyName);
 
         vsb.Append(StringHelpers.EscapeDataString(settings.UrlParameterFormatter.Format(
             value,
