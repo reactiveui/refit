@@ -46,14 +46,17 @@ namespace Refit.Implementation
                 Client = client;
                 _settings = settings;
             }
+
+            /// <summary>Cached parameter type array for the generated Get method.</summary>
+            private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] { typeof(int) };
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<string> Get(int @user)
             {
                 var refitSettings = _settings;
-                var valueStringBuilder = new global::Refit.ValueStringBuilder(stackalloc char[256]);
+                global::System.Span<char> span = stackalloc char[256];
+                var valueStringBuilder = new global::Refit.ValueStringBuilder(span);
                 valueStringBuilder.Append("/users/");
-                global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, user, false, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient), "Get", "user");
-
+                global::Refit.GeneratedRequestRunner.AddRouteParameter<global::RefitGeneratorTest.IGeneratedClient>(ref valueStringBuilder, @user, refitSettings, "user", ______typeParameters);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;

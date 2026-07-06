@@ -38,13 +38,17 @@ namespace Refit.Implementation
                 _settings = requestBuilder.Settings;
             }
 
+
+            /// <summary>Cached parameter type array for the generated GetUser method.</summary>
+            private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
             {
                 var refitSettings = _settings;
-                var valueStringBuilder = new global::Refit.ValueStringBuilder(stackalloc char[256]);
+                global::System.Span<char> span = stackalloc char[256];
+                var valueStringBuilder = new global::Refit.ValueStringBuilder(span);
                 valueStringBuilder.Append("/users/");
-                global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, userName, false, refitSettings, typeof(global::Refit.Tests.IGitHubApi), "GetUser", "userName");
+                global::Refit.GeneratedRequestRunner.AddRouteParameter<global::Refit.Tests.IGitHubApi>(ref valueStringBuilder, @userName, refitSettings, "userName", ______typeParameters);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
@@ -64,37 +68,41 @@ namespace Refit.Implementation
 
 
             /// <summary>Cached parameter type array for the generated GetUserObservable method.</summary>
-            private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] { typeof(string) };
+            private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
             public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
             {
                 var refitArguments = new object[] { @userName };
                 var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters );
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters0 );
 
                 return (global::System.IObservable<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments);
             }
 
 
             /// <summary>Cached parameter type array for the generated GetUserCamelCase method.</summary>
-            private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] { typeof(string) };
+            private static readonly global::System.Type[] ______typeParameters1 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
             public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
             {
                 var refitArguments = new object[] { @userName };
                 var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters0 );
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters1 );
 
                 return (global::System.IObservable<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments);
             }
 
+
+            /// <summary>Cached parameter type array for the generated GetOrgMembers method.</summary>
+            private static readonly global::System.Type[] ______typeParameters2 = new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) };
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName, global::System.Threading.CancellationToken @cancellationToken)
             {
                 var refitSettings = _settings;
-                var valueStringBuilder = new global::Refit.ValueStringBuilder(stackalloc char[256]);
+                global::System.Span<char> span = stackalloc char[256];
+                var valueStringBuilder = new global::Refit.ValueStringBuilder(span);
                 valueStringBuilder.Append("/orgs/");
-                global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, orgName, false, refitSettings, typeof(global::Refit.Tests.IGitHubApi), "GetOrgMembers", "orgName");
+                global::Refit.GeneratedRequestRunner.AddRouteParameter<global::Refit.Tests.IGitHubApi>(ref valueStringBuilder, @orgName, refitSettings, "orgName", ______typeParameters2);
                 valueStringBuilder.Append("/members");
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
@@ -115,13 +123,13 @@ namespace Refit.Implementation
 
 
             /// <summary>Cached parameter type array for the generated FindUsers method.</summary>
-            private static readonly global::System.Type[] ______typeParameters1 = new global::System.Type[] { typeof(string) };
+            private static readonly global::System.Type[] ______typeParameters3 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
             public async global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
             {
                 var refitArguments = new object[] { @q };
                 var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters1 );
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("FindUsers", ______typeParameters3 );
 
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }
@@ -199,14 +207,17 @@ namespace Refit.Implementation
                     global::System.Threading.CancellationToken.None);
             }
 
+
+            /// <summary>Cached parameter type array for the generated GetUserWithMetadata method.</summary>
+            private static readonly global::System.Type[] ______typeParameters4 = new global::System.Type[] { typeof(string), typeof(global::System.Threading.CancellationToken) };
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName, global::System.Threading.CancellationToken @cancellationToken)
             {
                 var refitSettings = _settings;
-                var valueStringBuilder = new global::Refit.ValueStringBuilder(stackalloc char[256]);
+                global::System.Span<char> span = stackalloc char[256];
+                var valueStringBuilder = new global::Refit.ValueStringBuilder(span);
                 valueStringBuilder.Append("/users/");
-                global::Refit.GeneratedRequestRunner.AddStandardParameter(ref valueStringBuilder, userName, false, refitSettings, typeof(global::Refit.Tests.IGitHubApi), "GetUserWithMetadata", "userName");
-
+                global::Refit.GeneratedRequestRunner.AddRouteParameter<global::Refit.Tests.IGitHubApi>(ref valueStringBuilder, @userName, refitSettings, "userName", ______typeParameters4);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
@@ -226,52 +237,52 @@ namespace Refit.Implementation
 
 
             /// <summary>Cached parameter type array for the generated GetUserObservableWithMetadata method.</summary>
-            private static readonly global::System.Type[] ______typeParameters2 = new global::System.Type[] { typeof(string) };
+            private static readonly global::System.Type[] ______typeParameters5 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
             public global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserObservableWithMetadata(string @userName)
             {
                 var refitArguments = new object[] { @userName };
                 var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters2 );
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters5 );
 
                 return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments);
             }
 
 
             /// <summary>Cached parameter type array for the generated GetUserIApiResponseObservableWithMetadata method.</summary>
-            private static readonly global::System.Type[] ______typeParameters3 = new global::System.Type[] { typeof(string) };
+            private static readonly global::System.Type[] ______typeParameters6 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
             public global::System.IObservable<global::Refit.IApiResponse<global::Refit.Tests.User>> GetUserIApiResponseObservableWithMetadata(string @userName)
             {
                 var refitArguments = new object[] { @userName };
                 var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserIApiResponseObservableWithMetadata", ______typeParameters3 );
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserIApiResponseObservableWithMetadata", ______typeParameters6 );
 
                 return (global::System.IObservable<global::Refit.IApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments);
             }
 
 
             /// <summary>Cached parameter type array for the generated CreateUser method.</summary>
-            private static readonly global::System.Type[] ______typeParameters4 = new global::System.Type[] { typeof(global::Refit.Tests.User) };
+            private static readonly global::System.Type[] ______typeParameters7 = new global::System.Type[] { typeof(global::Refit.Tests.User) };
             /// <inheritdoc />
             public async global::System.Threading.Tasks.Task<global::Refit.Tests.User> CreateUser(global::Refit.Tests.User @user)
             {
                 var refitArguments = new object[] { @user };
                 var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("CreateUser", ______typeParameters4 );
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("CreateUser", ______typeParameters7 );
 
                 return await ((global::System.Threading.Tasks.Task<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }
 
 
             /// <summary>Cached parameter type array for the generated CreateUserWithMetadata method.</summary>
-            private static readonly global::System.Type[] ______typeParameters5 = new global::System.Type[] { typeof(global::Refit.Tests.User) };
+            private static readonly global::System.Type[] ______typeParameters8 = new global::System.Type[] { typeof(global::Refit.Tests.User) };
             /// <inheritdoc />
             public async global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> CreateUserWithMetadata(global::Refit.Tests.User @user)
             {
                 var refitArguments = new object[] { @user };
                 var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ______typeParameters5 );
+                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("CreateUserWithMetadata", ______typeParameters8 );
 
                 return await ((global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
             }

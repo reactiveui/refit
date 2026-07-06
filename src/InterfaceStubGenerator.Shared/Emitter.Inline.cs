@@ -161,11 +161,13 @@ internal static partial class Emitter
             return data;
         }
 
+        var spanLocal = locals.New("span");
         var valueStringBuilderLocal = locals.New("valueStringBuilder");
         
         var sb = data.ConstructorStatement;
         _ = sb.AppendLine();
-        _ = sb.AppendLine($"{bodyIndent}var {valueStringBuilderLocal} = new global::Refit.ValueStringBuilder(stackalloc char[256]);");
+        _ = sb.AppendLine($"{bodyIndent}global::System.Span<char> {spanLocal} = stackalloc char[256];");
+        _ = sb.AppendLine($"{bodyIndent}var {valueStringBuilderLocal} = new global::Refit.ValueStringBuilder({spanLocal});");
 
         foreach (var fragment in routeFragments)
         {
