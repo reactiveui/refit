@@ -595,99 +595,7 @@ public static class GeneratedRequestRunner
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
     private static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
-    
-    private record struct ParameterInfoKey(Type Type, string MethodName, string ParameterName, Type[] TypeParameters, Type[]? GenericArgumentTypes);
 
-    private class ParameterInfoCacheKeyComparer : IEqualityComparer<ParameterInfoKey>
-    {
-        /// <summary>
-        /// Gets a thread-safe, reusable singleton instance of the <see cref="ParameterInfoCacheKeyComparer"/> to avoid redundant object allocations.
-        /// </summary>
-        public static ParameterInfoCacheKeyComparer Instance = new();
-        
-        /// <summary>
-        /// Determines whether two cache keys are structurally equal by comparing their string 
-        /// and type properties, as well as the sequential elements of their array properties.
-        /// </summary>
-        /// <param name="x">The first cache key to compare.</param>
-        /// <param name="y">The second cache key to compare.</param>
-        /// <returns><see langword="true"/> if the specified keys are equal; otherwise, <see langword="false"/>.</returns>
-        public bool Equals(ParameterInfoKey x, ParameterInfoKey y)
-        {
-            if (x.Type != y.Type) return false;
-            if (x.MethodName != y.MethodName) return false;
-            if (x.ParameterName != y.ParameterName) return false;
-
-            if (!SequenceEqual(x.TypeParameters, y.TypeParameters)) return false;
-
-            if (!SequenceEqual(x.GenericArgumentTypes, y.GenericArgumentTypes)) return false;
-
-            return true;
-        }
-
-        /// <summary>
-        /// Computes a structural hash code for the cache key record by combining the hashes 
-        /// of its scalar properties and the individual elements of its array fields.
-        /// </summary>
-        /// <param name="obj">The cache key to hash.</param>
-        /// <returns>A hash code value calculated from the values structural contents.</returns>
-        public int GetHashCode(ParameterInfoKey obj)
-        {
-            var hash = new HashCode();
-            
-            hash.Add(obj.Type);
-            hash.Add(obj.MethodName);
-            hash.Add(obj.ParameterName);
-
-            // Incorporate array contents into the hash
-            AddArrayHashCode(ref hash, obj.TypeParameters);
-            AddArrayHashCode(ref hash, obj.GenericArgumentTypes);
-
-            return hash.ToHashCode();
-        }
-
-        /// <summary>
-        /// Performs an efficient, allocation-free comparison between two type arrays to 
-        /// determine if they contain identical elements in the same order.
-        /// </summary>
-        /// <param name="a">The first array of types to compare, which can be null.</param>
-        /// <param name="b">The second array of types to compare, which can be null.</param>
-        /// <returns><see langword="true"/> if the arrays are sequentially equal or both null; otherwise, <see langword="false"/>.</returns>
-        private static bool SequenceEqual(Type[]? a, Type[]? b)
-        {
-            if (ReferenceEquals(a, b)) return true;
-            if (a is null || b is null) return false;
-            if (a.Length != b.Length) return false;
-
-            for (var i = 0; i < a.Length; i++)
-            {
-                if (a[i] != b[i]) return false;
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// Incorporates the lengths and individual elements of an array into the hash code 
-        /// computation without causing memory allocations.
-        /// </summary>
-        /// <param name="hash">The active <see cref="HashCode"/> instance passed by reference.</param>
-        /// <param name="array">The array of types to hash, which can be null.</param>
-        private static void AddArrayHashCode(ref HashCode hash, Type[]? array)
-        {
-            if (array is null)
-            {
-                hash.Add(0);
-                return;
-            }
-
-            hash.Add(array.Length);
-            foreach (var t in array)
-            {
-                hash.Add(t);
-            }
-        }
-    }
-    
     /// <summary>Retrieves the <see cref="ParameterInfo"/> for a specified method parameter, utilizing an internal cache to optimize subsequent lookups.</summary>
     /// <param name="type">The <see cref="Type"/> that contains the method.</param>
     /// <param name="methodName">The name of the method to reflect upon.</param>
@@ -759,5 +667,129 @@ public static class GeneratedRequestRunner
 
         _ = _propertyCache.TryAdd(cacheKey, property);
         return property;
+    }
+
+    /// <summary>Used as a key in a thread safe lookup to cache <see cref="ParameterInfo"/>.</summary>
+    /// <param name="Type">The <see cref="Type"/> that contains the method.</param>
+    /// <param name="MethodName">The name of the method to reflect upon.</param>
+    /// <param name="ParameterName">The name of the parameter to retrieve.</param>
+    /// <param name="TypeParameters">The types of the parameters of the method.</param>
+    /// <param name="GenericArgumentTypes">An array of generic argument types to use when constructing a generic method, or null if the method is not generic.</param>
+    private readonly record struct ParameterInfoKey(Type Type, string MethodName, string ParameterName, Type[] TypeParameters, Type[]? GenericArgumentTypes);
+
+    /// <summary>Used as a comparer to cache <see cref="ParameterInfo"/> values.</summary>
+    private sealed class ParameterInfoCacheKeyComparer : IEqualityComparer<ParameterInfoKey>
+    {
+        /// <summary>Gets a thread-safe, reusable singleton instance of the <see cref="ParameterInfoCacheKeyComparer"/> to avoid redundant object allocations.</summary>
+        public static ParameterInfoCacheKeyComparer Instance { get; } = new();
+
+        /// <summary>
+        /// Determines whether two cache keys are structurally equal by comparing their string 
+        /// and type properties, as well as the sequential elements of their array properties.
+        /// </summary>
+        /// <param name="x">The first cache key to compare.</param>
+        /// <param name="y">The second cache key to compare.</param>
+        /// <returns><see langword="true"/> if the specified keys are equal; otherwise, <see langword="false"/>.</returns>
+        public bool Equals(ParameterInfoKey x, ParameterInfoKey y)
+        {
+            if (x.Type != y.Type)
+            {
+                return false;
+            }
+
+            if (x.MethodName != y.MethodName)
+            {
+                return false;
+            }
+
+            if (x.ParameterName != y.ParameterName)
+            {
+                return false;
+            }
+
+            if (!SequenceEqual(x.TypeParameters, y.TypeParameters))
+            {
+                return false;
+            }
+
+            return SequenceEqual(x.GenericArgumentTypes, y.GenericArgumentTypes);
+        }
+
+        /// <summary>
+        /// Computes a structural hash code for the cache key record by combining the hashes 
+        /// of its scalar properties and the individual elements of its array fields.
+        /// </summary>
+        /// <param name="obj">The cache key to hash.</param>
+        /// <returns>A hash code value calculated from the values structural contents.</returns>
+        public int GetHashCode(ParameterInfoKey obj)
+        {
+            var hash = new HashCode();
+
+            hash.Add(obj.Type);
+            hash.Add(obj.MethodName);
+            hash.Add(obj.ParameterName);
+
+            // Incorporate array contents into the hash
+            AddArrayHashCode(ref hash, obj.TypeParameters);
+            AddArrayHashCode(ref hash, obj.GenericArgumentTypes);
+
+            return hash.ToHashCode();
+        }
+
+        /// <summary>
+        /// Performs an efficient, allocation-free comparison between two type arrays to 
+        /// determine if they contain identical elements in the same order.
+        /// </summary>
+        /// <param name="a">The first array of types to compare, which can be null.</param>
+        /// <param name="b">The second array of types to compare, which can be null.</param>
+        /// <returns><see langword="true"/> if the arrays are sequentially equal or both null; otherwise, <see langword="false"/>.</returns>
+        private static bool SequenceEqual(Type[]? a, Type[]? b)
+        {
+            if (ReferenceEquals(a, b))
+            {
+                return true;
+            }
+
+            if (a is null || b is null)
+            {
+                return false;
+            }
+
+            if (a.Length != b.Length)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Incorporates the lengths and individual elements of an array into the hash code 
+        /// computation without causing memory allocations.
+        /// </summary>
+        /// <param name="hash">The active <see cref="HashCode"/> instance passed by reference.</param>
+        /// <param name="array">The array of types to hash, which can be null.</param>
+        private static void AddArrayHashCode(ref HashCode hash, Type[]? array)
+        {
+            if (array is null)
+            {
+                hash.Add(0);
+                return;
+            }
+
+            hash.Add(array.Length);
+            foreach (var t in array)
+            {
+                hash.Add(t);
+            }
+        }
     }
 }
