@@ -2,15 +2,9 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Refit.Testing;
 
 namespace Refit.Tests;
@@ -1153,6 +1147,22 @@ public partial class RestServiceIntegrationTests
         var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
         _ = await fixture.GetNullableParam(null);
+
+        await handler.VerifyAllCalledAsync();
+    }
+
+    /// <summary>Verifies a round trip URL with a nullable parameter.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithNullRoundTripParameterGenerated()
+    {
+        var handler = new StubHttp
+        {
+            { Route.Get(BaseUrlWithSlash), Reply.Json("Ok") },
+        };
+        var fixture = handler.CreateClient<IRoundTrippingNullString>(BaseUrl);
+
+        _ = await fixture.GetValue(null);
 
         await handler.VerifyAllCalledAsync();
     }
