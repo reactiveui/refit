@@ -423,7 +423,8 @@ public static class GeneratedRequestRunner
     /// <typeparam name="TClass">Type of calling methods class, used to get ParameterInfo.</typeparam>
     /// <typeparam name="TParameter">Type of the parameter value.</typeparam>
     public static void AddPathParameter<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]TClass, TParameter>(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]TClass,
+        TParameter>(
                 ref ValueStringBuilder vsb,
                 TParameter value,
                 RefitSettings settings,
@@ -431,8 +432,7 @@ public static class GeneratedRequestRunner
                 Type[] typeParameters,
                 bool roundTripping = false,
                 int genericCount = 0,
-                [CallerMemberName]string callerMethod = ""
-                )
+                [CallerMemberName]string callerMethod = "")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(callerMethod);
         var parameterInfo = GetParameterInfo(typeof(TClass), callerMethod, parameterName, genericCount, typeParameters);
@@ -481,7 +481,8 @@ public static class GeneratedRequestRunner
     /// <typeparam name="TParameter">Type of the parameter, used to get PropertyInfo.</typeparam>
     /// <typeparam name="TProperty">Type of the property.</typeparam>
     public static void AddPathObjectProperty<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]TParameter, TProperty>(
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]TParameter,
+        TProperty>(
         ref ValueStringBuilder vsb,
         TProperty value,
         RefitSettings settings,
@@ -639,7 +640,7 @@ public static class GeneratedRequestRunner
             throw new UnreachableException($"Parameter '{parameterName}' was not found on method '{methodName}'.");
         }
 
-        _parameterCache.TryAdd(cacheKey, parameter);
+        _ = _parameterCache.TryAdd(cacheKey, parameter);
         return parameter;
     }
 
@@ -662,7 +663,7 @@ public static class GeneratedRequestRunner
         var property = type.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public)
             ?? throw new UnreachableException($"Property '{propertyName}' was not found on type '{type.Name}'.");
 
-        _propertyCache.TryAdd(cacheKey, property);
+        _ = _propertyCache.TryAdd(cacheKey, property);
         return property;
     }
 }
