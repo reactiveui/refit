@@ -36,6 +36,9 @@ internal static partial class Emitter
 
     /// <summary>The generated prefix for type expressions.</summary>
     private const string TypeOfPrefix = "typeof(";
+    
+    /// <summary>The generated prefix for MakeGenericMethodParameter expressions.</summary>
+    private const string TypeMakeGenericMethodParameterPrefix = "Type.MakeGenericMethodParameter(";
 
     /// <summary>The number of spaces in one generated indentation level.</summary>
     private const int CharsPerIndentation = 4;
@@ -719,6 +722,31 @@ internal static partial class Emitter
         return (source, typeParameterFieldName);
     }
 
+    /// <summary>Builds a cached field for non-generic method parameter types, when possible.</summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <returns>The generated field source and field name, if one was generated.</returns>
+    private static (string Source, string? FieldName) BuildInlineTypeParameterField(
+        MethodModel methodModel,
+        UniqueNameBuilder uniqueNames)
+    {
+        if (methodModel.Parameters.Count == 0)
+        {
+            return (string.Empty, null);
+        }
+
+        var typeParameterFieldName = uniqueNames.New(TypeParameterVariableName);
+        var typeList = BuildInlineParameterTypeList(methodModel.Parameters);
+        var memberIndent = Indent(MethodMemberIndentation);
+        var source = $$"""
+
+
+                       {{memberIndent}}/// <summary>Cached parameter type array for the generated {{ToXmlDocumentationText(methodModel.DeclaredMethod)}} method.</summary>
+                       {{memberIndent}}private static readonly global::System.Type[] {{typeParameterFieldName}} = new global::System.Type[] { {{typeList}} };
+                       """;
+        return (source, typeParameterFieldName);
+    }
+
     /// <summary>Determines whether any parameter type depends on a method type parameter.</summary>
     /// <param name="parameters">The parameter models to inspect.</param>
     /// <returns>True when at least one parameter is generic.</returns>
@@ -777,6 +805,58 @@ internal static partial class Emitter
 
                     AppendText(destination, TypeOfPrefix, ref position);
                     AppendText(destination, values[i].Type, ref position);
+                    destination[position++] = ')';
+                }
+            });
+    }
+    
+    /// <summary>Builds the generated <c>typeof(...)</c> argument list for method parameters.</summary>
+    /// <param name="parameters">The parameter models to emit.</param>
+    /// <returns>The generated parameter type list.</returns>
+    private static string BuildInlineParameterTypeList(ImmutableEquatableArray<ParameterModel> parameters)
+    {
+        if (parameters.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var length = (parameters.Count - 1) * 2;
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            if (parameters[i].IsGeneric)
+            {
+                length += TypeMakeGenericMethodParameterPrefix.Length + i.ToString().Length + 1;
+            }
+            else
+            {
+                length += TypeOfPrefix.Length + parameters[i].Type.Length + 1;
+            }
+        }
+
+        return CreateGeneratedString(
+            length,
+            parameters.AsArray(),
+            static (destination, values) =>
+            {
+                var position = 0;
+                for (var i = 0; i < values.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        AppendText(destination, ", ", ref position);
+                    }
+
+                    if (values[i].IsGeneric)
+                    {
+                        AppendText(destination, TypeMakeGenericMethodParameterPrefix, ref position);
+                        AppendInt32(destination, i, ref position);
+                    }
+                    else
+                    {
+                        AppendText(destination, TypeOfPrefix, ref position);
+                        AppendText(destination, values[i].Type, ref position);
+                    }
+                    
                     destination[position++] = ')';
                 }
             });

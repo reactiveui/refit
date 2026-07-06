@@ -107,7 +107,7 @@ internal static partial class Emitter
     {
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         var request = methodModel.Request;
-        var (typeParameterFieldSource, cachedTypeParameterFieldName) = BuildTypeParameterField(
+        var (typeParameterFieldSource, cachedTypeParameterFieldName) = BuildInlineTypeParameterField(
             methodModel,
             uniqueNames);
         typeParameterFieldSource = IsConstantRoute(methodModel.Request.RouteFragments) ? "" : typeParameterFieldSource;
