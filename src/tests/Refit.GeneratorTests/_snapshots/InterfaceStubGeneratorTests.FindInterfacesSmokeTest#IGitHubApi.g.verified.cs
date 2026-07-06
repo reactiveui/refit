@@ -48,7 +48,7 @@ namespace Refit.Implementation
                 global::System.Span<char> span = stackalloc char[256];
                 var valueStringBuilder = new global::Refit.ValueStringBuilder(span);
                 valueStringBuilder.Append("/users/");
-                global::Refit.GeneratedRequestRunner.AddRouteParameter<global::Refit.Tests.IGitHubApi>(ref valueStringBuilder, @userName, refitSettings, "userName", ______typeParameters);
+                global::Refit.GeneratedRequestRunner.AddPathParameter<global::Refit.Tests.IGitHubApi, string>(ref valueStringBuilder, @userName, refitSettings, nameof(@userName), ______typeParameters);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
@@ -102,7 +102,7 @@ namespace Refit.Implementation
                 global::System.Span<char> span = stackalloc char[256];
                 var valueStringBuilder = new global::Refit.ValueStringBuilder(span);
                 valueStringBuilder.Append("/orgs/");
-                global::Refit.GeneratedRequestRunner.AddRouteParameter<global::Refit.Tests.IGitHubApi>(ref valueStringBuilder, @orgName, refitSettings, "orgName", ______typeParameters2);
+                global::Refit.GeneratedRequestRunner.AddPathParameter<global::Refit.Tests.IGitHubApi, string>(ref valueStringBuilder, @orgName, refitSettings, nameof(@orgName), ______typeParameters2);
                 valueStringBuilder.Append("/members");
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
@@ -217,7 +217,7 @@ namespace Refit.Implementation
                 global::System.Span<char> span = stackalloc char[256];
                 var valueStringBuilder = new global::Refit.ValueStringBuilder(span);
                 valueStringBuilder.Append("/users/");
-                global::Refit.GeneratedRequestRunner.AddRouteParameter<global::Refit.Tests.IGitHubApi>(ref valueStringBuilder, @userName, refitSettings, "userName", ______typeParameters4);
+                global::Refit.GeneratedRequestRunner.AddPathParameter<global::Refit.Tests.IGitHubApi, string>(ref valueStringBuilder, @userName, refitSettings, nameof(@userName), ______typeParameters4);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;

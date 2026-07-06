@@ -9,8 +9,8 @@ namespace Refit.Generator;
 internal record RouteFragmentModel
 {
     internal record Constant(string Value) : RouteFragmentModel;
-    internal record ObjectAccess(string AccessExpression, string ParameterType, string Property) : RouteFragmentModel;
-    internal record StandardParameter(string MetadataName, bool IsRoundTripping) : RouteFragmentModel;
+    internal record ObjectAccess(string AccessExpression, string ParameterType, string Property, string PropertyType) : RouteFragmentModel;
+    internal record StandardParameter(string ParameterType, string MetadataName, bool IsRoundTripping) : RouteFragmentModel;
     internal record UnmatchedRouteGuard(string RawName) : RouteFragmentModel;
     internal record RoundTripNotStringError(string MetadataName, string ParamType) : RouteFragmentModel;
 }

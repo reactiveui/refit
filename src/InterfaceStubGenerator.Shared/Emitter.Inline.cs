@@ -189,14 +189,14 @@ internal static partial class Emitter
                     // Could use CallerMember here
                     // Use nameof()
                     _ = sb.AppendLine(
-                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathParameter<{methodModel.ContainingType}>(ref {valueStringBuilderLocal}, " +
-                        $"@{standardParameter.MetadataName}, {settingsLocal}, {ToCSharpStringLiteral(standardParameter.MetadataName)}, " +
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathParameter<{methodModel.ContainingType}, {standardParameter.ParameterType}>(ref {valueStringBuilderLocal}, " +
+                        $"@{standardParameter.MetadataName}, {settingsLocal}, nameof(@{standardParameter.MetadataName}), " +
                         $"{typeParameterExpression}{(standardParameter.IsRoundTripping ? ", roundTripping: true" : "")}{(methodModel.Constraints.Count > 0 ? $", genericCount: {methodModel.Constraints.Count}": "")});");
                     break;
                 case RouteFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property
                     _ = sb.AppendLine(
-                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathObjectProperty<{objectAccess.ParameterType}>(ref {valueStringBuilderLocal}, @{objectAccess.AccessExpression}, {settingsLocal}, {ToCSharpStringLiteral(objectAccess.Property)});");
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathObjectProperty<{objectAccess.ParameterType}, {objectAccess.PropertyType}>(ref {valueStringBuilderLocal}, @{objectAccess.AccessExpression}, {settingsLocal}, {ToCSharpStringLiteral(objectAccess.Property)});");
                     break;
                 case RouteFragmentModel.RoundTripNotStringError roundTripNotStringError:
                     {

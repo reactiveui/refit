@@ -56,7 +56,7 @@ namespace Refit.Implementation
                 global::System.Span<char> span = stackalloc char[256];
                 var valueStringBuilder = new global::Refit.ValueStringBuilder(span);
                 valueStringBuilder.Append("/users/");
-                global::Refit.GeneratedRequestRunner.AddRouteParameter<global::RefitGeneratorTest.IGeneratedClient>(ref valueStringBuilder, @user, refitSettings, "user", ______typeParameters);
+                global::Refit.GeneratedRequestRunner.AddPathParameter<global::RefitGeneratorTest.IGeneratedClient, int>(ref valueStringBuilder, @user, refitSettings, nameof(@user), ______typeParameters);
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, valueStringBuilder.ToString(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;

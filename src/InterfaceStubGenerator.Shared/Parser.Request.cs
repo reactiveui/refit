@@ -424,15 +424,15 @@ internal static partial class Parser
         bool isRoundTripping,
         IParameterSymbol value)
     {
-        var paramType = value.Type;
-        if (isRoundTripping && paramType.SpecialType != SpecialType.System_String)
+        var paramType = value.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        if (isRoundTripping && value.Type.SpecialType != SpecialType.System_String)
         {
-            fragmentList.Add(new RouteFragmentModel.RoundTripNotStringError(value.MetadataName, paramType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            fragmentList.Add(new RouteFragmentModel.RoundTripNotStringError(value.MetadataName, paramType));
             return;
         }
 
         ret.Add(value);
-        fragmentList.Add(new RouteFragmentModel.StandardParameter(value.MetadataName, isRoundTripping));
+        fragmentList.Add(new RouteFragmentModel.StandardParameter(paramType, value.MetadataName, isRoundTripping));
     }
     
     /// <summary>Adds an object-property route parameter to the parameter map and fragment list.</summary>
