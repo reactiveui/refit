@@ -621,12 +621,27 @@ public static class GeneratedRequestRunner
 
         var genericCount = genericArgumentTypes?.Length ?? 0;
 
+#if NETCOREAPP
         var method = type.GetMethod(
             methodName,
             genericCount,
             typeParameters)
                      ?? throw new UnreachableException($"Method '{methodName}' was not found on type '{type.Name}'.");
 
+        if (genericArgumentTypes is not null)
+        {
+            method = method.MakeGenericMethod(genericArgumentTypes);
+        }
+#else
+        // TOOD: This needs to handle generics, compare type parameters
+        // Should: Get methods by name, filter by generic count, then MakeGeneric as needed
+        // then compare parameter types
+        // This should be done if Glenn/Chris still want to use reflection
+        // Remember to create a placeholder type and custom MakeGenericMethodParameter
+        // we then filter for the placeholder type, treating it like a generic placeholder
+        var method = type.GetMethod(methodName);
+#endif
+        
         ParameterInfo? parameter = null;
         foreach (var parameterInfo in method.GetParameters())
         {
