@@ -22,5 +22,8 @@ internal enum RequestParameterKind
     Property,
 
     /// <summary>The parameter supplies the request cancellation token.</summary>
-    CancellationToken
+    CancellationToken,
+    
+    /// <summary>The parameter supplies a value for a placeholder in the path.</summary>
+    Path
 }

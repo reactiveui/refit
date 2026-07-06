@@ -548,14 +548,12 @@ internal static partial class Parser
             return new(propertyParameter, true, 0, 0, 0);
         }
 
-        if (routeParameterMap.Contains(parameter))
+        if (TryParseRouteParameter(parameter, parameterType, routeParameterMap, out var routeParameter))
         {
-            return new(propertyParameter, true, 0, 0, 0);
+            return new(routeParameter, true, 0, 0, 0);
         }
-        else
-        {
-            return new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
-        }
+    
+        return new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
     }
 
     /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
@@ -925,6 +923,36 @@ internal static partial class Parser
 
         propertyParameter = UnsupportedRequestParameter(parameter, parameterType);
         return false;
+    }
+    
+    /// <summary>Tries to parse a route property parameter.</summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="propertyParameter">Receives the property parameter model.</param>
+    /// <param name="routeParameterMap">Set of parameters that are use in the route.</param>
+    /// <returns><see langword="true"/> when the parameter has a property attribute.</returns>
+    private static bool TryParseRouteParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        HashSet<IParameterSymbol> routeParameterMap,
+        out RequestParameterModel propertyParameter)
+    {
+        if (!routeParameterMap.Contains(parameter))
+        {
+            propertyParameter = UnsupportedRequestParameter(parameter, parameterType);
+            return false;
+        }
+        
+        propertyParameter = new(
+            parameter.MetadataName,
+            parameterType,
+            RequestParameterKind.Path,
+            CanBeNull(parameter.Type, parameter.NullableAnnotation),
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            BodyBufferMode.None);
+        return true;
     }
 
     /// <summary>Builds an unsupported request parameter model.</summary>
