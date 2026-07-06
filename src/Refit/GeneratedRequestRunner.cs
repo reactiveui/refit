@@ -25,10 +25,10 @@ public static class GeneratedRequestRunner
     private static readonly ConcurrentDictionary<(Type ParentType, string Property), PropertyInfo> _propertyCache = new ();
 
     /// <summary>
-    /// An internal cache that maps a composite key of a parent <see cref="Type"/>, a method name, and a parameter name 
+    /// An internal cache that maps a composite key of a parent <see cref="Type"/>, a method name, and a parameter name and types
     /// to its corresponding <see cref="ParameterInfo"/>, avoiding redundant reflection overhead.
     /// </summary>
-    private static readonly ConcurrentDictionary<(Type ParentType, string MethodName, string ParameterName), ParameterInfo> _parameterCache = new ();
+    private static readonly ConcurrentDictionary<ParameterInfoKey, ParameterInfo> _parameterCache = new (ParameterInfoCacheKeyComparer.Instance);
 
     /// <summary>Builds the relative request URI for a generated request, joining the client base address with the method path.</summary>
     /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
@@ -418,7 +418,7 @@ public static class GeneratedRequestRunner
     /// <param name="parameterName">Name of the parameter to be appended, used to get the ParameterInfo.</param>
     /// <param name="typeParameters">The types of the parameters of the method.</param>
     /// <param name="roundTripping">If the fragment is round tripping.</param>
-    /// <param name="genericCount">The number of generic type parameters of the method.</param>
+    /// <param name="genericArgumentTypes">An array of generic argument types to use when constructing a generic method, or null if the method is not generic.</param>
     /// <param name="callerMethod">Name of the calling method, used to get ParameterInfo.</param>
     /// <typeparam name="TClass">Type of calling methods class, used to get ParameterInfo.</typeparam>
     /// <typeparam name="TParameter">Type of the parameter value.</typeparam>
@@ -431,11 +431,11 @@ public static class GeneratedRequestRunner
                 string parameterName,
                 Type[] typeParameters,
                 bool roundTripping = false,
-                int genericCount = 0,
+                Type[]? genericArgumentTypes = null,
                 [CallerMemberName]string callerMethod = "")
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(callerMethod);
-        var parameterInfo = GetParameterInfo(typeof(TClass), callerMethod, parameterName, genericCount, typeParameters);
+        var parameterInfo = GetParameterInfo(typeof(TClass), callerMethod, parameterName, typeParameters, genericArgumentTypes);
 
         if (!roundTripping)
         {
@@ -595,29 +595,123 @@ public static class GeneratedRequestRunner
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
     private static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
+    
+    private record struct ParameterInfoKey(Type Type, string MethodName, string ParameterName, Type[] TypeParameters, Type[]? GenericArgumentTypes);
 
+    private class ParameterInfoCacheKeyComparer : IEqualityComparer<ParameterInfoKey>
+    {
+        /// <summary>
+        /// Gets a thread-safe, reusable singleton instance of the <see cref="ParameterInfoCacheKeyComparer"/> to avoid redundant object allocations.
+        /// </summary>
+        public static ParameterInfoCacheKeyComparer Instance = new();
+        
+        /// <summary>
+        /// Determines whether two cache keys are structurally equal by comparing their string 
+        /// and type properties, as well as the sequential elements of their array properties.
+        /// </summary>
+        /// <param name="x">The first cache key to compare.</param>
+        /// <param name="y">The second cache key to compare.</param>
+        /// <returns><see langword="true"/> if the specified keys are equal; otherwise, <see langword="false"/>.</returns>
+        public bool Equals(ParameterInfoKey x, ParameterInfoKey y)
+        {
+            if (x.Type != y.Type) return false;
+            if (x.MethodName != y.MethodName) return false;
+            if (x.ParameterName != y.ParameterName) return false;
+
+            if (!SequenceEqual(x.TypeParameters, y.TypeParameters)) return false;
+
+            if (!SequenceEqual(x.GenericArgumentTypes, y.GenericArgumentTypes)) return false;
+
+            return true;
+        }
+
+        /// <summary>
+        /// Computes a structural hash code for the cache key record by combining the hashes 
+        /// of its scalar properties and the individual elements of its array fields.
+        /// </summary>
+        /// <param name="obj">The cache key to hash.</param>
+        /// <returns>A hash code value calculated from the values structural contents.</returns>
+        public int GetHashCode(ParameterInfoKey obj)
+        {
+            var hash = new HashCode();
+            
+            hash.Add(obj.Type);
+            hash.Add(obj.MethodName);
+            hash.Add(obj.ParameterName);
+
+            // Incorporate array contents into the hash
+            AddArrayHashCode(ref hash, obj.TypeParameters);
+            AddArrayHashCode(ref hash, obj.GenericArgumentTypes);
+
+            return hash.ToHashCode();
+        }
+
+        /// <summary>
+        /// Performs an efficient, allocation-free comparison between two type arrays to 
+        /// determine if they contain identical elements in the same order.
+        /// </summary>
+        /// <param name="a">The first array of types to compare, which can be null.</param>
+        /// <param name="b">The second array of types to compare, which can be null.</param>
+        /// <returns><see langword="true"/> if the arrays are sequentially equal or both null; otherwise, <see langword="false"/>.</returns>
+        private static bool SequenceEqual(Type[]? a, Type[]? b)
+        {
+            if (ReferenceEquals(a, b)) return true;
+            if (a is null || b is null) return false;
+            if (a.Length != b.Length) return false;
+
+            for (var i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i]) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Incorporates the lengths and individual elements of an array into the hash code 
+        /// computation without causing memory allocations.
+        /// </summary>
+        /// <param name="hash">The active <see cref="HashCode"/> instance passed by reference.</param>
+        /// <param name="array">The array of types to hash, which can be null.</param>
+        private static void AddArrayHashCode(ref HashCode hash, Type[]? array)
+        {
+            if (array is null)
+            {
+                hash.Add(0);
+                return;
+            }
+
+            hash.Add(array.Length);
+            foreach (var t in array)
+            {
+                hash.Add(t);
+            }
+        }
+    }
+    
     /// <summary>Retrieves the <see cref="ParameterInfo"/> for a specified method parameter, utilizing an internal cache to optimize subsequent lookups.</summary>
     /// <param name="type">The <see cref="Type"/> that contains the method.</param>
     /// <param name="methodName">The name of the method to reflect upon.</param>
     /// <param name="parameterName">The name of the parameter to retrieve.</param>
-    /// <param name="genericCount">The number of generic type parameters of the method.</param>
     /// <param name="typeParameters">The types of the parameters of the method.</param>
+    /// <param name="genericArgumentTypes">An array of generic argument types to use when constructing a generic method, or null if the method is not generic.</param>
     /// <returns>The <see cref="ParameterInfo"/> matching the specified criteria.</returns>
     private static ParameterInfo GetParameterInfo(
         [
             DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]Type type,
         string methodName,
         string parameterName,
-        int genericCount,
-        Type[] typeParameters)
+        Type[] typeParameters,
+        Type[]? genericArgumentTypes)
     {
         // need to update key.
-        var cacheKey = (type, methodName, parameterName);
+        var cacheKey = new ParameterInfoKey(type, methodName, parameterName, typeParameters, genericArgumentTypes);
 
         if (_parameterCache.TryGetValue(cacheKey, out var cachedParameter))
         {
             return cachedParameter;
         }
+
+        var genericCount = genericArgumentTypes?.Length ?? 0;
 
         var method = type.GetMethod(
             methodName,
