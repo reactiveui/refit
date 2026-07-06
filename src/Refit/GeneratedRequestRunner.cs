@@ -421,10 +421,11 @@ public static class GeneratedRequestRunner
     /// <param name="genericCount">The number of generic type parameters of the method.</param>
     /// <param name="callerMethod">Name of the calling method, used to get ParameterInfo.</param>
     /// <typeparam name="TClass">Type of calling methods class, used to get ParameterInfo.</typeparam>
-    public static void AddRouteParameter<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]TClass>(
+    /// <typeparam name="TParameter">Type of the parameter value.</typeparam>
+    public static void AddPathParameter<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]TClass, TParameter>(
                 ref ValueStringBuilder vsb,
-                object value,
+                TParameter value,
                 RefitSettings settings,
                 string parameterName,
                 Type[] typeParameters,
@@ -447,7 +448,7 @@ public static class GeneratedRequestRunner
         }
 
         // If round tripping, format each path segment independently.
-        var paramValue = (string)value;
+        var paramValue = (string)(object)value!;
         var sectionStart = 0;
         for (var i = 0; i <= paramValue.Length; i++)
         {
@@ -472,16 +473,17 @@ public static class GeneratedRequestRunner
         }
     }
 
-    /// <summary>Adds an object-property to the route.</summary>
+    /// <summary>Adds an object-property to the path.</summary>
     /// <param name="vsb">The path builder to append to.</param>
     /// <param name="value">The parameter property value to be appended.</param>
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="propertyName">The name of the property to be appended.</param>
     /// <typeparam name="TParameter">Type of the parameter, used to get PropertyInfo.</typeparam>
-    public static void AddRouteObjectProperty<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]TParameter>(
+    /// <typeparam name="TProperty">Type of the property.</typeparam>
+    public static void AddPathObjectProperty<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]TParameter, TProperty>(
         ref ValueStringBuilder vsb,
-        object value,
+        TProperty value,
         RefitSettings settings,
         string propertyName)
     {

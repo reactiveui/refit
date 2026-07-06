@@ -189,14 +189,14 @@ internal static partial class Emitter
                     // Could use CallerMember here
                     // Use nameof()
                     _ = sb.AppendLine(
-                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRouteParameter<{methodModel.ContainingType}>(ref {valueStringBuilderLocal}, " +
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathParameter<{methodModel.ContainingType}>(ref {valueStringBuilderLocal}, " +
                         $"@{standardParameter.MetadataName}, {settingsLocal}, {ToCSharpStringLiteral(standardParameter.MetadataName)}, " +
                         $"{typeParameterExpression}{(standardParameter.IsRoundTripping ? ", roundTripping: true" : "")}{(methodModel.Constraints.Count > 0 ? $", genericCount: {methodModel.Constraints.Count}": "")});");
                     break;
                 case RouteFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property
                     _ = sb.AppendLine(
-                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRouteObjectProperty<{objectAccess.ParameterType}>(ref {valueStringBuilderLocal}, @{objectAccess.AccessExpression}, {settingsLocal}, {ToCSharpStringLiteral(objectAccess.Property)});");
+                        $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathObjectProperty<{objectAccess.ParameterType}>(ref {valueStringBuilderLocal}, @{objectAccess.AccessExpression}, {settingsLocal}, {ToCSharpStringLiteral(objectAccess.Property)});");
                     break;
                 case RouteFragmentModel.RoundTripNotStringError roundTripNotStringError:
                     {
