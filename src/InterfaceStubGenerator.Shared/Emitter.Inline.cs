@@ -121,7 +121,7 @@ internal static partial class Emitter
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
-        var requestUriData = BuildRequestUri(methodModel, locals, settingsLocal, typeParameterExpression, genericTypesArgument);
+        var requestUriData = BuildRequestPath(methodModel, locals, settingsLocal, typeParameterExpression, genericTypesArgument);
         var requestUriExpression =
             requestUriData.RequestUriExpression!;
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
@@ -144,7 +144,17 @@ internal static partial class Emitter
             """;
     }
     
-    private static BuildUriData BuildRequestUri(
+    /// <summary>
+    /// Adds logic to the inline method body to add path parameters.
+    /// </summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="locals">Contains the unique member names in the method scope.</param>
+    /// <param name="settingsLocal">The unique generated variable name that stores Refit settings.</param>
+    /// <param name="typeParameterExpression">The name of the type parameter array instance <see cref="Type[]"/> representing this method.</param>
+    /// <param name="genericTypesArgument">The generic type parameter array <see cref="Type[]"/> for this method.</param>
+    /// <returns><see cref="BuildUriData"/> containing the expression to construct the path and the method body to create it.</returns>
+    /// <exception cref="NotImplementedException">Unreachable exception when the <see cref="RouteFragmentModel"/> is unknown.</exception>
+    private static BuildUriData BuildRequestPath(
         MethodModel methodModel,
         UniqueNameBuilder locals,
         string settingsLocal,
@@ -186,10 +196,6 @@ internal static partial class Emitter
                         break;
                     }
                 case RouteFragmentModel.StandardParameter standardParameter:
-                    // need to add indent and valueStringName, and settings
-                    // need to add parameterInfo nonsense here
-                    // Could use CallerMember here
-                    // Use nameof()
                     _ = sb.AppendLine(
                         $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathParameter<{methodModel.ContainingType}, {standardParameter.ParameterType}>(ref {valueStringBuilderLocal}, " +
                         $"@{standardParameter.MetadataName}, {settingsLocal}, nameof(@{standardParameter.MetadataName}), " +
