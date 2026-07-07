@@ -388,18 +388,24 @@ internal static class RequestExecutionHelpers
         }
         catch (Exception ex)
         {
-            if (!isApiResponse)
+            var transportException = settings.TransportExceptionFactory(request, ex);
+            if (transportException is ApiExceptionBase apiExceptionBase)
             {
-                throw new ApiRequestException(request, request.Method, settings, ex);
+                if (!isApiResponse)
+                {
+                    throw apiExceptionBase;
+                }
+
+                var failure = ApiResponse.Create<T, TBody>(
+                    request,
+                    null,
+                    default,
+                    settings,
+                    apiExceptionBase);
+                return SendResult<T>.FromFailure(failure);
             }
 
-            var failure = ApiResponse.Create<T, TBody>(
-                request,
-                null,
-                default,
-                settings,
-                new ApiRequestException(request, request.Method, settings, ex));
-            return SendResult<T>.FromFailure(failure);
+            throw transportException;
         }
     }
 

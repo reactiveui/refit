@@ -2,14 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Refit.Testing;
 
 namespace Refit.Tests;
@@ -384,7 +378,7 @@ public partial class RestServiceIntegrationTests
     /// <summary>Verifies a request canceled before the response is read surfaces the cancellation.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task RequestCanceledBeforeResponseRead()
+    public async Task RequestCanceledBeforeResponseRead_WhenNoTransportExceptionFactory()
     {
         using var cts = new CancellationTokenSource();
 
@@ -419,6 +413,51 @@ public partial class RestServiceIntegrationTests
         });
 
         var result = await Assert.That(
+            () => (Task)fixture.GetOrgMembers(OrgName, cts.Token)).ThrowsExactly<TaskCanceledException>();
+
+        // Source generated requests directly return the SendAsync task so won't contain the caller stack frame.
+        await AssertStackTraceContains(nameof(GeneratedRequestRunner.SendAsync), result!.StackTrace);
+    }
+
+    /// <summary>Verifies a request canceled before the response is read surfaces the cancellation. Providing a custom <see cref="RefitSettings.TransportExceptionFactory"/>.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequestCanceledBeforeResponseRead_WhenTransportExceptionFactory()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher
+                {
+                    Method = HttpMethod.Get,
+                    Template = OrgMembersUrl,
+                    Reusable = true
+                },
+                Reply.From(req =>
+                {
+                    // Cancel the request
+                    cts.Cancel();
+                    return new(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType)
+                    };
+                })
+            },
+        };
+        var refitSettings = new RefitSettings
+        {
+            ContentSerializer = new NewtonsoftJsonContentSerializer(
+                new()
+                {
+                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                })
+        };
+        refitSettings.TransportExceptionFactory = (req, ex) => new ApiRequestException(req, req.Method, refitSettings, ex);
+        var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, refitSettings);
+
+        var result = await Assert.That(
             () => (Task)fixture.GetOrgMembers(OrgName, cts.Token)).ThrowsExactly<ApiRequestException>();
 
         await Assert.That(result!.InnerException).IsNotNull();
@@ -431,7 +470,7 @@ public partial class RestServiceIntegrationTests
     /// <summary>Verifies cancellation before the response is read surfaces in the API response error.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task RequestCanceledBeforeResponseReadWithIApiResponse()
+    public async Task RequestCanceledBeforeResponseReadWithIApiResponse_WhenNoTransportExceptionFactory()
     {
         using var cts = new CancellationTokenSource();
 
@@ -457,6 +496,49 @@ public partial class RestServiceIntegrationTests
         };
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl);
+
+        await Assert.That(
+            () => (Task)fixture.GetUserWithMetadata(OrgName, cts.Token)).ThrowsExactly<TaskCanceledException>();
+    }
+
+    /// <summary>Verifies cancellation before the response is read surfaces in the API response error. Providing a custom <see cref="RefitSettings.TransportExceptionFactory"/>.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RequestCanceledBeforeResponseReadWithIApiResponse_WhenTransportExceptionFactory()
+    {
+        using var cts = new CancellationTokenSource();
+
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher
+                {
+                    Method = HttpMethod.Get,
+                    Template = "https://api.github.com/users/github",
+                    Reusable = true
+                },
+                Reply.From(req =>
+                {
+                    // Cancel the request
+                    cts.Cancel();
+                    return new(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(OrgMembersJson, Encoding.UTF8, JsonMediaType)
+                    };
+                })
+            },
+        };
+        var refitSettings = new RefitSettings
+        {
+            ContentSerializer = new NewtonsoftJsonContentSerializer(
+                new()
+                {
+                    ContractResolver = new SnakeCasePropertyNamesContractResolver()
+                })
+        };
+        refitSettings.TransportExceptionFactory = (req, ex) => new ApiRequestException(req, req.Method, refitSettings, ex);
+
+        var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, refitSettings);
 
         var result = await fixture.GetUserWithMetadata(OrgName, cts.Token);
 

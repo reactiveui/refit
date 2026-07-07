@@ -19,6 +19,7 @@ public class RefitSettings
         UrlParameterFormatter = new DefaultUrlParameterFormatter();
         FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
         ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
+        TransportExceptionFactory = DefaultTransportExceptionFactory();
     }
 
     /// <summary>Initializes a new instance of the <see cref="RefitSettings"/> class.</summary>
@@ -72,6 +73,7 @@ public class RefitSettings
         UrlParameterKeyFormatter =
             urlParameterKeyFormatter ?? new DefaultUrlParameterKeyFormatter();
         ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
+        TransportExceptionFactory = DefaultTransportExceptionFactory();
     }
 
     /// <summary>Gets or sets a function to provide the Authorization header. Does not work if you supply an HttpClient instance.</summary>
@@ -192,6 +194,20 @@ public class RefitSettings
     /// <summary>Gets optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.</summary>
     public Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
 
+    /// <summary>
+    /// Gets or sets a factory invoked when <see cref="HttpClient.SendAsync(HttpRequestMessage)"/> throws a transport-level
+    /// exception, giving callers full control over the exception that is ultimately thrown or captured.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The factory receives the <see cref="HttpRequestMessage"/> and the raw transport exception.
+    /// The returned exception is thrown directly (non-ApiResponse path) or stored as the error inside the
+    /// <see cref="ApiResponse{T}"/> (ApiResponse path); if it is not already an <see cref="ApiRequestException"/>,
+    /// it is automatically wrapped in one that carries the full request context.
+    /// </para>
+    /// </remarks>
+    public Func<HttpRequestMessage, Exception, Exception> TransportExceptionFactory { get; set; }
+
 #if NET6_0_OR_GREATER
 
     /// <summary>Gets or sets the version.</summary>
@@ -238,4 +254,13 @@ public class RefitSettings
             UrlParameterKeyFormatter = urlParameterKeyFormatter,
         };
     }
+
+    /// <summary>The default <see cref="TransportExceptionFactory"/>.</summary>
+    /// <returns>
+    /// A factory delegate that, given an <see cref="HttpRequestMessage"/> and an <see cref="Exception"/>,
+    /// returns a new <see cref="ApiRequestException"/> with the original exception as its inner exception.
+    /// </returns>
+    private Func<HttpRequestMessage, Exception, Exception> DefaultTransportExceptionFactory()
+        => (req, ex) =>
+             ex is OperationCanceledException ? ex : new ApiRequestException(req, req.Method, this, ex);
 }
