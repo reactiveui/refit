@@ -114,13 +114,14 @@ internal static partial class Emitter
         cachedTypeParameterFieldName = IsConstantRoute(methodModel.Request.RouteFragments) ? "" : cachedTypeParameterFieldName;
         
         var typeParameterExpression = BuildTypeParameterExpression(methodModel.Parameters, cachedTypeParameterFieldName);
+        var genericTypesArgument = BuildGenericTypesArgument(methodModel);
         var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
         var settingsLocal = locals.New("refitSettings");
         var requestLocal = locals.New("refitRequest");
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
-        var requestUriData = BuildRequestUri(methodModel, locals, settingsLocal, typeParameterExpression);
+        var requestUriData = BuildRequestUri(methodModel, locals, settingsLocal, typeParameterExpression, genericTypesArgument);
         var requestUriExpression =
             requestUriData.RequestUriExpression!;
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
@@ -147,7 +148,8 @@ internal static partial class Emitter
         MethodModel methodModel,
         UniqueNameBuilder locals,
         string settingsLocal,
-        string typeParameterExpression)
+        string typeParameterExpression,
+        string genericTypesArgument)
     {
         var relativePath = methodModel.Request.Path;
         var routeFragments = methodModel.Request.RouteFragments;
@@ -185,13 +187,13 @@ internal static partial class Emitter
                     }
                 case RouteFragmentModel.StandardParameter standardParameter:
                     // need to add indent and valueStringName, and settings
-                    // need to add parameterinfo nonsense here
+                    // need to add parameterInfo nonsense here
                     // Could use CallerMember here
                     // Use nameof()
                     _ = sb.AppendLine(
                         $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathParameter<{methodModel.ContainingType}, {standardParameter.ParameterType}>(ref {valueStringBuilderLocal}, " +
                         $"@{standardParameter.MetadataName}, {settingsLocal}, nameof(@{standardParameter.MetadataName}), " +
-                        $"{typeParameterExpression}{(standardParameter.IsRoundTripping ? ", roundTripping: true" : "")}{(methodModel.Constraints.Count > 0 ? $", genericCount: {methodModel.Constraints.Count}": "")});");
+                        $"{typeParameterExpression}{(standardParameter.IsRoundTripping ? ", roundTripping: true" : "")}{(string.IsNullOrEmpty(genericTypesArgument) ? $", genericArgumentTypes: {genericTypesArgument}" : "")});");
                     break;
                 case RouteFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property
