@@ -1026,6 +1026,34 @@ public partial class GeneratedRequestRunnerTests
             .ThrowsExactly<OperationCanceledException>();
     }
 
+    /// <summary>Verifies caller-requested cancellation during send is rethrown instead of being wrapped in <see cref="ApiRequestException"/>.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendAsyncRethrowsCancellationRequestedDuringSend()
+    {
+        using var tokenSource = new CancellationTokenSource();
+        var handler = new CapturingHandler(
+            (_, _) =>
+            {
+                tokenSource.Cancel();
+                throw new OperationCanceledException(tokenSource.Token);
+            });
+        using var client = CreateClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+
+        await Assert
+            .That(
+                () => GeneratedRequestRunner.SendAsync<string, string>(
+                    client,
+                    request,
+                    CreateSettings(),
+                    isApiResponse: false,
+                    shouldDisposeResponse: true,
+                    bufferBody: false,
+                    tokenSource.Token))
+            .Throws<OperationCanceledException>();
+    }
+
     /// <summary>Verifies that best-effort response buffering failures do not prevent serializer deserialization.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
