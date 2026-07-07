@@ -549,6 +549,18 @@ namespace Refit
             // If round tripping, format each path segment independently.
             Debug.Assert(parameterMapValue.Type == ParameterType.RoundTripping, "Dynamic route fragments must be Normal or RoundTripping.");
             var paramValue = (string)param;
+
+            if (paramValue is null)
+            {
+                vsb.Append(
+                    StringHelpers.EscapeDataString(
+                        _settings.UrlParameterFormatter.Format(
+                            paramValue,
+                            parameterInfo,
+                            parameterInfo.ParameterType) ?? string.Empty));
+                return;
+            }
+
             var sectionStart = 0;
             for (var i = 0; i <= paramValue.Length; i++)
             {
