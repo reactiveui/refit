@@ -153,7 +153,7 @@ internal static partial class Emitter
     /// <param name="typeParameterExpression">The name of the type parameter array instance <see cref="Type[]"/> representing this method.</param>
     /// <param name="genericTypesArgument">The generic type parameter array <see cref="Type[]"/> for this method.</param>
     /// <returns><see cref="BuildUriData"/> containing the expression to construct the path and the method body to create it.</returns>
-    /// <exception cref="NotImplementedException">Unreachable exception when the <see cref="RouteFragmentModel"/> is unknown.</exception>
+    /// <exception cref="NotImplementedException">Unreachable exception when the <see cref="PathFragmentModel"/> is unknown.</exception>
     private static BuildUriData BuildRequestPath(
         MethodModel methodModel,
         UniqueNameBuilder locals,
@@ -185,28 +185,27 @@ internal static partial class Emitter
         {
             switch (fragment)
             {
-                case RouteFragmentModel.Constant constant:
+                case PathFragmentModel.Constant constant:
                     _ = sb.AppendLine($"{bodyIndent}{valueStringBuilderLocal}.Append({ToCSharpStringLiteral(constant.Value)});");
                     break;
-                case RouteFragmentModel.UnmatchedRouteGuard unmatchedRouteGuard:
+                case PathFragmentModel.UnmatchedPathGuard unmatchedRouteGuard:
                     {
-                        // need to make this a csharp safe string
                         var unmatchedRouteParameterError = ToCSharpStringLiteral($"URL {relativePath} has parameter {unmatchedRouteGuard.RawName}, but no method parameter matches");
                         _ = sb.AppendLine($"{bodyIndent}global::Refit.GeneratedRequestRunner.UnmatchedRouteParameterGuard({settingsLocal}, {unmatchedRouteParameterError});");
                         break;
                     }
-                case RouteFragmentModel.StandardParameter standardParameter:
+                case PathFragmentModel.StandardParameter standardParameter:
                     _ = sb.AppendLine(
                         $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathParameter<{methodModel.ContainingType}, {standardParameter.ParameterType}>(ref {valueStringBuilderLocal}, " +
                         $"@{standardParameter.MetadataName}, {settingsLocal}, nameof(@{standardParameter.MetadataName}), " +
                         $"{typeParameterExpression}{(standardParameter.IsRoundTripping ? ", roundTripping: true" : "")}{(string.IsNullOrEmpty(genericTypesArgument) ? $", genericArgumentTypes: {genericTypesArgument}" : "")});");
                     break;
-                case RouteFragmentModel.ObjectAccess objectAccess:
+                case PathFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property
                     _ = sb.AppendLine(
                         $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathObjectProperty<{objectAccess.ParameterType}, {objectAccess.PropertyType}>(ref {valueStringBuilderLocal}, @{objectAccess.AccessExpression}, {settingsLocal}, {ToCSharpStringLiteral(objectAccess.Property)});");
                     break;
-                case RouteFragmentModel.RoundTripNotStringError roundTripNotStringError:
+                case PathFragmentModel.RoundTripNotStringError roundTripNotStringError:
                     {
                         _ = sb.AppendLine(
                             $"""
@@ -215,7 +214,7 @@ internal static partial class Emitter
                         break;
                     }
                 default:
-                    throw new NotImplementedException(nameof(RouteFragmentModel));
+                    throw new NotImplementedException(nameof(PathFragmentModel));
             }
         }
 
@@ -227,7 +226,7 @@ internal static partial class Emitter
     /// <summary>Determines if a route is constant.</summary>
     /// <param name="routeFragments">Collection of route fragments.</param>
     /// <returns>True if the path is constant.</returns>
-    private static bool IsConstantRoute(ImmutableEquatableArray<RouteFragmentModel> routeFragments) => routeFragments.Count == 0 || (routeFragments.Count == 1 && routeFragments[0] is RouteFragmentModel.Constant);
+    private static bool IsConstantRoute(ImmutableEquatableArray<PathFragmentModel> routeFragments) => routeFragments.Count == 0 || (routeFragments.Count == 1 && routeFragments[0] is PathFragmentModel.Constant);
 
     /// <summary>Builds request content assignment for an inline generated method.</summary>
     /// <param name="bodyParameter">The body parameter model.</param>

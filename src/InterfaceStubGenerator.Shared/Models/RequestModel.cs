@@ -23,7 +23,7 @@ internal sealed record RequestModel(
     bool CanGenerateInline,
     ImmutableEquatableArray<HeaderModel> StaticHeaders,
     ImmutableEquatableArray<RequestParameterModel> Parameters,
-    ImmutableEquatableArray<RouteFragmentModel> RouteFragments)
+    ImmutableEquatableArray<PathFragmentModel> RouteFragments)
 {
     /// <summary>Gets an empty model used for non-Refit method placeholders.</summary>
     public static RequestModel Empty { get; } = new(
@@ -36,5 +36,5 @@ internal sealed record RequestModel(
         false,
         ImmutableEquatableArray<HeaderModel>.Empty,
         ImmutableEquatableArray<RequestParameterModel>.Empty,
-        ImmutableEquatableArray<RouteFragmentModel>.Empty);
+        ImmutableEquatableArray<PathFragmentModel>.Empty);
 }
