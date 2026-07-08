@@ -4,6 +4,6 @@ Refit.GeneratedParameterAttributeProvider.GeneratedParameterAttributeProvider(Sy
 Refit.GeneratedParameterAttributeProvider.GetCustomAttributes(bool inherit) -> object![]!
 Refit.GeneratedParameterAttributeProvider.GetCustomAttributes(System.Type! attributeType, bool inherit) -> object![]!
 Refit.GeneratedParameterAttributeProvider.IsDefined(System.Type! attributeType, bool inherit) -> bool
-Refit.RefitSettings.TransportExceptionFactory.get -> System.Func<System.Net.Http.HttpRequestMessage!, System.Exception!, System.Exception!>!
+Refit.RefitSettings.TransportExceptionFactory.get -> System.Func<System.Net.Http.HttpRequestMessage!, System.Exception!, System.Threading.CancellationToken, System.Exception!>!
 Refit.RefitSettings.TransportExceptionFactory.set -> void
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, params ((int startIdx, int endIdx) range, string? value)[]! uriParams) -> string!

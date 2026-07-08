@@ -1,6 +1,8 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Runtime.ExceptionServices;
+
 namespace Refit;
 
 /// <summary>Shared send and response-processing helpers for generated and reflection-built requests.</summary>
@@ -388,7 +390,7 @@ internal static class RequestExecutionHelpers
         }
         catch (Exception ex)
         {
-            var transportException = settings.TransportExceptionFactory(request, ex);
+            var transportException = settings.TransportExceptionFactory(request, ex, cancellationToken);
             if (transportException is ApiExceptionBase apiExceptionBase)
             {
                 if (!isApiResponse)
@@ -405,6 +407,7 @@ internal static class RequestExecutionHelpers
                 return SendResult<T>.FromFailure(failure);
             }
 
+            ExceptionDispatchInfo.Capture(transportException).Throw();
             throw transportException;
         }
     }

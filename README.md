@@ -88,6 +88,7 @@ lets you stub responses and verify requests with a declarative route table — s
     * [Inspecting the error body synchronously](#inspecting-the-error-body-synchronously)
     * [Reading the request body that was sent](#reading-the-request-body-that-was-sent)
     * [Providing a custom ExceptionFactory](#providing-a-custom-exceptionfactory)
+    * [Providing a custom TransportExceptionFactory](#providing-a-custom-transportexceptionfactory)
     * [ApiException deconstruction with Serilog](#apiexception-deconstruction-with-serilog)
 * [Testing your Refit clients](#testing-your-refit-clients)
 
@@ -265,6 +266,7 @@ clients continue to honor settings such as:
 * `AuthorizationHeaderValueGetter`
 * `ExceptionFactory`
 * `DeserializationExceptionFactory`
+* `TransportExceptionFactory`
 * `HttpRequestMessageOptions`
 * `Version` and `VersionPolicy`
 
@@ -2222,6 +2224,47 @@ var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
     new RefitSettings {
         DeserializationExceptionFactory = (httpResponse, exception) => nullTask;
     });
+```
+
+#### Providing a custom `TransportExceptionFactory`
+
+You can control the exception that is surfaced when `HttpClient.SendAsync` throws a transport-level error (for example,
+`HttpRequestException`, `SocketException`, or `TaskCanceledException`) by setting `TransportExceptionFactory` on
+`RefitSettings`. The factory receives the `HttpRequestMessage` that was being sent, the raw exception, and the
+`CancellationToken` that was passed to the call, and returns the exception that Refit will ultimately throw
+(non-`ApiResponse` path) or store in `IApiResponse.Error` (`ApiResponse` path).
+
+By default, Refit wraps the transport exception in an `ApiRequestException` that carries the full request context,
+except when the exception is an `OperationCanceledException` and the `CancellationToken` is already cancelled — in
+that case the original exception is returned unchanged. You can replace that behavior entirely, for example to
+re-throw the original exception unchanged in all cases:
+
+```csharp
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com",
+    new RefitSettings
+    {
+        TransportExceptionFactory = (request, ex, ct) => ex
+    });
+```
+
+Because `RefitSettings` is captured in the closure, you can also reconstruct the default behavior with your own
+adjustments:
+
+```csharp
+var settings = new RefitSettings();
+
+settings.TransportExceptionFactory = (request, ex, ct) =>
+{
+    // Pass cancellation through so ApiResponse callers still throw rather
+    // than capturing a cancelled request as a soft error.
+    if (ex is OperationCanceledException && ct.IsCancellationRequested)
+        return ex;
+
+    // Wrap everything else in ApiRequestException, just like the default.
+    return new ApiRequestException(request, request.Method, settings, ex);
+};
+
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com", settings);
 ```
 
 #### `ApiException` deconstruction with Serilog

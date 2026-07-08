@@ -454,7 +454,7 @@ public partial class RestServiceIntegrationTests
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
         };
-        refitSettings.TransportExceptionFactory = (req, ex) => new ApiRequestException(req, req.Method, refitSettings, ex);
+        refitSettings.TransportExceptionFactory = (req, ex, _) => new ApiRequestException(req, req.Method, refitSettings, ex);
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, refitSettings);
 
         var result = await Assert.That(
@@ -536,7 +536,7 @@ public partial class RestServiceIntegrationTests
                     ContractResolver = new SnakeCasePropertyNamesContractResolver()
                 })
         };
-        refitSettings.TransportExceptionFactory = (req, ex) => new ApiRequestException(req, req.Method, refitSettings, ex);
+        refitSettings.TransportExceptionFactory = (req, ex, _) => new ApiRequestException(req, req.Method, refitSettings, ex);
 
         var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, refitSettings);
 
