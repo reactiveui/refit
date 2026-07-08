@@ -2,14 +2,9 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Http;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Refit.Testing;
 
 namespace Refit.Tests;
@@ -784,8 +779,7 @@ public partial class RestServiceIntegrationTests
 
         await tokenSource.CancelAsync();
         var task = fixture.GetWithCancellationAndReturn(token);
-        var exception = await Assert.That(() => (Task)task).ThrowsExactly<ApiRequestException>();
-        await Assert.That(exception!.InnerException).IsTypeOf<TaskCanceledException>();
+        await Assert.That(() => (Task)task).ThrowsExactly<TaskCanceledException>();
     }
 
     /// <summary>Verifies a null cancellation token is ignored.</summary>
