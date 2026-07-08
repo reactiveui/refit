@@ -352,9 +352,16 @@ namespace Refit
 
             foreach (var method in possibleMethods)
             {
-                if (ParametersMatch(method.MethodInfo.GetParameters(), parameterTypes))
+                try
                 {
-                    return CloseGenericMethodIfNeeded(method, genericArgumentTypes);
+                    var closedMethod = CloseGenericMethodIfNeeded(method, genericArgumentTypes);
+                    if (ParametersMatch(closedMethod.MethodInfo.GetParameters(), parameterTypes))
+                    {
+                        return closedMethod;
+                    }
+                }
+                catch (Exception exception) when (exception.Message.Contains("violates the constraint", StringComparison.CurrentCultureIgnoreCase))
+                {
                 }
             }
 
