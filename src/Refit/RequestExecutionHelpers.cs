@@ -386,13 +386,6 @@ internal static class RequestExecutionHelpers
                 .ConfigureAwait(false);
             return SendResult<T>.FromResponse(response);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            // Caller-requested cancellation is control flow, not a transport error.
-            // Propagate it unwrapped so callers, ASP.NET Core request-abort handling and
-            // Polly cancellation policies still see an OperationCanceledException.
-            throw;
-        }
         catch (Exception ex)
         {
             var transportException = settings.TransportExceptionFactory(request, ex, cancellationToken);

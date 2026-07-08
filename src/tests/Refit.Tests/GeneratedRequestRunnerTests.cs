@@ -1033,9 +1033,9 @@ public partial class GeneratedRequestRunnerTests
     {
         using var tokenSource = new CancellationTokenSource();
         var handler = new CapturingHandler(
-            (_, _) =>
+            async (_, _) =>
             {
-                tokenSource.Cancel();
+                await tokenSource.CancelAsync();
                 throw new OperationCanceledException(tokenSource.Token);
             });
         using var client = CreateClient(handler);
