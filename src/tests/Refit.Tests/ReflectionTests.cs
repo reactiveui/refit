@@ -68,19 +68,20 @@ public sealed class ReflectionTests
         /// <summary>Request with a generic route parameter and additional parameter.</summary>
         /// <param name="value1">Generic route parameter.</param>
         /// <param name="value2">Integer route parameter.</param>
-        /// <typeparam name="T1">Generic type of route parameter.</typeparam>
+        /// <typeparam name="T1">Generic type of route parameter, constrained to value types.</typeparam>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}/{value2}")]
-        Task GetGenericParameter<T1>(T1 value1, int value2);
+        Task GetGenericParameter<T1>(T1 value1, int value2)
+            where T1 : struct;
 
-        // This should be renamed to GetGenericParameter once #2197 is fixed.
         /// <summary>Request with two generic route parameters.</summary>
         /// <param name="value1">First generic route parameter.</param>
         /// <param name="value2">Second generic route parameter.</param>
-        /// <typeparam name="T1">Generic type of first route parameter.</typeparam>
+        /// <typeparam name="T1">Generic type of first route parameter, constrained to reference types.</typeparam>
         /// <returns>A task that completes when the request finishes.</returns>
         [Get("/{value1}/{value2}")]
-        Task GetClassGenericParameter<T1>(T1 value1, TInterface value2);
+        Task GetGenericParameter<T1>(T1 value1, TInterface value2)
+            where T1 : class;
     }
 
     /// <summary>Verifies a simple string path parameter is formatted with the expected metadata.</summary>
@@ -517,21 +518,21 @@ public sealed class ReflectionTests
         {
             {
                 Route.Get("https://foo/10/Empty"),
-                Reply.Json(nameof(IGenericMethodAndInterface<>.GetClassGenericParameter))
+                Reply.Json(nameof(IGenericMethodAndInterface<>.GetGenericParameter))
             },
         };
 
         var methodInfo = typeof(IGenericMethodAndInterface<string>).GetMethod(
-            nameof(IGenericMethodAndInterface<>.GetClassGenericParameter),
+            nameof(IGenericMethodAndInterface<>.GetGenericParameter),
             1,
             [Type.MakeGenericMethodParameter(0), typeof(string)])!;
-        methodInfo = methodInfo.MakeGenericMethod(typeof(long));
+        methodInfo = methodInfo.MakeGenericMethod(typeof(string));
         var parameterInfo1 = methodInfo.GetParameters()[0];
         var parameterInfo2 = methodInfo.GetParameters()[1];
 
         var formatter = new TestUrlFormatter(
             [parameterInfo1, parameterInfo2],
-            [typeof(long), typeof(string)]);
+            [typeof(string), typeof(string)]);
         var settings = new RefitSettings
         {
             HttpMessageHandlerFactory = () => handler,
@@ -539,7 +540,7 @@ public sealed class ReflectionTests
         };
         var service = RestService.For<IGenericMethodAndInterface<string>>(BaseUrl, settings);
 
-        await service.GetClassGenericParameter(LongValue, "Empty");
+        await service.GetGenericParameter<string>("10", "Empty");
         await formatter.AssertNoOutstandingAssertions();
     }
 }
