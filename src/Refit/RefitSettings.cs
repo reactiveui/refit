@@ -19,6 +19,7 @@ public class RefitSettings
         UrlParameterFormatter = new DefaultUrlParameterFormatter();
         FormUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
         ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
+        TransportExceptionFactory = DefaultTransportExceptionFactory();
     }
 
     /// <summary>Initializes a new instance of the <see cref="RefitSettings"/> class.</summary>
@@ -72,6 +73,7 @@ public class RefitSettings
         UrlParameterKeyFormatter =
             urlParameterKeyFormatter ?? new DefaultUrlParameterKeyFormatter();
         ExceptionFactory = new DefaultApiExceptionFactory(this).CreateAsync;
+        TransportExceptionFactory = DefaultTransportExceptionFactory();
     }
 
     /// <summary>Gets or sets a function to provide the Authorization header. Does not work if you supply an HttpClient instance.</summary>
@@ -192,6 +194,22 @@ public class RefitSettings
     /// <summary>Gets optional Key-Value pairs, which are displayed in the property <see cref="HttpRequestMessage.Properties"/>.</summary>
     public Dictionary<string, object>? HttpRequestMessageOptions { get; init; }
 
+    /// <summary>
+    /// Gets or sets a factory invoked when <see cref="HttpClient.SendAsync(HttpRequestMessage)"/> throws a
+    /// transport-level exception, giving callers full control over the exception that is ultimately surfaced.
+    /// </summary>
+    /// <remarks>
+    /// The factory receives the <see cref="HttpRequestMessage"/>, the raw transport exception, and the
+    /// <see cref="CancellationToken"/> that was passed to the call, and returns the exception to surface.
+    /// <para>
+    /// By default, an <see cref="OperationCanceledException"/> is returned unchanged when
+    /// <see cref="CancellationToken.IsCancellationRequested"/> is <see langword="true"/> (so a cancelled
+    /// <see cref="ApiResponse{T}"/> call throws instead of populating <c>Error</c>); every other exception
+    /// is wrapped in an <see cref="ApiRequestException"/> that carries the full request context.
+    /// </para>
+    /// </remarks>
+    public Func<HttpRequestMessage, Exception, CancellationToken, Exception> TransportExceptionFactory { get; set; }
+
 #if NET6_0_OR_GREATER
 
     /// <summary>Gets or sets the version.</summary>
@@ -238,4 +256,14 @@ public class RefitSettings
             UrlParameterKeyFormatter = urlParameterKeyFormatter,
         };
     }
+
+    /// <summary>Returns the default <see cref="TransportExceptionFactory"/> delegate for this instance.</summary>
+    /// <returns>
+    /// A factory that passes an <see cref="OperationCanceledException"/> through unchanged when
+    /// <see cref="CancellationToken.IsCancellationRequested"/> is <see langword="true"/>, and wraps every
+    /// other exception in an <see cref="ApiRequestException"/> that captures the request and these settings.
+    /// </returns>
+    private Func<HttpRequestMessage, Exception, CancellationToken, Exception> DefaultTransportExceptionFactory()
+        => (req, ex, ct) =>
+             ex is OperationCanceledException && ct.IsCancellationRequested ? ex : new ApiRequestException(req, req.Method, this, ex);
 }
