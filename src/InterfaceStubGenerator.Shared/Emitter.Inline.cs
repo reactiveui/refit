@@ -198,7 +198,7 @@ internal static partial class Emitter
                     _ = sb.AppendLine(
                         $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddPathParameter<{methodModel.ContainingType}, {standardParameter.ParameterType}>(ref {valueStringBuilderLocal}, " +
                         $"@{standardParameter.MetadataName}, {settingsLocal}, nameof(@{standardParameter.MetadataName}), " +
-                        $"{typeParameterExpression}{(standardParameter.IsRoundTripping ? ", roundTripping: true" : "")}{(string.IsNullOrEmpty(genericTypesArgument) ? $", genericArgumentTypes: {genericTypesArgument}" : "")});");
+                        $"{typeParameterExpression}{(standardParameter.IsRoundTripping ? ", roundTripping: true" : "")}{(!string.IsNullOrEmpty(genericTypesArgument) ? $", genericArgumentTypes: {genericTypesArgument}" : "")});");
                     break;
                 case PathFragmentModel.ObjectAccess objectAccess:
                     // use nameof for property

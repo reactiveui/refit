@@ -456,7 +456,9 @@ internal static partial class Parser
     {
         ret.Add(parameter);
         // perhaps this should be parameter metadata name
-        fragmentList.Add(new PathFragmentModel.ObjectAccess($"{parameter.Name}.{property.Name}", parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat), property.Name));
+        var parameterType = parameter.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        var propertyType = property.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        fragmentList.Add(new PathFragmentModel.ObjectAccess($"{parameter.Name}.{property.Name}", parameterType, property.Name, propertyType));
     }
 
     /// <summary>Gets the URL name to use for a symbol, honoring alias attributes.</summary>

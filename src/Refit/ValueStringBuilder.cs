@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 
 namespace Refit;
 
+// This should perhaps be made internal or made into a sub class.
 // From https://github/dotnet/runtime/blob/main/src/libraries/Common/src/System/Text/ValueStringBuilder.cs
 /// <summary>A stack-allocated string builder that grows using pooled buffers.</summary>
 public ref struct ValueStringBuilder
