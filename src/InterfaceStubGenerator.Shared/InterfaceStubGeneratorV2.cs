@@ -59,9 +59,9 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
             static (generatorContext, _) => (MethodDeclarationSyntax)generatorContext.Node);
 
         var candidateInterfacesProvider = context.SyntaxProvider.CreateSyntaxProvider(
-            (syntax, _) =>
+            static (syntax, _) =>
                 syntax is InterfaceDeclarationSyntax { BaseList: not null },
-            (generatorContext, _) => (InterfaceDeclarationSyntax)generatorContext.Node);
+            static (generatorContext, _) => (InterfaceDeclarationSyntax)generatorContext.Node);
 
         var generatorOptions =
             context.AnalyzerConfigOptionsProvider.Select(
@@ -249,12 +249,12 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
 #if ROSLYN_5
         return [.. combined.StandardMethods, .. combined.CustomMethods];
 #else
-        if (combined.StandardMethods.Length == 0)
+        if (combined.StandardMethods.IsEmpty)
         {
             return combined.CustomMethods;
         }
 
-        if (combined.CustomMethods.Length == 0)
+        if (combined.CustomMethods.IsEmpty)
         {
             return combined.StandardMethods;
         }

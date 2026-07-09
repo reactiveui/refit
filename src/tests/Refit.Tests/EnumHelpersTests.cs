@@ -153,9 +153,9 @@ public sealed class EnumHelpersTests
     [Test]
     public async Task NumericHelpersRejectUnsupportedBackingTypeRequests()
     {
-        await Assert.That(() => EnumHelpers.Info<UInt32Enum>.ToInt64(UInt32Enum.Value))
+        await Assert.That(static () => EnumHelpers.Info<UInt32Enum>.ToInt64(UInt32Enum.Value))
             .ThrowsExactly<JsonException>();
-        await Assert.That(() => EnumHelpers.Info<Int32Enum>.ToUInt64(Int32Enum.Value))
+        await Assert.That(static () => EnumHelpers.Info<Int32Enum>.ToUInt64(Int32Enum.Value))
             .ThrowsExactly<JsonException>();
         await Assert.That(ReadUnsupportedNumericValue)
             .ThrowsExactly<JsonException>();

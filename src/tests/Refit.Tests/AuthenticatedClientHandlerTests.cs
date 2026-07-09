@@ -123,7 +123,7 @@ public class AuthenticatedClientHandlerTests
     [Test]
     public async Task DefaultHandlerIsHttpClientHandler()
     {
-        var handler = new AuthenticatedHttpClientHandler((_, _) => Task.FromResult(string.Empty));
+        var handler = new AuthenticatedHttpClientHandler(static (_, _) => Task.FromResult(string.Empty));
 
         await Assert.That(handler.InnerHandler).IsTypeOf<HttpClientHandler>();
     }
@@ -133,7 +133,7 @@ public class AuthenticatedClientHandlerTests
     [Test]
     public async Task DefaultHandlerIsNull()
     {
-        var handler = new AuthenticatedHttpClientHandler(null, (_, _) => Task.FromResult(string.Empty));
+        var handler = new AuthenticatedHttpClientHandler(null, static (_, _) => Task.FromResult(string.Empty));
 
         await Assert.That(handler.InnerHandler).IsNull();
     }
@@ -144,7 +144,7 @@ public class AuthenticatedClientHandlerTests
     public async Task ExplicitInnerHandlerIsAssigned()
     {
         using var innerHandler = new TestHttpMessageHandler();
-        var handler = new AuthenticatedHttpClientHandler(innerHandler, (_, _) => Task.FromResult(string.Empty));
+        var handler = new AuthenticatedHttpClientHandler(innerHandler, static (_, _) => Task.FromResult(string.Empty));
 
         await Assert.That(handler.InnerHandler).IsSameReferenceAs(innerHandler);
     }
@@ -154,7 +154,7 @@ public class AuthenticatedClientHandlerTests
     [Test]
     public async Task NullTokenGetterThrows() =>
         await Assert
-            .That(() => new AuthenticatedHttpClientHandler(
+            .That(static () => new AuthenticatedHttpClientHandler(
                 (Func<HttpRequestMessage, CancellationToken, Task<string>>)null!))
             .ThrowsExactly<ArgumentNullException>();
 
@@ -166,13 +166,13 @@ public class AuthenticatedClientHandlerTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://api/unauth", Where = msg => msg.Headers.Authorization is null },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://api/unauth", Where = static msg => msg.Headers.Authorization is null },
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
         var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
         });
 
         var result = await fixture.GetUnauthenticated();
@@ -196,7 +196,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
         });
 
         var result = await fixture.GetAuthenticated();
@@ -241,7 +241,7 @@ public class AuthenticatedClientHandlerTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Headers = [.. headers.Select(kv => (kv.Key, kv.Value))] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Headers = [.. headers.Select(static kv => (kv.Key, kv.Value))] },
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
@@ -275,7 +275,7 @@ public class AuthenticatedClientHandlerTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Headers = [.. expectedHeaders.Select(kv => (kv.Key, kv.Value))] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Headers = [.. expectedHeaders.Select(static kv => (kv.Key, kv.Value))] },
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
@@ -312,7 +312,7 @@ public class AuthenticatedClientHandlerTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Headers = [.. expectedHeaders.Select(kv => (kv.Key, kv.Value))] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Headers = [.. expectedHeaders.Select(static kv => (kv.Key, kv.Value))] },
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
@@ -344,7 +344,7 @@ public class AuthenticatedClientHandlerTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Post, Template = $"http://api/auth/{id}", Headers = [.. headers.Select(kv => (kv.Key, kv.Value))] },
+                new RouteMatcher { Method = HttpMethod.Post, Template = $"http://api/auth/{id}", Headers = [.. headers.Select(static kv => (kv.Key, kv.Value))] },
                 Reply.Text("Ok", PlainTextContentType)
             },
         };
@@ -374,7 +374,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeaders>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
         });
 
         var result = await fixture.GetThingFromBase();
@@ -398,7 +398,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeaders>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
         });
 
         var result = await fixture.GetInheritedThing();
@@ -447,7 +447,7 @@ public class AuthenticatedClientHandlerTests
 
         var settings = new RefitSettings
         {
-            AuthorizationHeaderValueGetter = (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
         };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
@@ -474,7 +474,7 @@ public class AuthenticatedClientHandlerTests
 
         var settings = new RefitSettings
         {
-            AuthorizationHeaderValueGetter = async (_, _) =>
+            AuthorizationHeaderValueGetter = static async (_, _) =>
             {
                 await Task.Yield();
                 return TokenValue;
@@ -505,7 +505,7 @@ public class AuthenticatedClientHandlerTests
 
         var settings = new RefitSettings
         {
-            AuthorizationHeaderValueGetter = (_, _) => Task.FromResult("token-from-getter")
+            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult("token-from-getter")
         };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);

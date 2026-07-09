@@ -20,7 +20,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task GenerateInterfaceStubsRejectsNullCompilation() =>
         await Assert.That(
-                () => Parser.GenerateInterfaceStubs(
+                static () => Parser.GenerateInterfaceStubs(
                     null!,
                     null,
                     generatedRequestBuilding: true,

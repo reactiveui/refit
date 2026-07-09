@@ -43,7 +43,7 @@ internal static partial class Parser
         var canGenerateInline =
             parameterEligibility
             && returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
-            && methodSymbol.TypeParameters.Length == 0
+            && methodSymbol.TypeParameters.IsEmpty
             && httpMethod.Length > 0
             && IsPathSupported(path)
             && IsSupportedInlineBody(parameters)
@@ -59,48 +59,51 @@ internal static partial class Parser
             canGenerateInline,
             staticHeaders,
             parameters);
+    }
 
-        static Dictionary<string, List<Range>> ExtractPathParameterPlaceholderNames(string path)
+    /// <summary>Extracts the path parameter placeholder names and their locations from a URL template.</summary>
+    /// <param name="path">The normalized path template.</param>
+    /// <returns>A map of placeholder name to the ranges where each placeholder occurs in the template.</returns>
+    private static Dictionary<string, List<Range>> ExtractPathParameterPlaceholderNames(string path)
+    {
+        var pathSpan = path.AsSpan();
+
+        var i = pathSpan.IndexOf('{');
+        if (i < 0)
         {
-            var pathSpan = path.AsSpan();
-
-            var i = pathSpan.IndexOf('{');
-            if (i < 0)
-            {
-                return [];
-            }
-
-            var paramNames = new Dictionary<string, List<Range>>(StringComparer.OrdinalIgnoreCase);
-            var j = i + pathSpan[i..].IndexOfAny('}', '/');
-            while (i < pathSpan.Length && j > i)
-            {
-                if (pathSpan[j] == '}')
-                {
-                    var paramName = pathSpan[(i + 1)..j].ToString();
-                    var location = new Range(i, j + 1);
-                    if (paramNames.TryGetValue(paramName, out var values))
-                    {
-                        values.Add(location);
-                    }
-                    else
-                    {
-                        paramNames[paramName] = [location];
-                    }
-                }
-
-                var i2 = pathSpan[j..].IndexOf('{');
-                if (i2 < 0)
-                {
-                    break;
-                }
-
-                i = j;
-                i += i2;
-                j = i + pathSpan[i..].IndexOfAny('}', '/');
-            }
-
-            return paramNames;
+            return [];
         }
+
+        var paramNames = new Dictionary<string, List<Range>>(StringComparer.OrdinalIgnoreCase);
+        var j = i + pathSpan[i..].IndexOfAny('}', '/');
+        while (i < pathSpan.Length && j > i)
+        {
+            if (pathSpan[j] == '}')
+            {
+                var paramName = pathSpan[(i + 1)..j].ToString();
+                var location = new Range(i, j + 1);
+                if (paramNames.TryGetValue(paramName, out var values))
+                {
+                    values.Add(location);
+                }
+                else
+                {
+                    paramNames[paramName] = [location];
+                }
+            }
+
+            var i2 = pathSpan[j..].IndexOf('{');
+            if (i2 < 0)
+            {
+                break;
+            }
+
+            i = j;
+            i += i2;
+            j = i + pathSpan[i..].IndexOfAny('}', '/');
+        }
+
+        return paramNames;
     }
 
     /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
@@ -126,7 +129,7 @@ internal static partial class Parser
     private static string GetHttpPath(AttributeData attributeData)
     {
         var arguments = attributeData.ConstructorArguments;
-        return arguments.Length > 0 && arguments[0].Value is string path
+        return !arguments.IsEmpty && arguments[0].Value is string path
             ? path
             : string.Empty;
     }
@@ -267,7 +270,7 @@ internal static partial class Parser
         INamedTypeSymbol? formattableSymbol,
         out bool canGenerateInline)
     {
-        if (parameters.Length == 0)
+        if (parameters.IsEmpty)
         {
             canGenerateInline = true;
             return ImmutableEquatableArray<RequestParameterModel>.Empty;
@@ -358,50 +361,54 @@ internal static partial class Parser
         return locations is {} l && IsSimpleType(parameter.Type, formattableSymbol)
             ? new(PathRequestParameter(parameter, parameterType, l), true, 0, 0, 0)
             : new(UnsupportedRequestParameter(parameter, parameterType), false, 0, 0, 0);
+    }
 
+    /// <summary>Determines whether a parameter type renders to a URL scalar and is eligible for inline path formatting.</summary>
+    /// <param name="type">The parameter type to classify.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <returns><see langword="true"/> when the type is a simple scalar type supported by inline path formatting.</returns>
+    private static bool IsSimpleType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol)
+    {
         // A path value is emitted as UrlParameterFormatter.Format(value, provider, typeof(T)) - the same call the
         // reflection path uses - so any type the formatter can render round-trips identically. That is exactly the
         // set of IFormattable types (which is also what makes [Query(Format = ...)] and invariant culture work),
         // plus string and bool, which are scalars but not IFormattable. Collections, arrays and DTOs are excluded
         // and fall back to reflection. Matching on the resolved IFormattable symbol avoids per-parameter name-string
         // allocations and automatically covers future BCL scalars.
-        static bool IsSimpleType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol)
+        var underlyingType = GetUnderlyingType(type);
+
+        static ITypeSymbol GetUnderlyingType(ITypeSymbol type) =>
+            type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable
+                ? nullable.TypeArguments[0]
+                : type;
+
+        // The built-in value-type scalars occupy a contiguous SpecialType block - System_Boolean (bool, char,
+        // every integer width, decimal, float, double) through System_Double - so a range check covers them all
+        // in one comparison. string and DateTime sit just outside that block.
+        static bool IsScalarSpecialType(SpecialType specialType) =>
+            specialType is (>= SpecialType.System_Boolean and <= SpecialType.System_Double)
+                or SpecialType.System_String
+                or SpecialType.System_DateTime;
+
+        // A null interfaceSymbol (System.IFormattable unresolved) simply matches nothing and falls back.
+        static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol? interfaceSymbol)
         {
-            var underlyingType = GetUnderlyingType(type);
-
-            // Built-in scalars resolve from SpecialType alone (a jump table, no interface walk); everything else that
-            // renders to a URL scalar - enums, Guid, DateTimeOffset, DateOnly, TimeOnly, TimeSpan, BigInteger,
-            // Int128/UInt128, Half - implements IFormattable.
-            return IsScalarSpecialType(underlyingType.SpecialType)
-                   || ImplementsInterface(underlyingType, formattableSymbol);
-
-            static ITypeSymbol GetUnderlyingType(ITypeSymbol type) =>
-                type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable
-                    ? nullable.TypeArguments[0]
-                    : type;
-
-            // The built-in value-type scalars occupy a contiguous SpecialType block - System_Boolean (bool, char,
-            // every integer width, decimal, float, double) through System_Double - so a range check covers them all
-            // in one comparison. string and DateTime sit just outside that block.
-            static bool IsScalarSpecialType(SpecialType specialType) =>
-                specialType is (>= SpecialType.System_Boolean and <= SpecialType.System_Double)
-                    or SpecialType.System_String
-                    or SpecialType.System_DateTime;
-
-            // A null interfaceSymbol (System.IFormattable unresolved) simply matches nothing and falls back.
-            static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol? interfaceSymbol)
+            foreach (var implemented in type.AllInterfaces)
             {
-                foreach (var implemented in type.AllInterfaces)
+                if (SymbolEqualityComparer.Default.Equals(implemented, interfaceSymbol))
                 {
-                    if (SymbolEqualityComparer.Default.Equals(implemented, interfaceSymbol))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
-
-                return false;
             }
+
+            return false;
         }
+
+        // Built-in scalars resolve from SpecialType alone (a jump table, no interface walk); everything else that
+        // renders to a URL scalar - enums, Guid, DateTimeOffset, DateOnly, TimeOnly, TimeSpan, BigInteger,
+        // Int128/UInt128, Half - implements IFormattable.
+        return IsScalarSpecialType(underlyingType.SpecialType)
+               || ImplementsInterface(underlyingType, formattableSymbol);
     }
 
     /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
@@ -679,7 +686,7 @@ internal static partial class Parser
             }
 
             var arguments = attribute.ConstructorArguments;
-            if (arguments.Length == 0 || arguments[0].Value is not string headerName ||
+            if (arguments.IsEmpty || arguments[0].Value is not string headerName ||
                 string.IsNullOrWhiteSpace(headerName))
             {
                 continue;
@@ -762,7 +769,7 @@ internal static partial class Parser
             }
 
             var arguments = attribute.ConstructorArguments;
-            var propertyKey = arguments.Length > 0 && arguments[0].Value is string { Length: > 0 } key
+            var propertyKey = !arguments.IsEmpty && arguments[0].Value is string { Length: > 0 } key
                 ? key
                 : parameter.MetadataName;
             propertyParameter = new(
@@ -832,7 +839,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<ParameterAttributeModel> BuildParameterAttributes(IParameterSymbol parameter)
     {
         var attributes = parameter.GetAttributes();
-        if (attributes.Length == 0)
+        if (attributes.IsEmpty)
         {
             return ImmutableEquatableArray<ParameterAttributeModel>.Empty;
         }

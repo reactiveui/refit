@@ -128,7 +128,13 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Body = expected, Where = message => message.Content!.Headers.ContentType!.MediaType == "application/x-ndjson" },
+                new RouteMatcher
+                {
+                    Method = HttpMethod.Post,
+                    Template = HttpBinFooUrl,
+                    Body = expected,
+                    Where = static message => message.Content!.Headers.ContentType!.MediaType == "application/x-ndjson",
+                },
                 Reply.Status(HttpStatusCode.OK)
             },
         };
@@ -220,7 +226,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Where = request => request.Content?.Headers.ContentLength > 0 },
+                new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Where = static request => request.Content?.Headers.ContentLength > 0 },
                 Reply.Status(HttpStatusCode.OK)
             },
         };
@@ -243,7 +249,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Where = request => request.Content?.Headers.ContentLength > 0 },
+                new RouteMatcher { Method = HttpMethod.Post, Template = HttpBinFooUrl, Where = static request => request.Content?.Headers.ContentLength > 0 },
                 Reply.Text(expectedResponse, "text/plain")
             },
         };

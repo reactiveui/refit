@@ -30,6 +30,18 @@ internal static class StringHelpers
         value.IndexOfAny(_lineBreakCharacters) >= 0;
 #endif
 
+    /// <summary>Determines whether the value starts with the specified character.</summary>
+    /// <param name="value">The value to inspect.</param>
+    /// <param name="prefix">The character the value is expected to start with.</param>
+    /// <returns><see langword="true"/> if the value starts with <paramref name="prefix"/>.</returns>
+    /// <remarks>The <see cref="string"/> overload taking a <see cref="char"/> only exists on the modern targets.</remarks>
+    internal static bool StartsWith(string value, char prefix) =>
+#if NET8_0_OR_GREATER
+        value.StartsWith(prefix);
+#else
+        value.Length > 0 && value[0] == prefix;
+#endif
+
     /// <summary>Escapes a string for a URI data component.</summary>
     /// <param name="value">The value to escape.</param>
     /// <returns>The escaped value.</returns>

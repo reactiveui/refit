@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
-using System.Net.Http.Headers;
 using System.Reflection;
 
 namespace Refit.Tests;
@@ -11,6 +10,9 @@ namespace Refit.Tests;
 /// <summary>Tests for the generated request runtime helper.</summary>
 public partial class GeneratedRequestRunnerTests
 {
+    /// <summary>An arbitrary form-field name, alongside "Note" and "Roles"; unrelated to any type in scope.</summary>
+    private const string SkipFieldName = "Skip";
+
     /// <summary>Relative request path shared by the generated-runner fixtures.</summary>
     private const string RelativeResourcePath = "/resource";
 
@@ -278,7 +280,7 @@ public partial class GeneratedRequestRunnerTests
         {
             new FormField<DeclaredFormBody>(static _ => null, "Note", "note", null, null, null, serializeNull: true),
             new FormField<DeclaredFormBody>(static _ => new List<string> { "a", "b" }, "Roles", "roles", null, null, CollectionFormat.Multi, false),
-            new FormField<DeclaredFormBody>(static _ => null, "Skip", "skip", null, null, null, serializeNull: false)
+            new FormField<DeclaredFormBody>(static _ => null, SkipFieldName, "skip", null, null, null, serializeNull: false)
         };
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(settings, body, fields);
@@ -538,7 +540,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer();
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("response")
@@ -566,7 +568,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task SendAsyncBuffersRequestContentWhenRequested()
     {
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("buffered")
@@ -659,7 +661,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task SendAsyncReturnsResponseStream()
     {
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("streamed-response")
@@ -690,7 +692,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializedValue = new GeneratedResult(DeserializedResultValue)
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("{\"value\":42}")
@@ -721,7 +723,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializedValue = new GeneratedResult(DeserializedResultValue)
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new ByteArrayContent([])
@@ -780,7 +782,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task SendAsyncReturnsApiResponseForTransportFailure()
     {
         var handler = new CapturingHandler(
-            (_, _) => throw new HttpRequestException("network failure"));
+            static (_, _) => throw new HttpRequestException("network failure"));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -833,7 +835,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializedValue = new GeneratedResult(SuccessResultValue)
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("{\"value\":123}")
@@ -865,7 +867,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializedValue = new GeneratedResult(SuccessResultValue)
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent("bad")
@@ -899,7 +901,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializeException = new FormatException("bad content")
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("bad")
@@ -907,7 +909,7 @@ public partial class GeneratedRequestRunnerTests
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings(serializer);
-        settings.DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null);
+        settings.DeserializationExceptionFactory = static (_, _) => Task.FromResult<Exception?>(null);
 
         var result = await GeneratedRequestRunner.SendAsync<ApiResponse<GeneratedResult>, GeneratedResult>(
             client,
@@ -1064,7 +1066,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializedValue = new GeneratedResult(BufferedResultValue)
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new ThrowingLoadContent()
@@ -1193,7 +1195,7 @@ public partial class GeneratedRequestRunnerTests
         /// <summary>Initializes a new instance of the <see cref="CapturingHandler"/> class.</summary>
         public CapturingHandler()
             : this(
-                (_, _) => Task.FromResult(
+                static (_, _) => Task.FromResult(
                     new HttpResponseMessage(HttpStatusCode.OK)
                     {
                         Content = new StringContent(string.Empty)

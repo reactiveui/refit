@@ -22,7 +22,7 @@ internal static partial class Parser
             declaredBaseName = declaredBaseName[(lastDot + 1)..];
         }
 
-        if (methodSymbol.TypeParameters.Length == 0)
+        if (methodSymbol.TypeParameters.IsEmpty)
         {
             return declaredBaseName;
         }

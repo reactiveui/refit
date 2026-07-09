@@ -9,10 +9,10 @@ using System.Diagnostics.CodeAnalysis;
     "IDE0079:Remove unnecessary suppression",
     Justification = "Test fixtures retain intentional suppressions that vary across target frameworks.",
     Scope = "member",
-    Target = "~T:Refit.Tests.RequestBuilderTests")]
+    Target = "T:Refit.Tests.RequestBuilderTests")]
 [assembly: SuppressMessage(
     "CodeQuality",
     "IDE0079:Remove unnecessary suppression",
     Justification = "Test fixtures retain intentional suppressions that vary across target frameworks.",
     Scope = "member",
-    Target = "~T:Refit.Tests.MultipartTests")]
+    Target = "T:Refit.Tests.MultipartTests")]

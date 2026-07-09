@@ -31,7 +31,7 @@ public partial class RequestBuilderTests
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task ConstructorRejectsNonInterfaceTargets() =>
-        await Assert.That(() => new RequestBuilderImplementation(typeof(string)))
+        await Assert.That(static () => new RequestBuilderImplementation(typeof(string)))
             .ThrowsExactly<ArgumentException>();
 
     /// <summary>Verifies the public request-builder factory entry points create usable builders.</summary>
@@ -460,7 +460,7 @@ public partial class RequestBuilderTests
     public async Task ConstructorThrowsForInvalidPublicSyncMethod()
     {
         var exception = await Assert.That(
-            () => new RequestBuilderImplementation<IInvalidReturnTypeIApiResponse>()).ThrowsExactly<ArgumentException>();
+            static () => new RequestBuilderImplementation<IInvalidReturnTypeIApiResponse>()).ThrowsExactly<ArgumentException>();
 
         await Assert.That(exception!.Message).Contains(
             "All REST Methods must return either Task<T> or ValueTask<T> or IObservable<T>");

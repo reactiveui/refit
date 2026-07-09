@@ -74,7 +74,7 @@ public sealed class RefitInterfaceAnalyzerTests
             Task<string> InvalidHeaders([HeaderCollection] IDictionary<string, object> headers);
             """);
 
-        var diagnosticIds = diagnostics.Select(diagnostic => diagnostic.Id).ToArray();
+        var diagnosticIds = diagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
 
         await Assert.That(diagnosticIds).Contains("RF003");
         await Assert.That(diagnosticIds).Contains("RF004");
@@ -94,7 +94,7 @@ public sealed class RefitInterfaceAnalyzerTests
             void NonRefitMethod();
             """);
 
-        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .Contains(NonRefitMemberDiagnosticId);
     }
 
@@ -122,7 +122,7 @@ public sealed class RefitInterfaceAnalyzerTests
             }
             """);
 
-        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .Contains(NonRefitMemberDiagnosticId);
     }
 
@@ -150,7 +150,7 @@ public sealed class RefitInterfaceAnalyzerTests
             }
             """);
 
-        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .Contains(NonRefitMemberDiagnosticId);
     }
 
@@ -180,7 +180,7 @@ public sealed class RefitInterfaceAnalyzerTests
             }
             """);
 
-        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .DoesNotContain(NonRefitMemberDiagnosticId);
     }
 }

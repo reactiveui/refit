@@ -172,10 +172,10 @@ public class GeneratedCodeComplianceTests
                     ]));
         var diagnostics = compilation
             .GetDiagnostics()
-            .Where(diagnostic =>
+            .Where(static diagnostic =>
                 diagnostic.Severity is DiagnosticSeverity.Warning or DiagnosticSeverity.Error
                 && diagnostic.Id != "CS8019")
-            .Select(diagnostic => diagnostic.ToString());
+            .Select(static diagnostic => diagnostic.ToString());
 
         await Assert.That(string.Join(Environment.NewLine, diagnostics)).IsEqualTo(string.Empty);
     }
@@ -247,8 +247,8 @@ public class GeneratedCodeComplianceTests
     {
         var diagnostics = compilation
             .GetDiagnostics()
-            .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
-            .Select(diagnostic => diagnostic.ToString());
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(static diagnostic => diagnostic.ToString());
 
         return string.Join(Environment.NewLine, diagnostics);
     }

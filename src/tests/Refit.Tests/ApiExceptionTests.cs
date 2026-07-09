@@ -276,7 +276,7 @@ public sealed class ApiExceptionTests
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task ValidationApiExceptionInnerConstructorRejectsNullInnerException() =>
-        await Assert.That(() => new ValidationApiException(MessageText, null!))
+        await Assert.That(static () => new ValidationApiException(MessageText, null!))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies the problem+json media type is detected case-insensitively per RFC 7231 (#1702).</summary>
@@ -544,7 +544,7 @@ public sealed class ApiExceptionTests
             "{\"password\":\"hunter2\"}");
         var settings = new RefitSettings
         {
-            ExceptionRedactor = ex =>
+            ExceptionRedactor = static ex =>
             {
                 ex.RequestMessage.Headers.Authorization = null;
                 ex.RequestContent = RedactedText;

@@ -21,7 +21,7 @@ public class UrlResolutionModeTests
     [Test]
     public async Task Rfc3986AppendsRelativePathToBasePath()
     {
-        var captured = await CaptureRfcRequestAsync(BaseAddress, api => api.GetValuesRelative());
+        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetValuesRelative());
         await Assert.That(captured!.AbsoluteUri).IsEqualTo("http://foo/api/v1/values");
     }
 
@@ -30,7 +30,7 @@ public class UrlResolutionModeTests
     [Test]
     public async Task Rfc3986ExpandsDynamicSegment()
     {
-        var captured = await CaptureRfcRequestAsync(BaseAddress, api => api.GetUser(7));
+        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetUser(7));
         await Assert.That(captured!.AbsoluteUri).IsEqualTo("http://foo/api/v1/users/7");
     }
 
@@ -39,7 +39,7 @@ public class UrlResolutionModeTests
     [Test]
     public async Task Rfc3986LeadingSlashReplacesBasePath()
     {
-        var captured = await CaptureRfcRequestAsync(BaseAddress, api => api.GetValuesAbsolute());
+        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetValuesAbsolute());
         await Assert.That(captured!.AbsoluteUri).IsEqualTo("http://foo/values");
     }
 
@@ -48,7 +48,7 @@ public class UrlResolutionModeTests
     [Test]
     public async Task Rfc3986PreservesQueryParameters()
     {
-        var captured = await CaptureRfcRequestAsync(BaseAddress, api => api.GetValuesWithQuery(3));
+        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetValuesWithQuery(3));
         await Assert.That(captured!.AbsoluteUri).IsEqualTo("http://foo/api/v1/values?active=true&page=3");
     }
 
@@ -56,7 +56,7 @@ public class UrlResolutionModeTests
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task LegacyModeRejectsLeadingSlashlessRoute() =>
-        await Assert.That(() => RestService.For<IRfcUrlResolutionApi>(BaseAddress)).ThrowsExactly<ArgumentException>();
+        await Assert.That(static () => RestService.For<IRfcUrlResolutionApi>(BaseAddress)).ThrowsExactly<ArgumentException>();
 
     /// <summary>Invokes a call under <see cref="UrlResolutionMode.Rfc3986"/> and returns the captured request URI.</summary>
     /// <param name="baseAddress">The client base address.</param>

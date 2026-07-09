@@ -28,10 +28,7 @@ public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[
     /// <inheritdoc/>
     public object[] GetCustomAttributes(Type attributeType, bool inherit)
     {
-        if (attributeType is null)
-        {
-            throw new ArgumentNullException(nameof(attributeType));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(attributeType);
 
         return attributes.TryGetValue(attributeType, out var matches) ? matches : [];
     }

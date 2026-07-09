@@ -6,10 +6,6 @@ using System.Runtime.CompilerServices;
 namespace Refit.Buffers;
 
 /// <summary>A buffer writer that rents its backing storage from a shared array pool.</summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "RoslynCommonAnalyzers",
-    "SST1432:Mark type as static",
-    Justification = "The full type has instance members and implements IBufferWriter<byte> and IDisposable; this partial part only declares static throw helpers.")]
 internal sealed partial class PooledBufferWriter
 {
     /// <summary>Throws an <see cref="ArgumentOutOfRangeException"/> when a method receives a negative "count" parameter.</summary>

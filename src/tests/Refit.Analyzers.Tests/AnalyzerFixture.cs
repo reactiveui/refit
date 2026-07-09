@@ -93,7 +93,7 @@ internal static class AnalyzerFixture
                     .GetAssemblies()
                     .Concat(GetRequiredAssemblies(includeRefitReference))
                     .Distinct()
-                    .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+                    .Where(static a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
             ]
             : GetRequiredAssemblies(includeRefitReference);
 

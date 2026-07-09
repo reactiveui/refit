@@ -91,7 +91,7 @@ public class XmlContentSerializerTests
         var document = new XmlDocument();
         document.LoadXml(await content.ReadAsStringAsync());
 
-        await Assert.That(document["Dto"]?["Name", "https://google.com"]?.Prefix).IsEqualTo(prefix);
+        await Assert.That(document[nameof(Dto)]?["Name", "https://google.com"]?.Prefix).IsEqualTo(prefix);
     }
 
     /// <summary>Verifies a DTO can be deserialized from XML content.</summary>

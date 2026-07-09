@@ -43,6 +43,6 @@ internal sealed class Startup
 
         _ = app.UseRouting();
 
-        _ = app.UseEndpoints(endpoints => endpoints.MapControllers());
+        _ = app.UseEndpoints(static endpoints => endpoints.MapControllers());
     }
 }

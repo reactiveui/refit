@@ -17,7 +17,7 @@ public class CamelCaseUrlParameterKeyFormatter : IUrlParameterKeyFormatter
             : string.Create(
                 key.Length,
                 key,
-                (chars, name) =>
+                static (chars, name) =>
                 {
                     name.CopyTo(chars);
                     FixCasing(chars);

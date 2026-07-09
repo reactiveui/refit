@@ -288,7 +288,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", Where = r => r.Content is null },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/", Where = static r => r.Content is null },
                 Reply.Json("Ok")
             },
         };
@@ -336,7 +336,7 @@ public partial class RestServiceIntegrationTests
                     Template = "/users",
                     Headers = [("Content-Type", "application/xml; charset=utf-8")]
                 },
-                Reply.From(req => new(HttpStatusCode.OK) { Content = new StringContent("<User><Name>Created</Name></User>", Encoding.UTF8, "application/xml") })
+                Reply.From(static req => new(HttpStatusCode.OK) { Content = new StringContent("<User><Name>Created</Name></User>", Encoding.UTF8, "application/xml") })
             },
         };
 

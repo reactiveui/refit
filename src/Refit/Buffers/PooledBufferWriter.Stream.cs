@@ -6,10 +6,6 @@ using System.Buffers;
 namespace Refit.Buffers;
 
 /// <summary>A buffer writer that rents its backing storage from a shared array pool.</summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "RoslynCommonAnalyzers",
-    "SST1432:Mark type as static",
-    Justification = "The full type has instance members and implements IBufferWriter<byte> and IDisposable; this partial part only declares a nested type.")]
 internal sealed partial class PooledBufferWriter
 {
     /// <summary>An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool.</summary>

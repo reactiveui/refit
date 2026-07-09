@@ -360,7 +360,7 @@ public partial class RestServiceIntegrationTests
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task UnmatchedRouteParameterStillThrowsByDefault() =>
-        await Assert.That(() => RestService.For<IUrlNoMatchingParameters>(BaseUrl)).ThrowsExactly<ArgumentException>();
+        await Assert.That(static () => RestService.For<IUrlNoMatchingParameters>(BaseUrl)).ThrowsExactly<ArgumentException>();
 
     /// <summary>Verifies methods returning a <see cref="ValueTask{TResult}"/> of an API response work.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -399,7 +399,7 @@ public partial class RestServiceIntegrationTests
                     Template = "http://foo/nobody",
                     Headers = [("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")],
                     Body = string.Empty,
-                    Where = r => r.Content?.Headers.ContentLength == 0,
+                    Where = static r => r.Content?.Headers.ContentLength == 0,
                 },
                 Reply.Json("Ok")
             },
@@ -942,7 +942,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/nobody", Where = r => r.Content is null },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/nobody", Where = static r => r.Content is null },
                 Reply.Json("Ok")
             },
         };
@@ -961,7 +961,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Head, Template = "http://foo/nobody", Where = r => r.Content is null },
+                new RouteMatcher { Method = HttpMethod.Head, Template = "http://foo/nobody", Where = static r => r.Content is null },
                 Reply.Json("Ok")
             },
         };
@@ -1186,9 +1186,9 @@ public partial class RestServiceIntegrationTests
                 .Replace(' ', '_');
 
         // get resource stream
-        var fullName = assembly
-            .GetManifestResourceNames()
-            .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture))
+        var fullName = Array.Find(
+            assembly.GetManifestResourceNames(),
+            name => name.EndsWith(relativeName, StringComparison.InvariantCulture))
             ?? throw new InvalidOperationException(
                 $"Unable to find resource for path \"{relativeFilePath}\". Resource with name ending on \"{relativeName}\" was not found in assembly.");
 

@@ -114,10 +114,7 @@ public class ValidationApiException : ApiException
     /// <returns>A new validation exception wrapping the API exception.</returns>
     private static ValidationApiException CreateCore(ApiException exception)
     {
-        if (exception is null)
-        {
-            throw new ArgumentNullException(nameof(exception));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(exception);
 
 #if NET8_0_OR_GREATER
         ArgumentException.ThrowIfNullOrWhiteSpace(exception.Content);

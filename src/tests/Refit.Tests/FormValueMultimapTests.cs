@@ -40,7 +40,7 @@ public class FormValueMultimapTests
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task RejectsNullSettings() =>
-        await Assert.That(() => new FormValueMultimap(new(), null!))
+        await Assert.That(static () => new FormValueMultimap(new(), null!))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies the multimap loads entries from a dictionary source.</summary>
@@ -267,7 +267,7 @@ public class FormValueMultimapTests
 
         await Assert.That(target.Keys).DoesNotContain("Foo");
         await Assert.That(target.Keys).Contains("f");
-        await Assert.That(target.FirstOrDefault(entry => entry.Key == "f").Value).IsEqualTo("abc");
+        await Assert.That(target.FirstOrDefault(static entry => entry.Key == "f").Value).IsEqualTo("abc");
     }
 
     /// <summary>Verifies the <see cref="JsonPropertyNameAttribute"/> renames a property's key.</summary>
@@ -281,7 +281,7 @@ public class FormValueMultimapTests
 
         await Assert.That(target.Keys).DoesNotContain("Bar");
         await Assert.That(target.Keys).Contains("b");
-        await Assert.That(target.FirstOrDefault(entry => entry.Key == "b").Value).IsEqualTo("xyz");
+        await Assert.That(target.FirstOrDefault(static entry => entry.Key == "b").Value).IsEqualTo("xyz");
     }
 
     /// <summary>Verifies the <see cref="QueryAttribute"/> prefix and format are applied to a property's key and value.</summary>
@@ -295,7 +295,7 @@ public class FormValueMultimapTests
 
         await Assert.That(target.Keys).DoesNotContain("Bar");
         await Assert.That(target.Keys).Contains("prefix-fr");
-        await Assert.That(target.FirstOrDefault(entry => entry.Key == "prefix-fr").Value).IsEqualTo("4.0");
+        await Assert.That(target.FirstOrDefault(static entry => entry.Key == "prefix-fr").Value).IsEqualTo("4.0");
     }
 
     /// <summary>Verifies the <see cref="AliasAsAttribute"/> takes precedence over the <see cref="JsonPropertyNameAttribute"/>.</summary>
@@ -310,7 +310,7 @@ public class FormValueMultimapTests
         await Assert.That(target.Keys).DoesNotContain("Bar");
         await Assert.That(target.Keys).DoesNotContain("z");
         await Assert.That(target.Keys).Contains("a");
-        await Assert.That(target.FirstOrDefault(entry => entry.Key == "a").Value).IsEqualTo("123");
+        await Assert.That(target.FirstOrDefault(static entry => entry.Key == "a").Value).IsEqualTo("123");
     }
 
     /// <summary>Verifies dictionary entries with null values are skipped.</summary>

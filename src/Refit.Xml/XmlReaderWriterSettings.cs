@@ -36,17 +36,18 @@ public class XmlReaderWriterSettings
     {
     }
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     /// <summary>Initializes a new instance of the <see cref="XmlReaderWriterSettings"/> class.</summary>
     /// <param name="readerSettings">The reader settings.</param>
     /// <param name="writerSettings">The writer settings.</param>
     public XmlReaderWriterSettings(
         XmlReaderSettings readerSettings,
         XmlWriterSettings writerSettings)
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     {
-        ReaderSettings = readerSettings;
-        WriterSettings = writerSettings;
+        ArgumentExceptionHelper.ThrowIfNull(readerSettings);
+        ArgumentExceptionHelper.ThrowIfNull(writerSettings);
+
+        _readerSettings = readerSettings;
+        _writerSettings = writerSettings;
     }
 
     /// <summary>Gets or sets the reader settings.</summary>
@@ -127,6 +128,9 @@ public class XmlReaderWriterSettings
         _writerSettings.Async = true;
         _readerSettings.Async = true;
 
+        // A type cannot read its own intentionally-obsolete member without CS0618, and the compiler
+        // ignores [SuppressMessage] for compiler diagnostics. Introducing a backing field to dodge
+        // this instead trips RCS1085/S2292, so the pragma is the least-bad option here.
 #pragma warning disable CS0618 // Reading our own intentionally-obsolete XXE opt-out.
         if (AllowDtdProcessing)
 #pragma warning restore CS0618

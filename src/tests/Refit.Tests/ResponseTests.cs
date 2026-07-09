@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -490,7 +489,7 @@ public sealed class ResponseTests
         const string rawBody = "{ this is not valid json";
 
         await using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
-        var bytes = Encoding.UTF8.GetBytes(rawBody);
+        var bytes = "{ this is not valid json"u8.ToArray();
         await contentStream.WriteAsync(bytes);
         contentStream.Position = 0;
         contentStream.CanGetLength = false;
@@ -527,11 +526,8 @@ public sealed class ResponseTests
         // deserializing, which threw "The stream was already consumed" for XML over a
         // non-seekable network stream. Buffering via LoadIntoBufferAsync must keep this
         // scenario working.
-        const string xml =
-            "<XmlResponse><Identifier>abc-123</Identifier></XmlResponse>";
-
         await using var contentStream = new ThrowOnGetLengthMemoryStream { CanGetLength = true };
-        var bytes = Encoding.UTF8.GetBytes(xml);
+        var bytes = "<XmlResponse><Identifier>abc-123</Identifier></XmlResponse>"u8.ToArray();
         await contentStream.WriteAsync(bytes);
         contentStream.Position = 0;
         contentStream.CanGetLength = false;

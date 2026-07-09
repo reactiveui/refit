@@ -354,9 +354,12 @@ internal static partial class Emitter
             }
 
             var generatedType = $"global::Refit.Implementation.Generated.{interfaceModel.Ns}{interfaceModel.ClassSuffix}";
+
+            // The static modifier on a lambda is C# 9; older consumers must not see it.
+            var lambdaModifier = interfaceModel.SupportsStaticLambdas ? "static " : string.Empty;
             registrations[count++] = $$"""
                                     global::Refit.RestService.RegisterGeneratedFactory<{{interfaceModel.InterfaceDisplayName}}>(
-                                        (client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
+                                        {{lambdaModifier}}(client, requestBuilder) => new {{generatedType}}(client, requestBuilder));
 
                         """;
 
@@ -364,7 +367,7 @@ internal static partial class Emitter
             {
                 registrations[count++] = $$"""
                                         global::Refit.RestService.RegisterGeneratedSettingsFactory<{{interfaceModel.InterfaceDisplayName}}>(
-                                            (client, settings) => new {{generatedType}}(client, settings));
+                                            {{lambdaModifier}}(client, settings) => new {{generatedType}}(client, settings));
 
                             """;
             }

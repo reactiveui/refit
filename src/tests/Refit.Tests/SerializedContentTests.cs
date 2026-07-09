@@ -655,7 +655,7 @@ public partial class SerializedContentTests
     [Test]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForNullNonNullableEnumValues() =>
         await Assert.That(
-                () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "null",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<JsonException>();
@@ -665,7 +665,7 @@ public partial class SerializedContentTests
     [Test]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForEmptyNonNullableEnumValues() =>
         await Assert.That(
-                () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "\"\"",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<JsonException>();
@@ -675,7 +675,7 @@ public partial class SerializedContentTests
     [Test]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForInvalidEnumValues() =>
         await Assert.That(
-                () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "\"notAValue\"",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<JsonException>();
@@ -685,7 +685,7 @@ public partial class SerializedContentTests
     [Test]
     public async Task SystemTextJsonContentSerializer_DefaultOptions_ThrowForUnexpectedTokensWhenParsingEnums() =>
         await Assert.That(
-                () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
+                static () => SystemTextJsonSerializer.Deserialize<CamelCaseEnum>(
                     "true",
                     SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
             .ThrowsExactly<JsonException>();
@@ -876,8 +876,8 @@ public partial class SerializedContentTests
                     TypeInfoResolver = resolver
                 }))
         {
-            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(
-                _ => Task.FromResult(
+            HttpMessageHandlerFactory = static () => new StubHttpMessageHandler(
+                static _ => Task.FromResult(
                     new HttpResponseMessage(HttpStatusCode.OK)
                     {
                         Content = new StringContent(
@@ -1145,7 +1145,7 @@ public partial class SerializedContentTests
             new SystemTextJsonContentSerializer(
                 SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))
         {
-            HttpMessageHandlerFactory = () => new StubHttpMessageHandler(_ =>
+            HttpMessageHandlerFactory = static () => new StubHttpMessageHandler(static _ =>
                 Task.FromResult(
                     new HttpResponseMessage(HttpStatusCode.OK)
                     {
@@ -1216,9 +1216,9 @@ public partial class SerializedContentTests
         using (var writer = new Utf8JsonWriter(stream))
         {
             writer.WriteStartObject();
-#pragma warning disable CS8607 // The nullable converter intentionally supports null keys by writing an empty property name.
-            converter.WriteAsPropertyName(writer, null, options);
-#pragma warning restore CS8607
+
+            // The nullable converter intentionally supports null keys by writing an empty property name.
+            converter.WriteAsPropertyName(writer, null!, options);
             writer.WriteStringValue("empty");
             converter.WriteAsPropertyName(writer, CamelCaseEnum.ValueOne, options);
             writer.WriteStringValue("first");

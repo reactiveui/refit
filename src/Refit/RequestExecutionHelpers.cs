@@ -571,7 +571,11 @@ internal static class RequestExecutionHelpers
             var stream = await content
                 .ReadAsStreamAsync(cancellationToken)
                 .ConfigureAwait(false);
+#if NET8_0_OR_GREATER
+            await using (stream.ConfigureAwait(false))
+#else
             using (stream)
+#endif
             {
                 using var reader = new StreamReader(stream);
 #if NET8_0_OR_GREATER

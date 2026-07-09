@@ -37,41 +37,6 @@ internal static partial class Parser
             && path.IndexOf('\\') < 0
             && path.IndexOf('\r') < 0
             && path.IndexOf('\n') < 0;
-
-        static bool IsPathTemplateValid(in ReadOnlySpan<char> path)
-        {
-            var openingBraces = 0;
-            var closingBraces = 0;
-
-            foreach (var c in path)
-            {
-                switch (c)
-                {
-                    case '/' when openingBraces != closingBraces:
-                        return false;
-                    case '/':
-                        {
-                            openingBraces = 0;
-                            closingBraces = 0;
-                            break;
-                        }
-
-                    case '{':
-                        {
-                            ++openingBraces;
-                            break;
-                        }
-
-                    case '}':
-                        {
-                            ++closingBraces;
-                            break;
-                        }
-                }
-            }
-
-            return openingBraces == closingBraces;
-        }
     }
 
     /// <summary>Normalizes constant inline paths to match the reflection request builder URI cleanup.</summary>
@@ -238,4 +203,42 @@ internal static partial class Parser
             "global::System.Net.Http.HttpResponseMessage" and not
             "global::System.Net.Http.HttpContent" and not
             "global::System.IO.Stream";
+
+    /// <summary>Determines whether the braces in a path template are balanced within each segment.</summary>
+    /// <param name="path">The path template to validate.</param>
+    /// <returns><see langword="true"/> when every segment has balanced braces.</returns>
+    private static bool IsPathTemplateValid(in ReadOnlySpan<char> path)
+    {
+        var openingBraces = 0;
+        var closingBraces = 0;
+
+        foreach (var c in path)
+        {
+            switch (c)
+            {
+                case '/' when openingBraces != closingBraces:
+                    return false;
+                case '/':
+                    {
+                        openingBraces = 0;
+                        closingBraces = 0;
+                        break;
+                    }
+
+                case '{':
+                    {
+                        ++openingBraces;
+                        break;
+                    }
+
+                case '}':
+                    {
+                        ++closingBraces;
+                        break;
+                    }
+            }
+        }
+
+        return openingBraces == closingBraces;
+    }
 }

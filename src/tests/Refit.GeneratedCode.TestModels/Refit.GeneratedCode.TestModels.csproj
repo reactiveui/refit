@@ -3,7 +3,13 @@
   <PropertyGroup>
     <TargetFrameworks>$(RefitTestTargets)</TargetFrameworks>
     <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Pin to the lowest C# version the emitted code can be compiled with on these targets.
+         The generated module initializer needs C# 9, and nothing it emits needs more. Compiling
+         at 'latest' would make the analyzers demand C# 10+ syntax (file-scoped namespaces) that
+         the emitter must never produce, because consumers may build at an older LangVersion.
+         ImplicitUsings is off because global usings are themselves a C# 10 feature. -->
+    <LangVersion>9.0</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <RefitEmitGeneratedCodeMarkers>false</RefitEmitGeneratedCodeMarkers>
     <RefitGeneratedRequestBuilding>true</RefitGeneratedRequestBuilding>
@@ -13,6 +19,21 @@
          names with global:: for collision safety, which trips the SST1116 "shorten qualified name" rule. -->
     <NoWarn>$(NoWarn);SST1116</NoWarn>
   </PropertyGroup>
+
+  <!-- Directory.Build.props injects this polyfill into every net8.0 project, but it is written in
+       C# 12 and this project compiles at the C# 9 floor. Nothing here uses the attribute. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <Compile Remove="$(MSBuildThisFileDirectory)..\..\Polyfills\OverloadResolutionPriorityAttribute.cs"/>
+  </ItemGroup>
+
+  <!-- Directory.Build.props declares alias Using items, which MSBuild emits as 'global using'
+       directives - themselves a C# 10 feature. Drop them so this project can compile at C# 9. -->
+  <ItemGroup>
+    <Using Remove="System.ArgumentNullException"/>
+    <Using Remove="System.ArgumentOutOfRangeException"/>
+    <Using Remove="System.Threading.Lock"/>
+    <Using Remove="System.Object"/>
+  </ItemGroup>
 
   <ItemGroup>
     <CompilerVisibleProperty Include="DisableRefitSourceGenerator"/>

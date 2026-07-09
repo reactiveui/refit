@@ -8,7 +8,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -772,7 +771,7 @@ public class MultipartTests
     [Test]
     public async Task MultiPartConstructorShouldThrowArgumentNullExceptionWhenNoFileName() =>
         await Assert
-            .That(() => _ = new ByteArrayPart([], null!, PdfMediaType))
+            .That(static () => _ = new ByteArrayPart([], null!, PdfMediaType))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies the <see cref="FileInfoPart"/> constructor rejects a null file info.</summary>
@@ -780,7 +779,7 @@ public class MultipartTests
     [Test]
     public async Task FileInfoPartConstructorShouldThrowArgumentNullExceptionWhenNoFileInfo() =>
         await Assert
-            .That(() => _ = new FileInfoPart(null!, "file.pdf", PdfMediaType))
+            .That(static () => _ = new FileInfoPart(null!, "file.pdf", PdfMediaType))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Loads an embedded test resource as a stream.</summary>
@@ -802,9 +801,9 @@ public class MultipartTests
                 .Replace(' ', '_');
 
         // get resource stream
-        var fullName = assembly
-            .GetManifestResourceNames()
-            .FirstOrDefault(name => name.EndsWith(relativeName, StringComparison.InvariantCulture))
+        var fullName = Array.Find(
+            assembly.GetManifestResourceNames(),
+            name => name.EndsWith(relativeName, StringComparison.InvariantCulture))
             ?? throw new InvalidOperationException(
                 $"Unable to find resource for path \"{relativeFilePath}\". Resource with name ending on \"{relativeName}\" was not found in assembly.");
 

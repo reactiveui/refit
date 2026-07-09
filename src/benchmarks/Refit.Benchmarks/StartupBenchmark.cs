@@ -16,7 +16,7 @@ public class StartupBenchmark
     /// <summary>The Refit settings using a static response handler.</summary>
     private readonly RefitSettings _settings = new()
     {
-        HttpMessageHandlerFactory = () =>
+        HttpMessageHandlerFactory = static () =>
             new StaticValueHttpResponseHandler(
                 "Ok",
                 HttpStatusCode.OK)

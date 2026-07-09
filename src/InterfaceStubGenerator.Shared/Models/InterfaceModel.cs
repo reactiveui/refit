@@ -14,6 +14,7 @@ namespace Refit.Generator;
 /// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled for this interface.</param>
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="SupportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
+/// <param name="SupportsStaticLambdas">Whether the consumer compilation supports the <c>static</c> lambda modifier (C# 9).</param>
 /// <param name="Constraints">The generic type constraints of the interface.</param>
 /// <param name="MemberNames">The names of the interface members.</param>
 /// <param name="Properties">The interface properties implemented by the generated stub.</param>
@@ -33,6 +34,7 @@ internal sealed record InterfaceModel(
     bool GeneratedRequestBuilding,
     bool EmitGeneratedCodeMarkers,
     bool SupportsNullable,
+    bool SupportsStaticLambdas,
     ImmutableEquatableArray<TypeConstraint> Constraints,
     ImmutableEquatableArray<string> MemberNames,
     ImmutableEquatableArray<InterfacePropertyModel> Properties,

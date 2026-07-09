@@ -100,6 +100,7 @@ internal static partial class Parser
         }
 
         var supportsNullable = options.LanguageVersion >= LanguageVersion.CSharp8;
+        var supportsStaticLambdas = options.LanguageVersion >= LanguageVersion.CSharp9;
 
         // The PreserveAttribute is emitted into the consumer's compilation by the emitter
         // (see Emitter.EmitSharedCode). Its fully-qualified display name is fully determined
@@ -116,7 +117,8 @@ internal static partial class Parser
             formattableSymbol,
             generatedRequestBuilding,
             emitGeneratedCodeMarkers,
-            supportsNullable);
+            supportsNullable,
+            supportsStaticLambdas);
 
         var interfaceModels = BuildInterfaceModels(
             interfaces,
@@ -381,6 +383,7 @@ internal static partial class Parser
             context.GeneratedRequestBuilding,
             context.EmitGeneratedCodeMarkers,
             context.SupportsNullable,
+            context.SupportsStaticLambdas,
             constraints,
             memberNames,
             properties,
@@ -670,7 +673,7 @@ internal static partial class Parser
     private static bool IsEmittableProperty(IPropertySymbol property) =>
         !property.IsStatic
         && property.IsAbstract
-        && property.Parameters.Length == 0;
+        && property.Parameters.IsEmpty;
 
     /// <summary>Builds an interface property model.</summary>
     /// <param name="property">The property to parse.</param>
@@ -729,7 +732,7 @@ internal static partial class Parser
             }
 
             var arguments = attribute.ConstructorArguments;
-            return arguments.Length > 0 && arguments[0].Value is string { Length: > 0 } key
+            return !arguments.IsEmpty && arguments[0].Value is string { Length: > 0 } key
                 ? key
                 : property.MetadataName;
         }
@@ -840,7 +843,7 @@ internal static partial class Parser
     private static IMethodSymbol? FirstExplicitInterfaceImplementation(IMethodSymbol methodSymbol)
     {
         var implementations = methodSymbol.ExplicitInterfaceImplementations;
-        return implementations.Length == 0 ? null : implementations[0];
+        return implementations.IsEmpty ? null : implementations[0];
     }
 
     /// <summary>Classifies a method's return type into its <see cref="ReturnTypeInfo"/> shape.</summary>
@@ -864,7 +867,7 @@ internal static partial class Parser
         in ImmutableArray<ITypeParameterSymbol> typeParameters,
         bool isOverrideOrExplicitImplementation)
     {
-        if (typeParameters.Length == 0)
+        if (typeParameters.IsEmpty)
         {
             return ImmutableEquatableArrayFactory.Empty<TypeConstraint>();
         }
@@ -962,7 +965,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<ParameterModel> ParseParameters(
         in ImmutableArray<IParameterSymbol> parameters)
     {
-        if (parameters.Length == 0)
+        if (parameters.IsEmpty)
         {
             return ImmutableEquatableArrayFactory.Empty<ParameterModel>();
         }
@@ -982,7 +985,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<string> ParseConstraintTypes(
         in ImmutableArray<ITypeSymbol> constraintTypes)
     {
-        if (constraintTypes.Length == 0)
+        if (constraintTypes.IsEmpty)
         {
             return ImmutableEquatableArrayFactory.Empty<string>();
         }

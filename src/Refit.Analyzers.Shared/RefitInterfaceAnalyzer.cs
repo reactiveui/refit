@@ -43,7 +43,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         }
 
         var arguments = attributeData.ConstructorArguments;
-        return arguments.Length > 0 && arguments[0].Value is string path
+        return !arguments.IsEmpty && arguments[0].Value is string path
             ? path
             : string.Empty;
     }
@@ -380,5 +380,5 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <param name="symbol">The symbol.</param>
     /// <returns>The first available location, or <see langword="null"/>.</returns>
     private static Location? FirstLocation(ISymbol symbol) =>
-        symbol.Locations.Length > 0 ? symbol.Locations[0] : null;
+        !symbol.Locations.IsEmpty ? symbol.Locations[0] : null;
 }
