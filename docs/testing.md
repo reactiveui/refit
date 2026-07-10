@@ -21,6 +21,7 @@ Because the library is Refit-aware, it does three things a general-purpose HTTP 
 - [Inspecting the request that was sent](#inspecting-the-request-that-was-sent)
 - [Sequenced and reusable routes](#sequenced-and-reusable-routes)
 - [Simulating network conditions](#simulating-network-conditions)
+- [Testing retries and timeouts](#testing-retries-and-timeouts)
 - [Unit-testing code that consumes `IApiResponse<T>`](#unit-testing-code-that-consumes-iapiresponset)
 - [API reference](#api-reference)
 
@@ -262,6 +263,47 @@ var http = new StubHttp(behavior)
 
 Seeding makes runs reproducible: the same seed produces the same sequence of delays and failures, so a flaky-path
 test is deterministic. Set `FailureFactory` to control the exception a simulated transport failure throws.
+
+## Testing retries and timeouts
+
+Sequenced one-shot routes are matched in declared order, so a transient fault followed by a success exercises a
+retry policy — a Polly handler, or any `DelegatingHandler` — stacked above the stub:
+
+```csharp
+var http = new StubHttp
+{
+    { Route.Get("/users/{id}"), Reply.Status(HttpStatusCode.ServiceUnavailable) },  // first attempt
+    { Route.Get("/users/{id}"), Reply.With(new User(7, "octocat")) },               // the retry
+};
+
+var settings = new RefitSettings { HttpMessageHandlerFactory = () => new MyRetryHandler(http) };
+var api = RestService.For<IUserApi>("https://api.test", settings);
+
+var user = await api.GetUser(7);        // succeeded on the retry
+Assert.Equal(2, http.Requests.Count);   // both attempts were made
+```
+
+To retry a *transport* fault rather than a status code, have the first reply throw:
+`Reply.From(HttpResponseMessage (_) => throw new HttpRequestException("boom"))`.
+
+Timeouts fall out of `NetworkBehavior.Delay`: make the injected latency exceed the client's `Timeout` and the
+request is aborted. Refit's transport-exception factory surfaces the resulting cancellation as an
+`ApiRequestException` whose `InnerException` is the `TaskCanceledException`:
+
+```csharp
+var http = new StubHttp(new NetworkBehavior { Delay = TimeSpan.FromSeconds(10), Variance = 0 })
+{
+    { Route.Get("/users/{id}"), Reply.With(new User(7, "octocat")) },
+};
+
+using var client = new HttpClient(http)
+{
+    BaseAddress = new Uri("https://api.test"),
+    Timeout = TimeSpan.FromMilliseconds(50),
+};
+
+await Assert.ThrowsAsync<ApiRequestException>(() => RestService.For<IUserApi>(client).GetUser(7));
+```
 
 ## Unit-testing code that consumes `IApiResponse<T>`
 
