@@ -171,6 +171,10 @@ public class PooledBufferWriterTests
             .ThrowsExactly<TaskCanceledException>();
         await Assert.That(() => stream.CopyToAsync(Stream.Null, copyBufferSize, cancellationTokenSource.Token))
             .ThrowsExactly<OperationCanceledException>();
+#if NET6_0_OR_GREATER
+        await Assert.That(() => stream.ReadAsync(new byte[ThreeByteCount].AsMemory(), cancellationTokenSource.Token).AsTask())
+            .ThrowsExactly<TaskCanceledException>();
+#endif
     }
 
     /// <summary>Verifies a disposed detached stream rejects further reads.</summary>

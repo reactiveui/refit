@@ -146,7 +146,9 @@ internal partial class RequestBuilderImplementation
         for (var i = 0; i < queryParamsToAdd.Count; i++)
         {
             var queryParam = queryParamsToAdd[i];
-            if (queryParam is not { Key: not null, Value: not null })
+
+            // A formatter may render a value as null; such parameters are omitted entirely.
+            if (queryParam.Value is null)
             {
                 continue;
             }
@@ -168,7 +170,7 @@ internal partial class RequestBuilderImplementation
 #endif
             vsb.Append(key);
             vsb.Append('=');
-            vsb.Append(StringHelpers.EscapeDataString(queryParam.Value ?? string.Empty));
+            vsb.Append(StringHelpers.EscapeDataString(queryParam.Value));
             if (firstQuery)
             {
                 firstQuery = false;

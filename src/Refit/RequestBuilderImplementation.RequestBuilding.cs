@@ -240,7 +240,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="paramList">The argument values for the call.</param>
     /// <returns>The constructed request message.</returns>
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
-    private async Task<HttpRequestMessage?> BuildRequestMessageForMethodAsync(
+    private async Task<HttpRequestMessage> BuildRequestMessageForMethodAsync(
         RestMethodInfoInternal restMethod,
         string basePath,
         bool paramsContainsCancellationToken,
@@ -477,11 +477,9 @@ internal partial class RequestBuilderImplementation
             return;
         }
 
-        var contains = restMethod.ParameterMap.TryGetValue(fragment.ArgumentIndex, out var parameterMapValue);
-        if (!contains || parameterMapValue is null)
-        {
-            throw new InvalidOperationException($"{restMethod.ParameterMap} should contain parameter.");
-        }
+        // Every non-constant fragment carries the index of a parameter that BuildParameterMap registered,
+        // so the lookup always succeeds.
+        var parameterMapValue = restMethod.ParameterMap[fragment.ArgumentIndex];
 
         if (fragment.IsObjectProperty)
         {
@@ -489,13 +487,9 @@ internal partial class RequestBuilderImplementation
             return;
         }
 
-        if (fragment.IsDynamicRoute)
-        {
-            AppendDynamicRouteFragment(ref vsb, restMethod, paramList, fragment, parameterMapValue);
-            return;
-        }
-
-        throw new ArgumentException($"{nameof(ParameterFragment)} is in an invalid form.");
+        // A non-constant fragment always carries an argument index, so anything that is not an
+        // object property is a dynamic route value.
+        AppendDynamicRouteFragment(ref vsb, restMethod, paramList, fragment, parameterMapValue);
     }
 
     /// <summary>Appends an object-property-bound path fragment.</summary>

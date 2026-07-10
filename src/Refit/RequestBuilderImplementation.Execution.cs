@@ -9,14 +9,69 @@ namespace Refit;
 /// <summary>Reflection-based request builder that turns Refit interface calls into HTTP requests.</summary>
 internal partial class RequestBuilderImplementation
 {
+    /// <summary>Builds and streams the response for a method returning an asynchronous sequence.</summary>
+    /// <typeparam name="T">The element type yielded to the caller.</typeparam>
+    /// <param name="client">The HTTP client to send with.</param>
+    /// <param name="restMethod">The rest method being invoked.</param>
+    /// <param name="paramList">The argument values for the call.</param>
+    /// <param name="linked">The linked cancellation source, disposed when enumeration finishes.</param>
+    /// <returns>The streamed elements.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+    internal async IAsyncEnumerable<T?> StreamAsyncEnumerableRequestAsync<T>(
+        HttpClient client,
+        RestMethodInfoInternal restMethod,
+        object[] paramList,
+        CancellationTokenSource linked)
+    {
+        // Disposed through an explicit finally rather than 'using': the compiler would emit a null check
+        // on the source, and CreateLinkedTokenSource never returns null.
+        try
+        {
+            RequestExecutionHelpers.ThrowIfBaseAddressMissing(client);
+
+            var request = await BuildRequestMessageForMethodAsync(
+                    restMethod,
+                    client.BaseAddress!.AbsolutePath,
+                    restMethod.CancellationToken is not null,
+                    paramList)
+                .ConfigureAwait(false);
+
+            await foreach (var item in RequestExecutionHelpers
+                .StreamResponseAsync<T>(client, request, _settings, false, linked.Token)
+                .ConfigureAwait(false))
+            {
+                yield return item;
+            }
+        }
+        finally
+        {
+            linked.Dispose();
+        }
+    }
+
+    /// <summary>Gets the cancellation token declared by the interface method, if any.</summary>
+    /// <param name="restMethod">The rest method being invoked.</param>
+    /// <param name="paramList">The argument values for the call.</param>
+    /// <returns>The method's cancellation token, or <see cref="CancellationToken.None"/>.</returns>
+    private static CancellationToken GetMethodCancellationToken(
+        RestMethodInfoInternal restMethod,
+        object[] paramList) =>
+        restMethod.CancellationToken is not null
+            ? GetCancellationToken(paramList)
+            : CancellationToken.None;
+
     /// <summary>Determines whether the request body should be buffered before sending.</summary>
     /// <param name="restMethod">The rest method being invoked.</param>
-    /// <param name="request">The request message, if built.</param>
+    /// <param name="request">The built request message.</param>
     /// <returns><see langword="true"/> if the body should be buffered; otherwise <see langword="false"/>.</returns>
     private static bool IsBodyBuffered(
         RestMethodInfoInternal restMethod,
-        HttpRequestMessage? request) =>
-        (restMethod.BodyParameterInfo?.Item2 ?? false) && (request?.Content is not null);
+        HttpRequestMessage request) =>
+        (restMethod.BodyParameterInfo?.Item2 ?? false) && request.Content is not null;
 
     /// <summary>Builds and sends the request for a method with no response body, throwing on error.</summary>
     /// <param name="client">The HTTP client to send with.</param>
@@ -44,7 +99,7 @@ internal partial class RequestBuilderImplementation
 
         await RequestExecutionHelpers.SendVoidAsync(
                 client,
-                request!,
+                request,
                 _settings,
                 IsBodyBuffered(restMethod, request),
                 false,
@@ -82,7 +137,7 @@ internal partial class RequestBuilderImplementation
                 paramList)
             .ConfigureAwait(false);
 
-        return await SendAndProcessResponseAsync<T, TBody>(client, restMethod, request!, cancellationToken)
+        return await SendAndProcessResponseAsync<T, TBody>(client, restMethod, request, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -93,33 +148,27 @@ internal partial class RequestBuilderImplementation
     /// <param name="paramList">The argument values for the call.</param>
     /// <param name="cancellationToken">A token, supplied by the consumer's enumeration, to cancel streaming.</param>
     /// <returns>An asynchronous sequence of deserialized elements.</returns>
+    /// <remarks>
+    /// A forwarding shell only. The <c>EnumeratorCancellation</c> attribute makes the compiler emit a
+    /// <c>GetAsyncEnumerator</c> whose branches no test can drive, so the logic lives in
+    /// <see cref="StreamAsyncEnumerableRequestAsync{T}"/>, which is covered directly.
+    /// </remarks>
     [SuppressMessage(
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
     [RequiresDynamicCode("Serializing a body by runtime Type requires runtime generic method instantiation.")]
+    [ExcludeFromCodeCoverage]
     private async IAsyncEnumerable<T?> ExecuteAsyncEnumerableRequestAsync<T>(
         HttpClient client,
         RestMethodInfoInternal restMethod,
         object[] paramList,
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        RequestExecutionHelpers.ThrowIfBaseAddressMissing(client);
+        var methodCt = GetMethodCancellationToken(restMethod, paramList);
+        var linked = CancellationTokenSource.CreateLinkedTokenSource(methodCt, cancellationToken);
 
-        var methodCt = restMethod.CancellationToken is not null
-            ? GetCancellationToken(paramList)
-            : CancellationToken.None;
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(methodCt, cancellationToken);
-
-        var request = await BuildRequestMessageForMethodAsync(
-                restMethod,
-                client.BaseAddress!.AbsolutePath,
-                restMethod.CancellationToken is not null,
-                paramList)
-            .ConfigureAwait(false);
-
-        await foreach (var item in RequestExecutionHelpers
-            .StreamResponseAsync<T>(client, request!, _settings, false, linked.Token)
+        await foreach (var item in StreamAsyncEnumerableRequestAsync<T>(client, restMethod, paramList, linked)
             .ConfigureAwait(false))
         {
             yield return item;
@@ -150,13 +199,13 @@ internal partial class RequestBuilderImplementation
 
             try
             {
-                return await SendAndProcessResponseAsync<T, TBody>(client, restMethod, request!, ct)
+                return await SendAndProcessResponseAsync<T, TBody>(client, restMethod, request, ct)
                     .ConfigureAwait(false);
             }
             finally
             {
                 // Ensure we clean up the request, especially if it has open files/streams.
-                request?.Dispose();
+                request.Dispose();
             }
         };
 

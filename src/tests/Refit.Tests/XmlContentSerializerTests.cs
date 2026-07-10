@@ -183,6 +183,12 @@ public class XmlContentSerializerTests
         await Assert.That(both.WriterSettings.Async).IsTrue();
         await Assert.That(() => both.ReaderSettings = null!).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => both.WriterSettings = null!).ThrowsExactly<ArgumentNullException>();
+
+        both.ReaderSettings = readerSettings;
+        both.WriterSettings = writerSettings;
+
+        await Assert.That(both.ReaderSettings).IsSameReferenceAs(readerSettings);
+        await Assert.That(both.WriterSettings).IsSameReferenceAs(writerSettings);
     }
 
     /// <summary>Verifies DTD processing is forced off and the resolver cleared even when the caller opts into parsing (XXE hardening).</summary>

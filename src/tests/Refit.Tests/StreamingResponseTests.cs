@@ -297,6 +297,132 @@ public class StreamingResponseTests
         await Assert.That(ids).IsEquivalentTo([ExpectedId8]);
     }
 
+    /// <summary>Verifies the reflection request builder streams an async enumerable without a method cancellation token.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReflectionRequestBuilderStreamsAsyncEnumerable()
+    {
+        var (builder, client) = CreateReflectionBuilder("[{\"id\":2}]");
+        var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArray));
+
+        var ids = new List<int>();
+        await foreach (var item in (IAsyncEnumerable<StreamItem?>)func(client, [])!)
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([ExpectedId2]);
+    }
+
+    /// <summary>Verifies the reflection request builder links the method cancellation token when streaming.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReflectionRequestBuilderStreamsAsyncEnumerableWithCancellationToken()
+    {
+        var (builder, client) = CreateReflectionBuilder("[{\"id\":3}]");
+        var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArrayCancellable));
+
+        var ids = new List<int>();
+        await foreach (var item in (IAsyncEnumerable<StreamItem?>)func(client, [CancellationToken.None])!)
+        {
+            ids.Add(item!.Id);
+        }
+
+        await Assert.That(ids).IsEquivalentTo([ExpectedId3]);
+    }
+
+    /// <summary>Verifies abandoning the reflection stream part-way disposes the iterator cleanly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReflectionRequestBuilderStreamingStopsWhenEnumerationIsAbandoned()
+    {
+        var (builder, client) = CreateReflectionBuilder("[{\"id\":2},{\"id\":3}]");
+        var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArray));
+
+        var sequence = (IAsyncEnumerable<StreamItem?>)func(client, [])!;
+
+        await using var enumerator = sequence.GetAsyncEnumerator();
+        var moved = await enumerator.MoveNextAsync();
+
+        await Assert.That(moved).IsTrue();
+        await Assert.That(enumerator.Current!.Id).IsEqualTo(ExpectedId2);
+    }
+
+    /// <summary>Verifies the reflection request builder surfaces a missing base address when streaming.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReflectionRequestBuilderStreamingThrowsWhenBaseAddressMissing()
+    {
+        var (builder, _) = CreateReflectionBuilder("[]");
+        var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArray));
+        using var clientWithoutBaseAddress = new HttpClient(new StubHttp());
+
+        await Assert.That(() => EnumerateAsync((IAsyncEnumerable<StreamItem?>)func(clientWithoutBaseAddress, [])!))
+            .Throws<InvalidOperationException>();
+    }
+
+    /// <summary>Verifies disposing the reflection stream before the first move never starts the request.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReflectionRequestBuilderStreamingDisposesWithoutMoving()
+    {
+        var (builder, client) = CreateReflectionBuilder("[{\"id\":2}]");
+        var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArray));
+        var sequence = (IAsyncEnumerable<StreamItem?>)func(client, [])!;
+
+        var enumerator = sequence.GetAsyncEnumerator();
+        await enumerator.DisposeAsync();
+
+        await Assert.That(enumerator).IsNotNull();
+    }
+
+    /// <summary>Verifies the reflection stream propagates cancellation after linking the method token.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReflectionRequestBuilderStreamingPropagatesCancellation()
+    {
+        var (builder, client) = CreateReflectionBuilder("[{\"id\":2}]");
+        var func = builder.BuildRestResultFuncForMethod(nameof(IStreamingApi.GetArrayCancellable));
+        using var cancellationTokenSource = new CancellationTokenSource();
+        await cancellationTokenSource.CancelAsync();
+
+        await Assert
+            .That(() => EnumerateAsync((IAsyncEnumerable<StreamItem?>)func(client, [cancellationTokenSource.Token])!))
+            .Throws<OperationCanceledException>();
+    }
+
+    /// <summary>Enumerates an async sequence so exceptions thrown on first move surface to the caller.</summary>
+    /// <param name="source">The sequence to enumerate.</param>
+    /// <returns>The number of items produced.</returns>
+    private static async Task<int> EnumerateAsync(IAsyncEnumerable<StreamItem?> source)
+    {
+        var count = 0;
+        await foreach (var item in source)
+        {
+            count += item is null ? 0 : 1;
+        }
+
+        return count;
+    }
+
+    /// <summary>Creates the reflection request builder and a client backed by a stub handler.</summary>
+    /// <param name="payload">The JSON payload the stub handler replies with.</param>
+    /// <returns>The reflection request builder and its HTTP client.</returns>
+    private static (RequestBuilderImplementation<IStreamingApi> Builder, HttpClient Client) CreateReflectionBuilder(string payload)
+    {
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Template = "*", Reusable = true },
+                Reply.Content(new StringContent(payload, System.Text.Encoding.UTF8, JsonMediaType))
+            },
+        };
+
+        var settings = new RefitSettings { HttpMessageHandlerFactory = () => handler };
+        var client = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
+        return (new RequestBuilderImplementation<IStreamingApi>(settings), client);
+    }
+
     /// <summary>Creates a streaming fixture backed by a mock handler returning the given payload.</summary>
     /// <param name="mediaType">The response media type.</param>
     /// <param name="payload">The response body.</param>

@@ -26,7 +26,7 @@ internal sealed partial class PooledBufferWriter
         {
             if (_pooledBuffer is null)
             {
-                ThrowObjectDisposedException();
+                throw CreateObjectDisposedException();
             }
 
             var bytesAvailable = _length - _position;
@@ -69,7 +69,7 @@ internal sealed partial class PooledBufferWriter
         {
             if (_pooledBuffer is null)
             {
-                ThrowObjectDisposedException();
+                throw CreateObjectDisposedException();
             }
 
             if (_position >= _length)

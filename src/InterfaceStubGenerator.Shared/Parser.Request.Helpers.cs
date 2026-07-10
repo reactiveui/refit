@@ -18,7 +18,7 @@ internal static partial class Parser
     {
         foreach (var attributeData in methodSymbol.GetAttributes())
         {
-            if (attributeData.AttributeClass?.InheritsFromOrEquals(httpMethodAttribute) == true)
+            if (attributeData.AttributeClass!.InheritsFromOrEquals(httpMethodAttribute))
             {
                 return attributeData;
             }

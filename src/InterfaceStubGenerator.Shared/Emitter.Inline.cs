@@ -249,8 +249,11 @@ internal static partial class Emitter
             foreach (var kv in grouped)
             {
                 _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
+                var argIndex = 0;
                 foreach (var arg in kv.Value)
                 {
+                    // Multiple attributes of the same type must be comma-separated inside the array.
+                    _ = AppendSeparator(argIndex++, sb);
                     AppendAttributeValue(arg, sb);
                 }
 

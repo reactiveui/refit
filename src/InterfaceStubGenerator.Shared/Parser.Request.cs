@@ -76,7 +76,10 @@ internal static partial class Parser
 
         var paramNames = new Dictionary<string, List<Range>>(StringComparer.OrdinalIgnoreCase);
         var j = i + pathSpan[i..].IndexOfAny('}', '/');
-        while (i < pathSpan.Length && j > i)
+
+        // i always points at a '{' that IndexOf located, so it is always in range; only j can fall behind i
+        // (when no '}' or '/' follows the brace), which ends the scan.
+        while (j > i)
         {
             if (pathSpan[j] == '}')
             {
@@ -186,7 +189,7 @@ internal static partial class Parser
     {
         foreach (var attribute in attributes)
         {
-            var displayName = attribute.AttributeClass?.ToDisplayString();
+            var displayName = attribute.AttributeClass!.ToDisplayString();
             if (displayName is
                 "Refit.MultipartAttribute" or
                 "Refit.QueryUriFormatAttribute")
@@ -226,7 +229,7 @@ internal static partial class Parser
     {
         foreach (var attribute in attributes)
         {
-            if (attribute.AttributeClass?.ToDisplayString() != "Refit.HeadersAttribute")
+            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeadersAttribute")
             {
                 continue;
             }
@@ -386,9 +389,9 @@ internal static partial class Parser
         // every integer width, decimal, float, double) through System_Double - so a range check covers them all
         // in one comparison. string and DateTime sit just outside that block.
         static bool IsScalarSpecialType(SpecialType specialType) =>
-            specialType is (>= SpecialType.System_Boolean and <= SpecialType.System_Double)
-                or SpecialType.System_String
-                or SpecialType.System_DateTime;
+            (specialType >= SpecialType.System_Boolean && specialType <= SpecialType.System_Double)
+            || specialType == SpecialType.System_String
+            || specialType == SpecialType.System_DateTime;
 
         // A null interfaceSymbol (System.IFormattable unresolved) simply matches nothing and falls back.
         static bool ImplementsInterface(ITypeSymbol type, INamedTypeSymbol? interfaceSymbol)
@@ -436,7 +439,7 @@ internal static partial class Parser
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass?.ToDisplayString() != "Refit.BodyAttribute")
+            if (attribute.AttributeClass!.ToDisplayString() != "Refit.BodyAttribute")
             {
                 continue;
             }
@@ -488,9 +491,12 @@ internal static partial class Parser
 
         var fields = new List<FormFieldModel>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        // bodyType is a concrete class/struct/enum here (interfaces and the like are excluded upstream), so its base
+        // chain always reaches System.Object; the loop stops there and never dereferences a null BaseType.
         for (var current = bodyType;
-            current is not null && current.SpecialType != SpecialType.System_Object;
-            current = current.BaseType)
+            current.SpecialType != SpecialType.System_Object;
+            current = current.BaseType!)
         {
             foreach (var member in current.GetMembers())
             {
@@ -517,9 +523,14 @@ internal static partial class Parser
     /// <param name="type">The declared body type.</param>
     /// <returns><see langword="true"/> when descriptor-based flattening matches the reflection path.</returns>
     private static bool IsFormFieldEligibleType(ITypeSymbol type) =>
-        type.TypeKind is not (TypeKind.Interface or TypeKind.TypeParameter or TypeKind.Dynamic
-            or TypeKind.Array or TypeKind.Pointer or TypeKind.Error)
-        && type.SpecialType is not (SpecialType.System_String or SpecialType.System_Object)
+        type.TypeKind != TypeKind.Interface
+        && type.TypeKind != TypeKind.TypeParameter
+        && type.TypeKind != TypeKind.Dynamic
+        && type.TypeKind != TypeKind.Array
+        && type.TypeKind != TypeKind.Pointer
+        && type.TypeKind != TypeKind.Error
+        && type.SpecialType != SpecialType.System_String
+        && type.SpecialType != SpecialType.System_Object
         && type is not INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
 
         // Dictionaries and other enumerables flow through the reflection path, which special-cases them.
@@ -530,11 +541,8 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the type is enumerable.</returns>
     private static bool ImplementsEnumerable(ITypeSymbol type)
     {
-        if (type.SpecialType == SpecialType.System_Collections_IEnumerable)
-        {
-            return true;
-        }
-
+        // The only caller (IsFormFieldEligibleType) already excludes interface types, so type is never the
+        // System.Collections.IEnumerable interface itself; a concrete enumerable always exposes it through AllInterfaces.
         foreach (var contract in type.AllInterfaces)
         {
             if (contract.SpecialType == SpecialType.System_Collections_IEnumerable)
@@ -557,7 +565,7 @@ internal static partial class Parser
 
         foreach (var attribute in property.GetAttributes())
         {
-            var attributeName = attribute.AttributeClass?.ToDisplayString();
+            var attributeName = attribute.AttributeClass!.ToDisplayString();
             if (attributeName == "Refit.AliasAsAttribute")
             {
                 aliasName = GetFirstStringArgument(attribute);
@@ -617,9 +625,10 @@ internal static partial class Parser
 
         foreach (var argument in attribute.ConstructorArguments)
         {
-            if (argument.Type?.ToDisplayString() == "Refit.CollectionFormat" && argument.Value is int constructorCollectionFormat)
+            // The only enum-typed constructor argument a [Query] attribute accepts is CollectionFormat.
+            if (argument.Kind == TypedConstantKind.Enum)
             {
-                collectionFormatValue = constructorCollectionFormat;
+                collectionFormatValue = (int)argument.Value!;
             }
             else if (argument.Value is string stringValue)
             {
@@ -655,13 +664,13 @@ internal static partial class Parser
             {
                 data = data with { Format = formatValue };
             }
-            else if (named.Key == "CollectionFormat" && named.Value.Value is int namedCollectionFormat)
+            else if (named.Key == "CollectionFormat")
             {
-                data = data with { CollectionFormatValue = namedCollectionFormat };
+                data = data with { CollectionFormatValue = (int)named.Value.Value! };
             }
-            else if (named.Key == "SerializeNull" && named.Value.Value is bool serializeNullValue)
+            else if (named.Key == "SerializeNull")
             {
-                data = data with { SerializeNull = serializeNullValue };
+                data = data with { SerializeNull = (bool)named.Value.Value! };
             }
         }
 
@@ -680,7 +689,7 @@ internal static partial class Parser
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass?.ToDisplayString() != "Refit.HeaderAttribute")
+            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeaderAttribute")
             {
                 continue;
             }
@@ -722,7 +731,7 @@ internal static partial class Parser
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass?.ToDisplayString() != "Refit.HeaderCollectionAttribute")
+            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeaderCollectionAttribute")
             {
                 continue;
             }
@@ -763,7 +772,7 @@ internal static partial class Parser
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass?.ToDisplayString() != "Refit.PropertyAttribute")
+            if (attribute.AttributeClass!.ToDisplayString() != "Refit.PropertyAttribute")
             {
                 continue;
             }
@@ -847,11 +856,6 @@ internal static partial class Parser
         var models = new List<ParameterAttributeModel>(attributes.Length);
         foreach (var attribute in attributes)
         {
-            if (attribute.AttributeClass is null)
-            {
-                continue;
-            }
-
             var constructorArguments = new List<string>(attribute.ConstructorArguments.Length);
             foreach (var argument in attribute.ConstructorArguments)
             {
@@ -865,7 +869,7 @@ internal static partial class Parser
             }
 
             models.Add(new(
-                attribute.AttributeClass.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                attribute.AttributeClass!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 constructorArguments.ToImmutableEquatableArray(),
                 namedArguments.ToImmutableEquatableArray()));
         }
@@ -882,16 +886,17 @@ internal static partial class Parser
 
         if (!argument.IsNull)
         {
+            // A non-null attribute argument is always one of Enum, Type, Array or Primitive; the primitive rendering
+            // doubles as the fallback so no unreachable throwing arm is needed.
             result = argument.Kind switch
             {
                 TypedConstantKind.Enum =>
                     $"({argument.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}){argument.Value!}",
-                TypedConstantKind.Primitive => SymbolDisplay.FormatPrimitive(argument.Value!, true, false) ?? string.Empty,
                 TypedConstantKind.Type =>
-                    $"typeof({argument.Type!.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})",
+                    $"typeof({((ITypeSymbol)argument.Value!).ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)})",
                 TypedConstantKind.Array =>
                     $"new[] {{ {string.Join(", ", argument.Values.Select(ConstantValueToString))} }}",
-                _ => throw new NotSupportedException($"The type {argument.Kind} is not supported.")
+                _ => SymbolDisplay.FormatPrimitive(argument.Value!, true, false)!
             };
         }
 
@@ -955,10 +960,10 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when the argument is a body serialization method.</returns>
     private static bool TryGetBodySerializationMethodName(in TypedConstant argument, out string methodName)
     {
-        if (argument.Type?.ToDisplayString() == "Refit.BodySerializationMethod"
-            && argument.Value is int enumValue)
+        // The only enum-typed constructor argument a [Body] attribute accepts is BodySerializationMethod.
+        if (argument.Kind == TypedConstantKind.Enum)
         {
-            methodName = GetBodySerializationMethodName(enumValue);
+            methodName = GetBodySerializationMethodName((int)argument.Value!);
             return true;
         }
 
