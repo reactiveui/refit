@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Xml;
@@ -59,7 +58,8 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
 
         var xmlSerializer = _serializerCache.GetOrAdd(
             item.GetType(),
-            t => new(t, _settings.XmlAttributeOverrides));
+            static (t, settings) => new XmlSerializer(t, settings.XmlAttributeOverrides),
+            _settings);
 
         using var stream = new MemoryStream();
         using var writer = XmlWriter.Create(
@@ -89,13 +89,14 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
     {
         var xmlSerializer = _serializerCache.GetOrAdd(
             typeof(T),
-            t =>
-                new(
+            static (t, settings) =>
+                new XmlSerializer(
                     t,
-                    _settings.XmlAttributeOverrides,
+                    settings.XmlAttributeOverrides,
                     [],
                     null,
-                    _settings.XmlDefaultNamespace));
+                    settings.XmlDefaultNamespace),
+            _settings);
 
         using var input = new StringReader(
             await content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false));
@@ -114,13 +115,14 @@ public class XmlContentSerializer : IHttpContentSerializer, ISynchronousContentD
     {
         var xmlSerializer = _serializerCache.GetOrAdd(
             typeof(T),
-            t =>
-                new(
+            static (t, settings) =>
+                new XmlSerializer(
                     t,
-                    _settings.XmlAttributeOverrides,
+                    settings.XmlAttributeOverrides,
                     [],
                     null,
-                    _settings.XmlDefaultNamespace));
+                    settings.XmlDefaultNamespace),
+            _settings);
 
         using var input = new StringReader(content);
         using var reader = XmlReader.Create(

@@ -221,8 +221,8 @@ public static class Fixture
             var errors = string.Join(
                 Environment.NewLine,
                 emitResult.Diagnostics
-                    .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
-                    .Select(diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}"));
+                    .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+                    .Select(static diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}"));
             throw new InvalidOperationException(
                 $"Failed to emit generated compilation:{Environment.NewLine}{errors}");
         }
@@ -348,16 +348,16 @@ public static class Fixture
         [
             .. AppDomain.CurrentDomain
                 .GetAssemblies()
-                .Concat(_importantAssemblies.Select(x => x.Assembly))
+                .Concat(_importantAssemblies.Select(static x => x.Assembly))
                 .Distinct()
-                .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+                .Where(static a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
         ];
 
     /// <summary>Creates a compilation by parsing the given source strings.</summary>
     /// <param name="source">The source strings to parse and compile.</param>
     /// <returns>The created compilation.</returns>
     private static CSharpCompilation CreateLibrary(params string[] source) =>
-        CreateLibrary(source.Select(s => CSharpSyntaxTree.ParseText(s)).ToArray());
+        CreateLibrary(source.Select(static s => CSharpSyntaxTree.ParseText(s)).ToArray());
 
     /// <summary>Adds runtime framework references used by Roslyn in-memory compilations.</summary>
     /// <param name="referencePaths">The reference path set to populate.</param>
@@ -425,9 +425,9 @@ public static class Fixture
         var settings = new VerifySettings();
         if (ignoreNonInterfaces)
         {
-            settings.IgnoreGeneratedResult(x =>
+            settings.IgnoreGeneratedResult(static x =>
                 x.HintName.Contains("PreserveAttribute.g.cs", StringComparison.Ordinal));
-            settings.IgnoreGeneratedResult(x => x.HintName.Contains("Generated.g.cs", StringComparison.Ordinal));
+            settings.IgnoreGeneratedResult(static x => x.HintName.Contains("Generated.g.cs", StringComparison.Ordinal));
         }
 
         var verify = Verify(ranDriver, settings);

@@ -111,7 +111,7 @@ internal static class TestHelper
     {
         var actualStepReason = runResult
             .TrackedSteps[stepName]
-            .SelectMany(x => x.Outputs)
+            .SelectMany(static x => x.Outputs)
             .ElementAt(outputIndex)
             .Reason;
         await Assert.That(actualStepReason).IsEqualTo(expectedStepReason);

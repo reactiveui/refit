@@ -20,5 +20,5 @@ internal static class Program
     /// <returns>A configured web host builder instance that can be used to build and run the web application.</returns>
     public static IHostBuilder CreateWebHostBuilder(string[] args) =>
         Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder => webBuilder.UseStartup<Startup>());
+            .ConfigureWebHostDefaults(static webBuilder => webBuilder.UseStartup<Startup>());
 }

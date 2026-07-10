@@ -1,0 +1,5 @@
+[*.cs]
+
+# SST1449: Avoid writing directly to the console.
+# The smoke test reports its pass/fail result on stdout; that is the whole point of the program.
+dotnet_diagnostic.SST1449.severity = none

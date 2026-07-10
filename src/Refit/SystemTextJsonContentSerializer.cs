@@ -7,7 +7,6 @@ using System.Buffers;
 using System.Runtime.CompilerServices;
 #endif
 using System.Diagnostics.CodeAnalysis;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Text.Json;
@@ -127,13 +126,13 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
             async (stream, _, _) =>
             {
                 // Disposing the stream signals PushStreamContent that serialization is complete.
-                using (stream)
-                {
 #if NET8_0_OR_GREATER
-                    await using var writer = new Utf8JsonWriter(stream);
+                await using (stream.ConfigureAwait(false))
 #else
-                    using var writer = new Utf8JsonWriter(stream);
+                using (stream)
 #endif
+                {
+                    await using var writer = new Utf8JsonWriter(stream);
                     SerializeToWriter(item, writer);
                     await writer.FlushAsync().ConfigureAwait(false);
                 }
@@ -147,20 +146,16 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Major Code Smell",
         "S4018:Generic methods should provide type parameter for inference",
         Justification = "Type parameter intentionally specified explicitly by callers.")]
-    public async Task<T?> FromHttpContentAsync<T>(
+    public Task<T?> FromHttpContentAsync<T>(
         HttpContent content,
-        CancellationToken cancellationToken = default)
-    {
+        CancellationToken cancellationToken = default) =>
 #if NET8_0_OR_GREATER
-        return jsonSerializerOptions.TypeInfoResolver is not null
-            ? await content
-                .ReadFromJsonAsync(GetJsonTypeInfo<T>(), cancellationToken)
-                .ConfigureAwait(false)
-            : await FromHttpContentReflectionAsync<T>(content, cancellationToken).ConfigureAwait(false);
+        jsonSerializerOptions.TypeInfoResolver is not null
+            ? content.ReadFromJsonAsync(GetJsonTypeInfo<T>(), cancellationToken)
+            : FromHttpContentReflectionAsync<T>(content, cancellationToken);
 #else
-        return await FromHttpContentReflectionAsync<T>(content, cancellationToken).ConfigureAwait(false);
+        FromHttpContentReflectionAsync<T>(content, cancellationToken);
 #endif
-    }
 
     /// <inheritdoc/>
     [SuppressMessage(
@@ -478,7 +473,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         static bool IsBlankLine(byte[] lineBuffer, int lineStart, int lineLength)
         {
             var line = new ReadOnlySpan<byte>(lineBuffer, lineStart, lineLength);
-            if (line.Length > 0 && line[line.Length - 1] == (byte)'\r')
+            if (!line.IsEmpty && line[line.Length - 1] == (byte)'\r')
             {
                 line = line.Slice(0, line.Length - 1);
             }

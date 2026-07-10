@@ -10,6 +10,9 @@ namespace Refit.Tests;
 /// <summary>Tests for the cached request builder implementation.</summary>
 public class CachedRequestBuilderTests
 {
+    /// <summary>An arbitrary method name used to build cache keys; unrelated to any type in scope.</summary>
+    private const string CachedMethodName = "Foo";
+
     /// <summary>Expected cache entry and build count after two distinct method invocations.</summary>
     private const int ExpectedTwoEntries = 2;
 
@@ -19,17 +22,17 @@ public class CachedRequestBuilderTests
     /// <summary>Verifies the cached builder throws when constructed with a null inner builder.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
-    public async Task CachedBuilder_ThrowsForNullInnerBuilder() => await Assert.That(() => new CachedRequestBuilderImplementation(null!)).ThrowsExactly<ArgumentNullException>();
+    public async Task CachedBuilder_ThrowsForNullInnerBuilder() => await Assert.That(static () => new CachedRequestBuilderImplementation(null!)).ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies method-table key equality, including object equality and generic-argument differences.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
     public async Task MethodTableKey_ObjectEquals_And_GenericArgumentDifference_AreCovered()
     {
-        var key = new MethodTableKey("Foo", [typeof(string)], [typeof(int)]);
-        object same = new MethodTableKey("Foo", [typeof(string)], [typeof(int)]);
-        object different = new MethodTableKey("Foo", [typeof(string)], [typeof(long)]);
-        var differentParameter = new MethodTableKey("Foo", [typeof(int)], [typeof(int)]);
+        var key = new MethodTableKey(CachedMethodName, [typeof(string)], [typeof(int)]);
+        object same = new MethodTableKey(CachedMethodName, [typeof(string)], [typeof(int)]);
+        object different = new MethodTableKey(CachedMethodName, [typeof(string)], [typeof(long)]);
+        var differentParameter = new MethodTableKey(CachedMethodName, [typeof(int)], [typeof(int)]);
 
         await Assert.That(key.Equals(same)).IsTrue();
         await Assert.That(key.Equals(different)).IsFalse();

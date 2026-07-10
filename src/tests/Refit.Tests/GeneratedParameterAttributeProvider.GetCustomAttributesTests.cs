@@ -43,7 +43,7 @@ public partial class GeneratedParameterAttributeProviderTests
 
         var result = provider.GetCustomAttributes(typeof(QueryAttribute), false);
 
-        await Assert.That(result).IsNotEmpty().And.HasSingleItem().And.ContainsOnly(o => o is QueryAttribute);
+        await Assert.That(result).IsNotEmpty().And.HasSingleItem().And.ContainsOnly(static o => o is QueryAttribute);
     }
 
     /// <summary>Test GetCustomAttributes with no type returns an array of all attributes.</summary>
@@ -62,6 +62,6 @@ public partial class GeneratedParameterAttributeProviderTests
 
         var result = provider.GetCustomAttributes(false);
 
-        await Assert.That(result).IsNotEmpty().And.HasCountBetween(expectedCount, expectedCount).And.ContainsOnly(o => o is QueryAttribute or AliasAsAttribute);
+        await Assert.That(result).IsNotEmpty().And.HasCountBetween(expectedCount, expectedCount).And.ContainsOnly(static o => o is QueryAttribute or AliasAsAttribute);
     }
 }

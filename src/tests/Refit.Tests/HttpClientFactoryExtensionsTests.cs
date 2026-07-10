@@ -95,9 +95,9 @@ public partial class HttpClientFactoryExtensionsTests
         var serviceCollection = new ServiceCollection();
         _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>();
         await Assert.That(serviceCollection).Contains(
-            z => z.ServiceType == typeof(SettingsFor<IFooWithOtherAttribute>));
+            static z => z.ServiceType == typeof(SettingsFor<IFooWithOtherAttribute>));
         await Assert.That(serviceCollection).Contains(
-            z => z.ServiceType == typeof(IRequestBuilder<IFooWithOtherAttribute>));
+            static z => z.ServiceType == typeof(IRequestBuilder<IFooWithOtherAttribute>));
     }
 
     /// <summary>Verifies the <see cref="Type"/> overload registers the settings and request-builder services.</summary>
@@ -109,9 +109,9 @@ public partial class HttpClientFactoryExtensionsTests
         var serviceCollection = new ServiceCollection();
         _ = serviceCollection.AddRefitClient(typeof(IFooWithOtherAttribute));
         await Assert.That(serviceCollection).Contains(
-            z => z.ServiceType == typeof(SettingsFor<IFooWithOtherAttribute>));
+            static z => z.ServiceType == typeof(SettingsFor<IFooWithOtherAttribute>));
         await Assert.That(serviceCollection).Contains(
-            z => z.ServiceType == typeof(IRequestBuilder<IFooWithOtherAttribute>));
+            static z => z.ServiceType == typeof(IRequestBuilder<IFooWithOtherAttribute>));
     }
 
     /// <summary>Verifies the generic overload resolves a usable client instance.</summary>
@@ -143,9 +143,9 @@ public partial class HttpClientFactoryExtensionsTests
     public async Task HttpClientSettingsAreInjectableGivenGenericArgument()
     {
         var serviceCollection = new ServiceCollection().Configure<ClientOptions>(
-            o => o.Serializer = new(new()));
+            static o => o.Serializer = new(new()));
         _ = serviceCollection.AddRefitClient<IFooWithOtherAttribute>(
-            _ =>
+            static _ =>
                 new()
                 {
                     ContentSerializer = _.GetRequiredService<
@@ -166,10 +166,10 @@ public partial class HttpClientFactoryExtensionsTests
     public async Task HttpClientSettingsAreInjectableGivenTypeArgument()
     {
         var serviceCollection = new ServiceCollection().Configure<ClientOptions>(
-            o => o.Serializer = new(new()));
+            static o => o.Serializer = new(new()));
         _ = serviceCollection.AddRefitClient(
             typeof(IFooWithOtherAttribute),
-            _ =>
+            static _ =>
                 new()
                 {
                     ContentSerializer = _.GetRequiredService<
@@ -250,12 +250,12 @@ public partial class HttpClientFactoryExtensionsTests
     public async Task ServiceCollectionKeyedTypeSettingsFactoryOverloadUsesServiceProvider()
     {
         var services = new ServiceCollection().Configure<ClientOptions>(
-            o => o.Serializer = new(new()));
+            static o => o.Serializer = new(new()));
 
         var builder = services.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             ServiceKey,
-            serviceProvider => new()
+            static serviceProvider => new()
             {
                 ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
             },
@@ -406,7 +406,7 @@ public partial class HttpClientFactoryExtensionsTests
     public async Task HttpClientBuilderGenericOverloadUsesExistingBuilderName()
     {
         var services = new ServiceCollection();
-        var builder = services.AddHttpClient("builder-client", client => client.BaseAddress = new("https://builder.example"));
+        var builder = services.AddHttpClient("builder-client", static client => client.BaseAddress = new("https://builder.example"));
 
         var returnedBuilder = builder.AddRefitClient<IFooWithOtherAttribute>();
 
@@ -443,11 +443,11 @@ public partial class HttpClientFactoryExtensionsTests
     public async Task HttpClientBuilderGenericSettingsFactoryOverloadUsesServiceProvider()
     {
         var services = new ServiceCollection().Configure<ClientOptions>(
-            o => o.Serializer = new(new()));
+            static o => o.Serializer = new(new()));
         var builder = services.AddHttpClient("builder-settings-factory");
 
         _ = builder.AddRefitClient<IFooWithOtherAttribute>(
-            serviceProvider => new()
+            static serviceProvider => new()
             {
                 ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
             });
@@ -487,12 +487,12 @@ public partial class HttpClientFactoryExtensionsTests
     public async Task HttpClientBuilderTypeSettingsFactoryOverloadUsesServiceProvider()
     {
         var services = new ServiceCollection().Configure<ClientOptions>(
-            o => o.Serializer = new(new()));
+            static o => o.Serializer = new(new()));
         var builder = services.AddHttpClient("builder-type-settings-factory");
 
         _ = builder.AddRefitClient(
             typeof(IFooWithOtherAttribute),
-            serviceProvider => new()
+            static serviceProvider => new()
             {
                 ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
             });
@@ -550,13 +550,13 @@ public partial class HttpClientFactoryExtensionsTests
     public async Task HttpClientBuilderKeyedTypeSettingsFactoryOverloadUsesServiceProvider()
     {
         var services = new ServiceCollection().Configure<ClientOptions>(
-            o => o.Serializer = new(new()));
+            static o => o.Serializer = new(new()));
         var builder = services.AddHttpClient("builder-keyed-type-settings-factory");
 
         _ = builder.AddKeyedRefitClient(
             typeof(IFooWithOtherAttribute),
             BuilderKey,
-            serviceProvider => new()
+            static serviceProvider => new()
             {
                 ContentSerializer = serviceProvider.GetRequiredService<IOptions<ClientOptions>>().Value.Serializer!
             });
@@ -637,7 +637,7 @@ public partial class HttpClientFactoryExtensionsTests
     {
         var method = typeof(HttpClientFactoryExtensions)
             .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .SingleOrDefault(method =>
+            .SingleOrDefault(static method =>
                 method.Name == nameof(HttpClientFactoryExtensions.AddRefitClient)
                 && method.IsGenericMethodDefinition
                 && method.GetGenericArguments().Length == 1
@@ -659,7 +659,7 @@ public partial class HttpClientFactoryExtensionsTests
     {
         var method = typeof(HttpClientFactoryExtensions)
             .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .SingleOrDefault(method =>
+            .SingleOrDefault(static method =>
                 method.Name == nameof(HttpClientFactoryExtensions.AddRefitClient)
                 && !method.IsGenericMethodDefinition
                 && method.GetParameters() is
@@ -788,10 +788,10 @@ public partial class HttpClientFactoryExtensionsTests
         var settings = new RefitSettings(new SystemTextJsonContentSerializer());
         var serviceCollection = new ServiceCollection();
         var builder = serviceCollection.AddRefitGeneratedClient<IGeneratedSettingsFactoryApi>(settings);
-        _ = builder.ConfigureHttpClient(c => c.BaseAddress = new("http://generated/"));
+        _ = builder.ConfigureHttpClient(static c => c.BaseAddress = new("http://generated/"));
 
         await Assert.That(serviceCollection).Contains(
-            z => z.ServiceType == typeof(SettingsFor<IGeneratedSettingsFactoryApi>));
+            static z => z.ServiceType == typeof(SettingsFor<IGeneratedSettingsFactoryApi>));
 
         var serviceProvider = serviceCollection.BuildServiceProvider();
         var resolved = serviceProvider.GetRequiredService<IGeneratedSettingsFactoryApi>();
@@ -813,7 +813,7 @@ public partial class HttpClientFactoryExtensionsTests
         var serviceCollection = new ServiceCollection();
         _ = serviceCollection.AddSingleton(new ClientOptions { Serializer = serializer });
         _ = serviceCollection.AddRefitGeneratedClient<IGeneratedSettingsFactoryApi>(
-            provider => new RefitSettings(provider.GetRequiredService<ClientOptions>().Serializer!));
+            static provider => new RefitSettings(provider.GetRequiredService<ClientOptions>().Serializer!));
 
         var serviceProvider = serviceCollection.BuildServiceProvider();
         var resolved = serviceProvider.GetRequiredService<IGeneratedSettingsFactoryApi>();

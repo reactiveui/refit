@@ -15,7 +15,7 @@ public class JsonLinesContentTests
     [Test]
     public async Task ConstructorRejectsNullItems() =>
         await Assert
-            .That(() => new JsonLinesContent(null!, new SystemTextJsonContentSerializer()))
+            .That(static () => new JsonLinesContent(null!, new SystemTextJsonContentSerializer()))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies the constructor rejects a null serializer.</summary>
@@ -23,7 +23,7 @@ public class JsonLinesContentTests
     [Test]
     public async Task ConstructorRejectsNullSerializer() =>
         await Assert
-            .That(() => new JsonLinesContent(Array.Empty<int>(), null!))
+            .That(static () => new JsonLinesContent(Array.Empty<int>(), null!))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies an HttpContent body is passed through unchanged.</summary>

@@ -56,10 +56,14 @@ internal class CachedRequestBuilderImplementation : IRequestBuilder
                 methodName,
                 parameterTypes is not null ? (Type[])parameterTypes.Clone() : [],
                 genericArgumentTypes is not null ? (Type[])genericArgumentTypes.Clone() : []),
-            _ =>
-                _innerBuilder.BuildRestResultFuncForMethod(
-                    methodName,
-                    parameterTypes,
-                    genericArgumentTypes));
+            static (_, state) =>
+                state.Builder.BuildRestResultFuncForMethod(
+                    state.MethodName,
+                    state.ParameterTypes,
+                    state.GenericArgumentTypes),
+            (Builder: _innerBuilder,
+                MethodName: methodName,
+                ParameterTypes: parameterTypes,
+                GenericArgumentTypes: genericArgumentTypes));
     }
 }

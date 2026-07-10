@@ -12,4 +12,8 @@ namespace Refit;
     "Major Code Smell",
     "S2326:Unused type parameters should be removed",
     Justification = "The type parameter identifies the Refit interface and is intentionally carried by this marker interface for strongly typed APIs.")]
+[SuppressMessage(
+    "StyleSharp",
+    "SST1452:Unused type parameters should be removed",
+    Justification = "The type parameter identifies the Refit interface and is intentionally carried by this marker interface for strongly typed APIs.")]
 public interface IRequestBuilder<T> : IRequestBuilder;

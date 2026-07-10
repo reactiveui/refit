@@ -6,10 +6,6 @@ using System.Buffers;
 namespace Refit.Buffers;
 
 /// <summary>A buffer writer that rents its backing storage from a shared array pool.</summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-    "RoslynCommonAnalyzers",
-    "SST1432:Mark type as static",
-    Justification = "The full type has instance members and implements IBufferWriter<byte> and IDisposable; this partial part only declares a nested type.")]
 internal sealed partial class PooledBufferWriter
 {
     /// <summary>An in-memory <see cref="Stream"/> that uses memory buffers rented from a shared pool.</summary>
@@ -59,7 +55,7 @@ internal sealed partial class PooledBufferWriter
             set
             {
                 _ = value;
-                ThrowNotSupportedException();
+                throw CreateNotSupportedException();
             }
         }
 
@@ -84,18 +80,17 @@ internal sealed partial class PooledBufferWriter
             int bufferSize,
             CancellationToken cancellationToken)
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
 #if NET6_0_OR_GREATER
-                cancellationToken.ThrowIfCancellationRequested();
-#else
-                return Task.FromCanceled(cancellationToken);
-#endif
-            }
+            // Already tests the token, so no separate IsCancellationRequested guard is needed.
+            cancellationToken.ThrowIfCancellationRequested();
 
-#if NET6_0_OR_GREATER
             await CopyToInternalAsync(destination, cancellationToken).ConfigureAwait(false);
 #else
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromCanceled(cancellationToken);
+            }
+
             try
             {
                 CopyTo(destination, bufferSize);
@@ -117,22 +112,22 @@ internal sealed partial class PooledBufferWriter
         {
             if (offset < 0)
             {
-                ThrowArgumentOutOfRangeExceptionForNegativeOffset();
+                throw CreateArgumentOutOfRangeExceptionForNegativeOffset();
             }
 
             if (count < 0)
             {
-                ThrowArgumentOutOfRangeExceptionForNegativeCount();
+                throw CreateArgumentOutOfRangeExceptionForNegativeCount();
             }
 
             if (offset + count > buffer.Length)
             {
-                ThrowArgumentOutOfRangeExceptionForEndOfStreamReached();
+                throw CreateArgumentOutOfRangeExceptionForEndOfStreamReached();
             }
 
             if (_pooledBuffer is null)
             {
-                ThrowObjectDisposedException();
+                throw CreateObjectDisposedException();
             }
 
             var destination = buffer.AsSpan(offset, count);
@@ -183,28 +178,19 @@ internal sealed partial class PooledBufferWriter
         /// <inheritdoc/>
         public override int ReadByte()
         {
-            var pooledBuffer = _pooledBuffer;
-            if (pooledBuffer is null)
-            {
-                ThrowObjectDisposedException();
-            }
+            var pooledBuffer = _pooledBuffer ?? throw CreateObjectDisposedException();
 
-            return _position >= _length ? -1 : pooledBuffer![_position++];
+            return _position >= _length ? -1 : pooledBuffer[_position++];
         }
 
         /// <inheritdoc/>
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            ThrowNotSupportedException();
-
-            return default;
-        }
+        public override long Seek(long offset, SeekOrigin origin) => throw CreateNotSupportedException();
 
         /// <inheritdoc/>
-        public override void SetLength(long value) => ThrowNotSupportedException();
+        public override void SetLength(long value) => throw CreateNotSupportedException();
 
         /// <inheritdoc/>
-        public override void Write(byte[] buffer, int offset, int count) => ThrowNotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw CreateNotSupportedException();
 
         /// <inheritdoc/>
         protected override void Dispose(bool disposing)

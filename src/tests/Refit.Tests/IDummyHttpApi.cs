@@ -490,6 +490,32 @@ public interface IDummyHttpApi
     Task QueryWithDictionaryWithPrefix(
         [Query(".", "dictionary")] IDictionary<TestEnum, string> query);
 
+    /// <summary>Posts a body whose serialization method is not a declared enum value.</summary>
+    /// <param name="body">The body that must be left unserialized.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Post("/foo")]
+    Task PostWithUndeclaredBodySerializationMethod([Body((BodySerializationMethod)99)] string body);
+
+    /// <summary>Posts a body using the obsolete JSON serialization method, kept for legacy callers.</summary>
+    /// <param name="body">The body to serialize.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Post("/foo")]
+#pragma warning disable CS0618 // The reflection path must keep accepting legacy BodySerializationMethod.Json callers.
+    Task PostWithObsoleteJsonBody([Body(BodySerializationMethod.Json)] string body);
+#pragma warning restore CS0618
+
+    /// <summary>Gets foo with a query object exercising null serialization and property formatting.</summary>
+    /// <param name="query">The query object.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo")]
+    Task QueryWithSerializationObject([Query] QuerySerializationObject query);
+
+    /// <summary>Gets foo with a query dictionary whose values may be complex objects or null.</summary>
+    /// <param name="query">The query dictionary keyed by strings.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo")]
+    Task QueryWithObjectDictionary([Query] IDictionary<string, object?> query);
+
     /// <summary>Gets foo with a query dictionary keyed by integers.</summary>
     /// <param name="query">The query dictionary keyed by integers.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>

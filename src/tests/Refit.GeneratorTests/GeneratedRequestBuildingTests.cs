@@ -186,7 +186,7 @@ public class GeneratedRequestBuildingTests
             """,
             generatedRequestBuilding: true);
 
-        var errorMessages = string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString()));
+        var errorMessages = string.Join(Environment.NewLine, errors.Select(static diagnostic => diagnostic.ToString()));
         await Assert.That(errorMessages).IsEqualTo(string.Empty);
     }
 
@@ -209,7 +209,7 @@ public class GeneratedRequestBuildingTests
         foreach (var generatedRequestBuilding in new bool?[] { true, false })
         {
             var errors = Fixture.GenerateErrorsForBody(body, generatedRequestBuilding);
-            var errorMessages = string.Join(Environment.NewLine, errors.Select(diagnostic => diagnostic.ToString()));
+            var errorMessages = string.Join(Environment.NewLine, errors.Select(static diagnostic => diagnostic.ToString()));
             await Assert.That(errorMessages).IsEqualTo(string.Empty);
         }
     }

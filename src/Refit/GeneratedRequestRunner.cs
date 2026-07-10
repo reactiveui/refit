@@ -233,7 +233,11 @@ public static class GeneratedRequestRunner
             ? new PushStreamContent(
                 async (stream, _, _) =>
                 {
+#if NET8_0_OR_GREATER
+                    await using (stream.ConfigureAwait(false))
+#else
                     using (stream)
+#endif
                     {
                         await content.CopyToAsync(stream).ConfigureAwait(false);
                     }
@@ -447,6 +451,13 @@ public static class GeneratedRequestRunner
 #endif
     }
 
+    /// <summary>Determines whether the body should use the legacy JSON enum member.</summary>
+    /// <param name="serializationMethod">The body serialization method.</param>
+    /// <returns><see langword="true"/> for the legacy JSON value.</returns>
+    /// <remarks>Compares the underlying value so callers never name the obsolete member and raise CS0618.</remarks>
+    internal static bool IsObsoleteJsonSerializationMethod(BodySerializationMethod serializationMethod) =>
+        (int)serializationMethod == ObsoleteJsonBodySerializationMethodValue;
+
     /// <summary>Adds one pre-boxed configured request property or option value.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="key">The property key.</param>
@@ -482,6 +493,11 @@ public static class GeneratedRequestRunner
                         return synchronousSerializer.ToHttpContentSynchronous(body);
                     case RequestBodySerializationMode.Streamed:
                         return synchronousSerializer.ToStreamingHttpContent(body);
+                    default:
+                    {
+                        // Default (and any undeclared value) falls through to the async serializer below.
+                        break;
+                    }
                 }
             }
 
@@ -497,12 +513,6 @@ public static class GeneratedRequestRunner
     private static bool UsesSynchronousSerialization(RefitSettings settings) =>
         settings.RequestBodySerialization != RequestBodySerializationMode.Default
         && settings.ContentSerializer is ISynchronousContentSerializer;
-
-    /// <summary>Determines whether the body should use the legacy JSON enum member.</summary>
-    /// <param name="serializationMethod">The body serialization method.</param>
-    /// <returns><see langword="true"/> for the legacy JSON value.</returns>
-    private static bool IsObsoleteJsonSerializationMethod(BodySerializationMethod serializationMethod) =>
-        (int)serializationMethod == ObsoleteJsonBodySerializationMethodValue;
 
     /// <summary>Determines whether the HTTP method must not carry generated placeholder content for content headers.</summary>
     /// <param name="method">The HTTP method to inspect.</param>

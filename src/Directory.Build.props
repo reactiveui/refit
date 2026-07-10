@@ -125,6 +125,12 @@
     <Using Include="System.ArgumentOutOfRangeException" Alias="ArgumentOutOfRangeExceptionHelper"/>
   </ItemGroup>
 
+  <!-- Brings the Dictionary.TryAdd / ConcurrentDictionary.GetOrAdd(key, factory, state) extension
+       polyfills into scope. Only net4* lacks the instance methods, so only net4* needs the import. -->
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Using Include="Refit.Internal"/>
+  </ItemGroup>
+
   <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
     <PackageReference Include="System.Net.Http"/>
     <Reference Include="System.Net.Http"/>
@@ -158,6 +164,7 @@
   <ItemGroup>
     <PackageReference Include="MinVer" PrivateAssets="all"/>
     <PackageReference Include="StyleSharp.Analyzers" PrivateAssets="all"/>
+    <PackageReference Include="PerformanceSharp.Analyzers" PrivateAssets="all"/>
     <PackageReference Include="Roslynator.Analyzers" PrivateAssets="All"/>
     <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all"/>
   </ItemGroup>

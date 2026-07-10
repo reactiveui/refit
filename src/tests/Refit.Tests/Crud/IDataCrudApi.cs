@@ -27,6 +27,10 @@ public interface IDataCrudApi<T, TKey>
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters to enable type inference",
         Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
+    [SuppressMessage(
+        "StyleSharp",
+        "SST1452:Unused type parameters should be removed",
+        Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
     Task<List<T>> ReadAll<TFoo>()
         where TFoo : new();
 
@@ -38,6 +42,10 @@ public interface IDataCrudApi<T, TKey>
     [SuppressMessage(
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters to enable type inference",
+        Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
+    [SuppressMessage(
+        "StyleSharp",
+        "SST1452:Unused type parameters should be removed",
         Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
     Task<List<T>> ReadAll<TFoo, TBar>()
         where TFoo : new()
@@ -69,6 +77,10 @@ public interface IDataCrudApi<T, TKey>
     [SuppressMessage(
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters to enable type inference",
+        Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
+    [SuppressMessage(
+        "StyleSharp",
+        "SST1452:Unused type parameters should be removed",
         Justification = "Intentional test fixture exercising Refit generation of generic methods with unused type parameters.")]
     Task ReadAllClasses<TFoo>()
         where TFoo : class, new();

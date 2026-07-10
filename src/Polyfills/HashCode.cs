@@ -10,22 +10,16 @@ namespace System;
 /// <summary>Polyfill for <c>System.HashCode</c> on .NET Framework targets.</summary>
 /// <remarks>
 /// This is intentionally small: it provides the compiler/runtime surface Refit uses without
-/// attempting to clone the randomized framework implementation.
+/// attempting to clone the randomized framework implementation. It is a <c>ref struct</c>
+/// because every use is a stack-local accumulator; that keeps it from ever being boxed or
+/// compared, so it needs no equality members.
 /// </remarks>
-[Diagnostics.CodeAnalysis.SuppressMessage(
-    "Style",
-    "S3898:Value types should implement IEquatable<T>",
-    Justification = "BCL-shaped mutable hash accumulator; equality is intentionally not part of the public surface.")]
-[Diagnostics.CodeAnalysis.SuppressMessage(
-    "Performance",
-    "CA1815:Override equals and operator equals on value types",
-    Justification = "BCL-shaped mutable hash accumulator; equality is intentionally not part of the public surface.")]
 [Diagnostics.CodeAnalysis.SuppressMessage(
     "Style",
     "S1118:Utility classes should not have public constructors",
     Justification = "BCL-shaped mutable hash accumulator must be constructible.")]
 [Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage]
-internal struct HashCode
+internal ref struct HashCode
 {
     /// <summary>The second prime multiplier.</summary>
     private const int Prime2 = -2_048_144_777;

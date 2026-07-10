@@ -131,8 +131,7 @@ public sealed class StubHttpCoverageTests
         var generic = handler.ToList();
 
         var nonGeneric = 0;
-        var enumerator = ((IEnumerable)handler).GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (var _ in (IEnumerable)handler)
         {
             nonGeneric++;
         }

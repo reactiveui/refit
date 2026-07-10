@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
 
@@ -43,7 +44,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         }
 
         var arguments = attributeData.ConstructorArguments;
-        return arguments.Length > 0 && arguments[0].Value is string path
+        return !arguments.IsEmpty && arguments[0].Value is string path
             ? path
             : string.Empty;
     }
@@ -155,9 +156,11 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         var path = GetHttpPath(httpMethod);
         if (path.IndexOf('\\') >= 0)
         {
+            // A non-empty path can only originate from a source-declared HTTP method
+            // attribute, so both the attribute and its syntax reference are always present here.
             reportDiagnostic(Diagnostic.Create(
                 DiagnosticDescriptors.InvalidRouteBackslash,
-                httpMethod?.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? FirstLocation(method),
+                httpMethod!.ApplicationSyntaxReference!.GetSyntax().GetLocation(),
                 method.ContainingType.Name,
                 method.Name));
         }
@@ -347,8 +350,7 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
         == "global::System.Threading.CancellationToken" || (type is INamedTypeSymbol
                                                             {
-                                                                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
-                                                                TypeArguments.Length: 1
+                                                                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
                                                             } namedType
                                                             && namedType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
                                                             == "global::System.Threading.CancellationToken");
@@ -360,7 +362,9 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass?.ToDisplayString() == "Refit.HeaderCollectionAttribute")
+            // Every C# attribute surfaced by GetAttributes resolves to a symbol
+            // (an error type when unresolved), so AttributeClass is never null here.
+            if (attribute.AttributeClass!.ToDisplayString() == "Refit.HeaderCollectionAttribute")
             {
                 return true;
             }
@@ -380,5 +384,5 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
     /// <param name="symbol">The symbol.</param>
     /// <returns>The first available location, or <see langword="null"/>.</returns>
     private static Location? FirstLocation(ISymbol symbol) =>
-        symbol.Locations.Length > 0 ? symbol.Locations[0] : null;
+        symbol.Locations.FirstOrDefault();
 }

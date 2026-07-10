@@ -153,138 +153,175 @@ internal static partial class Emitter
             {{contentSource}}{{headerSource}}{{requestPropertySource}}{{returnSource}}{{methodIndent}}}
 
             """;
+    }
 
-        static string GetParameterInfoFieldName(string parameterName, UniqueNameBuilder uniqueNames) =>
-            uniqueNames.New($"______{parameterName}AttributeProvider");
+    /// <summary>Builds the unique cached attribute-provider field name for a path parameter.</summary>
+    /// <param name="parameterName">The source parameter name.</param>
+    /// <param name="uniqueNames">The unique member name builder for the interface scope.</param>
+    /// <returns>The unique generated field name.</returns>
+    private static string GetParameterInfoFieldName(string parameterName, UniqueNameBuilder uniqueNames) =>
+        uniqueNames.New($"______{parameterName}AttributeProvider");
 
-        static StringBuilder AppendSeparator(int i, StringBuilder sb, string separator = ", ")
+    /// <summary>Appends a separator before all but the first element.</summary>
+    /// <param name="i">The zero-based element index.</param>
+    /// <param name="sb">The target builder.</param>
+    /// <param name="separator">The separator to append.</param>
+    /// <returns>The same builder for chaining.</returns>
+    private static StringBuilder AppendSeparator(int i, StringBuilder sb, string separator = ", ")
+    {
+        return i <= 0 ? sb : sb.Append(separator);
+    }
+
+    /// <summary>Appends a value, prefixed by a separator for all but the first element.</summary>
+    /// <param name="value">The value to append.</param>
+    /// <param name="i">The zero-based element index.</param>
+    /// <param name="sb">The target builder.</param>
+    /// <param name="separator">The separator to append before the value.</param>
+    /// <returns>The same builder for chaining.</returns>
+    private static StringBuilder AppendJoining(string value, int i, StringBuilder sb, string separator = ", ")
+    {
+        return AppendSeparator(i, sb, separator).Append(value);
+    }
+
+    /// <summary>Appends a C# attribute construction expression to the builder.</summary>
+    /// <param name="attribute">The attribute model to render.</param>
+    /// <param name="sb0">The target builder.</param>
+    private static void AppendAttributeValue(ParameterAttributeModel attribute, StringBuilder sb0)
+    {
+        _ = sb0.Append("new ").Append(attribute.TypeExpression).Append('(');
+        var i = 0;
+
+        foreach (var argument in attribute.ConstructorArguments)
         {
-            return i <= 0 ? sb : sb.Append(separator);
-        }
-        static StringBuilder AppendJoining(string value, int i, StringBuilder sb, string separator = ", ")
-        {
-            return AppendSeparator(i, sb, separator).Append(value);
-        }
-
-        static void AppendAttributeValue(ParameterAttributeModel attribute, StringBuilder sb0)
-        {
-            _ = sb0.Append("new ").Append(attribute.TypeExpression).Append('(');
-            var i = 0;
-
-            foreach (var argument in attribute.ConstructorArguments)
-            {
-                _ = AppendJoining(argument, i++, sb0);
-            }
-
-            _ = sb0.Append(')');
-            if (attribute.NamedArguments.Count < 1)
-            {
-                return;
-            }
-
-            i = 0;
-            _ = sb0.Append("{ ");
-            foreach (var named in attribute.NamedArguments)
-            {
-                _ = AppendSeparator(i++, sb0);
-                _ = sb0.Append(named.Name).Append(" = ").Append(named.ValueExpression);
-            }
-
-            _ = sb0.Append(" }");
-        }
-        static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, StringBuilder sb)
-        {
-            // Build the initializer.
-            var memberIndent = Indent(MethodMemberIndentation);
-            Dictionary<string, List<ParameterAttributeModel>> grouped = new();
-
-            foreach (var attribute in parameter.Attributes)
-            {
-                var key = $"typeof({attribute.TypeExpression})";
-                if (grouped.TryGetValue(key, out var groupedAttributes))
-                {
-                    groupedAttributes.Add(attribute);
-                }
-                else
-                {
-                    grouped.Add(key, [attribute]);
-                }
-            }
-
-            const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
-            _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
-                .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
-                .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ")
-                .Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("()");
-            var i = 0;
-            if (grouped.Count > 0)
-            {
-                _ = sb.Append(" {");
-                foreach (var kv in grouped)
-                {
-                    _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
-                    foreach (var arg in kv.Value)
-                    {
-                        AppendAttributeValue(arg, sb);
-                    }
-
-                    _ = sb.Append("} }");
-                }
-
-                _ = sb.Append('}');
-            }
-
-            _ = sb.AppendLine(");");
+            _ = AppendJoining(argument, i++, sb0);
         }
 
-        static Dictionary<string, string> GetParameterInfoUniqueNames(
-            RequestModel request,
-            UniqueNameBuilder uniqueNames)
+        _ = sb0.Append(')');
+        if (attribute.NamedArguments.Count < 1)
         {
-            var dict = new Dictionary<string, string>();
-            foreach (var parameter in request.Parameters)
+            return;
+        }
+
+        i = 0;
+        _ = sb0.Append("{ ");
+        foreach (var named in attribute.NamedArguments)
+        {
+            _ = AppendSeparator(i++, sb0);
+            _ = sb0.Append(named.Name).Append(" = ").Append(named.ValueExpression);
+        }
+
+        _ = sb0.Append(" }");
+    }
+
+    /// <summary>Emits the cached attribute-provider field for a single path parameter.</summary>
+    /// <param name="parameter">The path parameter model.</param>
+    /// <param name="method">The declaring method name, used for the generated documentation.</param>
+    /// <param name="paramInfoFieldName">The unique generated field name.</param>
+    /// <param name="sb">The target builder.</param>
+    private static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, StringBuilder sb)
+    {
+        // Build the initializer.
+        var memberIndent = Indent(MethodMemberIndentation);
+        Dictionary<string, List<ParameterAttributeModel>> grouped = new();
+
+        foreach (var attribute in parameter.Attributes)
+        {
+            var key = $"typeof({attribute.TypeExpression})";
+            if (grouped.TryGetValue(key, out var groupedAttributes))
             {
-                if (parameter.Kind is not RequestParameterKind.Path)
+                groupedAttributes.Add(attribute);
+            }
+            else
+            {
+                grouped.Add(key, [attribute]);
+            }
+        }
+
+        const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
+        _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
+            .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
+            .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ")
+            .Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("()");
+        var i = 0;
+        if (grouped.Count > 0)
+        {
+            _ = sb.Append(" {");
+            foreach (var kv in grouped)
+            {
+                _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
+                var argIndex = 0;
+                foreach (var arg in kv.Value)
                 {
-                    continue;
+                    // Multiple attributes of the same type must be comma-separated inside the array.
+                    _ = AppendSeparator(argIndex++, sb);
+                    AppendAttributeValue(arg, sb);
                 }
 
-                var parameterInfoFieldName = GetParameterInfoFieldName(parameter.Name, uniqueNames);
-                dict.Add(parameter.Name, parameterInfoFieldName);
+                _ = sb.Append("} }");
             }
 
-            return dict;
+            _ = sb.Append('}');
         }
-        static string GetParametersArg(RequestModel request, Dictionary<string, string> uniqueNameLookup)
-        {
-            var parametersSb = new StringBuilder();
-            var pathLength = request.Path.Length;
-            foreach (var parameter in request.Parameters)
-            {
-                if (parameter.Kind is not RequestParameterKind.Path || parameter.Locations is null)
-                {
-                    continue;
-                }
 
-                foreach (var location in parameter.Locations)
-                {
-                    var start = location.Start.GetOffset(pathLength);
-                    var end = location.End.GetOffset(pathLength);
-                    _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ");
-                    var parameterInfoFieldName = uniqueNameLookup[parameter.Name];
-                    _ = parametersSb.Append("_settings.UrlParameterFormatter.Format(")
-                        .Append(parameter.Name)
-                        .Append(", ")
-                        .Append(parameterInfoFieldName)
-                        .Append(", ")
-                        .Append("typeof(").Append(parameter.Type).Append(')')
-                        .Append(')');
-                    _ = parametersSb.Append(')');
-                }
+        _ = sb.AppendLine(");");
+    }
+
+    /// <summary>Builds the unique cached field names for each path parameter attribute provider.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="uniqueNames">The unique member name builder for the interface scope.</param>
+    /// <returns>A map of parameter name to its cached attribute-provider field name.</returns>
+    private static Dictionary<string, string> GetParameterInfoUniqueNames(
+        RequestModel request,
+        UniqueNameBuilder uniqueNames)
+    {
+        var dict = new Dictionary<string, string>();
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind is not RequestParameterKind.Path)
+            {
+                continue;
             }
 
-            return parametersSb.ToString();
+            var parameterInfoFieldName = GetParameterInfoFieldName(parameter.Name, uniqueNames);
+            dict.Add(parameter.Name, parameterInfoFieldName);
         }
+
+        return dict;
+    }
+
+    /// <summary>Builds the additional arguments passed to the generated request path builder.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="uniqueNameLookup">The map of parameter name to cached attribute-provider field name.</param>
+    /// <returns>The generated argument list fragment.</returns>
+    private static string GetParametersArg(RequestModel request, Dictionary<string, string> uniqueNameLookup)
+    {
+        var parametersSb = new StringBuilder();
+        var pathLength = request.Path.Length;
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind is not RequestParameterKind.Path || parameter.Locations is null)
+            {
+                continue;
+            }
+
+            foreach (var location in parameter.Locations)
+            {
+                var start = location.Start.GetOffset(pathLength);
+                var end = location.End.GetOffset(pathLength);
+                _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ");
+                var parameterInfoFieldName = uniqueNameLookup[parameter.Name];
+                _ = parametersSb.Append("_settings.UrlParameterFormatter.Format(")
+                    .Append(parameter.Name)
+                    .Append(", ")
+                    .Append(parameterInfoFieldName)
+                    .Append(", ")
+                    .Append("typeof(").Append(parameter.Type).Append(')')
+                    .Append(')');
+                _ = parametersSb.Append(')');
+            }
+        }
+
+        return parametersSb.ToString();
     }
 
     /// <summary>Builds request content assignment for an inline generated method.</summary>
@@ -537,6 +574,13 @@ internal static partial class Emitter
                     {
                         parts[count++] =
                             $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddHeaderCollection({requestLocal}, @{parameter.Name});\n";
+                        break;
+                    }
+
+                default:
+                    {
+                        // All other parameter kinds (Path, Query, Body, Property, CancellationToken, ...)
+                        // are not headers and contribute nothing to header application here.
                         break;
                     }
             }

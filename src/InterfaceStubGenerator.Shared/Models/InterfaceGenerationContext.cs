@@ -14,6 +14,7 @@ namespace Refit.Generator;
 /// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled.</param>
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="SupportsNullable">Whether the compilation supports nullable reference types.</param>
+/// <param name="SupportsStaticLambdas">Whether the compilation supports the <c>static</c> lambda modifier (C# 9).</param>
 internal readonly record struct InterfaceGenerationContext(
     List<Diagnostic> Diagnostics,
     string PreserveAttributeDisplayName,
@@ -22,4 +23,5 @@ internal readonly record struct InterfaceGenerationContext(
     INamedTypeSymbol? FormattableSymbol,
     bool GeneratedRequestBuilding,
     bool EmitGeneratedCodeMarkers,
-    bool SupportsNullable);
+    bool SupportsNullable,
+    bool SupportsStaticLambdas);

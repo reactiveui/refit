@@ -61,12 +61,12 @@ internal static partial class Emitter
         bool isOverrideOrExplicitImplementation)
     {
         var knownConstraints = typeParameter.KnownTypeConstraint;
-        return knownConstraints.HasFlag(KnownTypeConstraint.Class)
-               || (knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation)
-               || knownConstraints.HasFlag(KnownTypeConstraint.Struct)
-               || (knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation)
+        return (knownConstraints & KnownTypeConstraint.Class) != 0
+               || ((knownConstraints & KnownTypeConstraint.Unmanaged) != 0 && !isOverrideOrExplicitImplementation)
+               || (knownConstraints & KnownTypeConstraint.Struct) != 0
+               || ((knownConstraints & KnownTypeConstraint.NotNull) != 0 && !isOverrideOrExplicitImplementation)
                || (!isOverrideOrExplicitImplementation && (typeParameter.Constraints.Count > 0 ||
-                                                           knownConstraints.HasFlag(KnownTypeConstraint.New)));
+                                                           (knownConstraints & KnownTypeConstraint.New) != 0));
     }
 
     /// <summary>Builds the comma-separated constraint list for a type parameter.</summary>
@@ -80,17 +80,17 @@ internal static partial class Emitter
         var parts = new string[typeParameter.Constraints.Count + 5];
         var count = 0;
         var knownConstraints = typeParameter.KnownTypeConstraint;
-        AddConstraint(parts, "class", knownConstraints.HasFlag(KnownTypeConstraint.Class), ref count);
+        AddConstraint(parts, "class", (knownConstraints & KnownTypeConstraint.Class) != 0, ref count);
         AddConstraint(
             parts,
             "unmanaged",
-            knownConstraints.HasFlag(KnownTypeConstraint.Unmanaged) && !isOverrideOrExplicitImplementation,
+            (knownConstraints & KnownTypeConstraint.Unmanaged) != 0 && !isOverrideOrExplicitImplementation,
             ref count);
-        AddConstraint(parts, "struct", knownConstraints.HasFlag(KnownTypeConstraint.Struct), ref count);
+        AddConstraint(parts, "struct", (knownConstraints & KnownTypeConstraint.Struct) != 0, ref count);
         AddConstraint(
             parts,
             "notnull",
-            knownConstraints.HasFlag(KnownTypeConstraint.NotNull) && !isOverrideOrExplicitImplementation,
+            (knownConstraints & KnownTypeConstraint.NotNull) != 0 && !isOverrideOrExplicitImplementation,
             ref count);
 
         if (!isOverrideOrExplicitImplementation)
@@ -104,7 +104,7 @@ internal static partial class Emitter
         AddConstraint(
             parts,
             "new()",
-            knownConstraints.HasFlag(KnownTypeConstraint.New) && !isOverrideOrExplicitImplementation,
+            (knownConstraints & KnownTypeConstraint.New) != 0 && !isOverrideOrExplicitImplementation,
             ref count);
         return JoinParts(parts, count, ", ");
     }

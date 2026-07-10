@@ -197,10 +197,7 @@ public class ApiException : ApiExceptionBase
         RefitSettings refitSettings,
         Exception? innerException)
     {
-        if (response is null)
-        {
-            throw new ArgumentNullException(nameof(response));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(response);
 
         if (response.IsSuccessStatusCode)
         {
@@ -257,10 +254,7 @@ public class ApiException : ApiExceptionBase
         RefitSettings refitSettings,
         Exception? innerException)
     {
-        if (response is null)
-        {
-            throw new ArgumentNullException(nameof(response));
-        }
+        ArgumentExceptionHelper.ThrowIfNull(response);
 
         var exception = new ApiException(
             exceptionMessage,

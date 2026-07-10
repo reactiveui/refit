@@ -7,6 +7,9 @@
   <PropertyGroup Label="Shared Version Variables">
     <PrimitivesVersion>6.0.0</PrimitivesVersion>
     <TUnitVersion>1.58.0</TUnitVersion>
+
+    <!-- StyleSharp and PerformanceSharp ship from the same repo on a single version line. -->
+    <SharpAnalyzersVersion>3.17.7</SharpAnalyzersVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Framework-Aligned Versions">
@@ -17,7 +20,7 @@
     <MicrosoftExtensionsVersion>10.0.9</MicrosoftExtensionsVersion>
     <SystemTextJsonVersion>10.0.9</SystemTextJsonVersion>
 
-    <MicrosoftCodeAnalysisAnalyzersVersion>5.3.0</MicrosoftCodeAnalysisAnalyzersVersion>
+    <MicrosoftCodeAnalysisAnalyzersVersion>5.6.0</MicrosoftCodeAnalysisAnalyzersVersion>
     <MicrosoftCodeAnalysisWorkspacesVersion>4.14.0</MicrosoftCodeAnalysisWorkspacesVersion>
 
     <SourceLinkVersion>10.0.300</SourceLinkVersion>
@@ -41,11 +44,12 @@
   </ItemGroup>
 
   <ItemGroup Label="Analyzers">
-    <PackageVersion Include="StyleSharp.Analyzers" Version="3.13.4"/>
+    <PackageVersion Include="StyleSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
+    <PackageVersion Include="PerformanceSharp.Analyzers" Version="$(SharpAnalyzersVersion)"/>
     <PackageVersion Include="Roslynator.Analyzers" Version="4.15.0"/>
     <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.28.0.143324"/>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(MicrosoftCodeAnalysisAnalyzersVersion)"/>
-    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.0.0-1.25277.114"/>
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0"/>
   </ItemGroup>
 
   <!-- Roslyn toolchain. Versions are intentionally held at their current bands:
@@ -65,10 +69,10 @@
 
   <ItemGroup Label="Test Stack">
     <PackageVersion Include="TUnit" Version="$(TUnitVersion)"/>
-    <PackageVersion Include="Verify.TUnit" Version="31.20.0"/>
+    <PackageVersion Include="Verify.TUnit" Version="31.22.0"/>
     <PackageVersion Include="Verify.DiffPlex" Version="3.3.0"/>
     <PackageVersion Include="Verify.SourceGenerators" Version="2.5.0"/>
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.8.0"/>
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.9.0"/>
   </ItemGroup>
 
   <ItemGroup Label="Benchmarks">

@@ -38,7 +38,7 @@ public partial class RestMethodInfoTests
             input
                 .GetMethods()
                 .First(
-                    x =>
+                    static x =>
                         x.Name
                         == nameof(
                             IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollection)));
@@ -329,7 +329,7 @@ public partial class RestMethodInfoTests
             input
                 .GetMethods()
                 .First(
-                    x =>
+                    static x =>
                         x.Name
                         == nameof(IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestProperty)));
         await Assert.That(fixture.ParameterMap[0].Name).IsEqualTo("id");
@@ -352,7 +352,7 @@ public partial class RestMethodInfoTests
             input
                 .GetMethods()
                 .First(
-                    x =>
+                    static x =>
                         x.Name
                         == nameof(IRestMethodInfoTests.PostSomeStuffWithDynamicRequestProperty)));
         await Assert.That(fixture.ParameterMap[0].Name).IsEqualTo("id");
@@ -377,7 +377,7 @@ public partial class RestMethodInfoTests
             input
                 .GetMethods()
                 .First(
-                    x =>
+                    static x =>
                         x.Name
                         == nameof(
                             IRestMethodInfoTests.PostSomeStuffWithDynamicRequestProperties)));
@@ -453,7 +453,7 @@ public partial class RestMethodInfoTests
             input
                 .GetMethods()
                 .First(
-                    x =>
+                    static x =>
                         x.Name
                         == nameof(
                             IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestPropertyWithoutKey)));
@@ -478,7 +478,7 @@ public partial class RestMethodInfoTests
             input
                 .GetMethods()
                 .First(
-                    x =>
+                    static x =>
                         x.Name
                         == nameof(
                             IRestMethodInfoTests.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey)));
@@ -502,7 +502,7 @@ public partial class RestMethodInfoTests
             input,
             input
                 .GetMethods()
-                .First(x => x.Name == nameof(IRestMethodInfoTests.OhYeahValueTypes)));
+                .First(static x => x.Name == nameof(IRestMethodInfoTests.OhYeahValueTypes)));
         await Assert.That(fixture.ParameterMap[0].Name).IsEqualTo("id");
         await Assert.That(fixture.ParameterMap[0].Type).IsEqualTo(ParameterType.Normal);
         await Assert.That(fixture.QueryParameterMap).IsEmpty();
@@ -523,7 +523,7 @@ public partial class RestMethodInfoTests
             input,
             input
                 .GetMethods()
-                .First(x => x.Name == nameof(IRestMethodInfoTests.OhYeahValueTypesUnbuffered)));
+                .First(static x => x.Name == nameof(IRestMethodInfoTests.OhYeahValueTypesUnbuffered)));
         await Assert.That(fixture.ParameterMap[0].Name).IsEqualTo("id");
         await Assert.That(fixture.ParameterMap[0].Type).IsEqualTo(ParameterType.Normal);
         await Assert.That(fixture.QueryParameterMap).IsEmpty();
@@ -544,7 +544,7 @@ public partial class RestMethodInfoTests
             input,
             input
                 .GetMethods()
-                .First(x => x.Name == nameof(IRestMethodInfoTests.PullStreamMethod)));
+                .First(static x => x.Name == nameof(IRestMethodInfoTests.PullStreamMethod)));
         await Assert.That(fixture.ParameterMap[0].Name).IsEqualTo("id");
         await Assert.That(fixture.ParameterMap[0].Type).IsEqualTo(ParameterType.Normal);
         await Assert.That(fixture.QueryParameterMap).IsEmpty();
@@ -563,7 +563,7 @@ public partial class RestMethodInfoTests
         var input = typeof(IRestMethodInfoTests);
         var fixture = new RestMethodInfoInternal(
             input,
-            input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.VoidPost)));
+            input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.VoidPost)));
         await Assert.That(fixture.ParameterMap[0].Name).IsEqualTo("id");
         await Assert.That(fixture.ParameterMap[0].Type).IsEqualTo(ParameterType.Normal);
 
@@ -585,7 +585,7 @@ public partial class RestMethodInfoTests
                 input,
                 input
                     .GetMethods()
-                    .First(x => x.Name == nameof(IRestMethodInfoTests.AsyncOnlyBuddy)));
+                    .First(static x => x.Name == nameof(IRestMethodInfoTests.AsyncOnlyBuddy)));
         }
         catch (ArgumentException)
         {
@@ -603,7 +603,7 @@ public partial class RestMethodInfoTests
         var input = typeof(IRestMethodInfoTests);
         var fixture = new RestMethodInfoInternal(
             input,
-            input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.PatchSomething)));
+            input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.PatchSomething)));
 
         await Assert.That(fixture.HttpMethod.Method).IsEqualTo("PATCH");
     }
@@ -616,7 +616,7 @@ public partial class RestMethodInfoTests
         var input = typeof(IRestMethodInfoTests);
         var fixture = new RestMethodInfoInternal(
             input,
-            input.GetMethods().First(x => x.Name == nameof(IDummyHttpApi.SendOptions)));
+            input.GetMethods().First(static x => x.Name == nameof(IDummyHttpApi.SendOptions)));
 
         await Assert.That(fixture.HttpMethod.Method).IsEqualTo("OPTIONS");
     }
@@ -631,7 +631,7 @@ public partial class RestMethodInfoTests
             input,
             input
                 .GetMethods()
-                .First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsApiResponse)));
+                .First(static x => x.Name == nameof(IRestMethodInfoTests.PostReturnsApiResponse)));
 
         await Assert.That(fixture.IsApiResponse).IsTrue();
     }
@@ -646,7 +646,7 @@ public partial class RestMethodInfoTests
             input,
             input
                 .GetMethods()
-                .First(x => x.Name == nameof(IRestMethodInfoTests.PostReturnsNonApiResponse)));
+                .First(static x => x.Name == nameof(IRestMethodInfoTests.PostReturnsNonApiResponse)));
 
         await Assert.That(fixture.IsApiResponse).IsFalse();
     }
@@ -662,7 +662,7 @@ public partial class RestMethodInfoTests
             input
                 .GetMethods()
                 .First(
-                    x =>
+                    static x =>
                         x.Name
                         == nameof(
                             IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderQueryParamAndArrayQueryParam)));
@@ -700,7 +700,7 @@ public partial class RestMethodInfoTests
             input
                 .GetTypeInfo()
                 .DeclaredMethods
-                .First(x => x.Name == nameof(IInternalSyncGenericReturnTypeApi.GetValues)));
+                .First(static x => x.Name == nameof(IInternalSyncGenericReturnTypeApi.GetValues)));
 
         await Assert.That(fixture.ReturnType).IsEqualTo(typeof(List<string>));
         await Assert.That(fixture.ReturnResultType).IsEqualTo(typeof(List<string>));
@@ -718,7 +718,7 @@ public partial class RestMethodInfoTests
             input
                 .GetTypeInfo()
                 .DeclaredMethods
-                .First(x => x.Name == nameof(IInternalSyncGenericApiResponseReturnTypeApi.GetResponse)));
+                .First(static x => x.Name == nameof(IInternalSyncGenericApiResponseReturnTypeApi.GetResponse)));
 
         await Assert.That(fixture.ReturnType).IsEqualTo(typeof(IApiResponse<string>));
         await Assert.That(fixture.ReturnResultType).IsEqualTo(typeof(IApiResponse<string>));

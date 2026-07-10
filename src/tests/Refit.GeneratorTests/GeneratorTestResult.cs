@@ -27,7 +27,7 @@ public sealed class GeneratorTestResult
         CompilationErrors =
         [
             .. outputCompilation.GetDiagnostics()
-                .Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+                .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
         ];
         GeneratedSources = BuildGeneratedSources(driver);
     }
@@ -48,7 +48,7 @@ public sealed class GeneratorTestResult
     public IReadOnlyDictionary<string, string> GeneratedSources { get; }
 
     /// <summary>Gets a value indicating whether the generated output compiles without errors.</summary>
-    public bool CompilesWithoutErrors => CompilationErrors.Length == 0;
+    public bool CompilesWithoutErrors => CompilationErrors.IsEmpty;
 
     /// <summary>Builds generated source text by hint name.</summary>
     /// <param name="driver">The generator driver after execution.</param>

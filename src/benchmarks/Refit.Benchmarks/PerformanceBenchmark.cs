@@ -33,7 +33,7 @@ public class PerformanceBenchmark
                 Host,
                 new(systemTextJsonContentSerializer)
                 {
-                    HttpMessageHandlerFactory = () =>
+                    HttpMessageHandlerFactory = static () =>
                         new StaticValueHttpResponseHandler(
                             "Ok",
                             HttpStatusCode.OK)

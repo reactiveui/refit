@@ -74,7 +74,7 @@ public sealed class RefitInterfaceAnalyzerTests
             Task<string> InvalidHeaders([HeaderCollection] IDictionary<string, object> headers);
             """);
 
-        var diagnosticIds = diagnostics.Select(diagnostic => diagnostic.Id).ToArray();
+        var diagnosticIds = diagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
 
         await Assert.That(diagnosticIds).Contains("RF003");
         await Assert.That(diagnosticIds).Contains("RF004");
@@ -94,7 +94,7 @@ public sealed class RefitInterfaceAnalyzerTests
             void NonRefitMethod();
             """);
 
-        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .Contains(NonRefitMemberDiagnosticId);
     }
 
@@ -122,7 +122,7 @@ public sealed class RefitInterfaceAnalyzerTests
             }
             """);
 
-        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .Contains(NonRefitMemberDiagnosticId);
     }
 
@@ -150,7 +150,7 @@ public sealed class RefitInterfaceAnalyzerTests
             }
             """);
 
-        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .Contains(NonRefitMemberDiagnosticId);
     }
 
@@ -180,7 +180,149 @@ public sealed class RefitInterfaceAnalyzerTests
             }
             """);
 
-        await Assert.That(diagnostics.Select(diagnostic => diagnostic.Id))
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
             .DoesNotContain(NonRefitMemberDiagnosticId);
+    }
+
+    /// <summary>Verifies custom HTTP method attributes without a string path literal are treated as empty.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CustomHttpMethodAttributesWithoutStringPathAreTreatedAsEmpty()
+    {
+        var diagnostics = await AnalyzerFixture.Run(
+            """
+            using System.Net.Http;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitAnalyzerTest;
+
+            public sealed class NoPathAttribute : HttpMethodAttribute
+            {
+                public NoPathAttribute() : base("/x") { }
+                public override HttpMethod Method => HttpMethod.Get;
+            }
+
+            public sealed class IntPathAttribute : HttpMethodAttribute
+            {
+                public IntPathAttribute(int code) : base("/x") { }
+                public override HttpMethod Method => HttpMethod.Get;
+            }
+
+            public interface IGeneratedClient
+            {
+                [NoPath]
+                Task<string> NoArguments();
+
+                [IntPath(5)]
+                Task<string> NonStringArgument();
+            }
+            """);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain("RF003");
+    }
+
+    /// <summary>Verifies properties and their accessors on a Refit interface are ignored.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task PropertiesAndAccessorsAreIgnored()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Get("/users")]
+            Task<string> Get();
+
+            string Name { get; set; }
+            """);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain(NonRefitMemberDiagnosticId);
+    }
+
+    /// <summary>Verifies static and default interface methods are not treated as emittable non-Refit members.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task StaticAndDefaultMethodsAreNotEmittable()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Get("/users")]
+            Task<string> Get();
+
+            static string Helper() => string.Empty;
+
+            void DefaultMethod() { }
+            """);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain(NonRefitMemberDiagnosticId);
+    }
+
+    /// <summary>Verifies inherited non-method members are ignored when detecting inherited Refit methods.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task InheritedNonMethodMembersAreIgnored()
+    {
+        var diagnostics = await AnalyzerFixture.Run(
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitAnalyzerTest;
+
+            public interface IBaseWithProperty
+            {
+                string SomeProperty { get; }
+
+                [Get("/base")]
+                Task<string> BaseGet();
+            }
+
+            public interface IGeneratedClient : IBaseWithProperty
+            {
+                [Get("/derived")]
+                Task<string> DerivedGet();
+            }
+            """);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain(NonRefitMemberDiagnosticId);
+    }
+
+    /// <summary>Verifies nullable, non-cancellation, and generic parameter types are classified correctly.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CancellationTokenClassificationHandlesNullableAndGenericParameters()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Get("/a")]
+            Task<string> NullableToken(CancellationToken? token);
+
+            [Get("/b")]
+            Task<string> NullableValue(int? value);
+
+            [Get("/c")]
+            Task<string> Generic<T>(T value);
+            """);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain("RF004");
+    }
+
+    /// <summary>Verifies parameters carrying a non-header-collection attribute are handled.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ParameterWithNonHeaderCollectionAttributeIsIgnored()
+    {
+        var diagnostics = await AnalyzerFixture.RunForBody(
+            """
+            [Get("/users")]
+            Task<string> Get([Query] string filter);
+            """);
+
+        await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
+            .DoesNotContain("RF005");
     }
 }

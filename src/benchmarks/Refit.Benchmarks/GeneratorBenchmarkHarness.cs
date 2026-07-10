@@ -11,6 +11,9 @@ namespace Refit.Benchmarks;
 /// <summary>Shared setup for the source-generator benchmarks: builds a compilation and a generator driver.</summary>
 internal static class GeneratorBenchmarkHarness
 {
+    /// <summary>The assembly name given to the throwaway compilation the generator runs against.</summary>
+    private const string CompilationAssemblyName = "compilation";
+
     /// <summary>The metadata reference to the Refit assembly, including its XML documentation.</summary>
     private static readonly MetadataReference _refitAssembly = MetadataReference.CreateFromFile(
         typeof(GetAttribute).Assembly.Location,
@@ -45,7 +48,7 @@ internal static class GeneratorBenchmarkHarness
         references.Add(_refitAssembly);
 
         var compilation = CSharpCompilation.Create(
-            "compilation",
+            CompilationAssemblyName,
             [CSharpSyntaxTree.ParseText(sourceText)],
             references,
             new(OutputKind.ConsoleApplication));

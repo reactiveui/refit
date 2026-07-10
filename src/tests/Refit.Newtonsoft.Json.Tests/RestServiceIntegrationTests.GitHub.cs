@@ -11,6 +11,9 @@ namespace Refit.Tests;
 /// <summary>Integration tests that exercise <see cref="RestService"/> end to end against a mock HTTP handler.</summary>
 public partial class RestServiceIntegrationTests
 {
+    /// <summary>The HTTP header name used to assert header round-tripping.</summary>
+    private const string CookieHeaderName = "Cookie";
+
     /// <summary>The base URL for the GitHub API used across the integration tests.</summary>
     private const string GitHubBaseUrl = "https://api.github.com";
 
@@ -48,7 +51,7 @@ public partial class RestServiceIntegrationTests
                 Encoding.UTF8,
                 JsonMediaType),
         };
-        responseMessage.Headers.Add("Cookie", "Value");
+        responseMessage.Headers.Add(CookieHeaderName, "Value");
 
         var handler = new StubHttp
         {
@@ -161,7 +164,7 @@ public partial class RestServiceIntegrationTests
                 Encoding.UTF8,
                 JsonMediaType),
         };
-        responseMessage.Headers.Add("Cookie", "Value");
+        responseMessage.Headers.Add(CookieHeaderName, "Value");
 
         var handler = new StubHttp
         {
@@ -208,7 +211,7 @@ public partial class RestServiceIntegrationTests
                 Encoding.UTF8,
                 JsonMediaType),
         };
-        responseMessage.Headers.Add("Cookie", "Value");
+        responseMessage.Headers.Add(CookieHeaderName, "Value");
 
         var handler = new StubHttp
         {
@@ -327,7 +330,7 @@ public partial class RestServiceIntegrationTests
         var result = await fixture.GetOrgMembers(OrgName);
 
         await Assert.That(result.Count > 0).IsTrue();
-        await Assert.That(result).Contains(member => member.Type == "User");
+        await Assert.That(result).Contains(static member => member.Type == "User");
 
         await handler.VerifyAllCalledAsync();
     }
@@ -367,10 +370,10 @@ public partial class RestServiceIntegrationTests
         var result2 = await task2;
 
         await Assert.That(result1.Count > 0).IsTrue();
-        await Assert.That(result1).Contains(member => member.Type == "User");
+        await Assert.That(result1).Contains(static member => member.Type == "User");
 
         await Assert.That(result2.Count > 0).IsTrue();
-        await Assert.That(result2).Contains(member => member.Type == "User");
+        await Assert.That(result2).Contains(static member => member.Type == "User");
 
         await handler.VerifyAllCalledAsync();
     }
@@ -574,7 +577,7 @@ public partial class RestServiceIntegrationTests
         var result = await fixture.FindUsers("tom repos:>42 followers:>1000");
 
         await Assert.That(result.TotalCount > 0).IsTrue();
-        await Assert.That(result.Items).Contains(member => member.Type == "User");
+        await Assert.That(result.Items).Contains(static member => member.Type == "User");
         await handler.VerifyAllCalledAsync();
     }
 
@@ -648,7 +651,7 @@ public partial class RestServiceIntegrationTests
         var input = new TestHttpMessageHandler
         {
             // we need to use a factory here to ensure each request gets its own httpcontent instance
-            ContentFactory = () => new StringContent("test")
+            ContentFactory = static () => new StringContent("test")
         };
 
         var client = new HttpClient(input) { BaseAddress = new("http://foo") };

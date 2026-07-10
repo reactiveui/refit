@@ -91,7 +91,7 @@ public class XmlContentSerializerTests
         var document = new XmlDocument();
         document.LoadXml(await content.ReadAsStringAsync());
 
-        await Assert.That(document["Dto"]?["Name", "https://google.com"]?.Prefix).IsEqualTo(prefix);
+        await Assert.That(document[nameof(Dto)]?["Name", "https://google.com"]?.Prefix).IsEqualTo(prefix);
     }
 
     /// <summary>Verifies a DTO can be deserialized from XML content.</summary>
@@ -183,6 +183,12 @@ public class XmlContentSerializerTests
         await Assert.That(both.WriterSettings.Async).IsTrue();
         await Assert.That(() => both.ReaderSettings = null!).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => both.WriterSettings = null!).ThrowsExactly<ArgumentNullException>();
+
+        both.ReaderSettings = readerSettings;
+        both.WriterSettings = writerSettings;
+
+        await Assert.That(both.ReaderSettings).IsSameReferenceAs(readerSettings);
+        await Assert.That(both.WriterSettings).IsSameReferenceAs(writerSettings);
     }
 
     /// <summary>Verifies DTD processing is forced off and the resolver cleared even when the caller opts into parsing (XXE hardening).</summary>

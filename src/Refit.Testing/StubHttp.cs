@@ -865,22 +865,16 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
     /// A re-readable in-memory replacement for a consumed request body that reports a length only when the
     /// original did, so a streamed body still appears to have no <c>Content-Length</c>.
     /// </summary>
-    private sealed class BufferedContent : HttpContent
+    /// <remarks>Initializes a new instance of the <see cref="BufferedContent"/> class.</remarks>
+    /// <param name="bytes">The buffered body bytes.</param>
+    /// <param name="knownLength">Whether the original content reported a length.</param>
+    private sealed class BufferedContent(byte[] bytes, bool knownLength) : HttpContent
     {
         /// <summary>The buffered body bytes.</summary>
-        private readonly byte[] _bytes;
+        private readonly byte[] _bytes = bytes;
 
         /// <summary>Whether the original content reported a length.</summary>
-        private readonly bool _knownLength;
-
-        /// <summary>Initializes a new instance of the <see cref="BufferedContent"/> class.</summary>
-        /// <param name="bytes">The buffered body bytes.</param>
-        /// <param name="knownLength">Whether the original content reported a length.</param>
-        public BufferedContent(byte[] bytes, bool knownLength)
-        {
-            _bytes = bytes;
-            _knownLength = knownLength;
-        }
+        private readonly bool _knownLength = knownLength;
 
         /// <inheritdoc/>
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>

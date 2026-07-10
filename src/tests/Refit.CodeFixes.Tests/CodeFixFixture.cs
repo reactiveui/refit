@@ -184,7 +184,7 @@ internal static class CodeFixFixture
                 typeof(IDisposable).Assembly
             ])
             .Distinct()
-            .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+            .Where(static a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
     ];
 
     /// <summary>Adds runtime framework references used by Roslyn in-memory compilations.</summary>

@@ -179,7 +179,7 @@ public class MethodOverladTests
                 {
                     Method = HttpMethod.Get,
                     Template = GetUrl,
-                    Query = [.. new Dictionary<string, string> { { "input1", "str" }, { "input2", "3" } }.Select(kv => (kv.Key, kv.Value))],
+                    Query = [.. new Dictionary<string, string> { { "input1", "str" }, { "input2", "3" } }.Select(static kv => (kv.Key, kv.Value))],
                 },
                 Reply.Json("Ok")
             },

@@ -111,10 +111,10 @@ public sealed class ApiResponseTests
         const IApiResponse<string> nullResponse = null!;
 
         await Assert
-            .That(() => (Task)nullResponse.EnsureSuccessStatusCodeAsync())
+            .That(static () => (Task)nullResponse.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<ArgumentNullException>();
         await Assert
-            .That(() => (Task)nullResponse.EnsureSuccessfulAsync())
+            .That(static () => (Task)nullResponse.EnsureSuccessfulAsync())
             .ThrowsExactly<ArgumentNullException>();
     }
 
@@ -138,9 +138,9 @@ public sealed class ApiResponseTests
     [Test]
     public async Task ConstructorsRequireResponseAndRequestMessage()
     {
-        await Assert.That(() => new ApiResponse<string>(null!, "body", new()))
+        await Assert.That(static () => new ApiResponse<string>(null!, "body", new()))
             .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => new ApiResponse<string>(new(HttpStatusCode.OK), "body", new()))
+        await Assert.That(static () => new ApiResponse<string>(new(HttpStatusCode.OK), "body", new()))
             .ThrowsExactly<ArgumentException>();
     }
 

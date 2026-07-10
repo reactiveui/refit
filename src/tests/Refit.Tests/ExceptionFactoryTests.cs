@@ -43,7 +43,7 @@ public class ExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
         {
-            ExceptionFactory = _ => Task.FromResult<Exception?>(null)
+            ExceptionFactory = static _ => Task.FromResult<Exception?>(null)
         });
 
         var result = await fixture.GetWithResult();
@@ -67,7 +67,7 @@ public class ExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseAddress, new RefitSettings
         {
-            ExceptionFactory = _ => Task.FromResult<Exception?>(null)
+            ExceptionFactory = static _ => Task.FromResult<Exception?>(null)
         });
 
         await fixture.PutWithoutResult();

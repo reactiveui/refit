@@ -398,7 +398,7 @@ public sealed class StubHttpTests
         {
             {
                 Route.Any("*"),
-                Reply.From(request => new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent(request.RequestUri!.AbsolutePath), })
+                Reply.From(static request => new HttpResponseMessage(HttpStatusCode.Accepted) { Content = new StringContent(request.RequestUri!.AbsolutePath), })
             },
         };
 
@@ -481,7 +481,7 @@ public sealed class StubHttpTests
         {
             {
                 Route.Post("*"),
-                Reply.From(async request =>
+                Reply.From(static async request =>
                 {
                     var body = await request.Content!.ReadAsStringAsync();
                     return new HttpResponseMessage(HttpStatusCode.OK)

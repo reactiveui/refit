@@ -326,7 +326,7 @@ internal class RestMethodInfoInternal
         }
 
         if (urlResolution == UrlResolutionMode.RefitLegacy
-            && !relativePath.StartsWith("/", StringComparison.Ordinal))
+            && !StringHelpers.StartsWith(relativePath, '/'))
         {
             throw new ArgumentException(
                 $"URL path {relativePath} must start with '/' and be of the form '/foo/bar/baz'");
@@ -440,10 +440,7 @@ internal class RestMethodInfoInternal
             for (var j = 0; j < properties.Length; j++)
             {
                 var key = $"{parameter.Name}.{GetUrlNameForProperty(properties[j])}".ToLowerInvariant();
-                if (!objectParamValidationDict.ContainsKey(key))
-                {
-                    objectParamValidationDict.Add(key, Tuple.Create(parameter, properties[j]));
-                }
+                _ = objectParamValidationDict.TryAdd(key, Tuple.Create(parameter, properties[j]));
             }
         }
 

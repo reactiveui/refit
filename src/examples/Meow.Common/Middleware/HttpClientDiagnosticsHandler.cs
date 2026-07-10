@@ -27,7 +27,7 @@ public class HttpClientDiagnosticsHandler : DelegatingHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
-        var totalElapsedTime = Stopwatch.StartNew();
+        var totalStartTimestamp = Stopwatch.GetTimestamp();
 
         Log.Debug("Request: {Request}", request);
         if (request.Content is not null)
@@ -36,7 +36,7 @@ public class HttpClientDiagnosticsHandler : DelegatingHandler
             Log.Debug("Request Content: {Content}", content);
         }
 
-        var responseElapsedTime = Stopwatch.StartNew();
+        var responseStartTimestamp = Stopwatch.GetTimestamp();
         var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
         Log.Debug("Response: {Response}", response);
@@ -46,11 +46,13 @@ public class HttpClientDiagnosticsHandler : DelegatingHandler
             Log.Debug("Response Content: {Content}", content);
         }
 
-        responseElapsedTime.Stop();
-        Log.Debug("Response elapsed time: {ElapsedMilliseconds} ms", responseElapsedTime.ElapsedMilliseconds);
+        Log.Debug(
+            "Response elapsed time: {ElapsedMilliseconds} ms",
+            (long)Stopwatch.GetElapsedTime(responseStartTimestamp).TotalMilliseconds);
 
-        totalElapsedTime.Stop();
-        Log.Debug("Total elapsed time: {ElapsedMilliseconds} ms", totalElapsedTime.ElapsedMilliseconds);
+        Log.Debug(
+            "Total elapsed time: {ElapsedMilliseconds} ms",
+            (long)Stopwatch.GetElapsedTime(totalStartTimestamp).TotalMilliseconds);
 
         return response;
     }

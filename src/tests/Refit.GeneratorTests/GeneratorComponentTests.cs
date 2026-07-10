@@ -214,7 +214,7 @@ public static class GeneratorComponentTests
                 Emitter.AppendEscapedCharacter(builder, value);
             }
 
-            await Assert.That(builder.ToString()).IsEqualTo(@"\\\""\0\a\b\f\n\r\t\v\u0085\u2028\u2029x");
+            await Assert.That(builder.ToString()).IsEqualTo("""\\\"\0\a\b\f\n\r\t\v\u0085\u2028\u2029x""");
         }
 
         /// <summary>Verifies the string-literal escape lookup for special, line-terminator, and verbatim characters.</summary>
@@ -336,7 +336,7 @@ public static class GeneratorComponentTests
             await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.Bar")).IsEqualTo("Bar");
             await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.")).IsEqualTo("IFoo.");
             await Assert.That(Emitter.StripExplicitInterfacePrefix("Bar")).IsEqualTo("Bar");
-            await Assert.That(() => Emitter.ToHttpMethodExpression("TRACE")).ThrowsExactly<ArgumentOutOfRangeException>();
+            await Assert.That(static () => Emitter.ToHttpMethodExpression("TRACE")).ThrowsExactly<ArgumentOutOfRangeException>();
         }
 
         /// <summary>Verifies generated return invocation text for every return type shape.</summary>
@@ -352,7 +352,7 @@ public static class GeneratorComponentTests
                 .IsEqualTo((false, "return ", string.Empty));
             await Assert.That(Emitter.GetReturnInvocationParts(ReturnTypeInfo.SyncVoid))
                 .IsEqualTo((false, string.Empty, string.Empty));
-            await Assert.That(() => Emitter.GetReturnInvocationParts((ReturnTypeInfo)int.MaxValue))
+            await Assert.That(static () => Emitter.GetReturnInvocationParts((ReturnTypeInfo)int.MaxValue))
                 .ThrowsExactly<ArgumentOutOfRangeException>();
         }
 
@@ -462,7 +462,7 @@ public static class GeneratorComponentTests
         [Test]
         public async Task IsStandardHttpMethodAttributeName_HandlesQualifiedAndAliasNames()
         {
-            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("GetAttribute"))).IsTrue();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName(nameof(GetAttribute)))).IsTrue();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("Refit.Post"))).IsTrue();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("global::PutAttribute"))).IsTrue();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("global::Refit.PutAttribute"))).IsTrue();
@@ -569,9 +569,10 @@ public static class GeneratorComponentTests
                 "public partial class IGeneratedClient",
                 "RefitGeneratorTest.IGeneratedClient",
                 string.Empty,
-                true,
-                true,
-                true,
+                GeneratedRequestBuilding: true,
+                EmitGeneratedCodeMarkers: true,
+                SupportsNullable: true,
+                SupportsStaticLambdas: true,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
                 ImmutableEquatableArray<string>.Empty,
                 ImmutableEquatableArray<InterfacePropertyModel>.Empty,

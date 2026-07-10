@@ -35,9 +35,7 @@ internal static class EnumHelpers
             return null;
         }
 
-        var enumMemberValues = _enumMemberValueCache.GetOrAdd(
-            enumType,
-            static type => CreateEnumMemberValueMap(type));
+        var enumMemberValues = _enumMemberValueCache.GetOrAdd(enumType, CreateEnumMemberValueMap);
         return enumMemberValues.TryGetValue(name, out var enumMemberValue) ? enumMemberValue : null;
     }
 

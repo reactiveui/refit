@@ -1,0 +1,5 @@
+[*.cs]
+
+# SST1449: Avoid writing directly to the console.
+# These are sample console applications - stdout is the product, not a diagnostic channel.
+dotnet_diagnostic.SST1449.severity = none

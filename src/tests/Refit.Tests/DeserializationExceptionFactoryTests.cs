@@ -82,7 +82,7 @@ public class DeserializationExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
         {
-            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null)
+            DeserializationExceptionFactory = static (_, _) => Task.FromResult<Exception?>(null)
         });
 
         var result = await fixture.GetWithResult();
@@ -106,7 +106,7 @@ public class DeserializationExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
         {
-            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(null)
+            DeserializationExceptionFactory = static (_, _) => Task.FromResult<Exception?>(null)
         });
 
         var result = await fixture.GetWithResult();

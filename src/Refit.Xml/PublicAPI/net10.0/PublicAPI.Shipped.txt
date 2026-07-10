@@ -1,5 +1,6 @@
 #nullable enable
 Refit.XmlContentSerializer
+Refit.XmlContentSerializer.DeserializeFromString<T>(string! content) -> T?
 Refit.XmlContentSerializer.FromHttpContentAsync<T>(System.Net.Http.HttpContent! content, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<T?>!
 Refit.XmlContentSerializer.GetFieldNameForProperty(System.Reflection.PropertyInfo! propertyInfo) -> string?
 Refit.XmlContentSerializer.ToHttpContent<T>(T item) -> System.Net.Http.HttpContent!
@@ -16,6 +17,8 @@ Refit.XmlContentSerializerSettings.XmlNamespaces.set -> void
 Refit.XmlContentSerializerSettings.XmlReaderWriterSettings.get -> Refit.XmlReaderWriterSettings!
 Refit.XmlContentSerializerSettings.XmlReaderWriterSettings.set -> void
 Refit.XmlReaderWriterSettings
+Refit.XmlReaderWriterSettings.AllowDtdProcessing.get -> bool
+Refit.XmlReaderWriterSettings.AllowDtdProcessing.set -> void
 Refit.XmlReaderWriterSettings.ReaderSettings.get -> System.Xml.XmlReaderSettings!
 Refit.XmlReaderWriterSettings.ReaderSettings.set -> void
 Refit.XmlReaderWriterSettings.WriterSettings.get -> System.Xml.XmlWriterSettings!
@@ -24,6 +27,3 @@ Refit.XmlReaderWriterSettings.XmlReaderWriterSettings() -> void
 Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlReaderSettings! readerSettings) -> void
 Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlReaderSettings! readerSettings, System.Xml.XmlWriterSettings! writerSettings) -> void
 Refit.XmlReaderWriterSettings.XmlReaderWriterSettings(System.Xml.XmlWriterSettings! writerSettings) -> void
-Refit.XmlContentSerializer.DeserializeFromString<T>(string! content) -> T?
-Refit.XmlReaderWriterSettings.AllowDtdProcessing.get -> bool
-Refit.XmlReaderWriterSettings.AllowDtdProcessing.set -> void

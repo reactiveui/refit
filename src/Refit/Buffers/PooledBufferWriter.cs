@@ -30,12 +30,12 @@ internal sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposa
     {
         if (count < 0)
         {
-            ThrowArgumentOutOfRangeExceptionForNegativeCount();
+            throw CreateArgumentOutOfRangeExceptionForNegativeCount();
         }
 
         if (_position > _buffer.Length - count)
         {
-            ThrowArgumentOutOfRangeExceptionForAdvancedTooFar();
+            throw CreateArgumentOutOfRangeExceptionForAdvancedTooFar();
         }
 
         _position += count;
@@ -86,7 +86,7 @@ internal sealed partial class PooledBufferWriter : IBufferWriter<byte>, IDisposa
     {
         if (count < 0)
         {
-            ThrowArgumentOutOfRangeExceptionForNegativeCount();
+            throw CreateArgumentOutOfRangeExceptionForNegativeCount();
         }
 
         if (count == 0)

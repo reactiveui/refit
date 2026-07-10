@@ -79,7 +79,7 @@ public class EndToEndBenchmark
                 Host,
                 new(systemTextJsonContentSerializer)
                 {
-                    HttpMessageHandlerFactory = () =>
+                    HttpMessageHandlerFactory = static () =>
                         new StaticFileHttpResponseHandler(
                             "system-text-json-10-users.json",
                             HttpStatusCode.OK)
@@ -89,7 +89,7 @@ public class EndToEndBenchmark
                 Host,
                 new(systemTextJsonContentSerializer)
                 {
-                    HttpMessageHandlerFactory = () =>
+                    HttpMessageHandlerFactory = static () =>
                         new StaticFileHttpResponseHandler(
                             "system-text-json-10-users.json",
                             HttpStatusCode.InternalServerError)
@@ -101,7 +101,7 @@ public class EndToEndBenchmark
                 Host,
                 new(newtonsoftJsonContentSerializer)
                 {
-                    HttpMessageHandlerFactory = () =>
+                    HttpMessageHandlerFactory = static () =>
                         new StaticFileHttpResponseHandler(
                             "newtonsoft-json-10-users.json",
                             HttpStatusCode.OK)
@@ -111,7 +111,7 @@ public class EndToEndBenchmark
                 Host,
                 new(newtonsoftJsonContentSerializer)
                 {
-                    HttpMessageHandlerFactory = () =>
+                    HttpMessageHandlerFactory = static () =>
                         new StaticFileHttpResponseHandler(
                             "newtonsoft-json-10-users.json",
                             HttpStatusCode.InternalServerError)
