@@ -124,7 +124,8 @@ internal static partial class Parser
             compilation,
             returnTypeAdapterInterface,
             returnTypeAdapters,
-            []);
+            [],
+            new Dictionary<ISymbol, string?>(SymbolEqualityComparer.Default));
 
         var interfaceModels = BuildInterfaceModels(
             interfaces,
@@ -375,7 +376,7 @@ internal static partial class Parser
         var names = ComputeInterfaceNames(interfaceSymbol);
         var members = interfaceSymbol.GetMembers();
 
-        var partition = PartitionMethods(
+        var partition = PartitionMembers(
             interfaceSymbol,
             members,
             refitMethods,
@@ -393,7 +394,7 @@ internal static partial class Parser
             partition.NonRefitMethods,
             partition.DerivedNonRefitMethods,
             context);
-        var properties = BuildInterfacePropertyModels(interfaceSymbol, members, context);
+        var properties = BuildInterfacePropertyModels(members, partition.InheritedProperties, context);
 
         var constraints = GenerateConstraints(interfaceSymbol.TypeParameters, false, context);
         var nullability = (context.SupportsNullable, nullableEnabled) switch
@@ -472,13 +473,13 @@ internal static partial class Parser
         return new(className, classDeclaration, classSuffix, ns, interfaceDisplayName);
     }
 
-    /// <summary>Splits the interface's direct and inherited members into Refit and non-Refit sets.</summary>
+    /// <summary>Splits the interface's direct and inherited members into the sets the generated stub emits.</summary>
     /// <param name="interfaceSymbol">The interface symbol being processed.</param>
     /// <param name="members">The directly declared members of the interface.</param>
     /// <param name="refitMethods">The Refit methods declared on the interface.</param>
     /// <param name="context">The shared generation context.</param>
-    /// <returns>The partitioned method sets.</returns>
-    private static MethodPartition PartitionMethods(
+    /// <returns>The partitioned member sets.</returns>
+    private static MethodPartition PartitionMembers(
         INamedTypeSymbol interfaceSymbol,
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> refitMethods,
@@ -488,11 +489,13 @@ internal static partial class Parser
 
         var derivedRefitMethods = new List<IMethodSymbol>();
         var derivedNonRefitMethods = new List<IMethodSymbol>();
-        var hasDispose = CollectDerivedMethods(
+        var inheritedProperties = new List<IPropertySymbol>();
+        var hasDispose = CollectDerivedMembers(
             interfaceSymbol,
             context,
             derivedRefitMethods,
-            derivedNonRefitMethods);
+            derivedNonRefitMethods,
+            inheritedProperties);
 
         derivedNonRefitMethods = ExcludeExplicitlyImplementedBaseMethods(
             members,
@@ -502,6 +505,7 @@ internal static partial class Parser
             nonRefitMethods,
             derivedRefitMethods,
             derivedNonRefitMethods,
+            inheritedProperties,
             hasDispose);
     }
 
@@ -536,45 +540,57 @@ internal static partial class Parser
         return nonRefitMethods;
     }
 
-    /// <summary>Walks the inherited interfaces, splitting their methods into Refit and non-Refit sets.</summary>
+    /// <summary>Walks the inherited interfaces once, collecting derived methods and inherited properties.</summary>
     /// <param name="interfaceSymbol">The interface symbol being processed.</param>
     /// <param name="context">The shared generation context.</param>
     /// <param name="derivedRefitMethods">Receives the Refit methods inherited from base interfaces.</param>
     /// <param name="derivedNonRefitMethods">Receives the non-Refit methods inherited from base interfaces.</param>
+    /// <param name="inheritedProperties">Receives the emittable properties inherited from base interfaces.</param>
     /// <returns><see langword="true"/> if the interface inherits <c>IDisposable.Dispose</c>; otherwise, <see langword="false"/>.</returns>
-    private static bool CollectDerivedMethods(
+    private static bool CollectDerivedMembers(
         INamedTypeSymbol interfaceSymbol,
         InterfaceGenerationContext context,
         List<IMethodSymbol> derivedRefitMethods,
-        List<IMethodSymbol> derivedNonRefitMethods)
+        List<IMethodSymbol> derivedNonRefitMethods,
+        List<IPropertySymbol> inheritedProperties)
     {
-        // Walk all inherited interfaces once, pulling out the IDisposable.Dispose method and
-        // splitting the rest into Refit and non-Refit methods.
+        // Walk all inherited interfaces (and each base's members) exactly once: pull out the IDisposable.Dispose
+        // method, split the remaining methods into Refit and non-Refit sets, and collect inherited emittable
+        // properties in the same pass. Methods and properties were previously two separate AllInterfaces walks.
         var disposableInterfaceSymbol = context.DisposableInterfaceSymbol;
         var hasDispose = false;
         var seenDerivedNonRefitMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        var seenInheritedProperties = new HashSet<IPropertySymbol>(SymbolEqualityComparer.Default);
         foreach (var baseInterface in interfaceSymbol.AllInterfaces)
         {
             foreach (var member in baseInterface.GetMembers())
             {
-                if (member is not IMethodSymbol method)
+                switch (member)
                 {
-                    continue;
-                }
+                    case IMethodSymbol method when IsDisposeMethod(method, disposableInterfaceSymbol):
+                    {
+                        hasDispose = true;
+                        break;
+                    }
 
-                if (IsDisposeMethod(method, disposableInterfaceSymbol))
-                {
-                    hasDispose = true;
-                    continue;
-                }
+                    case IMethodSymbol method when IsRefitMethod(method, context.HttpMethodBaseAttributeSymbol):
+                    {
+                        derivedRefitMethods.Add(method);
+                        break;
+                    }
 
-                if (IsRefitMethod(method, context.HttpMethodBaseAttributeSymbol))
-                {
-                    derivedRefitMethods.Add(method);
-                }
-                else if (seenDerivedNonRefitMethods.Add(method))
-                {
-                    derivedNonRefitMethods.Add(method);
+                    case IMethodSymbol method when seenDerivedNonRefitMethods.Add(method):
+                    {
+                        derivedNonRefitMethods.Add(method);
+                        break;
+                    }
+
+                    case IPropertySymbol property
+                        when IsEmittableProperty(property) && seenInheritedProperties.Add(property):
+                    {
+                        inheritedProperties.Add(property);
+                        break;
+                    }
                 }
             }
         }
@@ -680,13 +696,13 @@ internal static partial class Parser
     }
 
     /// <summary>Builds models for interface properties implemented by the generated stub.</summary>
-    /// <param name="interfaceSymbol">The interface symbol being processed.</param>
     /// <param name="members">The directly declared interface members.</param>
+    /// <param name="inheritedProperties">The emittable inherited properties collected during the single member walk.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased property types.</param>
     /// <returns>The property models.</returns>
     private static ImmutableEquatableArray<InterfacePropertyModel> BuildInterfacePropertyModels(
-        INamedTypeSymbol interfaceSymbol,
         in ImmutableArray<ISymbol> members,
+        List<IPropertySymbol> inheritedProperties,
         InterfaceGenerationContext context)
     {
         var properties = new List<InterfacePropertyModel>();
@@ -698,18 +714,9 @@ internal static partial class Parser
             }
         }
 
-        var seenInheritedProperties = new HashSet<IPropertySymbol>(SymbolEqualityComparer.Default);
-        foreach (var baseInterface in interfaceSymbol.AllInterfaces)
+        foreach (var property in inheritedProperties)
         {
-            foreach (var member in baseInterface.GetMembers())
-            {
-                if (member is IPropertySymbol property
-                    && IsEmittableProperty(property)
-                    && seenInheritedProperties.Add(property))
-                {
-                    properties.Add(ParseInterfaceProperty(property, true, context));
-                }
-            }
+            properties.Add(ParseInterfaceProperty(property, true, context));
         }
 
         return properties.ToImmutableEquatableArray();
@@ -1162,14 +1169,16 @@ internal static partial class Parser
         string Namespace,
         string InterfaceDisplayName);
 
-    /// <summary>The interface's methods partitioned into Refit and non-Refit sets.</summary>
+    /// <summary>The interface's members partitioned into the sets the generated stub emits.</summary>
     /// <param name="NonRefitMethods">The non-Refit methods declared directly on the interface.</param>
     /// <param name="DerivedRefitMethods">The Refit methods inherited from base interfaces.</param>
     /// <param name="DerivedNonRefitMethods">The non-Refit methods inherited from base interfaces.</param>
+    /// <param name="InheritedProperties">The emittable properties inherited from base interfaces, in discovery order.</param>
     /// <param name="HasDispose">Whether the interface inherits <c>IDisposable.Dispose</c>.</param>
     private readonly record struct MethodPartition(
         List<IMethodSymbol> NonRefitMethods,
         List<IMethodSymbol> DerivedRefitMethods,
         List<IMethodSymbol> DerivedNonRefitMethods,
+        List<IPropertySymbol> InheritedProperties,
         bool HasDispose);
 }

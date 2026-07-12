@@ -35,6 +35,27 @@ internal static partial class Parser
     /// <summary>The metadata name of <c>Refit.BodyAttribute</c>.</summary>
     private const string BodyAttributeDisplayName = "BodyAttribute";
 
+    /// <summary>The metadata name of <c>Refit.HeaderAttribute</c>.</summary>
+    private const string HeaderAttributeDisplayName = "HeaderAttribute";
+
+    /// <summary>The metadata name of <c>Refit.HeaderCollectionAttribute</c>.</summary>
+    private const string HeaderCollectionAttributeDisplayName = "HeaderCollectionAttribute";
+
+    /// <summary>The metadata name of <c>Refit.PropertyAttribute</c>.</summary>
+    private const string PropertyAttributeDisplayName = "PropertyAttribute";
+
+    /// <summary>The metadata name of <c>Refit.AliasAsAttribute</c>.</summary>
+    private const string AliasAsAttributeDisplayName = "AliasAsAttribute";
+
+    /// <summary>The metadata name of <c>Refit.HeadersAttribute</c>.</summary>
+    private const string HeadersAttributeDisplayName = "HeadersAttribute";
+
+    /// <summary>The metadata name of <c>Refit.MultipartAttribute</c>.</summary>
+    private const string MultipartAttributeDisplayName = "MultipartAttribute";
+
+    /// <summary>The metadata name of <c>Refit.QueryUriFormatAttribute</c>.</summary>
+    private const string QueryUriFormatAttributeDisplayName = "QueryUriFormatAttribute";
+
     /// <summary>The fully-qualified display name of the <c>EnumMember</c> attribute honored by the default formatter.</summary>
     private const string EnumMemberAttributeDisplayName = "System.Runtime.Serialization.EnumMemberAttribute";
 
@@ -688,12 +709,21 @@ internal static partial class Parser
                 : new(InlineFormatKind.Enum, format, typeName, isNullableValueType, members);
         }
 
-        if (!ImplementsFormattable(type, formattableSymbol))
+        // One pass over AllInterfaces resolves both the IFormattable and ISpanFormattable questions, instead of
+        // walking the interface list again inside ComputeSpanFormattableTiers.
+        var (implementsFormattable, implementsSpanFormattable) =
+            ClassifyFormattable(type, formattableSymbol, context.SpanFormattableSymbol);
+        if (!implementsFormattable)
         {
             return new(InlineFormatKind.ToStringOnly, format, typeName, isNullableValueType, null);
         }
 
-        var (urlSafe, escapable) = ComputeSpanFormattableTiers(type, format, isNullableValueType, context);
+        var (urlSafe, escapable) = ComputeSpanFormattableTiers(
+            type,
+            format,
+            isNullableValueType,
+            implementsSpanFormattable,
+            context);
         return new(InlineFormatKind.Formattable, format, typeName, isNullableValueType, null)
         {
             IsUrlSafeSpanFormattable = urlSafe,
@@ -701,10 +731,46 @@ internal static partial class Parser
         };
     }
 
+    /// <summary>Determines, in a single interface walk, whether a type implements <c>IFormattable</c> and <c>ISpanFormattable</c>.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="spanFormattableSymbol">The resolved <c>System.ISpanFormattable</c> symbol, or null when unavailable.</param>
+    /// <returns>Whether the type implements each interface.</returns>
+    private static (bool Formattable, bool SpanFormattable) ClassifyFormattable(
+        ITypeSymbol type,
+        INamedTypeSymbol? formattableSymbol,
+        INamedTypeSymbol? spanFormattableSymbol)
+    {
+        var formattable = false;
+        var spanFormattable = false;
+        foreach (var implemented in type.AllInterfaces)
+        {
+            if (!formattable && SymbolEqualityComparer.Default.Equals(implemented, formattableSymbol))
+            {
+                formattable = true;
+            }
+
+            if (!spanFormattable
+                && spanFormattableSymbol is not null
+                && SymbolEqualityComparer.Default.Equals(implemented, spanFormattableSymbol))
+            {
+                spanFormattable = true;
+            }
+
+            if (formattable && spanFormattable)
+            {
+                break;
+            }
+        }
+
+        return (formattable, spanFormattable);
+    }
+
     /// <summary>Computes the two path fast-write tiers a formattable value type supports on the consumer target.</summary>
     /// <param name="type">The unwrapped value type.</param>
     /// <param name="format">The compile-time format, or null.</param>
     /// <param name="isNullableValueType">Whether the source value is a nullable value type.</param>
+    /// <param name="implementsSpanFormattable">Whether the value type implements <c>ISpanFormattable</c>, resolved in the single interface walk.</param>
     /// <param name="context">The generation context carrying the resolved fast-path capabilities.</param>
     /// <returns>Whether the value qualifies for the net6+ URL-safe integer write and the net10+ span-escape write.</returns>
     /// <remarks>net6+: an unformatted integer renders as URL-safe digits, so it is written with no escaping.
@@ -713,6 +779,7 @@ internal static partial class Parser
         ITypeSymbol type,
         string? format,
         bool isNullableValueType,
+        bool implementsSpanFormattable,
         InterfaceGenerationContext context)
     {
         var urlSafe = context.SpanFormattableSymbol is not null
@@ -721,25 +788,8 @@ internal static partial class Parser
             && type.SpecialType is >= SpecialType.System_SByte and <= SpecialType.System_UInt64;
         var escapable = context.SupportsSpanEscape
             && !isNullableValueType
-            && ImplementsFormattable(type, context.SpanFormattableSymbol);
+            && implementsSpanFormattable;
         return (urlSafe, escapable);
-    }
-
-    /// <summary>Determines whether a type implements <c>System.IFormattable</c>.</summary>
-    /// <param name="type">The type to inspect.</param>
-    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
-    /// <returns><see langword="true"/> when the type is formattable.</returns>
-    private static bool ImplementsFormattable(ITypeSymbol type, INamedTypeSymbol? formattableSymbol)
-    {
-        foreach (var implemented in type.AllInterfaces)
-        {
-            if (SymbolEqualityComparer.Default.Equals(implemented, formattableSymbol))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /// <summary>Resolves the compile-time enum members honored by the default URL parameter formatter.</summary>
@@ -840,11 +890,21 @@ internal static partial class Parser
         }
 
         return elementType is not null;
-
-        static bool IsGenericEnumerable(INamedTypeSymbol candidate) =>
-            candidate is { MetadataName: "IEnumerable`1" }
-            && candidate.ContainingNamespace.ToDisplayString() == "System.Collections.Generic";
     }
+
+    /// <summary>Determines whether a type is a closed <c>System.Collections.Generic.IEnumerable&lt;T&gt;</c>.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns><see langword="true"/> when the type is the generic enumerable interface.</returns>
+    private static bool IsGenericEnumerable(ITypeSymbol type) =>
+        type is INamedTypeSymbol
+        {
+            TypeKind: TypeKind.Interface,
+            Name: "IEnumerable",
+            Arity: 1,
+            ContainingNamespace.Name: "Generic",
+            ContainingNamespace.ContainingNamespace.Name: "Collections",
+            ContainingNamespace.ContainingNamespace.ContainingNamespace.Name: "System"
+        };
 
     /// <summary>Determines whether collection elements need a null check before formatting.</summary>
     /// <param name="elementType">The element type.</param>

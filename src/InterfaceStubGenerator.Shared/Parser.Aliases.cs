@@ -20,16 +20,35 @@ internal static partial class Parser
 
     /// <summary>Gets the extern alias qualifying a symbol's assembly, or null when it is reachable via <c>global::</c>.</summary>
     /// <param name="symbol">The symbol whose containing assembly is inspected.</param>
-    /// <param name="compilation">The compilation supplying the assembly's metadata reference, or null in tests.</param>
+    /// <param name="context">The generation context supplying the compilation and the pass-wide alias cache.</param>
     /// <returns>The extern alias, or null.</returns>
-    private static string? GetExternAlias(ISymbol symbol, CSharpCompilation? compilation)
+    private static string? GetExternAlias(ISymbol symbol, InterfaceGenerationContext context)
     {
         var assembly = symbol.ContainingAssembly;
-        if (compilation is null || assembly is null)
+        if (context.Compilation is not { } compilation || assembly is null)
         {
             return null;
         }
 
+        // The assembly -> alias mapping is invariant for the whole pass, so a single metadata-reference lookup per
+        // assembly is cached and reused across every type node of every interface (QualifyType runs very often).
+        var cache = context.AssemblyAliasCache;
+        if (cache.TryGetValue(assembly, out var cachedAlias))
+        {
+            return cachedAlias;
+        }
+
+        var resolved = ResolveExternAlias(assembly, compilation);
+        cache[assembly] = resolved;
+        return resolved;
+    }
+
+    /// <summary>Resolves the extern alias for an assembly by inspecting its metadata reference.</summary>
+    /// <param name="assembly">The assembly to resolve.</param>
+    /// <param name="compilation">The compilation supplying the assembly's metadata reference.</param>
+    /// <returns>The extern alias, or null when the assembly is reachable via <c>global::</c>.</returns>
+    private static string? ResolveExternAlias(IAssemblySymbol assembly, CSharpCompilation compilation)
+    {
         var aliases = compilation.GetMetadataReference(assembly)?.Properties.Aliases ?? default;
         if (aliases.IsDefaultOrEmpty)
         {
@@ -50,13 +69,13 @@ internal static partial class Parser
 
     /// <summary>Determines whether a type (or any array element or type argument) lives behind an extern alias.</summary>
     /// <param name="type">The type to inspect.</param>
-    /// <param name="compilation">The compilation supplying assembly metadata, or null in tests.</param>
+    /// <param name="context">The generation context supplying the compilation and the pass-wide alias cache.</param>
     /// <returns><see langword="true"/> when the type involves an extern-aliased assembly.</returns>
-    private static bool ContainsAliasedType(ITypeSymbol type, CSharpCompilation? compilation)
+    private static bool ContainsAliasedType(ITypeSymbol type, InterfaceGenerationContext context)
     {
         if (type is IArrayTypeSymbol array)
         {
-            return ContainsAliasedType(array.ElementType, compilation);
+            return ContainsAliasedType(array.ElementType, context);
         }
 
         if (type is not INamedTypeSymbol named)
@@ -64,14 +83,14 @@ internal static partial class Parser
             return false;
         }
 
-        if (GetExternAlias(named, compilation) is not null)
+        if (GetExternAlias(named, context) is not null)
         {
             return true;
         }
 
         foreach (var argument in named.TypeArguments)
         {
-            if (ContainsAliasedType(argument, compilation))
+            if (ContainsAliasedType(argument, context))
             {
                 return true;
             }
@@ -87,7 +106,7 @@ internal static partial class Parser
     private static string QualifyType(ITypeSymbol type, InterfaceGenerationContext context) =>
 
         // The common case is no aliased type at all: Roslyn's own fully-qualified rendering is exactly right.
-        ContainsAliasedType(type, context.Compilation)
+        ContainsAliasedType(type, context)
             ? AliasedDisplay(type, context)
             : type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
@@ -111,7 +130,7 @@ internal static partial class Parser
     /// <returns>The rendered type name.</returns>
     private static string AliasedNamedDisplay(INamedTypeSymbol named, InterfaceGenerationContext context)
     {
-        var alias = GetExternAlias(named, context.Compilation);
+        var alias = GetExternAlias(named, context);
         if (alias is not null)
         {
             _ = context.ExternAliases.Add(alias);

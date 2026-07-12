@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 namespace Refit.Generator;
 
@@ -124,20 +123,10 @@ internal static partial class Emitter
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
 
-        // Build path
-        var parameterInfoNames = GetParameterInfoUniqueNames(request, uniqueNames);
-        var paramInfoSb = new StringBuilder();
-
-        foreach (var parameter in request.Parameters)
-        {
-            if (!NeedsAttributeProvider(parameter))
-            {
-                continue;
-            }
-
-            var parameterName = parameterInfoNames[parameter.Name];
-            BuildParameterInfoField(parameter, methodModel.DeclaredMethod, parameterName, paramInfoSb);
-        }
+        // Build path. Assigning the unique field names and emitting the attribute-provider fields is a single pass
+        // over the parameters (the two were previously separate loops sharing the same NeedsAttributeProvider filter).
+        var paramInfoSb = new PooledStringBuilder();
+        var parameterInfoNames = BuildParameterInfoFields(request, uniqueNames, methodModel.DeclaredMethod, paramInfoSb);
 
         var emission = new InlineValueEmission(
             locals.New("refitQueryBuilder"),
@@ -153,22 +142,33 @@ internal static partial class Emitter
 
         var bodyIndent = Indent(MethodBodyIndentation);
         var requestPathExpression = pathExpression;
-        var requestPrologueSource = NeedsFormattingLocal(request)
-            ? $"{bodyIndent}var {emission.UseDefaultFormattingLocal} = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting({settingsLocal});\n"
-            : string.Empty;
+
+        // Accumulate the request prologue through a pooled buffer rather than reallocating the whole string on each
+        // '+=' branch below.
+        var prologue = new PooledStringBuilder();
+        if (NeedsFormattingLocal(request))
+        {
+            _ = prologue.Append(bodyIndent).Append("var ").Append(emission.UseDefaultFormattingLocal)
+                .Append(" = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(")
+                .Append(settingsLocal).AppendLine(");");
+        }
+
         if (NeedsFormFormattingLocal(request))
         {
-            requestPrologueSource +=
-                $"{bodyIndent}var {emission.UseDefaultFormFormattingLocal} = global::Refit.GeneratedRequestRunner.UsesDefaultFormUrlEncodedParameterFormatting({settingsLocal});\n";
+            _ = prologue.Append(bodyIndent).Append("var ").Append(emission.UseDefaultFormFormattingLocal)
+                .Append(" = global::Refit.GeneratedRequestRunner.UsesDefaultFormUrlEncodedParameterFormatting(")
+                .Append(settingsLocal).AppendLine(");");
         }
 
         if (HasQueryBindings(request))
         {
-            requestPrologueSource +=
-                $"{bodyIndent}var {emission.QueryBuilderLocal} = new global::Refit.GeneratedQueryStringBuilder({pathExpression});\n"
-                + BuildInlineQueryStatements(request, parameterInfoNames, emission);
-            requestPathExpression = $"{emission.QueryBuilderLocal}.Build()";
+            _ = prologue.Append(bodyIndent).Append("var ").Append(emission.QueryBuilderLocal)
+                .Append(" = new global::Refit.GeneratedQueryStringBuilder(").Append(pathExpression).AppendLine(");")
+                .Append(BuildInlineQueryStatements(request, parameterInfoNames, emission));
+            requestPathExpression = emission.QueryBuilderLocal + ".Build()";
         }
+
+        var requestPrologueSource = prologue.ToString();
 
         var httpMethodExpression = ToHttpMethodExpression(request.HttpMethod);
         var requestUriExpression =
@@ -210,7 +210,7 @@ internal static partial class Emitter
     /// <param name="sb">The target builder.</param>
     /// <param name="separator">The separator to append.</param>
     /// <returns>The same builder for chaining.</returns>
-    private static StringBuilder AppendSeparator(int i, StringBuilder sb, string separator = ", ")
+    private static PooledStringBuilder AppendSeparator(int i, PooledStringBuilder sb, string separator = ", ")
     {
         return i <= 0 ? sb : sb.Append(separator);
     }
@@ -221,7 +221,7 @@ internal static partial class Emitter
     /// <param name="sb">The target builder.</param>
     /// <param name="separator">The separator to append before the value.</param>
     /// <returns>The same builder for chaining.</returns>
-    private static StringBuilder AppendJoining(string value, int i, StringBuilder sb, string separator = ", ")
+    private static PooledStringBuilder AppendJoining(string value, int i, PooledStringBuilder sb, string separator = ", ")
     {
         return AppendSeparator(i, sb, separator).Append(value);
     }
@@ -229,7 +229,7 @@ internal static partial class Emitter
     /// <summary>Appends a C# attribute construction expression to the builder.</summary>
     /// <param name="attribute">The attribute model to render.</param>
     /// <param name="sb0">The target builder.</param>
-    private static void AppendAttributeValue(ParameterAttributeModel attribute, StringBuilder sb0)
+    private static void AppendAttributeValue(ParameterAttributeModel attribute, PooledStringBuilder sb0)
     {
         _ = sb0.Append("new ").Append(attribute.TypeExpression).Append('(');
         var i = 0;
@@ -261,7 +261,7 @@ internal static partial class Emitter
     /// <param name="method">The declaring method name, used for the generated documentation.</param>
     /// <param name="paramInfoFieldName">The unique generated field name.</param>
     /// <param name="sb">The target builder.</param>
-    private static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, StringBuilder sb)
+    private static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, PooledStringBuilder sb)
     {
         // Build the initializer.
         var memberIndent = Indent(MethodMemberIndentation);
@@ -309,13 +309,17 @@ internal static partial class Emitter
         _ = sb.AppendLine(");");
     }
 
-    /// <summary>Builds the unique cached field names for each path parameter attribute provider.</summary>
+    /// <summary>Assigns the unique cached field name for each attribute-provider parameter and emits its field.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <param name="uniqueNames">The unique member name builder for the interface scope.</param>
+    /// <param name="declaredMethod">The declared method name the emitted fields are scoped to.</param>
+    /// <param name="paramInfoSb">The builder receiving the emitted attribute-provider fields.</param>
     /// <returns>A map of parameter name to its cached attribute-provider field name.</returns>
-    private static Dictionary<string, string> GetParameterInfoUniqueNames(
+    private static Dictionary<string, string> BuildParameterInfoFields(
         RequestModel request,
-        UniqueNameBuilder uniqueNames)
+        UniqueNameBuilder uniqueNames,
+        string declaredMethod,
+        PooledStringBuilder paramInfoSb)
     {
         var dict = new Dictionary<string, string>();
         foreach (var parameter in request.Parameters)
@@ -327,6 +331,7 @@ internal static partial class Emitter
 
             var parameterInfoFieldName = GetParameterInfoFieldName(parameter.Name, uniqueNames);
             dict.Add(parameter.Name, parameterInfoFieldName);
+            BuildParameterInfoField(parameter, declaredMethod, parameterInfoFieldName, paramInfoSb);
         }
 
         return dict;
@@ -354,7 +359,7 @@ internal static partial class Emitter
             }
         }
 
-        var parametersSb = new StringBuilder();
+        var parametersSb = new PooledStringBuilder();
         var pathLength = request.Path.Length;
         foreach (var parameter in request.Parameters)
         {
@@ -556,7 +561,7 @@ internal static partial class Emitter
         var kvpType = "global::System.Collections.Generic.KeyValuePair<string" + nullable + ", string" + nullable + ">";
         var site = new FormUnrollSite(bodyExpr, entriesLocal, inner, "new " + kvpType, locals);
 
-        var adds = new StringBuilder();
+        var adds = new PooledStringBuilder();
         foreach (var field in fields)
         {
             AppendFormFieldUnroll(adds, field, in site, emission);
@@ -585,7 +590,7 @@ internal static partial class Emitter
     /// <param name="site">The shared locals and rendered fragments for the enclosing body.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendFormFieldUnroll(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         FormFieldModel field,
         in FormUnrollSite site,
         in InlineValueEmission emission)
@@ -634,7 +639,7 @@ internal static partial class Emitter
     /// <param name="indent">The statement indentation.</param>
     /// <param name="keyExpr">The field key expression.</param>
     /// <param name="valueExpr">The field value expression.</param>
-    private static void AppendFormEntryAdd(StringBuilder sb, in FormUnrollSite site, string indent, string keyExpr, string valueExpr) =>
+    private static void AppendFormEntryAdd(PooledStringBuilder sb, in FormUnrollSite site, string indent, string keyExpr, string valueExpr) =>
         _ = sb.Append(indent).Append(site.EntriesLocal).Append(".Add(").Append(site.KvpNew)
             .Append('(').Append(keyExpr).Append(", ").Append(valueExpr).AppendLine("));");
 
@@ -1015,13 +1020,11 @@ internal static partial class Emitter
     private static UniqueNameBuilder CreateMethodLocalNameBuilder(ImmutableEquatableArray<ParameterModel> parameters)
     {
         var builder = new UniqueNameBuilder();
-        var names = new List<string>(parameters.Count);
         foreach (var parameter in parameters)
         {
-            names.Add(parameter.MetadataName);
+            builder.Reserve(parameter.MetadataName);
         }
 
-        builder.Reserve(names);
         return builder;
     }
 

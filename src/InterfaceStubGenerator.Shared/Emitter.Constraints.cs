@@ -23,6 +23,12 @@ internal static partial class Emitter
         bool isOverrideOrExplicitImplementation,
         int indentationLevel)
     {
+        // The overwhelmingly common case is a non-generic method: skip the array allocation entirely.
+        if (typeParameters.Count == 0)
+        {
+            return string.Empty;
+        }
+
         var parts = new string[typeParameters.Count];
         var count = 0;
         for (var i = 0; i < typeParameters.Count; i++)

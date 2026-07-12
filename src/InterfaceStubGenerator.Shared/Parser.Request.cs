@@ -286,10 +286,9 @@ internal static partial class Parser
     {
         foreach (var attribute in attributes)
         {
-            var displayName = attribute.AttributeClass!.ToDisplayString();
-            if (displayName is
-                "Refit.MultipartAttribute" or
-                "Refit.QueryUriFormatAttribute")
+            var attributeClass = attribute.AttributeClass;
+            if (IsRefitAttribute(attributeClass, MultipartAttributeDisplayName)
+                || IsRefitAttribute(attributeClass, QueryUriFormatAttributeDisplayName))
             {
                 return true;
             }
@@ -326,7 +325,7 @@ internal static partial class Parser
     {
         foreach (var attribute in attributes)
         {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeadersAttribute")
+            if (!IsRefitAttribute(attribute.AttributeClass, HeadersAttributeDisplayName))
             {
                 continue;
             }
@@ -430,7 +429,7 @@ internal static partial class Parser
     /// <returns>The alias name or the declared parameter name.</returns>
     private static string ResolveUrlName(IParameterSymbol parameter)
     {
-        var aliasAttr = parameter.GetAttributes().FirstOrDefault(static a => a.AttributeClass?.ToDisplayString() == "Refit.AliasAsAttribute");
+        var aliasAttr = FindParameterAttribute(parameter, AliasAsAttributeDisplayName);
         return aliasAttr is not null ? GetFirstStringArgument(aliasAttr) ?? parameter.Name : parameter.Name;
     }
 
@@ -861,15 +860,26 @@ internal static partial class Parser
     /// <summary>Determines whether a type is <see cref="CancellationToken"/> or nullable <see cref="CancellationToken"/>.</summary>
     /// <param name="type">The type to inspect.</param>
     /// <returns><see langword="true"/> when the type is a cancellation token.</returns>
-    private static bool IsCancellationToken(ITypeSymbol type) =>
-        type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-        == "global::System.Threading.CancellationToken" || (type is INamedTypeSymbol
-                                                            {
-                                                                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
-                                                                TypeArguments.Length: 1
-                                                            } namedType
-                                                            && namedType.TypeArguments[0].ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-                                                            == "global::System.Threading.CancellationToken");
+    private static bool IsCancellationToken(ITypeSymbol type)
+    {
+        // Structural match instead of allocating a fully-qualified display string for every parameter.
+        if (type is INamedTypeSymbol
+            {
+                OriginalDefinition.SpecialType: SpecialType.System_Nullable_T,
+                TypeArguments: [var underlying]
+            })
+        {
+            type = underlying;
+        }
+
+        return type is
+        {
+            Name: "CancellationToken",
+            ContainingNamespace.Name: "Threading",
+            ContainingNamespace.ContainingNamespace.Name: "System",
+            ContainingNamespace.ContainingNamespace.ContainingNamespace.IsGlobalNamespace: true
+        };
+    }
 
     /// <summary>Tries to parse an explicitly attributed body parameter.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
@@ -885,7 +895,7 @@ internal static partial class Parser
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.BodyAttribute")
+            if (!IsRefitAttribute(attribute.AttributeClass, BodyAttributeDisplayName))
             {
                 continue;
             }
@@ -911,17 +921,9 @@ internal static partial class Parser
             return true;
         }
 
-        bodyParameter = new(
-            parameter.MetadataName,
-            parameterType,
-            null,
-            BuildParameterAttributes(parameter, context),
-            RequestParameterKind.Unsupported,
-            CanBeNull(parameter.Type, parameter.NullableAnnotation),
-            string.Empty,
-            string.Empty,
-            string.Empty,
-            BodyBufferMode.None);
+        // The caller only reads the out value on the true branch, so skip building a discarded
+        // Unsupported model (and its per-attribute BuildParameterAttributes allocations) here.
+        bodyParameter = null!;
         return false;
     }
 
@@ -939,7 +941,7 @@ internal static partial class Parser
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeaderAttribute")
+            if (!IsRefitAttribute(attribute.AttributeClass, HeaderAttributeDisplayName))
             {
                 continue;
             }
@@ -965,7 +967,7 @@ internal static partial class Parser
             return true;
         }
 
-        headerParameter = UnsupportedRequestParameter(parameter, parameterType, context);
+        headerParameter = null!;
         return false;
     }
 
@@ -983,7 +985,7 @@ internal static partial class Parser
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.HeaderCollectionAttribute")
+            if (!IsRefitAttribute(attribute.AttributeClass, HeaderCollectionAttributeDisplayName))
             {
                 continue;
             }
@@ -1004,11 +1006,11 @@ internal static partial class Parser
                 return true;
             }
 
-            headerCollectionParameter = UnsupportedRequestParameter(parameter, parameterType, context);
+            headerCollectionParameter = null!;
             return false;
         }
 
-        headerCollectionParameter = UnsupportedRequestParameter(parameter, parameterType, context);
+        headerCollectionParameter = null!;
         return false;
     }
 
@@ -1026,7 +1028,7 @@ internal static partial class Parser
     {
         foreach (var attribute in parameter.GetAttributes())
         {
-            if (attribute.AttributeClass!.ToDisplayString() != "Refit.PropertyAttribute")
+            if (!IsRefitAttribute(attribute.AttributeClass, PropertyAttributeDisplayName))
             {
                 continue;
             }
@@ -1049,7 +1051,7 @@ internal static partial class Parser
             return true;
         }
 
-        propertyParameter = UnsupportedRequestParameter(parameter, parameterType, context);
+        propertyParameter = null!;
         return false;
     }
 

@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 namespace Refit.Generator;
 
@@ -119,7 +118,7 @@ internal static partial class Emitter
         "CodeQuality",
         "S1541:Methods and properties should not be too complex",
         Justification = "A compact switch avoids a dictionary or repeated helper calls on the generator hot path.")]
-    internal static void AppendEscapedCharacter(StringBuilder builder, char character) =>
+    internal static void AppendEscapedCharacter(PooledStringBuilder builder, char character) =>
         _ = character switch
         {
             '\\' => builder.Append(@"\\"),

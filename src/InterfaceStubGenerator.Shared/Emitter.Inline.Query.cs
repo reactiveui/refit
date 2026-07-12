@@ -1,7 +1,6 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
-using System.Text;
 
 namespace Refit.Generator;
 
@@ -176,7 +175,7 @@ internal static partial class Emitter
         Dictionary<string, string> parameterInfoNames,
         in InlineValueEmission emission)
     {
-        var sb = new StringBuilder();
+        var sb = new PooledStringBuilder();
         foreach (var parameter in request.Parameters)
         {
             if (parameter.Query is not { } query)
@@ -230,7 +229,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendScalarQueryStatement(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
@@ -246,20 +245,43 @@ internal static partial class Emitter
             query,
             providerField,
             emission);
-        var appendCall = query.Shape == QueryParameterShape.Flag
-            ? $"{emission.QueryBuilderLocal}.AddFlag({valueExpression}, {ToLowerInvariantString(query.PreEncoded)});"
-            : $"{emission.QueryBuilderLocal}.Add({ToCSharpStringLiteral(query.Key)}, {valueExpression}, {ToLowerInvariantString(query.PreEncoded)});";
 
         if (parameter.CanBeNull)
         {
             _ = sb.Append(bodyIndent).Append(IfParameterPrefix).Append(parameter.Name).AppendLine(NotNullCheckSuffix)
                 .Append(bodyIndent).AppendLine("{")
-                .Append(bodyIndent).Append("    ").AppendLine(appendCall)
-                .Append(bodyIndent).AppendLine("}");
+                .Append(bodyIndent).Append("    ");
+            AppendScalarAddCall(sb, query, valueExpression, emission);
+            _ = sb.Append(bodyIndent).AppendLine("}");
             return;
         }
 
-        _ = sb.Append(bodyIndent).AppendLine(appendCall);
+        _ = sb.Append(bodyIndent);
+        AppendScalarAddCall(sb, query, valueExpression, emission);
+    }
+
+    /// <summary>Appends the query-builder add/addflag call for a scalar value, writing each piece straight into the
+    /// builder instead of composing an intermediate interpolated statement string.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="query">The query-binding metadata.</param>
+    /// <param name="valueExpression">The formatted value expression.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    private static void AppendScalarAddCall(
+        PooledStringBuilder sb,
+        QueryParameterModel query,
+        string valueExpression,
+        in InlineValueEmission emission)
+    {
+        _ = sb.Append(emission.QueryBuilderLocal);
+        if (query.Shape == QueryParameterShape.Flag)
+        {
+            _ = sb.Append(".AddFlag(").Append(valueExpression).Append(", ")
+                .Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
+            return;
+        }
+
+        _ = sb.Append(".Add(").Append(ToCSharpStringLiteral(query.Key)).Append(", ").Append(valueExpression)
+            .Append(", ").Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
     }
 
     /// <summary>Appends the statements emitting one collection-valued query parameter or flag set.</summary>
@@ -269,7 +291,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendCollectionQueryStatement(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
@@ -284,9 +306,6 @@ internal static partial class Emitter
             providerField,
             emission);
         var isFlag = query.Shape == QueryParameterShape.FlagCollection;
-        var elementCall = isFlag
-            ? $"{emission.QueryBuilderLocal}.AddFlag({elementExpression}, {ToLowerInvariantString(query.PreEncoded)});"
-            : $"{emission.QueryBuilderLocal}.AddCollectionValue({elementExpression});";
         var guarded = parameter.CanBeNull;
         var loopIndent = guarded ? bodyIndent + "    " : bodyIndent;
 
@@ -298,21 +317,39 @@ internal static partial class Emitter
 
         if (!isFlag)
         {
-            var collectionFormatExpression = query.CollectionFormatValue is { } collectionFormatValue
-                ? $"{CollectionFormatCast}{collectionFormatValue}"
-                : $"{emission.SettingsLocal}.CollectionFormat";
-            _ = sb.Append(loopIndent)
-                .AppendLine($"{emission.QueryBuilderLocal}.BeginCollection({ToCSharpStringLiteral(query.Key)}, {collectionFormatExpression}, {ToLowerInvariantString(query.PreEncoded)});");
+            // Write the BeginCollection call straight into the builder instead of composing interpolated fragments.
+            _ = sb.Append(loopIndent).Append(emission.QueryBuilderLocal).Append(".BeginCollection(")
+                .Append(ToCSharpStringLiteral(query.Key)).Append(", ");
+            if (query.CollectionFormatValue is { } collectionFormatValue)
+            {
+                _ = sb.Append(CollectionFormatCast).Append(collectionFormatValue);
+            }
+            else
+            {
+                _ = sb.Append(emission.SettingsLocal).Append(".CollectionFormat");
+            }
+
+            _ = sb.Append(", ").Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
         }
 
         _ = sb.Append(loopIndent).Append("foreach (var ").Append(emission.QueryValueLocal).Append(" in @").Append(parameter.Name).AppendLine(")")
             .Append(loopIndent).AppendLine("{")
-            .Append(loopIndent).Append("    ").AppendLine(elementCall)
-            .Append(loopIndent).AppendLine("}");
+            .Append(loopIndent).Append("    ").Append(emission.QueryBuilderLocal);
+        if (isFlag)
+        {
+            _ = sb.Append(".AddFlag(").Append(elementExpression).Append(", ")
+                .Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
+        }
+        else
+        {
+            _ = sb.Append(".AddCollectionValue(").Append(elementExpression).AppendLine(");");
+        }
+
+        _ = sb.Append(loopIndent).AppendLine("}");
 
         if (!isFlag)
         {
-            _ = sb.Append(loopIndent).AppendLine($"{emission.QueryBuilderLocal}.EndCollection();");
+            _ = sb.Append(loopIndent).Append(emission.QueryBuilderLocal).AppendLine(".EndCollection();");
         }
 
         if (!guarded)
@@ -329,7 +366,7 @@ internal static partial class Emitter
     /// <param name="query">The query-binding metadata.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendConverterQueryStatements(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
         in InlineValueEmission emission)
@@ -371,7 +408,7 @@ internal static partial class Emitter
     /// enclosing parameter's attributes and declared type.
     /// </remarks>
     private static void AppendDictionaryQueryStatements(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
@@ -432,7 +469,7 @@ internal static partial class Emitter
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="entry">The generated locals and indentation for the current entry.</param>
     private static void AppendDictionaryEntryStatements(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
@@ -481,7 +518,7 @@ internal static partial class Emitter
     /// the URL parameter formatter, which receives the enclosing <em>parameter's</em> attributes and declared type.
     /// </remarks>
     private static void AppendObjectQueryStatements(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryParameterModel query,
         string providerField,
@@ -520,7 +557,7 @@ internal static partial class Emitter
     /// <param name="scope">The access expression, parent key, delimiter, local suffix and indentation.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendObjectPropertyList(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         in QueryObjectContext context,
         ImmutableEquatableArray<QueryObjectPropertyModel> properties,
         in ObjectFlattenScope scope,
@@ -553,7 +590,7 @@ internal static partial class Emitter
     /// <param name="scope">The access expression and indentation for this nesting level.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendObjectLeafProperty(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
         in QueryPropertySite site,
@@ -589,7 +626,7 @@ internal static partial class Emitter
     /// <param name="scope">The access expression, delimiter, local suffix and indentation for this level.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendNestedObjectProperty(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
         ImmutableEquatableArray<QueryObjectPropertyModel> children,
@@ -678,7 +715,7 @@ internal static partial class Emitter
     /// bare <c>key=</c>, matching the reflection builder.
     /// </remarks>
     private static void AppendObjectQueryCollectionProperty(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
         QueryObjectCollectionModel collection,
@@ -725,7 +762,7 @@ internal static partial class Emitter
     /// <c>Indentation</c> set to the body indentation.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendCollectionPropertyBody(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         in QueryObjectContext context,
         QueryObjectPropertyModel property,
         QueryObjectCollectionModel collection,
@@ -805,7 +842,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendNullableObjectQueryProperty(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryObjectPropertyModel property,
         in QueryPropertySite site,
@@ -846,7 +883,7 @@ internal static partial class Emitter
     /// <param name="providerField">The cached attribute-provider field name.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendObjectQueryPropertyValue(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryObjectPropertyModel property,
         in QueryPropertySite site,
@@ -871,7 +908,7 @@ internal static partial class Emitter
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="fastExpression">The reflection-free expression, or null when the formatter must always run.</param>
     private static void AppendUnformattedObjectQueryProperty(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         in QueryPropertySite site,
         string providerField,
@@ -897,7 +934,7 @@ internal static partial class Emitter
     /// <param name="emission">The shared emission locals and helper state.</param>
     /// <param name="fastExpression">The reflection-free expression, or null when the formatter must always run.</param>
     private static void AppendFormattedObjectQueryProperty(
-        StringBuilder sb,
+        PooledStringBuilder sb,
         RequestParameterModel parameter,
         QueryObjectPropertyModel property,
         in QueryPropertySite site,
@@ -1096,7 +1133,7 @@ internal static partial class Emitter
     private static void AppendEnumFormatterSource(
         InlineValueFormatModel valueFormat,
         string helperName,
-        StringBuilder memberSb)
+        PooledStringBuilder memberSb)
     {
         var memberIndent = Indent(MethodMemberIndentation);
         var bodyIndent = Indent(MethodBodyIndentation);
@@ -1162,7 +1199,7 @@ internal static partial class Emitter
     private static void AppendConverterFieldSource(
         string converterTypeName,
         string fieldName,
-        StringBuilder memberSb)
+        PooledStringBuilder memberSb)
     {
         var memberIndent = Indent(MethodMemberIndentation);
         _ = memberSb.AppendLine()
@@ -1188,7 +1225,7 @@ internal static partial class Emitter
         string UseDefaultFormattingLocal,
         string UseDefaultFormFormattingLocal,
         EnumFormatterScope Scope,
-        StringBuilder MemberSource);
+        PooledStringBuilder MemberSource);
 
     /// <summary>The generated locals and indentation used to emit one flattened query-object property.</summary>
     /// <param name="ValueLocal">The local holding the property value.</param>

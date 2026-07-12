@@ -27,6 +27,8 @@ namespace Refit.Generator;
 /// <param name="ReturnTypeAdapterInterface">The <c>Refit.IReturnTypeAdapter`2</c> symbol, or null when Refit is unavailable.</param>
 /// <param name="ReturnTypeAdapters">The types implementing <c>IReturnTypeAdapter</c> discovered in the compilation.</param>
 /// <param name="ExternAliases">The per-interface collector recording the extern aliases used while qualifying its types.</param>
+/// <param name="AssemblyAliasCache">A pass-wide cache mapping an assembly symbol to its resolved extern alias (or null),
+/// shared across every interface so the extern-alias metadata-reference lookup runs once per assembly, not per type node.</param>
 internal sealed record InterfaceGenerationContext(
     List<Diagnostic> Diagnostics,
     string PreserveAttributeDisplayName,
@@ -42,4 +44,5 @@ internal sealed record InterfaceGenerationContext(
     CSharpCompilation? Compilation,
     INamedTypeSymbol? ReturnTypeAdapterInterface,
     INamedTypeSymbol[] ReturnTypeAdapters,
-    HashSet<string> ExternAliases);
+    HashSet<string> ExternAliases,
+    Dictionary<ISymbol, string?> AssemblyAliasCache);

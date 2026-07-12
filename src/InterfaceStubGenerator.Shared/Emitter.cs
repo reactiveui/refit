@@ -46,6 +46,9 @@ internal static partial class Emitter
     /// <summary>The number of spaces in one generated indentation level.</summary>
     private const int CharsPerIndentation = 4;
 
+    /// <summary>The highest indentation level kept in the shared <see cref="IndentCache"/>; deeper levels allocate.</summary>
+    private const int MaxCachedIndentLevel = 8;
+
     /// <summary>Indentation level for generated nested implementation classes.</summary>
     private const int ClassMemberIndentation = 2;
 
@@ -57,6 +60,12 @@ internal static partial class Emitter
 
     /// <summary>The generated attribute that identifies source produced by this generator.</summary>
     private static readonly string GeneratedCodeAttribute = BuildGeneratedCodeAttribute();
+
+    /// <summary>The cached indentation strings for the levels the emitter uses in its hot paths.</summary>
+    private static readonly string[] IndentCache = BuildIndentCache();
+
+    /// <summary>The XML metacharacters that force <see cref="ToXmlDocumentationText"/> onto its escaping path.</summary>
+    private static readonly char[] XmlEscapeChars = ['&', '<', '>'];
 
 #if NETSTANDARD2_0
     /// <summary>Delegate used to fill a generated string buffer.</summary>
@@ -184,7 +193,18 @@ internal static partial class Emitter
             enumFormatterScope);
         var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods, model.SupportsNullable);
         var disposableSource = BuildDisposableMethod(model.DisposeMethod);
-        var memberSource = propertySource + refitMethodSource + derivedRefitMethodSource + nonRefitMethodSource + disposableSource;
+
+        // Concatenate the five member blocks through a pooled buffer instead of a five-operand '+', which would
+        // allocate a params string[] for the String.Concat overload.
+        var memberSource = new PooledStringBuilder(
+                propertySource.Length + refitMethodSource.Length + derivedRefitMethodSource.Length
+                + nonRefitMethodSource.Length + disposableSource.Length)
+            .Append(propertySource)
+            .Append(refitMethodSource)
+            .Append(derivedRefitMethodSource)
+            .Append(nonRefitMethodSource)
+            .Append(disposableSource)
+            .ToString();
         var typeParameterDocs = BuildTypeParameterDocumentation(model.Constraints, ClassMemberIndentation);
         var generatedCodeAttribute = GeneratedCodeAttribute;
         var settingsConstructorSource = BuildSettingsConstructor(model, settingsFieldName);
@@ -257,7 +277,14 @@ internal static partial class Emitter
     /// <returns>The escaped XML documentation text.</returns>
     private static string ToXmlDocumentationText(string value)
     {
-        var builder = new StringBuilder(value.Length);
+        // Most identifiers and type names contain none of the XML metacharacters, so return them untouched
+        // instead of allocating a builder and copying character by character.
+        if (value.IndexOfAny(XmlEscapeChars) < 0)
+        {
+            return value;
+        }
+
+        var builder = new PooledStringBuilder(value.Length);
         foreach (var c in value)
         {
             switch (c)
@@ -301,7 +328,7 @@ internal static partial class Emitter
             return string.Empty;
         }
 
-        var builder = new StringBuilder();
+        var builder = new PooledStringBuilder();
         foreach (var alias in aliases)
         {
             _ = builder.Append("extern alias ").Append(alias).AppendLine(";");
@@ -563,7 +590,14 @@ internal static partial class Emitter
     /// <returns>The escaped C# string literal.</returns>
     private static string ToCSharpStringLiteral(string value)
     {
-        var builder = new StringBuilder(value.Length + StringLiteralQuoteLength);
+        // The vast majority of emitted literals (query keys, header names, paths) need no escaping, so wrap them in
+        // quotes with a single concat instead of allocating a builder and appending each character.
+        if (!NeedsCSharpEscaping(value))
+        {
+            return "\"" + value + "\"";
+        }
+
+        var builder = new PooledStringBuilder(value.Length + StringLiteralQuoteLength);
         _ = builder.Append('"');
         foreach (var c in value)
         {
@@ -572,6 +606,22 @@ internal static partial class Emitter
 
         _ = builder.Append('"');
         return builder.ToString();
+    }
+
+    /// <summary>Determines whether any character in a value requires C# string-literal escaping.</summary>
+    /// <param name="value">The value to inspect.</param>
+    /// <returns><see langword="true"/> when at least one character needs an escape sequence.</returns>
+    private static bool NeedsCSharpEscaping(string value)
+    {
+        foreach (var c in value)
+        {
+            if (EscapeSequence(c) is not null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Builds the <c>object[]</c> literal that holds the method's argument values.</summary>
@@ -902,7 +952,25 @@ internal static partial class Emitter
     /// <summary>Builds a generated indentation string.</summary>
     /// <param name="level">The indentation level.</param>
     /// <returns>The generated indentation.</returns>
-    private static string Indent(int level) => new(' ', level * CharsPerIndentation);
+    /// <remarks>Indentation levels are compile-time constants, so the common levels are cached once and shared
+    /// instead of allocating an identical fresh string at every per-method and per-parameter call site.</remarks>
+    private static string Indent(int level) =>
+        (uint)level < (uint)IndentCache.Length
+            ? IndentCache[level]
+            : new string(' ', level * CharsPerIndentation);
+
+    /// <summary>Precomputes the shared indentation strings for levels 0 through <see cref="MaxCachedIndentLevel"/>.</summary>
+    /// <returns>The cached indentation strings, indexed by level.</returns>
+    private static string[] BuildIndentCache()
+    {
+        var cache = new string[MaxCachedIndentLevel + 1];
+        for (var level = 0; level <= MaxCachedIndentLevel; level++)
+        {
+            cache[level] = new(' ', level * CharsPerIndentation);
+        }
+
+        return cache;
+    }
 
 #if NETSTANDARD2_0
     /// <summary>Writes a C# string literal or the <c>null</c> keyword into a generated string buffer.</summary>

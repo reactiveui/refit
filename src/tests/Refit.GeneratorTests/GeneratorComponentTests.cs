@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -207,7 +206,7 @@ public static class GeneratorComponentTests
         [Test]
         public async Task AppendEscapedCharacter_HandlesSpecialCharacters()
         {
-            var builder = new StringBuilder();
+            var builder = new PooledStringBuilder();
 
             foreach (var value in new[] { '\\', '"', '\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\u0085', '\u2028', '\u2029', 'x' })
             {
