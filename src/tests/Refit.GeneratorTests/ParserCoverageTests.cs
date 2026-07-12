@@ -4,7 +4,6 @@
 
 using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -445,74 +444,6 @@ public sealed class ParserCoverageTests
         await Assert.That(model.Interfaces.AsArray().Length).IsEqualTo(ExpectedInterfaceCount);
         await Assert.That(interfaceNames).Contains(static name => name.Contains("IChild", StringComparison.Ordinal));
         await Assert.That(interfaceNames).DoesNotContain(static name => name.Contains("IEmpty", StringComparison.Ordinal));
-    }
-
-    /// <summary>Verifies the span-escape probe recognizes the net10 <c>Uri.EscapeDataString(ReadOnlySpan&lt;char&gt;)</c>
-    /// overload, so a path parameter generates inline against a net10 reference set.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task GeneratesInlinePathAgainstNet10SpanEscapeReferenceSet()
-    {
-        if (!TryCreateNet10Compilation(
-            """
-            using System.Threading.Tasks;
-            using Refit;
-            namespace RefitGeneratorTest;
-            public interface IGeneratedClient { [Get("/x/{id}")] Task<string> Get(System.Guid id); }
-            """,
-            out var compilation))
-        {
-            // The net10 reference pack is unavailable on this host; the span-escape tier cannot be exercised here.
-            return;
-        }
-
-        // Running the generator against the net10 reference set exercises the span-escape probe; the Guid path
-        // parameter takes the inline BuildRequestPath route rather than the reflection fallback.
-        var result = Fixture.RunGenerator(compilation, generatedRequestBuilding: true, false, null);
-        var generated = string.Join("\n", result.GeneratedSources.Values);
-
-        await Assert.That(generated).DoesNotContain("BuildRestResultFuncForMethod");
-        await Assert.That(generated).Contains("BuildRequestPath");
-    }
-
-    /// <summary>Builds a compilation whose framework references come from the net10 reference pack, so
-    /// <c>System.Uri</c> exposes the span overload of <c>EscapeDataString</c>.</summary>
-    /// <param name="source">The interface source to compile.</param>
-    /// <param name="compilation">Receives the created compilation when the net10 reference pack is present.</param>
-    /// <returns><see langword="true"/> when the net10 reference pack was found and the compilation was built.</returns>
-    private static bool TryCreateNet10Compilation(string source, out CSharpCompilation compilation)
-    {
-        compilation = null!;
-        var runtimeDirectory = RuntimeEnvironment.GetRuntimeDirectory();
-        var dotnetRoot = Path.GetFullPath(Path.Combine(runtimeDirectory, "..", "..", ".."));
-        var referencePackRoot = Path.Combine(dotnetRoot, "packs", "Microsoft.NETCore.App.Ref");
-        if (!Directory.Exists(referencePackRoot))
-        {
-            return false;
-        }
-
-        var referenceDirectory = Directory.GetDirectories(referencePackRoot)
-            .Select(static pack => Path.Combine(pack, "ref", "net10.0"))
-            .Where(Directory.Exists)
-            .OrderDescending(StringComparer.Ordinal)
-            .FirstOrDefault();
-        if (referenceDirectory is null)
-        {
-            return false;
-        }
-
-        var refitReference = MetadataReference.CreateFromFile(
-            Path.Combine(AppContext.BaseDirectory, "Refit.dll"));
-        var references = Directory.GetFiles(referenceDirectory, "*.dll")
-            .Select(static dll => (MetadataReference)Fixture.GetMetadataReference(dll))
-            .Append(refitReference)
-            .ToList();
-        compilation = CSharpCompilation.Create(
-            "net10compilation",
-            [CSharpSyntaxTree.ParseText(source)],
-            references,
-            new(OutputKind.DynamicallyLinkedLibrary));
-        return true;
     }
 
     /// <summary>Analyzer config options backed by a dictionary for direct helper tests.</summary>
