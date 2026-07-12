@@ -58,4 +58,8 @@ internal sealed record RequestParameterModel(
     /// <see langword="null"/>. When set, the parameter contributes no direct path value; each binding fills its own
     /// placeholder with a formatted property value.</summary>
     public ImmutableEquatableArray<PathObjectBindingModel>? PathObjectBindings { get; init; }
+
+    /// <summary>Gets the multipart part descriptor when this parameter contributes a <c>[Multipart]</c> form part —
+    /// set for <see cref="RequestParameterKind.MultipartPart"/> parameters and <see langword="null"/> otherwise.</summary>
+    public MultipartPartModel? MultipartPart { get; init; }
 }

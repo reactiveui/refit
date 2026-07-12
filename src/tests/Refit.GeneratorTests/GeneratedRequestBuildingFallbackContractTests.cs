@@ -34,6 +34,7 @@ public sealed class GeneratedRequestBuildingFallbackContractTests
     [Arguments("[Get(\"/values\")] Task<T> GetValue<T>();", "GetValue")]
     [Arguments("[Post(\"/echo\")] Task<T> Echo<T>([Body] T payload);", "Echo")]
     [Arguments("[Get(\"/cal/{**rest}\")] Task<string> RoundTrip(string rest);", "RoundTrip")]
+    [Arguments("[Multipart][Post(\"/upload\")] Task<string> Upload([AliasAs(\"file\")] StreamPart stream);", "Upload")]
     public Task InlineMethodsAreNotFlagged(string body, string methodName) =>
         AssertGeneratorAndAnalyzerAgree(body, methodName, expectedFallback: false);
 
@@ -44,7 +45,7 @@ public sealed class GeneratedRequestBuildingFallbackContractTests
     [Test]
     [Arguments("[Get(\"/query-map\")] Task<string> Search(object filters);", "Search")]
     [Arguments("[Post(\"/form\")] Task<string> PostForm<T>([Body(BodySerializationMethod.UrlEncoded)] T form);", "PostForm")]
-    [Arguments("[Multipart][Post(\"/upload\")] Task<string> Upload([AliasAs(\"file\")] StreamPart stream);", "Upload")]
+    [Arguments("[Multipart][Post(\"/upload\")] Task<string> Upload(object payload);", "Upload")]
     [Arguments("[Get(\"/stream\")] IObservable<string> Observe();", "Observe")]
     public Task FallbackMethodsAreFlagged(string body, string methodName) =>
         AssertGeneratorAndAnalyzerAgree(body, methodName, expectedFallback: true);

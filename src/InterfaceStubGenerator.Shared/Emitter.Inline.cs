@@ -178,9 +178,17 @@ internal static partial class Emitter
             uniqueNames,
             interfaceModel.SupportsNullable,
             interfaceModel.SupportsStaticLambdas);
+
+        // A multipart method builds a MultipartFormDataContent from its parts; every other method has at most one body
+        // parameter (a multipart method never carries one), so the two paths never both apply.
         var contentSource = bodyParameter is null
             ? string.Empty
             : BuildInlineContent(bodyParameter, requestLocal, settingsLocal, formFieldsFieldName, interfaceModel.SupportsNullable, emission, locals);
+        if (request.IsMultipart)
+        {
+            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, locals);
+        }
+
         var headerSource = BuildInlineHeaders(request, requestLocal);
         var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
         var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal, adapterTokenLocal);

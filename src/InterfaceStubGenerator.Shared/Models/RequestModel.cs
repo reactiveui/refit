@@ -40,4 +40,13 @@ internal sealed record RequestModel(
         null,
         ImmutableEquatableArray<HeaderModel>.Empty,
         ImmutableEquatableArray<RequestParameterModel>.Empty);
+
+    /// <summary>Gets a value indicating whether the method is a <c>[Multipart]</c> request whose form parts are
+    /// constructed inline. When set, the generated method builds a <c>MultipartFormDataContent</c> as the request body
+    /// instead of following the normal single-body path.</summary>
+    public bool IsMultipart { get; init; }
+
+    /// <summary>Gets the multipart boundary text, used only when <see cref="IsMultipart"/> is set. Mirrors the
+    /// reflection builder's boundary selection: the <c>[Multipart(boundary)]</c> argument, or the attribute default.</summary>
+    public string MultipartBoundary { get; init; } = string.Empty;
 }

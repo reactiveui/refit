@@ -28,5 +28,8 @@ internal enum RequestParameterKind
     Path,
 
     /// <summary>The parameter supplies one or more query string values or flags.</summary>
-    Query
+    Query,
+
+    /// <summary>The parameter supplies one (or, for an enumerable, each) part of a multipart form body.</summary>
+    MultipartPart
 }

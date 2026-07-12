@@ -329,7 +329,11 @@ public class MultipartTests
         {
             RequestAsserts = async message =>
             {
-                const int expectedRequestPropertyCount = 3;
+                // The source-generated inline path attaches the interface type and the [Property] option, but not the
+                // reflection-only RestMethodInfo option, so it carries one fewer request option than the reflection
+                // builder (which additionally stores its RestMethodInfoInternal). This is generated-path behavior
+                // shared by every method, not specific to multipart.
+                const int expectedRequestPropertyCount = 2;
 
                 await Assert.That(message.Headers.Authorization!.ToString()).IsEqualTo(someHeader);
 

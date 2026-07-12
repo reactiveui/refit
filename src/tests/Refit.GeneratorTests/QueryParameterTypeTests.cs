@@ -517,7 +517,7 @@ public sealed class QueryParameterTypeTests
     [Test]
     [Arguments("[Get(\"/i\")] IObservable<string> Get([QueryName] string flag);")]
     [Arguments("[Get(\"/i/{**rest}\")] Task<string> Get([Encoded] int rest);")]
-    [Arguments("[Multipart][Post(\"/i\")] Task<string> Post([QueryName] string flag);")]
+    [Arguments("[Multipart][Post(\"/i\")] Task<string> Post([QueryName] string flag, object payload);")]
     public async Task SourceGenOnlyAttributeOnFallbackMethodReportsError(string body)
     {
         var result = Fixture.RunGenerator(BuildSource(body), generatedRequestBuilding: true);

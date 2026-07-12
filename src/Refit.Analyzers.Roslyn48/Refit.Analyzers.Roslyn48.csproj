@@ -34,6 +34,7 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Path.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Body.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Query.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Multipart.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Helpers.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.InlineEligibility.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\DiagnosticDescriptors.cs" LinkBase="InterfaceStubGenerator.Shared"/>
@@ -62,6 +63,8 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\RequestModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\RequestParameterKind.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\RequestParameterModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\MultipartPartKind.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Models\MultipartPartModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\PathObjectBindingModel.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Models\ReturnTypeInfo.cs" LinkBase="InterfaceStubGenerator.Shared\Models"/>
   </ItemGroup>

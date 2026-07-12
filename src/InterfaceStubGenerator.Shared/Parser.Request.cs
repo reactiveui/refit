@@ -54,15 +54,20 @@ internal static partial class Parser
         var returnTypes = GetRequestReturnTypes(resultTypeSource, context);
         var unsupportedMetadata = HasUnsupportedInlineRequestMetadata(methodSymbol);
 
-        // Only POST/PUT/PATCH carry an implicit body, and multipart methods never do; the multipart case is
-        // covered because multipart methods carry unsupported metadata and fall back wholly.
-        var allowImplicitBody = !unsupportedMetadata && IsBodyCapableHttpMethod(httpMethod);
+        // A multipart method builds its parts inline; each part parameter is classified into a
+        // MultipartFormDataContent entry instead of feeding the query string or an implicit body.
+        var multipartBoundary = ResolveMultipartBoundary(methodSymbol, out var isMultipart);
+
+        // Only POST/PUT/PATCH carry an implicit body, and a multipart method never does — every un-attributed
+        // complex parameter is a form part rather than the request body.
+        var allowImplicitBody = !unsupportedMetadata && IsBodyCapableHttpMethod(httpMethod) && !isMultipart;
 
         var parameters = ParseRequestParameters(
             methodSymbol.Parameters,
             pathParameters,
             context.FormattableSymbol,
             allowImplicitBody,
+            isMultipart,
             context,
             out var parameterEligibility);
         var staticHeaders = ParseStaticHeaders(methodSymbol);
@@ -78,7 +83,8 @@ internal static partial class Parser
             httpMethod,
             new(path, normalizedPath),
             parameters,
-            unsupportedMetadata);
+            unsupportedMetadata,
+            isMultipart);
 
         if (!canGenerateInline)
         {
@@ -95,7 +101,11 @@ internal static partial class Parser
             canGenerateInline,
             canGenerateInline ? adapterTypeExpression : null,
             staticHeaders,
-            parameters);
+            parameters)
+        {
+            IsMultipart = isMultipart,
+            MultipartBoundary = multipartBoundary,
+        };
     }
 
     /// <summary>Reports an error when a method uses a source-generation-only attribute but cannot generate inline.</summary>
@@ -139,6 +149,7 @@ internal static partial class Parser
     /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
     /// <param name="parameters">The parsed request parameter models.</param>
     /// <param name="unsupportedMetadata">Whether the method carries metadata the inline emitter does not handle.</param>
+    /// <param name="isMultipart">Whether the method is multipart, which cannot also carry an explicit <c>[Body]</c>.</param>
     /// <returns><see langword="true"/> when the request is inline-eligible.</returns>
     /// <remarks>
     /// Generic methods are inline-eligible: a type parameter flows straight through to the generic runner
@@ -152,14 +163,19 @@ internal static partial class Parser
         string httpMethod,
         in RequestPathForms path,
         ImmutableEquatableArray<RequestParameterModel> parameters,
-        bool unsupportedMetadata) =>
+        bool unsupportedMetadata,
+        bool isMultipart) =>
         parameterEligibility
         && returnShapeEligible
         && httpMethod.Length > 0
         && IsPathSupported(path.Raw)
         && IsPathSupported(path.Normalized)
         && IsSupportedInlineBody(parameters)
-        && !unsupportedMetadata;
+        && !unsupportedMetadata
+
+        // A multipart method with an explicit [Body] is an invalid combination the reflection builder rejects; fall
+        // back so its validation still throws instead of emitting a non-multipart body request.
+        && (!isMultipart || !HasBodyParameter(parameters));
 
     /// <summary>Extracts the path parameter placeholder names and their locations from a URL template.</summary>
     /// <param name="path">The normalized path template.</param>
@@ -289,9 +305,9 @@ internal static partial class Parser
     {
         foreach (var attribute in attributes)
         {
-            var attributeClass = attribute.AttributeClass;
-            if (IsRefitAttribute(attributeClass, MultipartAttributeDisplayName)
-                || IsRefitAttribute(attributeClass, QueryUriFormatAttributeDisplayName))
+            // [Multipart] is no longer unsupported: its parts are classified and emitted inline. [QueryUriFormat]
+            // still forces the reflection request builder.
+            if (IsRefitAttribute(attribute.AttributeClass, QueryUriFormatAttributeDisplayName))
             {
                 return true;
             }
@@ -365,6 +381,7 @@ internal static partial class Parser
     /// <param name="parameterLocations">The placeholder names in the URL with their locations.</param>
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol used to classify inline-eligible path parameter types, or null when unavailable.</param>
     /// <param name="allowImplicitBody">Whether an un-attributed complex parameter becomes the implicit request body.</param>
+    /// <param name="isMultipart">Whether the method is multipart, so un-attributed parameters become form parts.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <param name="canGenerateInline">Receives whether every parameter is supported.</param>
     /// <returns>The parsed request parameter models.</returns>
@@ -373,6 +390,7 @@ internal static partial class Parser
         Dictionary<string, List<Range>> parameterLocations,
         INamedTypeSymbol? formattableSymbol,
         bool allowImplicitBody,
+        bool isMultipart,
         InterfaceGenerationContext context,
         out bool canGenerateInline)
     {
@@ -410,6 +428,7 @@ internal static partial class Parser
                 parameterLocations,
                 formattableSymbol,
                 implicitBodyEligible,
+                isMultipart,
                 context);
             var parsedParameter = ParseRequestParameter(parameter, classification, ref implicitBodyAssigned);
             requestParameters[i] = parsedParameter.Parameter;
@@ -667,6 +686,13 @@ internal static partial class Parser
                 0,
                 0,
                 0);
+        }
+
+        // In a multipart method every remaining parameter is a form part unless it carries [Query]; this replaces
+        // the implicit-body and auto-query classification the non-multipart path applies below.
+        if (context.IsMultipart)
+        {
+            return ClassifyMultipartParameter(parameter, parameterType, context);
         }
 
         if (HasParameterAttribute(parameter, QueryNameAttributeDisplayName))
@@ -1363,6 +1389,7 @@ internal static partial class Parser
     /// <param name="ParameterLocations">All placeholder names in the URL, used to detect dotted property bindings.</param>
     /// <param name="FormattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <param name="ImplicitBodyEligible">Whether an un-attributed complex parameter becomes the implicit request body.</param>
+    /// <param name="IsMultipart">Whether the method is multipart, so an un-attributed parameter becomes a form part.</param>
     /// <param name="Generation">The interface generation context, carrying the extern-alias collector for type qualification.</param>
     private readonly record struct LooseParameterContext(
         string UrlName,
@@ -1371,6 +1398,7 @@ internal static partial class Parser
         Dictionary<string, List<Range>> ParameterLocations,
         INamedTypeSymbol? FormattableSymbol,
         bool ImplicitBodyEligible,
+        bool IsMultipart,
         InterfaceGenerationContext Generation);
 
     /// <summary>Parsed request parameter data plus duplicate-detection counters.</summary>

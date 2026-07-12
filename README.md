@@ -202,6 +202,9 @@ This cuts runtime reflection, metadata lookup, argument boxing, and delegate con
 * dynamic `[Header]` parameters
 * `[HeaderCollection]` dictionaries
 * `[Body]` content
+* `[Multipart]` form uploads whose parts are `StreamPart`/`ByteArrayPart`/`FileInfoPart` (or a `MultipartItem` subclass),
+  `Stream`, `string`, `FileInfo`, `byte[]`, `HttpContent`, a date/time or `Guid` value, or an enumerable of these (an
+  object part serialized through the content serializer still falls back to the runtime builder)
 * `[Property]` parameters
 * `[Property]` interface properties
 * cancellation tokens

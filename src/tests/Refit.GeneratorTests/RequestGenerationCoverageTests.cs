@@ -328,10 +328,10 @@ public sealed class RequestGenerationCoverageTests
         await Assert.That(generated).Contains("AliasAsAttribute(null)");
     }
 
-    /// <summary>Verifies a method carrying an unsupported multipart attribute falls back to the reflective builder.</summary>
+    /// <summary>Verifies a multipart method with statically-dispatchable parts builds its content inline.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task MultipartMethodFallsBack()
+    public async Task MultipartMethodGeneratesInline()
     {
         const string Source =
             """
@@ -346,6 +346,34 @@ public sealed class RequestGenerationCoverageTests
                 [Multipart]
                 [Post("/upload")]
                 Task<string> Upload([AliasAs("file")] IEnumerable<StreamPart> streams);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("new global::System.Net.Http.MultipartFormDataContent(\"----MyGreatBoundary\")");
+    }
+
+    /// <summary>Verifies a multipart method with an <c>object</c>-typed part still falls back to the reflective builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartMethodWithObjectPartFallsBack()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Multipart]
+                [Post("/upload")]
+                Task<string> Upload(object payload);
             }
             """;
 

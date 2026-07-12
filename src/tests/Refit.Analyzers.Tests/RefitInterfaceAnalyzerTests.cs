@@ -192,7 +192,7 @@ public sealed class RefitInterfaceAnalyzerTests
     [Arguments("""
         [Multipart]
         [Post("/upload")]
-        Task<string> Upload([AliasAs("file")] StreamPart stream);
+        Task<string> Upload(object payload);
         """)]
     [Arguments("""
         [Get("/stream")]
@@ -236,6 +236,10 @@ public sealed class RefitInterfaceAnalyzerTests
 
             [Post("/echo")]
             Task<T> Echo<T>([Body] T payload);
+
+            [Multipart]
+            [Post("/upload")]
+            Task<string> Upload([AliasAs("file")] StreamPart stream);
             """);
 
         await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
