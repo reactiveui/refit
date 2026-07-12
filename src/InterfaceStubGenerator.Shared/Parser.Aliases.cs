@@ -84,7 +84,7 @@ internal static partial class Parser
     /// <param name="type">The type to qualify.</param>
     /// <param name="context">The generation context, whose extern-alias collector records the aliases used.</param>
     /// <returns>The fully-qualified type name.</returns>
-    private static string QualifyType(ITypeSymbol type, in InterfaceGenerationContext context) =>
+    private static string QualifyType(ITypeSymbol type, InterfaceGenerationContext context) =>
 
         // The common case is no aliased type at all: Roslyn's own fully-qualified rendering is exactly right.
         ContainsAliasedType(type, context.Compilation)
@@ -95,7 +95,7 @@ internal static partial class Parser
     /// <param name="type">The type to render.</param>
     /// <param name="context">The generation context, whose extern-alias collector records the aliases used.</param>
     /// <returns>The rendered type name.</returns>
-    private static string AliasedDisplay(ITypeSymbol type, in InterfaceGenerationContext context) =>
+    private static string AliasedDisplay(ITypeSymbol type, InterfaceGenerationContext context) =>
         type switch
         {
             IArrayTypeSymbol array => AliasedDisplay(array.ElementType, context) + "[]",
@@ -109,7 +109,7 @@ internal static partial class Parser
     /// <param name="named">The named type to render.</param>
     /// <param name="context">The generation context, whose extern-alias collector records the aliases used.</param>
     /// <returns>The rendered type name.</returns>
-    private static string AliasedNamedDisplay(INamedTypeSymbol named, in InterfaceGenerationContext context)
+    private static string AliasedNamedDisplay(INamedTypeSymbol named, InterfaceGenerationContext context)
     {
         var alias = GetExternAlias(named, context.Compilation);
         if (alias is not null)

@@ -508,6 +508,6 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         INamedTypeSymbol DisposableInterface,
         INamedTypeSymbol? FormattableInterface,
         INamedTypeSymbol? ReturnTypeAdapterInterface,
-        IReadOnlyList<INamedTypeSymbol> ReturnTypeAdapters,
+        INamedTypeSymbol[] ReturnTypeAdapters,
         bool ReportGeneratedRequestBuildingFallback);
 }

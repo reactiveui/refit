@@ -103,7 +103,7 @@ internal static partial class Parser
         IParameterSymbol parameter,
         string urlName,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         out QueryParameterModel? query)
     {
         var data = ParseParameterQueryData(parameter);
@@ -197,7 +197,7 @@ internal static partial class Parser
         QueryFormData data,
         string? format,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context) =>
+        InterfaceGenerationContext context) =>
         TryGetEnumerableElementType(type, out var elementType) && IsSimpleType(elementType!, formattableSymbol)
             ? new(
                 urlName,
@@ -223,7 +223,7 @@ internal static partial class Parser
         QueryFormData data,
         bool preEncoded,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         // The converter type is the sole typeof(...) constructor argument.
         if (converterAttribute.ConstructorArguments.IsEmpty
@@ -266,7 +266,7 @@ internal static partial class Parser
         string? format,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context) =>
+        InterfaceGenerationContext context) =>
         !TryGetDictionaryTypes(type, out var keyType, out var valueType)
         || !IsSimpleType(keyType!, formattableSymbol)
         || !IsSimpleType(valueType!, formattableSymbol)
@@ -354,7 +354,7 @@ internal static partial class Parser
         ITypeSymbol type,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context) =>
+        InterfaceGenerationContext context) =>
         TryBuildQueryObjectProperties(
             type,
             parameterPrefixSegment,
@@ -375,7 +375,7 @@ internal static partial class Parser
         ITypeSymbol type,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         ImmutableHashSet<ITypeSymbol> ancestors,
         int depth)
     {
@@ -510,7 +510,7 @@ internal static partial class Parser
         IPropertySymbol property,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         ImmutableHashSet<ITypeSymbol> ancestors,
         int depth)
     {
@@ -582,7 +582,7 @@ internal static partial class Parser
         string? normalizedPrefix,
         QueryFormData query,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         if (!TryGetEnumerableElementType(property.Type, out var elementType)
             || !IsSimpleType(elementType!, formattableSymbol))
@@ -615,7 +615,7 @@ internal static partial class Parser
     private static QueryParameterModel? TryBuildFlagModel(
         IParameterSymbol parameter,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var data = ParseParameterQueryData(parameter);
         var preEncoded = HasParameterAttribute(parameter, EncodedAttributeDisplayName);
@@ -658,7 +658,7 @@ internal static partial class Parser
         ITypeSymbol type,
         string? format,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var isNullableValueType = false;
         if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullable)
@@ -713,7 +713,7 @@ internal static partial class Parser
         ITypeSymbol type,
         string? format,
         bool isNullableValueType,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var urlSafe = context.SpanFormattableSymbol is not null
             && !isNullableValueType

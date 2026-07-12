@@ -26,8 +26,8 @@ internal static partial class Parser
     /// <param name="compilation">The compilation whose source assembly is scanned.</param>
     /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol, or null.</param>
     /// <param name="cancellationToken">A token to observe while scanning.</param>
-    /// <returns>The adapter type definitions, or an empty list when none exist.</returns>
-    internal static IReadOnlyList<INamedTypeSymbol> DiscoverReturnTypeAdapters(
+    /// <returns>The adapter type definitions, or an empty array when none exist.</returns>
+    internal static INamedTypeSymbol[] DiscoverReturnTypeAdapters(
         Compilation compilation,
         INamedTypeSymbol? adapterInterface,
         CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ internal static partial class Parser
 
         var adapters = new List<INamedTypeSymbol>();
         CollectReturnTypeAdapters(compilation.Assembly.GlobalNamespace, adapterInterface, adapters, cancellationToken);
-        return adapters;
+        return [.. adapters];
     }
 
     /// <summary>Recursively collects types implementing <c>IReturnTypeAdapter</c> from a namespace.</summary>
@@ -103,7 +103,7 @@ internal static partial class Parser
     /// <returns><see langword="true"/> when a discovered adapter surfaces the return type; otherwise <see langword="false"/>.</returns>
     private static bool TryMatchReturnTypeAdapter(
         ITypeSymbol returnType,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         out INamedTypeSymbol closedAdapter,
         out ITypeSymbol resultType)
     {
@@ -112,7 +112,7 @@ internal static partial class Parser
 
         var adapterInterface = context.ReturnTypeAdapterInterface;
         if (adapterInterface is null
-            || context.ReturnTypeAdapters.Count == 0
+            || context.ReturnTypeAdapters.Length == 0
             || returnType is not INamedTypeSymbol namedReturn)
         {
             return false;

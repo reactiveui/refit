@@ -16,7 +16,7 @@ internal static partial class Parser
     /// <returns>The field descriptors, or <see langword="null"/> when the type is not eligible for the descriptor path.</returns>
     private static ImmutableEquatableArray<FormFieldModel>? TryBuildFormFields(
         ITypeSymbol bodyType,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         if (!IsFormFieldEligibleType(bodyType))
         {
@@ -92,7 +92,7 @@ internal static partial class Parser
     /// <param name="property">The property to describe.</param>
     /// <param name="context">The interface generation context, used to classify the scalar fast path.</param>
     /// <returns>The field descriptor.</returns>
-    private static FormFieldModel BuildFormFieldModel(IPropertySymbol property, in InterfaceGenerationContext context)
+    private static FormFieldModel BuildFormFieldModel(IPropertySymbol property, InterfaceGenerationContext context)
     {
         string? aliasName = null;
         string? jsonName = null;

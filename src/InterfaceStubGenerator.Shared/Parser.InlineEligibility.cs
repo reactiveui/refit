@@ -2,7 +2,6 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
-using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
 namespace Refit.Generator;
@@ -39,7 +38,7 @@ internal static partial class Parser
         INamedTypeSymbol httpMethodBaseAttributeSymbol,
         INamedTypeSymbol? formattableSymbol,
         INamedTypeSymbol? returnTypeAdapterInterface,
-        IReadOnlyList<INamedTypeSymbol> returnTypeAdapters)
+        INamedTypeSymbol[] returnTypeAdapters)
     {
         if (FindHttpMethodAttribute(methodSymbol, httpMethodBaseAttributeSymbol) is null)
         {

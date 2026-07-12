@@ -21,7 +21,7 @@ internal static partial class Parser
     private static RequestModel ParseRequest(
         IMethodSymbol methodSymbol,
         ReturnTypeInfo returnTypeInfo,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         if (!context.GeneratedRequestBuilding)
         {
@@ -100,7 +100,7 @@ internal static partial class Parser
     /// <param name="context">The shared generation context.</param>
     private static void ReportSourceGenOnlyAttributeMisuse(
         IMethodSymbol methodSymbol,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         foreach (var parameter in methodSymbol.Parameters)
         {
@@ -371,7 +371,7 @@ internal static partial class Parser
         Dictionary<string, List<Range>> parameterLocations,
         INamedTypeSymbol? formattableSymbol,
         bool allowImplicitBody,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         out bool canGenerateInline)
     {
         if (parameters.IsEmpty)
@@ -507,7 +507,7 @@ internal static partial class Parser
         IParameterSymbol parameter,
         string parameterType,
         ImmutableEquatableArray<Range>? locations,
-        in InterfaceGenerationContext context) =>
+        InterfaceGenerationContext context) =>
         new(
             new(
                 parameter.MetadataName,
@@ -650,7 +650,7 @@ internal static partial class Parser
     private static ParsedRequestParameter ClaimImplicitBody(
         IParameterSymbol parameter,
         string parameterType,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         ref bool implicitBodyAssigned)
     {
         if (implicitBodyAssigned)
@@ -675,7 +675,7 @@ internal static partial class Parser
         string parameterType,
         string urlName,
         INamedTypeSymbol? formattableSymbol,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         RequestParameterModel propertyParameter)
     {
         if (!HasParameterAttribute(parameter, QueryAttributeDisplayName))
@@ -699,7 +699,7 @@ internal static partial class Parser
         IParameterSymbol parameter,
         string parameterType,
         QueryParameterModel query,
-        in InterfaceGenerationContext context) =>
+        InterfaceGenerationContext context) =>
         new(
             parameter.MetadataName,
             parameterType,
@@ -723,7 +723,7 @@ internal static partial class Parser
     private static RequestParameterModel ImplicitBodyRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
-        in InterfaceGenerationContext context) =>
+        InterfaceGenerationContext context) =>
         new(
             parameter.MetadataName,
             parameterType,
@@ -880,7 +880,7 @@ internal static partial class Parser
     private static bool TryParseBodyParameter(
         IParameterSymbol parameter,
         string parameterType,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         out RequestParameterModel bodyParameter)
     {
         foreach (var attribute in parameter.GetAttributes())
@@ -934,7 +934,7 @@ internal static partial class Parser
     private static bool TryParseHeaderParameter(
         IParameterSymbol parameter,
         string parameterType,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         out RequestParameterModel headerParameter)
     {
         foreach (var attribute in parameter.GetAttributes())
@@ -978,7 +978,7 @@ internal static partial class Parser
     private static bool TryParseHeaderCollectionParameter(
         IParameterSymbol parameter,
         string parameterType,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         out RequestParameterModel headerCollectionParameter)
     {
         foreach (var attribute in parameter.GetAttributes())
@@ -1021,7 +1021,7 @@ internal static partial class Parser
     private static bool TryParsePropertyParameter(
         IParameterSymbol parameter,
         string parameterType,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         out RequestParameterModel propertyParameter)
     {
         foreach (var attribute in parameter.GetAttributes())
@@ -1061,7 +1061,7 @@ internal static partial class Parser
     private static RequestParameterModel UnsupportedRequestParameter(
         IParameterSymbol parameter,
         string parameterType,
-        in InterfaceGenerationContext context) =>
+        InterfaceGenerationContext context) =>
         new(
             parameter.MetadataName,
             parameterType,
@@ -1084,7 +1084,7 @@ internal static partial class Parser
         IParameterSymbol parameter,
         string parameterType,
         ImmutableEquatableArray<Range> locations,
-        in InterfaceGenerationContext context) =>
+        InterfaceGenerationContext context) =>
         new(
             parameter.MetadataName,
             parameterType,
@@ -1104,7 +1104,7 @@ internal static partial class Parser
     /// <param name="parameter">The parameter to inspect.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The precomputed attribute models.</returns>
-    private static ImmutableEquatableArray<ParameterAttributeModel> BuildParameterAttributes(IParameterSymbol parameter, in InterfaceGenerationContext context)
+    private static ImmutableEquatableArray<ParameterAttributeModel> BuildParameterAttributes(IParameterSymbol parameter, InterfaceGenerationContext context)
     {
         var attributes = parameter.GetAttributes();
         if (attributes.IsEmpty)
@@ -1140,7 +1140,7 @@ internal static partial class Parser
     /// <param name="argument">The typed constant.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The source expression, or <c>"null"</c> when the value is null.</returns>
-    private static string ConstantValueToString(TypedConstant argument, in InterfaceGenerationContext context)
+    private static string ConstantValueToString(TypedConstant argument, InterfaceGenerationContext context)
     {
         var result = string.Empty;
 
@@ -1164,7 +1164,7 @@ internal static partial class Parser
     /// <param name="argument">The array typed constant.</param>
     /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
     /// <returns>The <c>new[] { ... }</c> source expression.</returns>
-    private static string RenderConstantArray(TypedConstant argument, in InterfaceGenerationContext context)
+    private static string RenderConstantArray(TypedConstant argument, InterfaceGenerationContext context)
     {
         var parts = new List<string>(argument.Values.Length);
         foreach (var value in argument.Values)
@@ -1198,7 +1198,7 @@ internal static partial class Parser
     /// <param name="returnType">The declared return type, or an adapter's wrapped result type.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The parsed return type details.</returns>
-    private static RequestReturnTypes GetRequestReturnTypes(ITypeSymbol returnType, in InterfaceGenerationContext context)
+    private static RequestReturnTypes GetRequestReturnTypes(ITypeSymbol returnType, InterfaceGenerationContext context)
     {
         var resultType = GetReturnResultType(returnType);
         var isApiResponse = IsApiResponseType(resultType);
@@ -1246,7 +1246,7 @@ internal static partial class Parser
     /// <param name="isApiResponse">Whether the result is an API response wrapper.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The deserialization target type.</returns>
-    private static string GetDeserializedResultTypeName(ITypeSymbol resultType, bool isApiResponse, in InterfaceGenerationContext context)
+    private static string GetDeserializedResultTypeName(ITypeSymbol resultType, bool isApiResponse, InterfaceGenerationContext context)
     {
         if (!isApiResponse)
         {

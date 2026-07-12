@@ -322,7 +322,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<InterfaceModel> BuildInterfaceModels(
         Dictionary<INamedTypeSymbol, List<IMethodSymbol>> interfaces,
         Dictionary<INamedTypeSymbol, bool> interfaceToNullableEnabledMap,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         CancellationToken cancellationToken)
     {
         var keyCount = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
@@ -370,7 +370,7 @@ internal static partial class Parser
         INamedTypeSymbol interfaceSymbol,
         List<IMethodSymbol> refitMethods,
         bool nullableEnabled,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var names = ComputeInterfaceNames(interfaceSymbol);
         var members = interfaceSymbol.GetMembers();
@@ -482,7 +482,7 @@ internal static partial class Parser
         INamedTypeSymbol interfaceSymbol,
         in ImmutableArray<ISymbol> members,
         List<IMethodSymbol> refitMethods,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var nonRefitMethods = CollectDirectNonRefitMethods(members, refitMethods);
 
@@ -544,7 +544,7 @@ internal static partial class Parser
     /// <returns><see langword="true"/> if the interface inherits <c>IDisposable.Dispose</c>; otherwise, <see langword="false"/>.</returns>
     private static bool CollectDerivedMethods(
         INamedTypeSymbol interfaceSymbol,
-        in InterfaceGenerationContext context,
+        InterfaceGenerationContext context,
         List<IMethodSymbol> derivedRefitMethods,
         List<IMethodSymbol> derivedNonRefitMethods)
     {
@@ -687,7 +687,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<InterfacePropertyModel> BuildInterfacePropertyModels(
         INamedTypeSymbol interfaceSymbol,
         in ImmutableArray<ISymbol> members,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var properties = new List<InterfacePropertyModel>();
         foreach (var member in members)
@@ -728,7 +728,7 @@ internal static partial class Parser
     /// <param name="isDerived">Whether the property comes from a base interface.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased property types.</param>
     /// <returns>The property model.</returns>
-    private static InterfacePropertyModel ParseInterfaceProperty(IPropertySymbol property, bool isDerived, in InterfaceGenerationContext context)
+    private static InterfacePropertyModel ParseInterfaceProperty(IPropertySymbol property, bool isDerived, InterfaceGenerationContext context)
     {
         var annotation =
             !property.Type.IsValueType && property.NullableAnnotation == NullableAnnotation.Annotated;
@@ -797,7 +797,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<MethodModel> ParseMethods(
         List<IMethodSymbol> methods,
         bool isImplicitInterface,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         if (methods.Count == 0)
         {
@@ -821,7 +821,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<MethodModel> BuildNonRefitMethodModels(
         List<IMethodSymbol> nonRefitMethods,
         List<IMethodSymbol> derivedNonRefitMethods,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         // Only abstract instance methods become non-Refit method models.
         var methodModels = new MethodModel[nonRefitMethods.Count + derivedNonRefitMethods.Count];
@@ -863,7 +863,7 @@ internal static partial class Parser
     private static MethodModel ParseNonRefitMethod(
         IMethodSymbol methodSymbol,
         bool isDerived,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         // Derived base-interface methods are emitted as explicit implementations.
         var explicitImpl = FirstExplicitInterfaceImplementation(methodSymbol);
@@ -922,7 +922,7 @@ internal static partial class Parser
     private static ImmutableEquatableArray<TypeConstraint> GenerateConstraints(
         in ImmutableArray<ITypeParameterSymbol> typeParameters,
         bool isOverrideOrExplicitImplementation,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         if (typeParameters.IsEmpty)
         {
@@ -949,7 +949,7 @@ internal static partial class Parser
     private static TypeConstraint ParseConstraintsForTypeParameter(
         ITypeParameterSymbol typeParameter,
         bool isOverrideOrExplicitImplementation,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var known = ComputeKnownConstraints(typeParameter, isOverrideOrExplicitImplementation);
 
@@ -1009,7 +1009,7 @@ internal static partial class Parser
     /// <param name="param">The parameter symbol to parse.</param>
     /// <param name="context">The generation context, used to qualify extern-aliased types.</param>
     /// <returns>The model describing the parameter.</returns>
-    private static ParameterModel ParseParameter(IParameterSymbol param, in InterfaceGenerationContext context)
+    private static ParameterModel ParseParameter(IParameterSymbol param, InterfaceGenerationContext context)
     {
         var annotation =
             !param.Type.IsValueType && param.NullableAnnotation == NullableAnnotation.Annotated;
@@ -1026,7 +1026,7 @@ internal static partial class Parser
     /// <returns>The parsed parameter models.</returns>
     private static ImmutableEquatableArray<ParameterModel> ParseParameters(
         in ImmutableArray<IParameterSymbol> parameters,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         if (parameters.IsEmpty)
         {
@@ -1048,7 +1048,7 @@ internal static partial class Parser
     /// <returns>The parsed constraint type display names.</returns>
     private static ImmutableEquatableArray<string> ParseConstraintTypes(
         in ImmutableArray<ITypeSymbol> constraintTypes,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         if (constraintTypes.IsEmpty)
         {
@@ -1098,7 +1098,7 @@ internal static partial class Parser
     private static MethodModel ParseMethod(
         IMethodSymbol methodSymbol,
         bool isImplicitInterface,
-        in InterfaceGenerationContext context)
+        InterfaceGenerationContext context)
     {
         var returnType = QualifyType(methodSymbol.ReturnType, context);
 
