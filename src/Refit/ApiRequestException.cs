@@ -14,10 +14,6 @@ namespace Refit;
     "Usage",
     "CA1032:Implement standard exception constructors",
     Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
-[SuppressMessage(
-    "Major Code Smell",
-    "S4027:Exceptions should provide standard constructors",
-    Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
 public class ApiRequestException : ApiExceptionBase
 {
     /// <inheritdoc/>

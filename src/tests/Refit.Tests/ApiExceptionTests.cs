@@ -650,10 +650,6 @@ public sealed class ApiExceptionTests
         "Usage",
         "CA1032:Implement standard exception constructors",
         Justification = "This test fixture exposes only the protected ApiException constructors under test.")]
-    [SuppressMessage(
-        "Major Code Smell",
-        "S4027:Exceptions should provide standard constructors",
-        Justification = "This test fixture exposes only the protected ApiException constructors under test.")]
     private sealed class DerivedApiException : ApiException
     {
         /// <inheritdoc />
