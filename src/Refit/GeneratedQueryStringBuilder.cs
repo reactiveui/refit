@@ -65,11 +65,21 @@ public ref struct GeneratedQueryStringBuilder
     /// <param name="relativePath">The relative path, whose template query string (if any) is preserved in front
     /// of appended parameters. Dynamic path segments must already be escaped.</param>
     public GeneratedQueryStringBuilder(string relativePath)
+        : this(relativePath, StringHelpers.Contains(relativePath, '?'))
+    {
+    }
+
+    /// <summary>Initializes a new instance of the <see cref="GeneratedQueryStringBuilder"/> struct with a known query state.</summary>
+    /// <param name="relativePath">The relative path, whose template query string (if any) is preserved in front of
+    /// appended parameters. Dynamic path segments must already be escaped.</param>
+    /// <param name="hasQuery">Whether <paramref name="relativePath"/> already contains a <c>?</c>; the generator passes
+    /// the compile-time answer so the path is not rescanned per call.</param>
+    public GeneratedQueryStringBuilder(string relativePath, bool hasQuery)
     {
         _relativePath = relativePath;
         _text = default;
         _joinedValues = default;
-        _hasQuery = StringHelpers.Contains(relativePath, '?');
+        _hasQuery = hasQuery;
     }
 
     /// <summary>Appends one <c>key=value</c> query parameter.</summary>

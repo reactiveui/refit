@@ -38,7 +38,7 @@ namespace Refit.Implementation
             }
 
             /// <summary>Cached attribute provider for the generated GetUser method's userName parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>());
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::Refit.Tests.User> GetUser(string @userName)
@@ -97,7 +97,7 @@ namespace Refit.Implementation
             }
 
             /// <summary>Cached attribute provider for the generated GetOrgMembers method's orgName parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______orgNameAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>());
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______orgNameAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::System.Collections.Generic.List<global::Refit.Tests.User>> GetOrgMembers(string @orgName)
@@ -122,14 +122,14 @@ namespace Refit.Implementation
             }
 
             /// <summary>Cached attribute provider for the generated FindUsers method's q parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______qAttributeProvider = new global::Refit.GeneratedParameterAttributeProvider(new global::System.Collections.Generic.Dictionary<global::System.Type, object[]>());
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______qAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::Refit.Tests.UserSearchResult> FindUsers(string @q)
             {
                 var refitSettings = _settings;
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
-                var refitQueryBuilder = new global::Refit.GeneratedQueryStringBuilder("/search/users");
+                var refitQueryBuilder = new global::Refit.GeneratedQueryStringBuilder("/search/users", false);
                 if (@q != null)
                 {
                     refitQueryBuilder.Add("q", refitUseDefaultFormatting ? (@q) : refitSettings.UrlParameterFormatter.Format(@q, ______qAttributeProvider, typeof(string)), false);

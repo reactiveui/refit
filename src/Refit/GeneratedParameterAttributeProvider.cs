@@ -10,6 +10,9 @@ namespace Refit;
 /// <param name="attributes">The attribute information.</param>
 public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[]> attributes) : ICustomAttributeProvider
 {
+    /// <summary>A shared provider for parameters that declare no attributes, avoiding a per-parameter empty dictionary.</summary>
+    public static readonly GeneratedParameterAttributeProvider Empty = new([]);
+
     /// <summary>List of all attributes.</summary>
     private readonly Lazy<object[]> _allAttributesCache = new(() =>
     {

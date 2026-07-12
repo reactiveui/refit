@@ -1123,7 +1123,7 @@ public class GeneratedRequestBuildingTests
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
-        await Assert.That(generated).Contains("new global::Refit.GeneratedQueryStringBuilder(\"/a\")");
+        await Assert.That(generated).Contains("new global::Refit.GeneratedQueryStringBuilder(\"/a\", false)");
         await Assert.That(generated).Contains("refitQueryBuilder.Add(\"bVal\"");
     }
 

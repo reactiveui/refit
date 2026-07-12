@@ -163,7 +163,17 @@ internal static partial class Emitter
         if (HasQueryBindings(request))
         {
             _ = prologue.Append(bodyIndent).Append("var ").Append(emission.QueryBuilderLocal)
-                .Append(" = new global::Refit.GeneratedQueryStringBuilder(").Append(pathExpression).AppendLine(");")
+                .Append(" = new global::Refit.GeneratedQueryStringBuilder(").Append(pathExpression);
+
+            // The query separator (? vs &) depends on whether the built path already carries a query. Path values are
+            // escaped, so only a pre-encoded ([Encoded]) segment could inject a ? the template lacks; without one the
+            // answer is the compile-time presence of ? in the template, passed in so the path is not rescanned per call.
+            if (!HasPreEncodedPathParameter(request))
+            {
+                _ = prologue.Append(", ").Append(ToLowerInvariantString(request.Path.IndexOf('?') >= 0));
+            }
+
+            _ = prologue.AppendLine(");")
                 .Append(BuildInlineQueryStatements(request, parameterInfoNames, emission));
             requestPathExpression = emission.QueryBuilderLocal + ".Build()";
         }
@@ -288,33 +298,35 @@ internal static partial class Emitter
             }
         }
 
-        const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
         _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
             .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
-            .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ")
-            .Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("()");
-        var i = 0;
-        if (grouped.Count > 0)
+            .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
+
+        // A parameter with no attributes shares the singleton empty provider instead of allocating an empty dictionary.
+        if (grouped.Count == 0)
         {
-            _ = sb.Append(" {");
-            foreach (var kv in grouped)
-            {
-                _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
-                var argIndex = 0;
-                foreach (var arg in kv.Value)
-                {
-                    // Multiple attributes of the same type must be comma-separated inside the array.
-                    _ = AppendSeparator(argIndex++, sb);
-                    AppendAttributeValue(arg, sb);
-                }
-
-                _ = sb.Append("} }");
-            }
-
-            _ = sb.Append('}');
+            _ = sb.AppendLine("global::Refit.GeneratedParameterAttributeProvider.Empty;");
+            return;
         }
 
-        _ = sb.AppendLine(");");
+        const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
+        _ = sb.Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("() {");
+        var i = 0;
+        foreach (var kv in grouped)
+        {
+            _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
+            var argIndex = 0;
+            foreach (var arg in kv.Value)
+            {
+                // Multiple attributes of the same type must be comma-separated inside the array.
+                _ = AppendSeparator(argIndex++, sb);
+                AppendAttributeValue(arg, sb);
+            }
+
+            _ = sb.Append("} }");
+        }
+
+        _ = sb.Append('}').AppendLine(");");
     }
 
     /// <summary>Assigns the unique cached field name for each attribute-provider parameter and emits its field.</summary>
