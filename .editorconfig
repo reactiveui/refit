@@ -869,6 +869,7 @@ dotnet_diagnostic.RCS1068.severity = none # Simplify logical negation — covere
 dotnet_diagnostic.RCS1069.severity = error # Remove unnecessary case label
 dotnet_diagnostic.RCS1070.severity = none # Remove redundant default switch section — covered by SST1179
 dotnet_diagnostic.RCS1071.severity = none # Remove redundant base constructor call — covered by SST1178
+dotnet_diagnostic.RCS1072.severity = none # Remove empty namespace declaration — covered by SST1435
 dotnet_diagnostic.RCS1073.severity = error # Convert 'if' to 'return' statement
 dotnet_diagnostic.RCS1074.severity = none # Remove redundant constructor — covered by SST1433
 dotnet_diagnostic.RCS1078.severity = error # Use "" or 'string.Empty'
@@ -879,6 +880,7 @@ dotnet_diagnostic.RCS1097.severity = error # Remove redundant 'ToString' call
 dotnet_diagnostic.RCS1103.severity = error # Convert 'if' to assignment
 dotnet_diagnostic.RCS1104.severity = none # Simplify conditional expression — covered by SST1182
 dotnet_diagnostic.RCS1105.severity = error # Unnecessary interpolation
+dotnet_diagnostic.RCS1106.severity = none # Remove empty destructor — covered by PSH1002
 dotnet_diagnostic.RCS1107.severity = error # Remove redundant 'ToCharArray' call
 dotnet_diagnostic.RCS1114.severity = error # Remove redundant delegate creation
 dotnet_diagnostic.RCS1124.severity = error # Inline local variable
@@ -1138,6 +1140,8 @@ stylesharp.avoid_linq_on_hot_path = true
 stylesharp.max_cyclomatic_complexity = 10
 stylesharp.max_cognitive_complexity = 15
 stylesharp.max_property_cognitive_complexity = 3
+# SST1484 also reports a field that shadows one inherited from a base type.
+stylesharp.SST1484.check_base_types = true
 
 # Spacing
 dotnet_diagnostic.SST1000.severity = error # A control-flow keyword is not followed by a space
@@ -1366,13 +1370,10 @@ dotnet_diagnostic.SST1480.severity = error # An exception is constructed and the
 dotnet_diagnostic.SST1481.severity = error # A bitwise operation has a constant operand that makes it pointless
 dotnet_diagnostic.SST1482.severity = error # GetHashCode reads mutable state
 dotnet_diagnostic.SST1483.severity = error # A constructor calls an overridable member
-dotnet_diagnostic.SST1484.severity = error # A declaration shadows an outer field or property (base types checked, replacing S2387)
+dotnet_diagnostic.SST1484.severity = error # A declaration shadows an outer field or property (inherited fields included)
 dotnet_diagnostic.SST1485.severity = error # A member that must not throw throws
 dotnet_diagnostic.SST1486.severity = error # The same string literal is repeated instead of being named
 dotnet_diagnostic.SST1487.severity = error # A collection element is assigned twice with nothing reading it in between
-
-# SST1484 replaces Sonar S2387 (inherited-field shadowing), so opt its base-type check in.
-stylesharp.SST1484.check_base_types = true
 
 # Layout
 dotnet_diagnostic.SST1500.severity = error # A brace in a multi-line construct shares its line with other code
@@ -1514,6 +1515,22 @@ dotnet_diagnostic.SST2233.severity = error # Hot-path code should avoid System.L
 dotnet_diagnostic.RCS1040.severity = none # covered by SST1180
 
 ###################
+# PerformanceSharp Analyzers (PSH)
+###################
+# Allocations
+dotnet_diagnostic.PSH1017.severity = error # A property allocates a copy of a collection on every read (excludable via performancesharp.PSH1017.excluded_properties)
+
+# Collections
+dotnet_diagnostic.PSH1122.severity = error # Read a sorted set's extreme through its Min/Max property, not the LINQ extension
+
+# Strings
+dotnet_diagnostic.PSH1217.severity = error # A sequence is copied to an array just to be read straight back
+dotnet_diagnostic.PSH1218.severity = error # A substring is allocated only to search it; slice with AsSpan instead
+
+# API selection
+dotnet_diagnostic.PSH1411.severity = error # Seal non-public types nothing derives from so the JIT can devirtualize
+
+###################
 # PublicApiAnalyzers (RSxxxx) - public API surface tracking
 ###################
 dotnet_diagnostic.RS0016.severity = error # public symbol missing from the PublicAPI baseline
@@ -1650,7 +1667,6 @@ dotnet_diagnostic.IL3054.severity = error # Generic expansion in type requires d
 dotnet_diagnostic.IL3055.severity = error # MakeGenericType on non-supported type requires dynamic code
 dotnet_diagnostic.IL3056.severity = error # MakeGenericMethod on non-supported method requires dynamic code
 dotnet_diagnostic.IL3057.severity = error # Reflection access to generic parameter requires dynamic code
-
 
 ###################
 # SonarAnalyzer (Sxxxx) - Blocker Bug
@@ -2084,7 +2100,7 @@ dotnet_diagnostic.S4018.severity = error # All type parameters should be used in
 dotnet_diagnostic.S4022.severity = error # Enumerations should have "Int32" storage
 dotnet_diagnostic.S4023.severity = none # Interfaces should not be empty — covered by SST1437
 dotnet_diagnostic.S4026.severity = error # Assemblies should be marked with "NeutralResourcesLanguageAttribute"
-dotnet_diagnostic.S4027.severity = none # Exceptions should provide standard constructors — matches SonarCloud; API exceptions need HTTP context
+dotnet_diagnostic.S4027.severity = none # Exceptions should provide standard constructors - DUPLICATE CA1032
 dotnet_diagnostic.S4040.severity = none # Strings should be normalized to uppercase - DUPLICATE CA1308
 dotnet_diagnostic.S4041.severity = none # Type names should not match namespaces - DUPLICATE CA1724
 dotnet_diagnostic.S4047.severity = error # Generics should be used when appropriate
@@ -2358,27 +2374,3 @@ end_of_line = lf
 
 [*.{cmd, bat}]
 end_of_line = crlf
-
-
-#############################################
-# Test projects (TUnit)
-#############################################
-# TUnit instantiates test classes per test, so they must remain instance classes and
-# cannot be marked static — even when a partial declaration happens to hold only static
-# members (the instance [Test] methods live in sibling partial files).
-[**/tests/**/*.cs]
-stylesharp.avoid_linq_on_hot_path = false
-dotnet_diagnostic.SST2229.severity = error # In tests, simplify LINQ Where plus terminal calls instead of banning LINQ
-dotnet_diagnostic.SST2230.severity = error # In tests, simplify LINQ type filters instead of banning LINQ
-dotnet_diagnostic.SST2233.severity = none # Tests can use LINQ for clarity
-dotnet_diagnostic.SST1432.severity = none
-
-# PerformanceSharp Analyzers (PSH)
-# Rules adopted from SonarCloud duplicates; the rest of the PSH set runs at its package default.
-dotnet_diagnostic.PSH1017.severity = error # A property allocates a copy of a collection on every read
-dotnet_diagnostic.PSH1122.severity = error # Read a sorted set's extreme through its Min/Max property, not the LINQ extension
-dotnet_diagnostic.PSH1217.severity = error # A sequence is copied to an array just to be read straight back
-dotnet_diagnostic.PSH1218.severity = error # A substring is allocated only to search it; slice with AsSpan instead
-dotnet_diagnostic.PSH1411.severity = error # Seal non-public types nothing derives from so the JIT can devirtualize
-dotnet_diagnostic.RCS1072.severity = none # covered by SST1435
-dotnet_diagnostic.RCS1106.severity = none # covered by SST1434

@@ -4,6 +4,10 @@
 namespace Refit.Tests.Http;
 
 /// <summary>An HTTP client fixture used to verify unique-name generation across namespaces and nested types.</summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "RoslynCommonAnalyzers",
+    "SST1432:Mark the type as static",
+    Justification = "Passed to UniqueName.ForType<T> as a type argument; C# forbids static types as type arguments, so this fixture cannot be static.")]
 public sealed class Client
 {
     /// <summary>A request fixture nested inside <see cref="Client"/> used to verify unique-name generation for nested types.</summary>

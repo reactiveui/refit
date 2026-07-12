@@ -16,3 +16,11 @@ dotnet_diagnostic.CA2213.severity = none # Disposable fields should be disposed
 # SonarAnalyzer (S) — relaxed for test projects
 ###################
 dotnet_diagnostic.S5332.severity = none # Using http protocol is insecure (test URLs are not real endpoints)
+
+###################
+# StyleSharp (SST) — relaxed for test projects
+###################
+stylesharp.avoid_linq_on_hot_path = false
+dotnet_diagnostic.SST2229.severity = error # In tests, simplify LINQ Where plus terminal calls instead of banning LINQ
+dotnet_diagnostic.SST2230.severity = error # In tests, simplify LINQ type filters instead of banning LINQ
+dotnet_diagnostic.SST2233.severity = none # Tests can use LINQ for clarity
