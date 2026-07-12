@@ -4,6 +4,7 @@
 
 using System.Collections.Immutable;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -15,6 +16,18 @@ namespace Refit.GeneratorTests;
 /// <summary>Focused tests for parser helper paths that are awkward to reach through snapshot tests.</summary>
 public sealed class ParserCoverageTests
 {
+    /// <summary>A minimal interface source with no Refit methods.</summary>
+    private const string UnusedInterfaceSource = "public interface IUnused { }";
+
+    /// <summary>The metadata name of the Refit HTTP method base attribute.</summary>
+    private const string HttpMethodAttributeMetadataName = "Refit.HttpMethodAttribute";
+
+    /// <summary>The metadata name of <c>System.IFormattable</c>.</summary>
+    private const string FormattableMetadataName = "System.IFormattable";
+
+    /// <summary>The metadata name of the sample interface used by inline-eligibility tests.</summary>
+    private const string SampleApiMetadataName = "RefitGeneratorTest.IApi";
+
     /// <summary>Verifies parser argument validation.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -35,7 +48,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task GenerateInterfaceStubsReportsMissingRefitReference()
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText("public interface IUnused { }");
+        var syntaxTree = CSharpSyntaxTree.ParseText(UnusedInterfaceSource);
         var compilation = CSharpCompilation.Create("no-refit", [syntaxTree]);
 
         var (diagnostics, model) = Parser.GenerateInterfaceStubs(
@@ -57,7 +70,7 @@ public sealed class ParserCoverageTests
     [Test]
     public async Task GenerateInterfaceStubsSanitizesInternalNamespaceSegments()
     {
-        var syntaxTree = CSharpSyntaxTree.ParseText("public interface IUnused { }");
+        var syntaxTree = CSharpSyntaxTree.ParseText(UnusedInterfaceSource);
         var compilation = CSharpCompilation.Create("no-refit", [syntaxTree]);
 
         var (_, leadingDotModel) = Parser.GenerateInterfaceStubs(
@@ -280,9 +293,9 @@ public sealed class ParserCoverageTests
             namespace RefitGeneratorTest;
             public interface IApi { Task<string> Plain(); }
             """));
-        var httpBase = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")!;
-        var formattable = compilation.GetTypeByMetadataName("System.IFormattable");
-        var method = compilation.GetTypeByMetadataName("RefitGeneratorTest.IApi")!
+        var httpBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
+        var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
+        var method = compilation.GetTypeByMetadataName(SampleApiMetadataName)!
             .GetMembers("Plain").OfType<IMethodSymbol>().First();
 
         await Assert.That(Parser.CanBuildRequestInline(method, httpBase, formattable)).IsFalse();
@@ -303,9 +316,9 @@ public sealed class ParserCoverageTests
                 [Get("/b")] string StringReturn();
             }
             """));
-        var httpBase = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")!;
-        var formattable = compilation.GetTypeByMetadataName("System.IFormattable");
-        var api = compilation.GetTypeByMetadataName("RefitGeneratorTest.IApi")!;
+        var httpBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
+        var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
+        var api = compilation.GetTypeByMetadataName(SampleApiMetadataName)!;
         var arrayReturn = api.GetMembers("ArrayReturn").OfType<IMethodSymbol>().First();
         var stringReturn = api.GetMembers("StringReturn").OfType<IMethodSymbol>().First();
 
@@ -313,6 +326,193 @@ public sealed class ParserCoverageTests
         // (string) declared result type both run here.
         await Assert.That(Parser.CanBuildRequestInline(arrayReturn, httpBase, formattable)).IsFalse();
         await Assert.That(Parser.CanBuildRequestInline(stringReturn, httpBase, formattable)).IsFalse();
+    }
+
+    /// <summary>Verifies adapter discovery returns nothing when the adapter interface is unresolved.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DiscoverReturnTypeAdaptersReturnsEmptyWhenInterfaceUnresolved()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(UnusedInterfaceSource));
+
+        var adapters = Parser.DiscoverReturnTypeAdapters(compilation, null, CancellationToken.None);
+
+        await Assert.That(adapters).IsEmpty();
+    }
+
+    /// <summary>Verifies the declared base name strips an explicit interface qualifier.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task BuildDeclaredBaseNameStripsExplicitInterfaceQualifier()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+            """
+            namespace Explicit;
+            public interface IFoo { System.Threading.Tasks.Task Bar(); }
+            public class Impl : IFoo
+            {
+                System.Threading.Tasks.Task IFoo.Bar() => System.Threading.Tasks.Task.CompletedTask;
+            }
+            """));
+        var explicitImplementation = compilation.GetTypeByMetadataName("Explicit.Impl")!
+            .GetMembers()
+            .OfType<IMethodSymbol>()
+            .First(static method => method.Name.Contains('.'));
+
+        await Assert.That(Parser.BuildDeclaredBaseName(explicitImplementation)).IsEqualTo("Bar");
+    }
+
+    /// <summary>Verifies the Refit-method predicate rejects a null method symbol.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task IsRefitMethodReturnsFalseForNullMethod()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(UnusedInterfaceSource));
+        var httpMethodBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
+
+        await Assert.That(Parser.IsRefitMethod(null, httpMethodBase)).IsFalse();
+    }
+
+    /// <summary>Verifies the inline return-shape classifier resolves the <c>IAsyncEnumerable&lt;T&gt;</c> shape.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CanBuildRequestInlineClassifiesAsyncEnumerableReturnShape()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+            """
+            using System.Collections.Generic;
+            using Refit;
+            namespace RefitGeneratorTest;
+            public interface IApi { [Get("/a")] IAsyncEnumerable<string> Enumerate(); }
+            """));
+        var httpBase = compilation.GetTypeByMetadataName(HttpMethodAttributeMetadataName)!;
+        var formattable = compilation.GetTypeByMetadataName(FormattableMetadataName);
+        var enumerate = compilation.GetTypeByMetadataName(SampleApiMetadataName)!
+            .GetMembers("Enumerate").OfType<IMethodSymbol>().First();
+
+        await Assert.That(Parser.CanBuildRequestInline(enumerate, httpBase, formattable)).IsTrue();
+    }
+
+    /// <summary>Verifies interface collection captures a child that only inherits Refit methods and skips a candidate
+    /// interface with no Refit methods, while a property member on the child is ignored during base-method exclusion.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CollectRefitInterfacesHandlesInheritedAndEmptyCandidates()
+    {
+        const int ExpectedInterfaceCount = 2;
+        var syntaxTree = CSharpSyntaxTree.ParseText(
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IParent
+            {
+                [Get("/p")]
+                Task<string> P();
+
+                void NonRefitBase();
+            }
+
+            public interface IChild : IParent
+            {
+                string Prop { get; }
+            }
+
+            public interface IEmpty
+            {
+                void Plain();
+            }
+            """);
+        var root = await syntaxTree.GetRootAsync();
+        var candidateMethods = root.DescendantNodes().OfType<MethodDeclarationSyntax>().ToImmutableArray();
+        var candidateInterfaces = root.DescendantNodes().OfType<InterfaceDeclarationSyntax>().ToImmutableArray();
+        var compilation = Fixture.CreateLibrary(syntaxTree);
+
+        var (_, model) = Parser.GenerateInterfaceStubs(
+            compilation,
+            "inherited",
+            generatedRequestBuilding: true,
+            emitGeneratedCodeMarkers: true,
+            candidateMethods,
+            candidateInterfaces,
+            CancellationToken.None);
+
+        var interfaceNames = model.Interfaces.AsArray().Select(static i => i.InterfaceDisplayName).ToArray();
+
+        // IParent (declares a Refit method) and IChild (inherits one); IEmpty has none and is dropped.
+        await Assert.That(model.Interfaces.AsArray().Length).IsEqualTo(ExpectedInterfaceCount);
+        await Assert.That(interfaceNames).Contains(static name => name.Contains("IChild", StringComparison.Ordinal));
+        await Assert.That(interfaceNames).DoesNotContain(static name => name.Contains("IEmpty", StringComparison.Ordinal));
+    }
+
+    /// <summary>Verifies the span-escape probe recognizes the net10 <c>Uri.EscapeDataString(ReadOnlySpan&lt;char&gt;)</c>
+    /// overload, so a path parameter generates inline against a net10 reference set.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GeneratesInlinePathAgainstNet10SpanEscapeReferenceSet()
+    {
+        if (!TryCreateNet10Compilation(
+            """
+            using System.Threading.Tasks;
+            using Refit;
+            namespace RefitGeneratorTest;
+            public interface IGeneratedClient { [Get("/x/{id}")] Task<string> Get(System.Guid id); }
+            """,
+            out var compilation))
+        {
+            // The net10 reference pack is unavailable on this host; the span-escape tier cannot be exercised here.
+            return;
+        }
+
+        // Running the generator against the net10 reference set exercises the span-escape probe; the Guid path
+        // parameter takes the inline BuildRequestPath route rather than the reflection fallback.
+        var result = Fixture.RunGenerator(compilation, generatedRequestBuilding: true, false, null);
+        var generated = string.Join("\n", result.GeneratedSources.Values);
+
+        await Assert.That(generated).DoesNotContain("BuildRestResultFuncForMethod");
+        await Assert.That(generated).Contains("BuildRequestPath");
+    }
+
+    /// <summary>Builds a compilation whose framework references come from the net10 reference pack, so
+    /// <c>System.Uri</c> exposes the span overload of <c>EscapeDataString</c>.</summary>
+    /// <param name="source">The interface source to compile.</param>
+    /// <param name="compilation">Receives the created compilation when the net10 reference pack is present.</param>
+    /// <returns><see langword="true"/> when the net10 reference pack was found and the compilation was built.</returns>
+    private static bool TryCreateNet10Compilation(string source, out CSharpCompilation compilation)
+    {
+        compilation = null!;
+        var runtimeDirectory = RuntimeEnvironment.GetRuntimeDirectory();
+        var dotnetRoot = Path.GetFullPath(Path.Combine(runtimeDirectory, "..", "..", ".."));
+        var referencePackRoot = Path.Combine(dotnetRoot, "packs", "Microsoft.NETCore.App.Ref");
+        if (!Directory.Exists(referencePackRoot))
+        {
+            return false;
+        }
+
+        var referenceDirectory = Directory.GetDirectories(referencePackRoot)
+            .Select(static pack => Path.Combine(pack, "ref", "net10.0"))
+            .Where(Directory.Exists)
+            .OrderDescending(StringComparer.Ordinal)
+            .FirstOrDefault();
+        if (referenceDirectory is null)
+        {
+            return false;
+        }
+
+        var refitReference = MetadataReference.CreateFromFile(
+            Path.Combine(AppContext.BaseDirectory, "Refit.dll"));
+        var references = Directory.GetFiles(referenceDirectory, "*.dll")
+            .Select(static dll => (MetadataReference)Fixture.GetMetadataReference(dll))
+            .Append(refitReference)
+            .ToList();
+        compilation = CSharpCompilation.Create(
+            "net10compilation",
+            [CSharpSyntaxTree.ParseText(source)],
+            references,
+            new(OutputKind.DynamicallyLinkedLibrary));
+        return true;
     }
 
     /// <summary>Analyzer config options backed by a dictionary for direct helper tests.</summary>

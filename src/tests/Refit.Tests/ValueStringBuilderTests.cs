@@ -96,6 +96,17 @@ public sealed class ValueStringBuilderTests
         await Assert.That(text).IsEqualTo("bba|abc|ab|abb|abc|ab");
     }
 
+    /// <summary>Verifies growing a second time returns the previously rented pooled buffer.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GrowingTwiceReturnsThePreviousPooledBuffer()
+    {
+        const int totalLength = 20;
+        var text = BuildAcrossTwoGrowths(totalLength);
+
+        await Assert.That(text).IsEqualTo(new string('a', totalLength));
+    }
+
     /// <summary>Verifies the enumerable peek helper distinguishes empty, single, and multi-item sequences.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -157,6 +168,25 @@ public sealed class ValueStringBuilderTests
         await Assert.That(value.Equals(differentMethod)).IsFalse();
         await Assert.That(value.Equals(differentLength)).IsFalse();
         await Assert.That(value.Equals(differentType)).IsFalse();
+    }
+
+    /// <summary>Appends across two growths so the second growth returns the buffer rented by the first.</summary>
+    /// <param name="totalLength">The total number of characters to append.</param>
+    /// <returns>The built string.</returns>
+    private static string BuildAcrossTwoGrowths(int totalLength)
+    {
+        const int firstAppendLength = 6;
+        var builder = new ValueStringBuilder(stackalloc char[4]);
+        try
+        {
+            builder.Append(new string('a', firstAppendLength));
+            builder.Append(new string('a', totalLength - firstAppendLength));
+            return builder.ToString();
+        }
+        finally
+        {
+            builder.Dispose();
+        }
     }
 
     /// <summary>Builds a string using append, insert, span, and indexer operations.</summary>

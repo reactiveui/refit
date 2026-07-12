@@ -384,13 +384,10 @@ internal static partial class Emitter
                 continue;
             }
 
-            if (parameter.Locations is null)
-            {
-                continue;
-            }
-
+            // Every remaining Path parameter is a direct placeholder built with locations (a dotted object binding is
+            // handled above), so its locations are always present.
             var valueExpression = BuildPathValueExpression(parameter, providerField, emission);
-            foreach (var location in parameter.Locations)
+            foreach (var location in parameter.Locations!)
             {
                 replacements.Add(new(
                     location.Start.GetOffset(pathLength),

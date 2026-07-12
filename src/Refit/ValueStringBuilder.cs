@@ -61,6 +61,7 @@ internal ref struct ValueStringBuilder
     /// <summary>Gets the DebuggerDisplay attribute.</summary>
     /// <remarks>ToString() clears the builder, so we need a side-effect free debugger display.</remarks>
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // Only evaluated by the debugger, never by tests.
     private readonly string DebuggerDisplay => AsSpan().ToString();
 
     /// <summary>Gets a reference to the character at the specified index.</summary>

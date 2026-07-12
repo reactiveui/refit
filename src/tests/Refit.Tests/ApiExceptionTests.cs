@@ -480,6 +480,24 @@ public sealed class ApiExceptionTests
         await Assert.That(exception.Content).IsEqualTo(string.Empty);
     }
 
+    /// <summary>Verifies a maximum length larger than the body reads the entire body and stops at end of stream.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MaxExceptionContentLengthLargerThanBodyReadsEntireBody()
+    {
+        const int bodyLength = 10;
+        using var response = CreateErrorResponse(new string('a', bodyLength));
+        var settings = new RefitSettings { MaxExceptionContentLength = LongBodyLength };
+
+        var exception = await ApiException.Create(
+            response.RequestMessage!,
+            HttpMethod.Get,
+            response,
+            settings);
+
+        await Assert.That(exception.Content!.Length).IsEqualTo(bodyLength);
+    }
+
     /// <summary>Verifies the error body is still read when the response carries no content type.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

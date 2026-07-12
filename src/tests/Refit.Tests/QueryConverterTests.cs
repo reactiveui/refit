@@ -75,6 +75,16 @@ public class QueryConverterTests
         await Assert.That(generated).IsEqualTo("/stj?q=ada&Count=3&Sub.City=wien");
     }
 
+    /// <summary>Verifies the attribute exposes the converter type passed to its constructor.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task AttributeExposesConverterType()
+    {
+        var attribute = new QueryConverterAttribute(typeof(DictionaryObjectQueryConverter));
+
+        await Assert.That(attribute.ConverterType).IsEqualTo(typeof(DictionaryObjectQueryConverter));
+    }
+
     /// <summary>Sends one request through the generated client and returns the relative URI it produced.</summary>
     /// <param name="call">The interface method to invoke.</param>
     /// <returns>The generated request's path and query.</returns>

@@ -130,4 +130,213 @@ public sealed class QueryObjectFlatteningGenerationTests
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
     }
+
+    /// <summary>Verifies a query object with nullable and non-nullable dictionary properties (with nullable values)
+    /// expands each entry inline under the property key.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task QueryObjectDictionaryPropertiesFlattenInline()
+    {
+        const string source =
+            """
+            #nullable enable
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class DictionaryQuery
+            {
+                public Dictionary<string, string>? Meta { get; set; }
+                public Dictionary<string, string> Tags { get; set; } = new();
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/d")]
+                Task<string> Find([Query] DictionaryQuery query);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+    }
+
+    /// <summary>Verifies the default-formatting-local decision recurses into a nested object that needs it, and skips a
+    /// nested object plus a scalar that both render only through the formatter.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task QueryObjectFormattingLocalDecisionCoversNestedAndFormatterOnly()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public enum Duplicated { First = 1, Alias = 1 }
+
+            public sealed class FormatterOnlyInner { public Duplicated Inner { get; set; } }
+
+            public sealed class FormatterOnlyQuery
+            {
+                public FormatterOnlyInner Nested { get; set; } = new();
+                public Duplicated Extra { get; set; }
+            }
+
+            public sealed class FormattedInner { public string Name { get; set; } = ""; }
+
+            public sealed class FormattedQuery
+            {
+                public FormattedInner Nested { get; set; } = new();
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/a")]
+                Task<string> FindFormatterOnly([Query] FormatterOnlyQuery query);
+
+                [Get("/b")]
+                Task<string> FindFormatted([Query] FormattedQuery query);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+    }
+
+    /// <summary>Verifies query-object collection properties across every guard shape: a nullable reference collection of
+    /// duplicate-constant enums (formatter fallback), a serialize-null collection, and a non-nullable value-type
+    /// collection.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task QueryObjectCollectionPropertiesCoverEveryGuardShape()
+    {
+        const string source =
+            """
+            using System;
+            using System.Collections.Immutable;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public enum Duplicated { First = 1, Alias = 1 }
+
+            public sealed class EnumCollectionQuery
+            {
+                public Duplicated[] Modes { get; set; } = Array.Empty<Duplicated>();
+
+                [Query(SerializeNull = true)]
+                public int[] Optional { get; set; } = Array.Empty<int>();
+
+                public ImmutableArray<int> Fixed { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/e")]
+                Task<string> Find([Query] EnumCollectionQuery query);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+    }
+
+    /// <summary>Verifies a value-type dictionary as both a query parameter and a query-object property flattens through
+    /// the unguarded (never-null) branch.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ValueTypeDictionaryFlattensThroughUnguardedBranch()
+    {
+        const string source =
+            """
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public struct StringMap : IDictionary<string, string>
+            {
+                public string this[string key] { get => throw null!; set => throw null!; }
+                public ICollection<string> Keys => throw null!;
+                public ICollection<string> Values => throw null!;
+                public int Count => throw null!;
+                public bool IsReadOnly => throw null!;
+                public void Add(string key, string value) => throw null!;
+                public void Add(KeyValuePair<string, string> item) => throw null!;
+                public void Clear() => throw null!;
+                public bool Contains(KeyValuePair<string, string> item) => throw null!;
+                public bool ContainsKey(string key) => throw null!;
+                public void CopyTo(KeyValuePair<string, string>[] array, int arrayIndex) => throw null!;
+                public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => throw null!;
+                public bool Remove(string key) => throw null!;
+                public bool Remove(KeyValuePair<string, string> item) => throw null!;
+                public bool TryGetValue(string key, out string value) => throw null!;
+                IEnumerator IEnumerable.GetEnumerator() => throw null!;
+            }
+
+            public sealed class MapQuery
+            {
+                public StringMap Meta { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/m")]
+                Task<string> FindMap([Query] StringMap map);
+
+                [Get("/o")]
+                Task<string> FindObject([Query] MapQuery query);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+    }
+
+    /// <summary>Verifies a <c>[Query(Format)]</c> on a non-simple property falls the whole query object back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task QueryObjectFormatOnNonSimplePropertyFallsBack()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Inner { public string Value { get; set; } = ""; }
+
+            public sealed class BadFormatQuery
+            {
+                [Query(Format = "x")]
+                public Inner Nested { get; set; } = new();
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/b")]
+                Task<string> Find([Query] BadFormatQuery query);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.GeneratedSources[Hint]).Contains(ReflectiveFallback);
+    }
 }

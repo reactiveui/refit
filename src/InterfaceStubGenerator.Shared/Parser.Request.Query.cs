@@ -937,13 +937,11 @@ internal static partial class Parser
                 continue;
             }
 
-            // A type implementing several distinct IEnumerable<T> closes over an ambiguous element type, and
-            // the reflection path's interface-order behavior is unspecified, so fall back.
-            if (!SymbolEqualityComparer.Default.Equals(elementType, candidate))
-            {
-                elementType = null;
-                return false;
-            }
+            // A second IEnumerable<T> among the (symbol-deduplicated) interfaces is always a distinct element type, so
+            // the parameter closes an ambiguous element type. The reflection path's interface-order behavior is
+            // unspecified, so fall back.
+            elementType = null;
+            return false;
         }
 
         return elementType is not null;

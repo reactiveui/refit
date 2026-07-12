@@ -77,6 +77,30 @@ public partial class GeneratedRequestRunnerTests
     }
 #endif
 
+    /// <summary>Verifies the span-formattable overload escapes a value that cannot format into the stack buffer.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathEscapesUnformattableSpanValue()
+    {
+        const int start = 3;
+        const int end = 6;
+        var result = GeneratedRequestRunner.BuildRequestPath("/n/{v}", false, (start, end), new AlwaysUnformattableValue());
+
+        await Assert.That(result).IsEqualTo("/n/a%2Fb");
+    }
+
+    /// <summary>Verifies the pre-encoded overload returns the template for an empty parameter set.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathReturnsTemplateForEmptyPreEncodedParameters()
+    {
+        ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams = [];
+
+        var result = GeneratedRequestRunner.BuildRequestPath("/plain", true, uriParams);
+
+        await Assert.That(result).IsEqualTo("/plain");
+    }
+
     /// <summary>Provides test data for <see cref="GeneratedRequestRunnerTests"/>.</summary>
     internal static class GeneratedRequestRunnerTestsDataSources
     {
@@ -122,6 +146,20 @@ public partial class GeneratedRequestRunnerTests
             }
 
             return [.. located];
+        }
+    }
+
+    /// <summary>A span-formattable value whose <see cref="ISpanFormattable.TryFormat"/> always fails.</summary>
+    private sealed class AlwaysUnformattableValue : ISpanFormattable
+    {
+        /// <inheritdoc/>
+        public string ToString(string? format, IFormatProvider? formatProvider) => "a/b";
+
+        /// <inheritdoc/>
+        public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
+        {
+            charsWritten = 0;
+            return false;
         }
     }
 }

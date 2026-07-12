@@ -55,4 +55,96 @@ public sealed class ReturnTypeAdapterGenerationTests
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
         await Assert.That(result.GeneratedSources[Hint]).Contains(".Adapt(");
     }
+
+    /// <summary>Verifies a non-generic adapter surfaces its non-generic return type inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task NonGenericAdapterBackedReturnTypeGeneratesInline()
+    {
+        const string Source =
+            """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Boxed
+            {
+                public int Value { get; init; }
+            }
+
+            public sealed class BoxedAdapter : IReturnTypeAdapter<Boxed, int>
+            {
+                public Boxed Adapt(Func<CancellationToken, Task<int>> invoke) => new();
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/count")]
+                Boxed GetCount();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+        await Assert.That(result.GeneratedSources[Hint]).Contains(".Adapt(");
+    }
+
+    /// <summary>
+    /// Verifies the adapter matcher rejects registered adapters that do not surface a method's return type: a generic
+    /// adapter with a different type-argument count, a non-generic adapter for a different return type, and a generic
+    /// adapter whose wrapper transposes the type parameters. The method has no matching adapter, so it falls back.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReturnTypeMatchingRejectsNonSurfacingAdapters()
+    {
+        const string Source =
+            """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Wrapped<T> { }
+
+            public sealed class WrappedAdapter<T> : IReturnTypeAdapter<Wrapped<T>, T>
+            {
+                public Wrapped<T> Adapt(Func<CancellationToken, Task<T>> invoke) => new();
+            }
+
+            public sealed class Boxed { }
+
+            public sealed class BoxedAdapter : IReturnTypeAdapter<Boxed, int>
+            {
+                public Boxed Adapt(Func<CancellationToken, Task<int>> invoke) => new();
+            }
+
+            public sealed class Pair<TLeft, TRight> { }
+
+            public sealed class SwapAdapter<TLeft, TRight> : IReturnTypeAdapter<Pair<TRight, TLeft>, TLeft>
+            {
+                public Pair<TRight, TLeft> Adapt(Func<CancellationToken, Task<TLeft>> invoke) => new();
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/pair")]
+                Pair<int, string> GetPair();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+
+        // No adapter surfaces Pair<int, string> (the SwapAdapter transposes the parameters), so the method falls back.
+        await Assert.That(result.GeneratedSources[Hint]).Contains(ReflectiveFallback);
+    }
 }

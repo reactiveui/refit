@@ -110,6 +110,77 @@ public sealed class RequestGenerationCoverageTests
         await Assert.That(generated).DoesNotContain("body.@Ignored");
     }
 
+    /// <summary>Verifies an unrolled scalar form body emits the empty-value branch for a nullable
+    /// <c>[Query(SerializeNull = true)]</c> field, alongside an unconditionally added value-type field.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UnrolledFormBodyEmitsSerializeNullEmptyBranch()
+    {
+        const string Source =
+            """
+            #nullable enable
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class NoteForm
+            {
+                public int Count { get; set; }
+
+                [Query(SerializeNull = true)]
+                public string? Note { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Post("/notes")]
+                Task Submit([Body(BodySerializationMethod.UrlEncoded)] NoteForm form);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("string.Empty");
+    }
+
+    /// <summary>Verifies an unrolled form body whose only field renders through the formatter (an enum with duplicate
+    /// constants) declares no default-form-formatting branch and still generates inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task UnrolledFormBodyWithFormatterOnlyFieldGeneratesInline()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public enum Duplicated { First = 1, Alias = 1 }
+
+            public sealed class ModeForm
+            {
+                public Duplicated Mode { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Post("/modes")]
+                Task Submit([Body(BodySerializationMethod.UrlEncoded)] ModeForm form);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
     /// <summary>Verifies dynamic header parameters with valid, null, and whitespace names are parsed.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -370,6 +441,7 @@ public sealed class RequestGenerationCoverageTests
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     [Arguments("Task Post<TBody>([Body(BodySerializationMethod.UrlEncoded)] TBody body);")]
+    [Arguments("Task Post<T>([Body(BodySerializationMethod.UrlEncoded)] System.Collections.Generic.List<T> body);")]
     [Arguments("Task Post([Body(BodySerializationMethod.UrlEncoded)] dynamic body);")]
     [Arguments("Task Post([Body(BodySerializationMethod.UrlEncoded)] MissingBodyType body);")]
     [Arguments("Task Post([Body(BodySerializationMethod.UrlEncoded)] int* body);")]

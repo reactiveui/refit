@@ -35,6 +35,7 @@ public sealed class QueryParameterTypeTests
     [Arguments("System.TimeSpan")]
     [Arguments("System.DayOfWeek")]
     [Arguments("System.DayOfWeek?")]
+    [Arguments("System.Globalization.CultureInfo")]
     public async Task ScalarQueryParameterGeneratesInline(string parameterType)
     {
         var generated = Generate($"[Get(\"/items\")] Task<string> Get({parameterType} value);");
@@ -292,6 +293,179 @@ public sealed class QueryParameterTypeTests
 
         var ids = result.GeneratorDiagnostics.Select(static diagnostic => diagnostic.Id).ToArray();
         await Assert.That(ids).Contains(SourceGenOnlyDiagnosticId);
+    }
+
+    /// <summary>Verifies a type closing <c>IEnumerable&lt;T&gt;</c> over two element types falls back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AmbiguousEnumerableQueryParameterFallsBack()
+    {
+        const string source =
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IDualSequence : IEnumerable<int>, IEnumerable<string> { }
+
+            public interface IGeneratedClient
+            {
+                [Get("/items")]
+                Task<string> Get([Query] IDualSequence values);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+    }
+
+    /// <summary>Verifies a type closing <c>IDictionary&lt;TKey, TValue&gt;</c> more than once falls back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AmbiguousDictionaryQueryParameterFallsBack()
+    {
+        const string source =
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IDualMap : IDictionary<string, int>, IDictionary<int, string> { }
+
+            public interface IGeneratedClient
+            {
+                [Get("/items")]
+                Task<string> Get([Query] IDualMap filter);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+    }
+
+    /// <summary>Verifies a <c>[QueryConverter(null)]</c> with no resolvable converter type falls back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task QueryConverterWithNullTypeFallsBack()
+    {
+        const string source =
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/i")]
+                Task<string> Get([QueryConverter(null)] Dictionary<string, object> filter);
+            }
+            """;
+
+        var generated = Fixture.RunGenerator(source, generatedRequestBuilding: true)
+            .GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a non-nullable dictionary query parameter flattens inline through the unguarded branch.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task NonNullableDictionaryQueryParameterGeneratesInline()
+    {
+        const string source =
+            """
+            #nullable enable
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Get("/i")]
+                Task<string> Get([Query] Dictionary<string, string> filter);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a compile-time <c>[Query(Format)]</c> on a plain enum emits a formatted numeric fallback.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EnumQueryWithFormatEmitsFormattedNumericFallback()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public enum Palette { Red, Green }
+
+            public interface IGeneratedClient
+            {
+                [Get("/p")]
+                Task<string> Get([Query(Format = "D")] Palette palette);
+            }
+            """;
+
+        var generated = Fixture.RunGenerator(source, generatedRequestBuilding: true)
+            .GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies enum-member override reading skips non-<c>EnumMember</c> attributes and a null-valued
+    /// <c>[EnumMember]</c> while a scalar enum query flattens inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task EnumMemberOverrideReadingHandlesMissingAndNonEnumMemberAttributes()
+    {
+        const string source =
+            """
+            using System;
+            using System.Runtime.Serialization;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public enum Season
+            {
+                [Obsolete]
+                Spring,
+                [EnumMember(Value = null)]
+                Summer,
+                [EnumMember(Value = "fall")]
+                Autumn,
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/s")]
+                Task<string> Get([Query] Season season);
+            }
+            """;
+
+        var generated = Fixture.RunGenerator(source, generatedRequestBuilding: true)
+            .GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
     /// <summary>Verifies an implicit (un-attributed) complex body on a body-capable method generates inline (issue #2190).</summary>

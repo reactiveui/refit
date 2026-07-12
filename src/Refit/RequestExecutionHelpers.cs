@@ -405,9 +405,18 @@ internal static class RequestExecutionHelpers
                 return SendResult<T>.FromFailure(failure);
             }
 
-            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(transportException).Throw();
-            throw transportException;
+            throw Rethrow(transportException);
         }
+    }
+
+    /// <summary>Rethrows an exception preserving its original stack trace; never returns normally.</summary>
+    /// <param name="exception">The exception to rethrow.</param>
+    /// <returns>Never returns; the return type only lets callers write <c>throw Rethrow(...)</c> as a terminator.</returns>
+    [System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverage] // The trailing return is unreachable: ExceptionDispatchInfo.Throw() always throws first.
+    private static Exception Rethrow(Exception exception)
+    {
+        System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
+        return exception;
     }
 
     /// <summary>Builds an API response, deserializing content unless an earlier error exists.</summary>
@@ -571,6 +580,7 @@ internal static class RequestExecutionHelpers
             var stream = await content
                 .ReadAsStreamAsync(cancellationToken)
                 .ConfigureAwait(false);
+            string text;
 #if NET8_0_OR_GREATER
             await using (stream.ConfigureAwait(false))
 #else
@@ -579,13 +589,14 @@ internal static class RequestExecutionHelpers
             {
                 using var reader = new StreamReader(stream);
 #if NET8_0_OR_GREATER
-                var str = (object)await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+                text = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 #else
                 cancellationToken.ThrowIfCancellationRequested();
-                var str = (object)await reader.ReadToEndAsync().ConfigureAwait(false);
+                text = await reader.ReadToEndAsync().ConfigureAwait(false);
 #endif
-                return (T)str;
             }
+
+            return (T)(object)text;
         }
 
         return await DeserializeSerializedContentAsync<T>(

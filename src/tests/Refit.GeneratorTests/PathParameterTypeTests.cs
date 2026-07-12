@@ -56,6 +56,34 @@ public sealed class PathParameterTypeTests
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
     }
 
+    /// <summary>Verifies an enum with duplicate constants as a path parameter renders through the URL parameter
+    /// formatter (no reflection-free fast path) while still generating inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DuplicateEnumPathParameterUsesFormatter()
+    {
+        const string source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public enum Duplicated { First = 1, Alias = 1 }
+
+            public interface IGeneratedClient
+            {
+                [Get("/items/{mode}")]
+                Task<string> Get(Duplicated mode);
+            }
+            """;
+
+        var generated = Fixture.RunGenerator(source, generatedRequestBuilding: true)
+            .GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
     /// <summary>Runs the generator over an interface body and returns the generated client source.</summary>
     /// <param name="body">The interface member body source.</param>
     /// <returns>The generated client source text.</returns>

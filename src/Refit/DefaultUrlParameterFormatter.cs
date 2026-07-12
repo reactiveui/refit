@@ -80,16 +80,9 @@ public class DefaultUrlParameterFormatter : IUrlParameterFormatter
     /// <returns>The first query attribute, or null when absent.</returns>
     private static QueryAttribute? GetFirstQueryAttribute(ICustomAttributeProvider attributeProvider)
     {
+        // GetCustomAttributes is type-filtered, so every element is a QueryAttribute; take the first, if any.
         var attributes = attributeProvider.GetCustomAttributes(typeof(QueryAttribute), true);
-        for (var i = 0; i < attributes.Length; i++)
-        {
-            if (attributes[i] is QueryAttribute attribute)
-            {
-                return attribute;
-            }
-        }
-
-        return null;
+        return attributes.Length > 0 ? attributes[0] as QueryAttribute : null;
     }
 
     /// <summary>Selects the effective format string, preferring the attribute format, then specific, then general formats.</summary>

@@ -172,14 +172,11 @@ internal static partial class Parser
     /// <param name="templateReturn">The adapter's declared <c>TReturn</c>.</param>
     /// <param name="adapter">The adapter type definition.</param>
     /// <returns><see langword="true"/> when each argument is the adapter's type parameter in the same position.</returns>
+    /// <remarks>The sole caller invokes this only after verifying the template return and the return type share a
+    /// generic definition and match the adapter's arity, so the argument and type-parameter counts are always equal.</remarks>
     private static bool IsPositionalTypeParameters(INamedTypeSymbol templateReturn, INamedTypeSymbol adapter)
     {
         var arguments = templateReturn.TypeArguments;
-        if (arguments.Length != adapter.TypeParameters.Length)
-        {
-            return false;
-        }
-
         for (var i = 0; i < arguments.Length; i++)
         {
             if (!SymbolEqualityComparer.Default.Equals(arguments[i], adapter.TypeParameters[i]))
