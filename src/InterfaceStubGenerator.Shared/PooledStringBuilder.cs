@@ -39,9 +39,6 @@ internal sealed class PooledStringBuilder
     /// <param name="capacity">The initial buffer capacity to rent.</param>
     public PooledStringBuilder(int capacity) => _buffer = ArrayPool<char>.Shared.Rent(Math.Max(capacity, DefaultCapacity));
 
-    /// <summary>Gets the number of characters written so far.</summary>
-    public int Length => _pos;
-
     /// <summary>Appends a string.</summary>
     /// <param name="value">The string to append, or null.</param>
     /// <returns>This builder, for chaining.</returns>

@@ -416,12 +416,48 @@ internal static partial class Parser
             canGenerateInline &= parsedParameter.CanGenerateInline;
         }
 
-        if (bodyCount > 1 || cancellationTokenCount > 1 || headerCollectionCount > 1)
-        {
-            canGenerateInline = false;
-        }
+        // More than one body, cancellation token, header collection, or [Authorize] parameter is an invalid
+        // definition the reflection builder rejects; fall back so its validation still throws.
+        canGenerateInline &= HasInlineableParameterCounts(
+            bodyCount,
+            cancellationTokenCount,
+            headerCollectionCount,
+            requestParameters);
 
         return ImmutableEquatableArrayFactory.FromArray(requestParameters);
+    }
+
+    /// <summary>Determines whether the single-instance parameter counts allow inline generation.</summary>
+    /// <param name="bodyCount">The number of body parameters.</param>
+    /// <param name="cancellationTokenCount">The number of cancellation token parameters.</param>
+    /// <param name="headerCollectionCount">The number of header collection parameters.</param>
+    /// <param name="parameters">The parsed request parameters, scanned for <c>[Authorize]</c> parameters.</param>
+    /// <returns><see langword="true"/> when no single-instance binding appears more than once.</returns>
+    private static bool HasInlineableParameterCounts(
+        int bodyCount,
+        int cancellationTokenCount,
+        int headerCollectionCount,
+        RequestParameterModel[] parameters) =>
+        bodyCount <= 1
+        && cancellationTokenCount <= 1
+        && headerCollectionCount <= 1
+        && CountAuthorizeParameters(parameters) <= 1;
+
+    /// <summary>Counts the <c>[Authorize]</c> parameters (Authorization headers carrying a scheme prefix).</summary>
+    /// <param name="parameters">The parsed request parameters.</param>
+    /// <returns>The number of <c>[Authorize]</c> parameters.</returns>
+    private static int CountAuthorizeParameters(RequestParameterModel[] parameters)
+    {
+        var count = 0;
+        foreach (var parameter in parameters)
+        {
+            if (parameter is { Kind: RequestParameterKind.Header, HeaderValuePrefix: not null })
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     /// <summary>Resolves a parameter's URL name, honoring an <c>[AliasAs]</c> attribute.</summary>
@@ -576,20 +612,27 @@ internal static partial class Parser
         IParameterSymbol parameter,
         string parameterType,
         ImmutableEquatableArray<Range> roundTripLocations,
-        in LooseParameterContext context) =>
-        parameter.Type.SpecialType == SpecialType.System_String
-        && HasParameterAttribute(parameter, EncodedAttributeDisplayName)
-            ? new(
+        in LooseParameterContext context)
+    {
+        var encoded = HasParameterAttribute(parameter, EncodedAttributeDisplayName);
+
+        // [Encoded] keeps the caller-encoded string verbatim (string only). A non-[Encoded] catch-all splits the
+        // value's string form on '/', formatting and escaping each segment while preserving the separators, exactly
+        // as the reflection builder does — so any type is supported inline.
+        return encoded && parameter.Type.SpecialType != SpecialType.System_String
+            ? new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0)
+            : new(
                 PathRequestParameter(parameter, parameterType, roundTripLocations, context.Generation) with
                 {
                     ValueFormat = BuildValueFormat(parameter.Type, null, context.FormattableSymbol, context.Generation),
                     PreEncoded = true,
+                    IsRoundTrip = !encoded,
                 },
                 true,
                 0,
                 0,
-                0)
-            : new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+                0);
+    }
 
     /// <summary>Classifies a parameter with no path binding as a flag, implicit body, query value, or fallback.</summary>
     /// <param name="parameter">The parameter to classify.</param>
@@ -603,12 +646,22 @@ internal static partial class Parser
         in LooseParameterContext context,
         ref bool implicitBodyAssigned)
     {
-        // Dotted {param.Prop} placeholders bind object properties through the reflection builder,
-        // and [Authorize] parameters keep using it too.
-        if (HasDottedPlaceholderFor(context.ParameterLocations, context.UrlName)
-            || HasParameterAttribute(parameter, AuthorizeAttributeDisplayName))
+        // Dotted {param.Prop} placeholders bind object properties through the reflection builder.
+        if (HasDottedPlaceholderFor(context.ParameterLocations, context.UrlName))
         {
             return new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+        }
+
+        // [Authorize] emits an Authorization header of "{scheme} {value}"; the scheme is a compile-time constant.
+        if (FindParameterAttribute(parameter, AuthorizeAttributeDisplayName) is { } authorizeAttribute)
+        {
+            var scheme = GetFirstStringArgument(authorizeAttribute) ?? DefaultAuthorizeScheme;
+            return new(
+                BuildAuthorizeHeaderParameter(parameter, parameterType, scheme, context.Generation),
+                true,
+                0,
+                0,
+                0);
         }
 
         if (HasParameterAttribute(parameter, QueryNameAttributeDisplayName))
@@ -1054,6 +1107,32 @@ internal static partial class Parser
         propertyParameter = null!;
         return false;
     }
+
+    /// <summary>Builds the <c>Authorization</c> header parameter model for an <c>[Authorize]</c> parameter.</summary>
+    /// <param name="parameter">The parameter symbol.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="scheme">The authorization scheme, prepended to the value as <c>"{scheme} "</c>.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The header parameter model that emits <c>Authorization: {scheme} {value}</c>.</returns>
+    private static RequestParameterModel BuildAuthorizeHeaderParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        string scheme,
+        InterfaceGenerationContext context) =>
+        new(
+            parameter.MetadataName,
+            parameterType,
+            null,
+            BuildParameterAttributes(parameter, context),
+            RequestParameterKind.Header,
+            CanBeNull(parameter.Type, parameter.NullableAnnotation),
+            "Authorization",
+            string.Empty,
+            string.Empty,
+            BodyBufferMode.None)
+        {
+            HeaderValuePrefix = scheme + " ",
+        };
 
     /// <summary>Builds an unsupported request parameter model.</summary>
     /// <param name="parameter">The parameter symbol.</param>

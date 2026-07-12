@@ -241,6 +241,54 @@ public class QueryObjectFlatteningTests
             query);
     }
 
+    /// <summary>Verifies a non-null nullable nested value type flattens exactly like the reflection builder.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task NullableNestedStructWithValueFlattensLikeReflection()
+    {
+        const double Lat = 1.5;
+        const double Lng = 2.5;
+        var query = new NullableNestedStructQueryObject { Name = "here", Location = new GeoPoint(Lat, Lng) };
+
+        var generated = await SendGeneratedAsync(new RefitSettings(), api => api.FlattenNullableNestedStruct(query));
+        var reflected = await new RequestBuilderImplementation<IQueryObjectApi>()
+            .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenNullableNestedStruct))([query]);
+
+        await Assert.That(generated).IsEqualTo(reflected.RequestUri!.PathAndQuery);
+    }
+
+    /// <summary>Verifies a null nullable nested value type contributes no query pairs, matching reflection.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task NullableNestedStructWhenNullOmittedLikeReflection()
+    {
+        var query = new NullableNestedStructQueryObject { Name = "here", Location = null };
+
+        var generated = await SendGeneratedAsync(new RefitSettings(), api => api.FlattenNullableNestedStruct(query));
+        var reflected = await new RequestBuilderImplementation<IQueryObjectApi>()
+            .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenNullableNestedStruct))([query]);
+
+        await Assert.That(generated).IsEqualTo(reflected.RequestUri!.PathAndQuery);
+    }
+
+    /// <summary>Verifies dictionary properties inside a query object expand exactly like the reflection builder.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task DictionaryPropertyExpandsLikeReflection()
+    {
+        const int Count = 10;
+        var query = new DictionaryPropertyQueryObject { Name = "root" };
+        query.Tags["a"] = "1";
+        query.Tags["b"] = "2";
+        query.Counts["x"] = Count;
+
+        var generated = await SendGeneratedAsync(new RefitSettings(), api => api.FlattenDictionaryProperty(query));
+        var reflected = await new RequestBuilderImplementation<IQueryObjectApi>()
+            .BuildRequestFactoryForMethod(nameof(IQueryObjectApi.FlattenDictionaryProperty))([query]);
+
+        await Assert.That(generated).IsEqualTo(reflected.RequestUri!.PathAndQuery);
+    }
+
     /// <summary>Verifies a dictionary expands to one query pair per entry, exactly as the reflection builder does.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

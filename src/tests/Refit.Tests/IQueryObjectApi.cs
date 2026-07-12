@@ -61,6 +61,18 @@ public interface IQueryObjectApi
     [Get("/nested")]
     Task<string> FlattenNested([Query] NestedQueryObject query);
 
+    /// <summary>Flattens a query object with a nullable nested value-type property under a dotted key.</summary>
+    /// <param name="query">The query object.</param>
+    /// <returns>The response body.</returns>
+    [Get("/nested/struct")]
+    Task<string> FlattenNullableNestedStruct([Query] NullableNestedStructQueryObject query);
+
+    /// <summary>Flattens a query object whose dictionary properties expand their entries under each property's key.</summary>
+    /// <param name="query">The query object.</param>
+    /// <returns>The response body.</returns>
+    [Get("/dictprop")]
+    Task<string> FlattenDictionaryProperty([Query] DictionaryPropertyQueryObject query);
+
     /// <summary>Expands a dictionary into one query pair per entry.</summary>
     /// <param name="query">The dictionary.</param>
     /// <returns>The response body.</returns>

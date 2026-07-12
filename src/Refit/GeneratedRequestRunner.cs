@@ -285,6 +285,46 @@ public static class GeneratedRequestRunner
         return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
     }
 
+    /// <summary>Round-trips a catch-all <c>{**param}</c> path value: each <c>/</c>-separated section is formatted and
+    /// escaped while the separators are preserved, matching the reflection request builder.</summary>
+    /// <param name="value">The value's string form (from <c>ToString</c>), or null.</param>
+    /// <param name="formatter">The configured URL parameter formatter.</param>
+    /// <param name="attributeProvider">The parameter's attribute provider passed to the formatter.</param>
+    /// <param name="type">The parameter's declared type passed to the formatter.</param>
+    /// <returns>The round-trip-escaped path fragment, ready to append verbatim.</returns>
+    public static string RoundTripEscapePath(
+        string? value,
+        IUrlParameterFormatter formatter,
+        ICustomAttributeProvider attributeProvider,
+        Type type)
+    {
+        if (value is null)
+        {
+            return StringHelpers.EscapeDataString(formatter.Format(null, attributeProvider, type) ?? string.Empty);
+        }
+
+        var sb = new StringBuilder(value.Length);
+        var sectionStart = 0;
+        for (var i = 0; i <= value.Length; i++)
+        {
+            if (i != value.Length && value[i] != '/')
+            {
+                continue;
+            }
+
+            if (sectionStart > 0)
+            {
+                _ = sb.Append('/');
+            }
+
+            var section = value.Substring(sectionStart, i - sectionStart);
+            _ = sb.Append(StringHelpers.EscapeDataString(formatter.Format(section, attributeProvider, type) ?? string.Empty));
+            sectionStart = i + 1;
+        }
+
+        return sb.ToString();
+    }
+
     /// <summary>Determines whether the settings use the pristine default URL parameter formatter, letting
     /// generated code format statically-known values inline without calling the formatter.</summary>
     /// <param name="settings">The Refit settings to inspect.</param>

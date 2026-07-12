@@ -23,6 +23,10 @@ namespace Refit.Generator;
 /// <param name="Nested">The flattened properties of a nested concrete class/struct property, or null. When set, this
 /// property contributes no value of its own; its children compose their keys under this property's key. Its own
 /// <paramref name="PrefixSegment"/> holds only the property-level <c>[Query(Prefix)]</c>, without any parameter prefix.</param>
+/// <param name="NestedThroughValue">Whether a nested property is a nullable value type (<c>Nullable&lt;T&gt;</c>), so its
+/// children are accessed through <c>.Value</c> after the null check rather than off the value directly.</param>
+/// <param name="Dictionary">The dictionary descriptor when the property is an <c>IDictionary&lt;simple, simple&gt;</c>, or
+/// null. When set the property's entries expand under this property's key, one <c>key.entryKey=value</c> pair each.</param>
 internal sealed record QueryObjectPropertyModel(
     string ClrName,
     string? ExplicitName,
@@ -33,4 +37,6 @@ internal sealed record QueryObjectPropertyModel(
     string? PropertyFormat,
     InlineValueFormatModel ValueFormat,
     QueryObjectCollectionModel? Collection = null,
-    ImmutableEquatableArray<QueryObjectPropertyModel>? Nested = null);
+    ImmutableEquatableArray<QueryObjectPropertyModel>? Nested = null,
+    bool NestedThroughValue = false,
+    QueryDictionaryModel? Dictionary = null);

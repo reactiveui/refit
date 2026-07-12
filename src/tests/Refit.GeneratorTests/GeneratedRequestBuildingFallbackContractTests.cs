@@ -33,6 +33,7 @@ public sealed class GeneratedRequestBuildingFallbackContractTests
     [Arguments("[Post(\"/create\")] Task<string> Post(System.IO.Stream payload, string tag);", "Post")]
     [Arguments("[Get(\"/values\")] Task<T> GetValue<T>();", "GetValue")]
     [Arguments("[Post(\"/echo\")] Task<T> Echo<T>([Body] T payload);", "Echo")]
+    [Arguments("[Get(\"/cal/{**rest}\")] Task<string> RoundTrip(string rest);", "RoundTrip")]
     public Task InlineMethodsAreNotFlagged(string body, string methodName) =>
         AssertGeneratorAndAnalyzerAgree(body, methodName, expectedFallback: false);
 
@@ -45,7 +46,6 @@ public sealed class GeneratedRequestBuildingFallbackContractTests
     [Arguments("[Post(\"/form\")] Task<string> PostForm<T>([Body(BodySerializationMethod.UrlEncoded)] T form);", "PostForm")]
     [Arguments("[Multipart][Post(\"/upload\")] Task<string> Upload([AliasAs(\"file\")] StreamPart stream);", "Upload")]
     [Arguments("[Get(\"/stream\")] IObservable<string> Observe();", "Observe")]
-    [Arguments("[Get(\"/cal/{**rest}\")] Task<string> RoundTrip(string rest);", "RoundTrip")]
     public Task FallbackMethodsAreFlagged(string body, string methodName) =>
         AssertGeneratorAndAnalyzerAgree(body, methodName, expectedFallback: true);
 

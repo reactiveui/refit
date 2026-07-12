@@ -71,6 +71,7 @@ public sealed class QueryParameterTypeTests
     [Arguments("[Get(\"/i\")] Task<string> Get([QueryName] string[] flags);")]
     [Arguments("[Get(\"/i\")] Task<string> Get([Encoded] string value);")]
     [Arguments("[Get(\"/i/{**rest}\")] Task<string> Get([Encoded] string rest);")]
+    [Arguments("[Get(\"/i/{**rest}\")] Task<string> Get(string rest);")]
     [Arguments("[Post(\"/i\")] Task<string> Post(System.IO.Stream body, string tag);")]
     [Arguments("[Get(\"/i\")] Task<string> Get([Property(\"key\")][Query] string value);")]
     [Arguments("[Get(\"/signin\")] Task<string> SignIn([AliasAs(\"login\")] string login, [AliasAs(\"tok\")] string token);")]
@@ -89,7 +90,6 @@ public sealed class QueryParameterTypeTests
     [Arguments("[Get(\"/i\")] Task<string> Get(object value);")]
     [Arguments("[Get(\"/i\")] Task<string> Get(System.Collections.Generic.Dictionary<string, object> map);")]
     [Arguments("[Get(\"/i\")] Task<string> Get([Query] System.Collections.Generic.IDictionary<string, object> map);")]
-    [Arguments("[Get(\"/i/{**rest}\")] Task<string> Get(string rest);")]
     [Arguments("[Post(\"/i\")] Task<string> Post(object first, object second);")]
     public async Task UnsupportedQueryShapeFallsBack(string body)
     {

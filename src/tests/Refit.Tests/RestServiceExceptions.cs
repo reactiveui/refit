@@ -67,6 +67,24 @@ public class RestServiceExceptions
         await Assert.That(request.RequestUri!.PathAndQuery).IsEqualTo("/repos/some/repo/contents");
     }
 
+    /// <summary>Verifies the source-generated non-string round-trip path matches the reflection builder, escaping
+    /// each segment while preserving the separators.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task RoundTripNotStringGeneratedMatchesReflection()
+    {
+        var repoPath = new RepoPath("some/repo dir");
+        using var handler = new TestHttpMessageHandler();
+        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+        _ = await RestService.ForGenerated<IRoundTripNotString>(client).GetValue(repoPath);
+        var generatedUri = handler.RequestMessage!.RequestUri!.PathAndQuery;
+
+        var reflected = await new RequestBuilderImplementation<IRoundTripNotString>()
+            .BuildRequestFactoryForMethod(nameof(IRoundTripNotString.GetValue))([repoPath]);
+
+        await Assert.That(generatedUri).IsEqualTo(reflected.RequestUri!.PathAndQuery);
+    }
+
     /// <summary>Verifies that a round-tripping parameter name with leading whitespace throws.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

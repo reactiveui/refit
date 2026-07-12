@@ -936,8 +936,12 @@ internal static partial class Emitter
             {
                 case RequestParameterKind.Header:
                     {
+                        // An [Authorize] parameter carries a "{scheme} " prefix; a plain [Header] has none.
+                        var headerValueExpression = parameter.HeaderValuePrefix is { } valuePrefix
+                            ? $"{ToCSharpStringLiteral(valuePrefix)} + {BuildHeaderValueExpression(parameter)}"
+                            : BuildHeaderValueExpression(parameter);
                         parts[count++] =
-                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(parameter.HeaderName)}, {BuildHeaderValueExpression(parameter)});\n";
+                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(parameter.HeaderName)}, {headerValueExpression});\n";
                         continue;
                     }
 

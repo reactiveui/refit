@@ -23,6 +23,9 @@ internal static partial class Emitter
     /// <summary>The generated call appending one query pair to the query-string builder.</summary>
     private const string AddQueryPairCall = ".Add(";
 
+    /// <summary>The start of a generated <c>foreach (var …)</c> loop over a collection or dictionary.</summary>
+    private const string ForeachVarKeyword = "foreach (var ";
+
     /// <summary>The <c>RefitSettings</c> property gating serializer-aware query key naming.</summary>
     private const string HonorSerializerNamesFlag = "HonorContentSerializerPropertyNamesInQuery";
 
@@ -98,10 +101,11 @@ internal static partial class Emitter
             }
 
             // A collection property branches on the local to pick the inline or double-pass rendering; a formatted or
-            // inline-renderable scalar branches on the URL formatter when appending its value.
+            // inline-renderable scalar (or a dictionary with an inline-renderable key) branches on the URL formatter.
             if (property.Collection is not null
                 || property.PropertyFormat is not null
-                || property.ValueFormat.Kind != InlineFormatKind.FormatterOnly)
+                || property.ValueFormat.Kind != InlineFormatKind.FormatterOnly
+                || property.Dictionary is { KeyFormat.Kind: not InlineFormatKind.FormatterOnly })
             {
                 return true;
             }
@@ -332,7 +336,7 @@ internal static partial class Emitter
             _ = sb.Append(", ").Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
         }
 
-        _ = sb.Append(loopIndent).Append("foreach (var ").Append(emission.QueryValueLocal).Append(" in @").Append(parameter.Name).AppendLine(")")
+        _ = sb.Append(loopIndent).Append(ForeachVarKeyword).Append(emission.QueryValueLocal).Append(" in @").Append(parameter.Name).AppendLine(")")
             .Append(loopIndent).AppendLine("{")
             .Append(loopIndent).Append("    ").Append(emission.QueryBuilderLocal);
         if (isFlag)
@@ -428,7 +432,7 @@ internal static partial class Emitter
                 .Append(bodyIndent).AppendLine("{");
         }
 
-        _ = sb.Append(indent).Append("foreach (var ").Append(entryLocal).Append(" in @").Append(parameter.Name).AppendLine(")")
+        _ = sb.Append(indent).Append(ForeachVarKeyword).Append(entryLocal).Append(" in @").Append(parameter.Name).AppendLine(")")
             .Append(indent).AppendLine("{");
 
         var entryIndent = indent + "    ";
@@ -601,7 +605,11 @@ internal static partial class Emitter
             .Append(site.Indentation).Append("var ").Append(site.ValueLocal).Append(" = ").Append(scope.AccessExpr)
             .Append('.').Append(property.ClrName).AppendLine(";");
 
-        if (property.Collection is { } collection)
+        if (property.Dictionary is { } dictionary)
+        {
+            AppendObjectDictionaryProperty(sb, context, property, dictionary, site, scope, emission);
+        }
+        else if (property.Collection is { } collection)
         {
             AppendObjectQueryCollectionProperty(sb, context, property, collection, site, emission);
         }
@@ -615,6 +623,89 @@ internal static partial class Emitter
         }
 
         _ = sb.Append(scope.Indentation).AppendLine("}");
+    }
+
+    /// <summary>Appends the statements expanding a dictionary property's entries under this property's key.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="context">The enclosing parameter, provider field, and pre-encoded context.</param>
+    /// <param name="property">The dictionary property descriptor.</param>
+    /// <param name="dictionary">The dictionary key metadata.</param>
+    /// <param name="site">The generated value local, composed key expression, and indentation for this property.</param>
+    /// <param name="scope">The nesting scope, supplying the key delimiter.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    private static void AppendObjectDictionaryProperty(
+        PooledStringBuilder sb,
+        in QueryObjectContext context,
+        QueryObjectPropertyModel property,
+        QueryDictionaryModel dictionary,
+        in QueryPropertySite site,
+        in ObjectFlattenScope scope,
+        in InlineValueEmission emission)
+    {
+        var indent = site.Indentation;
+        var entryLocal = site.ValueLocal + "_entry";
+        var entryValueLocal = site.ValueLocal + "_value";
+        var entryKeyLocal = site.ValueLocal + "_entrykey";
+
+        var loopIndent = indent;
+        if (property.CanBeNull)
+        {
+            _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NotNullCheckSuffix)
+                .Append(indent).AppendLine("{");
+            loopIndent = indent + "    ";
+        }
+
+        _ = sb.Append(loopIndent).Append(ForeachVarKeyword).Append(entryLocal).Append(" in ").Append(site.ValueLocal).AppendLine(")")
+            .Append(loopIndent).AppendLine("{");
+
+        var entryIndent = loopIndent + "    ";
+        _ = sb.Append(entryIndent).Append("var ").Append(entryValueLocal).Append(" = ").Append(entryLocal).AppendLine(".Value;");
+
+        var valueIndent = entryIndent;
+        if (dictionary.ValueCanBeNull)
+        {
+            _ = sb.Append(entryIndent).Append("if (").Append(entryValueLocal).AppendLine(NotNullCheckSuffix)
+                .Append(entryIndent).AppendLine("{");
+            valueIndent = entryIndent + "    ";
+        }
+
+        var keyTypeOf = $"typeof({dictionary.KeyTypeName})";
+        var customKey = $"{emission.SettingsLocal}.UrlParameterFormatter.Format({entryLocal}.Key, {keyTypeOf}, {keyTypeOf})";
+        var fastKey = BuildFastFormatExpression(entryLocal + ".Key", dictionary.KeyFormat, emission);
+        var entryKeyExpression = fastKey is null
+            ? customKey
+            : $"{emission.UseDefaultFormattingLocal} ? ({fastKey}) : {customKey}";
+
+        var customValue = BuildUrlFormatterCall(entryValueLocal, property.ValueFormat.TypeName, context.ProviderField, emission);
+        var fastValue = BuildFastFormatExpression(entryValueLocal, property.ValueFormat, emission);
+        var valueExpression = fastValue is null
+            ? customValue
+            : $"{emission.UseDefaultFormattingLocal} ? ({fastValue}) : {customValue}";
+
+        // The entry key composes under this property's key: "propertyKey" + delimiter + entryKey, matching the
+        // reflection builder's nested BuildQueryMap. A blank entry key drops the pair, exactly as reflection does.
+        _ = sb.Append(valueIndent).Append("var ").Append(entryKeyLocal).Append(" = ").Append(entryKeyExpression).AppendLine(";")
+            .Append(valueIndent).Append("if (!string.IsNullOrWhiteSpace(").Append(entryKeyLocal).AppendLine("))")
+            .Append(valueIndent).AppendLine("{")
+            .Append(valueIndent).Append("    ").Append(emission.QueryBuilderLocal)
+            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(" + ").Append(ToCSharpStringLiteral(scope.Delimiter))
+            .Append(" + ").Append(entryKeyLocal).Append(", ").Append(valueExpression).Append(", ")
+            .Append(context.PreEncoded).AppendLine(");")
+            .Append(valueIndent).AppendLine("}");
+
+        if (dictionary.ValueCanBeNull)
+        {
+            _ = sb.Append(entryIndent).AppendLine("}");
+        }
+
+        _ = sb.Append(loopIndent).AppendLine("}");
+
+        if (!property.CanBeNull)
+        {
+            return;
+        }
+
+        _ = sb.Append(indent).AppendLine("}");
     }
 
     /// <summary>Appends the statements flattening one nested-object property, recursing into its children.</summary>
@@ -644,9 +735,13 @@ internal static partial class Emitter
             .Append('.').Append(property.ClrName).AppendLine(";")
             .Append(innerIndent).Append("var ").Append(keyLocal).Append(" = ").Append(site.KeyExpression).AppendLine(";");
 
+        // A nullable value-type nested object holds its underlying struct behind .Value; a reference type flattens off
+        // the value directly. The null check above still runs against the value itself.
+        var childAccess = property.NestedThroughValue ? site.ValueLocal + ".Value" : site.ValueLocal;
+
         if (!property.CanBeNull)
         {
-            AppendObjectPropertyList(sb, context, children, new(site.ValueLocal, keyLocal, scope.Delimiter, childSuffix, innerIndent), emission);
+            AppendObjectPropertyList(sb, context, children, new(childAccess, keyLocal, scope.Delimiter, childSuffix, innerIndent), emission);
             _ = sb.Append(indent).AppendLine("}");
             return;
         }
@@ -661,14 +756,14 @@ internal static partial class Emitter
                 .Append(innerIndent).AppendLine("}")
                 .Append(innerIndent).AppendLine("else")
                 .Append(innerIndent).AppendLine("{");
-            AppendObjectPropertyList(sb, context, children, new(site.ValueLocal, keyLocal, scope.Delimiter, childSuffix, innerIndent + "    "), emission);
+            AppendObjectPropertyList(sb, context, children, new(childAccess, keyLocal, scope.Delimiter, childSuffix, innerIndent + "    "), emission);
             _ = sb.Append(innerIndent).AppendLine("}").Append(indent).AppendLine("}");
             return;
         }
 
         _ = sb.Append(innerIndent).Append("if (").Append(site.ValueLocal).AppendLine(NotNullCheckSuffix)
             .Append(innerIndent).AppendLine("{");
-        AppendObjectPropertyList(sb, context, children, new(site.ValueLocal, keyLocal, scope.Delimiter, childSuffix, innerIndent + "    "), emission);
+        AppendObjectPropertyList(sb, context, children, new(childAccess, keyLocal, scope.Delimiter, childSuffix, innerIndent + "    "), emission);
         _ = sb.Append(innerIndent).AppendLine("}").Append(indent).AppendLine("}");
     }
 
@@ -779,7 +874,7 @@ internal static partial class Emitter
             .Append(indent).AppendLine("{")
             .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".BeginCollection(").Append(site.KeyExpression)
             .Append(", ").Append(formatExpression).Append(", ").Append(site.PreEncoded).AppendLine(");")
-            .Append(innerIndent).Append("foreach (var ").Append(elementLocal).Append(" in ").Append(site.ValueLocal).AppendLine(")")
+            .Append(innerIndent).Append(ForeachVarKeyword).Append(elementLocal).Append(" in ").Append(site.ValueLocal).AppendLine(")")
             .Append(innerIndent).AppendLine("{")
             .Append(innerIndent).Append("    ").Append(emission.QueryBuilderLocal).Append(".AddCollectionValue(").Append(elementExpression).AppendLine(");")
             .Append(innerIndent).AppendLine("}")
@@ -1062,6 +1157,13 @@ internal static partial class Emitter
         string providerField,
         in InlineValueEmission emission)
     {
+        if (parameter.IsRoundTrip)
+        {
+            // A {**param} catch-all: split the value on '/', format and escape each segment, keep the separators.
+            var roundTripValue = parameter.CanBeNull ? $"@{parameter.Name}?.ToString()" : $"@{parameter.Name}.ToString()";
+            return $"global::Refit.GeneratedRequestRunner.RoundTripEscapePath({roundTripValue}, {emission.SettingsLocal}.UrlParameterFormatter, {providerField}, typeof({parameter.Type}))";
+        }
+
         var customExpression =
             $"{emission.SettingsLocal}.UrlParameterFormatter.Format(@{parameter.Name}, {providerField}, typeof({parameter.Type}))";
         var valueExpression = "@" + parameter.Name;

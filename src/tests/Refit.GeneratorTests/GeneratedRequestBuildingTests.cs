@@ -1158,7 +1158,7 @@ public class GeneratedRequestBuildingTests
     /// <summary>Verifies that round trip path parameters are not supported by the source generator.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task UsesFallbackForRoundTripPathPlaceholders()
+    public async Task GeneratesInlineForRoundTripPathPlaceholders()
     {
         const string source =
             """
@@ -1178,6 +1178,7 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("RoundTripEscapePath");
     }
 }

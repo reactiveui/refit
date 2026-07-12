@@ -32,6 +32,9 @@ internal static partial class Parser
     /// <summary>The metadata name of <c>Refit.AuthorizeAttribute</c>.</summary>
     private const string AuthorizeAttributeDisplayName = "AuthorizeAttribute";
 
+    /// <summary>The default authorization scheme when <c>[Authorize]</c> is used without an explicit scheme.</summary>
+    private const string DefaultAuthorizeScheme = "Bearer";
+
     /// <summary>The metadata name of <c>Refit.BodyAttribute</c>.</summary>
     private const string BodyAttributeDisplayName = "BodyAttribute";
 
@@ -571,9 +574,26 @@ internal static partial class Parser
             return collectionModel;
         }
 
+        // A dictionary property of simple keys and values expands its entries under this property's key, one
+        // key.entryKey=value pair per entry, exactly as the reflection builder's nested BuildQueryMap does.
+        if (TryBuildDictionaryPropertyModel(property, aliasName, serializerName, normalizedPrefix, query, formattableSymbol, context) is { } dictionaryModel)
+        {
+            return dictionaryModel;
+        }
+
         // A nested concrete object flattens recursively. Its children carry no parameter prefix (this property's key
         // already includes it); they compose their keys under this property's key with the parameter delimiter.
-        return TryBuildQueryObjectProperties(property.Type, null, formattableSymbol, context, ancestors, depth + 1) is { } nested
+        // A nullable value type (Nullable<T>) is unwrapped so its underlying struct flattens like a nullable class,
+        // accessed through .Value after the null check the emitter already emits for a nullable nested property.
+        var nestedType = property.Type;
+        var nestedThroughValue = false;
+        if (property.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableValueType)
+        {
+            nestedType = nullableValueType.TypeArguments[0];
+            nestedThroughValue = true;
+        }
+
+        return TryBuildQueryObjectProperties(nestedType, null, formattableSymbol, context, ancestors, depth + 1) is { } nested
             ? new(
                 property.Name,
                 aliasName,
@@ -583,9 +603,46 @@ internal static partial class Parser
                 CanElementBeNull(property.Type),
                 null,
                 BuildValueFormat(property.Type, null, formattableSymbol, context),
-                Nested: nested)
+                Nested: nested,
+                NestedThroughValue: nestedThroughValue)
             : null;
     }
+
+    /// <summary>Builds the descriptor for a dictionary property of simple keys and values, or null for any other shape.</summary>
+    /// <param name="property">The property to describe.</param>
+    /// <param name="aliasName">The resolved <c>[AliasAs]</c> name, or null.</param>
+    /// <param name="serializerName">The resolved content-serializer name, or null.</param>
+    /// <param name="normalizedPrefix">The resolved key prefix, or null.</param>
+    /// <param name="query">The property's parsed <c>[Query]</c> data.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <returns>The dictionary property descriptor, or null when the property is not a simple-keyed and -valued dictionary.</returns>
+    private static QueryObjectPropertyModel? TryBuildDictionaryPropertyModel(
+        IPropertySymbol property,
+        string? aliasName,
+        string? serializerName,
+        string? normalizedPrefix,
+        QueryFormData query,
+        INamedTypeSymbol? formattableSymbol,
+        InterfaceGenerationContext context) =>
+        !TryGetDictionaryTypes(property.Type, out var keyType, out var valueType)
+        || !IsSimpleType(keyType!, formattableSymbol)
+        || !IsSimpleType(valueType!, formattableSymbol)
+            ? null
+            : new(
+                property.Name,
+                aliasName,
+                serializerName,
+                normalizedPrefix,
+                query.SerializeNull,
+                CanElementBeNull(property.Type),
+                null,
+                BuildValueFormat(valueType!, null, formattableSymbol, context),
+                Dictionary: new(
+                    QualifyType(keyType!, context),
+                    BuildValueFormat(keyType!, null, formattableSymbol, context),
+                    CanElementBeNull(valueType!),
+                    PrefixSegment: null));
 
     /// <summary>Builds the descriptor for a collection-of-simple-elements property, or null for any other shape.</summary>
     /// <param name="property">The property to describe.</param>

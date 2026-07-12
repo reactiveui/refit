@@ -45,4 +45,12 @@ internal sealed record RequestParameterModel(
 
     /// <summary>Gets a value indicating whether a path parameter value passes through verbatim because the parameter carries <c>[Encoded]</c>.</summary>
     public bool PreEncoded { get; init; }
+
+    /// <summary>Gets the literal prefix prepended to a header value, or <see langword="null"/>. Set for an
+    /// <c>[Authorize]</c> parameter, whose <c>Authorization</c> header value is <c>"{scheme} " + value</c>.</summary>
+    public string? HeaderValuePrefix { get; init; }
+
+    /// <summary>Gets a value indicating whether a path parameter binds a round-trip <c>{**param}</c> catch-all whose
+    /// value is split on <c>/</c> with each segment formatted and escaped, preserving the separators.</summary>
+    public bool IsRoundTrip { get; init; }
 }

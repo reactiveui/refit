@@ -268,6 +268,53 @@ public sealed class ParserCoverageTests
         await Assert.That(model.Interfaces.AsArray()[0].Nullability).IsEqualTo(Nullability.None);
     }
 
+    /// <summary>Verifies inline eligibility is denied for a method with no HTTP method attribute.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CanBuildRequestInlineRejectsMethodWithoutHttpAttribute()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+            """
+            using System.Threading.Tasks;
+            using Refit;
+            namespace RefitGeneratorTest;
+            public interface IApi { Task<string> Plain(); }
+            """));
+        var httpBase = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")!;
+        var formattable = compilation.GetTypeByMetadataName("System.IFormattable");
+        var method = compilation.GetTypeByMetadataName("RefitGeneratorTest.IApi")!
+            .GetMembers("Plain").OfType<IMethodSymbol>().First();
+
+        await Assert.That(Parser.CanBuildRequestInline(method, httpBase, formattable)).IsFalse();
+    }
+
+    /// <summary>Verifies inline return-shape classification for non-named and plain named return types.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CanBuildRequestInlineClassifiesNonNamedAndNamedReturnShapes()
+    {
+        var compilation = Fixture.CreateLibrary(CSharpSyntaxTree.ParseText(
+            """
+            using Refit;
+            namespace RefitGeneratorTest;
+            public interface IApi
+            {
+                [Get("/a")] int[] ArrayReturn();
+                [Get("/b")] string StringReturn();
+            }
+            """));
+        var httpBase = compilation.GetTypeByMetadataName("Refit.HttpMethodAttribute")!;
+        var formattable = compilation.GetTypeByMetadataName("System.IFormattable");
+        var api = compilation.GetTypeByMetadataName("RefitGeneratorTest.IApi")!;
+        var arrayReturn = api.GetMembers("ArrayReturn").OfType<IMethodSymbol>().First();
+        var stringReturn = api.GetMembers("StringReturn").OfType<IMethodSymbol>().First();
+
+        // Neither is inline-eligible; the point is that classifying the non-named (array) and the plain named
+        // (string) declared result type both run here.
+        await Assert.That(Parser.CanBuildRequestInline(arrayReturn, httpBase, formattable)).IsFalse();
+        await Assert.That(Parser.CanBuildRequestInline(stringReturn, httpBase, formattable)).IsFalse();
+    }
+
     /// <summary>Analyzer config options backed by a dictionary for direct helper tests.</summary>
     /// <param name="values">The option values.</param>
     private sealed class DictionaryAnalyzerConfigOptions(IReadOnlyDictionary<string, string> values)
