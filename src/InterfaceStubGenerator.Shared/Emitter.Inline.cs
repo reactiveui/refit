@@ -149,11 +149,7 @@ internal static partial class Emitter
             paramInfoSb);
         var parameters = GetParametersArg(request, parameterInfoNames, emission);
 
-        // A template with placeholders but no bound path parameters still runs the unmatched-placeholder
-        // check so AllowUnmatchedRouteParameters keeps its reflection-path semantics.
-        var pathExpression = parameters.Length > 0 || request.Path.IndexOf('{') >= 0
-            ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}, {settingsLocal}.AllowUnmatchedRouteParameters{parameters})"
-            : ToCSharpStringLiteral(request.Path);
+        var pathExpression = BuildInlinePathExpression(request, parameterInfoNames, emission, settingsLocal, parameters);
 
         var bodyIndent = Indent(MethodBodyIndentation);
         var requestPathExpression = pathExpression;
@@ -387,6 +383,83 @@ internal static partial class Emitter
         }
 
         return parametersSb.ToString();
+    }
+
+    /// <summary>Builds the request path expression, preferring the span-formattable fast path when it applies.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="parameterInfoNames">The map of parameter name to cached attribute-provider field name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="parameters">The default path builder argument fragment.</param>
+    /// <returns>The generated path expression.</returns>
+    private static string BuildInlinePathExpression(
+        RequestModel request,
+        Dictionary<string, string> parameterInfoNames,
+        in InlineValueEmission emission,
+        string settingsLocal,
+        string parameters)
+    {
+        // A template with placeholders but no bound path parameters still runs the unmatched-placeholder
+        // check so AllowUnmatchedRouteParameters keeps its reflection-path semantics.
+        return TryBuildInlinePathFastExpression(request, parameterInfoNames, emission)
+            ?? (parameters.Length > 0 || request.Path.IndexOf('{') >= 0
+                ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}, {settingsLocal}.AllowUnmatchedRouteParameters{parameters})"
+                : ToCSharpStringLiteral(request.Path));
+    }
+
+    /// <summary>Builds the allocation-free path expression for a single span-formattable path parameter, or null.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="parameterInfoNames">The map of parameter name to cached attribute-provider field name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <returns>The path expression using the span-formattable fast overload, or null to use the default path building.</returns>
+    /// <remarks>The default-formatting branch formats the value straight into the path buffer (net6+ integers with no
+    /// escaping, net10+ span-escaped values); a customized <c>IUrlParameterFormatter</c> falls back to the string overload.</remarks>
+    private static string? TryBuildInlinePathFastExpression(
+        RequestModel request,
+        Dictionary<string, string> parameterInfoNames,
+        in InlineValueEmission emission)
+    {
+        RequestParameterModel? pathParameter = null;
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind != RequestParameterKind.Path)
+            {
+                continue;
+            }
+
+            // The single-placeholder fast overloads model one path parameter with one location; anything else falls back.
+            if (pathParameter is not null)
+            {
+                return null;
+            }
+
+            pathParameter = parameter;
+        }
+
+        if (pathParameter is not { Locations: { Count: 1 } locations, PreEncoded: false, ValueFormat: { } valueFormat }
+            || (!valueFormat.IsUrlSafeSpanFormattable && !valueFormat.IsSpanFormattableEscapable))
+        {
+            return null;
+        }
+
+        var pathLength = request.Path.Length;
+        var location = locations.AsArray()[0];
+        var start = location.Start.GetOffset(pathLength);
+        var end = location.End.GetOffset(pathLength);
+        var template = ToCSharpStringLiteral(request.Path);
+        var settingsLocal = emission.SettingsLocal;
+        var allowUnmatched = $"{settingsLocal}.AllowUnmatchedRouteParameters";
+        var valueExpression = "@" + pathParameter.Name;
+        _ = parameterInfoNames.TryGetValue(pathParameter.Name, out var providerField);
+        const string runner = "global::Refit.GeneratedRequestRunner.BuildRequestPath";
+
+        var fastExpression = valueFormat.IsUrlSafeSpanFormattable
+            ? $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression})"
+            : $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression}, {ToNullableCSharpStringLiteral(valueFormat.Format)})";
+        var customExpression =
+            $"{runner}({template}, {allowUnmatched}, (({start}, {end}), {settingsLocal}.UrlParameterFormatter.Format({valueExpression}, {providerField}, typeof({pathParameter.Type}))))";
+
+        return $"({emission.UseDefaultFormattingLocal} ? {fastExpression} : {customExpression})";
     }
 
     /// <summary>Builds request content assignment for an inline generated method.</summary>

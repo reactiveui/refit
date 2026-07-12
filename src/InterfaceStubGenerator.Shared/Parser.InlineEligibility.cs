@@ -53,6 +53,8 @@ internal static partial class Parser
             null,
             httpMethodBaseAttributeSymbol,
             formattableSymbol,
+            SpanFormattableSymbol: null,
+            SupportsSpanEscape: false,
             GeneratedRequestBuilding: true,
             EmitGeneratedCodeMarkers: false,
             SupportsNullable: false,

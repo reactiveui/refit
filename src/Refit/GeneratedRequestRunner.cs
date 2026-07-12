@@ -164,6 +164,81 @@ public static class GeneratedRequestRunner
         return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
     }
 
+#if NET6_0_OR_GREATER
+    /// <summary>Builds a single-placeholder request path, formatting an unformatted integer straight into the path
+    /// buffer with no intermediate string and no escaping.</summary>
+    /// <typeparam name="T">The integer value type.</typeparam>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <param name="range">The replacement range for the placeholder.</param>
+    /// <param name="value">The integer value to render.</param>
+    /// <returns>A path with the placeholder replaced.</returns>
+    /// <remarks>The generator emits this only for an unformatted integer parameter, whose invariant rendering is digits
+    /// and an optional leading <c>-</c> - all URL-unreserved - so the formatted span is appended without escaping.</remarks>
+    public static string BuildRequestPath<T>(
+        string relativePathTemplate,
+        bool allowUnmatchedParameter,
+        (int startIdx, int endIdx) range,
+        T value)
+        where T : ISpanFormattable
+    {
+        var pathSpan = relativePathTemplate.AsSpan();
+        using var sb = new ValueStringBuilder(stackalloc char[256]);
+        sb.Append(pathSpan[..range.startIdx]);
+
+        // long.MinValue and ulong.MaxValue both render in 20 characters, so 32 always succeeds for an integer.
+        Span<char> buffer = stackalloc char[32];
+        if (value.TryFormat(buffer, out var written, default, System.Globalization.CultureInfo.InvariantCulture))
+        {
+            sb.Append(buffer[..written]);
+        }
+        else
+        {
+            sb.Append(StringHelpers.EscapeDataString(value.ToString(null, System.Globalization.CultureInfo.InvariantCulture)));
+        }
+
+        sb.Append(pathSpan[range.endIdx..]);
+        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+    }
+#endif
+
+#if NET9_0_OR_GREATER
+    /// <summary>Builds a single-placeholder request path, formatting an <see cref="ISpanFormattable"/> value into a stack
+    /// buffer and escaping the span directly, so the intermediate formatted string is never allocated.</summary>
+    /// <typeparam name="T">The span-formattable value type.</typeparam>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <param name="range">The replacement range for the placeholder.</param>
+    /// <param name="value">The value to render.</param>
+    /// <param name="format">The compile-time format from <c>[Query(Format = ...)]</c>, or null.</param>
+    /// <returns>A path with the placeholder replaced.</returns>
+    public static string BuildRequestPath<T>(
+        string relativePathTemplate,
+        bool allowUnmatchedParameter,
+        (int startIdx, int endIdx) range,
+        T value,
+        string? format)
+        where T : ISpanFormattable
+    {
+        var pathSpan = relativePathTemplate.AsSpan();
+        using var sb = new ValueStringBuilder(stackalloc char[256]);
+        sb.Append(pathSpan[..range.startIdx]);
+
+        Span<char> buffer = stackalloc char[128];
+        if (value.TryFormat(buffer, out var written, format.AsSpan(), System.Globalization.CultureInfo.InvariantCulture))
+        {
+            sb.Append(Uri.EscapeDataString((ReadOnlySpan<char>)buffer[..written]));
+        }
+        else
+        {
+            sb.Append(StringHelpers.EscapeDataString(value.ToString(format, System.Globalization.CultureInfo.InvariantCulture)));
+        }
+
+        sb.Append(pathSpan[range.endIdx..]);
+        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+    }
+#endif
+
     /// <summary>Validates a parameterless request path template, throwing for unmatched placeholders.</summary>
     /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
     /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>

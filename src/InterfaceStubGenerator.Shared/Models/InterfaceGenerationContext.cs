@@ -13,6 +13,8 @@ namespace Refit.Generator;
 /// <param name="DisposableInterfaceSymbol">The <c>IDisposable</c> symbol, if available.</param>
 /// <param name="HttpMethodBaseAttributeSymbol">The Refit HTTP method attribute symbol.</param>
 /// <param name="FormattableSymbol">The <c>System.IFormattable</c> symbol used to classify inline-eligible path parameter types, if available.</param>
+/// <param name="SpanFormattableSymbol">The <c>System.ISpanFormattable</c> symbol (net6+ consumers only), used to enable the allocation-free path fast path, or null.</param>
+/// <param name="SupportsSpanEscape">Whether the consumer target exposes <c>Uri.EscapeDataString(ReadOnlySpan&lt;char&gt;)</c> (net10+), enabling the escaping span fast path.</param>
 /// <param name="GeneratedRequestBuilding">Whether generated request construction is enabled.</param>
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="SupportsNullable">Whether the compilation supports nullable reference types.</param>
@@ -27,6 +29,8 @@ internal readonly record struct InterfaceGenerationContext(
     ISymbol? DisposableInterfaceSymbol,
     INamedTypeSymbol HttpMethodBaseAttributeSymbol,
     INamedTypeSymbol? FormattableSymbol,
+    INamedTypeSymbol? SpanFormattableSymbol,
+    bool SupportsSpanEscape,
     bool GeneratedRequestBuilding,
     bool EmitGeneratedCodeMarkers,
     bool SupportsNullable,

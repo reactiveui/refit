@@ -688,9 +688,41 @@ internal static partial class Parser
                 : new(InlineFormatKind.Enum, format, typeName, isNullableValueType, members);
         }
 
-        return ImplementsFormattable(type, formattableSymbol)
-            ? new(InlineFormatKind.Formattable, format, typeName, isNullableValueType, null)
-            : new InlineValueFormatModel(InlineFormatKind.ToStringOnly, format, typeName, isNullableValueType, null);
+        if (!ImplementsFormattable(type, formattableSymbol))
+        {
+            return new(InlineFormatKind.ToStringOnly, format, typeName, isNullableValueType, null);
+        }
+
+        var (urlSafe, escapable) = ComputeSpanFormattableTiers(type, format, isNullableValueType, context);
+        return new(InlineFormatKind.Formattable, format, typeName, isNullableValueType, null)
+        {
+            IsUrlSafeSpanFormattable = urlSafe,
+            IsSpanFormattableEscapable = escapable,
+        };
+    }
+
+    /// <summary>Computes the two path fast-write tiers a formattable value type supports on the consumer target.</summary>
+    /// <param name="type">The unwrapped value type.</param>
+    /// <param name="format">The compile-time format, or null.</param>
+    /// <param name="isNullableValueType">Whether the source value is a nullable value type.</param>
+    /// <param name="context">The generation context carrying the resolved fast-path capabilities.</param>
+    /// <returns>Whether the value qualifies for the net6+ URL-safe integer write and the net10+ span-escape write.</returns>
+    /// <remarks>net6+: an unformatted integer renders as URL-safe digits, so it is written with no escaping.
+    /// net10+: any <c>ISpanFormattable</c> renders into a stack buffer and escapes span-to-string, skipping the ToString.</remarks>
+    private static (bool UrlSafe, bool Escapable) ComputeSpanFormattableTiers(
+        ITypeSymbol type,
+        string? format,
+        bool isNullableValueType,
+        in InterfaceGenerationContext context)
+    {
+        var urlSafe = context.SpanFormattableSymbol is not null
+            && !isNullableValueType
+            && format is null
+            && type.SpecialType is >= SpecialType.System_SByte and <= SpecialType.System_UInt64;
+        var escapable = context.SupportsSpanEscape
+            && !isNullableValueType
+            && ImplementsFormattable(type, context.SpanFormattableSymbol);
+        return (urlSafe, escapable);
     }
 
     /// <summary>Determines whether a type implements <c>System.IFormattable</c>.</summary>

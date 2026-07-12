@@ -35,6 +35,48 @@ public partial class GeneratedRequestRunnerTests
             .Throws<ArgumentException>()
             .WithMessage("URL /user/{id} has parameter {id}, but no method parameter matches", StringComparison.Ordinal);
 
+    /// <summary>Verifies the span-formattable overload writes an integer into the path without escaping.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathWritesIntegerWithoutEscaping()
+    {
+        const int start = 7;
+        const int end = 11;
+        const int id = 42;
+        var result = GeneratedRequestRunner.BuildRequestPath("/users/{id}/posts", false, (start, end), id);
+
+        await Assert.That(result).EqualTo("/users/42/posts");
+    }
+
+    /// <summary>Verifies the span-formattable overload renders a negative integer.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathWritesNegativeInteger()
+    {
+        const int start = 3;
+        const int end = 6;
+        const long value = -7;
+        var result = GeneratedRequestRunner.BuildRequestPath("/n/{v}", false, (start, end), value);
+
+        await Assert.That(result).EqualTo("/n/-7");
+    }
+
+#if NET10_0_OR_GREATER
+    /// <summary>Verifies the escaping span-formattable overload percent-encodes reserved characters (net10+).</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathEscapesSpanFormattableValue()
+    {
+        const int start = 4;
+        const int end = 10;
+        const double value = 1e21;
+        var result = GeneratedRequestRunner.BuildRequestPath("/at/{when}", false, (start, end), value, null);
+
+        // 1e21 renders as "1E+21"; the '+' is URL-reserved and percent-encoded exactly as Uri.EscapeDataString would.
+        await Assert.That(result).EqualTo("/at/1E%2B21");
+    }
+#endif
+
     /// <summary>Provides test data for <see cref="GeneratedRequestRunnerTests"/>.</summary>
     internal static class GeneratedRequestRunnerTestsDataSources
     {

@@ -3,3 +3,4 @@ static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplat
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, ((int startIdx, int endIdx) range, string? value) p0, ((int startIdx, int endIdx) range, string? value) p1) -> string!
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, ((int startIdx, int endIdx) range, string? value) p0, ((int startIdx, int endIdx) range, string? value) p1, ((int startIdx, int endIdx) range, string? value) p2) -> string!
 static Refit.GeneratedRequestRunner.CanUnrollForm(object? body) -> bool
+static Refit.GeneratedRequestRunner.BuildRequestPath<T>(string! relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value) -> string!
