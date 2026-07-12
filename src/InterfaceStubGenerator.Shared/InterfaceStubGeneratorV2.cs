@@ -157,7 +157,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="context">The generator initialization context.</param>
     /// <returns>The collected candidate methods.</returns>
     private static IncrementalValueProvider<ImmutableArray<MethodDeclarationSyntax>>
-        CreateStandardHttpMethodCandidateProvider(IncrementalGeneratorInitializationContext context)
+        CreateStandardHttpMethodCandidateProvider(in IncrementalGeneratorInitializationContext context)
     {
         var deleteMethods = CreateHttpMethodCandidateProvider(context, DeleteAttributeMetadataName).Collect();
         var getMethods = CreateHttpMethodCandidateProvider(context, GetAttributeMetadataName).Collect();
@@ -194,7 +194,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="metadataName">The fully qualified metadata name.</param>
     /// <returns>The matching method declarations.</returns>
     private static IncrementalValuesProvider<MethodDeclarationSyntax> CreateHttpMethodCandidateProvider(
-        IncrementalGeneratorInitializationContext context,
+        in IncrementalGeneratorInitializationContext context,
         string metadataName) =>
         context.SyntaxProvider.ForAttributeWithMetadataName(
             metadataName,
@@ -205,7 +205,7 @@ public class InterfaceStubGeneratorV2 : IIncrementalGenerator
     /// <param name="candidates">The candidate arrays.</param>
     /// <returns>The combined candidates.</returns>
     private static ImmutableArray<MethodDeclarationSyntax> CombineStandardHttpMethodCandidates(
-        StandardHttpMethodCandidates candidates)
+        in StandardHttpMethodCandidates candidates)
     {
 #if ROSLYN_5
         return

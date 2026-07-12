@@ -30,6 +30,12 @@ public sealed class ResponseTests
     /// <summary>Media type used for RFC 7807 problem-details responses.</summary>
     private const string ProblemJsonMediaType = "application/problem+json";
 
+    /// <summary>The JSON media type reused across the content-type tests.</summary>
+    private const string JsonMediaType = "application/json";
+
+    /// <summary>The invalid JSON response body used to trigger deserialization failures.</summary>
+    private const string InvalidJsonContent = "Invalid JSON";
+
     /// <summary>Expected problem-details detail value.</summary>
     private const string DetailValue = "detail";
 
@@ -288,7 +294,7 @@ public sealed class ResponseTests
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("Invalid JSON")
+            Content = new StringContent(InvalidJsonContent)
         };
 
         var handler = new StubHttp
@@ -315,7 +321,7 @@ public sealed class ResponseTests
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("Invalid JSON")
+            Content = new StringContent(InvalidJsonContent)
         };
 
         var handler = new StubHttp
@@ -343,7 +349,7 @@ public sealed class ResponseTests
     {
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK)
         {
-            Content = new StringContent("Invalid JSON")
+            Content = new StringContent(InvalidJsonContent)
         };
 
         var handler = new StubHttp
@@ -446,7 +452,7 @@ public sealed class ResponseTests
         {
             Headers =
             {
-                ContentType = new("application/json")
+                ContentType = new(JsonMediaType)
                 {
                     CharSet = Encoding.UTF8.WebName
                 }
@@ -455,7 +461,7 @@ public sealed class ResponseTests
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 
-        expectedResponse.Content.Headers.ContentType = new("application/json");
+        expectedResponse.Content.Headers.ContentType = new(JsonMediaType);
         expectedResponse.StatusCode = HttpStatusCode.OK;
 
         var localHandler = new StubHttp
@@ -495,7 +501,7 @@ public sealed class ResponseTests
         contentStream.CanGetLength = false;
 
         var httpContent = new StreamContent(contentStream);
-        httpContent.Headers.ContentType = new("application/json");
+        httpContent.Headers.ContentType = new(JsonMediaType);
 
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK) { Content = httpContent };
 

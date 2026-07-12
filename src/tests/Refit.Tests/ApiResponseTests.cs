@@ -13,6 +13,12 @@ public sealed class ApiResponseTests
     /// <summary>The example request URI reused across the response tests.</summary>
     private const string ExampleUri = "https://example.test";
 
+    /// <summary>The response body content reused across the payload tests.</summary>
+    private const string PayloadContent = "payload";
+
+    /// <summary>The content value reused across the successful-response tests.</summary>
+    private const string HelloContent = "hello";
+
     /// <summary>The expected length of the five-character body used by the narrowing tests.</summary>
     private const int ExpectedContentLength = 5;
 
@@ -171,15 +177,15 @@ public sealed class ApiResponseTests
     [Test]
     public async Task SuccessResponseExposesMetadataAndUsesFastEnsurePath()
     {
-        using var responseMessage = CreateResponse(HttpStatusCode.OK, "payload");
-        using var response = new ApiResponse<string>(responseMessage, "payload", new());
+        using var responseMessage = CreateResponse(HttpStatusCode.OK, PayloadContent);
+        using var response = new ApiResponse<string>(responseMessage, PayloadContent, new());
 
         var success = await response.EnsureSuccessStatusCodeAsync();
         var successful = await response.EnsureSuccessfulAsync();
 
         await Assert.That(success).IsSameReferenceAs(response);
         await Assert.That(successful).IsSameReferenceAs(response);
-        await Assert.That(response.Content).IsEqualTo("payload");
+        await Assert.That(response.Content).IsEqualTo(PayloadContent);
         await Assert.That(response.Headers).IsNotNull();
         await Assert.That(response.ContentHeaders).IsNotNull();
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
@@ -307,7 +313,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task IsSuccessfulWithContentNarrowsContent()
     {
-        using var response = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), "hello", new());
+        using var response = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), HelloContent, new());
 
         if (response.IsSuccessfulWithContent)
         {
@@ -560,7 +566,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task StatusCodeOrNullContentGuardStillNarrows()
     {
-        using var ok = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), "hello", new());
+        using var ok = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), HelloContent, new());
         if (!ok.IsSuccessStatusCode || ok.Content is null)
         {
             Assert.Fail("Expected a successful response with content.");
@@ -584,7 +590,7 @@ public sealed class ApiResponseTests
     [Test]
     public async Task SuccessfulOrHasContentGuardEqualsIsSuccessfulWithContent()
     {
-        using var ok = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), "hello", new());
+        using var ok = new ApiResponse<string>(CreateResponse(HttpStatusCode.OK, "x"), HelloContent, new());
         if (!ok.IsSuccessful || !ok.HasContent)
         {
             Assert.Fail("Expected a successful response with content.");

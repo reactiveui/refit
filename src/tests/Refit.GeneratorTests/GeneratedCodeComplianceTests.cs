@@ -15,6 +15,9 @@ public class GeneratedCodeComplianceTests
     /// <summary>The generated implementation hint name used by compatibility tests.</summary>
     private const string GeneratedClientHintName = "IGeneratedClient.g.cs";
 
+    /// <summary>The <c>#nullable</c> directive that must be absent from C# 7.3-targeted generated source.</summary>
+    private const string NullableDirective = "#nullable";
+
     /// <summary>Verifies generated source compiles for projects using C# 7.3.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -43,7 +46,7 @@ public class GeneratedCodeComplianceTests
         await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
         foreach (var generatedSource in result.GeneratedSources)
         {
-            await Assert.That(generatedSource.Value).DoesNotContain("#nullable");
+            await Assert.That(generatedSource.Value).DoesNotContain(NullableDirective);
             await Assert.That(generatedSource.Value).DoesNotContain("static (");
         }
     }
@@ -87,7 +90,7 @@ public class GeneratedCodeComplianceTests
         await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
 
         var generated = result.GeneratedSources[GeneratedClientHintName];
-        await Assert.That(generated).DoesNotContain("#nullable");
+        await Assert.That(generated).DoesNotContain(NullableDirective);
         await Assert.That(generated).DoesNotContain(".Add(new(");
         await Assert.That(generated).Contains("new global::System.Collections.Generic.KeyValuePair<string, string>(");
         await Assert.That(generated).Contains(" != null");
@@ -134,7 +137,7 @@ public class GeneratedCodeComplianceTests
         await Assert.That(GetCompilerErrors(result.OutputCompilation)).IsEqualTo(string.Empty);
 
         var generated = result.GeneratedSources[GeneratedClientHintName];
-        await Assert.That(generated).DoesNotContain("#nullable");
+        await Assert.That(generated).DoesNotContain(NullableDirective);
         await Assert.That(generated).DoesNotContain("static body =>");
         await Assert.That(generated).DoesNotContain("(object?)");
         await Assert.That(generated).Contains("global::Refit.FormField<");

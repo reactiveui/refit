@@ -12,6 +12,9 @@ namespace Refit.GeneratorTests;
 /// so the generated code compiles for types that are not reachable via <c>global::</c> (issue #1101).</summary>
 public sealed class ExternAliasTests
 {
+    /// <summary>The alias-qualified <c>Widget</c> type name the generator must emit into the generated code.</summary>
+    private const string AliasedWidgetQualifiedName = "CompanyLib::Colliding.Widget";
+
     /// <summary>Source for a separate assembly, referenced only through the extern alias <c>CompanyLib</c>.</summary>
     private const string AliasedLibrarySource =
         "namespace Colliding { public sealed class Widget { public int Size { get; set; } } public enum Color { Red, Green } }";
@@ -38,7 +41,7 @@ public sealed class ExternAliasTests
             """;
 
         var generated = await RunAndAssertNoErrors(consumer);
-        await Assert.That(generated).Contains("CompanyLib::Colliding.Widget");
+        await Assert.That(generated).Contains(AliasedWidgetQualifiedName);
     }
 
     /// <summary>Verifies a body parameter type behind an extern alias is emitted as <c>alias::</c> and compiles.</summary>
@@ -62,7 +65,7 @@ public sealed class ExternAliasTests
             """;
 
         var generated = await RunAndAssertNoErrors(consumer);
-        await Assert.That(generated).Contains("CompanyLib::Colliding.Widget");
+        await Assert.That(generated).Contains(AliasedWidgetQualifiedName);
     }
 
     /// <summary>Verifies an extern-aliased enum flattened into the query string is emitted as <c>alias::</c> and compiles.</summary>
@@ -112,7 +115,7 @@ public sealed class ExternAliasTests
             """;
 
         var generated = await RunAndAssertNoErrors(consumer);
-        await Assert.That(generated).Contains("CompanyLib::Colliding.Widget");
+        await Assert.That(generated).Contains(AliasedWidgetQualifiedName);
     }
 
     /// <summary>Runs the generator over a consumer that reaches the aliased library, asserting the emitted directive,

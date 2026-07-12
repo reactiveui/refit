@@ -33,6 +33,9 @@ public class AuthenticatedClientHandlerTests
     /// <summary>Authorization header value carrying the bearer token.</summary>
     private const string BearerTokenValue = "Bearer " + TokenValue;
 
+    /// <summary>Authorization header value carrying the refreshed bearer token.</summary>
+    private const string BearerTokenValue2 = "Bearer tokenValue2";
+
     /// <summary>Name of the HTTP user agent header.</summary>
     private const string UserAgentHeader = "User-Agent";
 
@@ -297,14 +300,14 @@ public class AuthenticatedClientHandlerTests
     {
         var expectedHeaders = new Dictionary<string, string>
         {
-            { AuthorizationHeader, "Bearer tokenValue2" },
+            { AuthorizationHeader, BearerTokenValue2 },
             { UserAgentHeader, RefitValue },
             { ForwardedForHeader, RefitValue }
         };
 
         var headerCollectionHeaders = new Dictionary<string, string>
         {
-            { AuthorizationHeader, "Bearer tokenValue2" },
+            { AuthorizationHeader, BearerTokenValue2 },
             { UserAgentHeader, RefitValue },
             { ForwardedForHeader, RefitValue }
         };
@@ -337,7 +340,7 @@ public class AuthenticatedClientHandlerTests
 
         var headers = new Dictionary<string, string>
         {
-            { AuthorizationHeader, "Bearer tokenValue2" },
+            { AuthorizationHeader, BearerTokenValue2 },
             { "ThingId", id.ToString() }
         };
 

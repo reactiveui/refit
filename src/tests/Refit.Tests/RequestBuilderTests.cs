@@ -18,6 +18,18 @@ public partial class RequestBuilderTests
     /// <summary>The name of the cancellable GET method exercised by the cancellation tests.</summary>
     private const string GetWithCancellationMethod = "GetWithCancellation";
 
+    /// <summary>The single positional argument reused by the dynamic-invocation tests.</summary>
+    private const string ValueArgument = "value";
+
+    /// <summary>The name of the void method with a query alias exercised by the escaping tests.</summary>
+    private const string FetchVoidQueryAliasMethodName = "FetchSomeStuffWithVoidAndQueryAlias";
+
+    /// <summary>A sample email query argument exercised by the escaping tests.</summary>
+    private const string ExampleEmailValue = "test@example.com";
+
+    /// <summary>A sample query argument containing reserved characters exercised by the escaping tests.</summary>
+    private const string PushNotPullValue = "push!=pull";
+
     /// <summary>The canonical sample route id passed as the first argument to most request-builder tests.</summary>
     private const int SampleId = 6;
 
@@ -405,7 +417,7 @@ public partial class RequestBuilderTests
                 {
                     BaseAddress = new(ApiBaseUrlWithSlash)
                 },
-                ["value"])!;
+                [ValueArgument])!;
 
         var result = await valueTask;
 
@@ -428,7 +440,7 @@ public partial class RequestBuilderTests
                 {
                     BaseAddress = new(ApiBaseUrlWithSlash)
                 },
-                ["value"])!;
+                [ValueArgument])!;
 
         using var response = await valueTask;
 
@@ -456,7 +468,7 @@ public partial class RequestBuilderTests
                 {
                     BaseAddress = new(ApiBaseUrlWithSlash)
                 },
-                ["value", cts.Token])!;
+                [ValueArgument, cts.Token])!;
 
         await Assert.That(() => (Task)ObservableTestHelpers.Await(observable)).ThrowsExactly<TaskCanceledException>();
         await Assert.That(testHttpMessageHandler.RequestMessage!.RequestUri!.ToString()).IsEqualTo("http://api/value/value");
@@ -652,8 +664,8 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = await factory(["6 & 7/8", "test@example.com", "push!=pull"]);
+            FetchVoidQueryAliasMethodName);
+        var output = await factory(["6 & 7/8", ExampleEmailValue, PushNotPullValue]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
@@ -667,8 +679,8 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = await factory(["6/6", "test@example.com", "push!=pull"]);
+            FetchVoidQueryAliasMethodName);
+        var output = await factory(["6/6", ExampleEmailValue, PushNotPullValue]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 
@@ -718,8 +730,8 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
-            "FetchSomeStuffWithVoidAndQueryAlias");
-        var output = await factory(["6", "test@example.com", "push!=pull"]);
+            FetchVoidQueryAliasMethodName);
+        var output = await factory(["6", ExampleEmailValue, PushNotPullValue]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
 

@@ -49,6 +49,15 @@ public partial class RestServiceIntegrationTests
     /// <summary>The sample postal code used in complex query-parameter exchanges.</summary>
     private const int PostcodeValue = 9999;
 
+    /// <summary>The custom header name exchanged with httpbin in the header tests.</summary>
+    private const string RefitHeaderName = "X-Refit";
+
+    /// <summary>Stub endpoint URL used by the no-body POST tests.</summary>
+    private const string HttpBinPostUrl = "http://httpbin.org/1h3a5jm1";
+
+    /// <summary>The error response body returned by the bad-request stub.</summary>
+    private const string BadErrorJson = "{\"error\":\"bad\"}";
+
     /// <summary>Verifies the npmjs registry can be queried.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -78,7 +87,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Post("http://httpbin.org/1h3a5jm1"),
+                Route.Post(HttpBinPostUrl),
                 Reply.Status(HttpStatusCode.OK)
             },
         };
@@ -210,11 +219,11 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Post("http://httpbin.org/1h3a5jm1"),
+                Route.Post(HttpBinPostUrl),
                 Reply.Status(HttpStatusCode.OK)
             },
             {
-                Route.Post("http://httpbin.org/1h3a5jm1"),
+                Route.Post(HttpBinPostUrl),
                 Reply.Status(HttpStatusCode.OK)
             },
         };
@@ -376,7 +385,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://httpbin.org/get", Query = [("param", "foo")], Headers = [("X-Refit", "99")] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://httpbin.org/get", Query = [("param", "foo")], Headers = [(RefitHeaderName, "99")] },
                 Reply.Json("{\"url\": \"http://httpbin.org/get?param=foo\", \"args\": {\"param\": \"foo\"}, \"headers\":{\"X-Refit\":\"99\"}}")
             },
         };
@@ -387,7 +396,7 @@ public partial class RestServiceIntegrationTests
 
         await Assert.That(result.Url).IsEqualTo("http://httpbin.org/get?param=foo");
         await Assert.That(result.Args!["param"]).IsEqualTo("foo");
-        await Assert.That(result.Headers!["X-Refit"]).IsEqualTo("99");
+        await Assert.That(result.Headers![RefitHeaderName]).IsEqualTo("99");
 
         await handler.VerifyAllCalledAsync();
     }
@@ -431,7 +440,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "https://httpbin.org/get", Headers = [("X-Refit", "99")] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = HttpBinGetUrl, Headers = [(RefitHeaderName, "99")] },
                 Reply.Json("{\"url\": \"https://httpbin.org/get?FirstName=John&LastName=Rambo\", \"args\": {\"FirstName\": \"John\", \"lName\": \"Rambo\"}}")
             },
         };
@@ -441,12 +450,12 @@ public partial class RestServiceIntegrationTests
         var myParams = new MySimpleQueryParams { FirstName = "John", LastName = RamboLastName };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, MySimpleQueryParams, int>>(
-            "https://httpbin.org/get",
+            HttpBinGetUrl,
             settings);
 
         var resp = await fixture.Get(myParams, XRefitHeaderValue);
 
-        await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
+        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
         await Assert.That(resp.Args["lName"]).IsEqualTo(RamboLastName);
     }
 
@@ -458,7 +467,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Get("https://httpbin.org/get"),
+                Route.Get(HttpBinGetUrl),
                 Reply.Json("{\"url\": \"https://httpbin.org/get?hardcoded=true&FirstName=John&LastName=Rambo"
                     + "&Addr_Zip=9999&Addr_Street=HomeStreet 99&MetaData_Age=99&MetaData_Initials=JR"
                     + "&MetaData_Birthday=10%2F31%2F1918 4%3A21%3A16 PM&Other=12345"
@@ -494,7 +503,7 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.GetQuery(myParams);
 
-        await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
+        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
         await Assert.That(resp.Args["LastName"]).IsEqualTo(RamboLastName);
         await Assert.That(resp.Args["Addr_Zip"]).IsEqualTo("9999");
     }
@@ -543,7 +552,7 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.PostQuery(myParams);
 
-        await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
+        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
         await Assert.That(resp.Args["LastName"]).IsEqualTo(RamboLastName);
         await Assert.That(resp.Args["Addr_Zip"]).IsEqualTo("9999");
     }
@@ -603,7 +612,7 @@ public partial class RestServiceIntegrationTests
         {
             {
                 Route.Post(HttpBinFooUrl),
-                Reply.Json("{\"error\":\"bad\"}", HttpStatusCode.BadRequest)
+                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
             },
         };
 
@@ -630,7 +639,7 @@ public partial class RestServiceIntegrationTests
         {
             {
                 Route.Post(HttpBinFooUrl),
-                Reply.Json("{\"error\":\"bad\"}", HttpStatusCode.BadRequest)
+                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
             },
         };
 
@@ -657,7 +666,7 @@ public partial class RestServiceIntegrationTests
         {
             {
                 Route.Post(HttpBinFooUrl),
-                Reply.Json("{\"error\":\"bad\"}", HttpStatusCode.BadRequest)
+                Reply.Json(BadErrorJson, HttpStatusCode.BadRequest)
             },
         };
 

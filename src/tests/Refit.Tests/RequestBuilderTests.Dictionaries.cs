@@ -20,6 +20,9 @@ public partial class RequestBuilderTests
     /// <summary>The identifier value reused across path and query segments.</summary>
     private const string TheId = "theId";
 
+    /// <summary>The title argument reused across the dictionary query tests.</summary>
+    private const string TitleValue = "title";
+
     /// <summary>The identifier rendered into the "/api/{id}" path across the optional-parameter query tests.</summary>
     private const int ResourceId = 123;
 
@@ -270,7 +273,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
         const int optionalId = 999;
-        var output = await factory([ResourceId, "title", optionalId, new Foo(), _stringArrayAb]);
+        var output = await factory([ResourceId, TitleValue, optionalId, new Foo(), _stringArrayAb]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
@@ -285,7 +288,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
-        var output = await factory([ResourceId, "title", null!, null!, _stringArrayAb]);
+        var output = await factory([ResourceId, TitleValue, null!, null!, _stringArrayAb]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
@@ -304,7 +307,7 @@ public partial class RequestBuilderTests
         var output = await factory(
             [
                 new PathBoundObject { SomeProperty = ResourceId, SomeProperty2 = "test" },
-                "title",
+                TitleValue,
                 null!,
                 _stringArrayAb
             ]);

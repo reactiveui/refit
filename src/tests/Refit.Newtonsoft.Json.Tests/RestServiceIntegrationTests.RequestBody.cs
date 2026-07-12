@@ -13,6 +13,9 @@ namespace Refit.Tests;
 /// <summary>Newtonsoft-specific request/response body integration tests.</summary>
 public partial class RestServiceIntegrationTests
 {
+    /// <summary>The <c>message</c> token used as an error payload key and expected error entry.</summary>
+    private const string MessageToken = "message";
+
     /// <summary>Verifies error content can be read from error responses.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -26,7 +29,7 @@ public partial class RestServiceIntegrationTests
             },
         };
 
-        var fixture = handler.CreateClient<IGitHubApi>("https://api.github.com", new RefitSettings
+        var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
                 new()
@@ -44,7 +47,7 @@ public partial class RestServiceIntegrationTests
             await Assert.That(exception.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
             var content = await exception.GetContentAsAsync<Dictionary<string, string>>();
 
-            await Assert.That(content!["message"]).IsEqualTo("Not Found");
+            await Assert.That(content![MessageToken]).IsEqualTo("Not Found");
             await Assert.That(content["documentation_url"]).IsNotNull();
         }
     }
@@ -62,7 +65,7 @@ public partial class RestServiceIntegrationTests
             },
         };
 
-        var fixture = handler.CreateClient<IGitHubApi>("https://api.github.com", new RefitSettings
+        var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
                 new()
@@ -82,7 +85,7 @@ public partial class RestServiceIntegrationTests
         var errors = await result.GetContentAsAsync<ErrorResponse>();
 
         await Assert.That(errors!.Errors).Contains("error1");
-        await Assert.That(errors.Errors).Contains("message");
+        await Assert.That(errors.Errors).Contains(MessageToken);
 
         await handler.VerifyAllCalledAsync();
     }
@@ -100,7 +103,7 @@ public partial class RestServiceIntegrationTests
             },
         };
 
-        var fixture = handler.CreateClient<IGitHubApi>("https://api.github.com", new RefitSettings
+        var fixture = handler.CreateClient<IGitHubApi>(GitHubBaseUrl, new RefitSettings
         {
             ContentSerializer = new NewtonsoftJsonContentSerializer(
                 new()
@@ -118,7 +121,7 @@ public partial class RestServiceIntegrationTests
         var errors = await error!.GetContentAsAsync<ErrorResponse>();
 
         await Assert.That(errors!.Errors).Contains("error1");
-        await Assert.That(errors.Errors).Contains("message");
+        await Assert.That(errors.Errors).Contains(MessageToken);
 
         await handler.VerifyAllCalledAsync();
     }

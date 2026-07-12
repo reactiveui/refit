@@ -26,6 +26,15 @@ internal static partial class Emitter
     /// <summary>The start of a generated <c>foreach (var …)</c> loop over a collection or dictionary.</summary>
     private const string ForeachVarKeyword = "foreach (var ";
 
+    /// <summary>The generated <c>ToString()</c> call appended to a value expression.</summary>
+    private const string ToStringCall = ".ToString()";
+
+    /// <summary>The tail of a generated <c>if (value == null)</c> guard.</summary>
+    private const string NullEqualityCheckSuffix = " == null)";
+
+    /// <summary>The generated argument list fragment that adds an empty serialized value.</summary>
+    private const string EmptyValueArgument = ", string.Empty, ";
+
     /// <summary>The <c>RefitSettings</c> property gating serializer-aware query key naming.</summary>
     private const string HonorSerializerNamesFlag = "HonorContentSerializerPropertyNamesInQuery";
 
@@ -52,8 +61,7 @@ internal static partial class Emitter
     {
         foreach (var parameter in request.Parameters)
         {
-            if (parameter.Kind == RequestParameterKind.Path
-                && parameter.ValueFormat is { Kind: not InlineFormatKind.FormatterOnly })
+            if (parameter.Kind == RequestParameterKind.Path && PathParameterNeedsFormattingLocal(parameter))
             {
                 return true;
             }
@@ -106,6 +114,32 @@ internal static partial class Emitter
                 || property.PropertyFormat is not null
                 || property.ValueFormat.Kind != InlineFormatKind.FormatterOnly
                 || property.Dictionary is { KeyFormat.Kind: not InlineFormatKind.FormatterOnly })
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Determines whether a path parameter's value or any of its object bindings uses the fast-format branch.</summary>
+    /// <param name="parameter">The path parameter model.</param>
+    /// <returns><see langword="true"/> when the default-formatting local is referenced when formatting the value.</returns>
+    private static bool PathParameterNeedsFormattingLocal(RequestParameterModel parameter)
+    {
+        if (parameter.ValueFormat is { Kind: not InlineFormatKind.FormatterOnly })
+        {
+            return true;
+        }
+
+        if (parameter.PathObjectBindings is not { } bindings)
+        {
+            return false;
+        }
+
+        foreach (var binding in bindings)
+        {
+            if (binding.ValueFormat.Kind != InlineFormatKind.FormatterOnly)
             {
                 return true;
             }
@@ -749,10 +783,10 @@ internal static partial class Emitter
         // A null nested object is omitted, unless [Query(SerializeNull = true)] emits a bare key=.
         if (property.SerializeNull)
         {
-            _ = sb.Append(innerIndent).Append("if (").Append(site.ValueLocal).AppendLine(" == null)")
+            _ = sb.Append(innerIndent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
                 .Append(innerIndent).AppendLine("{")
                 .Append(innerIndent).Append("    ").Append(emission.QueryBuilderLocal)
-                .Append(AddQueryPairCall).Append(keyLocal).Append(", string.Empty, ").Append(site.PreEncoded).AppendLine(");")
+                .Append(AddQueryPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
                 .Append(innerIndent).AppendLine("}")
                 .Append(innerIndent).AppendLine("else")
                 .Append(innerIndent).AppendLine("{");
@@ -830,10 +864,10 @@ internal static partial class Emitter
 
         if (property.SerializeNull)
         {
-            _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(" == null)")
+            _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
                 .Append(indent).AppendLine("{")
                 .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-                .Append(AddQueryPairCall).Append(keyLocal).Append(", string.Empty, ").Append(site.PreEncoded).AppendLine(");")
+                .Append(AddQueryPairCall).Append(keyLocal).Append(EmptyValueArgument).Append(site.PreEncoded).AppendLine(");")
                 .Append(indent).AppendLine("}")
                 .Append(indent).AppendLine("else")
                 .Append(indent).AppendLine("{");
@@ -956,10 +990,10 @@ internal static partial class Emitter
             return;
         }
 
-        _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(" == null)")
+        _ = sb.Append(indent).Append("if (").Append(site.ValueLocal).AppendLine(NullEqualityCheckSuffix)
             .Append(indent).AppendLine("{")
             .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(", string.Empty, ")
+            .Append(AddQueryPairCall).Append(site.KeyExpression).Append(EmptyValueArgument)
             .Append(site.PreEncoded).AppendLine(");")
             .Append(indent).AppendLine("}")
             .Append(indent).AppendLine("else")
@@ -1126,12 +1160,12 @@ internal static partial class Emitter
         in InlineValueEmission emission)
     {
         // TreatAsString stringifies the raw value before the formatter runs, mirroring the reflection builder.
-        var customValue = query.TreatAsString ? valueExpression + ".ToString()" : valueExpression;
+        var customValue = query.TreatAsString ? valueExpression + ToStringCall : valueExpression;
         var customExpression =
             $"{emission.SettingsLocal}.UrlParameterFormatter.Format({customValue}, {providerField}, typeof({parameterTypeName}))";
 
         var fastExpression = query.TreatAsString
-            ? valueExpression + ".ToString()"
+            ? valueExpression + ToStringCall
             : BuildFastFormatExpression(valueExpression, query.ValueFormat, emission);
         if (fastExpression is null)
         {
@@ -1164,21 +1198,45 @@ internal static partial class Emitter
             return $"global::Refit.GeneratedRequestRunner.RoundTripEscapePath({roundTripValue}, {emission.SettingsLocal}.UrlParameterFormatter, {providerField}, typeof({parameter.Type}))";
         }
 
+        return BuildPathValueExpressionCore(
+            "@" + parameter.Name,
+            parameter.Type,
+            parameter.ValueFormat,
+            parameter.CanBeNull,
+            providerField,
+            emission);
+    }
+
+    /// <summary>Builds the formatted path value expression for a value accessor, choosing the fast or formatter path.</summary>
+    /// <param name="valueAccessor">The C# expression yielding the value (for example <c>@param</c> or <c>@param.Prop</c>).</param>
+    /// <param name="typeName">The value's declared type, passed to the URL parameter formatter.</param>
+    /// <param name="valueFormat">The reflection-free rendering strategy, or null to always use the formatter.</param>
+    /// <param name="canBeNull">Whether the value requires a null guard before the fast path formats it.</param>
+    /// <param name="providerField">The cached attribute-provider field name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <returns>The path value expression.</returns>
+    private static string BuildPathValueExpressionCore(
+        string valueAccessor,
+        string typeName,
+        InlineValueFormatModel? valueFormat,
+        bool canBeNull,
+        string providerField,
+        in InlineValueEmission emission)
+    {
         var customExpression =
-            $"{emission.SettingsLocal}.UrlParameterFormatter.Format(@{parameter.Name}, {providerField}, typeof({parameter.Type}))";
-        var valueExpression = "@" + parameter.Name;
-        var fastExpression = parameter.ValueFormat is null
+            $"{emission.SettingsLocal}.UrlParameterFormatter.Format({valueAccessor}, {providerField}, typeof({typeName}))";
+        var fastExpression = valueFormat is null
             ? null
-            : BuildFastFormatExpression(valueExpression, parameter.ValueFormat, emission);
+            : BuildFastFormatExpression(valueAccessor, valueFormat, emission);
         if (fastExpression is null)
         {
             return customExpression;
         }
 
         // When the fast path is the value itself (strings), a null value already renders as null.
-        if (parameter.CanBeNull && fastExpression != valueExpression)
+        if (canBeNull && fastExpression != valueAccessor)
         {
-            fastExpression = $"{valueExpression} == null ? null : {fastExpression}";
+            fastExpression = $"{valueAccessor} == null ? null : {fastExpression}";
         }
 
         return $"{emission.UseDefaultFormattingLocal} ? ({fastExpression}) : {customExpression}";
@@ -1198,7 +1256,7 @@ internal static partial class Emitter
         return valueFormat.Kind switch
         {
             InlineFormatKind.String => unwrapped,
-            InlineFormatKind.ToStringOnly => unwrapped + ".ToString()",
+            InlineFormatKind.ToStringOnly => unwrapped + ToStringCall,
             InlineFormatKind.Formattable =>
                 $"global::Refit.GeneratedRequestRunner.FormatInvariant({unwrapped}, {ToNullableCSharpStringLiteral(valueFormat.Format)})",
             InlineFormatKind.Enum =>

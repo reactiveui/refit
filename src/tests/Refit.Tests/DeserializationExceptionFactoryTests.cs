@@ -16,6 +16,9 @@ public class DeserializationExceptionFactoryTests
     /// <summary>The stub endpoint URL that returns a deserialized result.</summary>
     private const string GetWithResultUrl = "http://api/get-with-result";
 
+    /// <summary>The non-integer response body used to trigger deserialization failures.</summary>
+    private const string NonIntResultContent = "non-int-result";
+
     /// <summary>Refit fixture interface returning a deserialized integer result.</summary>
     public interface IMyService
     {
@@ -56,7 +59,7 @@ public class DeserializationExceptionFactoryTests
         {
             {
                 Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("non-int-result") }
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) }
             },
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl);
@@ -101,7 +104,7 @@ public class DeserializationExceptionFactoryTests
         {
             {
                 Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("non-int-result") }
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) }
             },
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
@@ -126,7 +129,7 @@ public class DeserializationExceptionFactoryTests
         {
             {
                 Route.Get(GetWithResultUrl),
-                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent("non-int-result") }
+                new StubResponse { Status = HttpStatusCode.OK, Content = new StringContent(NonIntResultContent) }
             },
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings

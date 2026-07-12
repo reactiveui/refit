@@ -53,4 +53,9 @@ internal sealed record RequestParameterModel(
     /// <summary>Gets a value indicating whether a path parameter binds a round-trip <c>{**param}</c> catch-all whose
     /// value is split on <c>/</c> with each segment formatted and escaped, preserving the separators.</summary>
     public bool IsRoundTrip { get; init; }
+
+    /// <summary>Gets the dotted <c>{param.Prop}</c> path placeholder bindings for an object path parameter, or
+    /// <see langword="null"/>. When set, the parameter contributes no direct path value; each binding fills its own
+    /// placeholder with a formatted property value.</summary>
+    public ImmutableEquatableArray<PathObjectBindingModel>? PathObjectBindings { get; init; }
 }

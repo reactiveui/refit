@@ -21,6 +21,12 @@ public sealed class StubHttpTests
     /// <summary>A reusable request URL used by ordering tests.</summary>
     private const string SeqUrl = "https://api/seq";
 
+    /// <summary>A reusable request URL used by the any-method match test.</summary>
+    private const string AnyUrl = "https://api/any";
+
+    /// <summary>A query string appended to request URLs by query-matching tests.</summary>
+    private const string QuerySuffix = "?a=1&b=2";
+
     /// <summary>Verifies a method/URL match returns the configured JSON and satisfies verification.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -83,13 +89,13 @@ public sealed class StubHttpTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Template = "https://api/any", Reusable = true },
+                new RouteMatcher { Template = AnyUrl, Reusable = true },
                 Reply.Status(HttpStatusCode.OK)
             },
         };
 
-        var get = await SendAsync(handler, HttpMethod.Get, "https://api/any");
-        var post = await SendAsync(handler, HttpMethod.Post, "https://api/any");
+        var get = await SendAsync(handler, HttpMethod.Get, AnyUrl);
+        var post = await SendAsync(handler, HttpMethod.Post, AnyUrl);
 
         await Assert.That(get.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(post.StatusCode).IsEqualTo(HttpStatusCode.OK);
@@ -126,7 +132,7 @@ public sealed class StubHttpTests
             },
         };
 
-        var response = await SendAsync(handler, HttpMethod.Get, ThingUrl + "?a=1&b=2");
+        var response = await SendAsync(handler, HttpMethod.Get, ThingUrl + QuerySuffix);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
@@ -144,7 +150,7 @@ public sealed class StubHttpTests
             },
         };
 
-        var response = await SendAsync(handler, HttpMethod.Get, QueryUrl + "?a=1&b=2");
+        var response = await SendAsync(handler, HttpMethod.Get, QueryUrl + QuerySuffix);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await handler.VerifyAllCalledAsync();
@@ -198,7 +204,7 @@ public sealed class StubHttpTests
             },
         };
 
-        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, QueryUrl + "?a=1&b=2"))
+        await Assert.That(async () => _ = await SendAsync(handler, HttpMethod.Get, QueryUrl + QuerySuffix))
             .ThrowsExactly<InvalidOperationException>();
     }
 

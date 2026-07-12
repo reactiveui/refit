@@ -20,11 +20,23 @@ public sealed class QueryRequestBuildingLiveTests
     /// <summary>A sample page number.</summary>
     private const int PageSeven = 7;
 
+    /// <summary>A sample document revision used by the dotted-path scenario.</summary>
+    private const int DocRevision = 7;
+
     /// <summary>A sample price formatted with two decimals.</summary>
     private const double PriceFive = 5d;
 
     /// <summary>A sample raw double for TreatAsString.</summary>
     private const double RawDouble = 1.5d;
+
+    /// <summary>The enum-valued query method exercised across parity scenarios.</summary>
+    private const string SortedMethodName = "Sorted";
+
+    /// <summary>The multi-expanded collection query method exercised across parity scenarios.</summary>
+    private const string ExpandedMethodName = "Expanded";
+
+    /// <summary>The full name of the compiled scenario enum type.</summary>
+    private const string SearchSortTypeName = "Refit.LiveQuery.SearchSort";
 
     /// <summary>The interface source compiled through the generator for every scenario.</summary>
     private const string ApiSource =
@@ -49,10 +61,23 @@ public sealed class QueryRequestBuildingLiveTests
             public string? Name { get; set; }
         }
 
+        public sealed class RouteInfo
+        {
+            public string? Slug { get; set; }
+
+            public int Version { get; set; }
+        }
+
         public interface ILiveQueryApi
         {
             [Get("/search")]
             Task<string> Plain(string q);
+
+            [Get("/docs/{info.Slug}/rev/{info.Version}")]
+            Task<string> DottedPath(RouteInfo info);
+
+            [Get("/tags/{info.Slug}")]
+            Task<string> DottedPathResidual(RouteInfo info);
 
             [Get("/signin")]
             Task<string> Alias([AliasAs("login")] string user, [AliasAs("kind")] string kind);
@@ -152,6 +177,23 @@ public sealed class QueryRequestBuildingLiveTests
         await harness.AssertParityAsync("Templated", ["two"], "/base/tmpl?fixed=1&extra=two");
     }
 
+    /// <summary>Verifies generated dotted <c>{param.Property}</c> path URIs match the reflection builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task DottedPathParametersMatchReflection()
+    {
+        using var harness = LiveQueryHarness.Create();
+
+        var info = harness.CreateApiValue("Refit.LiveQuery.RouteInfo", ("Slug", "a b/c"), ("Version", DocRevision));
+        _ = await harness.AssertParityAsync("DottedPath", [info], "/base/docs/a%20b%2Fc/rev/7");
+
+        // Only Slug binds to the path; Version is a residual property flattened into the query, exactly as the
+        // reflection builder splits a path-bound object between the path and the query string.
+        _ = await harness.AssertParityAsync("DottedPathResidual", [info], "/base/tags/a%20b%2Fc?Version=7");
+    }
+
     /// <summary>Verifies generated query URIs match the reflection builder for formatted values.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -162,8 +204,8 @@ public sealed class QueryRequestBuildingLiveTests
         using var harness = LiveQueryHarness.Create();
 
         await harness.AssertParityAsync("Formatted", [PriceFive], "/base/fmt?price=5.00");
-        await harness.AssertParityAsync("Sorted", [harness.CreateEnumValue("Refit.LiveQuery.SearchSort", 0)], "/base/enum?sort=date-desc");
-        await harness.AssertParityAsync("Sorted", [harness.CreateEnumValue("Refit.LiveQuery.SearchSort", 1)], "/base/enum?sort=Name");
+        await harness.AssertParityAsync(SortedMethodName, [harness.CreateEnumValue(SearchSortTypeName, 0)], "/base/enum?sort=date-desc");
+        await harness.AssertParityAsync(SortedMethodName, [harness.CreateEnumValue(SearchSortTypeName, 1)], "/base/enum?sort=Name");
         await harness.AssertParityAsync("Treated", [RawDouble], null);
         await harness.AssertParityAsync("When", [SampleTimestamp], null);
     }
@@ -178,11 +220,11 @@ public sealed class QueryRequestBuildingLiveTests
         using var harness = LiveQueryHarness.Create();
 
         await harness.AssertParityAsync("Csv", [CsvIds], "/base/csv?ids=1%2C2%2C3");
-        await harness.AssertParityAsync("Expanded", [ExpandIds], "/base/expand?ids=1&ids=2");
+        await harness.AssertParityAsync(ExpandedMethodName, [ExpandIds], "/base/expand?ids=1&ids=2");
         await harness.AssertParityAsync("Pipes", [PipeValues], "/base/pipes?values=a%7Cb");
         await harness.AssertParityAsync("DefaultList", [ListIds], "/base/list?ids=4%2C5");
         await harness.AssertParityAsync("Csv", [EmptyIds], "/base/csv?ids=");
-        await harness.AssertParityAsync("Expanded", [EmptyIds], "/base/expand");
+        await harness.AssertParityAsync(ExpandedMethodName, [EmptyIds], "/base/expand");
     }
 
     /// <summary>Verifies a custom URL parameter formatter still runs for every generated value.</summary>
@@ -196,8 +238,8 @@ public sealed class QueryRequestBuildingLiveTests
         using var harness = LiveQueryHarness.Create(settings);
 
         await harness.AssertParityAsync("Plain", ["abc"], "/base/search?q=ABC");
-        await harness.AssertParityAsync("Expanded", [ExpandIds], null);
-        await harness.AssertParityAsync("Sorted", [harness.CreateEnumValue("Refit.LiveQuery.SearchSort", 0)], "/base/enum?sort=DATE-DESC");
+        await harness.AssertParityAsync(ExpandedMethodName, [ExpandIds], null);
+        await harness.AssertParityAsync(SortedMethodName, [harness.CreateEnumValue(SearchSortTypeName, 0)], "/base/enum?sort=DATE-DESC");
     }
 
     /// <summary>Verifies POST methods combine an implicit body with generated query parameters.</summary>
@@ -209,7 +251,7 @@ public sealed class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        var payload = harness.CreateApiValue("Refit.LiveQuery.CreatePayload", "Name", "Widget");
+        var payload = harness.CreateApiValue("Refit.LiveQuery.CreatePayload", ("Name", "Widget"));
         _ = await harness.AssertParityAsync("Create", [payload, "new"], "/base/create?tag=new");
 
         await Assert.That(harness.LastCapturedContent).IsNotNull();
@@ -315,17 +357,20 @@ public sealed class QueryRequestBuildingLiveTests
         public object CreateEnumValue(string typeName, int value) =>
             Enum.ToObject(interfaceType.Assembly.GetType(typeName, throwOnError: true)!, value);
 
-        /// <summary>Creates an instance of a compiled scenario type with one property assigned.</summary>
+        /// <summary>Creates an instance of a compiled scenario type with the given properties assigned.</summary>
         /// <param name="typeName">The compiled type's full name.</param>
-        /// <param name="propertyName">The property to assign.</param>
-        /// <param name="value">The property value.</param>
+        /// <param name="properties">The property name/value pairs to assign.</param>
         /// <returns>The created instance.</returns>
         [RequiresUnreferencedCode("Reflects over generated types and members.")]
-        public object CreateApiValue(string typeName, string propertyName, object? value)
+        public object CreateApiValue(string typeName, params (string Name, object? Value)[] properties)
         {
             var type = interfaceType.Assembly.GetType(typeName, throwOnError: true)!;
             var instance = Activator.CreateInstance(type)!;
-            type.GetProperty(propertyName)!.SetValue(instance, value);
+            foreach (var (name, value) in properties)
+            {
+                type.GetProperty(name)!.SetValue(instance, value);
+            }
+
             return instance;
         }
 

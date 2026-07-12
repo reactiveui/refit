@@ -19,6 +19,18 @@ public partial class GeneratedRequestRunnerTests
     /// <summary>Header name used by the header-assignment tests.</summary>
     private const string TestHeaderName = "X-Test";
 
+    /// <summary>Header name used by the header-collision tests.</summary>
+    private const string FirstHeaderName = "X-First";
+
+    /// <summary>Content-Language header value used by the content-header tests.</summary>
+    private const string ContentLanguageValue = "en-US";
+
+    /// <summary>Stream body payload shared by the stream-content tests.</summary>
+    private const string StreamBodyText = "stream-body";
+
+    /// <summary>Deserialization failure message shared by the error-path tests.</summary>
+    private const string BadContentMessage = "bad content";
+
     /// <summary>Sample body value for the unsupported serialization-mode test.</summary>
     private const int UnsupportedModeBodyValue = 42;
 
@@ -43,6 +55,9 @@ public partial class GeneratedRequestRunnerTests
     /// <summary>Deserialized result value used by the buffering-failure test.</summary>
     private const int BufferedResultValue = 321;
 
+    /// <summary>UTF-8 encoded stream body payload shared by the stream-content tests.</summary>
+    private static readonly byte[] StreamBodyBytes = "stream-body"u8.ToArray();
+
     /// <summary>Verifies that already-created HTTP content is reused directly.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -65,7 +80,7 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task CreateBodyContentUsesStreamContentForStreamBodies()
     {
-        await using var stream = new MemoryStream("stream-body"u8.ToArray());
+        await using var stream = new MemoryStream(StreamBodyBytes);
         var settings = CreateSettings();
 
         var result = GeneratedRequestRunner.CreateBodyContent(
@@ -75,7 +90,7 @@ public partial class GeneratedRequestRunnerTests
             streamBody: false);
 
         await Assert.That(result).IsTypeOf<StreamContent>();
-        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("stream-body");
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo(StreamBodyText);
     }
 
     /// <summary>Verifies that default string bodies are sent as literal string content.</summary>
@@ -182,14 +197,14 @@ public partial class GeneratedRequestRunnerTests
     public async Task CreateUrlEncodedBodyContentUsesStreamContentForStreams()
     {
         var settings = CreateSettings();
-        await using var stream = new MemoryStream("stream-body"u8.ToArray());
+        await using var stream = new MemoryStream(StreamBodyBytes);
 
         var result = GeneratedRequestRunner.CreateUrlEncodedBodyContent(
             settings,
             stream);
 
         await Assert.That(result).IsTypeOf<StreamContent>();
-        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo("stream-body");
+        await Assert.That(await result.ReadAsStringAsync()).IsEqualTo(StreamBodyText);
     }
 
     /// <summary>Verifies URL-encoded object bodies use the declared body type.</summary>
@@ -378,10 +393,10 @@ public partial class GeneratedRequestRunnerTests
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath);
 
-        GeneratedRequestRunner.SetHeader(request, "Content-Language", "en-US");
+        GeneratedRequestRunner.SetHeader(request, "Content-Language", ContentLanguageValue);
 
         await Assert.That(request.Content).IsNotNull();
-        await Assert.That(request.Content!.Headers.ContentLanguage).IsCollectionEqualTo(["en-US"]);
+        await Assert.That(request.Content!.Headers.ContentLanguage).IsCollectionEqualTo([ContentLanguageValue]);
     }
 
     /// <summary>Verifies that generated header assignment removes existing content headers before adding replacements.</summary>
@@ -393,7 +408,7 @@ public partial class GeneratedRequestRunnerTests
         {
             Content = new StringContent("body")
         };
-        request.Content.Headers.ContentLanguage.Add("en-US");
+        request.Content.Headers.ContentLanguage.Add(ContentLanguageValue);
 
         GeneratedRequestRunner.SetHeader(request, "Content-Language", "fr-FR");
 
@@ -408,15 +423,15 @@ public partial class GeneratedRequestRunnerTests
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var headers = new Dictionary<string, string>
         {
-            ["X-First"] = "one",
+            [FirstHeaderName] = "one",
             ["X-Second"] = "two"
         };
 
-        GeneratedRequestRunner.SetHeader(request, "X-First", "original");
+        GeneratedRequestRunner.SetHeader(request, FirstHeaderName, "original");
         GeneratedRequestRunner.AddHeaderCollection(request, null);
         GeneratedRequestRunner.AddHeaderCollection(request, headers);
 
-        await Assert.That(request.Headers.GetValues("X-First")).IsCollectionEqualTo(["one"]);
+        await Assert.That(request.Headers.GetValues(FirstHeaderName)).IsCollectionEqualTo(["one"]);
         await Assert.That(request.Headers.GetValues("X-Second")).IsCollectionEqualTo(["two"]);
     }
 
@@ -899,7 +914,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer
         {
-            DeserializeException = new FormatException("bad content")
+            DeserializeException = new FormatException(BadContentMessage)
         };
         var handler = new CapturingHandler(
             static (_, _) => Task.FromResult(
@@ -933,7 +948,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer
         {
-            DeserializeException = new FormatException("bad content")
+            DeserializeException = new FormatException(BadContentMessage)
         };
         var handler = new CapturingHandler(
             (_, _) => Task.FromResult(
@@ -969,7 +984,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var serializer = new RecordingContentSerializer
         {
-            DeserializeException = new FormatException("bad content")
+            DeserializeException = new FormatException(BadContentMessage)
         };
         var handler = new CapturingHandler(
             (_, _) => Task.FromResult(

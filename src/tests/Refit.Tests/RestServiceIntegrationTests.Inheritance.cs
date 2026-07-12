@@ -39,6 +39,21 @@ public partial class RestServiceIntegrationTests
     /// <summary>Second sample nullable-collection query value.</summary>
     private const int CollectionValueFour = 4;
 
+    /// <summary>Constructor parameter name asserted by the host-URL validation tests.</summary>
+    private const string HostUrlParamName = "hostUrl";
+
+    /// <summary>Assertion failure message used when an expected exception is not thrown.</summary>
+    private const string ExceptionNotThrownMessage = "Exception not thrown.";
+
+    /// <summary>Dictionary/query key for the first-name value shared across the request tests.</summary>
+    private const string FirstNameKey = "FirstName";
+
+    /// <summary>Dictionary/query key for the last-name value shared across the request tests.</summary>
+    private const string LastNameKey = "LastName";
+
+    /// <summary>Sample street address value shared across the request tests.</summary>
+    private const string HomeStreetAddress = "HomeStreet 99";
+
     /// <summary>Verifies a generic method can return multiple response shapes.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -66,9 +81,9 @@ public partial class RestServiceIntegrationTests
 
         var myParams = new Dictionary<string, object>
         {
-            ["FirstName"] = "John",
-            ["LastName"] = RamboLastName,
-            ["Address"] = (Zip: 9999, Street: "HomeStreet 99")
+            [FirstNameKey] = "John",
+            [LastNameKey] = RamboLastName,
+            ["Address"] = (Zip: 9999, Street: HomeStreetAddress)
         };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>(
@@ -228,9 +243,9 @@ public partial class RestServiceIntegrationTests
 
         var myParams = new Dictionary<string, object>
         {
-            ["FirstName"] = "John",
-            ["LastName"] = RamboLastName,
-            ["Address"] = (Zip: 9999, Street: "HomeStreet 99")
+            [FirstNameKey] = "John",
+            [LastNameKey] = RamboLastName,
+            ["Address"] = (Zip: 9999, Street: HomeStreetAddress)
         };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, Dictionary<string, object>, int>>(
@@ -239,8 +254,8 @@ public partial class RestServiceIntegrationTests
 
         var resp = await fixture.GetQuery(myParams);
 
-        await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
-        await Assert.That(resp.Args["LastName"]).IsEqualTo(RamboLastName);
+        await Assert.That(resp.Args![FirstNameKey]).IsEqualTo("John");
+        await Assert.That(resp.Args[LastNameKey]).IsEqualTo(RamboLastName);
         await Assert.That(resp.Args["Address_Zip"]).IsEqualTo("9999");
     }
 
@@ -266,7 +281,7 @@ public partial class RestServiceIntegrationTests
         {
             FirstName = "John",
             LastName = RamboLastName,
-            Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" },
+            Address = new() { Postcode = PostcodeValue, Street = HomeStreetAddress },
         };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>(
@@ -373,11 +388,11 @@ public partial class RestServiceIntegrationTests
         }
         catch (ArgumentException ex)
         {
-            await Assert.That(ex.ParamName).IsEqualTo("hostUrl");
+            await Assert.That(ex.ParamName).IsEqualTo(HostUrlParamName);
             return;
         }
 
-        Assert.Fail("Exception not thrown.");
+        Assert.Fail(ExceptionNotThrownMessage);
     }
 
     /// <summary>Verifies an empty host URL throws an <see cref="ArgumentException"/>.</summary>
@@ -391,11 +406,11 @@ public partial class RestServiceIntegrationTests
         }
         catch (ArgumentException ex)
         {
-            await Assert.That(ex.ParamName).IsEqualTo("hostUrl");
+            await Assert.That(ex.ParamName).IsEqualTo(HostUrlParamName);
             return;
         }
 
-        Assert.Fail("Exception not thrown.");
+        Assert.Fail(ExceptionNotThrownMessage);
     }
 
     /// <summary>Verifies a whitespace host URL throws an <see cref="ArgumentException"/>.</summary>
@@ -409,11 +424,11 @@ public partial class RestServiceIntegrationTests
         }
         catch (ArgumentException ex)
         {
-            await Assert.That(ex.ParamName).IsEqualTo("hostUrl");
+            await Assert.That(ex.ParamName).IsEqualTo(HostUrlParamName);
             return;
         }
 
-        Assert.Fail("Exception not thrown.");
+        Assert.Fail(ExceptionNotThrownMessage);
     }
 
     /// <summary>Verifies the non-generic create overload returns a usable instance.</summary>

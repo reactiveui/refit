@@ -43,6 +43,18 @@ public class MultipartTests
     /// <summary>The file name used for stream parts.</summary>
     private const string StreamPartFileName = "test-streampart.pdf";
 
+    /// <summary>The plain text media type asserted for string multipart parts.</summary>
+    private const string PlainTextMediaType = "text/plain";
+
+    /// <summary>The character set asserted for string multipart parts.</summary>
+    private const string Utf8CharSet = "utf-8";
+
+    /// <summary>The first property value of the sample model object.</summary>
+    private const string Model1Property1 = "M1.prop1";
+
+    /// <summary>The second property value of the sample model object.</summary>
+    private const string Model1Property2 = "M1.prop2";
+
     /// <summary>The expected integer value uploaded in the mixed-types test.</summary>
     private const int ExpectedIntValue = 42;
 
@@ -230,8 +242,8 @@ public class MultipartTests
 
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("SomeStringAlias");
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsNull();
-                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("text/plain");
-                await Assert.That(parts[0].Headers.ContentType!.CharSet).IsEqualTo("utf-8");
+                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(PlainTextMediaType);
+                await Assert.That(parts[0].Headers.ContentType!.CharSet).IsEqualTo(Utf8CharSet);
                 var str = await parts[0].ReadAsStringAsync();
                 await Assert.That(str).IsEqualTo(text);
             }
@@ -341,8 +353,8 @@ public class MultipartTests
 
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("SomeStringAlias");
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsNull();
-                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo("text/plain");
-                await Assert.That(parts[0].Headers.ContentType!.CharSet).IsEqualTo("utf-8");
+                await Assert.That(parts[0].Headers.ContentType!.MediaType).IsEqualTo(PlainTextMediaType);
+                await Assert.That(parts[0].Headers.ContentType!.CharSet).IsEqualTo(Utf8CharSet);
                 var str = await parts[0].ReadAsStringAsync();
                 await Assert.That(str).IsEqualTo(text);
             }
@@ -586,7 +598,7 @@ public class MultipartTests
                 $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
         }
 
-        var model1 = new ModelObject { Property1 = "M1.prop1", Property2 = "M1.prop2" };
+        var model1 = new ModelObject { Property1 = Model1Property1, Property2 = Model1Property2 };
 
         var handler = new MockHttpMessageHandler
         {
@@ -656,7 +668,7 @@ public class MultipartTests
                 $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
         }
 
-        var model1 = new ModelObject { Property1 = "M1.prop1", Property2 = "M1.prop2" };
+        var model1 = new ModelObject { Property1 = Model1Property1, Property2 = Model1Property2 };
 
         var model2 = new ModelObject { Property1 = "M2.prop1" };
 
@@ -708,7 +720,7 @@ public class MultipartTests
         var fileName = CreateTempFile();
         var name = Path.GetFileName(fileName);
 
-        var model1 = new ModelObject { Property1 = "M1.prop1", Property2 = "M1.prop2" };
+        var model1 = new ModelObject { Property1 = Model1Property1, Property2 = Model1Property2 };
 
         var model2 = new ModelObject { Property1 = "M2.prop1" };
 
@@ -891,8 +903,8 @@ public class MultipartTests
 
         await Assert.That(parts[stringPartIndex].Headers.ContentDisposition!.Name).IsEqualTo("aString");
         await Assert.That(parts[stringPartIndex].Headers.ContentDisposition!.FileName).IsNull();
-        await Assert.That(parts[stringPartIndex].Headers.ContentType!.MediaType).IsEqualTo("text/plain");
-        await Assert.That(parts[stringPartIndex].Headers.ContentType!.CharSet).IsEqualTo("utf-8");
+        await Assert.That(parts[stringPartIndex].Headers.ContentType!.MediaType).IsEqualTo(PlainTextMediaType);
+        await Assert.That(parts[stringPartIndex].Headers.ContentType!.CharSet).IsEqualTo(Utf8CharSet);
         await Assert.That(await parts[stringPartIndex].ReadAsStringAsync()).IsEqualTo("frob");
 
         await Assert.That(parts[intPartIndex].Headers.ContentDisposition!.Name).IsEqualTo("anInt");

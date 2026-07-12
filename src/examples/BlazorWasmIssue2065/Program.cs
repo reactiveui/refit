@@ -25,3 +25,12 @@ _ = builder.Services.AddScoped(sp =>
                 SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions()))));
 
 await builder.Build().RunAsync();
+
+/// <summary>The generated top-level program's declaring type, sealed so the JIT can devirtualize its members.</summary>
+internal sealed partial class Program
+{
+    /// <summary>Initializes a new instance of the <see cref="Program"/> class. Unused; the entry point is the generated top-level <c>Main</c>.</summary>
+    private Program()
+    {
+    }
+}

@@ -1127,34 +1127,6 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).Contains("refitQueryBuilder.Add(\"bVal\"");
     }
 
-    /// <summary>Verifies that dotted path parameters are not supported by the source generator.</summary>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    public async Task UsesFallbackForDottedPathPlaceholders()
-    {
-        const string source =
-            """
-            using System.Threading.Tasks;
-            using Refit;
-
-            namespace RefitGeneratorTest;
-
-            public record class Data(string Value);
-
-            public interface IGeneratedClient
-            {
-                [Get("/a/{data.Value}")]
-                Task Sample(Data data);
-            }
-            """;
-
-        var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
-        var generated = result.GeneratedSources[GeneratedClientHintName];
-
-        await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
-    }
-
     /// <summary>Verifies that round trip path parameters are not supported by the source generator.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

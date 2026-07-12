@@ -20,6 +20,9 @@ namespace Refit.GeneratorTests;
 /// </summary>
 public static class GeneratorComponentTests
 {
+    /// <summary>The URL-encoded body serialization method name shared across emitter and parser helper tests.</summary>
+    private const string UrlEncodedSerializationMethod = "UrlEncoded";
+
     /// <summary>Tests for <see cref="UniqueNameBuilder"/>.</summary>
     public class UniqueNameBuilderTests
     {
@@ -28,6 +31,9 @@ public static class GeneratorComponentTests
 
         /// <summary>The first generated collision suffix for <see cref="ClientName"/>.</summary>
         private const string FirstClientCollisionName = "client0";
+
+        /// <summary>The generated local name used to test cross-builder name isolation.</summary>
+        private const string GeneratedLocalName = "local";
 
         /// <summary>Verifies that an unused name is returned unchanged.</summary>
         /// <returns>A task representing the asynchronous test.</returns>
@@ -105,11 +111,11 @@ public static class GeneratorComponentTests
         public async Task IndependentBuilders_DoNotShareGeneratedNames()
         {
             var first = new UniqueNameBuilder();
-            _ = first.New("local");
+            _ = first.New(GeneratedLocalName);
 
             var second = new UniqueNameBuilder();
 
-            await Assert.That(second.New("local")).IsEqualTo("local");
+            await Assert.That(second.New(GeneratedLocalName)).IsEqualTo(GeneratedLocalName);
         }
     }
 
@@ -185,6 +191,12 @@ public static class GeneratorComponentTests
     {
         /// <summary>The default body serialization method name.</summary>
         private const string DefaultSerializationMethod = "Default";
+
+        /// <summary>The property name used to test explicit and public property access expressions.</summary>
+        private const string TenantPropertyName = "Tenant";
+
+        /// <summary>The non-standard HTTP method attribute name used by candidate-combining tests.</summary>
+        private const string CustomMethodName = "Custom";
 
         /// <summary>The generated false literal.</summary>
         private const string FalseLiteral = "false";
@@ -277,7 +289,7 @@ public static class GeneratorComponentTests
             var bufferedBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Buffered);
             var streamingBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.Streaming);
             var noneBody = CreateBody(DefaultSerializationMethod, BodyBufferMode.None);
-            var urlEncodedBody = CreateBody("UrlEncoded", BodyBufferMode.Streaming);
+            var urlEncodedBody = CreateBody(UrlEncodedSerializationMethod, BodyBufferMode.Streaming);
 
             await Assert.That(Emitter.BuildBufferBodyExpression(null, settings)).IsEqualTo(FalseLiteral);
             await Assert.That(Emitter.BuildBufferBodyExpression(settingsBody, settings)).IsEqualTo($"{settings}.Buffered");
@@ -304,9 +316,9 @@ public static class GeneratorComponentTests
             const string GlobalTenantInterface = "global::RefitGeneratorTest.ITenant";
 
             var generatedProperty = CreateProperty("Client", "global::System.Net.Http.HttpClient", "RefitGeneratorTest.IClient", true, false);
-            var explicitProperty = CreateProperty("Tenant", "int", TenantInterface, false, true);
-            var prefixedExplicitProperty = CreateProperty("Tenant", "int", GlobalTenantInterface, false, true);
-            var publicProperty = CreateProperty("Tenant", "int", TenantInterface, false, false);
+            var explicitProperty = CreateProperty(TenantPropertyName, "int", TenantInterface, false, true);
+            var prefixedExplicitProperty = CreateProperty(TenantPropertyName, "int", GlobalTenantInterface, false, true);
+            var publicProperty = CreateProperty(TenantPropertyName, "int", TenantInterface, false, false);
 
             await Assert.That(Emitter.BuildPropertyAccessExpression(generatedProperty)).IsEqualTo("this.Client");
             await Assert.That(Emitter.BuildPropertyAccessExpression(explicitProperty))
@@ -446,7 +458,7 @@ public static class GeneratorComponentTests
         public async Task CombineCandidateMethods_CombinesStandardAndCustomMethods()
         {
             var standard = ParseMethod("Standard", "[Get(\"/standard\")]");
-            var custom = ParseMethod("Custom", "[Custom(\"CUSTOM\", \"/custom\")]");
+            var custom = ParseMethod(CustomMethodName, "[Custom(\"CUSTOM\", \"/custom\")]");
 
             var result = InterfaceStubGeneratorV2.CombineCandidateMethodsForTesting(
                 ([standard], [custom]));
@@ -455,7 +467,7 @@ public static class GeneratorComponentTests
 
             await Assert.That(names.Length).IsEqualTo(PopulatedPartCount);
             await Assert.That(names[0]).IsEqualTo("Standard");
-            await Assert.That(names[1]).IsEqualTo("Custom");
+            await Assert.That(names[1]).IsEqualTo(CustomMethodName);
         }
 
         /// <summary>Verifies standard HTTP method attribute detection handles suffixes and qualified names.</summary>
@@ -468,7 +480,7 @@ public static class GeneratorComponentTests
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("global::PutAttribute"))).IsTrue();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("global::Refit.PutAttribute"))).IsTrue();
             await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("GetAttribute<string>"))).IsFalse();
-            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName("Custom"))).IsFalse();
+            await Assert.That(InterfaceStubGeneratorV2.IsStandardHttpMethodAttributeNameForTesting(ParseName(CustomMethodName))).IsFalse();
         }
 
         /// <summary>Verifies an explicitly-implemented Refit method emits an explicit interface prefix on both paths.</summary>
@@ -697,14 +709,14 @@ public static class GeneratorComponentTests
         {
             await Assert.That(Parser.GetBodySerializationMethodName(0)).IsEqualTo("Default");
             await Assert.That(Parser.GetBodySerializationMethodName(1)).IsEqualTo("Json");
-            await Assert.That(Parser.GetBodySerializationMethodName(UrlEncodedSerializationValue)).IsEqualTo("UrlEncoded");
+            await Assert.That(Parser.GetBodySerializationMethodName(UrlEncodedSerializationValue)).IsEqualTo(UrlEncodedSerializationMethod);
             await Assert.That(Parser.GetBodySerializationMethodName(SerializedSerializationValue)).IsEqualTo("Serialized");
             await Assert.That(Parser.GetBodySerializationMethodName(JsonLinesSerializationValue)).IsEqualTo("JsonLines");
             await Assert.That(Parser.GetBodySerializationMethodName(UnsupportedSerializationValue)).IsEqualTo(string.Empty);
             await Assert.That(Parser.IsSupportedInlineBody(ImmutableEquatableArray<RequestParameterModel>.Empty)).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new([CreateHeaderParameter()]))).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody(string.Empty)]))).IsFalse();
-            await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody("UrlEncoded")]))).IsTrue();
+            await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody(UrlEncodedSerializationMethod)]))).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody("Serialized")]))).IsTrue();
             await Assert.That(Parser.IsSupportedInlineBody(new([CreateBody("JsonLines")]))).IsTrue();
             await Assert.That(Parser.ShouldDisposeResponse("global::System.Net.Http.HttpResponseMessage")).IsFalse();

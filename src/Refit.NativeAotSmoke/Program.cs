@@ -73,3 +73,12 @@ if (!handler.SawFormBody)
 }
 
 Console.WriteLine("Native AOT Refit smoke test passed.");
+
+/// <summary>The generated top-level program's declaring type, sealed so the JIT can devirtualize its members.</summary>
+internal sealed partial class Program
+{
+    /// <summary>Initializes a new instance of the <see cref="Program"/> class. Unused; the entry point is the generated top-level <c>Main</c>.</summary>
+    private Program()
+    {
+    }
+}

@@ -32,6 +32,12 @@ public partial class SerializedContentTests
     /// <summary>A sample weapon name reused across polymorphic body serialization assertions.</summary>
     private const string PhotonName = "Photon";
 
+    /// <summary>The serialized JSON body asserted across the polymorphic serialization tests.</summary>
+    private const string PhotonJson = """{"name":"Photon"}""";
+
+    /// <summary>The first enum dictionary value reused across the camel-case serialization tests.</summary>
+    private const string FirstEnumValue = "first";
+
     /// <summary>The expected inferred integral value for object-value inference tests.</summary>
     private const long ExpectedIntegralValue = 42L;
 
@@ -1017,7 +1023,7 @@ public partial class SerializedContentTests
         await api.CreateWeapon(new InterfaceLaserWeaponRequest { Name = PhotonName });
 
         await Assert.That(serializedBody).IsNotNull();
-        await Assert.That(serializedBody).IsEqualTo("""{"name":"Photon"}""");
+        await Assert.That(serializedBody).IsEqualTo(PhotonJson);
     }
 
     /// <summary>Verifies resolver-backed options use runtime metadata when an interface body has no polymorphism metadata.</summary>
@@ -1047,7 +1053,7 @@ public partial class SerializedContentTests
         await api.CreateWeapon(new InterfaceLaserWeaponRequest { Name = PhotonName });
 
         await Assert.That(serializedBody).IsNotNull();
-        await Assert.That(serializedBody).IsEqualTo("""{"name":"Photon"}""");
+        await Assert.That(serializedBody).IsEqualTo(PhotonJson);
     }
 
     /// <summary>Verifies that a request body uses the runtime type when the declared type is abstract.</summary>
@@ -1072,7 +1078,7 @@ public partial class SerializedContentTests
         await api.CreateWeapon(new AbstractLaserWeaponRequest { Name = PhotonName });
 
         await Assert.That(serializedBody).IsNotNull();
-        await Assert.That(serializedBody).IsEqualTo("""{"name":"Photon"}""");
+        await Assert.That(serializedBody).IsEqualTo(PhotonJson);
     }
 
     /// <summary>Verifies that a bare object is serialized as empty JSON.</summary>
@@ -1097,7 +1103,7 @@ public partial class SerializedContentTests
 
         var source = new Dictionary<CamelCaseEnum, string>
         {
-            [CamelCaseEnum.ValueOne] = "first",
+            [CamelCaseEnum.ValueOne] = FirstEnumValue,
             [CamelCaseEnum.alreadyLowercase] = "second"
         };
 
@@ -1108,7 +1114,7 @@ public partial class SerializedContentTests
             new StringContent(serialized, Encoding.UTF8, JsonMediaType));
 
         await Assert.That(roundTrip).IsNotNull();
-        await Assert.That(roundTrip![CamelCaseEnum.ValueOne]).IsEqualTo("first");
+        await Assert.That(roundTrip![CamelCaseEnum.ValueOne]).IsEqualTo(FirstEnumValue);
         await Assert.That(roundTrip[CamelCaseEnum.alreadyLowercase]).IsEqualTo("second");
     }
 
@@ -1239,7 +1245,7 @@ public partial class SerializedContentTests
             converter.WriteAsPropertyName(writer, null!, options);
             writer.WriteStringValue("empty");
             converter.WriteAsPropertyName(writer, CamelCaseEnum.ValueOne, options);
-            writer.WriteStringValue("first");
+            writer.WriteStringValue(FirstEnumValue);
             writer.WriteEndObject();
         }
 

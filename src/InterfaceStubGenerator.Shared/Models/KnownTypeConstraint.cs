@@ -17,7 +17,7 @@ internal enum KnownTypeConstraint
     None = 0,
 
     /// <summary>The reference type (<c>class</c>) constraint.</summary>
-    Class = 1 << 0,
+    Class = 1,
 
     /// <summary>The <c>unmanaged</c> constraint.</summary>
     Unmanaged = 1 << 1,

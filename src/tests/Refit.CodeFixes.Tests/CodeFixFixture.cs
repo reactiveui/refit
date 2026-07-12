@@ -24,6 +24,9 @@ internal static class CodeFixFixture
     /// <summary>The runtime data key containing framework assemblies available to the current test host.</summary>
     private const string TrustedPlatformAssemblies = "TRUSTED_PLATFORM_ASSEMBLIES";
 
+    /// <summary>The in-memory document name used for code-fix test compilations.</summary>
+    private const string DefaultTestFileName = "Test.cs";
+
     /// <summary>Applies the first available code fix for a diagnostic ID.</summary>
     /// <param name="source">The source to fix.</param>
     /// <param name="diagnosticId">The diagnostic ID to fix.</param>
@@ -36,7 +39,7 @@ internal static class CodeFixFixture
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .WithParseOptions(CSharpParseOptions.Default)
             .AddMetadataReferences(GetMetadataReferences());
-        var document = project.AddDocument("Test.cs", SourceText.From(source));
+        var document = project.AddDocument(DefaultTestFileName, SourceText.From(source));
 
         var compilation = await document.Project.GetCompilationAsync()
                           ?? throw new InvalidOperationException("Could not create compilation for code fix test.");
@@ -142,7 +145,7 @@ internal static class CodeFixFixture
             .WithCompilationOptions(new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
             .WithParseOptions(CSharpParseOptions.Default)
             .AddMetadataReferences(GetMetadataReferences())
-            .AddDocument("Test.cs", SourceText.From(source));
+            .AddDocument(DefaultTestFileName, SourceText.From(source));
     }
 
     /// <summary>Creates a diagnostic over the first occurrence of a marker string.</summary>
@@ -167,7 +170,7 @@ internal static class CodeFixFixture
             "Refit",
             DiagnosticSeverity.Warning,
             isEnabledByDefault: true);
-        return Diagnostic.Create(descriptor, Location.Create("Test.cs", span, lineSpan));
+        return Diagnostic.Create(descriptor, Location.Create(DefaultTestFileName, span, lineSpan));
     }
 
     /// <summary>Gets the assemblies referenced when compiling code-fix test input.</summary>

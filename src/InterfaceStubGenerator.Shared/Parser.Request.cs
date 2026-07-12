@@ -13,6 +13,9 @@ namespace Refit.Generator;
 /// <content>Request parsing helpers for the Refit source generator.</content>
 internal static partial class Parser
 {
+    /// <summary>The <c>System</c> namespace name, matched structurally to identify well-known BCL types.</summary>
+    private const string SystemNamespace = "System";
+
     /// <summary>Parses the request metadata needed by generated request construction.</summary>
     /// <param name="methodSymbol">The Refit method symbol.</param>
     /// <param name="returnTypeInfo">The classified return type shape.</param>
@@ -646,10 +649,12 @@ internal static partial class Parser
         in LooseParameterContext context,
         ref bool implicitBodyAssigned)
     {
-        // Dotted {param.Prop} placeholders bind object properties through the reflection builder.
+        // Dotted {param.Prop} placeholders bind declared properties into the path; each property is formatted and
+        // escaped just like a scalar path parameter, and any property left unbound flattens into the query string.
+        // An unresolvable or non-simple placeholder property, or an unsupported residual property, falls back.
         if (HasDottedPlaceholderFor(context.ParameterLocations, context.UrlName))
         {
-            return new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+            return BuildPathObjectBinding(parameter, parameterType, context);
         }
 
         // [Authorize] emits an Authorization header of "{scheme} {value}"; the scheme is a compile-time constant.
@@ -880,7 +885,7 @@ internal static partial class Parser
         type is
         {
             Name: "Uri",
-            ContainingNamespace.Name: "System",
+            ContainingNamespace.Name: SystemNamespace,
             ContainingNamespace.ContainingNamespace.IsGlobalNamespace: true
         };
 
@@ -899,7 +904,7 @@ internal static partial class Parser
                 {
                     Name: "CultureInfo",
                     ContainingNamespace.Name: "Globalization",
-                    ContainingNamespace.ContainingNamespace.Name: "System",
+                    ContainingNamespace.ContainingNamespace.Name: SystemNamespace,
                     ContainingNamespace.ContainingNamespace.ContainingNamespace.IsGlobalNamespace: true
                 })
             {
@@ -929,7 +934,7 @@ internal static partial class Parser
         {
             Name: "CancellationToken",
             ContainingNamespace.Name: "Threading",
-            ContainingNamespace.ContainingNamespace.Name: "System",
+            ContainingNamespace.ContainingNamespace.Name: SystemNamespace,
             ContainingNamespace.ContainingNamespace.ContainingNamespace.IsGlobalNamespace: true
         };
     }

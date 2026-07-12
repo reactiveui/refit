@@ -56,6 +56,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="headers">The headers.</param>
     /// <param name="refitSettings">The refit settings.</param>
     /// <param name="innerException">The inner exception.</param>
+    [SuppressMessage("Design", "SST1472:Signatures should not declare too many parameters", Justification = "Shipped protected API constructor; grouping parameters would break the public surface.")]
     protected ApiException(
         HttpRequestMessage message,
         HttpMethod httpMethod,
@@ -87,6 +88,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="reasonPhrase">The reason phrase.</param>
     /// <param name="headers">The headers.</param>
     /// <param name="refitSettings">The refit settings.</param>
+    [SuppressMessage("Design", "SST1472:Signatures should not declare too many parameters", Justification = "Shipped protected API constructor; grouping parameters would break the public surface.")]
     protected ApiException(
         string exceptionMessage,
         HttpRequestMessage message,
@@ -119,6 +121,7 @@ public class ApiException : ApiExceptionBase
     /// <param name="headers">The headers.</param>
     /// <param name="refitSettings">The refit settings.</param>
     /// <param name="innerException">The inner exception.</param>
+    [SuppressMessage("Design", "SST1472:Signatures should not declare too many parameters", Justification = "Shipped protected API constructor; grouping parameters would break the public surface.")]
     protected ApiException(
         string exceptionMessage,
         HttpRequestMessage message,

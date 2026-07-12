@@ -349,45 +349,115 @@ internal static partial class Emitter
     {
         // A single pre-encoded path parameter switches every replacement to the overload carrying the
         // per-value encoding flag, because a params call cannot mix tuple arities.
-        var anyPreEncoded = false;
-        foreach (var parameter in request.Parameters)
-        {
-            if (parameter.Kind == RequestParameterKind.Path && parameter.PreEncoded)
-            {
-                anyPreEncoded = true;
-                break;
-            }
-        }
+        var anyPreEncoded = HasPreEncodedPathParameter(request);
 
-        var parametersSb = new PooledStringBuilder();
         var pathLength = request.Path.Length;
+        var replacements = new List<PathReplacement>();
         foreach (var parameter in request.Parameters)
         {
-            if (parameter.Kind is not RequestParameterKind.Path || parameter.Locations is null)
+            if (parameter.Kind is not RequestParameterKind.Path)
             {
                 continue;
             }
 
-            var valueExpression = BuildPathValueExpression(
-                parameter,
-                uniqueNameLookup[parameter.Name],
-                emission);
-            foreach (var location in parameter.Locations)
+            var providerField = uniqueNameLookup[parameter.Name];
+
+            // A dotted {param.Prop} object parameter fills each placeholder with a formatted property value.
+            if (parameter.PathObjectBindings is { } bindings)
             {
-                var start = location.Start.GetOffset(pathLength);
-                var end = location.End.GetOffset(pathLength);
-                _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ")
-                    .Append(valueExpression);
-                if (anyPreEncoded)
+                foreach (var binding in bindings)
                 {
-                    _ = parametersSb.Append(", ").Append(ToLowerInvariantString(parameter.PreEncoded));
+                    var bindingValue = BuildPathValueExpressionCore(
+                        "@" + parameter.Name + "." + binding.PropertyClrName,
+                        binding.PropertyType,
+                        binding.ValueFormat,
+                        binding.PropertyCanBeNull,
+                        providerField,
+                        emission);
+                    replacements.Add(new(
+                        binding.Location.Start.GetOffset(pathLength),
+                        binding.Location.End.GetOffset(pathLength),
+                        bindingValue,
+                        PreEncoded: false));
                 }
 
-                _ = parametersSb.Append(')');
+                continue;
+            }
+
+            if (parameter.Locations is null)
+            {
+                continue;
+            }
+
+            var valueExpression = BuildPathValueExpression(parameter, providerField, emission);
+            foreach (var location in parameter.Locations)
+            {
+                replacements.Add(new(
+                    location.Start.GetOffset(pathLength),
+                    location.End.GetOffset(pathLength),
+                    valueExpression,
+                    parameter.PreEncoded));
             }
         }
 
+        // BuildRequestPath fills the template left-to-right and slices between consecutive replacements, so they must
+        // be ordered by template position. Parameter order does not match template order when an object binding (or a
+        // later parameter) fills an earlier placeholder, so sort here rather than relying on declaration order.
+        replacements.Sort(static (left, right) => left.Start.CompareTo(right.Start));
+
+        var parametersSb = new PooledStringBuilder();
+        foreach (var replacement in replacements)
+        {
+            AppendPathTuple(
+                parametersSb,
+                replacement.Start,
+                replacement.End,
+                replacement.Value,
+                anyPreEncoded,
+                replacement.PreEncoded);
+        }
+
         return parametersSb.ToString();
+    }
+
+    /// <summary>Determines whether any path parameter passes its value through pre-encoded.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <returns><see langword="true"/> when a path parameter carries <c>[Encoded]</c>.</returns>
+    private static bool HasPreEncodedPathParameter(RequestModel request)
+    {
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind == RequestParameterKind.Path && parameter.PreEncoded)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Appends one <c>((start, end), value[, preEncoded])</c> tuple to the path replacement argument list.</summary>
+    /// <param name="sb">The argument list builder.</param>
+    /// <param name="start">The placeholder start offset.</param>
+    /// <param name="end">The placeholder end offset.</param>
+    /// <param name="valueExpression">The replacement value expression.</param>
+    /// <param name="includePreEncoded">Whether the tuple carries the per-value pre-encoded flag.</param>
+    /// <param name="preEncoded">The pre-encoded flag value, emitted only when <paramref name="includePreEncoded"/> is set.</param>
+    private static void AppendPathTuple(
+        PooledStringBuilder sb,
+        int start,
+        int end,
+        string valueExpression,
+        bool includePreEncoded,
+        bool preEncoded)
+    {
+        _ = sb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ").Append(valueExpression);
+        if (includePreEncoded)
+        {
+            _ = sb.Append(", ").Append(ToLowerInvariantString(preEncoded));
+        }
+
+        _ = sb.Append(')');
     }
 
     /// <summary>Builds the request path expression, preferring the span-formattable fast path when it applies.</summary>
@@ -1088,4 +1158,11 @@ internal static partial class Emitter
         string Indentation,
         string KvpNew,
         UniqueNameBuilder Locals);
+
+    /// <summary>One placeholder replacement in the request path template, ordered by its start offset.</summary>
+    /// <param name="Start">The placeholder start offset in the template.</param>
+    /// <param name="End">The placeholder end offset in the template.</param>
+    /// <param name="Value">The generated replacement value expression.</param>
+    /// <param name="PreEncoded">Whether the value passes through pre-encoded.</param>
+    private readonly record struct PathReplacement(int Start, int End, string Value, bool PreEncoded);
 }

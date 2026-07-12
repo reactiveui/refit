@@ -39,6 +39,27 @@ public partial class RestServiceIntegrationTests
     /// <summary>Sample large path-bound foo identifier.</summary>
     private const int LargeFooId = 12_345;
 
+    /// <summary>Stub endpoint URL returning a value body.</summary>
+    private const string FooValueUrl = "http://foo/value";
+
+    /// <summary>Stub endpoint URL used by the no-body request tests.</summary>
+    private const string FooNobodyUrl = "http://foo/nobody";
+
+    /// <summary>Query key asserted by the dynamic query-parameter tests.</summary>
+    private const string SomeProperty2Key = "SomeProperty2";
+
+    /// <summary>Stub endpoint URL used by the nested-path POST tests.</summary>
+    private const string Foos22BarBarUrl = "http://foo/foos/22/bar/bar";
+
+    /// <summary>Relative path to the sample PDF used by the file-upload tests.</summary>
+    private const string TestFilePath = "Test Files/Test.pdf";
+
+    /// <summary>File name used for the sample PDF multipart part.</summary>
+    private const string TestFileName = "Test.pdf";
+
+    /// <summary>Media type used for the sample PDF multipart part.</summary>
+    private const string PdfMediaType = "application/pdf";
+
     /// <summary>JSON serializer options that apply the camelCase property naming policy.</summary>
     private static readonly JsonSerializerOptions _camelCaseJsonOptions =
         new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
@@ -304,7 +325,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Get("http://foo/value"),
+                Route.Get(FooValueUrl),
                 Reply.Text("test", "text/plain")
             },
         };
@@ -375,7 +396,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                Route.Get("http://foo/value"),
+                Route.Get(FooValueUrl),
                 Reply.Text("test", "text/plain")
             },
         };
@@ -386,7 +407,7 @@ public partial class RestServiceIntegrationTests
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
         await Assert.That(response.Content).IsEqualTo("test");
         await Assert.That(response.RequestMessage!.Method).IsEqualTo(HttpMethod.Get);
-        await Assert.That(response.RequestMessage.RequestUri?.ToString()).IsEqualTo("http://foo/value");
+        await Assert.That(response.RequestMessage.RequestUri?.ToString()).IsEqualTo(FooValueUrl);
         await handler.VerifyAllCalledAsync();
     }
 
@@ -401,7 +422,7 @@ public partial class RestServiceIntegrationTests
                 new RouteMatcher
                 {
                     Method = HttpMethod.Post,
-                    Template = "http://foo/nobody",
+                    Template = FooNobodyUrl,
                     Headers = [("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")],
                     Body = string.Empty,
                     Where = static r => r.Content?.Headers.ContentLength == 0,
@@ -700,7 +721,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/1/bar/test", ExactQueryParams = [("SomeProperty2", BarNoneValue)] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/1/bar/test", ExactQueryParams = [(SomeProperty2Key, BarNoneValue)] },
                 Reply.Json("Ok")
             },
         };
@@ -722,9 +743,11 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task GetWithDerivedObjectAsBaseType()
     {
-        // see https://github.com/reactiveui/refit/issues/1882: a property bound to the
-        // path must not also be emitted as a query parameter when a derived instance is
-        // passed for a base-typed parameter.
+        // see https://github.com/reactiveui/refit/issues/1882: a property bound to the path must not also be emitted
+        // as a query parameter. SomeProperty binds to the path and so is excluded from the query. The generated
+        // request builder flattens the declared (base) type's properties, so SomeProperty2 flattens into the query
+        // while the derived-only SomeProperty3 does not contribute through a base-typed parameter — mirroring how the
+        // System.Text.Json source generator treats a declared type.
         var handler = new StubHttp
         {
             {
@@ -732,7 +755,7 @@ public partial class RestServiceIntegrationTests
                 {
                     Method = HttpMethod.Get,
                     Template = "http://foo/foos/1/bar",
-                    ExactQueryParams = [("SomeProperty3", "test"), ("SomeProperty2", BarNoneValue)],
+                    ExactQueryParams = [(SomeProperty2Key, BarNoneValue)],
                 },
                 Reply.Json("Ok")
             },
@@ -758,7 +781,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/22/bar", ExactQueryParams = [("SomeProperty2", "bart")] },
+                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/foos/22/bar", ExactQueryParams = [(SomeProperty2Key, "bart")] },
                 Reply.Json("Ok")
             },
         };
@@ -897,17 +920,17 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = string.Empty },
+                new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = string.Empty },
                 Reply.Json("Ok")
             },
         };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         await fixture.PostFooBarStreamPart(
             new PathBoundObject { SomeProperty = FooId, SomeProperty2 = "bar" },
-            new(stream, "Test.pdf", "application/pdf"));
+            new(stream, TestFileName, PdfMediaType));
         await handler.VerifyAllCalledAsync();
     }
 
@@ -919,14 +942,14 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = "SomeQuery=test" },
+                new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = "SomeQuery=test" },
                 Reply.Json("Ok")
             },
         };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         await fixture.PostFooBarStreamPart(
             new PathBoundObjectWithQuery
             {
@@ -934,7 +957,7 @@ public partial class RestServiceIntegrationTests
                 SomeProperty2 = "bar",
                 SomeQuery = "test"
             },
-            new(stream, "Test.pdf", "application/pdf"));
+            new(stream, TestFileName, PdfMediaType));
         await handler.VerifyAllCalledAsync();
     }
 
@@ -946,18 +969,18 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Post, Template = "http://foo/foos/22/bar/bar", ExactQuery = "Property1=test&Property2=test2" },
+                new RouteMatcher { Method = HttpMethod.Post, Template = Foos22BarBarUrl, ExactQuery = "Property1=test&Property2=test2" },
                 Reply.Json("Ok")
             },
         };
 
         var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
 
-        await using var stream = GetTestFileStream("Test Files/Test.pdf");
+        await using var stream = GetTestFileStream(TestFilePath);
         await fixture.PostFooBarStreamPart(
             new() { SomeProperty = FooId, SomeProperty2 = "bar" },
             new() { Property1 = "test", Property2 = "test2" },
-            new(stream, "Test.pdf", "application/pdf"));
+            new(stream, TestFileName, PdfMediaType));
         await handler.VerifyAllCalledAsync();
     }
 
@@ -969,7 +992,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Get, Template = "http://foo/nobody", Where = static r => r.Content is null },
+                new RouteMatcher { Method = HttpMethod.Get, Template = FooNobodyUrl, Where = static r => r.Content is null },
                 Reply.Json("Ok")
             },
         };
@@ -988,7 +1011,7 @@ public partial class RestServiceIntegrationTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Method = HttpMethod.Head, Template = "http://foo/nobody", Where = static r => r.Content is null },
+                new RouteMatcher { Method = HttpMethod.Head, Template = FooNobodyUrl, Where = static r => r.Content is null },
                 Reply.Json("Ok")
             },
         };

@@ -14,6 +14,9 @@ public partial class RestServiceIntegrationTests
     /// <summary>The HTTP header name used to assert header round-tripping.</summary>
     private const string CookieHeaderName = "Cookie";
 
+    /// <summary>The HTTP header value used to assert header round-tripping.</summary>
+    private const string CookieHeaderValue = "Value";
+
     /// <summary>The base URL for the GitHub API used across the integration tests.</summary>
     private const string GitHubBaseUrl = "https://api.github.com";
 
@@ -51,7 +54,7 @@ public partial class RestServiceIntegrationTests
                 Encoding.UTF8,
                 JsonMediaType),
         };
-        responseMessage.Headers.Add(CookieHeaderName, "Value");
+        responseMessage.Headers.Add(CookieHeaderName, CookieHeaderValue);
 
         var handler = new StubHttp
         {
@@ -164,7 +167,7 @@ public partial class RestServiceIntegrationTests
                 Encoding.UTF8,
                 JsonMediaType),
         };
-        responseMessage.Headers.Add(CookieHeaderName, "Value");
+        responseMessage.Headers.Add(CookieHeaderName, CookieHeaderValue);
 
         var handler = new StubHttp
         {
@@ -211,7 +214,7 @@ public partial class RestServiceIntegrationTests
                 Encoding.UTF8,
                 JsonMediaType),
         };
-        responseMessage.Headers.Add(CookieHeaderName, "Value");
+        responseMessage.Headers.Add(CookieHeaderName, CookieHeaderValue);
 
         var handler = new StubHttp
         {

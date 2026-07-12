@@ -40,6 +40,18 @@ public partial class RequestBuilderTests
     /// <summary>The dynamic request property key asserted by the property tests.</summary>
     private const string SomePropertyKey = "SomeProperty";
 
+    /// <summary>The emoji query value asserted by the header-encoding tests.</summary>
+    private const string JoyCatEmojiValue = ":joy_cat:";
+
+    /// <summary>Assertion reason describing the presence of the X-Emoji header.</summary>
+    private const string EmojiHeaderReason = "Headers include X-Emoji header";
+
+    /// <summary>Assertion reason describing the presence of the Accept header.</summary>
+    private const string AcceptHeaderReason = "Headers include Accept header";
+
+    /// <summary>The JSON content type asserted by the Accept-header tests.</summary>
+    private const string JsonContentType = "application/json";
+
     /// <summary>The numeric value assigned to the <c>Bar</c> field of the URL-encoded body samples.</summary>
     private const int SampleBarValue = 100;
 
@@ -58,8 +70,8 @@ public partial class RequestBuilderTests
         await Assert.That(output.Headers.UserAgent.ToString()).IsEqualTo(RefitTestClientUserAgent);
         await Assert.That(output.Headers.Contains(ApiVersionHeaderName)).IsTrue().Because(ApiVersionHeaderReason);
         await Assert.That(output.Headers.GetValues(ApiVersionHeaderName).Single()).IsEqualTo("2");
-        await Assert.That(output.Headers.Contains(AcceptHeaderName)).IsTrue().Because("Headers include Accept header");
-        await Assert.That(output.Headers.Accept.ToString()).IsEqualTo("application/json");
+        await Assert.That(output.Headers.Contains(AcceptHeaderName)).IsTrue().Because(AcceptHeaderReason);
+        await Assert.That(output.Headers.Accept.ToString()).IsEqualTo(JsonContentType);
     }
 
     /// <summary>Empty hardcoded headers appear in the request headers.</summary>
@@ -211,10 +223,10 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
-        var output = await factory([SampleId, ":joy_cat:"]);
+        var output = await factory([SampleId, JoyCatEmojiValue]);
 
-        await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because("Headers include X-Emoji header");
-        await Assert.That(output.Headers.GetValues(EmojiHeaderName).First()).IsEqualTo(":joy_cat:");
+        await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because(EmojiHeaderReason);
+        await Assert.That(output.Headers.GetValues(EmojiHeaderName).First()).IsEqualTo(JoyCatEmojiValue);
     }
 
     /// <summary>An empty dynamic header appears in the request headers.</summary>
@@ -226,7 +238,7 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
         var output = await factory([SampleId, string.Empty]);
 
-        await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because("Headers include X-Emoji header");
+        await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because(EmojiHeaderReason);
         await Assert.That(output.Headers.GetValues(EmojiHeaderName).First()).IsEqualTo(string.Empty);
     }
 
@@ -250,7 +262,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithPathMemberInCustomHeader");
-        var output = await factory([SampleId, ":joy_cat:"]);
+        var output = await factory([SampleId, JoyCatEmojiValue]);
 
         await Assert.That(output.Headers.Contains("X-PathMember")).IsTrue().Because("Headers include X-PathMember header");
         await Assert.That(output.Headers.GetValues("X-PathMember").First()).IsEqualTo("6");
@@ -266,7 +278,7 @@ public partial class RequestBuilderTests
         var output = await factory([SampleId, new { Foo = "bar" }, ":smile_cat:"]);
 
         await Assert.That(output.Headers.Contains(ApiVersionHeaderName)).IsTrue().Because(ApiVersionHeaderReason);
-        await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because("Headers include X-Emoji header");
+        await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because(EmojiHeaderReason);
         await Assert.That(output.Content!.Headers.Contains(ApiVersionHeaderName)).IsFalse().Because("Content headers include Api-Version header");
         await Assert.That(output.Content!.Headers.Contains(EmojiHeaderName)).IsFalse().Because("Content headers include X-Emoji header");
     }
@@ -299,8 +311,8 @@ public partial class RequestBuilderTests
 
         await Assert.That(output.Headers.Contains(AuthorizationHeaderName)).IsTrue().Because(AuthorizationHeaderReason);
         await Assert.That(output.Headers.GetValues(AuthorizationHeaderName).First()).IsEqualTo("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==");
-        await Assert.That(output.Headers.Contains(AcceptHeaderName)).IsTrue().Because("Headers include Accept header");
-        await Assert.That(output.Headers.GetValues(AcceptHeaderName).First()).IsEqualTo("application/json");
+        await Assert.That(output.Headers.Contains(AcceptHeaderName)).IsTrue().Because(AcceptHeaderReason);
+        await Assert.That(output.Headers.GetValues(AcceptHeaderName).First()).IsEqualTo(JsonContentType);
 
         await Assert.That(output.Headers.Contains("key1")).IsTrue().Because("Headers include key1 header");
         await Assert.That(output.Headers.GetValues("key1").First()).IsEqualTo("val1");
@@ -360,8 +372,8 @@ public partial class RequestBuilderTests
 
         await Assert.That(output.Headers.Contains(AuthorizationHeaderName)).IsTrue().Because(AuthorizationHeaderReason);
         await Assert.That(output.Headers.GetValues(AuthorizationHeaderName).First()).IsEqualTo("SRSLY aHR0cDovL2kuaW1ndXIuY29tL0NGRzJaLmdpZg==");
-        await Assert.That(output.Headers.Contains(AcceptHeaderName)).IsTrue().Because("Headers include Accept header");
-        await Assert.That(output.Headers.GetValues(AcceptHeaderName).First()).IsEqualTo("application/json");
+        await Assert.That(output.Headers.Contains(AcceptHeaderName)).IsTrue().Because(AcceptHeaderReason);
+        await Assert.That(output.Headers.GetValues(AcceptHeaderName).First()).IsEqualTo(JsonContentType);
     }
 
     /// <summary>A header collection can unset headers.</summary>

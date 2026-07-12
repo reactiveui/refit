@@ -4,6 +4,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Net;
@@ -54,9 +55,6 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
     /// <summary>Tracks, by index, which non-reusable route has already satisfied a request.</summary>
     private readonly List<bool> _consumed = [];
 
-    /// <summary>The requests received so far, in order.</summary>
-    private readonly List<HttpRequestMessage> _requests = [];
-
     /// <summary>The buffered request bodies, parallel to <see cref="_requests"/>, captured before disposal.</summary>
     private readonly List<CapturedBody?> _bodies = [];
 
@@ -66,6 +64,12 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
     /// <summary>Completes when every non-reusable route has been consumed; awaited by <see cref="VerifyAllCalledAsync(TimeSpan)"/>.</summary>
     private readonly TaskCompletionSource<bool> _allConsumed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    /// <summary>The requests received so far, in order.</summary>
+    private readonly List<HttpRequestMessage> _requests = [];
+
+    /// <summary>A cached read-only view over <see cref="_requests"/>, returned by <see cref="Requests"/> so reads never copy.</summary>
+    private readonly ReadOnlyCollection<HttpRequestMessage> _requestsView;
+
     /// <summary>The serializer used for typed replies and typed request capture; replaced by <see cref="ToSettings(RefitSettings)"/>.</summary>
     private IHttpContentSerializer _serializer = new SystemTextJsonContentSerializer();
 
@@ -73,25 +77,15 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
     private int _outstanding;
 
     /// <summary>Initializes a new instance of the <see cref="StubHttp"/> class with an empty route table.</summary>
-    public StubHttp()
-    {
-    }
+    public StubHttp() => _requestsView = new(_requests);
 
     /// <summary>Initializes a new instance of the <see cref="StubHttp"/> class with network-fault simulation.</summary>
     /// <param name="behavior">The network behavior applied to every matched request.</param>
-    public StubHttp(NetworkBehavior behavior) => Behavior = behavior;
+    public StubHttp(NetworkBehavior behavior)
+        : this() => Behavior = behavior;
 
-    /// <summary>Gets a snapshot of the requests this handler has received, in order.</summary>
-    public IReadOnlyList<HttpRequestMessage> Requests
-    {
-        get
-        {
-            lock (_gate)
-            {
-                return _requests.ToArray();
-            }
-        }
-    }
+    /// <summary>Gets a read-only view of the requests this handler has received, in order.</summary>
+    public IReadOnlyList<HttpRequestMessage> Requests => _requestsView;
 
     /// <summary>Gets or sets the network behavior simulated for each matched request; <c>null</c> disables simulation.</summary>
     public NetworkBehavior? Behavior { get; set; }

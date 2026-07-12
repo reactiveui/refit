@@ -26,6 +26,9 @@ public sealed class ApiExceptionTests
     /// <summary>A JSON error body that deserializes to <see cref="ResponseModel"/>.</summary>
     private const string ValueJson = "{\"Value\":42}";
 
+    /// <summary>The custom exception message reused across the constructor tests.</summary>
+    private const string CustomMessage = "custom";
+
     /// <summary>The deserialized value asserted by the content-helper tests.</summary>
     private const int ExpectedValue = 42;
 
@@ -79,7 +82,7 @@ public sealed class ApiExceptionTests
 
         var noContentException = await ApiException.Create(request, HttpMethod.Get, noContentResponse, new());
         var throwingContentException = await ApiException.Create(
-            "custom",
+            CustomMessage,
             request,
             HttpMethod.Get,
             throwingContentResponse,
@@ -105,7 +108,7 @@ public sealed class ApiExceptionTests
             response,
             settings);
         var derived = new DerivedApiException(
-            "custom",
+            CustomMessage,
             response.RequestMessage!,
             HttpMethod.Get,
             "content",
@@ -127,7 +130,7 @@ public sealed class ApiExceptionTests
 
         await Assert.That(model!.Value).IsEqualTo(ExpectedValue);
         await Assert.That(missing).IsNull();
-        await Assert.That(derived.Message).IsEqualTo("custom");
+        await Assert.That(derived.Message).IsEqualTo(CustomMessage);
         await Assert.That(derived.StatusCode).IsEqualTo(HttpStatusCode.Conflict);
         await Assert.That(emptyDerived.HasContent).IsFalse();
     }
@@ -636,6 +639,10 @@ public sealed class ApiExceptionTests
     private sealed class DerivedApiException : ApiException
     {
         /// <inheritdoc />
+        [SuppressMessage(
+            "Design",
+            "SST1472:Signatures should not declare too many parameters",
+            Justification = "Mirrors the shipped protected ApiException constructor under test; grouping parameters would stop exercising the real 8-parameter surface.")]
         public DerivedApiException(
             string exceptionMessage,
             HttpRequestMessage message,

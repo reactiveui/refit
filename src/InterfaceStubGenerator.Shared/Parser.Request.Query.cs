@@ -218,7 +218,7 @@ internal static partial class Parser
         ITypeSymbol type,
         string urlName,
         bool preEncoded,
-        QueryFormData data,
+        in QueryFormData data,
         string? format,
         INamedTypeSymbol? formattableSymbol,
         InterfaceGenerationContext context) =>
@@ -244,7 +244,7 @@ internal static partial class Parser
     private static QueryParameterModel? BuildConverterQueryModel(
         IParameterSymbol parameter,
         AttributeData converterAttribute,
-        QueryFormData data,
+        in QueryFormData data,
         bool preEncoded,
         INamedTypeSymbol? formattableSymbol,
         InterfaceGenerationContext context)
@@ -622,7 +622,7 @@ internal static partial class Parser
         string? aliasName,
         string? serializerName,
         string? normalizedPrefix,
-        QueryFormData query,
+        in QueryFormData query,
         INamedTypeSymbol? formattableSymbol,
         InterfaceGenerationContext context) =>
         !TryGetDictionaryTypes(property.Type, out var keyType, out var valueType)
@@ -658,7 +658,7 @@ internal static partial class Parser
         string? aliasName,
         string? serializerName,
         string? normalizedPrefix,
-        QueryFormData query,
+        in QueryFormData query,
         INamedTypeSymbol? formattableSymbol,
         InterfaceGenerationContext context)
     {

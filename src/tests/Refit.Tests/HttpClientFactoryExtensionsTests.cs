@@ -48,6 +48,12 @@ public partial class HttpClientFactoryExtensionsTests
     /// <summary>The name of a pre-registered HTTP client honored by the generated Refit client.</summary>
     private const string MyHttpClientName = "MyHttpClient";
 
+    /// <summary>Client name shared by the builder-matrix registration tests.</summary>
+    private const string BuilderMatrixName = "builder-matrix";
+
+    /// <summary>Header name asserted by the default-request-header tests.</summary>
+    private const string PoweredByHeaderName = "X-Powered-By";
+
     /// <summary>Verifies that generic Refit clients registered for different interfaces receive unique client names.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -593,7 +599,7 @@ public partial class HttpClientFactoryExtensionsTests
         var keyedTypeSettingsSerializer = new SystemTextJsonContentSerializer(new());
         var keyedGenericFactorySerializer = new SystemTextJsonContentSerializer(new());
         var services = new ServiceCollection();
-        var builder = services.AddHttpClient("builder-matrix");
+        var builder = services.AddHttpClient(BuilderMatrixName);
 
         var typeBuilder = builder.AddRefitClient(typeof(IFooWithOtherAttribute));
         _ = builder.AddRefitClient<IFooWithOtherAttribute>(static _ => new());
@@ -609,8 +615,8 @@ public partial class HttpClientFactoryExtensionsTests
             GenericFactoryName,
             _ => new() { ContentSerializer = keyedGenericFactorySerializer });
 
-        await Assert.That(typeBuilder.Name).IsEqualTo("builder-matrix");
-        await Assert.That(keyedTypeBuilder.Name).IsEqualTo("builder-matrix");
+        await Assert.That(typeBuilder.Name).IsEqualTo(BuilderMatrixName);
+        await Assert.That(keyedTypeBuilder.Name).IsEqualTo(BuilderMatrixName);
 
         var serviceProvider = services.BuildServiceProvider();
         await Assert.That(
@@ -686,7 +692,7 @@ public partial class HttpClientFactoryExtensionsTests
         _ = services.AddHttpClient(MyHttpClientName, client =>
         {
             client.BaseAddress = baseUri;
-            client.DefaultRequestHeaders.Add("X-Powered-By", Environment.OSVersion.VersionString);
+            client.DefaultRequestHeaders.Add(PoweredByHeaderName, Environment.OSVersion.VersionString);
         });
         var refitBuilder = services.AddRefitClient<IGitHubApi>(settingsAction: null, MyHttpClientName);
 
@@ -700,7 +706,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(gitHubApi).IsNotNull();
         await Assert.That(httpClient.BaseAddress).IsEqualTo(baseUri);
         await Assert.That(httpClient.DefaultRequestHeaders).Contains(
-            h => h.Key == "X-Powered-By"
+            h => h.Key == PoweredByHeaderName
                 && h.Value.Contains(Environment.OSVersion.VersionString));
     }
 
@@ -987,7 +993,7 @@ public partial class HttpClientFactoryExtensionsTests
         {
             AuthorizationParameter = request.Headers.Authorization?.Parameter;
             RequestUri = request.RequestUri;
-            PoweredByHeader = request.Headers.TryGetValues("X-Powered-By", out var values)
+            PoweredByHeader = request.Headers.TryGetValues(PoweredByHeaderName, out var values)
                 ? values.FirstOrDefault()
                 : null;
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
