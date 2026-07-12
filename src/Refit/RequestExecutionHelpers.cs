@@ -424,7 +424,7 @@ internal static class RequestExecutionHelpers
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "TBody is intentionally passed explicitly by callers for ApiResponse<T> body deserialization.")]
-    private static async Task<T?> BuildApiResponseAsync<T, TBody>(
+    private static async ValueTask<T?> BuildApiResponseAsync<T, TBody>(
         HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
@@ -469,7 +469,7 @@ internal static class RequestExecutionHelpers
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async Task<T?> DeserializeOrThrowAsync<T>(
+    private static async ValueTask<T?> DeserializeOrThrowAsync<T>(
         HttpRequestMessage request,
         HttpResponseMessage response,
         HttpContent content,
@@ -516,7 +516,7 @@ internal static class RequestExecutionHelpers
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="exception">The original exception.</param>
     /// <returns>The wrapped exception, or null when a configured factory returns null.</returns>
-    private static async Task<Exception?> CreateDeserializationExceptionAsync(
+    private static async ValueTask<Exception?> CreateDeserializationExceptionAsync(
         HttpRequestMessage request,
         HttpResponseMessage response,
         RefitSettings settings,
@@ -543,7 +543,7 @@ internal static class RequestExecutionHelpers
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async Task<T?> DeserializeContentAsync<T>(
+    private static async ValueTask<T?> DeserializeContentAsync<T>(
         HttpResponseMessage response,
         HttpContent content,
         RefitSettings settings,
@@ -607,7 +607,7 @@ internal static class RequestExecutionHelpers
         "Major Code Smell",
         "S4018:Generic methods should provide type parameters",
         Justification = "Callers intentionally close the result type; type inference is not part of this helper contract.")]
-    private static async Task<T?> DeserializeSerializedContentAsync<T>(
+    private static async ValueTask<T?> DeserializeSerializedContentAsync<T>(
         HttpResponseMessage response,
         HttpContent content,
         RefitSettings settings,

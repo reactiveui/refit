@@ -17,4 +17,13 @@ internal static class DiagnosticIds
 
     /// <summary>Diagnostic reported when a header collection parameter uses an unsupported type.</summary>
     public const string InvalidHeaderCollectionParameter = "RF005";
+
+    /// <summary>Diagnostic reported when a Refit method falls back to the reflection request builder and is not compatible with generated-only registration.</summary>
+    public const string GeneratedRequestBuildingFallback = "RF006";
+
+    /// <summary>Diagnostic reported when a Refit method declares more than one <c>[HeaderCollection]</c> parameter.</summary>
+    public const string MultipleHeaderCollections = "RF008";
+
+    /// <summary>Diagnostic reported when a Refit method declares more than one <c>[Authorize]</c> parameter.</summary>
+    public const string MultipleAuthorizeParameters = "RF009";
 }

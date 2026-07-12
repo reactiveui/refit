@@ -18,6 +18,12 @@ internal static partial class Emitter
     /// <summary>The number of quote characters wrapping a C# string literal.</summary>
     private const int StringLiteralQuoteLength = 2;
 
+    /// <summary>The rendered length of the <c>", "</c> separator emitted between joined items.</summary>
+    private const int ListSeparatorLength = 2;
+
+    /// <summary>The number of generated factory registrations emitted per non-generic interface.</summary>
+    private const int RegistrationsPerInterface = 2;
+
     /// <summary>The radix used when rendering decimal integers.</summary>
     private const int DecimalRadix = 10;
 
@@ -158,6 +164,7 @@ internal static partial class Emitter
         uniqueNames.Reserve(model.MemberNames);
         var requestBuilderFieldName = uniqueNames.New("_requestBuilder");
         var settingsFieldName = uniqueNames.New("_settings");
+        var enumFormatterScope = new EnumFormatterScope(uniqueNames);
         var propertySource = BuildInterfaceProperties(model.Properties, model.SupportsNullable);
         var refitMethodSource = BuildRefitMethods(
             model.RefitMethods,
@@ -165,14 +172,16 @@ internal static partial class Emitter
             model,
             uniqueNames,
             requestBuilderFieldName,
-            settingsFieldName);
+            settingsFieldName,
+            enumFormatterScope);
         var derivedRefitMethodSource = BuildRefitMethods(
             model.DerivedRefitMethods,
             false,
             model,
             uniqueNames,
             requestBuilderFieldName,
-            settingsFieldName);
+            settingsFieldName,
+            enumFormatterScope);
         var nonRefitMethodSource = BuildNonRefitMethods(model.NonRefitMethods, model.SupportsNullable);
         var disposableSource = BuildDisposableMethod(model.DisposeMethod);
         var memberSource = propertySource + refitMethodSource + derivedRefitMethodSource + nonRefitMethodSource + disposableSource;
@@ -183,7 +192,7 @@ internal static partial class Emitter
             ? "global::Refit.IRequestBuilder?"
             : "global::Refit.IRequestBuilder";
         var source = $$"""
-            {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}
+            {{BuildGeneratedFileHeader(model.Nullability, model.EmitGeneratedCodeMarkers)}}{{BuildExternAliasDirectives(model.ExternAliases)}}
             namespace Refit.Implementation
             {
                 /// <summary>Contains generated Refit implementation types.</summary>
@@ -282,6 +291,25 @@ internal static partial class Emitter
         return builder.ToString();
     }
 
+    /// <summary>Builds the <c>extern alias</c> directives an interface's types require, if any.</summary>
+    /// <param name="aliases">The extern aliases the interface's types reference.</param>
+    /// <returns>The directives, or an empty string when none are needed.</returns>
+    private static string BuildExternAliasDirectives(ImmutableEquatableArray<string> aliases)
+    {
+        if (aliases.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var builder = new StringBuilder();
+        foreach (var alias in aliases)
+        {
+            _ = builder.Append("extern alias ").Append(alias).AppendLine(";");
+        }
+
+        return builder.ToString();
+    }
+
     /// <summary>Builds the generated file header for an interface implementation.</summary>
     /// <param name="nullability">The nullable context for the generated source.</param>
     /// <param name="emitGeneratedCodeMarkers">Whether generated-code markers should be emitted.</param>
@@ -343,7 +371,7 @@ internal static partial class Emitter
     /// <returns>The generated factory registrations.</returns>
     private static string BuildGeneratedFactoryRegistrations(ImmutableEquatableArray<InterfaceModel> interfaces)
     {
-        var registrations = new string[interfaces.Count * 2];
+        var registrations = new string[interfaces.Count * RegistrationsPerInterface];
         var count = 0;
         for (var i = 0; i < interfaces.Count; i++)
         {
@@ -471,6 +499,7 @@ internal static partial class Emitter
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
     /// <returns>The generated method implementations.</returns>
     private static string BuildRefitMethods(
         ImmutableEquatableArray<MethodModel> methods,
@@ -478,7 +507,8 @@ internal static partial class Emitter
         InterfaceModel interfaceModel,
         UniqueNameBuilder uniqueNames,
         string requestBuilderFieldName,
-        string settingsFieldName)
+        string settingsFieldName,
+        EnumFormatterScope enumFormatterScope)
     {
         if (methods.Count == 0)
         {
@@ -494,7 +524,8 @@ internal static partial class Emitter
                 interfaceModel,
                 uniqueNames,
                 requestBuilderFieldName,
-                settingsFieldName);
+                settingsFieldName,
+                enumFormatterScope);
         }
 
         return ConcatParts(parts, parts.Length);
@@ -532,7 +563,7 @@ internal static partial class Emitter
     /// <returns>The escaped C# string literal.</returns>
     private static string ToCSharpStringLiteral(string value)
     {
-        var builder = new StringBuilder(value.Length + 2);
+        var builder = new StringBuilder(value.Length + StringLiteralQuoteLength);
         _ = builder.Append('"');
         foreach (var c in value)
         {
@@ -556,7 +587,7 @@ internal static partial class Emitter
 
         const string prefix = "new object[] { ";
         const string suffix = " }";
-        var length = prefix.Length + suffix.Length + ((parameters.Length - 1) * 2);
+        var length = prefix.Length + suffix.Length + ((parameters.Length - 1) * ListSeparatorLength);
         for (var i = 0; i < parameters.Length; i++)
         {
             length += 1 + parameters[i].MetadataName.Length;
@@ -597,7 +628,7 @@ internal static partial class Emitter
 
         const string prefix = ", new global::System.Type[] { ";
         const string suffix = " }";
-        var length = prefix.Length + suffix.Length + ((constraints.Length - 1) * 2);
+        var length = prefix.Length + suffix.Length + ((constraints.Length - 1) * ListSeparatorLength);
         for (var i = 0; i < constraints.Length; i++)
         {
             length += TypeOfPrefix.Length + constraints[i].DeclaredName.Length + 1;
@@ -759,7 +790,7 @@ internal static partial class Emitter
             return string.Empty;
         }
 
-        var length = (parameters.Count - 1) * 2;
+        var length = (parameters.Count - 1) * ListSeparatorLength;
         for (var i = 0; i < parameters.Count; i++)
         {
             length += TypeOfPrefix.Length + parameters[i].Type.Length + 1;

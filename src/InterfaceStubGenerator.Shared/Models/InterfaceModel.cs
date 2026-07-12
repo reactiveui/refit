@@ -23,6 +23,7 @@ namespace Refit.Generator;
 /// <param name="DerivedRefitMethods">The Refit methods inherited from base interfaces.</param>
 /// <param name="Nullability">The nullable reference type context of the interface.</param>
 /// <param name="DisposeMethod">A value indicating whether the interface declares a dispose method.</param>
+/// <param name="ExternAliases">The extern aliases the interface's types require, emitted as <c>extern alias</c> directives.</param>
 internal sealed record InterfaceModel(
     string PreserveAttributeDisplayName,
     string FileName,
@@ -42,4 +43,5 @@ internal sealed record InterfaceModel(
     ImmutableEquatableArray<MethodModel> RefitMethods,
     ImmutableEquatableArray<MethodModel> DerivedRefitMethods,
     Nullability Nullability,
-    bool DisposeMethod);
+    bool DisposeMethod,
+    ImmutableEquatableArray<string> ExternAliases);

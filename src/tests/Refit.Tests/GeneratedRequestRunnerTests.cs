@@ -104,9 +104,10 @@ public partial class GeneratedRequestRunnerTests
         var serializer = new RecordingContentSerializer();
         var settings = CreateSettings(serializer);
 
+        const int bodyValue = 42;
         var defaultContent = GeneratedRequestRunner.CreateBodyContent(
             settings,
-            42,
+            bodyValue,
             BodySerializationMethod.Default,
             streamBody: false);
         var serializedContent = GeneratedRequestRunner.CreateBodyContent(
@@ -495,8 +496,8 @@ public partial class GeneratedRequestRunnerTests
         request.Headers.Authorization = new("Bearer");
         var exception = new InvalidOperationException("factory failure");
         var settings = CreateSettings();
-        settings.AuthorizationHeaderValueGetter = (_, _) => Task.FromResult("token");
-        settings.ExceptionFactory = _ => Task.FromResult<Exception?>(exception);
+        settings.AuthorizationHeaderValueGetter = (_, _) => new ValueTask<string>("token");
+        settings.ExceptionFactory = _ => new ValueTask<Exception?>(exception);
 
         var thrown = await Assert
             .That(
@@ -612,7 +613,7 @@ public partial class GeneratedRequestRunnerTests
         settings.ExceptionFactory = _ =>
         {
             exceptionFactoryCalled = true;
-            return Task.FromResult<Exception?>(new InvalidOperationException("should not run"));
+            return new ValueTask<Exception?>(new InvalidOperationException("should not run"));
         };
 
         var result = await GeneratedRequestRunner.SendAsync<HttpResponseMessage, HttpResponseMessage>(
@@ -759,7 +760,7 @@ public partial class GeneratedRequestRunnerTests
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings();
-        settings.ExceptionFactory = _ => Task.FromResult<Exception?>(exception);
+        settings.ExceptionFactory = _ => new ValueTask<Exception?>(exception);
 
         var thrown = await Assert
             .That(
@@ -909,7 +910,7 @@ public partial class GeneratedRequestRunnerTests
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var settings = CreateSettings(serializer);
-        settings.DeserializationExceptionFactory = static (_, _) => Task.FromResult<Exception?>(null);
+        settings.DeserializationExceptionFactory = static (_, _) => new ValueTask<Exception?>((Exception?)null);
 
         var result = await GeneratedRequestRunner.SendAsync<ApiResponse<GeneratedResult>, GeneratedResult>(
             client,
@@ -944,7 +945,7 @@ public partial class GeneratedRequestRunnerTests
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
         var replacement = new InvalidOperationException("replacement");
         var settings = CreateSettings(serializer);
-        settings.DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(replacement);
+        settings.DeserializationExceptionFactory = (_, _) => new ValueTask<Exception?>(replacement);
 
         var thrown = await Assert
             .That(

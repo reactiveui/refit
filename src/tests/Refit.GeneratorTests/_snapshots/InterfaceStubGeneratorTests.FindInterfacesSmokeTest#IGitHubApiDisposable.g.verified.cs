@@ -38,6 +38,10 @@ namespace Refit.Implementation
             }
 
             /// <inheritdoc />
+            #if NET5_0_OR_GREATER
+            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
+            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
+            #endif
             public async global::System.Threading.Tasks.Task RefitMethod()
             {
                 var refitArguments = global::System.Array.Empty<object>();

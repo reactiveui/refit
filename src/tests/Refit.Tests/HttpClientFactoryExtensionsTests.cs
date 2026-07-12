@@ -741,7 +741,7 @@ public partial class HttpClientFactoryExtensionsTests
             new RefitSettings
             {
                 HttpMessageHandlerFactory = () => recordingHandler,
-                AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult("token")
+                AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("token")
             });
         var serviceProvider = services.BuildServiceProvider();
         var client = serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(builder.Name);
@@ -765,7 +765,7 @@ public partial class HttpClientFactoryExtensionsTests
             new RefitSettings
             {
                 HttpMessageHandlerFactory = () => recordingHandler,
-                AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult("keyed-token")
+                AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("keyed-token")
             });
         var serviceProvider = services.BuildServiceProvider();
         var client = serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(builder.Name);

@@ -82,7 +82,7 @@ public class DeserializationExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
         {
-            DeserializationExceptionFactory = static (_, _) => Task.FromResult<Exception?>(null)
+            DeserializationExceptionFactory = static (_, _) => new ValueTask<Exception?>((Exception?)null)
         });
 
         var result = await fixture.GetWithResult();
@@ -106,7 +106,7 @@ public class DeserializationExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
         {
-            DeserializationExceptionFactory = static (_, _) => Task.FromResult<Exception?>(null)
+            DeserializationExceptionFactory = static (_, _) => new ValueTask<Exception?>((Exception?)null)
         });
 
         var result = await fixture.GetWithResult();
@@ -131,7 +131,7 @@ public class DeserializationExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
         {
-            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(exception)
+            DeserializationExceptionFactory = (_, _) => new ValueTask<Exception?>(exception)
         });
 
         var thrownException = await Assert.That(fixture.GetWithResult).ThrowsExactly<InvalidOperationException>();
@@ -156,7 +156,7 @@ public class DeserializationExceptionFactoryTests
         };
         var fixture = handler.CreateClient<IMyService>(BaseUrl, new RefitSettings
         {
-            DeserializationExceptionFactory = (_, _) => Task.FromResult<Exception?>(exception)
+            DeserializationExceptionFactory = (_, _) => new ValueTask<Exception?>(exception)
         });
 
         var result = await fixture.GetWithResult();

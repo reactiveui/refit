@@ -20,12 +20,12 @@ public static class ApiResponseExtensions
         /// <exception cref="ArgumentNullException">The response is <see langword="null"/>.</exception>
         /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
         /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
-        public Task<IApiResponse<T>> EnsureSuccessStatusCodeAsync()
+        public ValueTask<IApiResponse<T>> EnsureSuccessStatusCodeAsync()
         {
             var checkedResponse = response ?? throw new ArgumentNullException(nameof(response));
             return checkedResponse.IsSuccessStatusCode
-                ? Task.FromResult(checkedResponse)
-                : Task.FromException<IApiResponse<T>>(GetError(checkedResponse));
+                ? new(checkedResponse)
+                : new(Task.FromException<IApiResponse<T>>(GetError(checkedResponse)));
         }
 
         /// <summary>
@@ -36,12 +36,12 @@ public static class ApiResponseExtensions
         /// <exception cref="ArgumentNullException">The response is <see langword="null"/>.</exception>
         /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
         /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
-        public Task<IApiResponse<T>> EnsureSuccessfulAsync()
+        public ValueTask<IApiResponse<T>> EnsureSuccessfulAsync()
         {
             var checkedResponse = response ?? throw new ArgumentNullException(nameof(response));
             return checkedResponse.IsSuccessful
-                ? Task.FromResult(checkedResponse)
-                : Task.FromException<IApiResponse<T>>(GetError(checkedResponse));
+                ? new(checkedResponse)
+                : new(Task.FromException<IApiResponse<T>>(GetError(checkedResponse)));
         }
     }
 

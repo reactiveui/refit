@@ -13,6 +13,18 @@ namespace Refit.Tests;
 /// <summary>Tests for <see cref="FormValueMultimap"/> source loading and serialization behavior.</summary>
 public class FormValueMultimapTests
 {
+    /// <summary>The second element shared by the sample integer collections.</summary>
+    private const int SecondSampleInt = 2;
+
+    /// <summary>The third element in the sample integer collection.</summary>
+    private const int ThirdSampleInt = 3;
+
+    /// <summary>The first element in the sample double collection.</summary>
+    private const double FirstSampleDouble = 0.1;
+
+    /// <summary>The second element in the sample double collection.</summary>
+    private const double SecondSampleDouble = 1.0;
+
     /// <summary>The default settings used to construct the multimap under test.</summary>
     private readonly RefitSettings _settings = new();
 
@@ -89,10 +101,10 @@ public class FormValueMultimapTests
     {
         var source = new ObjectWithRepeatedFieldsTestClass
         {
-            A = [1, 2],
+            A = [1, SecondSampleInt],
             B = new HashSet<string> { "set1", "set2" },
-            C = [1, 2],
-            D = [0.1, 1.0],
+            C = [1, SecondSampleInt],
+            D = [FirstSampleDouble, SecondSampleDouble],
             E = [true, false]
         };
         var expected = new List<KeyValuePair<string?, string?>>
@@ -124,14 +136,14 @@ public class FormValueMultimapTests
         var source = new ObjectWithRepeatedFieldsTestClass
         {
             // Members have explicit CollectionFormat
-            A = [1, 2],
+            A = [1, SecondSampleInt],
             B = new HashSet<string> { "set1", "set2" },
-            C = [1, 2],
-            D = [0.1, 1.0],
+            C = [1, SecondSampleInt],
+            D = [FirstSampleDouble, SecondSampleDouble],
             E = [true, false],
 
             // Member has no explicit CollectionFormat
-            F = [1, 2, 3]
+            F = [1, SecondSampleInt, ThirdSampleInt]
         };
         var expected = new List<KeyValuePair<string?, string?>>
         {
@@ -168,14 +180,14 @@ public class FormValueMultimapTests
         var source = new ObjectWithRepeatedFieldsTestClass
         {
             // Members have explicit CollectionFormat
-            A = [1, 2],
+            A = [1, SecondSampleInt],
             B = new HashSet<string> { "set1", "set2" },
-            C = [1, 2],
-            D = [0.1, 1.0],
+            C = [1, SecondSampleInt],
+            D = [FirstSampleDouble, SecondSampleDouble],
             E = [true, false],
 
             // Member has no explicit CollectionFormat
-            F = [1, 2, 3]
+            F = [1, SecondSampleInt, ThirdSampleInt]
         };
         var expected = new List<KeyValuePair<string?, string?>>
         {
@@ -247,7 +259,8 @@ public class FormValueMultimapTests
         Justification = "Verifies loading from an anonymous type; a tuple exposes Item1/Item2 fields, not reflectable named properties.")]
     public async Task LoadsFromAnonymousType()
     {
-        var source = new { foo = "bar", xyz = 123 };
+        const int xyzValue = 123;
+        var source = new { foo = "bar", xyz = xyzValue };
 
         var expected = new Dictionary<string, string> { { "foo", "bar" }, { "xyz", "123" } };
 
@@ -289,7 +302,8 @@ public class FormValueMultimapTests
     [Test]
     public async Task UsesQueryPropertyAttribute()
     {
-        var source = new AliasingTestClass { Frob = 4 };
+        const int frobValue = 4;
+        var source = new AliasingTestClass { Frob = frobValue };
 
         var target = new FormValueMultimap(source, _settings);
 

@@ -127,18 +127,18 @@ public sealed class ApiResponse<T>(
     /// <returns>The current <see cref="ApiResponse{T}"/></returns>
     /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
     /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
-    public Task<ApiResponse<T>> EnsureSuccessStatusCodeAsync() =>
+    public ValueTask<ApiResponse<T>> EnsureSuccessStatusCodeAsync() =>
         IsSuccessStatusCode
-            ? Task.FromResult(this)
+            ? new(this)
             : EnsureSlowAsync();
 
     /// <summary>Ensures the request was successful and without any other error by throwing an exception in case of failure.</summary>
     /// <returns>The current <see cref="ApiResponse{T}"/></returns>
     /// <exception cref="ApiException">Thrown when an unsuccessful response was received from the server.</exception>
     /// <exception cref="ApiRequestException">Thrown when the request failed before receiving a response from the server.</exception>
-    public Task<ApiResponse<T>> EnsureSuccessfulAsync() =>
+    public ValueTask<ApiResponse<T>> EnsureSuccessfulAsync() =>
         IsSuccessful
-            ? Task.FromResult(this)
+            ? new(this)
             : EnsureSlowAsync();
 
     /// <inheritdoc/>
@@ -182,11 +182,11 @@ public sealed class ApiResponse<T>(
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous validation operation.</returns>
-    private Task<ApiResponse<T>> EnsureSlowAsync() => ThrowsApiExceptionAsync();
+    private ValueTask<ApiResponse<T>> EnsureSlowAsync() => ThrowsApiExceptionAsync();
 
     /// <summary>Throws the appropriate API exception for an unsuccessful response.</summary>
     /// <returns>A task that represents the asynchronous throw operation.</returns>
-    private async Task<ApiResponse<T>> ThrowsApiExceptionAsync()
+    private async ValueTask<ApiResponse<T>> ThrowsApiExceptionAsync()
     {
         var responseMessage = response
                               ?? throw new InvalidOperationException(

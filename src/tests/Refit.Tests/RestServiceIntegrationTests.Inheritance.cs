@@ -266,7 +266,7 @@ public partial class RestServiceIntegrationTests
         {
             FirstName = "John",
             LastName = RamboLastName,
-            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+            Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" },
         };
 
         var fixture = RestService.For<IHttpBinApi<HttpBinGet, MyComplexQueryParams, int>>(

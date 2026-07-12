@@ -27,7 +27,11 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task BuildRequestPathFailsOnParameterNotFound() =>
         await Assert
-            .That(static () => GeneratedRequestRunner.BuildRequestPath("/user/{id}", false))
+            .That(static () =>
+            {
+                ((int startIdx, int endIdx) range, string? value)[] uriParams = [];
+                _ = GeneratedRequestRunner.BuildRequestPath("/user/{id}", false, uriParams);
+            })
             .Throws<ArgumentException>()
             .WithMessage("URL /user/{id} has parameter {id}, but no method parameter matches", StringComparison.Ordinal);
 

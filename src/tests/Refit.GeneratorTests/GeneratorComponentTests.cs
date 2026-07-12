@@ -370,6 +370,8 @@ public static class GeneratorComponentTests
                 RequestModel.Empty,
                 ImmutableEquatableArray<ParameterModel>.Empty,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
+                false,
+                false,
                 false);
 
             var source = Emitter.BuildMethodOpening(method, true, true, supportsNullable: true, isAsync: true);
@@ -580,7 +582,8 @@ public static class GeneratorComponentTests
                 refitMethods,
                 derivedRefitMethods,
                 Nullability.Enabled,
-                false);
+                false,
+                ImmutableEquatableArray<string>.Empty);
 
         /// <summary>Creates a Refit method model for direct emitter helper tests.</summary>
         /// <param name="canGenerateInline">Whether the request can be generated inline.</param>
@@ -600,10 +603,13 @@ public static class GeneratorComponentTests
                     false,
                     true,
                     canGenerateInline,
+                    null,
                     ImmutableEquatableArray<HeaderModel>.Empty,
                     ImmutableEquatableArray<RequestParameterModel>.Empty),
                 ImmutableEquatableArray<ParameterModel>.Empty,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
+                false,
+                false,
                 false);
 
         /// <summary>Parses a method declaration for syntax helper tests.</summary>

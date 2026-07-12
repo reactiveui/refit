@@ -80,7 +80,7 @@ public class RefitSettings
     public Func<
         HttpRequestMessage,
         CancellationToken,
-        Task<string>
+        ValueTask<string>
     >? AuthorizationHeaderValueGetter
     { get; set; }
 
@@ -88,22 +88,45 @@ public class RefitSettings
     public Func<HttpMessageHandler>? HttpMessageHandlerFactory { get; set; }
 
     /// <summary>Gets or sets a function to provide <see cref="Exception"/> based on <see cref="HttpResponseMessage"/>. If function returns null - no exception is thrown.</summary>
-    public Func<HttpResponseMessage, Task<Exception?>> ExceptionFactory { get; set; }
+    public Func<HttpResponseMessage, ValueTask<Exception?>> ExceptionFactory { get; set; }
 
     /// <summary>
     /// Gets or sets a function to provide <see cref="Exception"/> when deserialization exception is encountered.
     /// If function returns null - no exception is thrown.
     /// </summary>
-    public Func<HttpResponseMessage, Exception, Task<Exception?>>? DeserializationExceptionFactory { get; set; }
+    public Func<HttpResponseMessage, Exception, ValueTask<Exception?>>? DeserializationExceptionFactory { get; set; }
 
     /// <summary>Gets or sets how requests' content should be serialized. (defaults to <see cref="SystemTextJsonContentSerializer"/>).</summary>
     public IHttpContentSerializer ContentSerializer { get; set; }
+
+    /// <summary>Gets the return-type adapters the opt-in reflection request builder uses to surface custom return
+    /// shapes (for example <c>IObservable&lt;T&gt;</c> or <c>Result&lt;T&gt;</c>) from interface methods.</summary>
+    /// <remarks>
+    /// Each entry is a type implementing <see cref="IReturnTypeAdapter{TReturn, TResult}"/>: either a closed type,
+    /// or an open generic definition whose single type parameter is the wrapped result type. The source generator
+    /// does not consult this collection — it discovers adapters at compile time — so this only affects
+    /// <see cref="RestService.For{T}(HttpClient, RefitSettings)"/> and other reflection-based builds.
+    /// </remarks>
+    public IList<Type> ReturnTypeAdapters { get; } = [];
 
     /// <summary>
     /// Gets or sets the <see cref="IUrlParameterKeyFormatter"/> instance to use for formatting URL parameter keys
     /// (defaults to <see cref="DefaultUrlParameterKeyFormatter" />). Allows customization of key naming conventions.
     /// </summary>
     public IUrlParameterKeyFormatter UrlParameterKeyFormatter { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether a query object's flattened property keys honor the content serializer's
+    /// property name (for example <c>[JsonPropertyName]</c> with the default System.Text.Json serializer, or
+    /// <c>[JsonProperty]</c> with Refit.Newtonsoft.Json), matching how form-encoded field names are resolved
+    /// (defaults to <see langword="true"/>).
+    /// </summary>
+    /// <remarks>
+    /// When <see langword="false"/>, flattened query keys use only <c>[AliasAs]</c> and the
+    /// <see cref="UrlParameterKeyFormatter"/> over the CLR property name, as in Refit 13 and earlier. <c>[AliasAs]</c>
+    /// always takes precedence regardless of this setting.
+    /// </remarks>
+    public bool HonorContentSerializerPropertyNamesInQuery { get; set; } = true;
 
     /// <summary>Gets or sets the <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>).</summary>
     public IUrlParameterFormatter UrlParameterFormatter { get; set; }

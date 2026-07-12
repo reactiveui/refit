@@ -158,7 +158,10 @@ public class MultipartTests
             {
                 var parts = content.ToList();
 
-                await Assert.That(parts.Count).IsEqualTo(3);
+                const int expectedPartCount = 3;
+                const int additionalFilePartIndex = 2;
+
+                await Assert.That(parts.Count).IsEqualTo(expectedPartCount);
 
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(FileInfosName);
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo(name);
@@ -178,10 +181,10 @@ public class MultipartTests
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
 
-                await Assert.That(parts[2].Headers.ContentDisposition!.Name).IsEqualTo("anotherFile");
-                await Assert.That(parts[2].Headers.ContentDisposition!.FileName).IsEqualTo(name);
-                await Assert.That(parts[2].Headers.ContentType).IsNull();
-                await using (var str = await parts[2].ReadAsStreamAsync())
+                await Assert.That(parts[additionalFilePartIndex].Headers.ContentDisposition!.Name).IsEqualTo("anotherFile");
+                await Assert.That(parts[additionalFilePartIndex].Headers.ContentDisposition!.FileName).IsEqualTo(name);
+                await Assert.That(parts[additionalFilePartIndex].Headers.ContentType).IsNull();
+                await using (var str = await parts[additionalFilePartIndex].ReadAsStreamAsync())
                 await using (var src = GetTestFileStream(TestFilePath))
                 {
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
@@ -254,7 +257,9 @@ public class MultipartTests
             {
                 var parts = content.ToList();
 
-                await Assert.That(parts.Count).IsEqualTo(2);
+                const int expectedPartCount = 2;
+
+                await Assert.That(parts.Count).IsEqualTo(expectedPartCount);
 
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("id");
                 var idText = await parts[0].ReadAsStringAsync();
@@ -312,17 +317,19 @@ public class MultipartTests
         {
             RequestAsserts = async message =>
             {
+                const int expectedRequestPropertyCount = 3;
+
                 await Assert.That(message.Headers.Authorization!.ToString()).IsEqualTo(someHeader);
 
 #if NET6_0_OR_GREATER
-                await Assert.That(message.Options.Count()).IsEqualTo(3);
+                await Assert.That(message.Options.Count()).IsEqualTo(expectedRequestPropertyCount);
                 await Assert
                     .That(((IDictionary<string, object?>)message.Options)["SomeProperty"])
                     .IsEqualTo(someProperty);
 #endif
 
 #pragma warning disable CS0618 // Type or member is obsolete
-                await Assert.That(message.Properties.Count).IsEqualTo(3);
+                await Assert.That(message.Properties.Count).IsEqualTo(expectedRequestPropertyCount);
                 await Assert.That(message.Properties["SomeProperty"]).IsEqualTo(someProperty);
 #pragma warning restore CS0618 // Type or member is obsolete
             },
@@ -494,7 +501,10 @@ public class MultipartTests
             {
                 var parts = content.ToList();
 
-                await Assert.That(parts.Count).IsEqualTo(3);
+                const int expectedPartCount = 3;
+                const int additionalFilePartIndex = 2;
+
+                await Assert.That(parts.Count).IsEqualTo(expectedPartCount);
 
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(FileInfosName);
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsEqualTo("test-fileinfopart.pdf");
@@ -516,10 +526,10 @@ public class MultipartTests
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
                 }
 
-                await Assert.That(parts[2].Headers.ContentDisposition!.Name).IsEqualTo("anotherFile");
-                await Assert.That(parts[2].Headers.ContentDisposition!.FileName).IsEqualTo("additionalfile.pdf");
-                await Assert.That(parts[2].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
-                await using (var str = await parts[2].ReadAsStreamAsync())
+                await Assert.That(parts[additionalFilePartIndex].Headers.ContentDisposition!.Name).IsEqualTo("anotherFile");
+                await Assert.That(parts[additionalFilePartIndex].Headers.ContentDisposition!.FileName).IsEqualTo("additionalfile.pdf");
+                await Assert.That(parts[additionalFilePartIndex].Headers.ContentType!.MediaType).IsEqualTo(PdfMediaType);
+                await using (var str = await parts[additionalFilePartIndex].ReadAsStreamAsync())
                 await using (var src = GetTestFileStream(TestFilePath))
                 {
                     await Assert.That(StreamsEqual(src, str)).IsTrue();
@@ -656,7 +666,9 @@ public class MultipartTests
             {
                 var parts = content.ToList();
 
-                await Assert.That(parts.Count).IsEqualTo(2);
+                const int expectedPartCount = 2;
+
+                await Assert.That(parts.Count).IsEqualTo(expectedPartCount);
 
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo(TheObjectsName);
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsNull();

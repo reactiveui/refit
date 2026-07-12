@@ -18,6 +18,9 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
     /// <summary>Maximum stack-allocated buffer size, in characters, used when building paths and query strings.</summary>
     private const int StackallocThreshold = 512;
 
+    /// <summary>The name of the <see cref="IReturnTypeAdapter{TReturn, TResult}.Adapt"/> method, resolved reflectively.</summary>
+    private const string AdaptMethodName = "Adapt";
+
     /// <summary>The default query attribute applied when a parameter has none.</summary>
     private static readonly QueryAttribute DefaultQueryAttribute = new();
 
@@ -119,8 +122,15 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         }
 
         // IObservable<T>
-        return IsGenericReturnType(restMethod, typeof(IObservable<>))
-            ? BuildResultFuncForMethod(restMethod, nameof(BuildRxFuncForMethod))
+        if (IsGenericReturnType(restMethod, typeof(IObservable<>)))
+        {
+            return BuildResultFuncForMethod(restMethod, nameof(BuildRxFuncForMethod));
+        }
+
+        // A registered IReturnTypeAdapter surfaces this return type; this check runs after the built-in shapes so
+        // registering an adapter never overrides them.
+        return restMethod.HasReturnTypeAdapter
+            ? BuildAdapterFuncForMethod(restMethod)
             : BuildGeneratedSyncFuncForMethod(restMethod);
     }
 
@@ -413,6 +423,68 @@ internal partial class RequestBuilderImplementation : IRequestBuilder
         // The array is explicit: DynamicInvoke takes 'params object?[]?', and its expanded form
         // packs (client, args) into a single argument array rather than forwarding them one-to-one.
         return (client, args) => resultFunc!.DynamicInvoke([client, args]);
+    }
+
+    /// <summary>Builds a delegate for a method whose return type a registered <see cref="IReturnTypeAdapter{TReturn, TResult}"/> surfaces.</summary>
+    /// <param name="restMethod">The rest method to build a delegate for.</param>
+    /// <returns>A delegate that adapts the deferred HTTP call into the surfaced return type.</returns>
+    [RequiresUnreferencedCode("Building return-type adapter delegates requires generic method metadata to be available at runtime.")]
+    [RequiresDynamicCode("Building return-type adapter delegates requires runtime generic method instantiation.")]
+    private Func<HttpClient, object[], object?> BuildAdapterFuncForMethod(RestMethodInfoInternal restMethod)
+    {
+        var builderMethodInfo = FindDeclaredMethod(nameof(BuildAdapterFuncForMethodGeneric));
+        return (Func<HttpClient, object[], object?>)
+            builderMethodInfo!.MakeGenericMethod(
+                    restMethod.ReturnResultType,
+                    restMethod.DeserializedResultType)
+                .Invoke(this, [restMethod])!;
+    }
+
+    /// <summary>Builds an adapter invocation delegate for a method with known result and body types.</summary>
+    /// <typeparam name="T">The result type the HTTP call materializes (the adapter's <c>TResult</c>).</typeparam>
+    /// <typeparam name="TBody">The body type used for API responses.</typeparam>
+    /// <param name="restMethod">The rest method to build a delegate for.</param>
+    /// <returns>A delegate that returns the adapter's surfaced value.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally specified explicitly by callers.")]
+    [RequiresUnreferencedCode("Instantiating the adapter and resolving its interface method requires adapter metadata to be available at runtime.")]
+    [RequiresDynamicCode("Instantiating the adapter and closing its interface method requires runtime generic type instantiation.")]
+    private Func<HttpClient, object[], object?> BuildAdapterFuncForMethodGeneric<T, TBody>(
+        RestMethodInfoInternal restMethod)
+    {
+        var taskFunc = BuildCancellableTaskFuncForMethod<T, TBody>(restMethod);
+        var adapterType = ReturnTypeAdapterResolver.ResolveClosedAdapterType(
+                              restMethod.ReturnType,
+                              restMethod.RefitSettings.ReturnTypeAdapters)
+                          ?? throw new InvalidOperationException(
+                              $"No registered IReturnTypeAdapter surfaces return type '{restMethod.ReturnType}'.");
+        var adapter = Activator.CreateInstance(adapterType)!;
+
+        // The adapter implements IReturnTypeAdapter<ReturnType, T>; T is the inner result classified for it, so the
+        // closed interface method matches the strongly typed invoke delegate built below.
+        var adapterInterface = typeof(IReturnTypeAdapter<,>).MakeGenericType(restMethod.ReturnType, typeof(T));
+        var adaptMethod = adapterInterface.GetMethod(AdaptMethodName)!;
+
+        return (client, paramList) =>
+        {
+            var methodCt = restMethod.CancellationToken is not null
+                ? GetCancellationToken(paramList)
+                : CancellationToken.None;
+
+            Func<CancellationToken, Task<T?>> invoke = ct =>
+            {
+                // Link the adapter's per-invocation token with the method's token, and keep the linked source alive
+                // until the request finishes. The reflection builder rebuilds the request on each invoke, so a cold
+                // adapter can re-subscribe.
+                var cts = CancellationTokenSource.CreateLinkedTokenSource(methodCt, ct);
+                var task = taskFunc(client, cts.Token, paramList);
+                return DisposeWhenDoneAsync(task, cts);
+            };
+
+            return adaptMethod.Invoke(adapter, [invoke]);
+        };
     }
 
     /// <summary>Builds a synchronous invocation delegate for a generated (sync) interface method.</summary>

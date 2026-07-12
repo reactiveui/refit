@@ -11,6 +11,15 @@ namespace Refit;
 /// <summary>Default Url parameter formater.</summary>
 public class DefaultUrlParameterFormatter : IUrlParameterFormatter
 {
+    /// <summary>
+    /// Gets a value indicating whether this instance is the unmodified default formatter — not a derived type and
+    /// with no registered formats — so generated request building may format statically-known values inline.
+    /// </summary>
+    internal bool IsPristineDefault =>
+        GetType() == typeof(DefaultUrlParameterFormatter)
+        && SpecificFormats.Count == 0
+        && GeneralFormats.Count == 0;
+
     /// <summary>Gets the registered format strings keyed by container and parameter type.</summary>
     private Dictionary<(Type containerType, Type parameterType), string> SpecificFormats { get; } = [];
 

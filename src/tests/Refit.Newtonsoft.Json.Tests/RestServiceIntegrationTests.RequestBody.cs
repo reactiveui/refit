@@ -74,7 +74,10 @@ public partial class RestServiceIntegrationTests
         var result = await Assert.That(
             () => (Task)fixture.CreateUser(new() { Name = "foo" })).ThrowsExactly<ApiException>();
 
-        await AssertStackTraceContains(nameof(IGitHubApi.CreateUser), result!.StackTrace);
+        // Implicit-body methods now construct their request inline (no generated async frame in the stack),
+        // so assert the failing request's identity through the exception metadata instead.
+        await Assert.That(result!.HttpMethod).IsEqualTo(HttpMethod.Post);
+        await Assert.That(result.Uri!.AbsolutePath).IsEqualTo("/users");
 
         var errors = await result.GetContentAsAsync<ErrorResponse>();
 

@@ -8,6 +8,15 @@ namespace Refit.Generator;
 /// <summary>Internal request parser helpers that are directly covered by focused tests.</summary>
 internal static partial class Parser
 {
+    /// <summary>The underlying value for <c>BodySerializationMethod.UrlEncoded</c>.</summary>
+    private const int BodySerializationUrlEncoded = 2;
+
+    /// <summary>The underlying value for <c>BodySerializationMethod.Serialized</c>.</summary>
+    private const int BodySerializationSerialized = 3;
+
+    /// <summary>The underlying value for <c>BodySerializationMethod.JsonLines</c>.</summary>
+    private const int BodySerializationJsonLines = 4;
+
     /// <summary>Finds the HTTP method attribute on a Refit method.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>
     /// <param name="httpMethodAttribute">The Refit HTTP method base attribute symbol.</param>

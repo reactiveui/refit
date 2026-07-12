@@ -359,8 +359,13 @@ public partial class RestServiceIntegrationTests
     /// <summary>Verifies an unmatched route placeholder still throws by default.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task UnmatchedRouteParameterStillThrowsByDefault() =>
-        await Assert.That(static () => RestService.For<IUrlNoMatchingParameters>(BaseUrl)).ThrowsExactly<ArgumentException>();
+    public async Task UnmatchedRouteParameterStillThrowsByDefault()
+    {
+        // With no parameters at all the interface generates inline, so the unmatched-placeholder check
+        // now runs when the request is built rather than at client creation.
+        var service = RestService.For<IUrlNoMatchingParameters>(BaseUrl);
+        _ = await Assert.That(() => (Task)service.GetValue()).ThrowsExactly<ArgumentException>();
+    }
 
     /// <summary>Verifies methods returning a <see cref="ValueTask{TResult}"/> of an API response work.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -582,12 +587,34 @@ public partial class RestServiceIntegrationTests
         await handler.VerifyAllCalledAsync();
     }
 
+    /// <summary>Verifies a generic path-bound parameter binds dotted <c>{obj.Prop}</c> placeholders against the
+    /// runtime type instead of throwing at client creation (issue #1743).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task GetWithGenericPathBoundObject()
+    {
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = FoosBarBarNoneUrl, ExactQuery = string.Empty },
+                Reply.Json("Ok")
+            },
+        };
+
+        var fixture = handler.CreateClient<IApiBindPathToObject>(BaseUrl);
+
+        await fixture.GetFooBarsGeneric(
+            new PathBoundObject { SomeProperty = 1, SomeProperty2 = BarNoneValue });
+        await handler.VerifyAllCalledAsync();
+    }
+
     /// <summary>Verifies a long path-bound value is mapped into the path.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task GetWithLongPathBoundObject()
     {
-        var longPathString = string.Concat(Enumerable.Repeat(BarNoneValue, 1000));
+        const int pathRepeatCount = 1000;
+        var longPathString = string.Concat(Enumerable.Repeat(BarNoneValue, pathRepeatCount));
         var handler = new StubHttp
         {
             {
@@ -1049,7 +1076,9 @@ public partial class RestServiceIntegrationTests
         };
         var fixture = handler.CreateGeneratedClient<IGeneratedParametersApi>(BaseUrl);
 
-        var date = new DateOnly(2024, 1, 2);
+        const int year = 2024;
+        const int day = 2;
+        var date = new DateOnly(year, 1, day);
         _ = await fixture.GetDateOnlyPath(date);
 
         var expected = ((IFormattable)date).ToString(null, System.Globalization.CultureInfo.InvariantCulture);

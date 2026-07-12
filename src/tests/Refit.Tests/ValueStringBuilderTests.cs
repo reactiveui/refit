@@ -7,6 +7,9 @@ namespace Refit.Tests;
 /// <summary>Tests for allocation-conscious internal helper types.</summary>
 public sealed class ValueStringBuilderTests
 {
+    /// <summary>A multi-item sample sequence used to exercise the many-element peek branch.</summary>
+    private static readonly int[] MultiItemSequence = [1, 2];
+
     /// <summary>Verifies common append and insert operations on a stack-backed builder.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -101,7 +104,7 @@ public sealed class ValueStringBuilderTests
         const int singleSampleValue = 42;
         var emptyState = Array.Empty<int>().TryGetSingle(out var emptyValue);
         var singleState = new[] { singleSampleValue }.TryGetSingle(out var singleValue);
-        var manyState = new[] { 1, 2 }.TryGetSingle(out var manyValue);
+        var manyState = MultiItemSequence.TryGetSingle(out var manyValue);
 
         await Assert.That(emptyState).IsEqualTo(EnumerablePeek.Empty);
         await Assert.That(emptyValue).IsEqualTo(0);
@@ -186,6 +189,8 @@ public sealed class ValueStringBuilderTests
     /// <returns>A summary of the builder state before disposal.</returns>
     private static (string Text, int Length, int Capacity, string Suffix, string Middle, char Terminator) BuildSpanSummary()
     {
+        const int suffixStart = 2;
+        const int middleLength = 3;
         var builder = new ValueStringBuilder(stackalloc char[2]);
         try
         {
@@ -195,8 +200,8 @@ public sealed class ValueStringBuilderTests
             _ = builder.GetPinnableReference(terminate: true);
 
             var text = builder.AsSpan().ToString();
-            var suffix = builder.AsSpan(2).ToString();
-            var middle = builder.AsSpan(1, 3).ToString();
+            var suffix = builder.AsSpan(suffixStart).ToString();
+            var middle = builder.AsSpan(1, middleLength).ToString();
             var terminator = builder.RawChars[builder.Length];
             var length = builder.Length;
             var capacity = builder.Capacity;
@@ -253,7 +258,8 @@ public sealed class ValueStringBuilderTests
     /// <returns>The built text and capacity.</returns>
     private static (string Text, int Capacity) BuildWithPooledInitialCapacity()
     {
-        var builder = new ValueStringBuilder(2);
+        const int initialCapacity = 2;
+        var builder = new ValueStringBuilder(initialCapacity);
         try
         {
             builder.Append(null);

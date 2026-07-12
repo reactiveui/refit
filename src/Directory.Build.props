@@ -158,7 +158,7 @@
     <MinVerAutoIncrement>minor</MinVerAutoIncrement>
     <MinVerDefaultPreReleaseIdentifiers>alpha.0</MinVerDefaultPreReleaseIdentifiers>
     <MinVerTagPrefix>v</MinVerTagPrefix>
-    <MinVerMinimumMajorMinor>10.2</MinVerMinimumMajorMinor>
+    <MinVerMinimumMajorMinor>14.0</MinVerMinimumMajorMinor>
   </PropertyGroup>
 
   <ItemGroup>

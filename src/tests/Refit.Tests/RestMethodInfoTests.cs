@@ -15,6 +15,9 @@ public partial class RestMethodInfoTests
     /// <summary>Filter values used by path-bound object query tests.</summary>
     private static readonly string[] _filterValues = ["A", "B"];
 
+    /// <summary>Sample integer collection used to exercise inner-collection query formatting.</summary>
+    private static readonly int[] _testCollectionValues = [1, 2, 3];
+
     /// <summary>Verifies a method with too many complex types throws.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -144,7 +147,8 @@ public partial class RestMethodInfoTests
             nameof(IDummyHttpApi.FetchSomeStuff),
             baseAddress: "http://api/v1/");
 
-        var output = await factory([42]);
+        const int stuffId = 42;
+        var output = await factory([stuffId]);
 
         var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
@@ -161,9 +165,10 @@ public partial class RestMethodInfoTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "QueryWithOptionalParametersPathBoundObject");
+        const int pathBoundId = 123;
         var output = await factory(
         [
-            new DerivedPathBoundObject { SomeProperty = 123, SomeProperty2 = "test" },
+            new DerivedPathBoundObject { SomeProperty = pathBoundId, SomeProperty2 = "test" },
             "title",
             null!,
             _filterValues
@@ -305,7 +310,7 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.ComplexTypeQueryWithInnerCollection));
 
-        var param = new ComplexQueryObject { TestCollection = [1, 2, 3] };
+        var param = new ComplexQueryObject { TestCollection = _testCollectionValues };
         var output = await factory([param]);
         var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
@@ -340,7 +345,7 @@ public partial class RestMethodInfoTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.ComplexTypeQueryParameterLevelMulti));
 
-        var param = new ComplexQueryObject { TestCollection = [1, 2, 3] };
+        var param = new ComplexQueryObject { TestCollection = _testCollectionValues };
         var output = await factory([param]);
         var uri = new Uri(new(BaseAddressUri), output.RequestUri!);
 
@@ -487,26 +492,6 @@ public partial class RestMethodInfoTests
         await Assert.That(fixture.ParameterMap[1].Type).IsEqualTo(ParameterType.Normal);
         await Assert.That(fixture.QueryParameterMap).IsEmpty();
         await Assert.That(fixture.BodyParameterInfo).IsNull();
-    }
-
-    /// <summary>Verifies a non-string round-tripping parameter throws an argument exception.</summary>
-    /// <returns>A task that represents the asynchronous operation.</returns>
-    [Test]
-    public async Task ParameterMappingWithNonStringRoundTrippingShouldThrow()
-    {
-        var input = typeof(IRestMethodInfoTests);
-        await Assert.That(() =>
-        {
-            _ = new RestMethodInfoInternal(
-                input,
-                input
-                    .GetMethods()
-                    .First(
-                        x =>
-                            x.Name
-                            == nameof(
-                                IRestMethodInfoTests.FetchSomeStuffWithNonStringRoundTrippingParam)));
-        }).ThrowsExactly<ArgumentException>();
     }
 
     /// <summary>Verifies parameter mapping with a query parameter.</summary>

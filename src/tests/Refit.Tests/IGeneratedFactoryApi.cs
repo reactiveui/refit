@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System;
 using System.Threading.Tasks;
 
 namespace Refit.Tests;
@@ -20,9 +21,9 @@ public interface IGeneratedFactoryApi
     [Get("/generated/{id}")]
     Task GetById(string id);
 
-    /// <summary>Gets the generated endpoint with a query parameter.</summary>
-    /// <param name="id">The generated endpoint identifier.</param>
-    /// <returns>A task that completes when the request finishes.</returns>
+    /// <summary>Watches the generated endpoint; the observable return shape keeps this interface on the
+    /// reflection request builder so no generated settings factory is registered for it.</summary>
+    /// <returns>An observable sequence of responses.</returns>
     [Get("/generated")]
-    Task GetQuery(string id);
+    IObservable<string> Observe();
 }

@@ -77,7 +77,7 @@ public sealed class ApiResponseTests
 
         IApiResponse<string> asInterface = response;
         await Assert
-            .That(() => (Task)asInterface.EnsureSuccessStatusCodeAsync())
+            .That(async () => await asInterface.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<ApiException>();
     }
 
@@ -99,7 +99,7 @@ public sealed class ApiResponseTests
 
         IApiResponse<string> failInterface = failure;
         await Assert
-            .That(() => (Task)failInterface.EnsureSuccessfulAsync())
+            .That(async () => await failInterface.EnsureSuccessfulAsync())
             .ThrowsExactly<ApiException>();
     }
 
@@ -111,10 +111,10 @@ public sealed class ApiResponseTests
         const IApiResponse<string> nullResponse = null!;
 
         await Assert
-            .That(static () => (Task)nullResponse.EnsureSuccessStatusCodeAsync())
+            .That(static async () => await nullResponse.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<ArgumentNullException>();
         await Assert
-            .That(static () => (Task)nullResponse.EnsureSuccessfulAsync())
+            .That(static async () => await nullResponse.EnsureSuccessfulAsync())
             .ThrowsExactly<ArgumentNullException>();
     }
 
@@ -129,7 +129,7 @@ public sealed class ApiResponseTests
 
         IApiResponse<string> asInterface = response;
         await Assert
-            .That(() => (Task)asInterface.EnsureSuccessStatusCodeAsync())
+            .That(async () => await asInterface.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -162,7 +162,7 @@ public sealed class ApiResponseTests
         await Assert.That(response.StatusCode).IsNull();
         await Assert.That(response.Version).IsNull();
         await Assert.That(response.RequestMessage).IsSameReferenceAs(request);
-        await Assert.That(() => (Task)response.EnsureSuccessStatusCodeAsync())
+        await Assert.That(async () => await response.EnsureSuccessStatusCodeAsync())
             .ThrowsExactly<InvalidOperationException>();
     }
 
@@ -230,7 +230,7 @@ public sealed class ApiResponseTests
         await Assert.That(responseErrorResponse.HasResponseError(out var typedResponseError)).IsTrue();
         await Assert.That(typedResponseError).IsSameReferenceAs(apiError);
         await Assert.That(responseErrorResponse.HasRequestError(out _)).IsFalse();
-        await Assert.That(() => (Task)responseErrorResponse.EnsureSuccessfulAsync())
+        await Assert.That(async () => await responseErrorResponse.EnsureSuccessfulAsync())
             .ThrowsExactly<ApiException>();
     }
 
@@ -471,7 +471,8 @@ public sealed class ApiResponseTests
     [Test]
     public async Task ValueTypeContentIsAlwaysPresent()
     {
-        using var success = new ApiResponse<int>(CreateResponse(HttpStatusCode.OK, "5"), 5, new());
+        const int bodyValue = 5;
+        using var success = new ApiResponse<int>(CreateResponse(HttpStatusCode.OK, "5"), bodyValue, new());
         await Assert.That(success.HasContent).IsTrue();
         await Assert.That(success.IsSuccessfulWithContent).IsTrue();
 
@@ -486,7 +487,8 @@ public sealed class ApiResponseTests
     [Test]
     public async Task NullableValueTypeContentTracksNull()
     {
-        using var present = new ApiResponse<int?>(CreateResponse(HttpStatusCode.OK, "7"), 7, new());
+        const int presentValue = 7;
+        using var present = new ApiResponse<int?>(CreateResponse(HttpStatusCode.OK, "7"), presentValue, new());
         await Assert.That(present.HasContent).IsTrue();
         await Assert.That(present.IsSuccessfulWithContent).IsTrue();
 

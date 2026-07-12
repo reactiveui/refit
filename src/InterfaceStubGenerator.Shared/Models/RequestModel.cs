@@ -11,6 +11,9 @@ namespace Refit.Generator;
 /// <param name="IsApiResponse">Whether the method result is an API response wrapper.</param>
 /// <param name="ShouldDisposeResponse">Whether the response should be disposed by the shared runner.</param>
 /// <param name="CanGenerateInline">Whether this method is eligible for generated request construction.</param>
+/// <param name="AdapterTypeExpression">The closed <c>IReturnTypeAdapter</c> type expression when the return type is
+/// surfaced by an adapter, so the generated method emits an <c>Adapt</c> call; otherwise <see langword="null"/>. The
+/// result-type fields already carry the adapter's wrapped result type.</param>
 /// <param name="StaticHeaders">The static headers parsed from inherited interfaces, the declaring interface, and the method.</param>
 /// <param name="Parameters">The parsed request parameter bindings.</param>
 internal sealed record RequestModel(
@@ -21,6 +24,7 @@ internal sealed record RequestModel(
     bool IsApiResponse,
     bool ShouldDisposeResponse,
     bool CanGenerateInline,
+    string? AdapterTypeExpression,
     ImmutableEquatableArray<HeaderModel> StaticHeaders,
     ImmutableEquatableArray<RequestParameterModel> Parameters)
 {
@@ -33,6 +37,7 @@ internal sealed record RequestModel(
         false,
         true,
         false,
+        null,
         ImmutableEquatableArray<HeaderModel>.Empty,
         ImmutableEquatableArray<RequestParameterModel>.Empty);
 }

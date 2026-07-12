@@ -25,5 +25,22 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         public Task<string> CreateUserAsync(
             [Body] string payload,
             [HeaderCollection] IDictionary<string, string> headers);
+
+        /// <summary>Searches users with generated inline query construction.</summary>
+        /// <param name="query">The search text.</param>
+        /// <param name="page">The optional page number.</param>
+        /// <param name="ids">Identifiers expanded as repeated pairs.</param>
+        /// <param name="sort">The compile-time-resolved sort order.</param>
+        /// <param name="flag">A valueless query flag.</param>
+        /// <param name="cursor">A caller-encoded continuation cursor.</param>
+        /// <returns>The matching user payload.</returns>
+        [Get("/users/search")]
+        public Task<string> SearchUsersAsync(
+            [AliasAs("q")] string query,
+            int? page,
+            [Query(CollectionFormat.Multi)] IReadOnlyList<int> ids,
+            GeneratedUserSort sort,
+            [QueryName] string flag,
+            [Encoded] string cursor);
     }
 }

@@ -1042,8 +1042,8 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("static body => (object?)body.@Token");
-        await Assert.That(generated).Contains("static body => (object?)body.@BaseValue");
+        await Assert.That(generated).Contains("@form.@Token");
+        await Assert.That(generated).Contains("@form.@BaseValue");
         await Assert.That(generated).Contains("\"secret-\"");
     }
 
@@ -1099,10 +1099,10 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a?b={bVal}", refitSettings.AllowUnmatchedRouteParameters, ((5, 11), """);
     }
 
-    /// <summary>Verifies that non-templated parameters are not supported by the source generator.</summary>
+    /// <summary>Verifies that auto-appended query parameters generate inline query construction.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task UsesFallbackForNonTemplatedQueryParameters()
+    public async Task EmitsInlineConstructionForNonTemplatedQueryParameters()
     {
         const string source =
             """
@@ -1122,7 +1122,9 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("new global::Refit.GeneratedQueryStringBuilder(\"/a\")");
+        await Assert.That(generated).Contains("refitQueryBuilder.Add(\"bVal\"");
     }
 
     /// <summary>Verifies that dotted path parameters are not supported by the source generator.</summary>

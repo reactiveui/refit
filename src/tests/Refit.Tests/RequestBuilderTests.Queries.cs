@@ -40,6 +40,9 @@ public partial class RequestBuilderTests
     /// <summary>The dynamic request property key asserted by the property tests.</summary>
     private const string SomePropertyKey = "SomeProperty";
 
+    /// <summary>The numeric value assigned to the <c>Bar</c> field of the URL-encoded body samples.</summary>
+    private const int SampleBarValue = 100;
+
     /// <summary>Hardcoded headers appear in the request headers.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -49,7 +52,7 @@ public partial class RequestBuilderTests
 
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.FetchSomeStuffWithHardcodedHeaders));
-        var output = await factory([6]);
+        var output = await factory([SampleId]);
 
         await Assert.That(output.Headers.Contains(UserAgentHeaderName)).IsTrue().Because(UserAgentHeaderReason);
         await Assert.That(output.Headers.UserAgent.ToString()).IsEqualTo(RefitTestClientUserAgent);
@@ -67,7 +70,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithEmptyHardcodedHeader");
-        var output = await factory([6]);
+        var output = await factory([SampleId]);
 
         await Assert.That(output.Headers.Contains(UserAgentHeaderName)).IsTrue().Because(UserAgentHeaderReason);
         await Assert.That(output.Headers.UserAgent.ToString()).IsEqualTo(RefitTestClientUserAgent);
@@ -83,7 +86,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithNullHardcodedHeader");
-        var output = await factory([6]);
+        var output = await factory([SampleId]);
 
         await Assert.That(output.Headers.Contains(UserAgentHeaderName)).IsTrue().Because(UserAgentHeaderReason);
         await Assert.That(output.Headers.UserAgent.ToString()).IsEqualTo(RefitTestClientUserAgent);
@@ -106,7 +109,7 @@ public partial class RequestBuilderTests
                     {
                         BaseAddress = new(ApiBaseUrlWithSlash)
                     },
-                    [42])!;
+                    [AlternateSampleId])!;
         var result = await task;
 
         await Assert.That(result.Headers).IsNotNull();
@@ -126,7 +129,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "PostSomeStuffWithHardCodedContentTypeHeader");
-        var output = await factory([6, "stuff"]);
+        var output = await factory([SampleId, "stuff"]);
 
         await Assert.That(output.Content!.Headers.Contains("Content-Type")).IsTrue().Because("Content headers include Content-Type header");
         await Assert.That(output.Content!.Headers.ContentType!.ToString()).IsEqualTo("literally/anything");
@@ -140,7 +143,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "PostSomeStuffWithNonCanonicalContentTypeHeader");
-        var output = await factory([6, "stuff"]);
+        var output = await factory([SampleId, "stuff"]);
 
         await Assert.That(output.Content!.Headers.ContentType!.ToString()).IsEqualTo("application/soap+xml");
     }
@@ -153,7 +156,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithPropertyAndQuery");
-        var output = await factory([6, "value1"]);
+        var output = await factory([SampleId, "value1"]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/6?someValue=value1");
@@ -195,7 +198,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
-        var output = await factory([6, "Basic RnVjayB5ZWFoOmhlYWRlcnMh"]);
+        var output = await factory([SampleId, "Basic RnVjayB5ZWFoOmhlYWRlcnMh"]);
 
         await Assert.That(output.Headers.Authorization).IsNotNull();
         await Assert.That(output.Headers.Authorization!.Parameter).IsEqualTo("RnVjayB5ZWFoOmhlYWRlcnMh");
@@ -208,7 +211,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
-        var output = await factory([6, ":joy_cat:"]);
+        var output = await factory([SampleId, ":joy_cat:"]);
 
         await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because("Headers include X-Emoji header");
         await Assert.That(output.Headers.GetValues(EmojiHeaderName).First()).IsEqualTo(":joy_cat:");
@@ -221,7 +224,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithCustomHeader");
-        var output = await factory([6, string.Empty]);
+        var output = await factory([SampleId, string.Empty]);
 
         await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because("Headers include X-Emoji header");
         await Assert.That(output.Headers.GetValues(EmojiHeaderName).First()).IsEqualTo(string.Empty);
@@ -234,7 +237,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuffWithDynamicHeader");
-        var output = await factory([6, null!]);
+        var output = await factory([SampleId, null!]);
 
         await Assert.That(output.Headers.Authorization).IsNull();
     }
@@ -247,7 +250,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "FetchSomeStuffWithPathMemberInCustomHeader");
-        var output = await factory([6, ":joy_cat:"]);
+        var output = await factory([SampleId, ":joy_cat:"]);
 
         await Assert.That(output.Headers.Contains("X-PathMember")).IsTrue().Because("Headers include X-PathMember header");
         await Assert.That(output.Headers.GetValues("X-PathMember").First()).IsEqualTo("6");
@@ -260,7 +263,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("PostSomeStuffWithCustomHeader");
-        var output = await factory([6, new { Foo = "bar" }, ":smile_cat:"]);
+        var output = await factory([SampleId, new { Foo = "bar" }, ":smile_cat:"]);
 
         await Assert.That(output.Headers.Contains(ApiVersionHeaderName)).IsTrue().Because(ApiVersionHeaderReason);
         await Assert.That(output.Headers.Contains(EmojiHeaderName)).IsTrue().Because("Headers include X-Emoji header");
@@ -287,7 +290,7 @@ public partial class RequestBuilderTests
 
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(interfaceMethodName);
-        var output = await factory([6, headerCollection]);
+        var output = await factory([SampleId, headerCollection]);
 
         await Assert.That(output.Headers.Contains(UserAgentHeaderName)).IsTrue().Because(UserAgentHeaderReason);
         await Assert.That(output.Headers.GetValues(UserAgentHeaderName).First()).IsEqualTo(RefitTestClientUserAgent);
@@ -348,7 +351,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(interfaceMethodName);
-        var output = await factory([6, null!]);
+        var output = await factory([SampleId, null!]);
 
         await Assert.That(output.Headers.Contains(UserAgentHeaderName)).IsTrue().Because(UserAgentHeaderReason);
         await Assert.That(output.Headers.GetValues(UserAgentHeaderName).First()).IsEqualTo(RefitTestClientUserAgent);
@@ -375,7 +378,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.FetchSomeStuffWithDynamicHeaderCollection));
-        var output = await factory([6, headerCollection]);
+        var output = await factory([SampleId, headerCollection]);
 
         await Assert.That(!output.Headers.Contains(ApiVersionHeaderName)).IsTrue().Because("Headers does not include Api-Version header");
 
@@ -397,7 +400,7 @@ public partial class RequestBuilderTests
         var someProperty = new object();
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(interfaceMethodName);
-        var output = await factory([6, someProperty]);
+        var output = await factory([SampleId, someProperty]);
 
 #if NET6_0_OR_GREATER
         await Assert.That(output.Options).IsNotEmpty();
@@ -509,7 +512,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithoutKey));
-        var output = await factory([6, someProperty, someOtherProperty]);
+        var output = await factory([SampleId, someProperty, someOtherProperty]);
 
 #if NET6_0_OR_GREATER
         await Assert.That(output.Options).IsNotEmpty();
@@ -534,7 +537,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.FetchSomeStuffWithDynamicRequestPropertyWithDuplicateKey));
-        var output = await factory([6, someProperty, someOtherProperty]);
+        var output = await factory([SampleId, someProperty, someOtherProperty]);
 
         const int expectedPropertyCount = 3;
 
@@ -600,7 +603,7 @@ public partial class RequestBuilderTests
 
         var task = (Task)factory(
             new(testHttpMessageHandler) { BaseAddress = new(ApiBaseUrlWithSlash) },
-            [42])!;
+            [AlternateSampleId])!;
         await task;
 
         await Assert.That(testHttpMessageHandler.RequestMessage!.RequestUri!.ToString()).IsEqualTo("http://api/foo/bar/42");
@@ -611,10 +614,11 @@ public partial class RequestBuilderTests
     [Test]
     public async Task DontBlowUpWithDynamicAuthorizationHeaderAndContent()
     {
+        const int id = 7;
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("PutSomeContentWithAuthorization");
         var output = await factory(
-            [7, new { Octocat = "Dunetocat" }, "Basic RnVjayB5ZWFoOmhlYWRlcnMh"]);
+            [id, new { Octocat = "Dunetocat" }, "Basic RnVjayB5ZWFoOmhlYWRlcnMh"]);
 
         await Assert.That(output.Headers.Authorization).IsNotNull();
         await Assert.That(output.Headers.Authorization!.Parameter).IsEqualTo("RnVjayB5ZWFoOmhlYWRlcnMh");
@@ -625,11 +629,12 @@ public partial class RequestBuilderTests
     [Test]
     public async Task SuchFlexibleContentTypeWow()
     {
+        const int id = 7;
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod(
             "PutSomeStuffWithDynamicContentType");
         var output = await factory(
-            [7, "such \"refit\" is \"amaze\" wow", "text/dson"]);
+            [id, "such \"refit\" is \"amaze\" wow", "text/dson"]);
 
         await Assert.That(output.Content).IsNotNull();
         await Assert.That(output.Content!.Headers.ContentType).IsNotNull();
@@ -645,10 +650,10 @@ public partial class RequestBuilderTests
         var factory = fixture.RunRequest("PostSomeUrlEncodedStuff");
         var output = await factory(
             [
-                6,
+                SampleId,
 
                 // Baz is intentionally blank to verify empty values are preserved rather than stripped.
-                new UrlEncodedBody(Foo: "Something", Bar: 100, Baz: string.Empty)
+                new UrlEncodedBody(Foo: "Something", Bar: SampleBarValue, Baz: string.Empty)
             ]);
 
         await Assert.That(output.SendContent).IsEqualTo("Foo=Something&Bar=100&Baz=");
@@ -664,10 +669,10 @@ public partial class RequestBuilderTests
         var factory = fixture.RunRequest("PostSomeUrlEncodedStuff");
         var output = await factory(
             [
-                6,
+                SampleId,
 
                 // Baz is intentionally blank to verify empty values are preserved rather than stripped.
-                new UrlEncodedBodyWithCollection(Foo: "Something", Bar: 100, FooBar: _intArray57, Baz: string.Empty)
+                new UrlEncodedBodyWithCollection(Foo: "Something", Bar: SampleBarValue, FooBar: _intArray57, Baz: string.Empty)
             ]);
 
         await Assert.That(output.SendContent).IsEqualTo("Foo=Something&Bar=100&FooBar=5%2C7&Baz=");
@@ -678,12 +683,13 @@ public partial class RequestBuilderTests
     [Test]
     public async Task FormFieldGetsAliased()
     {
+        const int readablePropertyValue = 99;
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.RunRequest("PostSomeAliasedUrlEncodedStuff");
         var output = await factory(
             [
-                6,
-                new SomeRequestData { ReadablePropertyName = 99 }
+                SampleId,
+                new SomeRequestData { ReadablePropertyName = readablePropertyValue }
             ]);
 
         await Assert.That(output.SendContent).IsEqualTo("rpn=99");
@@ -694,6 +700,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task CustomParmeterFormatter()
     {
+        const int id = 5;
         var settings = new RefitSettings
         {
             UrlParameterFormatter = new TestUrlParameterFormatter("custom-parameter")
@@ -701,7 +708,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
         var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
-        var output = await factory([5]);
+        var output = await factory([id]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/custom-parameter");

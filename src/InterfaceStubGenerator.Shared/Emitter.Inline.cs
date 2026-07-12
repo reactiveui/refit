@@ -15,9 +15,6 @@ internal static partial class Emitter
     /// <summary>The opening of a generated <c>FormField</c> construction.</summary>
     private const string FormFieldNew = "new global::Refit.FormField<";
 
-    /// <summary>The getter lambda opening between the body type and the property name.</summary>
-    private const string FormFieldGetterOpen = ">(static body => (object?)body.@";
-
     /// <summary>The separator before the quoted CLR property name argument.</summary>
     private const string FormFieldNameOpen = ", \"";
 
@@ -40,6 +37,7 @@ internal static partial class Emitter
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
     /// <param name="requestBuilderFieldName">The unique generated field name that stores the request builder.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
     /// <returns>The generated method implementation.</returns>
     [SuppressMessage(
         "Usage",
@@ -52,11 +50,12 @@ internal static partial class Emitter
         InterfaceModel interfaceModel,
         UniqueNameBuilder uniqueNames,
         string requestBuilderFieldName,
-        string settingsFieldName)
+        string settingsFieldName,
+        EnumFormatterScope enumFormatterScope)
     {
         if (interfaceModel.GeneratedRequestBuilding && methodModel.Request.CanGenerateInline)
         {
-            return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel, settingsFieldName, uniqueNames);
+            return BuildInlineRefitMethod(methodModel, interfaceModel, isTopLevel, settingsFieldName, uniqueNames, enumFormatterScope);
         }
 
         var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
@@ -80,7 +79,15 @@ internal static partial class Emitter
             $"{requestBuilderFieldName} ?? throw new global::System.InvalidOperationException(\"This generated Refit method requires a request builder.\")";
 
         return typeParameterFieldSource
-            + BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable, isAsync)
+            + BuildMethodOpening(
+                methodModel,
+                isExplicit,
+                isExplicit,
+                interfaceModel.SupportsNullable,
+                isAsync,
+                BuildReflectionFallbackSuppressions(
+                    methodModel.RequiresUnreferencedCode,
+                    methodModel.RequiresDynamicCode))
             + $$"""
                 {{bodyIndent}}var {{argumentsLocal}} = {{BuildArgumentsArrayLiteral(methodModel)}};
                 {{bodyIndent}}var {{requestBuilderLocal}} = {{requestBuilderInit}};
@@ -97,31 +104,33 @@ internal static partial class Emitter
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
     /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <param name="enumFormatterScope">The enum formatter scope for the interface.</param>
     /// <returns>The generated inline method implementation.</returns>
     private static string BuildInlineRefitMethod(
         MethodModel methodModel,
         InterfaceModel interfaceModel,
         bool isTopLevel,
         string settingsFieldName,
-        UniqueNameBuilder uniqueNames)
+        UniqueNameBuilder uniqueNames,
+        EnumFormatterScope enumFormatterScope)
     {
         var isExplicit = methodModel.IsExplicitInterface || !isTopLevel;
         var request = methodModel.Request;
         var locals = CreateMethodLocalNameBuilder(methodModel.Parameters);
         var settingsLocal = locals.New("refitSettings");
         var requestLocal = locals.New("refitRequest");
+        var adapterTokenLocal = locals.New("refitAdapterToken");
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
         var cancellationTokenExpression = BuildCancellationTokenExpression(request);
         var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
 
         // Build path
         var parameterInfoNames = GetParameterInfoUniqueNames(request, uniqueNames);
-        var parameters = GetParametersArg(request, parameterInfoNames);
         var paramInfoSb = new StringBuilder();
 
         foreach (var parameter in request.Parameters)
         {
-            if (parameter.Kind is not RequestParameterKind.Path)
+            if (!NeedsAttributeProvider(parameter))
             {
                 continue;
             }
@@ -130,22 +139,60 @@ internal static partial class Emitter
             BuildParameterInfoField(parameter, methodModel.DeclaredMethod, parameterName, paramInfoSb);
         }
 
-        var pathExpression = parameters.Length > 0
+        var emission = new InlineValueEmission(
+            locals.New("refitQueryBuilder"),
+            locals.New("refitQueryValue"),
+            settingsLocal,
+            locals.New("refitUseDefaultFormatting"),
+            locals.New("refitUseDefaultFormFormatting"),
+            enumFormatterScope,
+            paramInfoSb);
+        var parameters = GetParametersArg(request, parameterInfoNames, emission);
+
+        // A template with placeholders but no bound path parameters still runs the unmatched-placeholder
+        // check so AllowUnmatchedRouteParameters keeps its reflection-path semantics.
+        var pathExpression = parameters.Length > 0 || request.Path.IndexOf('{') >= 0
             ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}, {settingsLocal}.AllowUnmatchedRouteParameters{parameters})"
             : ToCSharpStringLiteral(request.Path);
+
+        var bodyIndent = Indent(MethodBodyIndentation);
+        var requestPathExpression = pathExpression;
+        var requestPrologueSource = NeedsFormattingLocal(request)
+            ? $"{bodyIndent}var {emission.UseDefaultFormattingLocal} = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting({settingsLocal});\n"
+            : string.Empty;
+        if (NeedsFormFormattingLocal(request))
+        {
+            requestPrologueSource +=
+                $"{bodyIndent}var {emission.UseDefaultFormFormattingLocal} = global::Refit.GeneratedRequestRunner.UsesDefaultFormUrlEncodedParameterFormatting({settingsLocal});\n";
+        }
+
+        if (HasQueryBindings(request))
+        {
+            requestPrologueSource +=
+                $"{bodyIndent}var {emission.QueryBuilderLocal} = new global::Refit.GeneratedQueryStringBuilder({pathExpression});\n"
+                + BuildInlineQueryStatements(request, parameterInfoNames, emission);
+            requestPathExpression = $"{emission.QueryBuilderLocal}.Build()";
+        }
+
+        var httpMethodExpression = ToHttpMethodExpression(request.HttpMethod);
         var requestUriExpression =
-            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {pathExpression}, {settingsLocal}.UrlResolution)";
-        var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(bodyParameter, uniqueNames);
-        var contentSource = bodyParameter is null ? string.Empty : BuildInlineContent(bodyParameter, requestLocal, settingsLocal, formFieldsFieldName);
+            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
+        var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
+            bodyParameter,
+            uniqueNames,
+            interfaceModel.SupportsNullable,
+            interfaceModel.SupportsStaticLambdas);
+        var contentSource = bodyParameter is null
+            ? string.Empty
+            : BuildInlineContent(bodyParameter, requestLocal, settingsLocal, formFieldsFieldName, interfaceModel.SupportsNullable, emission, locals);
         var headerSource = BuildInlineHeaders(request, requestLocal);
         var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
-        var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal);
+        var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal, adapterTokenLocal);
         var methodIndent = Indent(MethodMemberIndentation);
-        var bodyIndent = Indent(MethodBodyIndentation);
 
         return $$"""
             {{paramInfoSb}}{{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
-            {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
+            {{requestPrologueSource}}{{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{httpMethodExpression}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
             {{bodyIndent}}{{requestLocal}}.VersionPolicy = {{settingsLocal}}.VersionPolicy;
@@ -277,7 +324,7 @@ internal static partial class Emitter
         var dict = new Dictionary<string, string>();
         foreach (var parameter in request.Parameters)
         {
-            if (parameter.Kind is not RequestParameterKind.Path)
+            if (!NeedsAttributeProvider(parameter))
             {
                 continue;
             }
@@ -292,9 +339,25 @@ internal static partial class Emitter
     /// <summary>Builds the additional arguments passed to the generated request path builder.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <param name="uniqueNameLookup">The map of parameter name to cached attribute-provider field name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
     /// <returns>The generated argument list fragment.</returns>
-    private static string GetParametersArg(RequestModel request, Dictionary<string, string> uniqueNameLookup)
+    private static string GetParametersArg(
+        RequestModel request,
+        Dictionary<string, string> uniqueNameLookup,
+        in InlineValueEmission emission)
     {
+        // A single pre-encoded path parameter switches every replacement to the overload carrying the
+        // per-value encoding flag, because a params call cannot mix tuple arities.
+        var anyPreEncoded = false;
+        foreach (var parameter in request.Parameters)
+        {
+            if (parameter.Kind == RequestParameterKind.Path && parameter.PreEncoded)
+            {
+                anyPreEncoded = true;
+                break;
+            }
+        }
+
         var parametersSb = new StringBuilder();
         var pathLength = request.Path.Length;
         foreach (var parameter in request.Parameters)
@@ -304,19 +367,21 @@ internal static partial class Emitter
                 continue;
             }
 
+            var valueExpression = BuildPathValueExpression(
+                parameter,
+                uniqueNameLookup[parameter.Name],
+                emission);
             foreach (var location in parameter.Locations)
             {
                 var start = location.Start.GetOffset(pathLength);
                 var end = location.End.GetOffset(pathLength);
-                _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ");
-                var parameterInfoFieldName = uniqueNameLookup[parameter.Name];
-                _ = parametersSb.Append("_settings.UrlParameterFormatter.Format(")
-                    .Append(parameter.Name)
-                    .Append(", ")
-                    .Append(parameterInfoFieldName)
-                    .Append(", ")
-                    .Append("typeof(").Append(parameter.Type).Append(')')
-                    .Append(')');
+                _ = parametersSb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ")
+                    .Append(valueExpression);
+                if (anyPreEncoded)
+                {
+                    _ = parametersSb.Append(", ").Append(ToLowerInvariantString(parameter.PreEncoded));
+                }
+
                 _ = parametersSb.Append(')');
             }
         }
@@ -329,12 +394,27 @@ internal static partial class Emitter
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <param name="formFieldsFieldName">The cached form field descriptor array name, or null to use the reflection path.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <param name="locals">The method-scope unique local name builder.</param>
     /// <returns>The generated content assignment.</returns>
-    private static string BuildInlineContent(RequestParameterModel bodyParameter, string requestLocal, string settingsLocal, string? formFieldsFieldName)
+    private static string BuildInlineContent(
+        RequestParameterModel bodyParameter,
+        string requestLocal,
+        string settingsLocal,
+        string? formFieldsFieldName,
+        bool supportsNullable,
+        in InlineValueEmission emission,
+        UniqueNameBuilder locals)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
         if (bodyParameter.BodySerializationMethod == "UrlEncoded")
         {
+            if (IsUnrollableFormBody(bodyParameter))
+            {
+                return BuildInlineFormUnroll(bodyParameter, requestLocal, supportsNullable, emission, locals);
+            }
+
             return formFieldsFieldName is not null
                 ? $$"""
                     {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
@@ -374,14 +454,202 @@ internal static partial class Emitter
             """;
     }
 
+    /// <summary>Emits straight-line form-url-encoded body serialization for an all-scalar body, mirroring the descriptor
+    /// path's wire output without the descriptor array, getter delegates, or value boxing on the fast path.</summary>
+    /// <param name="bodyParameter">The URL-encoded body parameter model.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <param name="locals">The method-scope unique local name builder.</param>
+    /// <returns>The generated content assignment.</returns>
+    private static string BuildInlineFormUnroll(
+        RequestParameterModel bodyParameter,
+        string requestLocal,
+        bool supportsNullable,
+        in InlineValueEmission emission,
+        UniqueNameBuilder locals)
+    {
+        var settingsLocal = emission.SettingsLocal;
+        var bodyIndent = Indent(MethodBodyIndentation);
+        var inner = bodyIndent + "    ";
+        var fields = bodyParameter.FormFields!.AsArray();
+        var bodyExpr = "@" + bodyParameter.Name;
+        var entriesLocal = locals.New("______formEntries");
+
+        // Nullable reference annotations are a C# 8 feature; older consumers get the unannotated types, which also match
+        // the .NET Framework/netstandard FormUrlEncodedContent constructor signature. The generated code stays
+        // compilable down to the C# 7.3 floor (explicit KeyValuePair construction, != null guards - no C# 9 syntax).
+        var nullable = supportsNullable ? "?" : string.Empty;
+        var kvpType = "global::System.Collections.Generic.KeyValuePair<string" + nullable + ", string" + nullable + ">";
+        var site = new FormUnrollSite(bodyExpr, entriesLocal, inner, "new " + kvpType, locals);
+
+        var adds = new StringBuilder();
+        foreach (var field in fields)
+        {
+            AppendFormFieldUnroll(adds, field, in site, emission);
+        }
+
+        // CanUnrollForm rejects the null, HttpContent, Stream, string, and dictionary bodies the reflection path
+        // special-cases; a non-System.Text.Json serializer resolves field names differently, so it falls back too.
+        return $$"""
+            {{bodyIndent}}if ({{settingsLocal}}.ContentSerializer is global::Refit.SystemTextJsonContentSerializer
+            {{inner}}    && global::Refit.GeneratedRequestRunner.CanUnrollForm({{bodyExpr}}))
+            {{bodyIndent}}{
+            {{inner}}var {{entriesLocal}} = new global::System.Collections.Generic.List<{{kvpType}}>({{fields.Length}});
+            {{adds}}{{inner}}{{requestLocal}}.Content = new global::System.Net.Http.FormUrlEncodedContent({{entriesLocal}});
+            {{bodyIndent}}}
+            {{bodyIndent}}else
+            {{bodyIndent}}{
+            {{inner}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>({{settingsLocal}}, {{bodyExpr}});
+            {{bodyIndent}}}
+
+            """;
+    }
+
+    /// <summary>Appends the statements adding one scalar field to the unrolled form entry list.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="field">The form field descriptor.</param>
+    /// <param name="site">The shared locals and rendered fragments for the enclosing body.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    private static void AppendFormFieldUnroll(
+        StringBuilder sb,
+        FormFieldModel field,
+        in FormUnrollSite site,
+        in InlineValueEmission emission)
+    {
+        var indent = site.Indentation;
+        var valueLocal = site.Locals.New("______formValue");
+        var keyExpr = "global::Refit.GeneratedRequestRunner.BuildQueryKey("
+            + emission.SettingsLocal + ", "
+            + ToCSharpStringLiteral(field.PropertyName) + ", "
+            + ToNullableCSharpStringLiteral(field.ExplicitName) + ", "
+            + ToNullableCSharpStringLiteral(field.PrefixSegment) + ")";
+
+        _ = sb.Append(indent).Append("var ").Append(valueLocal).Append(" = ").Append(site.BodyExpr).Append(".@").Append(field.PropertyName).AppendLine(";");
+
+        var valueExpr = BuildFormFieldValueExpression(field, valueLocal, emission);
+
+        // A non-nullable value type is always present, so it is added unconditionally.
+        if (!field.CanBeNull)
+        {
+            AppendFormEntryAdd(sb, in site, indent, keyExpr, valueExpr);
+            return;
+        }
+
+        // "!= null" (not the C# 9 "is not null" pattern) keeps the emitted null guard compilable down to C# 7.3.
+        var childIndent = indent + "    ";
+        _ = sb.Append(indent).Append("if (").Append(valueLocal).AppendLine(" != null)")
+            .Append(indent).AppendLine("{");
+        AppendFormEntryAdd(sb, in site, childIndent, keyExpr, valueExpr);
+        _ = sb.Append(indent).AppendLine("}");
+
+        // A null value is omitted unless the field opts in via [Query(SerializeNull = true)], which emits an empty value.
+        if (!field.SerializeNull)
+        {
+            return;
+        }
+
+        _ = sb.Append(indent).AppendLine("else")
+            .Append(indent).AppendLine("{");
+        AppendFormEntryAdd(sb, in site, childIndent, keyExpr, "string.Empty");
+        _ = sb.Append(indent).AppendLine("}");
+    }
+
+    /// <summary>Appends one entry-list <c>Add</c> using an explicit <c>KeyValuePair</c> construction (no C# 9 target-typed new).</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="site">The shared locals and rendered fragments for the enclosing body.</param>
+    /// <param name="indent">The statement indentation.</param>
+    /// <param name="keyExpr">The field key expression.</param>
+    /// <param name="valueExpr">The field value expression.</param>
+    private static void AppendFormEntryAdd(StringBuilder sb, in FormUnrollSite site, string indent, string keyExpr, string valueExpr) =>
+        _ = sb.Append(indent).Append(site.EntriesLocal).Append(".Add(").Append(site.KvpNew)
+            .Append('(').Append(keyExpr).Append(", ").Append(valueExpr).AppendLine("));");
+
+    /// <summary>Builds the value expression for one scalar form field, matching the configured form formatter.</summary>
+    /// <param name="field">The form field descriptor.</param>
+    /// <param name="valueLocal">The non-null value local name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <returns>The rendering expression, branching to the formatter when it is customized.</returns>
+    private static string BuildFormFieldValueExpression(
+        FormFieldModel field,
+        string valueLocal,
+        in InlineValueEmission emission)
+    {
+        var formatterExpression =
+            $"{emission.SettingsLocal}.FormUrlEncodedParameterFormatter.Format({valueLocal}, {ToNullableCSharpStringLiteral(field.Format)})";
+        var fastExpression = field.ValueFormat!.Kind == InlineFormatKind.FormatterOnly
+            ? null
+            : BuildFastFormatExpression(valueLocal, field.ValueFormat, emission);
+
+        return fastExpression is null
+            ? formatterExpression
+            : $"{emission.UseDefaultFormFormattingLocal} ? ({fastExpression}) : {formatterExpression}";
+    }
+
+    /// <summary>Determines whether a URL-encoded body can be serialized by the straight-line unrolled fast path.</summary>
+    /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
+    /// <returns><see langword="true"/> when every field is a simple scalar carrying a compile-time rendering strategy,
+    /// so the body needs neither the descriptor array nor reflection on the common System.Text.Json path.</returns>
+    private static bool IsUnrollableFormBody(RequestParameterModel? bodyParameter)
+    {
+        if (bodyParameter is not { BodySerializationMethod: "UrlEncoded", FormFields: { Count: > 0 } formFields })
+        {
+            return false;
+        }
+
+        // A collection or complex field leaves ValueFormat null; it needs the descriptor path's collection-format and
+        // nested handling, so the whole body falls back rather than the generator guessing the wire format.
+        foreach (var field in formFields)
+        {
+            if (field.ValueFormat is null)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Determines whether an unrollable form body has at least one field with a reflection-free fast path.</summary>
+    /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
+    /// <returns><see langword="true"/> when a field renders through the default-form-formatting branch, so the generated
+    /// method must declare that branch local.</returns>
+    private static bool FormBodyHasFastPath(RequestParameterModel? bodyParameter)
+    {
+        if (!IsUnrollableFormBody(bodyParameter))
+        {
+            return false;
+        }
+
+        foreach (var field in bodyParameter!.FormFields!)
+        {
+            if (field.ValueFormat!.Kind != InlineFormatKind.FormatterOnly)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /// <summary>Builds the cached form field descriptor array declaration for a URL-encoded body, if eligible.</summary>
     /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
     /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
+    /// <param name="supportsStaticLambdas">Whether the consumer compilation supports static lambda syntax.</param>
     /// <returns>The generated field declaration and its name, or empty values when the reflection path is used.</returns>
     private static (string Source, string? FieldName) BuildFormFieldsField(
         RequestParameterModel? bodyParameter,
-        UniqueNameBuilder uniqueNames)
+        UniqueNameBuilder uniqueNames,
+        bool supportsNullable,
+        bool supportsStaticLambdas)
     {
+        // An all-scalar body is serialized straight-line by BuildInlineFormUnroll and needs no descriptor array.
+        if (IsUnrollableFormBody(bodyParameter))
+        {
+            return (string.Empty, null);
+        }
+
         if (bodyParameter?.FormFields is not { Count: > 0 } formFields)
         {
             return (string.Empty, null);
@@ -392,26 +660,31 @@ internal static partial class Emitter
         var fieldName = uniqueNames.New(FormFieldsVariableName);
         var elementIndent = Indent(MethodBodyIndentation);
 
+        // The getter lambda degrades to the consumer's language version: 'static' is C# 9 and the 'object?' cast
+        // annotation is C# 8, so both are omitted below those versions to keep generation compilable at the C# 7.3 floor.
+        var getterOpen = ">(" + (supportsStaticLambdas ? "static " : string.Empty)
+            + "body => (" + (supportsNullable ? "object?" : "object") + ")body.@";
+
         var elementsLength = 0;
         for (var i = 0; i < fields.Length; i++)
         {
-            elementsLength += MeasureFormFieldElement(fields[i], bodyType, elementIndent.Length);
+            elementsLength += MeasureFormFieldElement(fields[i], bodyType, getterOpen.Length, elementIndent.Length);
         }
 
         var elements = CreateGeneratedString(
             elementsLength,
-            (fields, bodyType, elementIndent),
+            (fields, bodyType, elementIndent, getterOpen),
             static (destination, state) =>
             {
                 var position = 0;
-                var (elementFields, type, indent) = state;
+                var (elementFields, type, indent, getter) = state;
                 for (var i = 0; i < elementFields.Length; i++)
                 {
                     var field = elementFields[i];
                     AppendText(destination, indent, ref position);
                     AppendText(destination, FormFieldNew, ref position);
                     AppendText(destination, type, ref position);
-                    AppendText(destination, FormFieldGetterOpen, ref position);
+                    AppendText(destination, getter, ref position);
                     AppendText(destination, field.PropertyName, ref position);
                     AppendText(destination, FormFieldNameOpen, ref position);
                     AppendText(destination, field.PropertyName, ref position);
@@ -453,13 +726,14 @@ internal static partial class Emitter
     /// <summary>Measures the rendered length of one generated form field element line.</summary>
     /// <param name="field">The form field descriptor.</param>
     /// <param name="bodyType">The fully-qualified body type.</param>
+    /// <param name="getterOpenLength">The length of the language-version-specific getter lambda opening.</param>
     /// <param name="indentLength">The element indentation length.</param>
     /// <returns>The number of characters the rendered element occupies.</returns>
-    private static int MeasureFormFieldElement(FormFieldModel field, string bodyType, int indentLength) =>
+    private static int MeasureFormFieldElement(FormFieldModel field, string bodyType, int getterOpenLength, int indentLength) =>
         indentLength
         + FormFieldNew.Length
         + bodyType.Length
-        + FormFieldGetterOpen.Length
+        + getterOpenLength
         + field.PropertyName.Length
         + FormFieldNameOpen.Length
         + field.PropertyName.Length
@@ -484,6 +758,7 @@ internal static partial class Emitter
     /// <param name="cancellationTokenExpression">The cancellation token expression.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="adapterTokenLocal">The lambda parameter name for the return-type adapter's cancellation token.</param>
     /// <returns>The generated return statement.</returns>
     private static string BuildInlineReturn(
         MethodModel methodModel,
@@ -491,9 +766,27 @@ internal static partial class Emitter
         string bufferBodyExpression,
         string cancellationTokenExpression,
         string requestLocal,
-        string settingsLocal)
+        string settingsLocal,
+        string adapterTokenLocal)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
+        if (request.AdapterTypeExpression is { } adapterType)
+        {
+            // The adapter surfaces the call synchronously and receives a deferred send. The request is built eagerly
+            // and captured, so the deferred call is single-use (a second invocation sends a disposed request).
+            return $$"""
+                {{bodyIndent}}return new {{adapterType}}().Adapt(({{adapterTokenLocal}}) => global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
+                {{bodyIndent}}    this.Client,
+                {{bodyIndent}}    {{requestLocal}},
+                {{bodyIndent}}    {{settingsLocal}},
+                {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
+                {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
+                {{bodyIndent}}    {{bufferBodyExpression}},
+                {{bodyIndent}}    {{adapterTokenLocal}}));
+
+                """;
+        }
+
         if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncVoid)
         {
             return $$"""
@@ -702,4 +995,17 @@ internal static partial class Emitter
             : bodyParameter.BodySerializationMethod;
         return $"global::Refit.BodySerializationMethod.{serializationMethod}";
     }
+
+    /// <summary>The shared locals and rendered fragments used to emit one unrolled form body.</summary>
+    /// <param name="BodyExpr">The body value expression.</param>
+    /// <param name="EntriesLocal">The form entry list local name.</param>
+    /// <param name="Indentation">The statement indentation.</param>
+    /// <param name="KvpNew">The <c>new KeyValuePair&lt;...&gt;</c> constructor prefix, nullable-annotated per language version.</param>
+    /// <param name="Locals">The method-scope unique local name builder.</param>
+    private readonly record struct FormUnrollSite(
+        string BodyExpr,
+        string EntriesLocal,
+        string Indentation,
+        string KvpNew,
+        UniqueNameBuilder Locals);
 }

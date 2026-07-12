@@ -209,7 +209,8 @@ public class StreamingResponseTests
     [Test]
     public async Task StreamsJsonLinesWithSourceGenContextAndReaderEdges()
     {
-        var bigGap = new string(' ', 5000);
+        const int bufferExceedingGapLength = 5000;
+        var bigGap = new string(' ', bufferExceedingGapLength);
 
         // Includes a whitespace-only line (skipped), a line larger than the read buffer, CRLF endings, and no final newline.
         var payload = "{\"id\":1}\r\n   \r\n{" + bigGap + "\"id\":2}\r\n{\"id\":3}";

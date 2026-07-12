@@ -36,6 +36,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     {
     }
 
+    /// <summary>Gets the JSON serialization options this serializer uses, exposed so a query converter can walk a
+    /// registered type's <see cref="System.Text.Json.Serialization.Metadata.JsonTypeInfo"/> without reflection.</summary>
+    public JsonSerializerOptions SerializerOptions => jsonSerializerOptions;
+
     /// <summary>Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters.</summary>
     /// <returns>The default <see cref="JsonSerializerOptions"/>.</returns>
     public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
@@ -489,7 +493,11 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
             return true;
         }
 
-        var buffer = ArrayPool<byte>.Shared.Rent(4096);
+        // The initial pooled buffer, and the factor it grows by when a single line does not fit in it.
+        const int lineScanBufferSize = 4096;
+        const int lineScanBufferGrowthFactor = 2;
+
+        var buffer = ArrayPool<byte>.Shared.Rent(lineScanBufferSize);
         var start = 0;
         var end = 0;
         try
@@ -518,7 +526,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
                 if (end == buffer.Length)
                 {
-                    var larger = ArrayPool<byte>.Shared.Rent(buffer.Length * 2);
+                    var larger = ArrayPool<byte>.Shared.Rent(buffer.Length * lineScanBufferGrowthFactor);
                     Buffer.BlockCopy(buffer, 0, larger, 0, end);
                     ArrayPool<byte>.Shared.Return(buffer);
                     buffer = larger;

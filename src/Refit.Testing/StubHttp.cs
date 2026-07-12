@@ -109,7 +109,7 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
             _routes.Add(route);
             _responses.Add(response);
             _consumed.Add(false);
-            if (!route.Reusable)
+            if (!route.Reusable && !route.Fallback)
             {
                 _outstanding++;
             }
@@ -326,11 +326,17 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
         // for typed inspection even after the client disposes the request.
         await BufferRequestAsync(request, requestIndex).ConfigureAwait(false);
 
-        // Non-reusable (one-shot) routes take priority; reusable background stubs are the fallback.
-        var index = await FindMatchAsync(request, false, cancellationToken).ConfigureAwait(false);
+        // Priority tiers, tried in order regardless of declaration order: one-shot expectations, then reusable
+        // background stubs, then catch-all fallbacks.
+        var index = await FindMatchAsync(request, RouteTier.OneShot, cancellationToken).ConfigureAwait(false);
         if (index < 0)
         {
-            index = await FindMatchAsync(request, true, cancellationToken).ConfigureAwait(false);
+            index = await FindMatchAsync(request, RouteTier.Reusable, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (index < 0)
+        {
+            index = await FindMatchAsync(request, RouteTier.Fallback, cancellationToken).ConfigureAwait(false);
         }
 
         if (index < 0)
@@ -339,7 +345,7 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
                 $"No stubbed route matched the request: {request.Method} {request.RequestUri}");
         }
 
-        if (!_routes[index].Reusable)
+        if (!_routes[index].Reusable && !_routes[index].Fallback)
         {
             Consume(index);
         }
@@ -449,6 +455,17 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
     /// <returns><see langword="true"/> when the segment is a placeholder.</returns>
     private static bool IsPlaceholder(string segment) =>
         segment.Length >= 2 && segment[0] == '{' && segment[^1] == '}';
+
+    /// <summary>Classifies a route into its priority tier.</summary>
+    /// <param name="route">The route to classify.</param>
+    /// <returns>The route's priority tier.</returns>
+    private static RouteTier TierOf(RouteMatcher route) =>
+        route switch
+        {
+            { Fallback: true } => RouteTier.Fallback,
+            { Reusable: true } => RouteTier.Reusable,
+            _ => RouteTier.OneShot
+        };
 
     /// <summary>Applies the partial and exact query matchers, if any, to the request URI.</summary>
     /// <param name="route">The candidate route.</param>
@@ -750,7 +767,7 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
             for (var i = 0; i < _routes.Count; i++)
             {
                 var route = _routes[i];
-                if (route.Reusable || _consumed[i])
+                if (route.Reusable || route.Fallback || _consumed[i])
                 {
                     continue;
                 }
@@ -822,12 +839,12 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
         return error;
     }
 
-    /// <summary>Finds the first eligible route of the requested kind that matches the request.</summary>
+    /// <summary>Finds the first eligible route of the requested priority tier that matches the request.</summary>
     /// <param name="request">The incoming request.</param>
-    /// <param name="reusable">Whether to search reusable (background) routes or one-shot expectations.</param>
+    /// <param name="tier">The priority tier to search.</param>
     /// <param name="cancellationToken">A token to cancel body reads.</param>
     /// <returns>The matching route index, or <c>-1</c> if none match.</returns>
-    private async Task<int> FindMatchAsync(HttpRequestMessage request, bool reusable, CancellationToken cancellationToken)
+    private async Task<int> FindMatchAsync(HttpRequestMessage request, RouteTier tier, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -842,7 +859,7 @@ public sealed class StubHttp : HttpMessageHandler, IEnumerable<RouteMatcher>
         for (var i = 0; i < routes.Length; i++)
         {
             var route = routes[i];
-            if (route.Reusable != reusable || (!reusable && consumed[i]))
+            if (TierOf(route) != tier || (tier == RouteTier.OneShot && consumed[i]))
             {
                 continue;
             }

@@ -59,6 +59,24 @@ public partial class SerializedContentTests
     /// <summary>The expected second component of the inferred date value.</summary>
     private const int ExpectedSecond = 5;
 
+    /// <summary>The year component of the sample created-at date used in body-serialization round-trips.</summary>
+    private const int SampleCreatedYear = 1949;
+
+    /// <summary>The month component of the sample created-at date used in body-serialization round-trips.</summary>
+    private const int SampleCreatedMonth = 9;
+
+    /// <summary>The day component of the sample created-at date used in body-serialization round-trips.</summary>
+    private const int SampleCreatedDay = 16;
+
+    /// <summary>An undefined signed enum value used to verify serialization of unknown enum members.</summary>
+    private const int UndefinedEnumValue = 999;
+
+    /// <summary>An undefined unsigned enum value (2^63) used to verify serialization of unknown unsigned enum members.</summary>
+    private const ulong UndefinedUnsignedEnumValue = 9_223_372_036_854_775_808UL;
+
+    /// <summary>The circuit-breaker timeout, in seconds, that bounds a body-serialization task run.</summary>
+    private const int CircuitBreakerTimeoutSeconds = 30;
+
 #if NET9_0_OR_GREATER
     /// <summary>Status enum used to verify JsonStringEnumMemberName handling.</summary>
     public enum EnumMemberNameStatus
@@ -239,7 +257,7 @@ public partial class SerializedContentTests
         var model = new User
         {
             Name = "Wile E. Coyote",
-            CreatedAt = new DateOnly(1949, 9, 16).ToString(),
+            CreatedAt = new DateOnly(SampleCreatedYear, SampleCreatedMonth, SampleCreatedDay).ToString(),
             Company = "ACME",
         };
 
@@ -447,7 +465,7 @@ public partial class SerializedContentTests
     public async Task SystemTextJsonContentSerializer_DefaultOptions_WriteNumbersAsNumbers()
     {
         var json = SystemTextJsonSerializer.Serialize(
-            new NumberContainer { Id = 123, Amount = 9.99m },
+            new NumberContainer { Id = ExpectedId, Amount = ExpectedAmount },
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(json).Contains("123", StringComparison.Ordinal);
@@ -696,7 +714,7 @@ public partial class SerializedContentTests
     public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeUndefinedEnumValuesAsNumbers()
     {
         var json = SystemTextJsonSerializer.Serialize(
-            (CamelCaseEnum)999,
+            (CamelCaseEnum)UndefinedEnumValue,
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(json).IsEqualTo("999");
@@ -708,7 +726,7 @@ public partial class SerializedContentTests
     public async Task SystemTextJsonContentSerializer_DefaultOptions_SerializeUndefinedUnsignedEnumValuesAsNumbers()
     {
         var json = SystemTextJsonSerializer.Serialize(
-            (UnsignedCamelCaseEnum)9_223_372_036_854_775_808UL,
+            (UnsignedCamelCaseEnum)UndefinedUnsignedEnumValue,
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
         await Assert.That(json).IsEqualTo("9223372036854775808");
@@ -722,7 +740,7 @@ public partial class SerializedContentTests
         var json = SystemTextJsonSerializer.Serialize(
             new Dictionary<CamelCaseEnum, string>
             {
-                [(CamelCaseEnum)999] = "unknown"
+                [(CamelCaseEnum)UndefinedEnumValue] = "unknown"
             },
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
@@ -737,7 +755,7 @@ public partial class SerializedContentTests
         var json = SystemTextJsonSerializer.Serialize(
             new Dictionary<UnsignedCamelCaseEnum, string>
             {
-                [(UnsignedCamelCaseEnum)9_223_372_036_854_775_808UL] = "unknown"
+                [(UnsignedCamelCaseEnum)UndefinedUnsignedEnumValue] = "unknown"
             },
             SystemTextJsonContentSerializer.GetDefaultJsonSerializerOptions());
 
@@ -1192,7 +1210,7 @@ public partial class SerializedContentTests
     /// <returns>The original fixture task once it completes or the timeout elapses.</returns>
     private static async Task<Task<User>> RunTaskWithATimeLimit(Task<User> fixtureTask)
     {
-        var circuitBreakerTask = Task.Delay(TimeSpan.FromSeconds(30));
+        var circuitBreakerTask = Task.Delay(TimeSpan.FromSeconds(CircuitBreakerTimeoutSeconds));
         await Task.WhenAny(fixtureTask, circuitBreakerTask);
         return fixtureTask;
     }

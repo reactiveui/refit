@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Product>Refit.Reflection ($(TargetFramework))</Product>
+    <PackageDescription>The opt-in reflection request builder for Refit. Install this package to use RestService.For / AddRefitClient with interface shapes that the Refit source generator cannot build inline. Applications that only use generated clients never need it, and stay trimmable and Native AOT friendly without it.</PackageDescription>
+    <PackageTags>refit;rest;http;httpclient;api-client;typed-client;reflection</PackageTags>
+    <TargetFrameworks>$(RefitTargets)</TargetFrameworks>
+    <RootNamespace>Refit</RootNamespace>
+
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Refit.Tests"/>
+    <ProjectReference Include="..\Refit\Refit.csproj" PrivateAssets="Analyzers"/>
+  </ItemGroup>
+
+  <!-- Nothing here is referenced statically; core Refit discovers this assembly by name at runtime. Root it so
+       trimmed publishes of applications that deliberately installed this package keep the reflection pipeline. -->
+  <ItemGroup Label="Package">
+    <None Include="targets\Refit.Reflection.targets" PackagePath="buildTransitive\netstandard2.0" Pack="true"/>
+  </ItemGroup>
+
+  <!-- This assembly is a friend of Refit and uses its internal polyfill shims directly; compiling local
+       copies would conflict with the InternalsVisibleTo-imported ones (CS0436). -->
+  <ItemGroup>
+    <Compile Remove="..\Polyfills\**\*.cs"/>
+  </ItemGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <IsAotCompatible>true</IsAotCompatible>
+    <TrimMode>link</TrimMode>
+    <IsTrimmable>true</IsTrimmable>
+    <IlcGenerateCompleteTypeMetadata>true</IlcGenerateCompleteTypeMetadata>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NETFramework.ReferenceAssemblies" Version="$(NetFrameworkReferenceAssembliesVersion)"/>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462' Or '$(TargetFramework)' == 'net470' Or '$(TargetFramework)' == 'net471' Or '$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'net48' Or '$(TargetFramework)' == 'net481'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" PrivateAssets="all"/>
+    <PackageReference Include="System.Text.Json"/>
+    <Reference Include="System.Web"/>
+  </ItemGroup>
+
+</Project>

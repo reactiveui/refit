@@ -19,6 +19,12 @@ public partial class RestServiceIntegrationTests
     /// <summary>A sample value routed through a form field named 'Password' to exercise field-descriptor serialization.</summary>
     private const string SensitiveFormValue = "secret";
 
+    /// <summary>A sample integer form value exercising the reflection-free numeric fast path.</summary>
+    private const int SampleFormAge = 42;
+
+    /// <summary>A sample formatted numeric form value; rendered as <c>1.50</c> via <c>[Query(Format = "0.00")]</c>.</summary>
+    private const double SampleFormRatio = 1.5;
+
     /// <summary>Base URL for the httpbin.org request-bin exchanges.</summary>
     private const string HttpBinBaseUrl = "http://httpbin.org/";
 
@@ -36,6 +42,12 @@ public partial class RestServiceIntegrationTests
 
     /// <summary>Sample "Other" collection numeric query value.</summary>
     private const int OtherQueryNumber = 12_345;
+
+    /// <summary>The X-Refit header value passed as the integer type argument in httpbin exchanges.</summary>
+    private const int XRefitHeaderValue = 99;
+
+    /// <summary>The sample postal code used in complex query-parameter exchanges.</summary>
+    private const int PostcodeValue = 9999;
 
     /// <summary>Verifies the npmjs registry can be queried.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -288,9 +300,11 @@ public partial class RestServiceIntegrationTests
     [Test]
     public async Task CanSerializeBigData()
     {
+        const int bigDataByteCount = 800_000;
+        const int byteModulus = 256;
         var bigObject = new BigObject
         {
-            BigData = [.. Enumerable.Range(0, 800_000).Select(x => (byte)(x % 256))]
+            BigData = [.. Enumerable.Range(0, bigDataByteCount).Select(x => (byte)(x % byteModulus))]
         };
 
         var handler = new StubHttp
@@ -369,7 +383,7 @@ public partial class RestServiceIntegrationTests
 
         var fixture = handler.CreateClient<IHttpBinApi<HttpBinGet, string, int>>("http://httpbin.org/get");
 
-        var result = await fixture.Get("foo", 99);
+        var result = await fixture.Get("foo", XRefitHeaderValue);
 
         await Assert.That(result.Url).IsEqualTo("http://httpbin.org/get?param=foo");
         await Assert.That(result.Args!["param"]).IsEqualTo("foo");
@@ -430,7 +444,7 @@ public partial class RestServiceIntegrationTests
             "https://httpbin.org/get",
             settings);
 
-        var resp = await fixture.Get(myParams, 99);
+        var resp = await fixture.Get(myParams, XRefitHeaderValue);
 
         await Assert.That(resp.Args!["FirstName"]).IsEqualTo("John");
         await Assert.That(resp.Args["lName"]).IsEqualTo(RamboLastName);
@@ -463,7 +477,7 @@ public partial class RestServiceIntegrationTests
         {
             FirstName = "John",
             LastName = RamboLastName,
-            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+            Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" },
         };
 
         myParams.MetaData.Add("Age", MetaDataAge);
@@ -512,7 +526,7 @@ public partial class RestServiceIntegrationTests
         {
             FirstName = "John",
             LastName = RamboLastName,
-            Address = new() { Postcode = 9999, Street = "HomeStreet 99" },
+            Address = new() { Postcode = PostcodeValue, Street = "HomeStreet 99" },
         };
 
         myParams.MetaData.Add("Age", MetaDataAge);
@@ -546,7 +560,17 @@ public partial class RestServiceIntegrationTests
                 {
                     Method = HttpMethod.Post,
                     Template = "http://foo/form",
-                    FormData = [("user_name", "bob"), ("pwd", "secret"), ("Plain", "x"), ("Nullable", string.Empty)],
+                    FormData =
+                    [
+                        ("user_name", "bob"),
+                        ("pwd", "secret"),
+                        ("Plain", "x"),
+                        ("Nullable", string.Empty),
+                        ("Age", "42"),
+                        ("Color", "Green"),
+                        ("Ratio", "1.50"),
+                        ("addr-City", "NYC"),
+                    ],
                 },
                 Reply.Json("\"ok\"")
             },
@@ -561,6 +585,10 @@ public partial class RestServiceIntegrationTests
                 Password = SensitiveFormValue,
                 Plain = "x",
                 Nullable = null,
+                Age = SampleFormAge,
+                Color = GeneratedFormColor.Green,
+                Ratio = SampleFormRatio,
+                City = "NYC",
             });
 
         await handler.VerifyAllCalledAsync();

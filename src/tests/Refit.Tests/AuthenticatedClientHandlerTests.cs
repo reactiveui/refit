@@ -123,7 +123,7 @@ public class AuthenticatedClientHandlerTests
     [Test]
     public async Task DefaultHandlerIsHttpClientHandler()
     {
-        var handler = new AuthenticatedHttpClientHandler(static (_, _) => Task.FromResult(string.Empty));
+        var handler = new AuthenticatedHttpClientHandler(static (_, _) => new ValueTask<string>(string.Empty));
 
         await Assert.That(handler.InnerHandler).IsTypeOf<HttpClientHandler>();
     }
@@ -133,7 +133,7 @@ public class AuthenticatedClientHandlerTests
     [Test]
     public async Task DefaultHandlerIsNull()
     {
-        var handler = new AuthenticatedHttpClientHandler(null, static (_, _) => Task.FromResult(string.Empty));
+        var handler = new AuthenticatedHttpClientHandler(null, static (_, _) => new ValueTask<string>(string.Empty));
 
         await Assert.That(handler.InnerHandler).IsNull();
     }
@@ -144,7 +144,7 @@ public class AuthenticatedClientHandlerTests
     public async Task ExplicitInnerHandlerIsAssigned()
     {
         using var innerHandler = new TestHttpMessageHandler();
-        var handler = new AuthenticatedHttpClientHandler(innerHandler, static (_, _) => Task.FromResult(string.Empty));
+        var handler = new AuthenticatedHttpClientHandler(innerHandler, static (_, _) => new ValueTask<string>(string.Empty));
 
         await Assert.That(handler.InnerHandler).IsSameReferenceAs(innerHandler);
     }
@@ -155,7 +155,7 @@ public class AuthenticatedClientHandlerTests
     public async Task NullTokenGetterThrows() =>
         await Assert
             .That(static () => new AuthenticatedHttpClientHandler(
-                (Func<HttpRequestMessage, CancellationToken, Task<string>>)null!))
+                (Func<HttpRequestMessage, CancellationToken, ValueTask<string>>)null!))
             .ThrowsExactly<ArgumentNullException>();
 
     /// <summary>Verifies unauthenticated calls do not send an authorization header.</summary>
@@ -172,7 +172,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
         });
 
         var result = await fixture.GetUnauthenticated();
@@ -196,7 +196,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
         });
 
         var result = await fixture.GetAuthenticated();
@@ -374,7 +374,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeaders>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
         });
 
         var result = await fixture.GetThingFromBase();
@@ -398,7 +398,7 @@ public class AuthenticatedClientHandlerTests
         };
         var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeaders>(BaseUrl, new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
         });
 
         var result = await fixture.GetInheritedThing();
@@ -424,7 +424,7 @@ public class AuthenticatedClientHandlerTests
         {
             var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeadersCrlf>(BaseUrl, new RefitSettings
             {
-                AuthorizationHeaderValueGetter = (_, _) => Task.FromResult(TokenValue)
+                AuthorizationHeaderValueGetter = (_, _) => new ValueTask<string>(TokenValue)
             });
 
             await fixture.GetInheritedThing();
@@ -447,7 +447,7 @@ public class AuthenticatedClientHandlerTests
 
         var settings = new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult(TokenValue)
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
         };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
@@ -505,7 +505,7 @@ public class AuthenticatedClientHandlerTests
 
         var settings = new RefitSettings
         {
-            AuthorizationHeaderValueGetter = static (_, _) => Task.FromResult("token-from-getter")
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("token-from-getter")
         };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);

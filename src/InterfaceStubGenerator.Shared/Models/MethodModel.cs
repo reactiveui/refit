@@ -13,6 +13,10 @@ namespace Refit.Generator;
 /// <param name="Parameters">The method parameters.</param>
 /// <param name="Constraints">The generic type constraints for the method.</param>
 /// <param name="IsExplicitInterface">A value indicating whether the method is an explicit interface implementation.</param>
+/// <param name="RequiresUnreferencedCode">Whether the interface method declares <c>[RequiresUnreferencedCode]</c>, which a
+/// reflection-fallback implementation must mirror instead of suppressing IL2026.</param>
+/// <param name="RequiresDynamicCode">Whether the interface method declares <c>[RequiresDynamicCode]</c>, which a
+/// reflection-fallback implementation must mirror instead of suppressing IL3050.</param>
 internal sealed record MethodModel(
     string Name,
     string ReturnType,
@@ -22,4 +26,6 @@ internal sealed record MethodModel(
     RequestModel Request,
     ImmutableEquatableArray<ParameterModel> Parameters,
     ImmutableEquatableArray<TypeConstraint> Constraints,
-    bool IsExplicitInterface);
+    bool IsExplicitInterface,
+    bool RequiresUnreferencedCode,
+    bool RequiresDynamicCode);

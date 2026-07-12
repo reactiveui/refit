@@ -1,7 +1,9 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -66,23 +68,260 @@ public static class GeneratedRequestRunner
         }
 
         sb.Append(pathSpan[pos..]);
+        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+    }
 
-        var path = sb.ToString();
-        var i = path.IndexOf('{');
-        if (i < 0 || allowUnmatchedParameter)
+    /// <summary>Builds the request path for a single-placeholder template without allocating a parameter array.</summary>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <param name="p0">The replacement range and value for the first placeholder.</param>
+    /// <returns>A path with the placeholder replaced.</returns>
+    /// <remarks>Overload resolution prefers this fixed-arity form over the <c>params</c> overload, so a generated call
+    /// with one path parameter binds here and skips the per-request array allocation. It also unrolls the replacement
+    /// loop into straight-line span appends.</remarks>
+    public static string BuildRequestPath(
+        string relativePathTemplate,
+        bool allowUnmatchedParameter,
+        ((int startIdx, int endIdx) range, string? value) p0)
+    {
+        var pathSpan = relativePathTemplate.AsSpan();
+        using var sb = new ValueStringBuilder(stackalloc char[256]);
+        sb.Append(pathSpan[..p0.range.startIdx]);
+        if (p0.value is not null)
         {
-            return path;
+            sb.Append(StringHelpers.EscapeDataString(p0.value));
         }
 
-        var j = path.AsSpan(i).IndexOfAny('}', '/');
-        if (j < 0 || path[j += i] != '}')
+        sb.Append(pathSpan[p0.range.endIdx..]);
+        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+    }
+
+    /// <summary>Builds the request path for a two-placeholder template without allocating a parameter array.</summary>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <param name="p0">The replacement range and value for the first placeholder.</param>
+    /// <param name="p1">The replacement range and value for the second placeholder.</param>
+    /// <returns>A path with the placeholders replaced.</returns>
+    public static string BuildRequestPath(
+        string relativePathTemplate,
+        bool allowUnmatchedParameter,
+        ((int startIdx, int endIdx) range, string? value) p0,
+        ((int startIdx, int endIdx) range, string? value) p1)
+    {
+        var pathSpan = relativePathTemplate.AsSpan();
+        using var sb = new ValueStringBuilder(stackalloc char[256]);
+        sb.Append(pathSpan[..p0.range.startIdx]);
+        if (p0.value is not null)
         {
-            return path;
+            sb.Append(StringHelpers.EscapeDataString(p0.value));
         }
 
-        var key = path[(i + 1)..j];
-        throw new ArgumentException(
-            $"URL {relativePathTemplate} has parameter {{{key}}}, but no method parameter matches");
+        sb.Append(pathSpan[p0.range.endIdx..p1.range.startIdx]);
+        if (p1.value is not null)
+        {
+            sb.Append(StringHelpers.EscapeDataString(p1.value));
+        }
+
+        sb.Append(pathSpan[p1.range.endIdx..]);
+        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+    }
+
+    /// <summary>Builds the request path for a three-placeholder template without allocating a parameter array.</summary>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <param name="p0">The replacement range and value for the first placeholder.</param>
+    /// <param name="p1">The replacement range and value for the second placeholder.</param>
+    /// <param name="p2">The replacement range and value for the third placeholder.</param>
+    /// <returns>A path with the placeholders replaced.</returns>
+    public static string BuildRequestPath(
+        string relativePathTemplate,
+        bool allowUnmatchedParameter,
+        ((int startIdx, int endIdx) range, string? value) p0,
+        ((int startIdx, int endIdx) range, string? value) p1,
+        ((int startIdx, int endIdx) range, string? value) p2)
+    {
+        var pathSpan = relativePathTemplate.AsSpan();
+        using var sb = new ValueStringBuilder(stackalloc char[256]);
+        sb.Append(pathSpan[..p0.range.startIdx]);
+        if (p0.value is not null)
+        {
+            sb.Append(StringHelpers.EscapeDataString(p0.value));
+        }
+
+        sb.Append(pathSpan[p0.range.endIdx..p1.range.startIdx]);
+        if (p1.value is not null)
+        {
+            sb.Append(StringHelpers.EscapeDataString(p1.value));
+        }
+
+        sb.Append(pathSpan[p1.range.endIdx..p2.range.startIdx]);
+        if (p2.value is not null)
+        {
+            sb.Append(StringHelpers.EscapeDataString(p2.value));
+        }
+
+        sb.Append(pathSpan[p2.range.endIdx..]);
+        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+    }
+
+    /// <summary>Validates a parameterless request path template, throwing for unmatched placeholders.</summary>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <returns>The template, unchanged.</returns>
+    /// <exception cref="ArgumentException">
+    /// The template contains a placeholder and unmatched URL parameters aren't allowed.
+    /// </exception>
+    public static string BuildRequestPath(string relativePathTemplate, bool allowUnmatchedParameter) =>
+        ThrowIfUnmatchedParameter(relativePathTemplate, relativePathTemplate, allowUnmatchedParameter);
+
+    /// <summary>Builds the request path for a generated request from a template, honoring per-value encoding opt-outs.</summary>
+    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <param name="uriParams">The replacement uri parameters; a <c>preEncoded</c> value is appended verbatim.</param>
+    /// <returns>A path with all the placeholder parameters in the path template replaced.</returns>
+    /// <exception cref="ArgumentException">
+    /// A URI template parameter is not available in the provided parameter array and unmatched URL parameters aren't allowed.
+    /// </exception>
+    public static string BuildRequestPath(
+        string relativePathTemplate,
+        bool allowUnmatchedParameter,
+        params ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams)
+    {
+        if (uriParams.Length == 0 && allowUnmatchedParameter)
+        {
+            return relativePathTemplate;
+        }
+
+        var pathSpan = relativePathTemplate.AsSpan();
+        using var sb = new ValueStringBuilder(stackalloc char[256]);
+        var pos = 0;
+        foreach (var ((startIdx, endIdx), value, preEncoded) in uriParams)
+        {
+            sb.Append(pathSpan[pos..startIdx]);
+            if (value is not null)
+            {
+                sb.Append(preEncoded ? value : StringHelpers.EscapeDataString(value));
+            }
+
+            pos = endIdx;
+        }
+
+        sb.Append(pathSpan[pos..]);
+        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+    }
+
+    /// <summary>Determines whether the settings use the pristine default URL parameter formatter, letting
+    /// generated code format statically-known values inline without calling the formatter.</summary>
+    /// <param name="settings">The Refit settings to inspect.</param>
+    /// <returns><see langword="true"/> when generated inline formatting matches the configured formatter.</returns>
+    public static bool UsesDefaultUrlParameterFormatting(RefitSettings settings) =>
+        settings.UrlParameterFormatter is DefaultUrlParameterFormatter formatter
+        && formatter.IsPristineDefault;
+
+    /// <summary>Determines whether the settings use the pristine default form-url-encoded parameter formatter.</summary>
+    /// <param name="settings">The Refit settings to inspect.</param>
+    /// <returns><see langword="true"/> when generated inline formatting matches the configured formatter.</returns>
+    /// <remarks>
+    /// A property-level <c>[Query(Format = ...)]</c> on a flattened query object is applied by
+    /// <see cref="IFormUrlEncodedParameterFormatter"/>, not <see cref="IUrlParameterFormatter"/>. Its default renders
+    /// <c>string.Format(InvariantCulture, "{0:format}", enumMemberValue ?? value)</c>, which is what generated inline
+    /// formatting reproduces. <c>Format</c> is virtual, so a derived formatter must disable the fast path.
+    /// </remarks>
+    public static bool UsesDefaultFormUrlEncodedParameterFormatting(RefitSettings settings) =>
+        settings.FormUrlEncodedParameterFormatter.GetType() == typeof(DefaultFormUrlEncodedParameterFormatter);
+
+    /// <summary>Determines whether the settings use the pristine default URL parameter key formatter, letting
+    /// generated code use a compile-time constant query key instead of calling the formatter.</summary>
+    /// <param name="settings">The Refit settings to inspect.</param>
+    /// <returns><see langword="true"/> when a property's CLR name is its query key verbatim.</returns>
+    public static bool UsesDefaultUrlParameterKeyFormatting(RefitSettings settings) =>
+        settings.UrlParameterKeyFormatter.GetType() == typeof(DefaultUrlParameterKeyFormatter);
+
+    /// <summary>Composes the query key for a property flattened out of a query object.</summary>
+    /// <param name="settings">The Refit settings supplying the key formatter.</param>
+    /// <param name="clrName">The declared CLR property name.</param>
+    /// <param name="explicitName">The name from <c>[AliasAs]</c> or <c>[JsonPropertyName]</c>, which bypasses the key formatter, or <see langword="null"/>.</param>
+    /// <param name="prefixSegment">The compile-time <c>prefix + delimiter</c> from <c>[Query(Prefix = ...)]</c>, or <see langword="null"/>.</param>
+    /// <returns>The query key.</returns>
+    /// <remarks>
+    /// Matches the reflection request builder's <c>BuildPropertyQueryKey</c>: an explicit <c>[AliasAs]</c> or
+    /// <c>[JsonPropertyName]</c> name (resolved by the generator and passed as <paramref name="explicitName"/>) is used
+    /// verbatim; otherwise the CLR name passes through <see cref="IUrlParameterKeyFormatter"/>.
+    /// </remarks>
+    public static string BuildQueryKey(
+        RefitSettings settings,
+        string clrName,
+        string? explicitName,
+        string? prefixSegment)
+    {
+        var name = explicitName
+            ?? (UsesDefaultUrlParameterKeyFormatting(settings)
+                ? clrName
+                : settings.UrlParameterKeyFormatter.Format(clrName));
+
+        return prefixSegment is null ? name : prefixSegment + name;
+    }
+
+    /// <summary>Formats a value with the invariant culture, matching the default URL parameter formatter's
+    /// rendering for <see cref="IFormattable"/> values without boxing or reflection.</summary>
+    /// <typeparam name="T">The formattable value type.</typeparam>
+    /// <param name="value">The value to format.</param>
+    /// <param name="format">The compile-time format from <c>[Query(Format = ...)]</c>, or null.</param>
+    /// <returns>The formatted value.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameter intentionally inferred from generated call sites to avoid boxing.")]
+    public static string FormatInvariant<T>(T value, string? format)
+        where T : IFormattable =>
+        value.ToString(format, System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Expands a query-object collection property through a customized <see cref="IUrlParameterFormatter"/>,
+    /// reproducing the reflection request builder's two formatting passes.</summary>
+    /// <param name="builder">The query-string builder to append to.</param>
+    /// <param name="settings">The Refit settings supplying the URL parameter formatter.</param>
+    /// <param name="values">The collection value; a null collection appends nothing.</param>
+    /// <param name="key">The already-composed query key.</param>
+    /// <param name="collectionFormat">The resolved collection format.</param>
+    /// <param name="preEncoded">Whether the key and values are caller-encoded and appended verbatim.</param>
+    /// <param name="formatting">The two-pass formatting targets: the declared property type used as both the attribute
+    /// provider and type for each element (matching the reflection builder's <c>propertyInfo.PropertyType</c> element
+    /// pass), and the enclosing parameter's attribute provider and declared type for the second pass.</param>
+    /// <remarks>
+    /// Each element is formatted with the property's provider and type; the results are joined (or, under
+    /// <see cref="CollectionFormat.Multi"/>, kept separate) and formatted again with the parameter's provider and type.
+    /// A pristine default formatter makes the second pass a no-op, so generated code takes this slow path only when the
+    /// formatter is customized; the fast path uses <see cref="GeneratedQueryStringBuilder"/> directly.
+    /// </remarks>
+    public static void AddFormattedCollectionProperty(
+        ref GeneratedQueryStringBuilder builder,
+        RefitSettings settings,
+        IEnumerable? values,
+        string key,
+        CollectionFormat collectionFormat,
+        bool preEncoded,
+        (Type ElementProviderType, ICustomAttributeProvider JoinedProvider, Type JoinedType) formatting)
+    {
+        if (values is null)
+        {
+            return;
+        }
+
+        var formatter = settings.UrlParameterFormatter;
+        var element = formatting.ElementProviderType;
+        if (collectionFormat == CollectionFormat.Multi)
+        {
+            foreach (var value in values)
+            {
+                var formatted = formatter.Format(value, element, element);
+                builder.Add(key, formatter.Format(formatted, formatting.JoinedProvider, formatting.JoinedType), preEncoded);
+            }
+
+            return;
+        }
+
+        var joined = JoinFormattedElements(values, formatter, element, CollectionDelimiter(collectionFormat));
+        builder.Add(key, formatter.Format(joined, formatting.JoinedProvider, formatting.JoinedType), preEncoded);
     }
 
     /// <summary>Sends a generated request with no response body, throwing on HTTP errors.</summary>
@@ -181,12 +420,33 @@ public static class GeneratedRequestRunner
     {
         RequestExecutionHelpers.ThrowIfBaseAddressMissing(client);
 
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, cancellationToken);
-        await foreach (var item in RequestExecutionHelpers
-                           .StreamResponseAsync<T>(client, request, settings, true, linked.Token)
-                           .ConfigureAwait(false))
+        // Only allocate a linked source when both tokens can actually cancel; linking a non-cancelable token is a
+        // no-op, so when the method has no CancellationToken parameter or the consumer enumerates without
+        // WithCancellation the request runs against whichever token can cancel (or none) with no CTS allocation.
+        CancellationTokenSource? linked = null;
+        CancellationToken token;
+        if (methodCancellationToken.CanBeCanceled && cancellationToken.CanBeCanceled)
         {
-            yield return item;
+            linked = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, cancellationToken);
+            token = linked.Token;
+        }
+        else
+        {
+            token = methodCancellationToken.CanBeCanceled ? methodCancellationToken : cancellationToken;
+        }
+
+        try
+        {
+            await foreach (var item in RequestExecutionHelpers
+                               .StreamResponseAsync<T>(client, request, settings, true, token)
+                               .ConfigureAwait(false))
+            {
+                yield return item;
+            }
+        }
+        finally
+        {
+            linked?.Dispose();
         }
     }
 
@@ -265,7 +525,7 @@ public static class GeneratedRequestRunner
             return new StreamContent(stream);
         }
 
-        var items = body is System.Collections.IEnumerable enumerable and not string
+        var items = body is IEnumerable enumerable and not string
             ? enumerable
             : new[] { (object?)body };
 
@@ -356,6 +616,19 @@ public static class GeneratedRequestRunner
                 ? FormValueMultimap.CreateFromFields(body, fields, settings)
                 : FormValueMultimap.Create(body, settings));
     }
+
+    /// <summary>Determines whether a form body can be serialized by the generated straight-line unrolled fast path.</summary>
+    /// <param name="body">The body instance.</param>
+    /// <returns><see langword="true"/> when the body is a plain object the unrolled path can flatten field-by-field;
+    /// <see langword="false"/> for the <see langword="null"/>, <see cref="HttpContent"/>, <see cref="Stream"/>,
+    /// <see cref="string"/>, and <see cref="System.Collections.IDictionary"/> bodies the reflection path special-cases.</returns>
+    /// <remarks>The <see cref="NotNullWhenAttribute"/> lets generated code dereference the body directly inside the guard.</remarks>
+    public static bool CanUnrollForm([NotNullWhen(true)] object? body) =>
+        body is not null
+        && body is not HttpContent
+        && body is not Stream
+        && body is not string
+        && body is not System.Collections.IDictionary;
 
     /// <summary>Sets, replaces, or removes a generated request header.</summary>
     /// <param name="request">The request to modify.</param>
@@ -458,6 +731,74 @@ public static class GeneratedRequestRunner
     internal static bool IsObsoleteJsonSerializationMethod(BodySerializationMethod serializationMethod) =>
         (int)serializationMethod == ObsoleteJsonBodySerializationMethodValue;
 
+    /// <summary>Resolves the single-character delimiter for a non-multi collection format.</summary>
+    /// <param name="collectionFormat">The collection format.</param>
+    /// <returns>The delimiter character.</returns>
+    private static char CollectionDelimiter(CollectionFormat collectionFormat) =>
+        collectionFormat switch
+        {
+            CollectionFormat.Ssv => ' ',
+            CollectionFormat.Tsv => '\t',
+            CollectionFormat.Pipes => '|',
+            _ => ','
+        };
+
+    /// <summary>Formats each element with the property's provider and type and joins them with the delimiter.</summary>
+    /// <param name="values">The collection value.</param>
+    /// <param name="formatter">The URL parameter formatter.</param>
+    /// <param name="elementProviderType">The declared property type used as the attribute provider and type.</param>
+    /// <param name="delimiter">The delimiter between formatted values.</param>
+    /// <returns>The joined formatted values, empty when the collection has no elements.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S2930:\"IDisposables\" should be disposed",
+        Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
+    private static string JoinFormattedElements(
+        IEnumerable values,
+        IUrlParameterFormatter formatter,
+        Type elementProviderType,
+        char delimiter)
+    {
+        var builder = new ValueStringBuilder(stackalloc char[256]);
+        var first = true;
+        foreach (var value in values)
+        {
+            if (!first)
+            {
+                builder.Append(delimiter);
+            }
+
+            first = false;
+            builder.Append(formatter.Format(value, elementProviderType, elementProviderType));
+        }
+
+        return builder.ToString();
+    }
+
+    /// <summary>Throws when the expanded path still contains a placeholder and unmatched parameters are not allowed.</summary>
+    /// <param name="path">The expanded request path to validate.</param>
+    /// <param name="relativePathTemplate">The original path template, used in the error message.</param>
+    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
+    /// <returns>The validated path, returned unchanged.</returns>
+    private static string ThrowIfUnmatchedParameter(string path, string relativePathTemplate, bool allowUnmatchedParameter)
+    {
+        var i = path.IndexOf('{');
+        if (i < 0 || allowUnmatchedParameter)
+        {
+            return path;
+        }
+
+        var j = path.AsSpan(i).IndexOfAny('}', '/');
+        if (j < 0 || path[j += i] != '}')
+        {
+            return path;
+        }
+
+        var key = path[(i + 1)..j];
+        throw new ArgumentException(
+            $"URL {relativePathTemplate} has parameter {{{key}}}, but no method parameter matches");
+    }
+
     /// <summary>Adds one pre-boxed configured request property or option value.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="key">The property key.</param>
@@ -526,6 +867,12 @@ public static class GeneratedRequestRunner
     /// <returns><see langword="true"/> when the header key exists; otherwise <see langword="false"/>.</returns>
     private static bool ContainsHeader(System.Net.Http.Headers.HttpHeaders headers, string name)
     {
+#if NET6_0_OR_GREATER
+        // NonValidated checks key presence (case-insensitively, like the store) without parsing or materializing the
+        // stored header values, and never throws for unsupported header shapes, so it preserves the tolerant behavior
+        // of the manual scan while avoiding the per-check value enumeration.
+        return headers.NonValidated.Contains(name);
+#else
         foreach (var header in headers)
         {
             if (string.Equals(header.Key, name, StringComparison.OrdinalIgnoreCase))
@@ -535,6 +882,7 @@ public static class GeneratedRequestRunner
         }
 
         return false;
+#endif
     }
 
     /// <summary>Removes CR and LF characters from a generated header name or value.</summary>

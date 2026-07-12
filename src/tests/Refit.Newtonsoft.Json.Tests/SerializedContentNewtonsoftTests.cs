@@ -62,10 +62,13 @@ public class SerializedContentNewtonsoftTests
                 $"{contentSerializerType.FullName} does not implement {nameof(IHttpContentSerializer)}");
         }
 
+        const int sampleCreatedYear = 1949;
+        const int sampleCreatedMonth = 9;
+        const int sampleCreatedDay = 16;
         var model = new User
         {
             Name = "Wile E. Coyote",
-            CreatedAt = new DateOnly(1949, 9, 16).ToString(),
+            CreatedAt = new DateOnly(sampleCreatedYear, sampleCreatedMonth, sampleCreatedDay).ToString(),
             Company = "ACME",
         };
 
@@ -224,7 +227,8 @@ public class SerializedContentNewtonsoftTests
     /// <returns>The original fixture task once it completes or the timeout elapses.</returns>
     private static async Task<Task<User>> RunTaskWithATimeLimit(Task<User> fixtureTask)
     {
-        var circuitBreakerTask = Task.Delay(TimeSpan.FromSeconds(30));
+        const int circuitBreakerTimeoutSeconds = 30;
+        var circuitBreakerTask = Task.Delay(TimeSpan.FromSeconds(circuitBreakerTimeoutSeconds));
         await Task.WhenAny(fixtureTask, circuitBreakerTask);
         return fixtureTask;
     }

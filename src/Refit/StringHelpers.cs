@@ -42,6 +42,18 @@ internal static class StringHelpers
         value.Length > 0 && value[0] == prefix;
 #endif
 
+    /// <summary>Determines whether the value contains the specified character.</summary>
+    /// <param name="value">The value to inspect.</param>
+    /// <param name="character">The character to find.</param>
+    /// <returns><see langword="true"/> if the value contains <paramref name="character"/>.</returns>
+    /// <remarks>The <see cref="string"/> overload taking a <see cref="char"/> only exists on the modern targets.</remarks>
+    internal static bool Contains(string value, char character) =>
+#if NET8_0_OR_GREATER
+        value.Contains(character);
+#else
+        value.IndexOf(character) >= 0;
+#endif
+
     /// <summary>Escapes a string for a URI data component.</summary>
     /// <param name="value">The value to escape.</param>
     /// <returns>The escaped value.</returns>

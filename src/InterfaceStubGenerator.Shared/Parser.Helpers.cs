@@ -9,6 +9,12 @@ namespace Refit.Generator;
 /// <summary>Internal parser helpers that are directly covered by focused tests.</summary>
 internal static partial class Parser
 {
+    /// <summary>The length of the <c>&lt;&gt;</c> pair wrapping a generic type parameter list.</summary>
+    private const int GenericBracketLength = 2;
+
+    /// <summary>The assumed rendered length of one type parameter, used only to size a <see cref="StringBuilder"/>.</summary>
+    private const int EstimatedTypeParameterLength = 32;
+
     /// <summary>Builds the unqualified declared method name, including any generic type parameters.</summary>
     /// <param name="methodSymbol">The method symbol.</param>
     /// <returns>The declared method name without its interface qualifier.</returns>
@@ -28,7 +34,8 @@ internal static partial class Parser
         }
 
         var typeParameters = methodSymbol.TypeParameters;
-        var estimatedCapacity = declaredBaseName.Length + 2 + (typeParameters.Length * 32);
+        var estimatedCapacity =
+            declaredBaseName.Length + GenericBracketLength + (typeParameters.Length * EstimatedTypeParameterLength);
         var builder = new StringBuilder(estimatedCapacity)
             .Append(declaredBaseName)
             .Append('<');

@@ -88,8 +88,9 @@ public class MultipartNewtonsoftTests
             Asserts = async content =>
             {
                 var parts = content.ToList();
+                const int expectedPartCount = 2;
 
-                await Assert.That(parts.Count).IsEqualTo(2);
+                await Assert.That(parts.Count).IsEqualTo(expectedPartCount);
 
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("theObjects");
                 await Assert.That(parts[0].Headers.ContentDisposition!.FileName).IsNull();

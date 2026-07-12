@@ -52,6 +52,41 @@ internal static class DiagnosticDescriptors
             DiagnosticSeverity.Warning,
             true);
 
+    /// <summary>Diagnostic reported when a Refit method cannot use generated request building and falls back to reflection.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    public static readonly DiagnosticDescriptor GeneratedRequestBuildingFallback =
+        new(
+            DiagnosticIds.GeneratedRequestBuildingFallback,
+            "Refit method is not compatible with generated-only client registration",
+            "Method {0}.{1} uses request features the Refit source generator cannot build without reflection, so it falls back to the reflection request builder. "
+            + "It will throw at runtime when resolved through AddRefitGeneratedClient (generated-only) or under NativeAOT. "
+            + "Use RestService.For where reflection is acceptable, or change the method to use only features supported by generated request building.",
+            Category,
+            DiagnosticSeverity.Warning,
+            true);
+
+    /// <summary>Diagnostic reported when a Refit method declares more than one HeaderCollection parameter.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    public static readonly DiagnosticDescriptor MultipleHeaderCollections =
+        new(
+            DiagnosticIds.MultipleHeaderCollections,
+            "Refit methods can only have one HeaderCollection parameter",
+            "Method {0}.{1} has more than one HeaderCollection parameter",
+            Category,
+            DiagnosticSeverity.Warning,
+            true);
+
+    /// <summary>Diagnostic reported when a Refit method declares more than one Authorize parameter.</summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "RS2008", Justification = "Diagnostic IDs are stable and intentionally not tracked in an analyzer release-tracking file.")]
+    public static readonly DiagnosticDescriptor MultipleAuthorizeParameters =
+        new(
+            DiagnosticIds.MultipleAuthorizeParameters,
+            "Refit methods can only have one Authorize parameter",
+            "Method {0}.{1} has more than one Authorize parameter",
+            Category,
+            DiagnosticSeverity.Warning,
+            true);
+
     /// <summary>The diagnostic category for Refit analyzer diagnostics.</summary>
     private const string Category = "Refit";
 }

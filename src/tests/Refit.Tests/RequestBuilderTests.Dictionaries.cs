@@ -20,6 +20,9 @@ public partial class RequestBuilderTests
     /// <summary>The identifier value reused across path and query segments.</summary>
     private const string TheId = "theId";
 
+    /// <summary>The identifier rendered into the "/api/{id}" path across the optional-parameter query tests.</summary>
+    private const int ResourceId = 123;
+
     /// <summary>A query string with an array can be formatted by attribute.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -163,7 +166,9 @@ public partial class RequestBuilderTests
 
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithEnumerable");
 
-        var list = new List<int> { 1, 2, 3 };
+        const int secondSampleValue = 2;
+        const int thirdSampleValue = 3;
+        var list = new List<int> { 1, secondSampleValue, thirdSampleValue };
 
         var output = await factory([list]);
 
@@ -264,7 +269,8 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
-        var output = await factory([123, "title", 999, new Foo(), _stringArrayAb]);
+        const int optionalId = 999;
+        var output = await factory([ResourceId, "title", optionalId, new Foo(), _stringArrayAb]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
@@ -279,7 +285,7 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.BuildRequestFactoryForMethod("QueryWithOptionalParameters");
-        var output = await factory([123, "title", null!, null!, _stringArrayAb]);
+        var output = await factory([ResourceId, "title", null!, null!, _stringArrayAb]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
         await Assert.That(uri.PathAndQuery).IsEqualTo(expectedQuery);
@@ -297,7 +303,7 @@ public partial class RequestBuilderTests
             "QueryWithOptionalParametersPathBoundObject");
         var output = await factory(
             [
-                new PathBoundObject { SomeProperty = 123, SomeProperty2 = "test" },
+                new PathBoundObject { SomeProperty = ResourceId, SomeProperty2 = "test" },
                 "title",
                 null!,
                 _stringArrayAb
@@ -326,7 +332,8 @@ public partial class RequestBuilderTests
             var fixture = new RequestBuilderImplementation<IDummyHttpApi>(settings);
 
             var factory = fixture.BuildRequestFactoryForMethod("FetchSomeStuff");
-            var output = await factory([5.4]);
+            const double fractionalValue = 5.4;
+            var output = await factory([fractionalValue]);
 
             var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);
             await Assert.That(uri.PathAndQuery).IsEqualTo("/foo/bar/5.4");
@@ -345,9 +352,10 @@ public partial class RequestBuilderTests
     {
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.RunRequest("PostAValueType", "true");
+        const int valueTypeId = 7;
         var guid = Guid.NewGuid();
         var expected = string.Format("\"{0}\"", guid);
-        var output = await factory([7, guid]);
+        var output = await factory([valueTypeId, guid]);
 
         await Assert.That(output.SendContent).IsEqualTo(expected);
     }
@@ -394,7 +402,8 @@ public partial class RequestBuilderTests
 
         var sp = new StreamPart(file, "aFile");
 
-        var output = await factory([42, "aPath", sp, "theAuth", false, "theMeta"]);
+        const int companyId = 42;
+        var output = await factory([companyId, "aPath", sp, "theAuth", false, "theMeta"]);
 
         var uri = new Uri(new(ApiBaseUrl), output.RequestMessage!.RequestUri!);
 
@@ -411,7 +420,8 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.Blob_Post_Byte));
 
-        var bytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        const int sampleByteCount = 10;
+        var bytes = Enumerable.Range(1, sampleByteCount).Select(static i => (byte)i).ToArray();
 
         var bap = new ByteArrayPart(bytes, "theBytes");
 
@@ -526,7 +536,8 @@ public partial class RequestBuilderTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.QueryWithDictionaryWithNumericKey));
 
-        var dict = new Dictionary<int, string> { { 1, Value1 }, { 2, Value2 }, };
+        const int secondNumericKey = 2;
+        var dict = new Dictionary<int, string> { { 1, Value1 }, { secondNumericKey, Value2 }, };
 
         var output = await factory([dict]);
         var uri = new Uri(new(ApiBaseUrl), output.RequestUri!);

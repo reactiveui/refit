@@ -213,6 +213,18 @@ public static class RestService
             DynamicallyAccessedMemberTypes.NonPublicMethods)]
         T>(HttpClient client, RefitSettings? settings)
     {
+        // A generated settings factory means every method builds its request inline, so the reflection
+        // request builder (and the Refit.Reflection assembly) is never needed for this interface.
+        if (GeneratedSettingsFactory<T>.Factory is { } settingsFactory)
+        {
+            return settingsFactory(client, settings ?? new());
+        }
+
+        if (_generatedSettingsFactories.TryGetValue(typeof(T), out var untypedSettingsFactory))
+        {
+            return (T)untypedSettingsFactory(client, settings ?? new());
+        }
+
         var requestBuilder = RequestBuilder.ForType<T>(settings);
 
         return For(client, requestBuilder);
@@ -312,6 +324,13 @@ public static class RestService
         HttpClient client,
         RefitSettings? settings)
     {
+        // A generated settings factory means every method builds its request inline, so the reflection
+        // request builder (and the Refit.Reflection assembly) is never needed for this interface.
+        if (_generatedSettingsFactories.TryGetValue(refitInterfaceType, out var settingsFactory))
+        {
+            return settingsFactory(client, settings ?? new());
+        }
+
         var requestBuilder = RequestBuilder.ForType(refitInterfaceType, settings);
 
         return For(refitInterfaceType, client, requestBuilder);

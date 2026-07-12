@@ -1,7 +1,9 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Refit.Generator;
 
@@ -15,6 +17,10 @@ namespace Refit.Generator;
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="SupportsNullable">Whether the compilation supports nullable reference types.</param>
 /// <param name="SupportsStaticLambdas">Whether the compilation supports the <c>static</c> lambda modifier (C# 9).</param>
+/// <param name="Compilation">The compilation, used to resolve extern aliases for types behind an <c>extern alias</c>, or null.</param>
+/// <param name="ReturnTypeAdapterInterface">The <c>Refit.IReturnTypeAdapter`2</c> symbol, or null when Refit is unavailable.</param>
+/// <param name="ReturnTypeAdapters">The types implementing <c>IReturnTypeAdapter</c> discovered in the compilation.</param>
+/// <param name="ExternAliases">The per-interface collector recording the extern aliases used while qualifying its types.</param>
 internal readonly record struct InterfaceGenerationContext(
     List<Diagnostic> Diagnostics,
     string PreserveAttributeDisplayName,
@@ -24,4 +30,8 @@ internal readonly record struct InterfaceGenerationContext(
     bool GeneratedRequestBuilding,
     bool EmitGeneratedCodeMarkers,
     bool SupportsNullable,
-    bool SupportsStaticLambdas);
+    bool SupportsStaticLambdas,
+    CSharpCompilation? Compilation,
+    INamedTypeSymbol? ReturnTypeAdapterInterface,
+    IReadOnlyList<INamedTypeSymbol> ReturnTypeAdapters,
+    HashSet<string> ExternAliases);

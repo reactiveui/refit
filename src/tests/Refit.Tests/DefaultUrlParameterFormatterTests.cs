@@ -288,12 +288,13 @@ public class DefaultUrlParameterFormatterTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
+        const int secondEntryKey = 2;
         var parameters = new DefaultUrlParameterFormatterTestRequest
         {
             DateTimeDictionary = new Dictionary<int, DateTime>
             {
                 { 1, new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
-                { 2, new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
+                { secondEntryKey, new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified) },
             },
         };
 
@@ -317,12 +318,13 @@ public class DefaultUrlParameterFormatterTests
         var factory = fixture.BuildRequestFactoryForMethod(
             nameof(IDummyHttpApi.PostWithComplexTypeQuery));
 
+        const int secondEntryValue = 2;
         var parameters = new DefaultUrlParameterFormatterTestRequest
         {
             DateTimeKeyedDictionary = new Dictionary<DateTime, int>
             {
                 { new(2023, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), 1 },
-                { new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), 2 },
+                { new(2024, 8, 21, 0, 0, 0, DateTimeKind.Unspecified), secondEntryValue },
             },
         };
 

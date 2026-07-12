@@ -100,6 +100,11 @@ internal partial class RequestBuilderImplementation
         restMethod.PropertyParameterMap.ContainsKey(i)
         && restMethod.ParameterInfoArray[i].GetCustomAttribute<QueryAttribute>() is null;
 
+    /// <summary>Reduces a round-tripping parameter value to its string form, using <c>ToString</c> for non-strings.</summary>
+    /// <param name="param">The parameter value.</param>
+    /// <returns>The value's string form, or null.</returns>
+    private static string? RoundTripStringValue(object? param) => (param as string) ?? param?.ToString();
+
     /// <summary>Serializes a request body using the declared body type.</summary>
     /// <param name="serializer">The content serializer to use.</param>
     /// <param name="body">The body value to serialize.</param>
@@ -264,7 +269,7 @@ internal partial class RequestBuilderImplementation
                 ret.Content = multiPartContent;
             }
 
-            List<KeyValuePair<string, string?>>? queryParamsToAdd = null;
+            List<QueryParameterEntry>? queryParamsToAdd = null;
             var headersToAdd = restMethod.Headers.Count > 0
                 ? new Dictionary<string, string?>(restMethod.Headers)
                 : null;
@@ -303,7 +308,7 @@ internal partial class RequestBuilderImplementation
         HttpRequestMessage ret,
         MultipartFormDataContent? multiPartContent,
         ref Dictionary<string, string?>? headersToAdd,
-        ref List<KeyValuePair<string, string?>>? queryParamsToAdd)
+        ref List<QueryParameterEntry>? queryParamsToAdd)
     {
         RestMethodParameterInfo? parameterInfo = null;
 
@@ -399,7 +404,7 @@ internal partial class RequestBuilderImplementation
         HttpRequestMessage ret,
         string basePath,
         object[] paramList,
-        List<KeyValuePair<string, string?>>? queryParamsToAdd)
+        List<QueryParameterEntry>? queryParamsToAdd)
     {
         var urlTarget = BuildRelativePath(basePath, restMethod, paramList);
 
@@ -539,9 +544,10 @@ internal partial class RequestBuilderImplementation
             return;
         }
 
-        // If round tripping, format each path segment independently.
+        // If round tripping, split the value's string form on '/' (ToString for a non-string, so any type is
+        // supported) and format+escape each segment independently, preserving the separators.
         Debug.Assert(parameterMapValue.Type == ParameterType.RoundTripping, "Dynamic route fragments must be Normal or RoundTripping.");
-        var paramValue = (string)param;
+        var paramValue = RoundTripStringValue(param);
 
         if (paramValue is null)
         {
@@ -703,7 +709,7 @@ internal partial class RequestBuilderImplementation
         RestMethodInfoInternal restMethod,
         QueryAttribute? queryAttribute,
         object param,
-        List<KeyValuePair<string, string?>> queryParamsToAdd,
+        List<QueryParameterEntry> queryParamsToAdd,
         int i,
         RestMethodParameterInfo? parameterInfo)
     {
@@ -905,7 +911,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="queryPath">The query key path for the parameter.</param>
     /// <param name="queryAttribute">The query attribute governing formatting.</param>
     private void AppendQueryParameter(
-        List<KeyValuePair<string, string?>> queryParamsToAdd,
+        List<QueryParameterEntry> queryParamsToAdd,
         object? param,
         ParameterInfo parameterInfo,
         string queryPath,

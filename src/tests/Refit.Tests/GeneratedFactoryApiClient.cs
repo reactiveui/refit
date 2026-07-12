@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -26,5 +27,5 @@ internal sealed class GeneratedFactoryApiClient(HttpClient client, IRequestBuild
     public Task GetById(string id) => Task.CompletedTask;
 
     /// <inheritdoc/>
-    public Task GetQuery(string id) => Task.CompletedTask;
+    public IObservable<string> Observe() => throw new NotSupportedException();
 }

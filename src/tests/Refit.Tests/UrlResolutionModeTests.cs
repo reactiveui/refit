@@ -30,7 +30,8 @@ public class UrlResolutionModeTests
     [Test]
     public async Task Rfc3986ExpandsDynamicSegment()
     {
-        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetUser(7));
+        const int userId = 7;
+        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetUser(userId));
         await Assert.That(captured!.AbsoluteUri).IsEqualTo("http://foo/api/v1/users/7");
     }
 
@@ -48,7 +49,8 @@ public class UrlResolutionModeTests
     [Test]
     public async Task Rfc3986PreservesQueryParameters()
     {
-        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetValuesWithQuery(3));
+        const int pageNumber = 3;
+        var captured = await CaptureRfcRequestAsync(BaseAddress, static api => api.GetValuesWithQuery(pageNumber));
         await Assert.That(captured!.AbsoluteUri).IsEqualTo("http://foo/api/v1/values?active=true&page=3");
     }
 

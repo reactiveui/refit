@@ -78,7 +78,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Extracts any query parameters already present on the URI into the pending list.</summary>
     /// <param name="uri">The URI builder whose query is read.</param>
     /// <param name="queryParamsToAdd">The pending query parameter list, created if needed.</param>
-    private static void ParseExistingQueryString(UriBuilder uri, ref List<KeyValuePair<string, string?>>? queryParamsToAdd) =>
+    private static void ParseExistingQueryString(UriBuilder uri, ref List<QueryParameterEntry>? queryParamsToAdd) =>
         ParseQueryStringInto(uri.Query, ref queryParamsToAdd);
 
     /// <summary>Assigns the request URI as a bare relative reference so the <see cref="HttpClient"/> merges it
@@ -89,7 +89,7 @@ internal partial class RequestBuilderImplementation
     private static void AssignRequestUriRfc3986(
         HttpRequestMessage ret,
         string urlTarget,
-        List<KeyValuePair<string, string?>>? queryParamsToAdd)
+        List<QueryParameterEntry>? queryParamsToAdd)
     {
         var path = urlTarget;
         var queryIndex = urlTarget.IndexOf('?');
@@ -109,7 +109,7 @@ internal partial class RequestBuilderImplementation
     /// <summary>Parses a raw query string into the pending query parameter list.</summary>
     /// <param name="queryString">The raw query string, with or without a leading '?'.</param>
     /// <param name="queryParamsToAdd">The pending query parameter list, created if needed.</param>
-    private static void ParseQueryStringInto(string? queryString, ref List<KeyValuePair<string, string?>>? queryParamsToAdd)
+    private static void ParseQueryStringInto(string? queryString, ref List<QueryParameterEntry>? queryParamsToAdd)
     {
         if (string.IsNullOrEmpty(queryString))
         {
@@ -139,7 +139,7 @@ internal partial class RequestBuilderImplementation
         "Major Code Smell",
         "S2930:\"IDisposables\" should be disposed",
         Justification = "ValueStringBuilder.ToString() disposes the builder and returns its pooled buffer; Dispose is idempotent.")]
-    private static string CreateQueryString(List<KeyValuePair<string, string?>> queryParamsToAdd)
+    private static string CreateQueryString(List<QueryParameterEntry> queryParamsToAdd)
     {
         var vsb = new ValueStringBuilder(stackalloc char[StackallocThreshold]);
         var firstQuery = true;
@@ -289,7 +289,7 @@ internal partial class RequestBuilderImplementation
     /// <param name="parameterInfo">Optional parameter info used to skip path-bound properties.</param>
     /// <param name="collectionFormat">The collection format for enumerable values.</param>
     /// <returns>The query-string key/value pairs.</returns>
-    private List<KeyValuePair<string, object?>> BuildQueryMap(
+    private List<QueryMapEntry> BuildQueryMap(
         object @object,
         string? delimiter = null,
         RestMethodParameterInfo? parameterInfo = null,
@@ -300,7 +300,7 @@ internal partial class RequestBuilderImplementation
             return BuildQueryMap(idictionary, delimiter, collectionFormat);
         }
 
-        var kvps = new List<KeyValuePair<string, object?>>();
+        var kvps = new List<QueryMapEntry>();
 
         var props = GetCachedQueryProperties(@object.GetType());
         for (var i = 0; i < props.Length; i++)
@@ -317,12 +317,12 @@ internal partial class RequestBuilderImplementation
     /// <param name="delimiter">The delimiter used between nested keys.</param>
     /// <param name="collectionFormat">The collection format for enumerable values.</param>
     /// <returns>The query-string key/value pairs.</returns>
-    private List<KeyValuePair<string, object?>> BuildQueryMap(
+    private List<QueryMapEntry> BuildQueryMap(
         IDictionary dictionary,
         string? delimiter = null,
         CollectionFormat? collectionFormat = null)
     {
-        var kvps = new List<KeyValuePair<string, object?>>();
+        var kvps = new List<QueryMapEntry>();
 
         foreach (var key in dictionary.Keys)
         {
@@ -371,7 +371,7 @@ internal partial class RequestBuilderImplementation
     private void AppendPropertyToQueryMap(
         object @object,
         PropertyInfo propertyInfo,
-        List<KeyValuePair<string, object?>> kvps,
+        List<QueryMapEntry> kvps,
         string? delimiter,
         RestMethodParameterInfo? parameterInfo,
         CollectionFormat? collectionFormat)
@@ -426,7 +426,15 @@ internal partial class RequestBuilderImplementation
     private string BuildPropertyQueryKey(PropertyInfo propertyInfo, QueryAttribute? queryAttribute)
     {
         var aliasAttribute = propertyInfo.GetCustomAttribute<AliasAsAttribute>();
-        var name = aliasAttribute?.Name ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
+
+        // Match the form-encoded field-naming precedence (FormValueMultimap.GetFieldNameForProperty): an [AliasAs]
+        // wins, then the configured content serializer's field name ([JsonPropertyName] for System.Text.Json,
+        // [JsonProperty] for Newtonsoft.Json) unless disabled, then the URL parameter key formatter over the CLR name.
+        var name = aliasAttribute?.Name
+            ?? (_settings.HonorContentSerializerPropertyNamesInQuery
+                ? _settings.ContentSerializer.GetFieldNameForProperty(propertyInfo)
+                : null)
+            ?? _settings.UrlParameterKeyFormatter.Format(propertyInfo.Name);
 
         // Honor a property-level [Query(delimiter, prefix)], matching how form-encoded fields are named.
         return queryAttribute is not null && !string.IsNullOrWhiteSpace(queryAttribute.Prefix)
@@ -475,7 +483,7 @@ internal partial class RequestBuilderImplementation
         IEnumerable values,
         PropertyInfo propertyInfo,
         string key,
-        List<KeyValuePair<string, object?>> kvps,
+        List<QueryMapEntry> kvps,
         QueryAttribute? queryAttribute,
         CollectionFormat? collectionFormat)
     {
@@ -499,7 +507,7 @@ internal partial class RequestBuilderImplementation
     private void AppendNestedQueryMap(
         object obj,
         string key,
-        List<KeyValuePair<string, object?>> kvps,
+        List<QueryMapEntry> kvps,
         string? delimiter,
         CollectionFormat? collectionFormat)
     {

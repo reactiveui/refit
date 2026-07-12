@@ -26,6 +26,12 @@ public partial class RequestBuilderTests
     /// <summary>The query value the test formatter renders as null.</summary>
     private const string NullFormattedQueryValue = "nulled";
 
+    /// <summary>The byte array {1, 2} used as sample multipart byte-array-part content.</summary>
+    private static readonly byte[] _byteArray12 = [1, 2];
+
+    /// <summary>The integer array {1, 2} wrapped in a non-generic collection for the query-map guard test.</summary>
+    private static readonly int[] _intArray12 = [1, 2];
+
     /// <summary>Skips dictionary entries whose value is null.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -182,7 +188,7 @@ public partial class RequestBuilderTests
         var fixture = new RequestBuilderImplementation<IDummyHttpApi>();
         var factory = fixture.RunRequest(nameof(IDummyHttpApi.Blob_Post_Byte));
 
-        var output = await factory(["dir/file", new ByteArrayPart([1, 2], string.Empty, name: "custom")]);
+        var output = await factory(["dir/file", new ByteArrayPart(_byteArray12, string.Empty, name: "custom")]);
 
         await Assert.That(output.SendContent).Contains("custom");
     }
@@ -206,7 +212,7 @@ public partial class RequestBuilderTests
     [Test]
     public async Task DoNotConvertToQueryMapIsFalseForANonGenericEnumerable()
     {
-        var nonGenericSequence = new ArrayList { 1, 2 };
+        var nonGenericSequence = new ArrayList(_intArray12);
 
         await Assert.That(RequestBuilderImplementation.DoNotConvertToQueryMap(nonGenericSequence)).IsFalse();
     }

@@ -60,7 +60,12 @@ internal class RestMethodInfoInternal
 
         VerifyUrlPathIsSane(RelativePath, RefitSettings.UrlResolution);
 
-        var (returnType, returnResultType, deserializedResultType) = DetermineReturnTypeInfo(methodInfo);
+        HasReturnTypeAdapter = ReturnTypeAdapterResolver.TryResolveResultType(
+            methodInfo.ReturnType,
+            RefitSettings.ReturnTypeAdapters,
+            out var adapterResultType);
+        var (returnType, returnResultType, deserializedResultType) =
+            DetermineReturnTypeInfo(methodInfo, adapterResultType);
         ReturnType = returnType;
         ReturnResultType = returnResultType;
         DeserializedResultType = deserializedResultType;
@@ -68,7 +73,13 @@ internal class RestMethodInfoInternal
 
         // Exclude cancellation token parameters from this list
         ParameterInfoArray = GetNonCancellationTokenParameters(methodInfo.GetParameters());
-        (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray, RefitSettings.AllowUnmatchedRouteParameters);
+
+        // An open generic method definition cannot resolve dotted {obj.Prop} placeholders yet — the generic parameter
+        // has no properties until the method is closed over a concrete type. This RestMethodInfo is only used for
+        // method selection; the closed instantiation (built on first call) resolves the placeholders, so leave any
+        // unmatched placeholder in place here instead of throwing.
+        var allowUnmatched = RefitSettings.AllowUnmatchedRouteParameters || methodInfo.IsGenericMethodDefinition;
+        (ParameterMap, FragmentPath) = BuildParameterMap(RelativePath, ParameterInfoArray, allowUnmatched);
         BodyParameterInfo = FindBodyParameter(ParameterInfoArray, IsMultipart, hma.Method);
         AuthorizeParameterInfo = FindAuthorizationParameter(ParameterInfoArray);
 
@@ -155,6 +166,9 @@ internal class RestMethodInfoInternal
 
     /// <summary>Gets or sets the type that the response content is deserialized into.</summary>
     public Type DeserializedResultType { get; set; }
+
+    /// <summary>Gets a value indicating whether a registered <see cref="IReturnTypeAdapter{TReturn, TResult}"/> surfaces this method's return type.</summary>
+    public bool HasReturnTypeAdapter { get; }
 
     /// <summary>Gets the Refit settings used when building the request.</summary>
     public RefitSettings RefitSettings { get; }
@@ -464,14 +478,14 @@ internal class RestMethodInfoInternal
         Match match,
         bool allowUnmatchedRouteParameters)
     {
+        const string roundTripPrefix = "**";
         var rawName = match.Groups[1].Value.ToLowerInvariant();
-        var isRoundTripping = rawName.StartsWith("**", StringComparison.Ordinal);
-        var name = isRoundTripping ? rawName[2..] : rawName;
+        var isRoundTripping = rawName.StartsWith(roundTripPrefix, StringComparison.Ordinal);
+        var name = isRoundTripping ? rawName[roundTripPrefix.Length..] : rawName;
 
         if (validation.Param.TryGetValue(name, out var value))
         {
             AddStandardParameter(
-                relativePath,
                 parameterInfo,
                 ret,
                 fragmentList,
@@ -496,27 +510,20 @@ internal class RestMethodInfoInternal
     }
 
     /// <summary>Adds a standard (directly matched) route parameter to the parameter map and fragment list.</summary>
-    /// <param name="relativePath">The relative URL path template.</param>
     /// <param name="parameterInfo">The array of method parameters.</param>
     /// <param name="ret">The parameter map being built.</param>
     /// <param name="fragmentList">The fragment list being built.</param>
     /// <param name="parsedName">The parsed parameter name details from the URL template.</param>
     /// <param name="value">The matched method parameter.</param>
     private static void AddStandardParameter(
-        string relativePath,
         ParameterInfo[] parameterInfo,
         Dictionary<int, RestMethodParameterInfo> ret,
         List<ParameterFragment> fragmentList,
         ParsedParameterName parsedName,
         ParameterInfo value)
     {
-        var paramType = value.ParameterType;
-        if (parsedName.IsRoundTripping && paramType != typeof(string))
-        {
-            throw new ArgumentException(
-                $"URL {relativePath} has round-tripping parameter {parsedName.RawName}, but the type of matched method parameter is {paramType.FullName}. It must be a string.");
-        }
-
+        // A round-tripping parameter may be any type: its value is formatted through the URL parameter formatter
+        // (ToString by default) and each '/'-delimited segment is escaped independently, preserving the separators.
         var parameterType = parsedName.IsRoundTripping
             ? ParameterType.RoundTripping
             : ParameterType.Normal;
@@ -772,10 +779,13 @@ internal class RestMethodInfoInternal
     }
 
     /// <summary>Determines the return type, result type, and deserialized result type for the method.</summary>
-    /// <param name="methodInfo">The reflected method information.</param>
+    /// <param name="methodInfo">The reflected method whose return type is classified.</param>
+    /// <param name="adapterResultType">The wrapped result type of a matched return-type adapter, or
+    /// <see langword="null"/> when the return type is a built-in shape or unadapted.</param>
     /// <returns>A tuple of the return type, result type, and deserialized result type.</returns>
     private static (Type ReturnType, Type ReturnResultType, Type DeserializedResultType) DetermineReturnTypeInfo(
-        MethodInfo methodInfo)
+        MethodInfo methodInfo,
+        Type? adapterResultType)
     {
         var returnType = methodInfo.ReturnType;
         if (
@@ -795,6 +805,13 @@ internal class RestMethodInfoInternal
         if (returnType == typeof(Task))
         {
             return (returnType, typeof(void), typeof(void));
+        }
+
+        // A registered return-type adapter surfaces this return type; the HTTP call materializes the adapter's
+        // wrapped result, so classify against that inner type just like a Task<T>.
+        if (adapterResultType is not null)
+        {
+            return (returnType, adapterResultType, DetermineDeserializedResultType(adapterResultType));
         }
 
         // Allow synchronous return types only for methods that are implemented by generated stubs

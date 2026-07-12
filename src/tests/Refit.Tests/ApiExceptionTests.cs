@@ -464,7 +464,8 @@ public sealed class ApiExceptionTests
     [Test]
     public async Task MaxExceptionContentLengthZeroReturnsEmptyContent()
     {
-        using var response = CreateErrorResponse(new string('a', 100));
+        const int bodyLength = 100;
+        using var response = CreateErrorResponse(new string('a', bodyLength));
         var settings = new RefitSettings { MaxExceptionContentLength = 0 };
 
         var exception = await ApiException.Create(

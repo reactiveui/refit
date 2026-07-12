@@ -38,6 +38,52 @@ public static class SourceGeneratorBenchmarksProjects
         }
         """;
 
+    /// <summary>Gets the source text for a query-heavy Refit interface exercising inline query classification.</summary>
+    public static string QueryHeavyInterface =>
+        """
+        using System;
+        using System.Collections.Generic;
+        using System.Runtime.Serialization;
+        using System.Threading;
+        using System.Threading.Tasks;
+        using Refit;
+
+        namespace RefitGeneratorTest;
+
+        public enum BenchSort
+        {
+            [EnumMember(Value = "date-desc")]
+            DateDescending,
+            Name,
+        }
+
+        public sealed class BenchPayload
+        {
+            public string? Name { get; set; }
+        }
+
+        public interface IQueryHeavyApi
+        {
+            [Get("/search")]
+            Task<string> Search(string q, int? page, int size, bool archived, BenchSort sort);
+
+            [Get("/csv")]
+            Task<string> Csv([Query(CollectionFormat.Csv)] int[] ids, [AliasAs("t")] string tag);
+
+            [Get("/multi")]
+            Task<string> Multi([Query(CollectionFormat.Multi)] IReadOnlyList<Guid> ids);
+
+            [Get("/flags")]
+            Task<string> Flags([QueryName] string[] flags, [Encoded] string cursor);
+
+            [Post("/create")]
+            Task<string> Create(BenchPayload payload, string tag, CancellationToken token);
+
+            [Get("/fmt")]
+            Task<string> Formatted([Query(Format = "0.00")] double price, [Query(TreatAsString = true)] object raw);
+        }
+        """;
+
     /// <summary>Gets the source text containing many Refit interfaces used by larger benchmarks.</summary>
     public static string ManyInterfaces =>
         """

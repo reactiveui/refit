@@ -81,8 +81,9 @@ public sealed class NetworkBehaviorTests
     {
         const int samples = 5;
         const int seed = 123;
-        var a = new NetworkBehavior(seed) { Delay = TimeSpan.FromSeconds(1), Variance = 0.5d };
-        var b = new NetworkBehavior(seed) { Delay = TimeSpan.FromSeconds(1), Variance = 0.5d };
+        const double delayVariance = 0.5d;
+        var a = new NetworkBehavior(seed) { Delay = TimeSpan.FromSeconds(1), Variance = delayVariance };
+        var b = new NetworkBehavior(seed) { Delay = TimeSpan.FromSeconds(1), Variance = delayVariance };
 
         for (var i = 0; i < samples; i++)
         {

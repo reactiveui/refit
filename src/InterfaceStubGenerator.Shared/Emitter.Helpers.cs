@@ -60,11 +60,13 @@ internal static partial class Emitter
             : $"this.{property.Name}";
     }
 
-    /// <summary>Ensures a type display name is prefixed with <c>global::</c>.</summary>
+    /// <summary>Ensures a type display name carries an alias qualifier, adding <c>global::</c> when it has none.</summary>
     /// <param name="typeName">The type display name.</param>
-    /// <returns>The globally qualified type display name.</returns>
+    /// <returns>The alias-qualified type display name.</returns>
+    /// <remarks>A name that already carries an alias qualifier (either <c>global::</c> or an extern alias) contains
+    /// the <c>::</c> separator, whereas a bare name never does, so only bare names receive the <c>global::</c> prefix.</remarks>
     internal static string EnsureGlobalPrefix(string typeName) =>
-        typeName.StartsWith(GlobalPrefix, StringComparison.Ordinal)
+        typeName.IndexOf("::", StringComparison.Ordinal) >= 0
             ? typeName
             : GlobalPrefix + typeName;
 
@@ -214,13 +216,15 @@ internal static partial class Emitter
     /// <param name="isExplicitInterface">True if the method is an explicit interface implementation.</param>
     /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
     /// <param name="isAsync">True if the method should be emitted as async.</param>
+    /// <param name="methodAttributes">Attribute lines emitted between the documentation and the signature.</param>
     /// <returns>The generated method opening.</returns>
     internal static string BuildMethodOpening(
         MethodModel methodModel,
         bool isDerivedExplicitImpl,
         bool isExplicitInterface,
         bool supportsNullable,
-        bool isAsync = false)
+        bool isAsync = false,
+        string methodAttributes = "")
     {
         var visibility = !isExplicitInterface ? "public " : string.Empty;
         var asyncKeyword = isAsync ? "async " : string.Empty;
@@ -232,12 +236,55 @@ internal static partial class Emitter
         return $$"""
 
             {{methodIndent}}/// <inheritdoc />
-            {{methodIndent}}{{visibility}}{{asyncKeyword}}{{methodModel.ReturnType}} {{explicitInterface}}{{methodModel.DeclaredMethod}}({{parameters}})
+            {{methodAttributes}}{{methodIndent}}{{visibility}}{{asyncKeyword}}{{methodModel.ReturnType}} {{explicitInterface}}{{methodModel.DeclaredMethod}}({{parameters}})
 
             """
             + constraints
             + methodIndent
             + "{\n";
+    }
+
+    /// <summary>Builds the trim/AOT annotations emitted onto methods that use the reflection request builder.</summary>
+    /// <param name="requiresUnreferencedCode">Whether the interface method declares <c>[RequiresUnreferencedCode]</c>.</param>
+    /// <param name="requiresDynamicCode">Whether the interface method declares <c>[RequiresDynamicCode]</c>.</param>
+    /// <remarks>
+    /// The reflection fallback intentionally trades trim safety for coverage of method shapes the inline emitter does
+    /// not support; RF006/RF007 report those shapes at compile time. When the interface member is unannotated the
+    /// generated call site suppresses the per-interface IL2026/IL3050 noise consumers cannot act on
+    /// (see reactiveui/refit#2200). When the interface member declares the matching <c>[RequiresUnreferencedCode]</c> or
+    /// <c>[RequiresDynamicCode]</c>, the implementation mirrors it instead: that both honours the caller-visible contract
+    /// and satisfies the trim/AOT annotation-matching rule (IL2046/IL3051) between the interface and its implementation.
+    /// </remarks>
+    /// <returns>The generated attribute lines, terminated by a newline.</returns>
+    internal static string BuildReflectionFallbackSuppressions(
+        bool requiresUnreferencedCode,
+        bool requiresDynamicCode)
+    {
+        const string justification =
+            "\"This method's shape is not supported by generated request building and intentionally uses the "
+            + "reflection request builder; trimmed and Native AOT applications must use inline-eligible method "
+            + "shapes instead (Refit reports this at compile time).\"";
+        const string requiresMessage =
+            "\"This generated Refit method's shape is not supported by generated request building and uses the "
+            + "reflection request builder, which requires unreferenced code and runtime code generation.\"";
+        var methodIndent = Indent(MethodMemberIndentation);
+
+        // A [RequiresDynamicCode] attribute only exists on net7.0+, but it is only emitted when the interface member
+        // declares it, which itself can only compile on net7.0+ — so it is always inside the net5.0 guard safely.
+        var unreferencedCodeAttribute = requiresUnreferencedCode
+            ? $"[global::System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode({requiresMessage})]"
+            : $"[global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(\"Trimming\", \"IL2026\", Justification = {justification})]";
+        var dynamicCodeAttribute = requiresDynamicCode
+            ? $"[global::System.Diagnostics.CodeAnalysis.RequiresDynamicCode({requiresMessage})]"
+            : $"[global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(\"AOT\", \"IL3050\", Justification = {justification})]";
+
+        return $$"""
+            {{methodIndent}}#if NET5_0_OR_GREATER
+            {{methodIndent}}{{unreferencedCodeAttribute}}
+            {{methodIndent}}{{dynamicCodeAttribute}}
+            {{methodIndent}}#endif
+
+            """;
     }
 
     /// <summary>Builds the explicit interface qualifier for a method signature.</summary>
@@ -271,7 +318,7 @@ internal static partial class Emitter
             return string.Empty;
         }
 
-        var length = (parameterModels.Length - 1) * 2;
+        var length = (parameterModels.Length - 1) * ListSeparatorLength;
         for (var i = 0; i < parameterModels.Length; i++)
         {
             var (metadataName, type, annotation, _) = parameterModels[i];

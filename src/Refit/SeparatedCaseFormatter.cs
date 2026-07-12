@@ -9,6 +9,9 @@ namespace Refit;
 /// <summary>Converts PascalCase/camelCase identifiers into a lower-case, separator-delimited form (e.g. snake_case or kebab-case).</summary>
 internal static class SeparatedCaseFormatter
 {
+    /// <summary>Extra capacity reserved for the separators inserted before upper-case characters.</summary>
+    private const int SeparatorCapacityHeadroom = 8;
+
     /// <summary>Formats the given identifier using the supplied word separator.</summary>
     /// <param name="key">The identifier to format.</param>
     /// <param name="separator">The character inserted between words.</param>
@@ -20,7 +23,7 @@ internal static class SeparatedCaseFormatter
             return key;
         }
 
-        var builder = new StringBuilder(key.Length + 8);
+        var builder = new StringBuilder(key.Length + SeparatorCapacityHeadroom);
         for (var i = 0; i < key.Length; i++)
         {
             var current = key[i];

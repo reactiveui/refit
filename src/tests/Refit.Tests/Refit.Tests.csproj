@@ -32,5 +32,6 @@
     <ProjectReference Include="..\..\Refit.Xml\Refit.Xml.csproj" />
     <ProjectReference Include="..\..\InterfaceStubGenerator.Roslyn48\InterfaceStubGenerator.Roslyn48.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\Refit\Refit.csproj" />
+    <ProjectReference Include="..\..\Refit.Reflection\Refit.Reflection.csproj" />
   </ItemGroup>
 </Project>

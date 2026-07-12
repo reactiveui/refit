@@ -269,7 +269,7 @@ public sealed class ResponseTests
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         using var response = await fixture.GetApiResponseTestObject();
-        var actualException = await Assert.That(() => (Task)response!.EnsureSuccessStatusCodeAsync()).ThrowsExactly<ValidationApiException>();
+        var actualException = await Assert.That(async () => await response!.EnsureSuccessStatusCodeAsync()).ThrowsExactly<ValidationApiException>();
 
         await Assert.That(actualException!.Content).IsNotNull();
         await Assert.That(actualException.Content!.Detail).IsEqualTo(DetailValue);
@@ -356,7 +356,7 @@ public sealed class ResponseTests
         var fixture = RestService.For<IMyAliasService>(BaseAddress, handler.ToSettings());
 
         using var response = await fixture.GetApiResponseTestObject();
-        var actualException = await Assert.That(() => (Task)response!.EnsureSuccessfulAsync()).ThrowsExactly<ApiException>();
+        var actualException = await Assert.That(async () => await response!.EnsureSuccessfulAsync()).ThrowsExactly<ApiException>();
 
         await Assert.That(response!.IsReceived).IsTrue();
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
@@ -769,7 +769,7 @@ public sealed class ResponseTests
         using var response = new HttpResponseMessage(HttpStatusCode.BadRequest);
 
         // RequestMessage is left null, as a hand-rolled test HttpMessageHandler often does.
-        var ex = await Assert.That(() => settings.ExceptionFactory(response)).ThrowsExactly<InvalidOperationException>();
+        var ex = await Assert.That(async () => await settings.ExceptionFactory(response)).ThrowsExactly<InvalidOperationException>();
 
         await Assert.That(ex!.Message).Contains("RequestMessage", StringComparison.Ordinal);
     }

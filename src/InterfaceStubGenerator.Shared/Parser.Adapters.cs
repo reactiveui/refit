@@ -1,0 +1,234 @@
+// Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
+// ReactiveUI and Contributors licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for full license information.
+
+using System.Collections.Generic;
+using System.Threading;
+using Microsoft.CodeAnalysis;
+
+namespace Refit.Generator;
+
+/// <summary>Parses candidate interfaces and methods into the models used to generate Refit stubs.</summary>
+/// <content>Discovery and matching for <c>IReturnTypeAdapter</c> implementations, so generated methods surface custom
+/// return types (for example <c>IObservable&lt;T&gt;</c> or <c>Result&lt;T&gt;</c>) with a direct <c>Adapt</c> call.</content>
+internal static partial class Parser
+{
+    /// <summary>The metadata name of the <c>Refit.IReturnTypeAdapter`2</c> interface.</summary>
+    private const string ReturnTypeAdapterMetadataName = "Refit.IReturnTypeAdapter`2";
+
+    /// <summary>Resolves the <c>Refit.IReturnTypeAdapter`2</c> interface symbol, or null when Refit is unavailable.</summary>
+    /// <param name="compilation">The compilation to resolve against.</param>
+    /// <returns>The interface symbol, or <see langword="null"/>.</returns>
+    internal static INamedTypeSymbol? ResolveReturnTypeAdapterInterface(Compilation compilation) =>
+        compilation.GetTypeByMetadataName(ReturnTypeAdapterMetadataName);
+
+    /// <summary>Discovers the source-declared types that implement <c>IReturnTypeAdapter</c> in the compilation.</summary>
+    /// <param name="compilation">The compilation whose source assembly is scanned.</param>
+    /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol, or null.</param>
+    /// <param name="cancellationToken">A token to observe while scanning.</param>
+    /// <returns>The adapter type definitions, or an empty list when none exist.</returns>
+    internal static IReadOnlyList<INamedTypeSymbol> DiscoverReturnTypeAdapters(
+        Compilation compilation,
+        INamedTypeSymbol? adapterInterface,
+        CancellationToken cancellationToken)
+    {
+        if (adapterInterface is null)
+        {
+            return [];
+        }
+
+        var adapters = new List<INamedTypeSymbol>();
+        CollectReturnTypeAdapters(compilation.Assembly.GlobalNamespace, adapterInterface, adapters, cancellationToken);
+        return adapters;
+    }
+
+    /// <summary>Recursively collects types implementing <c>IReturnTypeAdapter</c> from a namespace.</summary>
+    /// <param name="namespaceSymbol">The namespace to scan.</param>
+    /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
+    /// <param name="adapters">The accumulator for discovered adapter types.</param>
+    /// <param name="cancellationToken">A token to observe while scanning.</param>
+    private static void CollectReturnTypeAdapters(
+        INamespaceSymbol namespaceSymbol,
+        INamedTypeSymbol adapterInterface,
+        List<INamedTypeSymbol> adapters,
+        CancellationToken cancellationToken)
+    {
+        foreach (var member in namespaceSymbol.GetMembers())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            switch (member)
+            {
+                case INamespaceSymbol nestedNamespace:
+                {
+                    CollectReturnTypeAdapters(nestedNamespace, adapterInterface, adapters, cancellationToken);
+                    break;
+                }
+
+                case INamedTypeSymbol type:
+                {
+                    CollectReturnTypeAdapterType(type, adapterInterface, adapters);
+                    break;
+                }
+            }
+        }
+    }
+
+    /// <summary>Adds a type and its nested types to the adapter list when they implement <c>IReturnTypeAdapter</c>.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
+    /// <param name="adapters">The accumulator for discovered adapter types.</param>
+    private static void CollectReturnTypeAdapterType(
+        INamedTypeSymbol type,
+        INamedTypeSymbol adapterInterface,
+        List<INamedTypeSymbol> adapters)
+    {
+        if (type.TypeKind is TypeKind.Class or TypeKind.Struct
+            && !type.IsAbstract
+            && FindImplementedAdapterInterface(type, adapterInterface) is not null)
+        {
+            adapters.Add(type);
+        }
+
+        foreach (var nested in type.GetTypeMembers())
+        {
+            CollectReturnTypeAdapterType(nested, adapterInterface, adapters);
+        }
+    }
+
+    /// <summary>Finds a registered adapter that surfaces the method's return type and its wrapped result type.</summary>
+    /// <param name="returnType">The declared return type of the interface method.</param>
+    /// <param name="context">The generation context carrying the discovered adapters.</param>
+    /// <param name="closedAdapter">The closed adapter type to instantiate when matched.</param>
+    /// <param name="resultType">The result type the HTTP call materializes when matched.</param>
+    /// <returns><see langword="true"/> when a discovered adapter surfaces the return type; otherwise <see langword="false"/>.</returns>
+    private static bool TryMatchReturnTypeAdapter(
+        ITypeSymbol returnType,
+        in InterfaceGenerationContext context,
+        out INamedTypeSymbol closedAdapter,
+        out ITypeSymbol resultType)
+    {
+        closedAdapter = null!;
+        resultType = null!;
+
+        var adapterInterface = context.ReturnTypeAdapterInterface;
+        if (adapterInterface is null
+            || context.ReturnTypeAdapters.Count == 0
+            || returnType is not INamedTypeSymbol namedReturn)
+        {
+            return false;
+        }
+
+        foreach (var adapter in context.ReturnTypeAdapters)
+        {
+            var closed = CloseAdapterForReturn(adapter, namedReturn, adapterInterface);
+            if (closed is null)
+            {
+                continue;
+            }
+
+            var implemented = FindConstructedAdapterInterface(closed, namedReturn, adapterInterface);
+            if (implemented is not null)
+            {
+                closedAdapter = closed;
+                resultType = implemented.TypeArguments[1];
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>Closes an adapter definition over the return type's type arguments, or returns it when non-generic.</summary>
+    /// <param name="adapter">The adapter type definition.</param>
+    /// <param name="returnType">The declared return type supplying the type arguments.</param>
+    /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
+    /// <returns>The closed adapter type, or <see langword="null"/> when it cannot surface the return type.</returns>
+    private static INamedTypeSymbol? CloseAdapterForReturn(
+        INamedTypeSymbol adapter,
+        INamedTypeSymbol returnType,
+        INamedTypeSymbol adapterInterface)
+    {
+        if (adapter.TypeParameters.IsEmpty)
+        {
+            return adapter;
+        }
+
+        // Single-wrapper heuristic: the adapter's TReturn must be its type parameters wrapped in the return type's
+        // generic definition, so a Wrapper<X> return closes Adapter<T> : IReturnTypeAdapter<Wrapper<T>, ...> over X.
+        if (returnType.TypeArguments.Length != adapter.TypeParameters.Length)
+        {
+            return null;
+        }
+
+        var openInterface = FindImplementedAdapterInterface(adapter, adapterInterface);
+        return openInterface?.TypeArguments[0] is INamedTypeSymbol templateReturn
+            && SymbolEqualityComparer.Default.Equals(templateReturn.OriginalDefinition, returnType.OriginalDefinition)
+            && IsPositionalTypeParameters(templateReturn, adapter)
+            ? adapter.Construct([.. returnType.TypeArguments])
+            : null;
+    }
+
+    /// <summary>Determines whether a constructed type's type arguments are the adapter's type parameters in order.</summary>
+    /// <param name="templateReturn">The adapter's declared <c>TReturn</c>.</param>
+    /// <param name="adapter">The adapter type definition.</param>
+    /// <returns><see langword="true"/> when each argument is the adapter's type parameter in the same position.</returns>
+    private static bool IsPositionalTypeParameters(INamedTypeSymbol templateReturn, INamedTypeSymbol adapter)
+    {
+        var arguments = templateReturn.TypeArguments;
+        if (arguments.Length != adapter.TypeParameters.Length)
+        {
+            return false;
+        }
+
+        for (var i = 0; i < arguments.Length; i++)
+        {
+            if (!SymbolEqualityComparer.Default.Equals(arguments[i], adapter.TypeParameters[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Gets the closed <c>IReturnTypeAdapter</c> interface whose <c>TReturn</c> equals the return type.</summary>
+    /// <param name="closedAdapter">The closed adapter type.</param>
+    /// <param name="returnType">The declared return type the adapter must surface.</param>
+    /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
+    /// <returns>The matching constructed interface, or <see langword="null"/>.</returns>
+    private static INamedTypeSymbol? FindConstructedAdapterInterface(
+        INamedTypeSymbol closedAdapter,
+        INamedTypeSymbol returnType,
+        INamedTypeSymbol adapterInterface)
+    {
+        foreach (var implemented in closedAdapter.AllInterfaces)
+        {
+            if (SymbolEqualityComparer.Default.Equals(implemented.OriginalDefinition, adapterInterface)
+                && SymbolEqualityComparer.Default.Equals(implemented.TypeArguments[0], returnType))
+            {
+                return implemented;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>Gets any <c>IReturnTypeAdapter</c> interface a type implements.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <param name="adapterInterface">The resolved <c>IReturnTypeAdapter`2</c> symbol.</param>
+    /// <returns>The implemented adapter interface, or <see langword="null"/>.</returns>
+    private static INamedTypeSymbol? FindImplementedAdapterInterface(
+        INamedTypeSymbol type,
+        INamedTypeSymbol adapterInterface)
+    {
+        foreach (var implemented in type.AllInterfaces)
+        {
+            if (SymbolEqualityComparer.Default.Equals(implemented.OriginalDefinition, adapterInterface))
+            {
+                return implemented;
+            }
+        }
+
+        return null;
+    }
+}
