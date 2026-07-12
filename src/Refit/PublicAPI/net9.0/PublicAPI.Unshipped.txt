@@ -1,4 +1,6 @@
 #nullable enable
+Refit.GeneratedQueryStringBuilder.AddCollectionValueFormatted<T>(T value) -> void
+Refit.GeneratedQueryStringBuilder.AddFormatted<T>(string! name, T value, string? format, bool preEncoded) -> void
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, ((int startIdx, int endIdx) range, string? value) p0) -> string!
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, ((int startIdx, int endIdx) range, string? value) p0, ((int startIdx, int endIdx) range, string? value) p1) -> string!
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, ((int startIdx, int endIdx) range, string? value) p0, ((int startIdx, int endIdx) range, string? value) p1, ((int startIdx, int endIdx) range, string? value) p2) -> string!

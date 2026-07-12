@@ -23,6 +23,9 @@ internal static partial class Emitter
     /// <summary>The generated call appending one query pair to the query-string builder.</summary>
     private const string AddQueryPairCall = ".Add(";
 
+    /// <summary>The generated call appending one collection element to the query-string builder.</summary>
+    private const string AddCollectionValueCall = ".AddCollectionValue(";
+
     /// <summary>The start of a generated <c>foreach (var …)</c> loop over a collection or dictionary.</summary>
     private const string ForeachVarKeyword = "foreach (var ";
 
@@ -275,51 +278,69 @@ internal static partial class Emitter
     {
         var bodyIndent = Indent(MethodBodyIndentation);
 
-        // Scalar values are guarded by the outer null check, so the value is never null when formatted.
-        var valueExpression = BuildFormattedValueExpression(
-            "@" + parameter.Name,
-            canBeNullAtEvaluation: false,
-            parameter.Type,
-            query,
-            providerField,
-            emission);
-
         if (parameter.CanBeNull)
         {
             _ = sb.Append(bodyIndent).Append(IfParameterPrefix).Append(parameter.Name).AppendLine(NotNullCheckSuffix)
-                .Append(bodyIndent).AppendLine("{")
-                .Append(bodyIndent).Append("    ");
-            AppendScalarAddCall(sb, query, valueExpression, emission);
+                .Append(bodyIndent).AppendLine("{");
+            AppendScalarAddCall(sb, parameter, query, providerField, bodyIndent + "    ", emission);
             _ = sb.Append(bodyIndent).AppendLine("}");
             return;
         }
 
-        _ = sb.Append(bodyIndent);
-        AppendScalarAddCall(sb, query, valueExpression, emission);
+        AppendScalarAddCall(sb, parameter, query, providerField, bodyIndent, emission);
     }
 
     /// <summary>Appends the query-builder add/addflag call for a scalar value, writing each piece straight into the
     /// builder instead of composing an intermediate interpolated statement string.</summary>
     /// <param name="sb">The statement builder.</param>
+    /// <param name="parameter">The parameter model.</param>
     /// <param name="query">The query-binding metadata.</param>
-    /// <param name="valueExpression">The formatted value expression.</param>
+    /// <param name="providerField">The cached attribute-provider field name.</param>
+    /// <param name="indent">The indentation of the emitted statement.</param>
     /// <param name="emission">The shared emission locals and helper state.</param>
     private static void AppendScalarAddCall(
         PooledStringBuilder sb,
+        RequestParameterModel parameter,
         QueryParameterModel query,
-        string valueExpression,
+        string providerField,
+        string indent,
         in InlineValueEmission emission)
     {
-        _ = sb.Append(emission.QueryBuilderLocal);
+        var preEncoded = ToLowerInvariantString(query.PreEncoded);
         if (query.Shape == QueryParameterShape.Flag)
         {
-            _ = sb.Append(".AddFlag(").Append(valueExpression).Append(", ")
-                .Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
+            // Scalar values are guarded by the outer null check, so the value is never null when formatted.
+            var flagValue = BuildFormattedValueExpression("@" + parameter.Name, false, parameter.Type, query, providerField, emission);
+            _ = sb.Append(indent).Append(emission.QueryBuilderLocal).Append(".AddFlag(").Append(flagValue).Append(", ")
+                .Append(preEncoded).AppendLine(");");
             return;
         }
 
-        _ = sb.Append(".Add(").Append(ToCSharpStringLiteral(query.Key)).Append(", ").Append(valueExpression)
-            .Append(", ").Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
+        var key = ToCSharpStringLiteral(query.Key);
+
+        // On the default-formatting branch a span-formattable value is rendered straight into the builder, skipping the
+        // per-value intermediate string; a customized formatter keeps the string-formatted Add.
+        if (IsSpanFormattableFast(query, out var format))
+        {
+            var accessor = "@" + parameter.Name;
+            var customExpression = BuildUrlFormatterCall(accessor, parameter.Type, providerField, emission);
+            var innerIndent = indent + "    ";
+            _ = sb.Append(indent).Append("if (").Append(emission.UseDefaultFormattingLocal).AppendLine(")")
+                .Append(indent).AppendLine("{")
+                .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".AddFormatted(").Append(key).Append(", ")
+                    .Append(accessor).Append(", ").Append(ToNullableCSharpStringLiteral(format)).Append(", ").Append(preEncoded).AppendLine(");")
+                .Append(indent).AppendLine("}")
+                .Append(indent).AppendLine("else")
+                .Append(indent).AppendLine("{")
+                .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".Add(").Append(key).Append(", ")
+                    .Append(customExpression).Append(", ").Append(preEncoded).AppendLine(");")
+                .Append(indent).AppendLine("}");
+            return;
+        }
+
+        var valueExpression = BuildFormattedValueExpression("@" + parameter.Name, false, parameter.Type, query, providerField, emission);
+        _ = sb.Append(indent).Append(emission.QueryBuilderLocal).Append(".Add(").Append(key).Append(", ").Append(valueExpression)
+            .Append(", ").Append(preEncoded).AppendLine(");");
     }
 
     /// <summary>Appends the statements emitting one collection-valued query parameter or flag set.</summary>
@@ -336,14 +357,13 @@ internal static partial class Emitter
         in InlineValueEmission emission)
     {
         var bodyIndent = Indent(MethodBodyIndentation);
-        var elementExpression = BuildFormattedValueExpression(
-            emission.QueryValueLocal,
-            query.ElementCanBeNull,
-            parameter.Type,
-            query,
-            providerField,
-            emission);
         var isFlag = query.Shape == QueryParameterShape.FlagCollection;
+        var preEncoded = ToLowerInvariantString(query.PreEncoded);
+
+        // An unformatted span-formattable element renders straight into the builder on the default-formatting branch,
+        // skipping the per-element intermediate string; a per-element format keeps the string-formatted path because
+        // AddCollectionValueFormatted renders with the default format only.
+        var fast = !isFlag && IsCollectionSpanFormattableFast(query);
         var guarded = parameter.CanBeNull;
         var loopIndent = guarded ? bodyIndent + "    " : bodyIndent;
 
@@ -367,20 +387,43 @@ internal static partial class Emitter
                 _ = sb.Append(emission.SettingsLocal).Append(".CollectionFormat");
             }
 
-            _ = sb.Append(", ").Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
+            _ = sb.Append(", ").Append(preEncoded).AppendLine(");");
         }
 
         _ = sb.Append(loopIndent).Append(ForeachVarKeyword).Append(emission.QueryValueLocal).Append(" in @").Append(parameter.Name).AppendLine(")")
-            .Append(loopIndent).AppendLine("{")
-            .Append(loopIndent).Append("    ").Append(emission.QueryBuilderLocal);
-        if (isFlag)
+            .Append(loopIndent).AppendLine("{");
+        var itemIndent = loopIndent + "    ";
+        if (fast)
         {
-            _ = sb.Append(".AddFlag(").Append(elementExpression).Append(", ")
-                .Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
+            var customExpression = BuildUrlFormatterCall(emission.QueryValueLocal, parameter.Type, providerField, emission);
+            var innerIndent = itemIndent + "    ";
+            _ = sb.Append(itemIndent).Append("if (").Append(emission.UseDefaultFormattingLocal).AppendLine(")")
+                .Append(itemIndent).AppendLine("{")
+                .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".AddCollectionValueFormatted(").Append(emission.QueryValueLocal).AppendLine(");")
+                .Append(itemIndent).AppendLine("}")
+                .Append(itemIndent).AppendLine("else")
+                .Append(itemIndent).AppendLine("{")
+                .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(AddCollectionValueCall).Append(customExpression).AppendLine(");")
+                .Append(itemIndent).AppendLine("}");
         }
         else
         {
-            _ = sb.Append(".AddCollectionValue(").Append(elementExpression).AppendLine(");");
+            var elementExpression = BuildFormattedValueExpression(
+                emission.QueryValueLocal,
+                query.ElementCanBeNull,
+                parameter.Type,
+                query,
+                providerField,
+                emission);
+            _ = sb.Append(itemIndent).Append(emission.QueryBuilderLocal);
+            if (isFlag)
+            {
+                _ = sb.Append(".AddFlag(").Append(elementExpression).Append(", ").Append(preEncoded).AppendLine(");");
+            }
+            else
+            {
+                _ = sb.Append(AddCollectionValueCall).Append(elementExpression).AppendLine(");");
+            }
         }
 
         _ = sb.Append(loopIndent).AppendLine("}");
@@ -910,7 +953,7 @@ internal static partial class Emitter
             .Append(", ").Append(formatExpression).Append(", ").Append(site.PreEncoded).AppendLine(");")
             .Append(innerIndent).Append(ForeachVarKeyword).Append(elementLocal).Append(" in ").Append(site.ValueLocal).AppendLine(")")
             .Append(innerIndent).AppendLine("{")
-            .Append(innerIndent).Append("    ").Append(emission.QueryBuilderLocal).Append(".AddCollectionValue(").Append(elementExpression).AppendLine(");")
+            .Append(innerIndent).Append("    ").Append(emission.QueryBuilderLocal).Append(AddCollectionValueCall).Append(elementExpression).AppendLine(");")
             .Append(innerIndent).AppendLine("}")
             .Append(innerIndent).Append(emission.QueryBuilderLocal).AppendLine(".EndCollection();")
             .Append(indent).AppendLine("}")
@@ -1242,6 +1285,37 @@ internal static partial class Emitter
         return $"{emission.UseDefaultFormattingLocal} ? ({fastExpression}) : {customExpression}";
     }
 
+    /// <summary>Determines whether a scalar query value renders straight into the query builder as an
+    /// <c>ISpanFormattable</c>, skipping the per-value intermediate string.</summary>
+    /// <param name="query">The query-binding metadata.</param>
+    /// <param name="format">The compile-time format passed to <c>AddFormatted</c>, or null.</param>
+    /// <returns><see langword="true"/> when the value has a span-formattable fast write on the consumer target.</returns>
+    /// <remarks>Reuses the shared span-formattable tiers computed by the parser: an unformatted URL-safe integer (net6+)
+    /// or any span-escapable value (net9+). A <c>TreatAsString</c> value stringifies first and stays on the string path.</remarks>
+    private static bool IsSpanFormattableFast(QueryParameterModel query, out string? format)
+    {
+        var valueFormat = query.ValueFormat;
+        format = valueFormat.Format;
+        return !query.TreatAsString
+            && valueFormat.Kind == InlineFormatKind.Formattable
+            && (valueFormat.IsUrlSafeSpanFormattable || valueFormat.IsSpanFormattableEscapable);
+    }
+
+    /// <summary>Determines whether a collection element renders straight into the query builder as an
+    /// <c>ISpanFormattable</c>, skipping the per-element intermediate string.</summary>
+    /// <param name="query">The query-binding metadata.</param>
+    /// <returns><see langword="true"/> when each element has an unformatted span-formattable fast write on the target.</returns>
+    /// <remarks><c>AddCollectionValueFormatted</c> takes no format, so a per-element <c>[Query(Format)]</c> keeps the
+    /// string-formatted path; only unformatted span-formattable elements qualify.</remarks>
+    private static bool IsCollectionSpanFormattableFast(QueryParameterModel query)
+    {
+        var valueFormat = query.ValueFormat;
+        return !query.TreatAsString
+            && valueFormat.Kind == InlineFormatKind.Formattable
+            && valueFormat.Format is null
+            && (valueFormat.IsUrlSafeSpanFormattable || valueFormat.IsSpanFormattableEscapable);
+    }
+
     /// <summary>Builds the reflection-free fast-path expression for one non-null value.</summary>
     /// <param name="valueExpression">The value expression, evaluated only when non-null.</param>
     /// <param name="valueFormat">The rendering strategy.</param>
@@ -1263,110 +1337,6 @@ internal static partial class Emitter
                 $"{GetOrAddEnumFormatter(valueFormat, emission)}({unwrapped})",
             _ => null
         };
-    }
-
-    /// <summary>Gets the generated enum formatting helper for an enum type and format, emitting it on first use.</summary>
-    /// <param name="valueFormat">The enum rendering strategy.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <returns>The helper method name.</returns>
-    private static string GetOrAddEnumFormatter(
-        InlineValueFormatModel valueFormat,
-        in InlineValueEmission emission)
-    {
-        var scope = emission.Scope;
-        var key = (valueFormat.TypeName, valueFormat.Format);
-        if (scope.Formatters.TryGetValue(key, out var existing))
-        {
-            return existing;
-        }
-
-        var helperName = scope.UniqueNames.New(EnumFormatterBaseName);
-        scope.Formatters.Add(key, helperName);
-        AppendEnumFormatterSource(valueFormat, helperName, emission.MemberSource);
-        return helperName;
-    }
-
-    /// <summary>Appends the source of one generated enum formatting helper.</summary>
-    /// <param name="valueFormat">The enum rendering strategy.</param>
-    /// <param name="helperName">The unique helper method name.</param>
-    /// <param name="memberSb">The builder receiving emitted helper members.</param>
-    private static void AppendEnumFormatterSource(
-        InlineValueFormatModel valueFormat,
-        string helperName,
-        PooledStringBuilder memberSb)
-    {
-        var memberIndent = Indent(MethodMemberIndentation);
-        var bodyIndent = Indent(MethodBodyIndentation);
-        var caseIndent = bodyIndent + "    ";
-        var format = valueFormat.Format;
-
-        _ = memberSb.AppendLine()
-            .Append(memberIndent).Append("/// <summary>Formats ").Append(ToXmlDocumentationText(valueFormat.TypeName))
-            .AppendLine(" values for generated requests without reflection.</summary>")
-            .Append(memberIndent).Append("private static string ").Append(helperName)
-            .Append('(').Append(valueFormat.TypeName).AppendLine(" value)")
-            .Append(memberIndent).AppendLine("{")
-            .Append(bodyIndent).AppendLine("switch (value)")
-            .Append(bodyIndent).AppendLine("{");
-
-        foreach (var member in valueFormat.EnumMembers!)
-        {
-            // With a compile-time format only [EnumMember] overrides beat the formatted numeric rendering,
-            // matching string.Format's precedence in the default URL parameter formatter.
-            var resolved = format is null
-                ? member.EnumMemberValue ?? member.MemberName
-                : member.EnumMemberValue;
-            if (resolved is null)
-            {
-                continue;
-            }
-
-            _ = memberSb.Append(caseIndent).Append("case ").Append(valueFormat.TypeName).Append(".@").Append(member.MemberName).AppendLine(":")
-                .Append(caseIndent).Append("    return ").Append(ToCSharpStringLiteral(resolved)).AppendLine(";");
-        }
-
-        var defaultExpression = format is null
-            ? "value.ToString()"
-            : $"value.ToString({ToCSharpStringLiteral(format)})";
-        _ = memberSb.Append(caseIndent).AppendLine("default:")
-            .Append(caseIndent).Append("    return ").Append(defaultExpression).AppendLine(";")
-            .Append(bodyIndent).AppendLine("}")
-            .Append(memberIndent).AppendLine("}");
-    }
-
-    /// <summary>Gets the cached converter field for a converter type, emitting the field on first use.</summary>
-    /// <param name="converterTypeName">The fully-qualified converter type.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <returns>The cached field name.</returns>
-    private static string GetOrAddConverterField(string converterTypeName, in InlineValueEmission emission)
-    {
-        var scope = emission.Scope;
-        if (scope.Converters.TryGetValue(converterTypeName, out var existing))
-        {
-            return existing;
-        }
-
-        var fieldName = scope.UniqueNames.New(ConverterFieldBaseName);
-        scope.Converters.Add(converterTypeName, fieldName);
-        AppendConverterFieldSource(converterTypeName, fieldName, emission.MemberSource);
-        return fieldName;
-    }
-
-    /// <summary>Appends the source of one cached converter field.</summary>
-    /// <param name="converterTypeName">The fully-qualified converter type.</param>
-    /// <param name="fieldName">The unique field name.</param>
-    /// <param name="memberSb">The builder receiving emitted helper members.</param>
-    private static void AppendConverterFieldSource(
-        string converterTypeName,
-        string fieldName,
-        PooledStringBuilder memberSb)
-    {
-        var memberIndent = Indent(MethodMemberIndentation);
-        _ = memberSb.AppendLine()
-            .Append(memberIndent).Append("/// <summary>Cached query converter of type ")
-            .Append(ToXmlDocumentationText(converterTypeName)).AppendLine(".</summary>")
-            .Append(memberIndent).Append("private static readonly ").Append(converterTypeName).Append(' ').Append(fieldName)
-            .Append(" = new ").Append(converterTypeName).AppendLine("();");
     }
 
     /// <summary>Bundles the locals and helper state shared by inline value-formatting emission.</summary>

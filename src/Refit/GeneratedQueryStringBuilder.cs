@@ -23,6 +23,14 @@ public ref struct GeneratedQueryStringBuilder
     /// <summary>The extra capacity reserved beyond the path when the first parameter is appended.</summary>
     private const int InitialQueryCapacity = 128;
 
+#if NET6_0_OR_GREATER
+    /// <summary>The stack buffer size for span-formatting a single query value; larger renderings grow a rented buffer.</summary>
+    private const int FormatBufferLength = 128;
+
+    /// <summary>The factor by which the rented span-formatting buffer grows when a value overflows the current buffer.</summary>
+    private const int BufferGrowthFactor = 2;
+#endif
+
     /// <summary>The relative path the query string is appended to.</summary>
     private readonly string _relativePath;
 
@@ -77,6 +85,22 @@ public ref struct GeneratedQueryStringBuilder
 
         AppendPair(name, value, preEncoded);
     }
+
+#if NET6_0_OR_GREATER
+    /// <summary>Appends one <c>key=value</c> query parameter, formatting an <see cref="ISpanFormattable"/> value straight
+    /// into the query buffer with no intermediate formatted string.</summary>
+    /// <typeparam name="T">The span-formattable value type.</typeparam>
+    /// <param name="name">The query key.</param>
+    /// <param name="value">The value to render; the generator routes only non-null values here.</param>
+    /// <param name="format">The compile-time format from <c>[Query(Format = ...)]</c>, or null.</param>
+    /// <param name="preEncoded">Whether the key and value are caller-encoded and appended verbatim.</param>
+    /// <remarks>The value is rendered invariant and escaped to produce exactly what <see cref="Add"/> yields for the
+    /// same rendered string. On targets without <c>Uri.EscapeDataString(ReadOnlySpan&lt;char&gt;)</c> the generator only
+    /// routes a URL-unreserved integer here, whose formatted span (digits and an optional <c>-</c>) needs no escaping.</remarks>
+    public void AddFormatted<T>(string name, T value, string? format, bool preEncoded)
+        where T : ISpanFormattable =>
+        AppendFormattedPair(name, value, format, preEncoded);
+#endif
 
     /// <summary>Appends one valueless query flag (<c>?name</c>).</summary>
     /// <param name="name">The formatted flag name; the flag is omitted when this is <see langword="null"/>.</param>
@@ -136,6 +160,33 @@ public ref struct GeneratedQueryStringBuilder
 
         _joinedValues.Append(value);
     }
+
+#if NET6_0_OR_GREATER
+    /// <summary>Appends one <see cref="ISpanFormattable"/> element of the current collection, formatting it straight into
+    /// the query buffer with no intermediate formatted string.</summary>
+    /// <typeparam name="T">The span-formattable element type.</typeparam>
+    /// <param name="value">The element to render; the generator routes only non-null values here.</param>
+    /// <remarks>The element is rendered invariant with no format. Under <see cref="CollectionFormat.Multi"/> it becomes
+    /// its own escaped <c>key=value</c> pair; otherwise it joins into the value that <see cref="EndCollection"/> escapes
+    /// as a whole, so the joined element is appended unescaped exactly like <see cref="AddCollectionValue"/>.</remarks>
+    public void AddCollectionValueFormatted<T>(T value)
+        where T : ISpanFormattable
+    {
+        Debug.Assert(_collectionKey is not null, "AddCollectionValueFormatted requires BeginCollection.");
+        if (_collectionIsMulti)
+        {
+            AppendFormattedPair(_collectionKey!, value, null, _collectionPreEncoded);
+            return;
+        }
+
+        if (_collectionValueCount++ > 0)
+        {
+            _joinedValues.Append(_collectionDelimiter);
+        }
+
+        AppendFormattedValue(ref _joinedValues, value, null, escape: false);
+    }
+#endif
 
     /// <summary>Finishes the current collection, emitting the joined <c>key=value</c> pair for non-multi formats.</summary>
     public void EndCollection()
@@ -198,4 +249,74 @@ public ref struct GeneratedQueryStringBuilder
         _text.Append('=');
         _text.Append(StringHelpers.EscapeDataString(value));
     }
+
+#if NET6_0_OR_GREATER
+    /// <summary>Appends one <c>key=value</c> pair, formatting a span-formattable value straight into the buffer.</summary>
+    /// <typeparam name="T">The span-formattable value type.</typeparam>
+    /// <param name="name">The query key.</param>
+    /// <param name="value">The value to render.</param>
+    /// <param name="format">The compile-time format, or null.</param>
+    /// <param name="preEncoded">Whether the key and value are appended verbatim.</param>
+    private void AppendFormattedPair<T>(string name, T value, string? format, bool preEncoded)
+        where T : ISpanFormattable
+    {
+        AppendSeparator();
+        _text.Append(preEncoded ? name : StringHelpers.EscapeDataString(name));
+        _text.Append('=');
+        AppendFormattedValue(ref _text, value, format, escape: !preEncoded);
+    }
+
+    /// <summary>Formats a span-formattable value into a stack buffer (growing a rented buffer when it overflows) and
+    /// appends it to the target, escaping the formatted span in place when requested.</summary>
+    /// <typeparam name="T">The span-formattable value type.</typeparam>
+    /// <param name="target">The buffer receiving the rendered value.</param>
+    /// <param name="value">The value to render.</param>
+    /// <param name="format">The compile-time format, or null for the default rendering.</param>
+    /// <param name="escape">Whether the formatted span is URI-data-escaped before it is appended.</param>
+    private readonly void AppendFormattedValue<T>(ref ValueStringBuilder target, T value, string? format, bool escape)
+        where T : ISpanFormattable
+    {
+        Span<char> buffer = stackalloc char[FormatBufferLength];
+        char[]? rented = null;
+        try
+        {
+            int written;
+            while (!value.TryFormat(buffer, out written, format.AsSpan(), System.Globalization.CultureInfo.InvariantCulture))
+            {
+                if (rented is not null)
+                {
+                    System.Buffers.ArrayPool<char>.Shared.Return(rented);
+                }
+
+                rented = System.Buffers.ArrayPool<char>.Shared.Rent(buffer.Length * BufferGrowthFactor);
+                buffer = rented;
+            }
+
+            var formatted = (ReadOnlySpan<char>)buffer[..written];
+#if NET9_0_OR_GREATER
+            if (escape)
+            {
+                target.Append(Uri.EscapeDataString(formatted));
+                return;
+            }
+#else
+            // Pre-net9 has no span overload of Uri.EscapeDataString; the generator only routes a URL-unreserved integer
+            // to the escaping path, whose digits (and an optional leading '-') are already URL-safe, so it is appended
+            // verbatim just like an unescaped value.
+            _ = escape;
+#endif
+
+            // Copy into a reserved slice so the stack buffer is never captured by the builder (ref-safety), matching a
+            // verbatim span append with no intermediate string.
+            formatted.CopyTo(target.AppendSpan(written));
+        }
+        finally
+        {
+            if (rented is not null)
+            {
+                System.Buffers.ArrayPool<char>.Shared.Return(rented);
+            }
+        }
+    }
+#endif
 }

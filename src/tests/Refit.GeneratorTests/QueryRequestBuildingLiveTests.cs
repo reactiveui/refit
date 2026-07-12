@@ -20,6 +20,9 @@ public sealed class QueryRequestBuildingLiveTests
     /// <summary>A sample page number.</summary>
     private const int PageSeven = 7;
 
+    /// <summary>A sample 64-bit identifier beyond the 32-bit range, exercising the long span-formatted fast write.</summary>
+    private const long LargeIdentifier = 9_000_000_000L;
+
     /// <summary>A sample document revision used by the dotted-path scenario.</summary>
     private const int DocRevision = 7;
 
@@ -109,6 +112,9 @@ public sealed class QueryRequestBuildingLiveTests
             [Get("/page")]
             Task<string> Paged(int? page);
 
+            [Get("/big")]
+            Task<string> Big(long id);
+
             [Get("/treat")]
             Task<string> Treated([Query(TreatAsString = true)] double raw);
 
@@ -174,6 +180,7 @@ public sealed class QueryRequestBuildingLiveTests
         await harness.AssertParityAsync("NullSkip", [null, "kept"], "/base/nullskip?b=kept");
         await harness.AssertParityAsync("Paged", [PageSeven], "/base/page?page=7");
         await harness.AssertParityAsync("Paged", [null], "/base/page");
+        await harness.AssertParityAsync("Big", [LargeIdentifier], "/base/big?id=9000000000");
         await harness.AssertParityAsync("Templated", ["two"], "/base/tmpl?fixed=1&extra=two");
     }
 
