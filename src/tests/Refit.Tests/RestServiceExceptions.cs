@@ -37,12 +37,16 @@ public class RestServiceExceptions
         await AssertExceptionContains("HeaderCollection parameter of type", exception!);
     }
 
-    /// <summary>Verifies that a URL not starting with a slash throws.</summary>
+    /// <summary>Verifies that a URL not starting with a slash throws under legacy resolution. Generated request building
+    /// validates the leading slash when the request is built rather than when the client is created, so the throw
+    /// surfaces on the first call instead of from <see cref="RestService.For{T}(string, RefitSettings)"/>.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     public async Task UrlDoesntStartWithSlashShouldThrow()
     {
-        var exception = await Assert.That(static () => RestService.For<IDoesNotStartSlash>(BaseAddress)).ThrowsExactly<ArgumentException>();
+        var api = RestService.For<IDoesNotStartSlash>(BaseAddress);
+        Func<Task> call = () => api.GetValue();
+        var exception = await Assert.That(call).ThrowsExactly<ArgumentException>();
         await AssertExceptionContains("must start with '/' and be of the form", exception!);
     }
 

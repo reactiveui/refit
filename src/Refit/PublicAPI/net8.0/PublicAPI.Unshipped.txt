@@ -13,3 +13,4 @@ static Refit.GeneratedRequestRunner.SendObservable<T, TBody>(System.Net.Http.Htt
 Refit.RestMethodParameterProperty.RestMethodParameterProperty(string! name, System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo!>! propertyChain) -> void
 Refit.RestMethodParameterProperty.PropertyChain.get -> System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo!>!
 Refit.RestMethodParameterProperty.PropertyChain.set -> void
+static Refit.GeneratedRequestRunner.SerializeMultipartPart<T>(Refit.RefitSettings! settings, T value, string! fieldName) -> System.Net.Http.HttpContent!

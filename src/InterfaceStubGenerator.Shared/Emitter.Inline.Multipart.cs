@@ -167,8 +167,10 @@ internal static partial class Emitter
             case MultipartPartKind.Serialized:
             {
                 // A sealed/value part is JSON-serialized under its field name, matching AddSerializedMultipartItem's
-                // serializer fallback. The declared type drives ToHttpContent<T>, so the serialized form matches.
-                _ = sb.Append(settingsLocal).Append(".ContentSerializer.ToHttpContent(").Append(value).Append("), ")
+                // serializer fallback. The declared type drives ToHttpContent<T>, so the serialized form matches; a
+                // serialization failure is wrapped in the same descriptive ArgumentException the reflection builder raises.
+                _ = sb.Append("global::Refit.GeneratedRequestRunner.SerializeMultipartPart(").Append(settingsLocal)
+                    .Append(", ").Append(value).Append(", ").Append(fieldName).Append("), ")
                     .Append(fieldName).AppendLine(");");
                 break;
             }

@@ -351,6 +351,10 @@ significant, exactly as with `HttpClient`:
 [Get("/values")]  // -> https://api.example.com/values         (leading slash replaces the base path)
 ```
 
+> **Note:** with generated request building (the default), a leading-slash-less route under the default legacy
+> resolution is validated when the request is built — so the `ArgumentException` surfaces on the first call rather than
+> from `RestService.For<T>(...)`. Under `UrlResolutionMode.Rfc3986` the route is valid and no exception is raised.
+
 ### Querystrings
 
 #### Dynamic Querystring Parameters

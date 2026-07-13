@@ -834,6 +834,30 @@ public static class GeneratedRequestRunner
 #endif
     }
 
+    /// <summary>Serializes a multipart part through the content serializer, wrapping a failure with the same descriptive
+    /// argument exception the reflection request builder raises for an unserializable part.</summary>
+    /// <typeparam name="T">The declared part type.</typeparam>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="value">The part value to serialize.</param>
+    /// <param name="fieldName">The multipart field name, named in the failure message.</param>
+    /// <returns>The serialized HTTP content.</returns>
+    /// <exception cref="ArgumentException">The content serializer could not serialize the value.</exception>
+    public static HttpContent SerializeMultipartPart<T>(RefitSettings settings, T value, string fieldName)
+    {
+        try
+        {
+            return settings.ContentSerializer.ToHttpContent(value);
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException(
+                $"Unexpected parameter type in a Multipart request. Parameter {fieldName} is of type {value?.GetType().Name}, "
+                    + "whereas allowed types are String, Stream, FileInfo, Byte array and anything that's JSON serializable",
+                nameof(value),
+                ex);
+        }
+    }
+
     /// <summary>Determines whether the body should use the legacy JSON enum member.</summary>
     /// <param name="serializationMethod">The body serialization method.</param>
     /// <returns><see langword="true"/> for the legacy JSON value.</returns>
