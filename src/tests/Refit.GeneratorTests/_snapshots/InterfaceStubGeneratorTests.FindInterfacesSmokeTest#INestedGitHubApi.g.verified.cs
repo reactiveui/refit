@@ -45,10 +45,6 @@ namespace Refit.Implementation
             {
                 var refitSettings = _settings;
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, ((7, 17), _settings.UrlParameterFormatter.Format(userName, ______userNameAttributeProvider, typeof(string)))), refitSettings.UrlResolution));
-                #if NET6_0_OR_GREATER
-                refitRequest.Version = refitSettings.Version;
-                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
-                #endif
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 return global::Refit.GeneratedRequestRunner.SendAsync<global::Refit.Tests.User, global::Refit.Tests.User>(
@@ -95,10 +91,6 @@ namespace Refit.Implementation
             {
                 var refitSettings = _settings;
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/orgs/{orgname}/members", refitSettings.AllowUnmatchedRouteParameters, ((6, 15), _settings.UrlParameterFormatter.Format(orgName, ______orgNameAttributeProvider, typeof(string)))), refitSettings.UrlResolution));
-                #if NET6_0_OR_GREATER
-                refitRequest.Version = refitSettings.Version;
-                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
-                #endif
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 return global::Refit.GeneratedRequestRunner.SendAsync<global::System.Collections.Generic.List<global::Refit.Tests.User>, global::System.Collections.Generic.List<global::Refit.Tests.User>>(
@@ -129,10 +121,6 @@ namespace Refit.Implementation
             {
                 var refitSettings = _settings;
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/", refitSettings.UrlResolution));
-                #if NET6_0_OR_GREATER
-                refitRequest.Version = refitSettings.Version;
-                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
-                #endif
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 return global::Refit.GeneratedRequestRunner.SendAsync<global::System.Net.Http.HttpResponseMessage, global::System.Net.Http.HttpResponseMessage>(
@@ -160,10 +148,6 @@ namespace Refit.Implementation
             {
                 var refitSettings = _settings;
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/give-me-some-404-action", refitSettings.UrlResolution));
-                #if NET6_0_OR_GREATER
-                refitRequest.Version = refitSettings.Version;
-                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
-                #endif
                 global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.TestNested.INestedGitHubApi));
                 return global::Refit.GeneratedRequestRunner.SendVoidAsync(

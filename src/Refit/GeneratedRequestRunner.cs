@@ -413,7 +413,7 @@ public static class GeneratedRequestRunner
         }
     }
 
-    /// <summary>Adds configured request options/properties shared by every generated request.</summary>
+    /// <summary>Adds configured request options/properties and HTTP version and version policy shared by every generated request.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="settings">The Refit settings to use.</param>
     /// <param name="interfaceType">The generated interface type.</param>
@@ -431,6 +431,11 @@ public static class GeneratedRequestRunner
         }
 
         AddRequestProperty<Type>(request, HttpRequestMessageOptions.InterfaceType, interfaceType);
+
+#if NET6_0_OR_GREATER
+        request.Version = settings.Version;
+        request.VersionPolicy = settings.VersionPolicy;
+#endif
     }
 
     /// <summary>Adds one generated request property or option value.</summary>

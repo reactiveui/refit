@@ -146,10 +146,6 @@ internal static partial class Emitter
         return $$"""
             {{paramInfoSb}}{{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
             {{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{ToHttpMethodExpression(request.HttpMethod)}}, {{requestUriExpression}});
-            {{bodyIndent}}#if NET6_0_OR_GREATER
-            {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
-            {{bodyIndent}}{{requestLocal}}.VersionPolicy = {{settingsLocal}}.VersionPolicy;
-            {{bodyIndent}}#endif
             {{contentSource}}{{headerSource}}{{requestPropertySource}}{{returnSource}}{{methodIndent}}}
 
             """;
