@@ -771,7 +771,7 @@ dotnet_diagnostic.IDE0084.severity = error # Use pattern matching ('IsNot' opera
 dotnet_diagnostic.IDE0090.severity = none # Simplify 'new' expression — covered by SST2202
 dotnet_diagnostic.IDE0100.severity = none # Remove unnecessary equality operator — covered by SST1143
 dotnet_diagnostic.IDE0110.severity = none # Remove unnecessary discard — covered by SST2213
-dotnet_diagnostic.IDE0120.severity = none # Simplify LINQ expression — covered by SST2229/SST2233
+dotnet_diagnostic.IDE0120.severity = none # Simplify LINQ expression — covered by PSH1100/PSH1101
 dotnet_diagnostic.IDE0150.severity = none # Prefer 'null' check over type check — covered by SST2231
 dotnet_diagnostic.IDE0161.severity = none # Use file-scoped namespace declaration — covered by SST2237
 dotnet_diagnostic.IDE0170.severity = none # Simplify property pattern — covered by SST2238
@@ -1136,19 +1136,19 @@ stylesharp.document_private_fields = true
 stylesharp.document_interfaces = all
 stylesharp.SST1305.allowed_hungarian_prefixes = rx
 stylesharp.instance_member_qualification = omit_this
-stylesharp.avoid_linq_on_hot_path = true
 stylesharp.max_cyclomatic_complexity = 10
 stylesharp.max_cognitive_complexity = 15
 stylesharp.max_property_cognitive_complexity = 3
 # SST1484 also reports a field that shadows one inherited from a base type.
 stylesharp.SST1484.check_base_types = true
-# stylesharp.max_line_length = 120                         # SST1521 (characters)
+stylesharp.max_line_length = 200                           # SST1521 (characters; keeps the limit this repo has always enforced)
 # stylesharp.max_file_lines = 500                          # SST1522 (code lines; blank lines and comments do not count)
 # stylesharp.max_member_lines = 60                         # SST1523 (code lines)
 # stylesharp.max_switch_section_lines = 20                 # SST1524 (code lines)
 # stylesharp.include_internal = true                       # SST1499 (set false to report only fields visible outside the assembly)
 # stylesharp.require_parameterless = true                  # SST1488 (set false where every exception must carry a message)
 # stylesharp.include_non_public_types = true               # SST1488 (set false to check only externally visible exceptions)
+performancesharp.avoid_linq_on_hot_path = true             # PSH1100 (product code bans LINQ outright; tests relax this)
 # performancesharp.empty_string_style = pattern            # PSH1204 (pattern | length | is_null_or_empty; the last two are only offered where the string is provably not null)
 # performancesharp.include_public = false                  # PSH1411 (set true in an app to seal public types too; a break in a library)
 # performancesharp.excluded_properties = Items, Keys       # PSH1017 (comma-separated; properties allowed to copy on read)
@@ -1186,7 +1186,6 @@ dotnet_diagnostic.SST1028.severity = error # A line ends with trailing whitespac
 
 # Readability and maintainability
 dotnet_diagnostic.SST1100.severity = error # A base. prefix is used where the type does not override the member
-dotnet_diagnostic.SST1101.severity = none # An instance member is accessed without a this. prefix — we don't require this. prefixing
 dotnet_diagnostic.SST1102.severity = error # A query clause is separated from the previous clause by a blank line
 dotnet_diagnostic.SST1103.severity = error # Query clauses mix single-line and multi-line layout
 dotnet_diagnostic.SST1104.severity = error # A query clause shares the last line of a multi-line previous clause
@@ -1356,7 +1355,6 @@ dotnet_diagnostic.SST1430.severity = error # Rethrow with 'throw;' to preserve t
 dotnet_diagnostic.SST1431.severity = error # Static members of a generic type should use a type parameter
 dotnet_diagnostic.SST1432.severity = error # Classes with only static members should be static
 dotnet_diagnostic.SST1433.severity = error # Redundant constructors should be removed
-dotnet_diagnostic.SST1434.severity = error # Empty finalizers should be removed
 dotnet_diagnostic.SST1435.severity = error # Empty namespace declarations should be removed
 dotnet_diagnostic.SST1436.severity = error # Empty types should not be declared
 dotnet_diagnostic.SST1437.severity = error # Empty interfaces should not be declared
@@ -1500,7 +1498,6 @@ dotnet_diagnostic.SST1658.severity = error # Documentation repeats a word
 dotnet_diagnostic.SST1659.severity = error # A comment has no text at all
 
 # Concurrency and modernization
-dotnet_diagnostic.SST1900.severity = error # A dedicated object lock field should be a System.Threading.Lock
 dotnet_diagnostic.SST1901.severity = error # A lock targets a field or property reachable from outside the declaring type
 dotnet_diagnostic.SST1902.severity = error # Do not lock on 'this', a Type, or a string
 dotnet_diagnostic.SST1903.severity = error # Do not lock on a newly-created object
@@ -1569,11 +1566,8 @@ dotnet_diagnostic.SST2225.severity = error # A foreach loop hides an explicit el
 dotnet_diagnostic.SST2226.severity = error # A cast hides an inner explicit conversion
 dotnet_diagnostic.SST2227.severity = error # A post-assignment null fallback can be folded into the assigned expression
 dotnet_diagnostic.SST2228.severity = error # A delegate local used only as a call target can be a local function
-dotnet_diagnostic.SST2229.severity = none # LINQ terminal predicate simplification is reserved for test code; production code should avoid LINQ on hot paths
-dotnet_diagnostic.SST2230.severity = none # LINQ type-filter simplification is reserved for test code; production code should avoid LINQ on hot paths
 dotnet_diagnostic.SST2231.severity = error # A broad object pattern can use a direct null pattern
 dotnet_diagnostic.SST2232.severity = error # nameof does not need concrete generic type arguments
-dotnet_diagnostic.SST2233.severity = error # Hot-path code should avoid System.Linq.Enumerable calls
 dotnet_diagnostic.SST2234.severity = error # Nullable<T> should use the T? shorthand
 dotnet_diagnostic.SST2235.severity = error # Capture-free local functions should be static
 dotnet_diagnostic.SST2236.severity = error # Tail-position using blocks can use using declarations
@@ -1637,9 +1631,9 @@ dotnet_diagnostic.PSH1019.severity = error # The range indexer on an array alloc
 dotnet_diagnostic.PSH1020.severity = error # Prefer a jagged array over a multidimensional one
 
 # Collections
-# dotnet_diagnostic.PSH1100.severity = error # Avoid LINQ calls on hot paths (opt-in; also set performancesharp.avoid_linq_on_hot_path = true)
-dotnet_diagnostic.PSH1101.severity = error # Carry LINQ predicates at the terminal call
-dotnet_diagnostic.PSH1102.severity = error # Filter LINQ values by type once
+dotnet_diagnostic.PSH1100.severity = error # Hot-path code should avoid System.Linq.Enumerable calls
+dotnet_diagnostic.PSH1101.severity = none # LINQ terminal predicate simplification is reserved for test code; production code should avoid LINQ on hot paths
+dotnet_diagnostic.PSH1102.severity = none # LINQ type-filter simplification is reserved for test code; production code should avoid LINQ on hot paths
 dotnet_diagnostic.PSH1103.severity = error # Prefer the collection's own count over enumerating
 dotnet_diagnostic.PSH1104.severity = error # Use TryGetValue instead of ContainsKey followed by an indexer read
 dotnet_diagnostic.PSH1105.severity = error # Avoid double lookups on dictionaries and sets
@@ -2087,7 +2081,7 @@ dotnet_diagnostic.S927.severity = none # Parameter names should match base decla
 ###################
 # SonarAnalyzer (Sxxxx) - Major Code Smell
 ###################
-dotnet_diagnostic.S103.severity = error # Lines should not be too long
+dotnet_diagnostic.S103.severity = none # Lines should not be too long — covered by SST1521
 dotnet_diagnostic.S104.severity = error # Files should not have too many lines of code
 dotnet_diagnostic.S106.severity = none # Standard outputs should not be used directly to log anything — covered by SST1449
 dotnet_diagnostic.S1066.severity = error # Mergeable "if" statements should be combined
@@ -2146,7 +2140,7 @@ dotnet_diagnostic.S3442.severity = none # "abstract" classes should not have "pu
 dotnet_diagnostic.S3445.severity = none # Exceptions should not be explicitly rethrown — covered by SST1430
 dotnet_diagnostic.S3457.severity = none # Composite format strings should be used correctly — covered by SST1454
 dotnet_diagnostic.S3597.severity = error # "ServiceContract" and "OperationContract" attributes should be used together
-dotnet_diagnostic.S3880.severity = none # Finalizers should not be empty — covered by SST1434
+dotnet_diagnostic.S3880.severity = none # Finalizers should not be empty — covered by PSH1002
 dotnet_diagnostic.S3881.severity = error # "IDisposable" should be implemented correctly
 dotnet_diagnostic.S3885.severity = error # "Assembly.Load" should be used
 dotnet_diagnostic.S3898.severity = none # Value types should implement "IEquatable<T>" — covered by PSH1005
