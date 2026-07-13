@@ -50,10 +50,10 @@ internal static partial class Parser
         var formattableSymbol = compilation.GetTypeByMetadataName("System.IFormattable");
 
         // Resolve the value-formatting fast-path capabilities once per pass (never per interface or per parameter) and
-        // thread them through the context. ISpanFormattable is net6+; the span overload of Uri.EscapeDataString is
-        // net10+. A missing capability simply leaves that tier off, so the generator only emits what the target compiles.
+        // thread them through the context. ISpanFormattable is net6+, and the query builder percent-encodes a formatted
+        // span in place on every net6+ target, so the span-escape tier applies wherever ISpanFormattable exists.
         var spanFormattableSymbol = compilation.GetTypeByMetadataName("System.ISpanFormattable");
-        var supportsSpanEscape = HasSpanEscapeDataString(compilation);
+        var supportsSpanEscape = spanFormattableSymbol is not null;
 
         var diagnostics = new List<Diagnostic>();
         if (httpMethodBaseAttributeSymbol is null)
@@ -141,28 +141,6 @@ internal static partial class Parser
             emitGeneratedCodeMarkers,
             interfaceModels);
         return (diagnostics, contextGenerationSpec);
-    }
-
-    /// <summary>Determines whether the consumer target exposes the span overload of <c>Uri.EscapeDataString</c> (net10+).</summary>
-    /// <param name="compilation">The compilation to probe.</param>
-    /// <returns><see langword="true"/> when <c>Uri.EscapeDataString(ReadOnlySpan&lt;char&gt;)</c> is available.</returns>
-    /// <remarks>Resolved once per generation pass and threaded through the context, never re-evaluated per interface.</remarks>
-    private static bool HasSpanEscapeDataString(CSharpCompilation compilation)
-    {
-        if (compilation.GetTypeByMetadataName("System.Uri") is not { } uriSymbol)
-        {
-            return false;
-        }
-
-        foreach (var member in uriSymbol.GetMembers("EscapeDataString"))
-        {
-            if (member is IMethodSymbol { Parameters: [{ Type.Name: "ReadOnlySpan" }] })
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /// <summary>Builds the internal generated namespace from a consumer-provided namespace prefix.</summary>

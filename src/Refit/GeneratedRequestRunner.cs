@@ -143,7 +143,7 @@ public static class GeneratedRequestRunner
     }
 #endif
 
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
     /// <summary>Builds a single-placeholder request path, formatting an <see cref="ISpanFormattable"/> value into a stack
     /// buffer and escaping the span directly, so the intermediate formatted string is never allocated.</summary>
     /// <typeparam name="T">The span-formattable value type.</typeparam>
@@ -162,21 +162,28 @@ public static class GeneratedRequestRunner
         where T : ISpanFormattable
     {
         var pathSpan = relativePathTemplate.AsSpan();
-        using var sb = new ValueStringBuilder(stackalloc char[256]);
-        sb.Append(pathSpan[..range.startIdx]);
-
-        Span<char> buffer = stackalloc char[128];
-        if (value.TryFormat(buffer, out var written, format.AsSpan(), System.Globalization.CultureInfo.InvariantCulture))
+        var sb = new ValueStringBuilder(stackalloc char[256]);
+        try
         {
-            sb.Append(Uri.EscapeDataString((ReadOnlySpan<char>)buffer[..written]));
-        }
-        else
-        {
-            sb.Append(StringHelpers.EscapeDataString(value.ToString(format, System.Globalization.CultureInfo.InvariantCulture)));
-        }
+            sb.Append(pathSpan[..range.startIdx]);
 
-        sb.Append(pathSpan[range.endIdx..]);
-        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+            Span<char> buffer = stackalloc char[128];
+            if (value.TryFormat(buffer, out var written, format.AsSpan(), System.Globalization.CultureInfo.InvariantCulture))
+            {
+                StringHelpers.AppendUriDataEscaped(ref sb, buffer[..written]);
+            }
+            else
+            {
+                sb.Append(StringHelpers.EscapeDataString(value.ToString(format, System.Globalization.CultureInfo.InvariantCulture)));
+            }
+
+            sb.Append(pathSpan[range.endIdx..]);
+            return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+        }
+        finally
+        {
+            sb.Dispose();
+        }
     }
 #endif
 

@@ -324,18 +324,13 @@ public ref struct GeneratedQueryStringBuilder
             }
 
             var formatted = (ReadOnlySpan<char>)buffer[..written];
-#if NET9_0_OR_GREATER
             if (escape)
             {
-                target.Append(Uri.EscapeDataString(formatted));
+                // Percent-encode straight into the builder with no intermediate escaped string, on every target
+                // framework (the span overload of Uri.EscapeDataString only exists on net9+).
+                StringHelpers.AppendUriDataEscaped(ref target, formatted);
                 return;
             }
-#else
-            // Pre-net9 has no span overload of Uri.EscapeDataString; the generator only routes a URL-unreserved integer
-            // to the escaping path, whose digits (and an optional leading '-') are already URL-safe, so it is appended
-            // verbatim just like an unescaped value.
-            _ = escape;
-#endif
 
             // Copy into a reserved slice so the stack buffer is never captured by the builder (ref-safety), matching a
             // verbatim span append with no intermediate string.
@@ -349,5 +344,6 @@ public ref struct GeneratedQueryStringBuilder
             }
         }
     }
+
 #endif
 }
