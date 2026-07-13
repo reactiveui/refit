@@ -221,7 +221,7 @@ internal static partial class Parser
         // A sealed or value type (bool, enum, sealed DTO) is written through the content serializer, exactly as the
         // reflection builder's serializer fallback does; its declared type is the runtime type, so the serialized form
         // matches. An open, interface, or object-typed part stays on the reflection path (runtime type decides).
-        return IsSealedComplexType(type) ? MultipartPartKind.Serialized : null;
+        return IsConcreteComplexType(type) ? MultipartPartKind.Serialized : null;
     }
 
     /// <summary>Gets the reference-typed element of an enumerable parameter, or null when it is not one.</summary>

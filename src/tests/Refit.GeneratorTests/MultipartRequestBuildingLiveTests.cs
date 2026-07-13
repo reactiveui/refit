@@ -30,7 +30,8 @@ public sealed class MultipartRequestBuildingLiveTests
 
         namespace Refit.LiveMultipart;
 
-        public sealed class Report
+        // Not sealed: exercises the concrete (non-sealed) serialized part; the test value is not a subtype.
+        public class Report
         {
             public string? Title { get; set; }
 
@@ -172,7 +173,7 @@ public sealed class MultipartRequestBuildingLiveTests
             ]);
     }
 
-    /// <summary>Verifies generated serialized parts (a bool and a sealed DTO) match the reflection builder, byte for byte
+    /// <summary>Verifies generated serialized parts (a bool and a concrete (non-sealed) DTO) match the reflection builder, byte for byte
     /// through the content serializer, mirroring its <c>AddSerializedMultipartItem</c> fallback.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

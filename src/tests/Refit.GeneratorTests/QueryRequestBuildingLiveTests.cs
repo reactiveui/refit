@@ -102,7 +102,9 @@ public sealed class QueryRequestBuildingLiveTests
             public Bounds? Window { get; set; }
         }
 
-        public sealed class Facet
+        // Deliberately not sealed: exercises the concrete (non-sealed) declared-type flatten. The test value is not a
+        // subtype, so the declared-type flatten matches the reflection builder's runtime-type flatten exactly.
+        public class Facet
         {
             public string? Name { get; set; }
 
@@ -309,13 +311,13 @@ public sealed class QueryRequestBuildingLiveTests
         _ = await harness.AssertParityAsync("RangeSearch", [query], "/base/range?Window=1..9");
     }
 
-    /// <summary>Verifies a dictionary of a sealed complex value type flattens each entry under the entry key, matching
+    /// <summary>Verifies a dictionary of a concrete (non-sealed) complex value type flattens each entry under the entry key, matching
     /// the reflection builder's per-value nested map (<c>key.Property=value</c>).</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
     [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
-    public async Task DictionaryOfSealedValuesMatchesReflection()
+    public async Task DictionaryOfConcreteValuesMatchesReflection()
     {
         using var harness = LiveQueryHarness.Create();
 

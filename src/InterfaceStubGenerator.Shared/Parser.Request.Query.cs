@@ -344,7 +344,7 @@ internal static partial class Parser
         }
 
         if (format is null
-            && IsSealedComplexType(valueType)
+            && IsConcreteComplexType(valueType)
             && TryBuildQueryObjectProperties(valueType, null, formattableSymbol, context) is { } properties)
         {
             inlineable = true;
@@ -355,11 +355,18 @@ internal static partial class Parser
         return null;
     }
 
-    /// <summary>Determines whether a type is a sealed or value complex type whose declared shape is its runtime shape.</summary>
+    /// <summary>Determines whether a type is a concrete complex type flattened or serialized by its declared shape.</summary>
     /// <param name="type">The type to inspect.</param>
-    /// <returns><see langword="true"/> for a sealed class or value type that is neither <c>object</c> nor a collection.</returns>
-    private static bool IsSealedComplexType(ITypeSymbol type) =>
-        (type.IsValueType || type.IsSealed)
+    /// <returns><see langword="true"/> for a concrete class or value type that is neither <c>object</c> nor a collection.</returns>
+    /// <remarks>
+    /// Non-sealed types are accepted: the generator uses the declared shape, the same accepted divergence a non-sealed
+    /// query object already carries (matching the System.Text.Json source generator). For a value that is not a runtime
+    /// subtype the rendering matches the reflection builder exactly; a polymorphic subtype value renders by its declared
+    /// type instead of its runtime type. An <c>object</c>, interface, or open generic type has no usable declared shape
+    /// and stays on the reflection path.
+    /// </remarks>
+    private static bool IsConcreteComplexType(ITypeSymbol type) =>
+        type.TypeKind is TypeKind.Class or TypeKind.Struct
         && type.SpecialType != SpecialType.System_Object
         && !TryGetEnumerableElementType(type, out _);
 
