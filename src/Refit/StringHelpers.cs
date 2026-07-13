@@ -125,7 +125,7 @@ internal static class StringHelpers
         {
             if (c > MaxAsciiChar)
             {
-#if NET10_0_OR_GREATER
+#if NET9_0_OR_GREATER
                 target.Append(Uri.EscapeDataString(span));
 #else
                 target.Append(Uri.EscapeDataString(span.ToString()));
