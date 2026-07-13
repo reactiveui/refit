@@ -109,6 +109,14 @@ public sealed class QueryRequestBuildingLiveTests
             public int Count { get; set; }
         }
 
+        // The HTTP QUERY method (currently a draft standard): a custom verb attribute carrying a body.
+        public sealed class QueryVerbAttribute : HttpMethodAttribute
+        {
+            public QueryVerbAttribute(string path) : base(path) { }
+
+            public override System.Net.Http.HttpMethod Method => new System.Net.Http.HttpMethod("QUERY");
+        }
+
         public interface ILiveQueryApi
         {
             [Get("/search")]
@@ -171,6 +179,12 @@ public sealed class QueryRequestBuildingLiveTests
 
             [Get("/facets")]
             Task<string> Facets(Dictionary<string, Facet> facets);
+
+            [QueryVerb("/documents")]
+            Task<string> QueryDocuments([Body] CreatePayload body);
+
+            [QueryVerb("/rows")]
+            Task<string> QueryRows([Query] RangeQuery filter);
 
             [Get("/when")]
             Task<string> When(DateTimeOffset at);
@@ -308,6 +322,32 @@ public sealed class QueryRequestBuildingLiveTests
         var facet = harness.CreateApiValue("Refit.LiveQuery.Facet", ("Name", "blue"), ("Count", WindowMin));
         var facets = harness.CreateStringKeyedDictionary("Refit.LiveQuery.Facet", ("color", facet));
         _ = await harness.AssertParityAsync("Facets", [facets], "/base/facets?color.Name=blue&color.Count=1");
+    }
+
+    /// <summary>Verifies a custom HTTP QUERY verb attribute (a draft-standard body-carrying method) generates inline and
+    /// matches the reflection builder: the request uses the custom verb, carries an explicit body, and - since the verb is
+    /// not yet body-capable - flattens an un-attributed complex parameter into the query, all at parity.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task QueryVerbMatchesReflection()
+    {
+        const string queryVerb = "QUERY";
+        using var harness = LiveQueryHarness.Create();
+
+        // An explicit [Body] on the QUERY verb: the generated request uses the custom verb and carries the body.
+        var payload = harness.CreateApiValue("Refit.LiveQuery.CreatePayload", ("Name", "report"));
+        var generated = await harness.InvokeGeneratedAsync("QueryDocuments", [payload], "/base/documents");
+        await Assert.That(generated.Method.Method).IsEqualTo(queryVerb);
+        await Assert.That(harness.LastCapturedContent).IsNotNull();
+        _ = await harness.AssertParityAsync("QueryDocuments", [payload], "/base/documents");
+
+        // The verb is not body-capable for an un-attributed complex parameter yet, so both paths flatten it into the query.
+        var bounds = harness.CreateApiValue("Refit.LiveQuery.Bounds", ("Min", WindowMin), ("Max", WindowMax));
+        var filter = harness.CreateApiValue("Refit.LiveQuery.RangeQuery", ("Window", bounds));
+        var rows = await harness.AssertParityAsync("QueryRows", [filter], "/base/rows?Window=1..9");
+        await Assert.That(rows.Method.Method).IsEqualTo(queryVerb);
     }
 
     /// <summary>Verifies generated query URIs match the reflection builder for formatted values.</summary>
@@ -551,6 +591,7 @@ public sealed class QueryRequestBuildingLiveTests
             await reflectionTask.ConfigureAwait(false);
             var reflectionRequest = handler.TakeLastRequest();
 
+            await Assert.That(generatedRequest.Method).IsEqualTo(reflectionRequest.Method);
             await Assert.That(generatedRequest.RequestUri!.AbsoluteUri)
                 .IsEqualTo(reflectionRequest.RequestUri!.AbsoluteUri);
             return generatedRequest;

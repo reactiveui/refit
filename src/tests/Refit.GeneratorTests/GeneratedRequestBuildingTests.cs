@@ -538,6 +538,37 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).Contains("new global::System.Net.Http.HttpMethod(\"PURGE\")");
     }
 
+    /// <summary>Verifies a custom HTTP QUERY verb attribute (a draft-standard body-carrying method) with an explicit
+    /// <c>[Body]</c> generates inline, emitting the custom verb and serializing the body instead of falling back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnGeneratesInlineForQueryVerbWithBody()
+    {
+        var generated = Fixture.GenerateForDeclaration(
+            """
+            public sealed class QueryVerbAttribute : HttpMethodAttribute
+            {
+                public QueryVerbAttribute(string path) : base(path) { }
+                public override System.Net.Http.HttpMethod Method => new System.Net.Http.HttpMethod("QUERY");
+            }
+
+            public sealed class SearchBody { public string? Term { get; set; } }
+
+            public interface IGeneratedClient
+            {
+                [QueryVerb("/documents")]
+                Task<string> Query([Body] SearchBody body);
+            }
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains(NewHttpRequestMessage);
+        await Assert.That(generated).Contains("new global::System.Net.Http.HttpMethod(\"QUERY\")");
+        await Assert.That(generated).Contains("GeneratedRequestRunner.CreateBodyContent");
+    }
+
     /// <summary>Verifies synchronous Refit methods use the reflective fallback emitter shapes.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
