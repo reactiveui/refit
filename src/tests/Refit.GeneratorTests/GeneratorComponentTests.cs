@@ -676,7 +676,9 @@ public static class GeneratorComponentTests
             await Assert.That(Parser.NormalizeConstantPathForInline("/path?one=1&&two=2#fragment")).IsEqualTo("/path?one=1&two=2");
             await Assert.That(Parser.IsPathSupported(string.Empty)).IsTrue();
             await Assert.That(Parser.IsPathSupported(SimplePath)).IsTrue();
-            await Assert.That(Parser.IsPathSupported("relative")).IsFalse();
+
+            // A no-leading-slash path is supported: it resolves against the base under RFC 3986 and throws under legacy.
+            await Assert.That(Parser.IsPathSupported("relative")).IsTrue();
             await Assert.That(Parser.IsPathSupported("/{id}")).IsTrue();
             await Assert.That(Parser.IsPathSupported("/id}")).IsFalse();
             await Assert.That(Parser.IsPathSupported("/line\nbreak")).IsFalse();

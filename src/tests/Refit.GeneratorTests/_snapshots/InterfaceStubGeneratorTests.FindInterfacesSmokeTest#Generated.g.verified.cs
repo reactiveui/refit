@@ -30,6 +30,8 @@ namespace Refit.Implementation
                 static (client, settings) => new global::Refit.Implementation.Generated.RefitTestsIGitHubApi(client, settings));
             global::Refit.RestService.RegisterGeneratedFactory<global::Refit.Tests.IGitHubApiDisposable>(
                 static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitTestsIGitHubApiDisposable(client, requestBuilder));
+            global::Refit.RestService.RegisterGeneratedSettingsFactory<global::Refit.Tests.IGitHubApiDisposable>(
+                static (client, settings) => new global::Refit.Implementation.Generated.RefitTestsIGitHubApiDisposable(client, settings));
             global::Refit.RestService.RegisterGeneratedFactory<global::Refit.Tests.TestNested.INestedGitHubApi>(
                 static (client, requestBuilder) => new global::Refit.Implementation.Generated.RefitTestsTestNestedINestedGitHubApi(client, requestBuilder));
             global::Refit.RestService.RegisterGeneratedSettingsFactory<global::Refit.Tests.TestNested.INestedGitHubApi>(

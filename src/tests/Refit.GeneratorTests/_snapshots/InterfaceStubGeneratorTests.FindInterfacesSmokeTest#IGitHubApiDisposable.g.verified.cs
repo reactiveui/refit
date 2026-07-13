@@ -37,18 +37,30 @@ namespace Refit.Implementation
                 _settings = requestBuilder.Settings;
             }
 
-            /// <inheritdoc />
-            #if NET5_0_OR_GREATER
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            #endif
-            public async global::System.Threading.Tasks.Task RefitMethod()
+            /// <summary>Initializes a new instance of the RefitTestsIGitHubApiDisposable class for generated-only execution.</summary>
+            /// <param name="client">The HTTP client used by the generated implementation.</param>
+            /// <param name="settings">The settings used by the generated implementation.</param>
+            public RefitTestsIGitHubApiDisposable(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
             {
-                var refitArguments = global::System.Array.Empty<object>();
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("RefitMethod", global::System.Array.Empty<global::System.Type>() );
-
-                await ((global::System.Threading.Tasks.Task)refitFunc(this.Client, refitArguments)).ConfigureAwait(false);
+                Client = client;
+                _settings = settings;
+            }
+            /// <inheritdoc />
+            public global::System.Threading.Tasks.Task RefitMethod()
+            {
+                var refitSettings = _settings;
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "whatever", refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApiDisposable));
+                return global::Refit.GeneratedRequestRunner.SendVoidAsync(
+                    this.Client,
+                    refitRequest,
+                    refitSettings,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
             /// <inheritdoc />

@@ -34,6 +34,7 @@ public static class GeneratedRequestRunner
             return new(relativePath, UriKind.Relative);
         }
 
+        RequireLeadingSlashUnderLegacy(relativePath);
         var basePath = client.BaseAddress?.AbsolutePath
                        ?? throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
         basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
@@ -57,6 +58,7 @@ public static class GeneratedRequestRunner
             return new(relativePath, UriKind.Relative);
         }
 
+        RequireLeadingSlashUnderLegacy(relativePath);
         var basePath = client.BaseAddress?.AbsolutePath
                        ?? throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
         basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
@@ -905,6 +907,20 @@ public static class GeneratedRequestRunner
         var key = path[(i + 1)..j];
         throw new ArgumentException(
             $"URL {relativePathTemplate} has parameter {{{key}}}, but no method parameter matches");
+    }
+
+    /// <summary>Rejects a no-leading-slash path under legacy resolution, matching the reflection request builder.</summary>
+    /// <param name="relativePath">The resolved relative request path.</param>
+    /// <exception cref="ArgumentException">The path is non-empty and does not start with '/'.</exception>
+    private static void RequireLeadingSlashUnderLegacy(string relativePath)
+    {
+        if (relativePath.Length == 0 || relativePath[0] == '/')
+        {
+            return;
+        }
+
+        throw new ArgumentException(
+            $"URL path {relativePath} must start with '/' and be of the form '/foo/bar/baz'");
     }
 
     /// <summary>Adds one pre-boxed configured request property or option value.</summary>

@@ -415,9 +415,6 @@ public class GeneratedRequestBuildingTests
     {
         var generated = Fixture.GenerateForBody(
             """
-            [Get("relative")]
-            Task<string> Relative();
-
             [Get("/bad\r\npath")]
             Task<string> ControlCharacters();
 
@@ -429,8 +426,6 @@ public class GeneratedRequestBuildingTests
             generatedRequestBuilding: true);
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
-        await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"relative\"");
-        await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"/users/{id}\"");
         await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"/bad");
     }
 
