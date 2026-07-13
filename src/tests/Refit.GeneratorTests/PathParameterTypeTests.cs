@@ -35,25 +35,14 @@ public sealed class PathParameterTypeTests
     [Arguments("System.Int128")]
     [Arguments("System.Half")]
     [Arguments("System.DayOfWeek")]
-    public async Task ScalarPathParameterGeneratesInline(string parameterType)
+    [Arguments("byte[]")]
+    [Arguments("int[]")]
+    [Arguments("System.Collections.Generic.List<int>")]
+    public async Task ScalarOrCollectionPathParameterGeneratesInline(string parameterType)
     {
         var generated = Generate($"[Get(\"/items/{{value}}\")] Task<string> Get({parameterType} value);");
 
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
-    }
-
-    /// <summary>Verifies non-scalar path-parameter types fall back to the reflection request builder.</summary>
-    /// <param name="parameterType">The path parameter type expression.</param>
-    /// <returns>A task representing the asynchronous test.</returns>
-    [Test]
-    [Arguments("byte[]")]
-    [Arguments("int[]")]
-    [Arguments("System.Collections.Generic.List<int>")]
-    public async Task NonScalarPathParameterFallsBack(string parameterType)
-    {
-        var generated = Generate($"[Get(\"/items/{{value}}\")] Task<string> Get({parameterType} value);");
-
-        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
     }
 
     /// <summary>Verifies an enum with duplicate constants as a path parameter renders through the URL parameter

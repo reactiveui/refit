@@ -602,18 +602,19 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <returns><see langword="true"/> when the value stringifies with the same result as the reflection builder.</returns>
     /// <remarks>
-    /// A simple type formats through the fast path. Any concrete class or struct also binds inline: the reflection builder
-    /// renders a route value with <c>UrlParameterFormatter.Format(value, ...)</c>, which for a non-<c>IFormattable</c> value
-    /// is <c>value.ToString()</c> - a virtual call that dispatches to the runtime type in the generated code exactly as it
-    /// does in the reflection builder, so a runtime subtype renders identically. (The only divergence is the vanishing case
-    /// of a subtype whose <c>IFormattable.ToString(null, invariant)</c> differs from its parameterless <c>ToString()</c>.)
-    /// An <c>object</c>, interface, or open generic type stays on the reflection path - it has no usable declared shape.
+    /// A simple type formats through the fast path. Any concrete class, struct, or array (including a collection like
+    /// <c>List&lt;int&gt;</c> or <c>byte[]</c>) also binds inline: the reflection builder renders a route value with
+    /// <c>UrlParameterFormatter.Format(value, ...)</c>, which for a non-<c>IFormattable</c> value is <c>value.ToString()</c>
+    /// - a virtual call that dispatches to the runtime type in the generated code exactly as it does in the reflection
+    /// builder, so a runtime subtype (and a collection's <c>System.Collections…</c> text) renders identically. (The only
+    /// divergence is the vanishing case of a subtype whose <c>IFormattable.ToString(null, invariant)</c> differs from its
+    /// parameterless <c>ToString()</c>.) An <c>object</c>, interface, or open generic type stays on the reflection path -
+    /// it has no usable declared shape.
     /// </remarks>
     private static bool CanInlinePathParameterType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol) =>
         IsSimpleType(type, formattableSymbol)
-        || (type.TypeKind is TypeKind.Class or TypeKind.Struct
-            && type.SpecialType != SpecialType.System_Object
-            && !TryGetEnumerableElementType(type, out _));
+        || (type.SpecialType != SpecialType.System_Object
+            && type.TypeKind is TypeKind.Class or TypeKind.Struct or TypeKind.Array);
 
     /// <summary>Parses a parameter bound to a round-tripping <c>{**name}</c> placeholder.</summary>
     /// <remarks>Round-tripping normally needs the reflection builder's per-segment escaping, but an
