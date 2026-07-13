@@ -739,6 +739,43 @@ public partial class RestMethodInfoTests
             .ThrowsExactly<ArgumentException>();
     }
 
+    /// <summary>Verifies a deep dotted route placeholder whose root segment matches no parameter is rejected.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task DeepDottedRouteWithUnknownRootParameterThrows()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithUnknownRootParameter));
+
+        await Assert.That(() => new RestMethodInfoInternal(input, method))
+            .ThrowsExactly<ArgumentException>();
+    }
+
+    /// <summary>Verifies a deep dotted route placeholder rooted on a value-type parameter is rejected, because a
+    /// value-type parameter cannot own a nested property chain.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task DeepDottedRouteWithValueTypeRootParameterThrows()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithValueTypeRootParameter));
+
+        await Assert.That(() => new RestMethodInfoInternal(input, method))
+            .ThrowsExactly<ArgumentException>();
+    }
+
+    /// <summary>Verifies a deep dotted route placeholder whose final nested property does not exist is rejected.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task DeepDottedRouteWithUnknownNestedPropertyThrows()
+    {
+        var input = typeof(IRestMethodInfoTests);
+        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithUnknownNestedProperty));
+
+        await Assert.That(() => new RestMethodInfoInternal(input, method))
+            .ThrowsExactly<ArgumentException>();
+    }
+
     /// <summary>Verifies only one authorization parameter may be declared.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

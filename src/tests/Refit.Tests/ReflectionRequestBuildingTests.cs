@@ -92,4 +92,22 @@ public sealed class ReflectionRequestBuildingTests
 
         await Assert.That(output.Headers.GetValues("X-Base")).IsCollectionEqualTo(["base"]);
     }
+
+    /// <summary>Verifies RFC 3986 resolution splits a route template's inline query string from its path and merges it
+    /// with the dynamic query parameters.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task Rfc3986ResolutionMergesInlineTemplateQueryWithQueryParameters()
+    {
+        const int pageNumber = 3;
+        var settings = new RefitSettings { UrlResolution = UrlResolutionMode.Rfc3986 };
+        var fixture = new RequestBuilderImplementation<IRfcUrlResolutionApi>(settings);
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IRfcUrlResolutionApi.GetValuesWithQuery));
+
+        var output = await factory([pageNumber]);
+
+        // The reflection builder assigns a relative URI ("values?active=true&page=3") that the HttpClient resolves
+        // against the base address once the request is sent, so the captured request carries the merged absolute URI.
+        await Assert.That(output.RequestUri!.AbsoluteUri).IsEqualTo("http://api/values?active=true&page=3");
+    }
 }

@@ -2,6 +2,8 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Numerics;
+
 namespace Refit.Tests;
 
 /// <summary>Verifies the null-omission and collection-delimiter behavior of <see cref="GeneratedQueryStringBuilder"/>.</summary>
@@ -12,6 +14,10 @@ public sealed class GeneratedQueryStringBuilderTests
 
     /// <summary>The query key shared by the builder fixtures.</summary>
     private const string Key = "k";
+
+    /// <summary>The number of trailing zeros in the buffer-overflowing value, chosen to exceed both the 128-char stack
+    /// buffer and the first 256-char rented buffer so the format loop grows twice and returns the earlier rented buffer.</summary>
+    private const int LongValueZeroCount = 300;
 
     /// <summary>Verifies a null value omits its parameter, leaving the path unchanged.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -51,6 +57,43 @@ public sealed class GeneratedQueryStringBuilderTests
         var result = JoinCollection(CollectionFormat.Tsv);
 
         await Assert.That(result).IsEqualTo("/x?k=a%09b");
+    }
+
+    /// <summary>Verifies a pre-escaped key with a null value omits the parameter, leaving the path unchanged.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddPreEscapedKeyOmitsParameterForNullValue()
+    {
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.AddPreEscapedKey(Key, null, false);
+
+        await Assert.That(builder.Build()).IsEqualTo(Path);
+    }
+
+    /// <summary>Verifies a span-formattable value is rendered straight into the query.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddFormattedRendersSpanFormattableValue()
+    {
+        const int value = 42;
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.AddFormatted(Key, value, null, false);
+
+        await Assert.That(builder.Build()).IsEqualTo("/x?k=42");
+    }
+
+    /// <summary>Verifies a span-formattable value longer than the stack buffer and first rented buffer grows the rented
+    /// buffer twice and still renders in full.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AddFormattedGrowsRentedBufferForLongValue()
+    {
+        var value = BigInteger.Pow(10, LongValueZeroCount);
+        var builder = new GeneratedQueryStringBuilder(Path);
+        builder.AddFormatted(Key, value, null, false);
+
+        var expected = "/x?k=1" + new string('0', LongValueZeroCount);
+        await Assert.That(builder.Build()).IsEqualTo(expected);
     }
 
     /// <summary>Appends a single value and returns the built relative path.</summary>

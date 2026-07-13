@@ -1162,6 +1162,48 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(uri.OriginalString).IsEqualTo("x");
     }
 
+    /// <summary>Verifies the query-format overload also emits the relative path verbatim under RFC 3986 resolution,
+    /// where the escaping format is irrelevant.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRelativeUriWithQueryFormatEmitsRelativePathInRfcMode()
+    {
+        using var client = new HttpClient();
+
+        var uri = GeneratedRequestRunner.BuildRelativeUri(client, "x", UrlResolutionMode.Rfc3986, UriFormat.UriEscaped);
+
+        await Assert.That(uri.OriginalString).IsEqualTo("x");
+    }
+
+    /// <summary>Verifies a cold observable links the method's cancellation token with the per-subscription token when
+    /// both can cancel, and still yields the response.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SendObservableLinksMethodAndSubscriptionCancellationTokens()
+    {
+        var handler = new CapturingHandler(
+            static (_, _) => Task.FromResult(
+                new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("observed")
+                }));
+        using var client = CreateClient(handler);
+        using var methodTokenSource = new CancellationTokenSource();
+
+        var observable = GeneratedRequestRunner.SendObservable<string, string>(
+            client,
+            () => new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath),
+            CreateSettings(),
+            isApiResponse: false,
+            shouldDisposeResponse: true,
+            bufferBody: false,
+            methodTokenSource.Token);
+
+        var result = await ObservableTestHelpers.Await(observable);
+
+        await Assert.That(result).IsEqualTo("observed");
+    }
+
     /// <summary>Verifies EnsureResponseContent substitutes empty content when the response has none.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

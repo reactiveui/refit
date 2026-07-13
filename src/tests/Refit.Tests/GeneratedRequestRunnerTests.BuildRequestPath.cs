@@ -89,6 +89,19 @@ public partial class GeneratedRequestRunnerTests
         await Assert.That(result).IsEqualTo("/n/a%2Fb");
     }
 
+    /// <summary>Verifies the format-taking escaping overload falls back to the string escaper when the value cannot
+    /// format into the stack buffer.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task BuildRequestPathEscapesUnformattableSpanValueWithFormatOverload()
+    {
+        const int start = 3;
+        const int end = 6;
+        var result = GeneratedRequestRunner.BuildRequestPath("/n/{v}", false, (start, end), new AlwaysUnformattableValue(), null);
+
+        await Assert.That(result).IsEqualTo("/n/a%2Fb");
+    }
+
     /// <summary>Verifies the pre-encoded overload returns the template for an empty parameter set.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]

@@ -22,4 +22,17 @@ public sealed class StringHelpersTests
 
         await Assert.That(result).IsEqualTo("%20c%2F");
     }
+
+    /// <summary>Verifies the in-place span escaper defers a non-ASCII value to the framework escaper, matching
+    /// <see cref="Uri.EscapeDataString(string)"/>'s UTF-8 percent-encoding.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AppendUriDataEscapedEscapesNonAsciiValue()
+    {
+        var target = new ValueStringBuilder(16);
+        StringHelpers.AppendUriDataEscaped(ref target, "café".AsSpan());
+
+        // ToString returns the rented buffer to the pool.
+        await Assert.That(target.ToString()).IsEqualTo("caf%C3%A9");
+    }
 }

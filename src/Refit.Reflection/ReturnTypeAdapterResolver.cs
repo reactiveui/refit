@@ -222,12 +222,9 @@ internal static class ReturnTypeAdapterResolver
             return templateArgument == returnArgument;
         }
 
+        // The upstream arity check guarantees the parameter's position indexes into the mapped slots, matching the
+        // source-generated adapter binder, which indexes the same slots by ordinal without a bounds guard.
         var position = templateArgument.GenericParameterPosition;
-        if (position >= mapped.Length)
-        {
-            return false;
-        }
-
         if (mapped[position] is { } existing)
         {
             return existing == returnArgument;

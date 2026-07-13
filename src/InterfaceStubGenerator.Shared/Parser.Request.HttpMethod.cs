@@ -51,8 +51,23 @@ internal static partial class Parser
     {
         verb = string.Empty;
 
-        // The property type pins this to the real HttpMethodAttribute.Method override rather than an unrelated "Method".
-        if (FindHttpMethodProperty(attributeClass) is not { GetMethod: { } getter } property
+        // Walk the attribute and its bases for the most-derived Method override. The base HttpMethodAttribute always
+        // declares an (abstract) HttpMethod Method, so a property is always found; the property type pins this to that
+        // real override rather than an unrelated "Method", and any non-HttpMethod or unreadable override falls through.
+        IPropertySymbol? property = null;
+        for (INamedTypeSymbol? current = attributeClass; property is null && current is not null; current = current.BaseType)
+        {
+            foreach (var member in current.GetMembers("Method"))
+            {
+                if (member is IPropertySymbol { GetMethod: not null } candidate)
+                {
+                    property = candidate;
+                    break;
+                }
+            }
+        }
+
+        if (property is not { GetMethod: { } getter }
             || property.Type.ToDisplayString() != "System.Net.Http.HttpMethod")
         {
             return false;
@@ -72,32 +87,12 @@ internal static partial class Parser
         return false;
     }
 
-    /// <summary>Finds the most-derived <c>Method</c> property declared on an attribute type or its bases.</summary>
-    /// <param name="attributeClass">The attribute type.</param>
-    /// <returns>The property, or null when none is found.</returns>
-    private static IPropertySymbol? FindHttpMethodProperty(INamedTypeSymbol attributeClass)
-    {
-        for (INamedTypeSymbol? current = attributeClass; current is not null; current = current.BaseType)
-        {
-            foreach (var member in current.GetMembers("Method"))
-            {
-                if (member is IPropertySymbol { GetMethod: not null } property)
-                {
-                    return property;
-                }
-            }
-        }
-
-        return null;
-    }
-
     /// <summary>Gets the expression a property getter returns, as an expression body or a single return statement.</summary>
     /// <param name="syntax">The getter or property syntax.</param>
     /// <returns>The returned expression, or null when the getter is not a single expression.</returns>
     private static ExpressionSyntax? GetterReturnExpression(SyntaxNode syntax) =>
         syntax switch
         {
-            PropertyDeclarationSyntax { ExpressionBody.Expression: { } propertyBody } => propertyBody,
             ArrowExpressionClauseSyntax { Expression: { } arrowBody } => arrowBody,
             AccessorDeclarationSyntax { ExpressionBody.Expression: { } accessorBody } => accessorBody,
             AccessorDeclarationSyntax { Body.Statements: [ReturnStatementSyntax { Expression: { } returned }] } => returned,

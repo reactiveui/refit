@@ -27,6 +27,24 @@ public interface IRestMethodInfoTests
     [Get("/foo/{route}/{route.Visible}")]
     Task ConflictingObjectRoute(RouteObjectWithUnreadableProperty route);
 
+    /// <summary>Defines a route with a deep dotted placeholder whose root segment matches no method parameter.</summary>
+    /// <param name="route">The complex route parameter that does not match the placeholder root.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo/{missing.Visible.Length}")]
+    Task DeepDottedRouteWithUnknownRootParameter(RouteObjectWithUnreadableProperty route);
+
+    /// <summary>Defines a route with a deep dotted placeholder whose root segment is a value-type parameter.</summary>
+    /// <param name="count">The value-type parameter that cannot own a nested property chain.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo/{count.Length.Value}")]
+    Task DeepDottedRouteWithValueTypeRootParameter(int count);
+
+    /// <summary>Defines a route with a deep dotted placeholder whose final nested property does not exist.</summary>
+    /// <param name="route">The complex route parameter whose nested chain cannot be resolved.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Get("/foo/{route.Visible.Missing}")]
+    Task DeepDottedRouteWithUnknownNestedProperty(RouteObjectWithUnreadableProperty route);
+
     /// <summary>Defines a route with duplicate authorize parameters.</summary>
     /// <param name="first">The first authorization value.</param>
     /// <param name="second">The second authorization value.</param>

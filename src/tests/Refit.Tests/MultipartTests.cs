@@ -794,6 +794,59 @@ public class MultipartTests
         await fixture.UploadHttpContent(httpContent);
     }
 
+    /// <summary>Verifies each element of an <see cref="IEnumerable{T}"/> of <see cref="HttpContent"/> is added directly as
+    /// its own multipart part when the request is built through the reflection request builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartHttpContentCollectionAddsEachItemThroughReflectionBuilder()
+    {
+        var first = new StringContent("first", Encoding.UTF8, "application/custom");
+        var second = new StringContent("second", Encoding.UTF8, "application/custom");
+
+        // The parts are captured while the request is in flight because the HttpClient disposes the multipart content
+        // (clearing its child parts) once the send completes.
+        List<HttpContent>? capturedParts = null;
+        var handler = new MockHttpMessageHandler
+        {
+            Asserts = content =>
+            {
+                capturedParts = content.ToList();
+                return Task.CompletedTask;
+            }
+        };
+
+        var fixture = new RequestBuilderImplementation<IRunscopeApi>();
+        var factory = fixture.BuildRestResultFuncForMethod(nameof(IRunscopeApi.UploadHttpContents));
+        using var client = new HttpClient(handler) { BaseAddress = new(BaseAddress) };
+
+        var task = (Task)factory(client, [new List<HttpContent> { first, second }])!;
+        await task;
+
+        const int expectedPartCount = 2;
+        await Assert.That(capturedParts!.Count).IsEqualTo(expectedPartCount);
+        await Assert.That(capturedParts).Contains(first);
+        await Assert.That(capturedParts).Contains(second);
+    }
+
+    /// <summary>Verifies an element of an enumerable multipart parameter that the serializer cannot serialize is wrapped in
+    /// a descriptive argument exception, and that the request message is disposed and the failure rethrown when request
+    /// building fails, exercised through the reflection request builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartUnserializableCollectionItemThroughReflectionBuilderThrowsArgumentException()
+    {
+        var settings = new RefitSettings { ContentSerializer = new ThrowingContentSerializer() };
+        var fixture = new RequestBuilderImplementation<IRunscopeApi>(settings);
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IRunscopeApi.UploadJsonObjects));
+
+        Task Build() => factory([new List<ModelObject> { new() }]);
+
+        var exception = await Assert.That(Build).ThrowsExactly<ArgumentException>();
+
+        await Assert.That(exception!.Message).Contains("Unexpected parameter type", StringComparison.Ordinal);
+        await Assert.That(exception.InnerException).IsTypeOf<InvalidOperationException>();
+    }
+
     /// <summary>Verifies the <see cref="ByteArrayPart"/> constructor rejects a null file name.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]

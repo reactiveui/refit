@@ -793,4 +793,319 @@ public sealed class RequestGenerationCoverageTests
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
     }
+
+    /// <summary>Verifies a multipart method with an <see cref="System.Net.Http.HttpContent"/> part adds the content
+    /// directly and generates inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartHttpContentPartGeneratesInline()
+    {
+        const string Source =
+            """
+            using System.Net.Http;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Multipart]
+                [Post("/upload")]
+                Task<string> Upload([AliasAs("content")] HttpContent content);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains(".Add(@content)");
+    }
+
+    /// <summary>Verifies a <c>[Query]</c> parameter inside a multipart method feeds the query string rather than a part.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartQueryParameterFeedsQueryStringInline()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Multipart]
+                [Post("/upload")]
+                Task<string> Upload([Query] string filter, [AliasAs("file")] StreamPart part);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("MultipartFormDataContent");
+    }
+
+    /// <summary>Verifies multipart parts classified through the single-value and reference-enumerable element paths:
+    /// a nullable formattable, an array of strings, an enumerable of byte arrays, and a list of strings.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task MultipartEnumerableAndNullableElementPartsGenerateInline()
+    {
+        const string Source =
+            """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public interface IGeneratedClient
+            {
+                [Multipart]
+                [Post("/a")]
+                Task<string> UploadNullableId([AliasAs("id")] Guid? id);
+
+                [Multipart]
+                [Post("/b")]
+                Task<string> UploadTags([AliasAs("tag")] string[] tags);
+
+                [Multipart]
+                [Post("/c")]
+                Task<string> UploadBlobs([AliasAs("blob")] IEnumerable<byte[]> blobs);
+
+                [Multipart]
+                [Post("/d")]
+                Task<string> UploadNames([AliasAs("name")] List<string> names);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a dictionary query parameter with a key prefix whose values are complex objects flattens each
+    /// value's properties under the prefixed entry key.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DictionaryQueryWithComplexValuesAndPrefixFlattensInline()
+    {
+        const string Source =
+            """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Bounds
+            {
+                public int Min { get; set; }
+
+                public int Max { get; set; }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/search")]
+                Task<string> Search([Query(".", "f")] IDictionary<string, Bounds> filters);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("_prefixed");
+    }
+
+    /// <summary>Verifies custom HTTP method attributes whose <c>Method</c> getter is statically readable resolve their
+    /// verbs inline: an inherited expression-bodied property, an expression-bodied accessor, and a block accessor.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CustomHttpMethodAttributeGetterShapesResolveVerbsInline()
+    {
+        const string Source =
+            """
+            using System.Net.Http;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public abstract class ReportMethodBaseAttribute : HttpMethodAttribute
+            {
+                protected ReportMethodBaseAttribute(string path) : base(path) { }
+
+                public override HttpMethod Method => new HttpMethod("REPORT");
+            }
+
+            public sealed class ReportAttribute : ReportMethodBaseAttribute
+            {
+                public ReportAttribute(string path) : base(path) { }
+            }
+
+            // The leaf shadows the inherited Method property with a same-named method, so property lookup skips it and
+            // walks past to the base's readable Method override.
+            public sealed class WalkAttribute : ReportMethodBaseAttribute
+            {
+                public WalkAttribute(string path) : base(path) { }
+
+                public new void Method() { }
+            }
+
+            public sealed class PurgeAttribute : HttpMethodAttribute
+            {
+                public PurgeAttribute(string path) : base(path) { }
+
+                public override HttpMethod Method { get => new HttpMethod("PURGE"); }
+            }
+
+            public sealed class TraceMethodAttribute : HttpMethodAttribute
+            {
+                public TraceMethodAttribute(string path) : base(path) { }
+
+                public override HttpMethod Method { get { return new HttpMethod("TRACE"); } }
+            }
+
+            public interface IGeneratedClient
+            {
+                [Report("/report")] Task<string> Report();
+
+                [Walk("/walk")] Task<string> Walk();
+
+                [Purge("/purge")] Task<string> Purge();
+
+                [TraceMethod("/trace")] Task<string> Trace();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains("new global::System.Net.Http.HttpMethod(\"REPORT\")");
+        await Assert.That(generated).Contains("new global::System.Net.Http.HttpMethod(\"PURGE\")");
+        await Assert.That(generated).Contains("new global::System.Net.Http.HttpMethod(\"TRACE\")");
+    }
+
+    /// <summary>Verifies custom HTTP method attributes whose verb is not statically readable fall back: a shadowing
+    /// non-<c>HttpMethod</c> <c>Method</c> property, and an auto-property getter with no readable body.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task CustomHttpMethodAttributesWithUnreadableVerbsFallBack()
+    {
+        const string Source =
+            """
+            using System.Net.Http;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public abstract class ShadowBaseAttribute : HttpMethodAttribute
+            {
+                protected ShadowBaseAttribute(string path) : base(path) { }
+
+                public override HttpMethod Method => new HttpMethod("SHADOW");
+            }
+
+            public sealed class ShadowAttribute : ShadowBaseAttribute
+            {
+                public ShadowAttribute(string path) : base(path) { }
+
+                public new string Method => "SHADOW";
+            }
+
+            public sealed class OpaqueAttribute : HttpMethodAttribute
+            {
+                public OpaqueAttribute(string path) : base(path) { }
+
+                public override HttpMethod Method { get; } = new HttpMethod("OPAQUE");
+            }
+
+            public interface IGeneratedClient
+            {
+                [Shadow("/shadow")] Task<string> Shadow();
+
+                [Opaque("/opaque")] Task<string> Opaque();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a dotted path placeholder whose intermediate segment property does not exist falls back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DottedPathWithMissingNestedPropertyFallsBack()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Inner { public string Slug { get; set; } }
+
+            public sealed class Outer { public Inner Inner { get; set; } }
+
+            public interface IGeneratedClient
+            {
+                [Get("/x/{route.Inner.Missing}")]
+                Task<string> Get(Outer route);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies a dotted path placeholder whose final property is a complex type falls back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task DottedPathWithComplexFinalPropertyFallsBack()
+    {
+        const string Source =
+            """
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Inner { public string Slug { get; set; } }
+
+            public sealed class Outer { public Inner Inner { get; set; } }
+
+            public interface IGeneratedClient
+            {
+                [Get("/x/{route.Inner}")]
+                Task<string> Get(Outer route);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[GeneratedClientHintName];
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
 }

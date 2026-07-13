@@ -197,6 +197,47 @@ public sealed class ReturnTypeAdapterResolverTests
         await Assert.That(adapterType).IsNull();
     }
 
+    /// <summary>Verifies a generic adapter whose wrapper pins a concrete argument is rejected when the return type's
+    /// argument at that position differs, so the concrete-versus-return comparison fails the whole bind.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task OpenGenericAdapterWithConcreteWrapperArgumentRejectsDifferingReturnArgument()
+    {
+        // PositionalMismatchAdapter<T> : IReturnTypeAdapter<Wrapped<int>, T>. Binding a Wrapped<string> return keeps the
+        // arity match but the wrapper's concrete int argument cannot bind the return's string argument, so the map fails.
+        var matched = ReturnTypeAdapterResolver.TryResolveResultType(
+            typeof(Wrapped<string>),
+            [typeof(PositionalMismatchAdapter<>)],
+            out var resultType);
+
+        await Assert.That(matched).IsFalse();
+        await Assert.That(resultType).IsNull();
+    }
+
+    /// <summary>Verifies a generic adapter whose wrapper repeats a type parameter enforces a consistent binding: the same
+    /// return argument at both positions is accepted, while a differing argument rejects the bind.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task OpenGenericAdapterWithRepeatedWrapperParameterRequiresConsistentBinding()
+    {
+        // RepeatedWrapperAdapter<TValue, TResult> : IReturnTypeAdapter<Paired<TValue, TValue>, TResult>. Both wrapper
+        // positions bind the same parameter, so the second position re-checks the first binding for consistency. Neither
+        // return closes the adapter (TResult never appears in the wrapper), so both resolve to no match; the value lies in
+        // exercising the consistent (Paired<int, int>) and inconsistent (Paired<int, string>) outcomes of that re-check.
+        var consistent = ReturnTypeAdapterResolver.TryResolveResultType(
+            typeof(Paired<int, int>),
+            [typeof(RepeatedWrapperAdapter<,>)],
+            out _);
+
+        var inconsistent = ReturnTypeAdapterResolver.TryResolveResultType(
+            typeof(Paired<int, string>),
+            [typeof(RepeatedWrapperAdapter<,>)],
+            out _);
+
+        await Assert.That(consistent).IsFalse();
+        await Assert.That(inconsistent).IsFalse();
+    }
+
     /// <summary>A non-generic return shape surfaced by a closed adapter; no interface method returns it, so the
     /// generator never references the adapter.</summary>
     private sealed class AdapterShape
@@ -286,5 +327,15 @@ public sealed class ReturnTypeAdapterResolverTests
     {
         /// <inheritdoc/>
         public Paired<T2, T1> Adapt(Func<CancellationToken, Task<T1>> invoke) => new();
+    }
+
+    /// <summary>An open generic adapter whose wrapper binds a single type parameter to both of its positions, so matching
+    /// re-checks the second position against the first binding for consistency.</summary>
+    /// <typeparam name="TValue">The type parameter bound at both wrapper positions.</typeparam>
+    /// <typeparam name="TResult">The result type parameter, absent from the wrapper.</typeparam>
+    private sealed class RepeatedWrapperAdapter<TValue, TResult> : IReturnTypeAdapter<Paired<TValue, TValue>, TResult>
+    {
+        /// <inheritdoc/>
+        public Paired<TValue, TValue> Adapt(Func<CancellationToken, Task<TResult>> invoke) => new();
     }
 }

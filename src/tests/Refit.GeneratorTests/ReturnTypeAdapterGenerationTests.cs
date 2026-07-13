@@ -184,4 +184,99 @@ public sealed class ReturnTypeAdapterGenerationTests
         // surfaces Pair<int, string> and the method falls back.
         await Assert.That(result.GeneratedSources[Hint]).Contains(ReflectiveFallback);
     }
+
+    /// <summary>
+    /// Verifies the adapter type-argument matcher rejects wrappers whose arguments cannot bind the adapter's parameters
+    /// consistently: a concrete template argument that mismatches the return argument, a repeated type parameter bound to
+    /// unequal arguments, a concrete template argument that matches, and a type parameter left unbound. None of these
+    /// adapters surface a <c>Wrapper&lt;,&gt;</c> return, so every method falls back.
+    /// </summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AdapterTypeArgumentBindingRejectsNonSurfacingWrappers()
+    {
+        const string Source =
+            """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Wrapper<TFirst, TSecond> { }
+
+            // A partially-concrete wrapper: the first argument is a fixed 'int', the second is the adapter's TSecond.
+            // TFirst never appears in the wrapper, so it can never bind.
+            public sealed class ConcreteFirstAdapter<TFirst, TSecond> : IReturnTypeAdapter<Wrapper<int, TSecond>, TSecond>
+            {
+                public Wrapper<int, TSecond> Adapt(Func<CancellationToken, Task<TSecond>> invoke) => new();
+            }
+
+            // A wrapper that repeats TSecond in both positions, so a return type must supply equal arguments to bind.
+            public sealed class RepeatAdapter<TFirst, TSecond> : IReturnTypeAdapter<Wrapper<TSecond, TSecond>, TSecond>
+            {
+                public Wrapper<TSecond, TSecond> Adapt(Func<CancellationToken, Task<TSecond>> invoke) => new();
+            }
+
+            public interface IGeneratedClient
+            {
+                // ConcreteFirstAdapter's concrete 'int' mismatches 'string'; RepeatAdapter re-binds TSecond inconsistently.
+                [Get("/a")] Wrapper<string, int> First();
+
+                // RepeatAdapter binds TSecond=string twice consistently, but TFirst is left unbound.
+                [Get("/b")] Wrapper<string, string> Second();
+
+                // ConcreteFirstAdapter's concrete 'int' matches 'int', but TFirst is left unbound.
+                [Get("/c")] Wrapper<int, string> Third();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).Contains(ReflectiveFallback);
+    }
+
+    /// <summary>Verifies an adapter whose result type is itself a single-argument generic (that is not one of the
+    /// recognised async wrappers) resolves that result type unchanged and generates inline.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task AdapterWithGenericResultTypeGeneratesInline()
+    {
+        const string Source =
+            """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Deferred<T>
+            {
+                private readonly Func<CancellationToken, Task<T>> _invoke;
+                public Deferred(Func<CancellationToken, Task<T>> invoke) => _invoke = invoke;
+                public Task<T> InvokeAsync(CancellationToken token) => _invoke(token);
+            }
+
+            public sealed class DeferredAdapter<T> : IReturnTypeAdapter<Deferred<T>, T>
+            {
+                public Deferred<T> Adapt(Func<CancellationToken, Task<T>> invoke) => new(invoke);
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/values")]
+                Deferred<List<int>> GetValues();
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+        await Assert.That(result.GeneratedSources[Hint]).Contains(AdaptCall);
+    }
 }
