@@ -38,7 +38,8 @@ internal static class ReflectionPropertyHelpers
         {
             if (IsReadablePublicProperty(properties[i]))
             {
-                readableProperties[index++] = properties[i];
+                readableProperties[index] = properties[i];
+                index++;
             }
         }
 

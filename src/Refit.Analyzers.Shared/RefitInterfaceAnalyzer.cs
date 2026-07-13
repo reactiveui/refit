@@ -413,13 +413,44 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
         var authorizeCount = 0;
         foreach (var parameter in method.Parameters)
         {
-            var isHeaderCollection = HasHeaderCollectionAttribute(parameter);
-            if (IsCancellationToken(parameter.Type) && cancellationTokenCount++ > 0)
+            ReportParameterShapeDiagnostics(
+                method,
+                parameter,
+                reportDiagnostic,
+                ref cancellationTokenCount,
+                ref headerCollectionCount,
+                ref authorizeCount);
+        }
+    }
+
+    /// <summary>Reports the duplicate and type diagnostics for a single Refit method parameter.</summary>
+    /// <param name="method">The Refit method.</param>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <param name="reportDiagnostic">The diagnostic reporting callback.</param>
+    /// <param name="cancellationTokenCount">The running count of cancellation-token parameters seen so far.</param>
+    /// <param name="headerCollectionCount">The running count of header-collection parameters seen so far.</param>
+    /// <param name="authorizeCount">The running count of authorize parameters seen so far.</param>
+    private static void ReportParameterShapeDiagnostics(
+        IMethodSymbol method,
+        IParameterSymbol parameter,
+        Action<Diagnostic> reportDiagnostic,
+        ref int cancellationTokenCount,
+        ref int headerCollectionCount,
+        ref int authorizeCount)
+    {
+        if (IsCancellationToken(parameter.Type))
+        {
+            if (cancellationTokenCount > 0)
             {
                 reportDiagnostic(MethodShapeDiagnostic(DiagnosticDescriptors.MultipleCancellationTokens, method, parameter));
             }
 
-            if (isHeaderCollection && !IsSupportedHeaderCollectionType(parameter.Type))
+            cancellationTokenCount++;
+        }
+
+        if (HasHeaderCollectionAttribute(parameter))
+        {
+            if (!IsSupportedHeaderCollectionType(parameter.Type))
             {
                 reportDiagnostic(Diagnostic.Create(
                     DiagnosticDescriptors.InvalidHeaderCollectionParameter,
@@ -429,16 +460,25 @@ public sealed class RefitInterfaceAnalyzer : DiagnosticAnalyzer
                     method.Name));
             }
 
-            if (isHeaderCollection && headerCollectionCount++ > 0)
+            if (headerCollectionCount > 0)
             {
                 reportDiagnostic(MethodShapeDiagnostic(DiagnosticDescriptors.MultipleHeaderCollections, method, parameter));
             }
 
-            if (HasAuthorizeAttribute(parameter) && authorizeCount++ > 0)
-            {
-                reportDiagnostic(MethodShapeDiagnostic(DiagnosticDescriptors.MultipleAuthorizeParameters, method, parameter));
-            }
+            headerCollectionCount++;
         }
+
+        if (!HasAuthorizeAttribute(parameter))
+        {
+            return;
+        }
+
+        if (authorizeCount > 0)
+        {
+            reportDiagnostic(MethodShapeDiagnostic(DiagnosticDescriptors.MultipleAuthorizeParameters, method, parameter));
+        }
+
+        authorizeCount++;
     }
 
     /// <summary>Creates a method-scoped diagnostic located at a parameter.</summary>

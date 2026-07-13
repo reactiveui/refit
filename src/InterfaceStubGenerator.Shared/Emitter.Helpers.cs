@@ -348,7 +348,8 @@ internal static partial class Emitter
                     AppendText(destination, type, ref position);
                     if (emitNullableAnnotations && annotation)
                     {
-                        destination[position++] = '?';
+                        destination[position] = '?';
+                        position++;
                     }
 
                     AppendText(destination, " @", ref position);

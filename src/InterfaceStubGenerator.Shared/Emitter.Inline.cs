@@ -120,8 +120,6 @@ internal static partial class Emitter
         var requestLocal = locals.New("refitRequest");
         var adapterTokenLocal = locals.New("refitAdapterToken");
         var bodyParameter = FindRequestParameter(request, RequestParameterKind.Body);
-        var cancellationTokenExpression = BuildCancellationTokenExpression(request);
-        var bufferBodyExpression = BuildBufferBodyExpression(bodyParameter, settingsLocal);
 
         // Build path. Assigning the unique field names and emitting the attribute-provider fields is a single pass
         // over the parameters (the two were previously separate loops sharing the same NeedsAttributeProvider filter).
@@ -138,10 +136,116 @@ internal static partial class Emitter
             paramInfoSb,
             interfaceModel.SupportsCollectionExpressions);
         var parameters = GetParametersArg(request, parameterInfoNames, emission);
-
         var pathExpression = BuildInlinePathExpression(request, parameterInfoNames, emission, settingsLocal, parameters);
 
+        var plan = new InlineMethodPlan(
+            bodyParameter,
+            settingsLocal,
+            requestLocal,
+            adapterTokenLocal,
+            BuildCancellationTokenExpression(request),
+            BuildBufferBodyExpression(bodyParameter, settingsLocal),
+            pathExpression,
+            parameterInfoNames,
+            paramInfoSb,
+            emission,
+            locals);
+        return BuildInlineRefitMethodBody(methodModel, interfaceModel, isExplicit, settingsFieldName, uniqueNames, plan);
+    }
+
+    /// <summary>Assembles the generated inline method from its request-message construction and return statement.</summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="interfaceModel">The interface model being emitted.</param>
+    /// <param name="isExplicit">Whether the method is emitted as an explicit interface implementation.</param>
+    /// <param name="settingsFieldName">The unique generated field name that stores Refit settings.</param>
+    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
+    /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
+    /// <returns>The generated inline method implementation.</returns>
+    private static string BuildInlineRefitMethodBody(
+        MethodModel methodModel,
+        InterfaceModel interfaceModel,
+        bool isExplicit,
+        string settingsFieldName,
+        UniqueNameBuilder uniqueNames,
+        in InlineMethodPlan plan)
+    {
+        var request = methodModel.Request;
+        var settingsLocal = plan.SettingsLocal;
+        var requestLocal = plan.RequestLocal;
+        var emission = plan.Emission;
         var bodyIndent = Indent(MethodBodyIndentation);
+
+        var requestPrologueSource = BuildInlineRequestPrologue(request, plan, bodyIndent, out var requestPathExpression);
+
+        var (httpMethodFieldSource, httpMethodExpression) = BuildHttpMethodField(request, uniqueNames);
+
+        // A [QueryUriFormat] method re-encodes the whole path and query with the attribute's UriFormat, matching the
+        // reflection builder's final GetComponents pass; every other method uses the direct relative URI.
+        var requestUriExpression = request.QueryUriFormat is { } queryUriFormat
+            ? $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution, (global::System.UriFormat){queryUriFormat})"
+            : $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
+        var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
+            plan.BodyParameter,
+            uniqueNames,
+            interfaceModel.SupportsNullable,
+            interfaceModel.SupportsStaticLambdas);
+
+        // A multipart method builds a MultipartFormDataContent from its parts; every other method has at most one body
+        // parameter (a multipart method never carries one), so the two paths never both apply.
+        var contentSource = plan.BodyParameter is null
+            ? string.Empty
+            : BuildInlineContent(plan.BodyParameter, requestLocal, settingsLocal, formFieldsFieldName, interfaceModel.SupportsNullable, emission, plan.Locals);
+        if (request.IsMultipart)
+        {
+            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, plan.Locals);
+        }
+
+        var headerSource = BuildInlineHeaders(request, requestLocal);
+        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
+        var methodIndent = Indent(MethodMemberIndentation);
+        var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
+        var methodPrefix = $"{plan.ParamInfoBuilder}{formFieldsSource}{httpMethodFieldSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
+
+        // The request construction shared by every shape: prologue locals, the message, the version, content, headers,
+        // and request properties. A cold IObservable wraps this in a per-subscription local function so a second
+        // subscription rebuilds and re-sends instead of reusing a disposed request.
+        var requestConstruction = $$"""
+            {{requestPrologueSource}}{{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{httpMethodExpression}}, {{requestUriExpression}});
+            {{bodyIndent}}#if NET6_0_OR_GREATER
+            {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
+            {{bodyIndent}}{{requestLocal}}.VersionPolicy = {{settingsLocal}}.VersionPolicy;
+            {{bodyIndent}}#endif
+            {{contentSource}}{{headerSource}}{{requestPropertySource}}
+            """;
+
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable)
+        {
+            var buildRequestLocal = plan.Locals.New("BuildRefitRequest");
+            var observableReturn = BuildInlineObservableReturn(request, plan.BufferBodyExpression, plan.CancellationTokenExpression, buildRequestLocal, settingsLocal);
+            return BuildInlineObservableMethodSource(methodPrefix, requestConstruction, buildRequestLocal, requestLocal, observableReturn, bodyIndent, methodIndent);
+        }
+
+        var returnSource = BuildInlineReturn(methodModel, request, plan.BufferBodyExpression, plan.CancellationTokenExpression, requestLocal, settingsLocal, plan.AdapterTokenLocal);
+        return $$"""
+            {{methodPrefix}}{{requestConstruction}}{{returnSource}}{{methodIndent}}}
+
+            """;
+    }
+
+    /// <summary>Emits the request-prologue formatting locals and resolves the request-path expression to use.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="plan">The method-scope locals and pre-built request fragments.</param>
+    /// <param name="bodyIndent">The method-body indentation.</param>
+    /// <param name="requestPathExpression">The request-path expression: the query builder's <c>Build()</c> call, or the path when no query binds.</param>
+    /// <returns>The generated request-prologue source.</returns>
+    private static string BuildInlineRequestPrologue(
+        RequestModel request,
+        in InlineMethodPlan plan,
+        string bodyIndent,
+        out string requestPathExpression)
+    {
+        var emission = plan.Emission;
+        var settingsLocal = plan.SettingsLocal;
 
         // Accumulate the request prologue through a pooled buffer rather than reallocating the whole string on each
         // '+=' branch below.
@@ -160,62 +264,8 @@ internal static partial class Emitter
                 .Append(settingsLocal).AppendLine(");");
         }
 
-        var requestPathExpression = AppendInlineQueryPrologue(prologue, request, parameterInfoNames, emission, pathExpression, bodyIndent);
-        var requestPrologueSource = prologue.ToString();
-
-        var (httpMethodFieldSource, httpMethodExpression) = BuildHttpMethodField(request, uniqueNames);
-
-        // A [QueryUriFormat] method re-encodes the whole path and query with the attribute's UriFormat, matching the
-        // reflection builder's final GetComponents pass; every other method uses the direct relative URI.
-        var requestUriExpression = request.QueryUriFormat is { } queryUriFormat
-            ? $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution, (global::System.UriFormat){queryUriFormat})"
-            : $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
-        var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
-            bodyParameter,
-            uniqueNames,
-            interfaceModel.SupportsNullable,
-            interfaceModel.SupportsStaticLambdas);
-
-        // A multipart method builds a MultipartFormDataContent from its parts; every other method has at most one body
-        // parameter (a multipart method never carries one), so the two paths never both apply.
-        var contentSource = bodyParameter is null
-            ? string.Empty
-            : BuildInlineContent(bodyParameter, requestLocal, settingsLocal, formFieldsFieldName, interfaceModel.SupportsNullable, emission, locals);
-        if (request.IsMultipart)
-        {
-            contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, locals);
-        }
-
-        var headerSource = BuildInlineHeaders(request, requestLocal);
-        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
-        var methodIndent = Indent(MethodMemberIndentation);
-        var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
-        var methodPrefix = $"{paramInfoSb}{formFieldsSource}{httpMethodFieldSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
-
-        // The request construction shared by every shape: prologue locals, the message, the version, content, headers,
-        // and request properties. A cold IObservable wraps this in a per-subscription local function so a second
-        // subscription rebuilds and re-sends instead of reusing a disposed request.
-        var requestConstruction = $$"""
-            {{requestPrologueSource}}{{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{httpMethodExpression}}, {{requestUriExpression}});
-            {{bodyIndent}}#if NET6_0_OR_GREATER
-            {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
-            {{bodyIndent}}{{requestLocal}}.VersionPolicy = {{settingsLocal}}.VersionPolicy;
-            {{bodyIndent}}#endif
-            {{contentSource}}{{headerSource}}{{requestPropertySource}}
-            """;
-
-        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable)
-        {
-            var buildRequestLocal = locals.New("BuildRefitRequest");
-            var observableReturn = BuildInlineObservableReturn(request, bufferBodyExpression, cancellationTokenExpression, buildRequestLocal, settingsLocal);
-            return BuildInlineObservableMethodSource(methodPrefix, requestConstruction, buildRequestLocal, requestLocal, observableReturn, bodyIndent, methodIndent);
-        }
-
-        var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal, adapterTokenLocal);
-        return $$"""
-            {{methodPrefix}}{{requestConstruction}}{{returnSource}}{{methodIndent}}}
-
-            """;
+        requestPathExpression = AppendInlineQueryPrologue(prologue, request, plan.ParameterInfoNames, emission, plan.PathExpression, bodyIndent);
+        return prologue.ToString();
     }
 
     /// <summary>Appends the query-string-builder prologue and returns the request-path expression to use.</summary>
@@ -309,759 +359,6 @@ internal static partial class Emitter
             """;
     }
 
-    /// <summary>Builds the unique cached attribute-provider field name for a path parameter.</summary>
-    /// <param name="parameterName">The source parameter name.</param>
-    /// <param name="uniqueNames">The unique member name builder for the interface scope.</param>
-    /// <returns>The unique generated field name.</returns>
-    private static string GetParameterInfoFieldName(string parameterName, UniqueNameBuilder uniqueNames) =>
-        uniqueNames.New($"______{parameterName}AttributeProvider");
-
-    /// <summary>Appends a separator before all but the first element.</summary>
-    /// <param name="i">The zero-based element index.</param>
-    /// <param name="sb">The target builder.</param>
-    /// <param name="separator">The separator to append.</param>
-    /// <returns>The same builder for chaining.</returns>
-    private static PooledStringBuilder AppendSeparator(int i, PooledStringBuilder sb, string separator = ", ")
-    {
-        return i <= 0 ? sb : sb.Append(separator);
-    }
-
-    /// <summary>Appends a value, prefixed by a separator for all but the first element.</summary>
-    /// <param name="value">The value to append.</param>
-    /// <param name="i">The zero-based element index.</param>
-    /// <param name="sb">The target builder.</param>
-    /// <param name="separator">The separator to append before the value.</param>
-    /// <returns>The same builder for chaining.</returns>
-    private static PooledStringBuilder AppendJoining(string value, int i, PooledStringBuilder sb, string separator = ", ")
-    {
-        return AppendSeparator(i, sb, separator).Append(value);
-    }
-
-    /// <summary>Appends a C# attribute construction expression to the builder.</summary>
-    /// <param name="attribute">The attribute model to render.</param>
-    /// <param name="sb0">The target builder.</param>
-    private static void AppendAttributeValue(ParameterAttributeModel attribute, PooledStringBuilder sb0)
-    {
-        _ = sb0.Append("new ").Append(attribute.TypeExpression).Append('(');
-        var i = 0;
-
-        foreach (var argument in attribute.ConstructorArguments)
-        {
-            _ = AppendJoining(argument, i++, sb0);
-        }
-
-        _ = sb0.Append(')');
-        if (attribute.NamedArguments.Count < 1)
-        {
-            return;
-        }
-
-        i = 0;
-        _ = sb0.Append("{ ");
-        foreach (var named in attribute.NamedArguments)
-        {
-            _ = AppendSeparator(i++, sb0);
-            _ = sb0.Append(named.Name).Append(" = ").Append(named.ValueExpression);
-        }
-
-        _ = sb0.Append(" }");
-    }
-
-    /// <summary>Emits the cached attribute-provider field for a single path parameter.</summary>
-    /// <param name="parameter">The path parameter model.</param>
-    /// <param name="method">The declaring method name, used for the generated documentation.</param>
-    /// <param name="paramInfoFieldName">The unique generated field name.</param>
-    /// <param name="sb">The target builder.</param>
-    private static void BuildParameterInfoField(RequestParameterModel parameter, string method, string paramInfoFieldName, PooledStringBuilder sb)
-    {
-        // Build the initializer.
-        var memberIndent = Indent(MethodMemberIndentation);
-        Dictionary<string, List<ParameterAttributeModel>> grouped = new();
-
-        foreach (var attribute in parameter.Attributes)
-        {
-            var key = $"typeof({attribute.TypeExpression})";
-            if (grouped.TryGetValue(key, out var groupedAttributes))
-            {
-                groupedAttributes.Add(attribute);
-            }
-            else
-            {
-                grouped.Add(key, [attribute]);
-            }
-        }
-
-        _ = sb.AppendLine().Append(memberIndent).Append("/// <summary>Cached attribute provider for the generated ")
-            .Append(ToXmlDocumentationText(method)).Append(" method's ").Append(ToXmlDocumentationText(parameter.Name)).AppendLine(" parameter.</summary>")
-            .Append(memberIndent).Append("private static readonly global::Refit.GeneratedParameterAttributeProvider ").Append(paramInfoFieldName).Append(" = ");
-
-        // A parameter with no attributes shares the singleton empty provider instead of allocating an empty dictionary.
-        if (grouped.Count == 0)
-        {
-            _ = sb.AppendLine("global::Refit.GeneratedParameterAttributeProvider.Empty;");
-            return;
-        }
-
-        const string dictType = "global::System.Collections.Generic.Dictionary<global::System.Type, object[]>";
-        _ = sb.Append("new global::Refit.GeneratedParameterAttributeProvider(new ").Append(dictType).Append("() {");
-        var i = 0;
-        foreach (var kv in grouped)
-        {
-            _ = AppendJoining("{ ", i++, sb).Append(kv.Key).Append(", new object[] { ");
-            var argIndex = 0;
-            foreach (var arg in kv.Value)
-            {
-                // Multiple attributes of the same type must be comma-separated inside the array.
-                _ = AppendSeparator(argIndex++, sb);
-                AppendAttributeValue(arg, sb);
-            }
-
-            _ = sb.Append("} }");
-        }
-
-        _ = sb.Append('}').AppendLine(");");
-    }
-
-    /// <summary>Assigns the unique cached field name for each attribute-provider parameter and emits its field.</summary>
-    /// <param name="request">The parsed request model.</param>
-    /// <param name="uniqueNames">The unique member name builder for the interface scope.</param>
-    /// <param name="declaredMethod">The declared method name the emitted fields are scoped to.</param>
-    /// <param name="paramInfoSb">The builder receiving the emitted attribute-provider fields.</param>
-    /// <returns>A map of parameter name to its cached attribute-provider field name.</returns>
-    private static Dictionary<string, string> BuildParameterInfoFields(
-        RequestModel request,
-        UniqueNameBuilder uniqueNames,
-        string declaredMethod,
-        PooledStringBuilder paramInfoSb)
-    {
-        var dict = new Dictionary<string, string>();
-        foreach (var parameter in request.Parameters)
-        {
-            if (!NeedsAttributeProvider(parameter))
-            {
-                continue;
-            }
-
-            var parameterInfoFieldName = GetParameterInfoFieldName(parameter.Name, uniqueNames);
-            dict.Add(parameter.Name, parameterInfoFieldName);
-            BuildParameterInfoField(parameter, declaredMethod, parameterInfoFieldName, paramInfoSb);
-        }
-
-        return dict;
-    }
-
-    /// <summary>Builds the additional arguments passed to the generated request path builder.</summary>
-    /// <param name="request">The parsed request model.</param>
-    /// <param name="uniqueNameLookup">The map of parameter name to cached attribute-provider field name.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <returns>The generated argument list fragment.</returns>
-    private static string GetParametersArg(
-        RequestModel request,
-        Dictionary<string, string> uniqueNameLookup,
-        in InlineValueEmission emission)
-    {
-        // A single pre-encoded path parameter switches every replacement to the overload carrying the
-        // per-value encoding flag, because a params call cannot mix tuple arities.
-        var anyPreEncoded = HasPreEncodedPathParameter(request);
-
-        var pathLength = request.Path.Length;
-        var replacements = new List<PathReplacement>();
-        foreach (var parameter in request.Parameters)
-        {
-            if (parameter.Kind is not RequestParameterKind.Path)
-            {
-                continue;
-            }
-
-            var providerField = uniqueNameLookup[parameter.Name];
-
-            // A dotted {param.Prop} object parameter fills each placeholder with a formatted property value.
-            if (parameter.PathObjectBindings is { } bindings)
-            {
-                foreach (var binding in bindings)
-                {
-                    var bindingValue = BuildPathValueExpressionCore(
-                        "@" + parameter.Name + "." + binding.PropertyClrName,
-                        binding.PropertyType,
-                        binding.ValueFormat,
-                        binding.PropertyCanBeNull,
-                        providerField,
-                        emission);
-                    replacements.Add(new(
-                        binding.Location.Start.GetOffset(pathLength),
-                        binding.Location.End.GetOffset(pathLength),
-                        bindingValue,
-                        PreEncoded: false));
-                }
-
-                continue;
-            }
-
-            // Every remaining Path parameter is a direct placeholder built with locations (a dotted object binding is
-            // handled above), so its locations are always present.
-            var valueExpression = BuildPathValueExpression(parameter, providerField, emission);
-            foreach (var location in parameter.Locations!)
-            {
-                replacements.Add(new(
-                    location.Start.GetOffset(pathLength),
-                    location.End.GetOffset(pathLength),
-                    valueExpression,
-                    parameter.PreEncoded));
-            }
-        }
-
-        if (replacements.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        // BuildRequestPath fills the template left-to-right and slices between consecutive replacements, so they must
-        // be ordered by template position. Parameter order does not match template order when an object binding (or a
-        // later parameter) fills an earlier placeholder, so sort here rather than relying on declaration order.
-        replacements.Sort(static (left, right) => left.Start.CompareTo(right.Start));
-
-        var parametersSb = new PooledStringBuilder();
-        var first = true;
-        foreach (var replacement in replacements)
-        {
-            if (!first)
-            {
-                _ = parametersSb.Append(", ");
-            }
-
-            first = false;
-            AppendPathTuple(
-                parametersSb,
-                replacement.Start,
-                replacement.End,
-                replacement.Value,
-                anyPreEncoded,
-                replacement.PreEncoded);
-        }
-
-        return WrapPathReplacements(parametersSb.ToString(), emission.SupportsCollectionExpressions);
-    }
-
-    /// <summary>Wraps the path replacement tuples as the collection argument passed to <c>BuildRequestPath</c>.</summary>
-    /// <param name="tuples">The comma-separated tuple expressions.</param>
-    /// <param name="supportsCollectionExpressions">Whether the consumer supports C# 12 collection expressions.</param>
-    /// <returns>The <c>, &lt;collection&gt;</c> argument fragment.</returns>
-    /// <remarks>A C# 12 consumer receives a <c>[...]</c> collection expression, which the compiler materializes on the
-    /// stack (net8.0+ inline arrays) so no array is allocated; an older consumer receives an inferred array that the same
-    /// <c>ReadOnlySpan</c> overload accepts via the array-to-span conversion. The array element type is inferred from the
-    /// tuple values rather than stated, so no nullable reference annotation is emitted into a pre-C# 8 consumer.</remarks>
-    private static string WrapPathReplacements(string tuples, bool supportsCollectionExpressions) =>
-        supportsCollectionExpressions ? ", [" + tuples + "]" : ", new[] { " + tuples + " }";
-
-    /// <summary>Determines whether any path parameter passes its value through pre-encoded.</summary>
-    /// <param name="request">The parsed request model.</param>
-    /// <returns><see langword="true"/> when a path parameter carries <c>[Encoded]</c>.</returns>
-    private static bool HasPreEncodedPathParameter(RequestModel request)
-    {
-        foreach (var parameter in request.Parameters)
-        {
-            if (parameter.Kind == RequestParameterKind.Path && parameter.PreEncoded)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>Appends one <c>((start, end), value[, preEncoded])</c> tuple to the path replacement argument list.</summary>
-    /// <param name="sb">The argument list builder.</param>
-    /// <param name="start">The placeholder start offset.</param>
-    /// <param name="end">The placeholder end offset.</param>
-    /// <param name="valueExpression">The replacement value expression.</param>
-    /// <param name="includePreEncoded">Whether the tuple carries the per-value pre-encoded flag.</param>
-    /// <param name="preEncoded">The pre-encoded flag value, emitted only when <paramref name="includePreEncoded"/> is set.</param>
-    private static void AppendPathTuple(
-        PooledStringBuilder sb,
-        int start,
-        int end,
-        string valueExpression,
-        bool includePreEncoded,
-        bool preEncoded)
-    {
-        _ = sb.Append("((").Append(start).Append(", ").Append(end).Append("), ").Append(valueExpression);
-        if (includePreEncoded)
-        {
-            _ = sb.Append(", ").Append(ToLowerInvariantString(preEncoded));
-        }
-
-        _ = sb.Append(')');
-    }
-
-    /// <summary>Builds the request path expression, preferring the span-formattable fast path when it applies.</summary>
-    /// <param name="request">The parsed request model.</param>
-    /// <param name="parameterInfoNames">The map of parameter name to cached attribute-provider field name.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <param name="settingsLocal">The generated settings local name.</param>
-    /// <param name="parameters">The default path builder argument fragment.</param>
-    /// <returns>The generated path expression.</returns>
-    private static string BuildInlinePathExpression(
-        RequestModel request,
-        Dictionary<string, string> parameterInfoNames,
-        in InlineValueEmission emission,
-        string settingsLocal,
-        string parameters)
-    {
-        // A template with placeholders but no bound path parameters still runs the unmatched-placeholder
-        // check so AllowUnmatchedRouteParameters keeps its reflection-path semantics.
-        return TryBuildInlinePathFastExpression(request, parameterInfoNames, emission)
-            ?? (parameters.Length > 0 || request.Path.IndexOf('{') >= 0
-                ? $"global::Refit.GeneratedRequestRunner.BuildRequestPath({ToCSharpStringLiteral(request.Path)}, {settingsLocal}.AllowUnmatchedRouteParameters{parameters})"
-                : ToCSharpStringLiteral(request.Path));
-    }
-
-    /// <summary>Builds the allocation-free path expression for a single span-formattable path parameter, or null.</summary>
-    /// <param name="request">The parsed request model.</param>
-    /// <param name="parameterInfoNames">The map of parameter name to cached attribute-provider field name.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <returns>The path expression using the span-formattable fast overload, or null to use the default path building.</returns>
-    /// <remarks>The default-formatting branch formats the value straight into the path buffer (net6+ integers with no
-    /// escaping, net10+ span-escaped values); a customized <c>IUrlParameterFormatter</c> falls back to the string overload.</remarks>
-    private static string? TryBuildInlinePathFastExpression(
-        RequestModel request,
-        Dictionary<string, string> parameterInfoNames,
-        in InlineValueEmission emission)
-    {
-        RequestParameterModel? pathParameter = null;
-        foreach (var parameter in request.Parameters)
-        {
-            if (parameter.Kind != RequestParameterKind.Path)
-            {
-                continue;
-            }
-
-            // The single-placeholder fast overloads model one path parameter with one location; anything else falls back.
-            if (pathParameter is not null)
-            {
-                return null;
-            }
-
-            pathParameter = parameter;
-        }
-
-        if (pathParameter is not { Locations: { Count: 1 } locations, PreEncoded: false, ValueFormat: { } valueFormat }
-            || valueFormat.IsNullableValueType
-            || (!valueFormat.IsUrlSafeSpanFormattable && !valueFormat.IsSpanFormattableEscapable))
-        {
-            // A nullable value type keeps the string-formatting path, which null-guards and unwraps .Value itself.
-            return null;
-        }
-
-        var pathLength = request.Path.Length;
-        var location = locations.AsArray()[0];
-        var start = location.Start.GetOffset(pathLength);
-        var end = location.End.GetOffset(pathLength);
-        var template = ToCSharpStringLiteral(request.Path);
-        var settingsLocal = emission.SettingsLocal;
-        var allowUnmatched = $"{settingsLocal}.AllowUnmatchedRouteParameters";
-        var valueExpression = "@" + pathParameter.Name;
-        _ = parameterInfoNames.TryGetValue(pathParameter.Name, out var providerField);
-        const string runner = "global::Refit.GeneratedRequestRunner.BuildRequestPath";
-
-        var fastExpression = valueFormat.IsUrlSafeSpanFormattable
-            ? $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression})"
-            : $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression}, {ToNullableCSharpStringLiteral(valueFormat.Format)})";
-        var customTuple =
-            $"(({start}, {end}), {settingsLocal}.UrlParameterFormatter.Format({valueExpression}, {providerField}, typeof({pathParameter.Type})))";
-        var customReplacements = WrapPathReplacements(customTuple, emission.SupportsCollectionExpressions);
-        var customExpression = $"{runner}({template}, {allowUnmatched}{customReplacements})";
-
-        return $"({emission.UseDefaultFormattingLocal} ? {fastExpression} : {customExpression})";
-    }
-
-    /// <summary>Builds request content assignment for an inline generated method.</summary>
-    /// <param name="bodyParameter">The body parameter model.</param>
-    /// <param name="requestLocal">The generated request message local name.</param>
-    /// <param name="settingsLocal">The generated settings local name.</param>
-    /// <param name="formFieldsFieldName">The cached form field descriptor array name, or null to use the reflection path.</param>
-    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <param name="locals">The method-scope unique local name builder.</param>
-    /// <returns>The generated content assignment.</returns>
-    private static string BuildInlineContent(
-        RequestParameterModel bodyParameter,
-        string requestLocal,
-        string settingsLocal,
-        string? formFieldsFieldName,
-        bool supportsNullable,
-        in InlineValueEmission emission,
-        UniqueNameBuilder locals)
-    {
-        var bodyIndent = Indent(MethodBodyIndentation);
-        if (bodyParameter.BodySerializationMethod == "UrlEncoded")
-        {
-            if (IsUnrollableFormBody(bodyParameter))
-            {
-                return BuildInlineFormUnroll(bodyParameter, requestLocal, supportsNullable, emission, locals);
-            }
-
-            return formFieldsFieldName is not null
-                ? $$"""
-                    {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
-                    {{bodyIndent}}    {{settingsLocal}},
-                    {{bodyIndent}}    @{{bodyParameter.Name}},
-                    {{bodyIndent}}    {{formFieldsFieldName}});
-
-                    """
-                : $$"""
-                    {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>(
-                    {{bodyIndent}}    {{settingsLocal}},
-                    {{bodyIndent}}    @{{bodyParameter.Name}});
-
-                    """;
-        }
-
-        if (bodyParameter.BodySerializationMethod == "JsonLines")
-        {
-            return $$"""
-                {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateJsonLinesBodyContent<{{bodyParameter.Type}}>(
-                {{bodyIndent}}    {{settingsLocal}},
-                {{bodyIndent}}    @{{bodyParameter.Name}});
-
-                """;
-        }
-
-        var streamBodyExpression = BuildStreamBodyExpression(bodyParameter, settingsLocal);
-        var serializationMethodExpression = BuildBodySerializationMethodExpression(bodyParameter);
-
-        return $$"""
-            {{bodyIndent}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateBodyContent<{{bodyParameter.Type}}>(
-            {{bodyIndent}}    {{settingsLocal}},
-            {{bodyIndent}}    @{{bodyParameter.Name}},
-            {{bodyIndent}}    {{serializationMethodExpression}},
-            {{bodyIndent}}    {{streamBodyExpression}});
-
-            """;
-    }
-
-    /// <summary>Emits straight-line form-url-encoded body serialization for an all-scalar body, mirroring the descriptor
-    /// path's wire output without the descriptor array, getter delegates, or value boxing on the fast path.</summary>
-    /// <param name="bodyParameter">The URL-encoded body parameter model.</param>
-    /// <param name="requestLocal">The generated request message local name.</param>
-    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <param name="locals">The method-scope unique local name builder.</param>
-    /// <returns>The generated content assignment.</returns>
-    private static string BuildInlineFormUnroll(
-        RequestParameterModel bodyParameter,
-        string requestLocal,
-        bool supportsNullable,
-        in InlineValueEmission emission,
-        UniqueNameBuilder locals)
-    {
-        var settingsLocal = emission.SettingsLocal;
-        var bodyIndent = Indent(MethodBodyIndentation);
-        var inner = bodyIndent + "    ";
-        var fields = bodyParameter.FormFields!.AsArray();
-        var bodyExpr = "@" + bodyParameter.Name;
-        var entriesLocal = locals.New("______formEntries");
-
-        // Nullable reference annotations are a C# 8 feature; older consumers get the unannotated types, which also match
-        // the .NET Framework/netstandard FormUrlEncodedContent constructor signature. The generated code stays
-        // compilable down to the C# 7.3 floor (explicit KeyValuePair construction, != null guards - no C# 9 syntax).
-        var nullable = supportsNullable ? "?" : string.Empty;
-        var kvpType = "global::System.Collections.Generic.KeyValuePair<string" + nullable + ", string" + nullable + ">";
-        var site = new FormUnrollSite(bodyExpr, entriesLocal, inner, "new " + kvpType, locals);
-
-        var adds = new PooledStringBuilder();
-        foreach (var field in fields)
-        {
-            AppendFormFieldUnroll(adds, field, in site, emission);
-        }
-
-        // CanUnrollForm rejects the null, HttpContent, Stream, string, and dictionary bodies the reflection path
-        // special-cases; a non-System.Text.Json serializer resolves field names differently, so it falls back too.
-        return $$"""
-            {{bodyIndent}}if ({{settingsLocal}}.ContentSerializer is global::Refit.SystemTextJsonContentSerializer
-            {{inner}}    && global::Refit.GeneratedRequestRunner.CanUnrollForm({{bodyExpr}}))
-            {{bodyIndent}}{
-            {{inner}}var {{entriesLocal}} = new global::System.Collections.Generic.List<{{kvpType}}>({{fields.Length}});
-            {{adds}}{{inner}}{{requestLocal}}.Content = new global::System.Net.Http.FormUrlEncodedContent({{entriesLocal}});
-            {{bodyIndent}}}
-            {{bodyIndent}}else
-            {{bodyIndent}}{
-            {{inner}}{{requestLocal}}.Content = global::Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<{{bodyParameter.Type}}>({{settingsLocal}}, {{bodyExpr}});
-            {{bodyIndent}}}
-
-            """;
-    }
-
-    /// <summary>Appends the statements adding one scalar field to the unrolled form entry list.</summary>
-    /// <param name="sb">The statement builder.</param>
-    /// <param name="field">The form field descriptor.</param>
-    /// <param name="site">The shared locals and rendered fragments for the enclosing body.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    private static void AppendFormFieldUnroll(
-        PooledStringBuilder sb,
-        FormFieldModel field,
-        in FormUnrollSite site,
-        in InlineValueEmission emission)
-    {
-        var indent = site.Indentation;
-        var valueLocal = site.Locals.New("______formValue");
-        var keyExpr = "global::Refit.GeneratedRequestRunner.BuildQueryKey("
-            + emission.SettingsLocal + ", "
-            + ToCSharpStringLiteral(field.PropertyName) + ", "
-            + ToNullableCSharpStringLiteral(field.ExplicitName) + ", "
-            + ToNullableCSharpStringLiteral(field.PrefixSegment) + ")";
-
-        _ = sb.Append(indent).Append("var ").Append(valueLocal).Append(" = ").Append(site.BodyExpr).Append(".@").Append(field.PropertyName).AppendLine(";");
-
-        var valueExpr = BuildFormFieldValueExpression(field, valueLocal, emission);
-
-        // A non-nullable value type is always present, so it is added unconditionally.
-        if (!field.CanBeNull)
-        {
-            AppendFormEntryAdd(sb, in site, indent, keyExpr, valueExpr);
-            return;
-        }
-
-        // "!= null" (not the C# 9 "is not null" pattern) keeps the emitted null guard compilable down to C# 7.3.
-        var childIndent = indent + "    ";
-        _ = sb.Append(indent).Append("if (").Append(valueLocal).AppendLine(" != null)")
-            .Append(indent).AppendLine("{");
-        AppendFormEntryAdd(sb, in site, childIndent, keyExpr, valueExpr);
-        _ = sb.Append(indent).AppendLine("}");
-
-        // A null value is omitted unless the field opts in via [Query(SerializeNull = true)], which emits an empty value.
-        if (!field.SerializeNull)
-        {
-            return;
-        }
-
-        _ = sb.Append(indent).AppendLine("else")
-            .Append(indent).AppendLine("{");
-        AppendFormEntryAdd(sb, in site, childIndent, keyExpr, "string.Empty");
-        _ = sb.Append(indent).AppendLine("}");
-    }
-
-    /// <summary>Appends one entry-list <c>Add</c> using an explicit <c>KeyValuePair</c> construction (no C# 9 target-typed new).</summary>
-    /// <param name="sb">The statement builder.</param>
-    /// <param name="site">The shared locals and rendered fragments for the enclosing body.</param>
-    /// <param name="indent">The statement indentation.</param>
-    /// <param name="keyExpr">The field key expression.</param>
-    /// <param name="valueExpr">The field value expression.</param>
-    private static void AppendFormEntryAdd(PooledStringBuilder sb, in FormUnrollSite site, string indent, string keyExpr, string valueExpr) =>
-        _ = sb.Append(indent).Append(site.EntriesLocal).Append(".Add(").Append(site.KvpNew)
-            .Append('(').Append(keyExpr).Append(", ").Append(valueExpr).AppendLine("));");
-
-    /// <summary>Builds the value expression for one scalar form field, matching the configured form formatter.</summary>
-    /// <param name="field">The form field descriptor.</param>
-    /// <param name="valueLocal">The non-null value local name.</param>
-    /// <param name="emission">The shared emission locals and helper state.</param>
-    /// <returns>The rendering expression, branching to the formatter when it is customized.</returns>
-    private static string BuildFormFieldValueExpression(
-        FormFieldModel field,
-        string valueLocal,
-        in InlineValueEmission emission)
-    {
-        var formatterExpression =
-            $"{emission.SettingsLocal}.FormUrlEncodedParameterFormatter.Format({valueLocal}, {ToNullableCSharpStringLiteral(field.Format)})";
-        var fastExpression = field.ValueFormat!.Kind == InlineFormatKind.FormatterOnly
-            ? null
-            : BuildFastFormatExpression(valueLocal, field.ValueFormat, emission);
-
-        return fastExpression is null
-            ? formatterExpression
-            : $"{emission.UseDefaultFormFormattingLocal} ? ({fastExpression}) : {formatterExpression}";
-    }
-
-    /// <summary>Determines whether a URL-encoded body can be serialized by the straight-line unrolled fast path.</summary>
-    /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
-    /// <returns><see langword="true"/> when every field is a simple scalar carrying a compile-time rendering strategy,
-    /// so the body needs neither the descriptor array nor reflection on the common System.Text.Json path.</returns>
-    private static bool IsUnrollableFormBody(RequestParameterModel? bodyParameter)
-    {
-        if (bodyParameter is not { BodySerializationMethod: "UrlEncoded", FormFields: { Count: > 0 } formFields })
-        {
-            return false;
-        }
-
-        // A collection or complex field leaves ValueFormat null; it needs the descriptor path's collection-format and
-        // nested handling, so the whole body falls back rather than the generator guessing the wire format.
-        foreach (var field in formFields)
-        {
-            if (field.ValueFormat is null)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /// <summary>Determines whether an unrollable form body has at least one field with a reflection-free fast path.</summary>
-    /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
-    /// <returns><see langword="true"/> when a field renders through the default-form-formatting branch, so the generated
-    /// method must declare that branch local.</returns>
-    private static bool FormBodyHasFastPath(RequestParameterModel? bodyParameter)
-    {
-        if (!IsUnrollableFormBody(bodyParameter))
-        {
-            return false;
-        }
-
-        foreach (var field in bodyParameter!.FormFields!)
-        {
-            if (field.ValueFormat!.Kind != InlineFormatKind.FormatterOnly)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>Resolves the HTTP method expression, caching a custom verb in a static field.</summary>
-    /// <param name="request">The parsed request model.</param>
-    /// <param name="uniqueNames">The interface-scope unique name builder.</param>
-    /// <returns>The static field source (empty for a known verb) and the method expression to use.</returns>
-    /// <remarks>A known verb resolves to a framework-cached <see cref="System.Net.Http.HttpMethod"/> singleton. A custom
-    /// verb otherwise constructs a new instance on every call; caching it in a static field matches the reflection
-    /// builder, which reads the verb from the attribute once per method.</remarks>
-    private static (string Source, string Expression) BuildHttpMethodField(RequestModel request, UniqueNameBuilder uniqueNames)
-    {
-        var expression = ToHttpMethodExpression(request.HttpMethod);
-        if (!expression.StartsWith("new ", StringComparison.Ordinal))
-        {
-            return (string.Empty, expression);
-        }
-
-        var fieldName = uniqueNames.New("______httpMethod");
-        var memberIndent = Indent(MethodMemberIndentation);
-        var source = $$"""
-
-
-            {{memberIndent}}/// <summary>Cached custom HTTP method, allocated once instead of per request.</summary>
-            {{memberIndent}}private static readonly global::System.Net.Http.HttpMethod {{fieldName}} = {{expression}};
-            """;
-        return (source, fieldName);
-    }
-
-    /// <summary>Builds the cached form field descriptor array declaration for a URL-encoded body, if eligible.</summary>
-    /// <param name="bodyParameter">The body parameter model, or null when the method has no body.</param>
-    /// <param name="uniqueNames">Contains the unique member names in the interface scope.</param>
-    /// <param name="supportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
-    /// <param name="supportsStaticLambdas">Whether the consumer compilation supports static lambda syntax.</param>
-    /// <returns>The generated field declaration and its name, or empty values when the reflection path is used.</returns>
-    private static (string Source, string? FieldName) BuildFormFieldsField(
-        RequestParameterModel? bodyParameter,
-        UniqueNameBuilder uniqueNames,
-        bool supportsNullable,
-        bool supportsStaticLambdas)
-    {
-        // An all-scalar body is serialized straight-line by BuildInlineFormUnroll and needs no descriptor array.
-        if (IsUnrollableFormBody(bodyParameter))
-        {
-            return (string.Empty, null);
-        }
-
-        if (bodyParameter?.FormFields is not { Count: > 0 } formFields)
-        {
-            return (string.Empty, null);
-        }
-
-        var fields = formFields.AsArray();
-        var bodyType = bodyParameter.Type;
-        var fieldName = uniqueNames.New(FormFieldsVariableName);
-        var elementIndent = Indent(MethodBodyIndentation);
-
-        // The getter lambda degrades to the consumer's language version: 'static' is C# 9 and the 'object?' cast
-        // annotation is C# 8, so both are omitted below those versions to keep generation compilable at the C# 7.3 floor.
-        var getterOpen = ">(" + (supportsStaticLambdas ? "static " : string.Empty)
-            + "body => (" + (supportsNullable ? "object?" : "object") + ")body.@";
-
-        var elementsLength = 0;
-        for (var i = 0; i < fields.Length; i++)
-        {
-            elementsLength += MeasureFormFieldElement(fields[i], bodyType, getterOpen.Length, elementIndent.Length);
-        }
-
-        var elements = CreateGeneratedString(
-            elementsLength,
-            (fields, bodyType, elementIndent, getterOpen),
-            static (destination, state) =>
-            {
-                var position = 0;
-                var (elementFields, type, indent, getter) = state;
-                for (var i = 0; i < elementFields.Length; i++)
-                {
-                    var field = elementFields[i];
-                    AppendText(destination, indent, ref position);
-                    AppendText(destination, FormFieldNew, ref position);
-                    AppendText(destination, type, ref position);
-                    AppendText(destination, getter, ref position);
-                    AppendText(destination, field.PropertyName, ref position);
-                    AppendText(destination, FormFieldNameOpen, ref position);
-                    AppendText(destination, field.PropertyName, ref position);
-                    AppendText(destination, FormFieldNameClose, ref position);
-                    AppendLiteralOrNull(destination, field.ExplicitName, ref position);
-                    AppendText(destination, ArgumentSeparator, ref position);
-                    AppendLiteralOrNull(destination, field.PrefixSegment, ref position);
-                    AppendText(destination, ArgumentSeparator, ref position);
-                    AppendLiteralOrNull(destination, field.Format, ref position);
-                    AppendText(destination, ArgumentSeparator, ref position);
-                    if (field.CollectionFormatValue is { } collectionFormatValue)
-                    {
-                        AppendText(destination, CollectionFormatCast, ref position);
-                        AppendInt32(destination, collectionFormatValue, ref position);
-                    }
-                    else
-                    {
-                        AppendText(destination, NullLiteral, ref position);
-                    }
-
-                    AppendText(destination, ArgumentSeparator, ref position);
-                    AppendText(destination, field.SerializeNull ? TrueLiteral : FalseLiteral, ref position);
-                    AppendText(destination, FormFieldClose, ref position);
-                }
-            });
-
-        var memberIndent = Indent(MethodMemberIndentation);
-        var source = $$"""
-
-
-            {{memberIndent}}/// <summary>Cached form field descriptors used to serialize the URL-encoded request body without reflection.</summary>
-            {{memberIndent}}private static readonly global::Refit.FormField<{{bodyType}}>[] {{fieldName}} = new global::Refit.FormField<{{bodyType}}>[]
-            {{memberIndent}}{
-            {{elements}}{{memberIndent}}};
-            """;
-        return (source, fieldName);
-    }
-
-    /// <summary>Measures the rendered length of one generated form field element line.</summary>
-    /// <param name="field">The form field descriptor.</param>
-    /// <param name="bodyType">The fully-qualified body type.</param>
-    /// <param name="getterOpenLength">The length of the language-version-specific getter lambda opening.</param>
-    /// <param name="indentLength">The element indentation length.</param>
-    /// <returns>The number of characters the rendered element occupies.</returns>
-    private static int MeasureFormFieldElement(FormFieldModel field, string bodyType, int getterOpenLength, int indentLength) =>
-        indentLength
-        + FormFieldNew.Length
-        + bodyType.Length
-        + getterOpenLength
-        + field.PropertyName.Length
-        + FormFieldNameOpen.Length
-        + field.PropertyName.Length
-        + FormFieldNameClose.Length
-        + LiteralOrNullLength(field.ExplicitName)
-        + ArgumentSeparator.Length
-        + LiteralOrNullLength(field.PrefixSegment)
-        + ArgumentSeparator.Length
-        + LiteralOrNullLength(field.Format)
-        + ArgumentSeparator.Length
-        + (field.CollectionFormatValue is { } collectionFormatValue
-            ? CollectionFormatCast.Length + Int32Length(collectionFormatValue)
-            : NullLiteral.Length)
-        + ArgumentSeparator.Length
-        + (field.SerializeNull ? TrueLiteral.Length : FalseLiteral.Length)
-        + FormFieldClose.Length;
-
     /// <summary>Builds the return statement for an inline generated Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="request">The parsed request model.</param>
@@ -1111,19 +408,36 @@ internal static partial class Emitter
                 """;
         }
 
-        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncEnumerable)
-        {
-            return $$"""
+        return methodModel.ReturnTypeMetadata == ReturnTypeInfo.AsyncEnumerable
+            ? $$"""
                 {{bodyIndent}}return global::Refit.GeneratedRequestRunner.StreamAsync<{{request.ResultType}}>(
                 {{bodyIndent}}    this.Client,
                 {{bodyIndent}}    {{requestLocal}},
                 {{bodyIndent}}    {{settingsLocal}},
                 {{bodyIndent}}    {{cancellationTokenExpression}});
 
-                """;
-        }
+                """
+            : BuildInlineSendAsyncReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal, bodyIndent);
+    }
 
-        return methodModel.ReturnType.StartsWith("global::System.Threading.Tasks.ValueTask<", StringComparison.Ordinal)
+    /// <summary>Builds the awaited <c>SendAsync</c> return statement for the standard async-result inline path.</summary>
+    /// <param name="methodModel">The method model being emitted.</param>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="bufferBodyExpression">The request-body buffering expression.</param>
+    /// <param name="cancellationTokenExpression">The cancellation token expression.</param>
+    /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="bodyIndent">The method-body indentation.</param>
+    /// <returns>The generated return statement.</returns>
+    private static string BuildInlineSendAsyncReturn(
+        MethodModel methodModel,
+        RequestModel request,
+        string bufferBodyExpression,
+        string cancellationTokenExpression,
+        string requestLocal,
+        string settingsLocal,
+        string bodyIndent) =>
+        methodModel.ReturnType.StartsWith("global::System.Threading.Tasks.ValueTask<", StringComparison.Ordinal)
             ? $$"""
                 {{bodyIndent}}return new {{methodModel.ReturnType}}(global::Refit.GeneratedRequestRunner.SendAsync<{{request.ResultType}}, {{request.DeserializedResultType}}>(
                 {{bodyIndent}}    this.Client,
@@ -1146,7 +460,6 @@ internal static partial class Emitter
                 {{bodyIndent}}    {{cancellationTokenExpression}});
 
                 """;
-    }
 
     /// <summary>Builds static and dynamic header application for an inline generated method.</summary>
     /// <param name="request">The parsed request model.</param>
@@ -1159,8 +472,9 @@ internal static partial class Emitter
         var bodyIndent = Indent(MethodBodyIndentation);
         foreach (var header in request.StaticHeaders)
         {
-            parts[count++] =
+            parts[count] =
                 $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(header.Name)}, {ToNullableCSharpStringLiteral(header.Value)});\n";
+            count++;
         }
 
         foreach (var parameter in request.Parameters)
@@ -1173,15 +487,17 @@ internal static partial class Emitter
                         var headerValueExpression = parameter.HeaderValuePrefix is { } valuePrefix
                             ? $"{ToCSharpStringLiteral(valuePrefix)} + {BuildHeaderValueExpression(parameter)}"
                             : BuildHeaderValueExpression(parameter);
-                        parts[count++] =
+                        parts[count] =
                             $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(parameter.HeaderName)}, {headerValueExpression});\n";
+                        count++;
                         continue;
                     }
 
                 case RequestParameterKind.HeaderCollection:
                     {
-                        parts[count++] =
+                        parts[count] =
                             $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddHeaderCollection({requestLocal}, @{parameter.Name});\n";
+                        count++;
                         break;
                     }
 
@@ -1223,8 +539,9 @@ internal static partial class Emitter
         var parts = new string[1 + interfaceModel.Properties.Count + request.Parameters.Count];
         var count = 0;
         var bodyIndent = Indent(MethodBodyIndentation);
-        parts[count++] =
+        parts[count] =
             $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions({requestLocal}, {settingsLocal}, typeof({interfaceModel.InterfaceDisplayName}));\n";
+        count++;
 
         foreach (var property in interfaceModel.Properties)
         {
@@ -1233,18 +550,20 @@ internal static partial class Emitter
                 continue;
             }
 
-            parts[count++] =
+            parts[count] =
                 $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{property.Type}>"
                 + $"({requestLocal}, {ToCSharpStringLiteral(property.RequestPropertyKey)}, "
                 + $"{BuildPropertyAccessExpression(property)});\n";
+            count++;
         }
 
         foreach (var parameter in request.Parameters)
         {
             if (parameter.Kind == RequestParameterKind.Property)
             {
-                parts[count++] =
+                parts[count] =
                     $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<{parameter.Type}>({requestLocal}, {ToCSharpStringLiteral(parameter.PropertyKey)}, @{parameter.Name});\n";
+                count++;
             }
         }
 
@@ -1328,4 +647,29 @@ internal static partial class Emitter
     /// <param name="Value">The generated replacement value expression.</param>
     /// <param name="PreEncoded">Whether the value passes through pre-encoded.</param>
     private readonly record struct PathReplacement(int Start, int End, string Value, bool PreEncoded);
+
+    /// <summary>The method-scope locals and pre-built request fragments threaded through inline method assembly.</summary>
+    /// <param name="BodyParameter">The request body parameter, or null.</param>
+    /// <param name="SettingsLocal">The generated settings local name.</param>
+    /// <param name="RequestLocal">The generated request message local name.</param>
+    /// <param name="AdapterTokenLocal">The lambda parameter name for the return-type adapter's cancellation token.</param>
+    /// <param name="CancellationTokenExpression">The cancellation token expression.</param>
+    /// <param name="BufferBodyExpression">The request-body buffering expression.</param>
+    /// <param name="PathExpression">The generated relative-path expression.</param>
+    /// <param name="ParameterInfoNames">The per-parameter attribute-provider field names.</param>
+    /// <param name="ParamInfoBuilder">The builder holding the emitted attribute-provider fields.</param>
+    /// <param name="Emission">The inline value-emission context.</param>
+    /// <param name="Locals">The method-scope unique local name builder.</param>
+    private readonly record struct InlineMethodPlan(
+        RequestParameterModel? BodyParameter,
+        string SettingsLocal,
+        string RequestLocal,
+        string AdapterTokenLocal,
+        string CancellationTokenExpression,
+        string BufferBodyExpression,
+        string PathExpression,
+        Dictionary<string, string> ParameterInfoNames,
+        PooledStringBuilder ParamInfoBuilder,
+        InlineValueEmission Emission,
+        UniqueNameBuilder Locals);
 }

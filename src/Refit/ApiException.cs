@@ -10,8 +10,8 @@ namespace Refit;
 
 /// <summary>Represents an error that occurred after a response was received from the server.</summary>
 [SuppressMessage(
-    "Usage",
-    "CA1032:Implement standard exception constructors",
+    "Design",
+    "SST1488:Exception types should declare the standard constructors",
     Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
 public class ApiException : ApiExceptionBase
 {

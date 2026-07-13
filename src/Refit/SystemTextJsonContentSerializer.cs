@@ -30,6 +30,12 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
     private const string ReflectionFallbackJustification =
         "Serializing or deserializing without supplied JSON type metadata requires runtime serializer metadata.";
 
+#if NET8_0_OR_GREATER
+    /// <summary>The message thrown when the serializer options provide no metadata for a requested type.</summary>
+    private static readonly System.Text.CompositeFormat MissingMetadataFormat =
+        System.Text.CompositeFormat.Parse("The serializer options did not provide metadata for {0}.");
+#endif
+
     /// <summary>Initializes a new instance of the <see cref="SystemTextJsonContentSerializer"/> class.</summary>
     public SystemTextJsonContentSerializer()
         : this(GetDefaultJsonSerializerOptions())
@@ -42,6 +48,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
     /// <summary>Creates new <see cref="JsonSerializerOptions"/> and fills it with default parameters.</summary>
     /// <returns>The default <see cref="JsonSerializerOptions"/>.</returns>
+    [SuppressMessage(
+        "Performance",
+        "PSH1416:Cache constructed objects in a static readonly field",
+        Justification = "Returns a new mutable options instance on each call; callers mutate it, so a cached instance would be shared.")]
     public static JsonSerializerOptions GetDefaultJsonSerializerOptions()
     {
         // Default to case insensitive property name matching as that's likely the behavior most users expect
@@ -75,6 +85,10 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         "Design",
         "CA1024:Use properties where appropriate",
         Justification = "Returns a new mutable options instance on each call; a property would wrongly imply a cached value.")]
+    [SuppressMessage(
+        "Performance",
+        "PSH1416:Cache constructed objects in a static readonly field",
+        Justification = "Returns a new mutable options instance on each call; callers mutate it, so a cached instance would be shared.")]
     public static JsonSerializerOptions GetFastPathJsonSerializerOptions() =>
         new()
         {
@@ -226,6 +240,45 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 #endif
     }
 
+#if !NET9_0_OR_GREATER
+    /// <summary>Determines whether a buffered line is blank, ignoring a trailing carriage return and treating spaces and tabs as blank.</summary>
+    /// <param name="lineBuffer">The buffer holding the line bytes.</param>
+    /// <param name="lineStart">The offset of the line.</param>
+    /// <param name="lineLength">The length of the line.</param>
+    /// <returns><see langword="true"/> when the line contains only spaces and tabs.</returns>
+    private static bool IsBlankLine(byte[] lineBuffer, int lineStart, int lineLength)
+    {
+        var line = new ReadOnlySpan<byte>(lineBuffer, lineStart, lineLength);
+        if (!line.IsEmpty && line[line.Length - 1] == (byte)'\r')
+        {
+            line = line.Slice(0, line.Length - 1);
+        }
+
+        foreach (var b in line)
+        {
+            if (b != (byte)' ' && b != (byte)'\t')
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Grows the pooled line-scan buffer, copying the buffered prefix into a larger rented buffer and returning the old one to the pool.</summary>
+    /// <param name="buffer">The current buffer, returned to the pool once its prefix is copied.</param>
+    /// <param name="length">The number of buffered bytes to preserve.</param>
+    /// <param name="growthFactor">The factor by which the buffer capacity grows.</param>
+    /// <returns>The larger rented buffer holding the preserved prefix.</returns>
+    private static byte[] GrowLineScanBuffer(byte[] buffer, int length, int growthFactor)
+    {
+        var larger = ArrayPool<byte>.Shared.Rent(buffer.Length * growthFactor);
+        Buffer.BlockCopy(buffer, 0, larger, 0, length);
+        ArrayPool<byte>.Shared.Return(buffer);
+        return larger;
+    }
+#endif
+
 #if NET8_0_OR_GREATER
     /// <summary>Gets the JSON type metadata for the given runtime type from the supplied options.</summary>
     /// <param name="type">The runtime type to resolve metadata for.</param>
@@ -236,7 +289,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         ?? throw new InvalidOperationException(
             string.Format(
                 CultureInfo.InvariantCulture,
-                "The serializer options did not provide metadata for {0}.",
+                MissingMetadataFormat,
                 type));
 
 #if NET11_0_OR_GREATER
@@ -270,7 +323,7 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         ?? throw new InvalidOperationException(
             string.Format(
                 CultureInfo.InvariantCulture,
-                "The serializer options did not provide metadata for {0}.",
+                MissingMetadataFormat,
                 typeof(T)));
 #endif
 
@@ -474,25 +527,6 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
         Stream stream,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        static bool IsBlankLine(byte[] lineBuffer, int lineStart, int lineLength)
-        {
-            var line = new ReadOnlySpan<byte>(lineBuffer, lineStart, lineLength);
-            if (!line.IsEmpty && line[line.Length - 1] == (byte)'\r')
-            {
-                line = line.Slice(0, line.Length - 1);
-            }
-
-            foreach (var b in line)
-            {
-                if (b != (byte)' ' && b != (byte)'\t')
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
         // The initial pooled buffer, and the factor it grows by when a single line does not fit in it.
         const int lineScanBufferSize = 4096;
         const int lineScanBufferGrowthFactor = 2;
@@ -526,15 +560,12 @@ public sealed class SystemTextJsonContentSerializer(JsonSerializerOptions jsonSe
 
                 if (end == buffer.Length)
                 {
-                    var larger = ArrayPool<byte>.Shared.Rent(buffer.Length * lineScanBufferGrowthFactor);
-                    Buffer.BlockCopy(buffer, 0, larger, 0, end);
-                    ArrayPool<byte>.Shared.Return(buffer);
-                    buffer = larger;
+                    buffer = GrowLineScanBuffer(buffer, end, lineScanBufferGrowthFactor);
                 }
 
 #if NET8_0_OR_GREATER
                 var read = await stream
-                    .ReadAsync(buffer.AsMemory(end, buffer.Length - end), cancellationToken)
+                    .ReadAsync(buffer.AsMemory(end), cancellationToken)
                     .ConfigureAwait(false);
 #else
                 var read = await stream

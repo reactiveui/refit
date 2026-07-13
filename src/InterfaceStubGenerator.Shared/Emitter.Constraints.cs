@@ -39,7 +39,8 @@ internal static partial class Emitter
                 indentationLevel);
             if (source.Length != 0)
             {
-                parts[count++] = source;
+                parts[count] = source;
+                count++;
             }
         }
 
@@ -137,6 +138,7 @@ internal static partial class Emitter
             return;
         }
 
-        parts[count++] = keyword;
+        parts[count] = keyword;
+        count++;
     }
 }

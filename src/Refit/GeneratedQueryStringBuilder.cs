@@ -190,11 +190,12 @@ public ref struct GeneratedQueryStringBuilder
             return;
         }
 
-        if (_collectionValueCount++ > 0)
+        if (_collectionValueCount > 0)
         {
             _joinedValues.Append(_collectionDelimiter);
         }
 
+        _collectionValueCount++;
         _joinedValues.Append(value);
     }
 
@@ -216,11 +217,12 @@ public ref struct GeneratedQueryStringBuilder
             return;
         }
 
-        if (_collectionValueCount++ > 0)
+        if (_collectionValueCount > 0)
         {
             _joinedValues.Append(_collectionDelimiter);
         }
 
+        _collectionValueCount++;
         AppendFormattedValue(ref _joinedValues, value, null, escape: false);
     }
 #endif

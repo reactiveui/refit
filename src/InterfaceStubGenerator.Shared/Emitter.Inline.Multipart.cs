@@ -121,6 +121,24 @@ internal static partial class Emitter
         var fieldName = ToCSharpStringLiteral(part.FieldName);
         var fileName = ToCSharpStringLiteral(part.FileName);
         _ = sb.Append(indent).Append(contentLocal).Append(".Add(");
+        AppendMultipartAddArguments(sb, part, settingsLocal, value, fieldName, fileName);
+    }
+
+    /// <summary>Appends the <c>.Add(...)</c> argument list for one multipart part, per its dispatch arm.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="part">The multipart part descriptor.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="value">The value expression (a parameter accessor or a foreach element local).</param>
+    /// <param name="fieldName">The C# string literal for the part's field name.</param>
+    /// <param name="fileName">The C# string literal for the part's file name.</param>
+    private static void AppendMultipartAddArguments(
+        PooledStringBuilder sb,
+        MultipartPartModel part,
+        string settingsLocal,
+        string value,
+        string fieldName,
+        string fileName)
+    {
         switch (part.Kind)
         {
             case MultipartPartKind.HttpContent:
@@ -166,12 +184,7 @@ internal static partial class Emitter
 
             case MultipartPartKind.Serialized:
             {
-                // A sealed/value part is JSON-serialized under its field name, matching AddSerializedMultipartItem's
-                // serializer fallback. The declared type drives ToHttpContent<T>, so the serialized form matches; a
-                // serialization failure is wrapped in the same descriptive ArgumentException the reflection builder raises.
-                _ = sb.Append("global::Refit.GeneratedRequestRunner.SerializeMultipartPart(").Append(settingsLocal)
-                    .Append(", ").Append(value).Append(", ").Append(fieldName).Append("), ")
-                    .Append(fieldName).AppendLine(");");
+                AppendSerializedMultipartArgument(sb, settingsLocal, value, fieldName);
                 break;
             }
 
@@ -185,5 +198,20 @@ internal static partial class Emitter
                 break;
             }
         }
+    }
+
+    /// <summary>Appends the <c>.Add(...)</c> arguments for a JSON-serialized multipart part.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <param name="value">The value expression (a parameter accessor or a foreach element local).</param>
+    /// <param name="fieldName">The C# string literal for the part's field name.</param>
+    private static void AppendSerializedMultipartArgument(PooledStringBuilder sb, string settingsLocal, string value, string fieldName)
+    {
+        // A sealed/value part is JSON-serialized under its field name, matching AddSerializedMultipartItem's
+        // serializer fallback. The declared type drives ToHttpContent<T>, so the serialized form matches; a
+        // serialization failure is wrapped in the same descriptive ArgumentException the reflection builder raises.
+        _ = sb.Append("global::Refit.GeneratedRequestRunner.SerializeMultipartPart(").Append(settingsLocal)
+            .Append(", ").Append(value).Append(", ").Append(fieldName).Append("), ")
+            .Append(fieldName).AppendLine(");");
     }
 }

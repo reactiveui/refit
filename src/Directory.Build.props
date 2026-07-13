@@ -27,7 +27,6 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <RunAnalyzers>false</RunAnalyzers>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <ReportAnalyzer>true</ReportAnalyzer>
     <Nullable>enable</Nullable>

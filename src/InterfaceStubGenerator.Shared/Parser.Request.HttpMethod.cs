@@ -51,23 +51,9 @@ internal static partial class Parser
     {
         verb = string.Empty;
 
-        // Walk the attribute and its bases for the most-derived Method override. The base HttpMethodAttribute always
-        // declares an (abstract) HttpMethod Method, so a property is always found; the property type pins this to that
-        // real override rather than an unrelated "Method", and any non-HttpMethod or unreadable override falls through.
-        IPropertySymbol? property = null;
-        for (INamedTypeSymbol? current = attributeClass; property is null && current is not null; current = current.BaseType)
-        {
-            foreach (var member in current.GetMembers("Method"))
-            {
-                if (member is IPropertySymbol { GetMethod: not null } candidate)
-                {
-                    property = candidate;
-                    break;
-                }
-            }
-        }
-
-        if (property is not { GetMethod: { } getter }
+        // The property type pins this to the real HttpMethod override rather than an unrelated "Method", and any
+        // non-HttpMethod or unreadable override falls through.
+        if (FindMethodProperty(attributeClass) is not { GetMethod: { } getter } property
             || property.Type.ToDisplayString() != "System.Net.Http.HttpMethod")
         {
             return false;
@@ -85,6 +71,27 @@ internal static partial class Parser
         }
 
         return false;
+    }
+
+    /// <summary>Finds the most-derived <c>Method</c> property that declares a getter on an attribute type.</summary>
+    /// <param name="attributeClass">The custom HTTP method attribute type.</param>
+    /// <returns>The <c>Method</c> property, or null when none declares a getter.</returns>
+    /// <remarks>Walks the attribute and its bases for the most-derived <c>Method</c> override. The base
+    /// HttpMethodAttribute always declares an (abstract) HttpMethod Method, so a property is normally found.</remarks>
+    private static IPropertySymbol? FindMethodProperty(INamedTypeSymbol attributeClass)
+    {
+        for (INamedTypeSymbol? current = attributeClass; current is not null; current = current.BaseType)
+        {
+            foreach (var member in current.GetMembers("Method"))
+            {
+                if (member is IPropertySymbol { GetMethod: not null } candidate)
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Gets the expression a property getter returns, as an expression body or a single return statement.</summary>

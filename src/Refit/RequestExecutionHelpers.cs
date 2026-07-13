@@ -118,30 +118,13 @@ internal static class RequestExecutionHelpers
                 ? await settings.ExceptionFactory(response).ConfigureAwait(false)
                 : null;
 
-            if (options.IsApiResponse)
-            {
-                return await BuildApiResponseAsync<T, TBody>(
-                        request,
-                        response,
-                        content,
-                        settings,
-                        exception,
-                        cancellationToken)
-                    .ConfigureAwait(false);
-            }
-
-            if (exception is not null)
+            // A non-ApiResponse error hands ownership of the response to the thrown exception, so it must outlive this scope.
+            if (!options.IsApiResponse && exception is not null)
             {
                 disposeResponse = false;
-                throw exception;
             }
 
-            return await DeserializeOrThrowAsync<T>(
-                    request,
-                    response,
-                    content,
-                    settings,
-                    cancellationToken)
+            return await DispatchResponseAsync<T, TBody>(request, response, content, settings, options, exception, cancellationToken)
                 .ConfigureAwait(false);
         }
         finally
@@ -417,6 +400,56 @@ internal static class RequestExecutionHelpers
     {
         System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(exception).Throw();
         return exception;
+    }
+
+    /// <summary>Turns a received response into the caller's result: an API-response wrapper, a thrown error, or a deserialized value.</summary>
+    /// <typeparam name="T">The result type returned to the caller.</typeparam>
+    /// <typeparam name="TBody">The deserialized body type for API response wrappers.</typeparam>
+    /// <param name="request">The request message.</param>
+    /// <param name="response">The response message.</param>
+    /// <param name="content">The response content.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="options">The send and response-processing options.</param>
+    /// <param name="exception">The exception produced by the exception factory, if any.</param>
+    /// <param name="cancellationToken">A token to cancel the request.</param>
+    /// <returns>The deserialized or wrapped response.</returns>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "TBody is intentionally passed explicitly by generated and reflection callers for ApiResponse<T> body deserialization.")]
+    private static async Task<T?> DispatchResponseAsync<T, TBody>(
+        HttpRequestMessage request,
+        HttpResponseMessage response,
+        HttpContent content,
+        RefitSettings settings,
+        RequestExecutionOptions options,
+        Exception? exception,
+        CancellationToken cancellationToken)
+    {
+        if (options.IsApiResponse)
+        {
+            return await BuildApiResponseAsync<T, TBody>(
+                    request,
+                    response,
+                    content,
+                    settings,
+                    exception,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (exception is not null)
+        {
+            throw exception;
+        }
+
+        return await DeserializeOrThrowAsync<T>(
+                request,
+                response,
+                content,
+                settings,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     /// <summary>Builds an API response, deserializing content unless an earlier error exists.</summary>

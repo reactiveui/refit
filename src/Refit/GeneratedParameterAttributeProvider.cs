@@ -13,19 +13,31 @@ public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[
     /// <summary>A shared provider for parameters that declare no attributes, avoiding a per-parameter empty dictionary.</summary>
     public static readonly GeneratedParameterAttributeProvider Empty = new([]);
 
-    /// <summary>Gets a lazily initialised array of all attributes.</summary>
-    private object[] AllAttributesCache
-    {
-        get
-        {
-            if (field is null)
-            {
-                _ = Interlocked.CompareExchange(ref field, FlattenAttributes(attributes), null);
-            }
+    /// <summary>The lazily flattened array of every attribute, memoized on first access.</summary>
+    private object[]? _allAttributes;
 
-            return field;
+    /// <inheritdoc/>
+    public object[] GetCustomAttributes(bool inherit)
+    {
+        if (Volatile.Read(ref _allAttributes) is { } cached)
+        {
+            return cached;
         }
+
+        var flattened = FlattenAttributes(attributes);
+        return Interlocked.CompareExchange(ref _allAttributes, flattened, null) ?? flattened;
     }
+
+    /// <inheritdoc/>
+    public object[] GetCustomAttributes(Type attributeType, bool inherit)
+    {
+        ArgumentExceptionHelper.ThrowIfNull(attributeType);
+
+        return attributes.TryGetValue(attributeType, out var matches) ? matches : [];
+    }
+
+    /// <inheritdoc/>
+    public bool IsDefined(Type attributeType, bool inherit) => attributes.ContainsKey(attributeType);
 
     /// <summary>Flattens the per-type attribute arrays into a single array without nested iteration.</summary>
     /// <param name="attributes">The attribute arrays keyed by attribute type.</param>
@@ -48,18 +60,4 @@ public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[
 
         return allAttributes;
     }
-
-    /// <inheritdoc/>
-    public object[] GetCustomAttributes(bool inherit) => AllAttributesCache;
-
-    /// <inheritdoc/>
-    public object[] GetCustomAttributes(Type attributeType, bool inherit)
-    {
-        ArgumentExceptionHelper.ThrowIfNull(attributeType);
-
-        return attributes.TryGetValue(attributeType, out var matches) ? matches : [];
-    }
-
-    /// <inheritdoc/>
-    public bool IsDefined(Type attributeType, bool inherit) => attributes.ContainsKey(attributeType);
 }

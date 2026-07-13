@@ -2,11 +2,16 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace Refit;
 
 /// <summary>Defines various parameters on how Refit should work.</summary>
+[SuppressMessage(
+    "Reliability",
+    "SST2403:'this' escapes from a constructor before the object is fully built",
+    Justification = "The default exception-factory delegate captures the settings instance but is only invoked after construction completes.")]
 public class RefitSettings
 {
     /// <summary>Initializes a new instance of the <see cref="RefitSettings"/> class.</summary>

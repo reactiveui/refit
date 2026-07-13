@@ -10,8 +10,8 @@ namespace Refit;
 
 /// <summary>An ApiException that is raised according to RFC 7807, which contains problem details for validation exceptions.</summary>
 [SuppressMessage(
-    "Usage",
-    "CA1032:Implement standard exception constructors",
+    "Design",
+    "SST1488:Exception types should declare the standard constructors",
     Justification = "This exception requires HTTP request/response context and cannot be constructed via the parameterless or message-only constructors.")]
 public class ValidationApiException : ApiException
 {

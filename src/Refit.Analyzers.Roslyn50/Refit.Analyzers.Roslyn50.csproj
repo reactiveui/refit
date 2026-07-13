@@ -31,10 +31,13 @@
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Adapters.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Aliases.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Parameters.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.ParameterKinds.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.HttpMethod.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Path.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Body.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Query.cs" LinkBase="InterfaceStubGenerator.Shared"/>
+    <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Query.Objects.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Multipart.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.Request.Helpers.cs" LinkBase="InterfaceStubGenerator.Shared"/>
     <Compile Include="..\InterfaceStubGenerator.Shared\Parser.InlineEligibility.cs" LinkBase="InterfaceStubGenerator.Shared"/>
