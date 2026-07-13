@@ -163,7 +163,7 @@ internal static partial class Emitter
         var requestPathExpression = AppendInlineQueryPrologue(prologue, request, parameterInfoNames, emission, pathExpression, bodyIndent);
         var requestPrologueSource = prologue.ToString();
 
-        var httpMethodExpression = ToHttpMethodExpression(request.HttpMethod);
+        var (httpMethodFieldSource, httpMethodExpression) = BuildHttpMethodField(request, uniqueNames);
 
         // A [QueryUriFormat] method re-encodes the whole path and query with the attribute's UriFormat, matching the
         // reflection builder's final GetComponents pass; every other method uses the direct relative URI.
@@ -190,7 +190,7 @@ internal static partial class Emitter
         var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
         var methodIndent = Indent(MethodMemberIndentation);
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
-        var methodPrefix = $"{paramInfoSb}{formFieldsSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
+        var methodPrefix = $"{paramInfoSb}{formFieldsSource}{httpMethodFieldSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
 
         // The request construction shared by every shape: prologue locals, the message, the version, content, headers,
         // and request properties. A cold IObservable wraps this in a per-subscription local function so a second
@@ -915,6 +915,32 @@ internal static partial class Emitter
         }
 
         return false;
+    }
+
+    /// <summary>Resolves the HTTP method expression, caching a custom verb in a static field.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="uniqueNames">The interface-scope unique name builder.</param>
+    /// <returns>The static field source (empty for a known verb) and the method expression to use.</returns>
+    /// <remarks>A known verb resolves to a framework-cached <see cref="System.Net.Http.HttpMethod"/> singleton. A custom
+    /// verb otherwise constructs a new instance on every call; caching it in a static field matches the reflection
+    /// builder, which reads the verb from the attribute once per method.</remarks>
+    private static (string Source, string Expression) BuildHttpMethodField(RequestModel request, UniqueNameBuilder uniqueNames)
+    {
+        var expression = ToHttpMethodExpression(request.HttpMethod);
+        if (!expression.StartsWith("new ", StringComparison.Ordinal))
+        {
+            return (string.Empty, expression);
+        }
+
+        var fieldName = uniqueNames.New("______httpMethod");
+        var memberIndent = Indent(MethodMemberIndentation);
+        var source = $$"""
+
+
+            {{memberIndent}}/// <summary>Cached custom HTTP method, allocated once instead of per request.</summary>
+            {{memberIndent}}private static readonly global::System.Net.Http.HttpMethod {{fieldName}} = {{expression}};
+            """;
+        return (source, fieldName);
     }
 
     /// <summary>Builds the cached form field descriptor array declaration for a URL-encoded body, if eligible.</summary>

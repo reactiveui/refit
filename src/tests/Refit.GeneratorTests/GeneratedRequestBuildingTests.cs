@@ -495,7 +495,10 @@ public class GeneratedRequestBuildingTests
 
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
         await Assert.That(generated).Contains(NewHttpRequestMessage);
-        await Assert.That(generated).Contains("new global::System.Net.Http.HttpMethod(\"PURGE\")");
+
+        // The custom verb is allocated once in a static field and the request references it, not a per-call allocation.
+        await Assert.That(generated).Contains("private static readonly global::System.Net.Http.HttpMethod ______httpMethod = new global::System.Net.Http.HttpMethod(\"PURGE\");");
+        await Assert.That(generated).Contains("new global::System.Net.Http.HttpRequestMessage(______httpMethod,");
     }
 
     /// <summary>Verifies a custom HTTP QUERY verb attribute (a draft-standard body-carrying method) with an explicit
