@@ -2,6 +2,7 @@
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace Refit;
@@ -13,20 +14,41 @@ public sealed class GeneratedParameterAttributeProvider(Dictionary<Type, object[
     /// <summary>A shared provider for parameters that declare no attributes, avoiding a per-parameter empty dictionary.</summary>
     public static readonly GeneratedParameterAttributeProvider Empty = new([]);
 
-    /// <summary>List of all attributes.</summary>
-    private readonly Lazy<object[]> _allAttributesCache = new(() =>
+    /// <summary>Gets a lazily initialised array of all attributes.</summary>
+    private object[] AllAttributesCache
     {
-        var allAttributes = new List<object>();
-        foreach (var value in attributes.Values)
+        [SuppressMessage("StyleCop.Analyzers", "SST1443:ReduceNestedFlowComplexity", Justification = "The nested logic is necessary here to avoid LINQ usage.")]
+        get
         {
-            allAttributes.AddRange(value);
-        }
+            if (field is not null)
+            {
+                return field;
+            }
 
-        return allAttributes.ToArray();
-    });
+            var totalCount = 0;
+            foreach (var attributeArray in attributes.Values)
+            {
+                totalCount += attributeArray.Length;
+            }
+
+            var allAttributes = new object[totalCount];
+            var index = 0;
+            foreach (var attributeArray in attributes.Values)
+            {
+                foreach (var item in attributeArray)
+                {
+                    allAttributes[index++] = item;
+                }
+            }
+
+            _ = Interlocked.CompareExchange(ref field, allAttributes, null);
+
+            return field;
+        }
+    }
 
     /// <inheritdoc/>
-    public object[] GetCustomAttributes(bool inherit) => _allAttributesCache.Value;
+    public object[] GetCustomAttributes(bool inherit) => AllAttributesCache;
 
     /// <inheritdoc/>
     public object[] GetCustomAttributes(Type attributeType, bool inherit)
