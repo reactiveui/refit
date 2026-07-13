@@ -26,8 +26,14 @@ public class QueryRequestBuildingBenchmark
     /// <summary>The sample page size.</summary>
     private const int SamplePageSize = 25;
 
+    /// <summary>The sample scalar query text.</summary>
+    private const string QueryText = "widgets";
+
     /// <summary>The sample collection values.</summary>
     private static readonly int[] _sampleIds = [1, 2, 3, 4, 5, 6, 7, 8];
+
+    /// <summary>A sample timestamp whose invariant form contains reserved characters (<c>:</c>, <c>+</c>).</summary>
+    private static readonly DateTimeOffset _sampleTimestamp = new(2026, 7, 13, 12, 30, 0, TimeSpan.Zero);
 
     /// <summary>The generated Refit client.</summary>
     private IQueryRequestService _generated = null!;
@@ -47,6 +53,12 @@ public class QueryRequestBuildingBenchmark
     /// <summary>The cached reflection delegate for <see cref="IQueryRequestService.MultiCollectionAsync"/>.</summary>
     private Func<HttpClient, object[], object?> _reflectionMultiCollection = null!;
 
+    /// <summary>The cached reflection delegate for <see cref="IQueryRequestService.TimestampQueryAsync"/>.</summary>
+    private Func<HttpClient, object[], object?> _reflectionTimestampQuery = null!;
+
+    /// <summary>The cached reflection delegate for <see cref="IQueryRequestService.TimestampPathAsync"/>.</summary>
+    private Func<HttpClient, object[], object?> _reflectionTimestampPath = null!;
+
     /// <summary>Initializes the clients before the benchmarks run.</summary>
     [GlobalSetup]
     public void Setup()
@@ -64,6 +76,8 @@ public class QueryRequestBuildingBenchmark
         _reflectionMultiParameter = reflectionBuilder.BuildRestResultFuncForMethod(nameof(IQueryRequestService.MultiParameterAsync));
         _reflectionCsvCollection = reflectionBuilder.BuildRestResultFuncForMethod(nameof(IQueryRequestService.CsvCollectionAsync));
         _reflectionMultiCollection = reflectionBuilder.BuildRestResultFuncForMethod(nameof(IQueryRequestService.MultiCollectionAsync));
+        _reflectionTimestampQuery = reflectionBuilder.BuildRestResultFuncForMethod(nameof(IQueryRequestService.TimestampQueryAsync));
+        _reflectionTimestampPath = reflectionBuilder.BuildRestResultFuncForMethod(nameof(IQueryRequestService.TimestampPathAsync));
     }
 
     /// <summary>Cleans up the HTTP client.</summary>
@@ -88,7 +102,7 @@ public class QueryRequestBuildingBenchmark
     [Benchmark(Baseline = true)]
     [BenchmarkCategory("MultiParameter")]
     public Task<HttpResponseMessage> GeneratedMultiParameterAsync() =>
-        _generated.MultiParameterAsync("widgets", SamplePage, SamplePageSize, true, QuerySort.DateDescending);
+        _generated.MultiParameterAsync(QueryText, SamplePage, SamplePageSize, true, QuerySort.DateDescending);
 
     /// <summary>Benchmarks five reflection-built scalar query parameters including an enum.</summary>
     /// <returns>The HTTP response message.</returns>
@@ -97,7 +111,7 @@ public class QueryRequestBuildingBenchmark
     public Task<HttpResponseMessage> ReflectionMultiParameterAsync() =>
         (Task<HttpResponseMessage>)_reflectionMultiParameter(
             _client,
-            ["widgets", SamplePage, SamplePageSize, true, QuerySort.DateDescending])!;
+            [QueryText, SamplePage, SamplePageSize, true, QuerySort.DateDescending])!;
 
     /// <summary>Benchmarks a generated csv-joined collection.</summary>
     /// <returns>The HTTP response message.</returns>
@@ -136,4 +150,36 @@ public class QueryRequestBuildingBenchmark
     [Benchmark]
     [BenchmarkCategory("SourceGenOnly")]
     public Task<HttpResponseMessage> GeneratedEncodedAsync() => _generated.EncodedAsync("a%2Fb%2Fc");
+
+    /// <summary>Benchmarks a generated span-formattable query value that requires escaping (span-escape path).</summary>
+    /// <returns>The HTTP response message.</returns>
+    [Benchmark(Baseline = true)]
+    [BenchmarkCategory("TimestampQuery")]
+    public Task<HttpResponseMessage> GeneratedTimestampQueryAsync() => _generated.TimestampQueryAsync(_sampleTimestamp);
+
+    /// <summary>Benchmarks a reflection-built span-formattable query value that requires escaping.</summary>
+    /// <returns>The HTTP response message.</returns>
+    [Benchmark]
+    [BenchmarkCategory("TimestampQuery")]
+    public Task<HttpResponseMessage> ReflectionTimestampQueryAsync() =>
+        (Task<HttpResponseMessage>)_reflectionTimestampQuery(_client, [_sampleTimestamp])!;
+
+    /// <summary>Benchmarks a generated span-formattable path value that requires escaping (path span-escape).</summary>
+    /// <returns>The HTTP response message.</returns>
+    [Benchmark(Baseline = true)]
+    [BenchmarkCategory("TimestampPath")]
+    public Task<HttpResponseMessage> GeneratedTimestampPathAsync() => _generated.TimestampPathAsync(_sampleTimestamp);
+
+    /// <summary>Benchmarks a reflection-built span-formattable path value that requires escaping.</summary>
+    /// <returns>The HTTP response message.</returns>
+    [Benchmark]
+    [BenchmarkCategory("TimestampPath")]
+    public Task<HttpResponseMessage> ReflectionTimestampPathAsync() =>
+        (Task<HttpResponseMessage>)_reflectionTimestampPath(_client, [_sampleTimestamp])!;
+
+    /// <summary>Benchmarks a generated custom-verb request, exercising the cached verb instance (source-generation only).</summary>
+    /// <returns>The HTTP response message.</returns>
+    [Benchmark]
+    [BenchmarkCategory("SourceGenOnly")]
+    public Task<HttpResponseMessage> GeneratedCustomVerbAsync() => _generated.CustomVerbAsync(QueryText);
 }

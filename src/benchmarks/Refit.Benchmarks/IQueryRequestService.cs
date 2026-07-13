@@ -45,4 +45,22 @@ public interface IQueryRequestService
     /// <returns>The HTTP response message.</returns>
     [Get("/cursor")]
     Task<HttpResponseMessage> EncodedAsync([Encoded] string cursor);
+
+    /// <summary>Sends a request with a span-formattable timestamp query value that requires percent-encoding.</summary>
+    /// <param name="at">The timestamp, whose invariant form contains reserved characters.</param>
+    /// <returns>The HTTP response message.</returns>
+    [Get("/events")]
+    Task<HttpResponseMessage> TimestampQueryAsync(DateTimeOffset at);
+
+    /// <summary>Sends a request with a span-formattable timestamp path value that requires percent-encoding.</summary>
+    /// <param name="at">The timestamp substituted into the path, whose invariant form contains reserved characters.</param>
+    /// <returns>The HTTP response message.</returns>
+    [Get("/events/{at}")]
+    Task<HttpResponseMessage> TimestampPathAsync(DateTimeOffset at);
+
+    /// <summary>Sends a request with a custom HTTP verb, exercising the cached verb instance.</summary>
+    /// <param name="q">The query text.</param>
+    /// <returns>The HTTP response message.</returns>
+    [QueryVerb("/documents")]
+    Task<HttpResponseMessage> CustomVerbAsync(string q);
 }
