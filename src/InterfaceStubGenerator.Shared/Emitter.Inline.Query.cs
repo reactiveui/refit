@@ -26,6 +26,9 @@ internal static partial class Emitter
     /// <summary>The suffix appended to a generated local holding a dictionary entry or nested property value.</summary>
     private const string ValueLocalSuffix = "_value";
 
+    /// <summary>The member access unwrapping a nullable value type to its underlying value after a null guard.</summary>
+    private const string NullableValueAccess = ".Value";
+
     /// <summary>The generated call appending one collection element to the query-string builder.</summary>
     private const string AddCollectionValueCall = ".AddCollectionValue(";
 
@@ -325,13 +328,17 @@ internal static partial class Emitter
         // per-value intermediate string; a customized formatter keeps the string-formatted Add.
         if (IsSpanFormattableFast(query, out var format))
         {
+            // A nullable value type writes the unwrapped .Value (span-formattable) on the fast path - the outer null
+            // guard already ran - while the customized-formatter branch keeps the original value and declared type so
+            // it matches the reflection builder's UrlParameterFormatter.Format call exactly.
             var accessor = "@" + parameter.Name;
+            var fastAccessor = query.ValueFormat.IsNullableValueType ? accessor + NullableValueAccess : accessor;
             var customExpression = BuildUrlFormatterCall(accessor, parameter.Type, providerField, emission);
             var innerIndent = indent + "    ";
             _ = sb.Append(indent).Append("if (").Append(emission.UseDefaultFormattingLocal).AppendLine(")")
                 .Append(indent).AppendLine("{")
                 .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".AddFormatted(").Append(key).Append(", ")
-                    .Append(accessor).Append(", ").Append(ToNullableCSharpStringLiteral(format)).Append(", ").Append(preEncoded).AppendLine(");")
+                    .Append(fastAccessor).Append(", ").Append(ToNullableCSharpStringLiteral(format)).Append(", ").Append(preEncoded).AppendLine(");")
                 .Append(indent).AppendLine("}")
                 .Append(indent).AppendLine("else")
                 .Append(indent).AppendLine("{")
@@ -866,7 +873,7 @@ internal static partial class Emitter
 
         // A nullable value-type nested object holds its underlying struct behind .Value; a reference type flattens off
         // the value directly. The null check above still runs against the value itself.
-        var childAccess = property.NestedThroughValue ? site.ValueLocal + ".Value" : site.ValueLocal;
+        var childAccess = property.NestedThroughValue ? site.ValueLocal + NullableValueAccess : site.ValueLocal;
 
         if (!property.CanBeNull)
         {
@@ -1365,6 +1372,7 @@ internal static partial class Emitter
         return !query.TreatAsString
             && valueFormat.Kind == InlineFormatKind.Formattable
             && valueFormat.Format is null
+            && !valueFormat.IsNullableValueType
             && (valueFormat.IsUrlSafeSpanFormattable || valueFormat.IsSpanFormattableEscapable);
     }
 
@@ -1378,7 +1386,7 @@ internal static partial class Emitter
         InlineValueFormatModel valueFormat,
         in InlineValueEmission emission)
     {
-        var unwrapped = valueFormat.IsNullableValueType ? valueExpression + ".Value" : valueExpression;
+        var unwrapped = valueFormat.IsNullableValueType ? valueExpression + NullableValueAccess : valueExpression;
         return valueFormat.Kind switch
         {
             InlineFormatKind.String => unwrapped,

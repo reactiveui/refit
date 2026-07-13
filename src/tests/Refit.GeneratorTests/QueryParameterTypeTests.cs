@@ -43,6 +43,18 @@ public sealed class QueryParameterTypeTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
+    /// <summary>Verifies a nullable value-type query parameter uses the span-formattable fast write on its unwrapped
+    /// <c>.Value</c> after the null guard, rather than materializing an intermediate string.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task NullableValueTypeQueryParameterUsesSpanFastWrite()
+    {
+        var generated = Generate("[Get(\"/items\")] Task<string> Get(int? page);");
+
+        await Assert.That(generated).Contains(".AddFormatted(");
+        await Assert.That(generated).Contains("@page.Value");
+    }
+
     /// <summary>Verifies collections of scalars generate inline query construction.</summary>
     /// <param name="parameterType">The query parameter type expression.</param>
     /// <returns>A task representing the asynchronous test.</returns>

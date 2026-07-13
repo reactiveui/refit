@@ -557,8 +557,10 @@ internal static partial class Emitter
         }
 
         if (pathParameter is not { Locations: { Count: 1 } locations, PreEncoded: false, ValueFormat: { } valueFormat }
+            || valueFormat.IsNullableValueType
             || (!valueFormat.IsUrlSafeSpanFormattable && !valueFormat.IsSpanFormattableEscapable))
         {
+            // A nullable value type keeps the string-formatting path, which null-guards and unwraps .Value itself.
             return null;
         }
 

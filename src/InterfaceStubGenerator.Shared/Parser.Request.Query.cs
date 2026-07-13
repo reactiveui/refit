@@ -843,7 +843,6 @@ internal static partial class Parser
         var (urlSafe, escapable) = ComputeSpanFormattableTiers(
             type,
             format,
-            isNullableValueType,
             implementsSpanFormattable,
             context);
         return new(InlineFormatKind.Formattable, format, typeName, isNullableValueType, null)
@@ -891,25 +890,24 @@ internal static partial class Parser
     /// <summary>Computes the two path fast-write tiers a formattable value type supports on the consumer target.</summary>
     /// <param name="type">The unwrapped value type.</param>
     /// <param name="format">The compile-time format, or null.</param>
-    /// <param name="isNullableValueType">Whether the source value is a nullable value type.</param>
     /// <param name="implementsSpanFormattable">Whether the value type implements <c>ISpanFormattable</c>, resolved in the single interface walk.</param>
     /// <param name="context">The generation context carrying the resolved fast-path capabilities.</param>
-    /// <returns>Whether the value qualifies for the net6+ URL-safe integer write and the net10+ span-escape write.</returns>
+    /// <returns>Whether the value qualifies for the net6+ URL-safe integer write and the net9+ span-escape write.</returns>
     /// <remarks>net6+: an unformatted integer renders as URL-safe digits, so it is written with no escaping.
-    /// net10+: any <c>ISpanFormattable</c> renders into a stack buffer and escapes span-to-string, skipping the ToString.</remarks>
+    /// net9+: any <c>ISpanFormattable</c> renders into a stack buffer and escapes span-to-string, skipping the ToString.</remarks>
     private static (bool UrlSafe, bool Escapable) ComputeSpanFormattableTiers(
         ITypeSymbol type,
         string? format,
-        bool isNullableValueType,
         bool implementsSpanFormattable,
         InterfaceGenerationContext context)
     {
+        // A nullable value type still qualifies: the scalar query emitter formats it inside the existing null guard and
+        // writes the unwrapped .Value (which is span-formattable). The path and collection fast paths opt out of the
+        // nullable case separately, keeping their existing string-formatting path.
         var urlSafe = context.SpanFormattableSymbol is not null
-            && !isNullableValueType
             && format is null
             && type.SpecialType is >= SpecialType.System_SByte and <= SpecialType.System_UInt64;
         var escapable = context.SupportsSpanEscape
-            && !isNullableValueType
             && implementsSpanFormattable;
         return (urlSafe, escapable);
     }
