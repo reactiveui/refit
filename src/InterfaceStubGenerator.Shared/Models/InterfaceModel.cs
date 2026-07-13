@@ -15,6 +15,8 @@ namespace Refit.Generator;
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="SupportsNullable">Whether the consumer compilation supports nullable reference type syntax.</param>
 /// <param name="SupportsStaticLambdas">Whether the consumer compilation supports the <c>static</c> lambda modifier (C# 9).</param>
+/// <param name="SupportsCollectionExpressions">Whether the consumer compilation supports collection expressions (C# 12),
+/// so path replacements can be passed as a stack-allocatable <c>[...]</c> span instead of an array.</param>
 /// <param name="Constraints">The generic type constraints of the interface.</param>
 /// <param name="MemberNames">The names of the interface members.</param>
 /// <param name="Properties">The interface properties implemented by the generated stub.</param>
@@ -36,6 +38,7 @@ internal sealed record InterfaceModel(
     bool EmitGeneratedCodeMarkers,
     bool SupportsNullable,
     bool SupportsStaticLambdas,
+    bool SupportsCollectionExpressions,
     ImmutableEquatableArray<TypeConstraint> Constraints,
     ImmutableEquatableArray<string> MemberNames,
     ImmutableEquatableArray<InterfacePropertyModel> Properties,

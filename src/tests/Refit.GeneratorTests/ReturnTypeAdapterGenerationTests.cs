@@ -16,6 +16,9 @@ public sealed class ReturnTypeAdapterGenerationTests
     /// <summary>The reflective request-builder call emitted by fallback paths.</summary>
     private const string ReflectiveFallback = "BuildRestResultFuncForMethod";
 
+    /// <summary>The deferred adapter invocation emitted for an adapter-backed return type.</summary>
+    private const string AdaptCall = ".Adapt(";
+
     /// <summary>Verifies an adapter-backed return type generates a deferred inline <c>Adapt</c> call.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -53,7 +56,45 @@ public sealed class ReturnTypeAdapterGenerationTests
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
-        await Assert.That(result.GeneratedSources[Hint]).Contains(".Adapt(");
+        await Assert.That(result.GeneratedSources[Hint]).Contains(AdaptCall);
+    }
+
+    /// <summary>Verifies an adapter whose wrapper reorders its type parameters generates inline, closing the adapter over
+    /// the reordered arguments (a successful compile proves the mapping is correct).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task ReorderedAdapterBackedReturnTypeGeneratesInline()
+    {
+        const string Source =
+            """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace RefitGeneratorTest;
+
+            public sealed class Paired<TFirst, TSecond> { }
+
+            // The wrapper lists the adapter's parameters in reverse: Paired<T2, T1>. A Paired<string, int> return must
+            // bind T2 = string and T1 = int, closing the adapter as SwapAdapter<int, string> with a result type of int.
+            public sealed class SwapAdapter<T1, T2> : IReturnTypeAdapter<Paired<T2, T1>, T1>
+            {
+                public Paired<T2, T1> Adapt(Func<CancellationToken, Task<T1>> invoke) => new();
+            }
+
+            public interface IGeneratedClient
+            {
+                [Get("/pairs/{id}")]
+                Paired<string, int> GetPair(int id);
+            }
+            """;
+
+        var result = Fixture.RunGenerator(Source, generatedRequestBuilding: true);
+
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
+        await Assert.That(result.GeneratedSources[Hint]).Contains(AdaptCall);
     }
 
     /// <summary>Verifies a non-generic adapter surfaces its non-generic return type inline.</summary>
@@ -91,13 +132,13 @@ public sealed class ReturnTypeAdapterGenerationTests
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
-        await Assert.That(result.GeneratedSources[Hint]).Contains(".Adapt(");
+        await Assert.That(result.GeneratedSources[Hint]).Contains(AdaptCall);
     }
 
     /// <summary>
     /// Verifies the adapter matcher rejects registered adapters that do not surface a method's return type: a generic
-    /// adapter with a different type-argument count, a non-generic adapter for a different return type, and a generic
-    /// adapter whose wrapper transposes the type parameters. The method has no matching adapter, so it falls back.
+    /// adapter with a different type-argument count and a non-generic adapter for a different return type. The method has
+    /// no matching adapter, so it falls back.
     /// </summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -128,11 +169,6 @@ public sealed class ReturnTypeAdapterGenerationTests
 
             public sealed class Pair<TLeft, TRight> { }
 
-            public sealed class SwapAdapter<TLeft, TRight> : IReturnTypeAdapter<Pair<TRight, TLeft>, TLeft>
-            {
-                public Pair<TRight, TLeft> Adapt(Func<CancellationToken, Task<TLeft>> invoke) => new();
-            }
-
             public interface IGeneratedClient
             {
                 [Get("/pair")]
@@ -144,7 +180,8 @@ public sealed class ReturnTypeAdapterGenerationTests
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
 
-        // No adapter surfaces Pair<int, string> (the SwapAdapter transposes the parameters), so the method falls back.
+        // WrappedAdapter<T> mismatches Pair's two-argument arity and BoxedAdapter is a different type, so no adapter
+        // surfaces Pair<int, string> and the method falls back.
         await Assert.That(result.GeneratedSources[Hint]).Contains(ReflectiveFallback);
     }
 }

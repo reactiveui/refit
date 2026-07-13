@@ -23,6 +23,9 @@ internal static partial class Emitter
     /// <summary>The generated call appending one query pair to the query-string builder.</summary>
     private const string AddQueryPairCall = ".Add(";
 
+    /// <summary>The suffix appended to a generated local holding a dictionary entry or nested property value.</summary>
+    private const string ValueLocalSuffix = "_value";
+
     /// <summary>The generated call appending one collection element to the query-string builder.</summary>
     private const string AddCollectionValueCall = ".AddCollectionValue(";
 
@@ -501,7 +504,7 @@ internal static partial class Emitter
         var indent = guarded ? bodyIndent + "    " : bodyIndent;
         var entryLocal = emission.QueryValueLocal + "_entry";
         var keyLocal = emission.QueryValueLocal + "_key";
-        var valueLocal = emission.QueryValueLocal + "_value";
+        var valueLocal = emission.QueryValueLocal + ValueLocalSuffix;
 
         if (guarded)
         {
@@ -567,23 +570,72 @@ internal static partial class Emitter
             ? customKey
             : $"{emission.UseDefaultFormattingLocal} ? ({fastKey}) : {customKey}";
 
-        var customValue = BuildUrlFormatterCall(valueLocal, parameter.Type, providerField, emission);
-        var fastValue = BuildFastFormatExpression(valueLocal, query.ValueFormat, emission);
-        var valueExpression = fastValue is null
-            ? customValue
-            : $"{emission.UseDefaultFormattingLocal} ? ({fastValue}) : {customValue}";
-
-        var keyArgument = dictionary.PrefixSegment is { } prefix
-            ? $"{ToCSharpStringLiteral(prefix)} + {keyLocal}"
-            : keyLocal;
-
         _ = sb.Append(indent).Append("var ").Append(keyLocal).Append(" = ").Append(keyExpression).AppendLine(";")
             .Append(indent).Append("if (!string.IsNullOrWhiteSpace(").Append(keyLocal).AppendLine("))")
-            .Append(indent).AppendLine("{")
-            .Append(indent).Append("    ").Append(emission.QueryBuilderLocal)
-            .Append(AddQueryPairCall).Append(keyArgument).Append(", ").Append(valueExpression).Append(", ")
-            .Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");")
-            .Append(indent).AppendLine("}");
+            .Append(indent).AppendLine("{");
+
+        var innerIndent = indent + "    ";
+        if (dictionary.ValueProperties is { } valueProperties)
+        {
+            AppendDictionaryValueFlatten(sb, parameter, query, providerField, emission, entry, valueProperties);
+        }
+        else
+        {
+            var customValue = BuildUrlFormatterCall(valueLocal, parameter.Type, providerField, emission);
+            var fastValue = BuildFastFormatExpression(valueLocal, query.ValueFormat, emission);
+            var valueExpression = fastValue is null
+                ? customValue
+                : $"{emission.UseDefaultFormattingLocal} ? ({fastValue}) : {customValue}";
+            var keyArgument = dictionary.PrefixSegment is { } prefix
+                ? $"{ToCSharpStringLiteral(prefix)} + {keyLocal}"
+                : keyLocal;
+            _ = sb.Append(innerIndent).Append(emission.QueryBuilderLocal)
+                .Append(AddQueryPairCall).Append(keyArgument).Append(", ").Append(valueExpression).Append(", ")
+                .Append(ToLowerInvariantString(query.PreEncoded)).AppendLine(");");
+        }
+
+        _ = sb.Append(indent).AppendLine("}");
+    }
+
+    /// <summary>Appends the statements flattening a sealed complex dictionary value under the entry's key.</summary>
+    /// <param name="sb">The statement builder.</param>
+    /// <param name="parameter">The parameter model.</param>
+    /// <param name="query">The query-binding metadata.</param>
+    /// <param name="providerField">The cached attribute-provider field name.</param>
+    /// <param name="emission">The shared emission locals and helper state.</param>
+    /// <param name="entry">The generated locals and indentation for the current entry.</param>
+    /// <param name="valueProperties">The flattened property descriptors of the value type.</param>
+    /// <remarks>Reuses the query-object flattening walk with the entry key as the runtime parent key, so each value
+    /// property emits an <c>entryKey.property=value</c> pair, matching the reflection builder's nested <c>BuildQueryMap</c>.</remarks>
+    private static void AppendDictionaryValueFlatten(
+        PooledStringBuilder sb,
+        RequestParameterModel parameter,
+        QueryParameterModel query,
+        string providerField,
+        in InlineValueEmission emission,
+        in DictionaryEntrySite entry,
+        ImmutableEquatableArray<QueryObjectPropertyModel> valueProperties)
+    {
+        var dictionary = query.Dictionary!;
+        var (_, keyLocal, valueLocal, entryIndent) = entry;
+        var indent = entryIndent + "    ";
+
+        var parentKeyExpression = keyLocal;
+        if (dictionary.PrefixSegment is { } prefix)
+        {
+            var parentKeyLocal = keyLocal + "_prefixed";
+            _ = sb.Append(indent).Append("var ").Append(parentKeyLocal).Append(" = ")
+                .Append(ToCSharpStringLiteral(prefix)).Append(" + ").Append(keyLocal).AppendLine(";");
+            parentKeyExpression = parentKeyLocal;
+        }
+
+        var context = new QueryObjectContext(
+            parameter,
+            providerField,
+            query.CollectionFormatValue,
+            ToLowerInvariantString(query.PreEncoded));
+        var scope = new ObjectFlattenScope(valueLocal, parentKeyExpression, query.NestingDelimiter, ValueLocalSuffix, indent);
+        AppendObjectPropertyList(sb, context, valueProperties, scope, emission);
     }
 
     /// <summary>Appends the statements flattening one query object's properties into query pairs.</summary>
@@ -721,7 +773,7 @@ internal static partial class Emitter
     {
         var indent = site.Indentation;
         var entryLocal = site.ValueLocal + "_entry";
-        var entryValueLocal = site.ValueLocal + "_value";
+        var entryValueLocal = site.ValueLocal + ValueLocalSuffix;
         var entryKeyLocal = site.ValueLocal + "_entrykey";
 
         var loopIndent = indent;
@@ -1348,6 +1400,8 @@ internal static partial class Emitter
     /// guarding the fast path for a flattened property's <c>[Query(Format)]</c>.</param>
     /// <param name="Scope">The enum formatter scope for the interface.</param>
     /// <param name="MemberSource">The builder receiving emitted helper members.</param>
+    /// <param name="SupportsCollectionExpressions">Whether the consumer supports C# 12 collection expressions, so path
+    /// replacements are emitted as a stack-allocatable <c>[...]</c> span instead of an explicitly-typed array.</param>
     private readonly record struct InlineValueEmission(
         string QueryBuilderLocal,
         string QueryValueLocal,
@@ -1355,7 +1409,8 @@ internal static partial class Emitter
         string UseDefaultFormattingLocal,
         string UseDefaultFormFormattingLocal,
         EnumFormatterScope Scope,
-        PooledStringBuilder MemberSource);
+        PooledStringBuilder MemberSource,
+        bool SupportsCollectionExpressions);
 
     /// <summary>The generated locals and indentation used to emit one flattened query-object property.</summary>
     /// <param name="ValueLocal">The local holding the property value.</param>

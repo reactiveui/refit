@@ -347,7 +347,9 @@ public static class GeneratorComponentTests
             await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.Bar")).IsEqualTo("Bar");
             await Assert.That(Emitter.StripExplicitInterfacePrefix("IFoo.")).IsEqualTo("IFoo.");
             await Assert.That(Emitter.StripExplicitInterfacePrefix("Bar")).IsEqualTo("Bar");
-            await Assert.That(static () => Emitter.ToHttpMethodExpression("TRACE")).ThrowsExactly<ArgumentOutOfRangeException>();
+
+            // A verb outside the cached singletons (a custom HTTP method attribute's verb) constructs an HttpMethod.
+            await Assert.That(Emitter.ToHttpMethodExpression("TRACE")).IsEqualTo("new global::System.Net.Http.HttpMethod(\"TRACE\")");
         }
 
         /// <summary>Verifies generated return invocation text for every return type shape.</summary>
@@ -586,6 +588,7 @@ public static class GeneratorComponentTests
                 EmitGeneratedCodeMarkers: true,
                 SupportsNullable: true,
                 SupportsStaticLambdas: true,
+                SupportsCollectionExpressions: true,
                 ImmutableEquatableArray<TypeConstraint>.Empty,
                 ImmutableEquatableArray<string>.Empty,
                 ImmutableEquatableArray<InterfacePropertyModel>.Empty,

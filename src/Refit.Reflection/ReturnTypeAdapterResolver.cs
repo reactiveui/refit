@@ -145,18 +145,18 @@ internal static class ReturnTypeAdapterResolver
             }
 
             var templateReturn = implemented.GetGenericArguments()[0];
-            if (!IsPositionalTypeParameters(templateReturn, returnType))
+            if (!TryMapTypeArguments(templateReturn, returnType, out var adapterOrdered))
             {
                 continue;
             }
 
-            var resolved = ResolveTemplateResult(implemented.GetGenericArguments()[1], returnArguments);
+            var resolved = ResolveTemplateResult(implemented.GetGenericArguments()[1], adapterOrdered);
             if (resolved is null)
             {
                 continue;
             }
 
-            typeArguments = returnArguments;
+            typeArguments = adapterOrdered;
             resultType = resolved;
             return true;
         }
@@ -170,13 +170,20 @@ internal static class ReturnTypeAdapterResolver
     private static bool IsAdapterInterface(Type implemented) =>
         implemented.IsGenericType && implemented.GetGenericTypeDefinition() == typeof(IReturnTypeAdapter<,>);
 
-    /// <summary>Determines whether the adapter's template <c>TReturn</c> is the return type's generic definition
-    /// closed over the adapter's type parameters in declaration order.</summary>
-    /// <param name="templateReturn">The adapter's declared <c>TReturn</c> (open constructed).</param>
+    /// <summary>Maps a wrapper return type's arguments onto the adapter's type parameters, in adapter declaration order.</summary>
+    /// <param name="templateReturn">The adapter's declared <c>TReturn</c> (open constructed over the adapter's parameters).</param>
     /// <param name="returnType">The declared return type of the interface method.</param>
-    /// <returns><see langword="true"/> when the shapes line up positionally.</returns>
-    private static bool IsPositionalTypeParameters(Type templateReturn, Type returnType)
+    /// <param name="adapterOrdered">The concrete arguments ordered by the adapter's type parameters when the map succeeds.</param>
+    /// <returns><see langword="true"/> when every adapter type parameter is bound consistently.</returns>
+    /// <remarks>
+    /// Supports reordered and concrete-mixed wrappers, not only the in-order case: each template argument that is a generic
+    /// parameter binds the return type's argument at its position, and each concrete template argument must equal the
+    /// return type's argument, so <c>Adapter&lt;T1, T2&gt; : IReturnTypeAdapter&lt;Wrapper&lt;T2, T1&gt;, …&gt;</c> closes over a
+    /// <c>Wrapper&lt;A, B&gt;</c> return as <c>Adapter&lt;B, A&gt;</c>. Mirrors the generator's <c>TryMapAdapterTypeArguments</c>.
+    /// </remarks>
+    private static bool TryMapTypeArguments(Type templateReturn, Type returnType, out Type[] adapterOrdered)
     {
+        adapterOrdered = [];
         if (!templateReturn.IsGenericType
             || templateReturn.GetGenericTypeDefinition() != returnType.GetGenericTypeDefinition())
         {
@@ -184,14 +191,49 @@ internal static class ReturnTypeAdapterResolver
         }
 
         var templateArguments = templateReturn.GetGenericArguments();
+        var returnArguments = returnType.GetGenericArguments();
+        var mapped = new Type?[templateArguments.Length];
         for (var i = 0; i < templateArguments.Length; i++)
         {
-            if (!templateArguments[i].IsGenericParameter || templateArguments[i].GenericParameterPosition != i)
+            if (!TryBindArgument(templateArguments[i], returnArguments[i], mapped))
             {
                 return false;
             }
         }
 
+        if (!Array.TrueForAll(mapped, static argument => argument is not null))
+        {
+            return false;
+        }
+
+        adapterOrdered = mapped!;
+        return true;
+    }
+
+    /// <summary>Binds one template argument to its return-type argument, either through a type parameter or an exact match.</summary>
+    /// <param name="templateArgument">The adapter template's argument (a type parameter or a concrete type).</param>
+    /// <param name="returnArgument">The return type's argument at the same position.</param>
+    /// <param name="mapped">The per-type-parameter binding slots, filled by position.</param>
+    /// <returns><see langword="true"/> when the argument binds consistently.</returns>
+    private static bool TryBindArgument(Type templateArgument, Type returnArgument, Type?[] mapped)
+    {
+        if (!templateArgument.IsGenericParameter)
+        {
+            return templateArgument == returnArgument;
+        }
+
+        var position = templateArgument.GenericParameterPosition;
+        if (position >= mapped.Length)
+        {
+            return false;
+        }
+
+        if (mapped[position] is { } existing)
+        {
+            return existing == returnArgument;
+        }
+
+        mapped[position] = returnArgument;
         return true;
     }
 

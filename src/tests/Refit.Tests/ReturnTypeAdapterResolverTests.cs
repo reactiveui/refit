@@ -64,6 +64,23 @@ public sealed class ReturnTypeAdapterResolverTests
         await Assert.That(resultType).IsEqualTo(typeof(AdapterUser));
     }
 
+    /// <summary>Verifies an open generic adapter whose wrapper reorders the adapter's type parameters is matched, closing
+    /// the adapter over the reordered arguments and surfacing the correctly mapped result type.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task OpenGenericAdapterSurfacesReorderedWrappedResultType()
+    {
+        // SwappedAdapter<T1, T2> : IReturnTypeAdapter<Paired<T2, T1>, T1>, so a Paired<AdapterUser, int> return binds
+        // T2 = AdapterUser and T1 = int; the surfaced result type is T1 = int.
+        var matched = ReturnTypeAdapterResolver.TryResolveResultType(
+            typeof(Paired<AdapterUser, int>),
+            [typeof(SwappedAdapter<,>)],
+            out var resultType);
+
+        await Assert.That(matched).IsTrue();
+        await Assert.That(resultType).IsEqualTo(typeof(int));
+    }
+
     /// <summary>Verifies an open generic adapter is not matched against a non-generic return type.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -248,5 +265,26 @@ public sealed class ReturnTypeAdapterResolverTests
     {
         /// <inheritdoc/>
         public Wrapped<int> Adapt(Func<CancellationToken, Task<T>> invoke) => new();
+    }
+
+    /// <summary>A two-parameter generic return shape used by the reordered adapter.</summary>
+    /// <typeparam name="TFirst">The first wrapped value type.</typeparam>
+    /// <typeparam name="TSecond">The second wrapped value type.</typeparam>
+    private sealed class Paired<TFirst, TSecond>
+    {
+        /// <summary>Gets the first wrapped value.</summary>
+        public TFirst? First { get; init; }
+
+        /// <summary>Gets the second wrapped value.</summary>
+        public TSecond? Second { get; init; }
+    }
+
+    /// <summary>An open generic adapter whose wrapper reorders the adapter's type parameters.</summary>
+    /// <typeparam name="T1">The result type parameter, appearing second in the wrapper.</typeparam>
+    /// <typeparam name="T2">The type parameter appearing first in the wrapper.</typeparam>
+    private sealed class SwappedAdapter<T1, T2> : IReturnTypeAdapter<Paired<T2, T1>, T1>
+    {
+        /// <inheritdoc/>
+        public Paired<T2, T1> Adapt(Func<CancellationToken, Task<T1>> invoke) => new();
     }
 }

@@ -135,7 +135,8 @@ internal static partial class Emitter
             locals.New("refitUseDefaultFormatting"),
             locals.New("refitUseDefaultFormFormatting"),
             enumFormatterScope,
-            paramInfoSb);
+            paramInfoSb,
+            interfaceModel.SupportsCollectionExpressions);
         var parameters = GetParametersArg(request, parameterInfoNames, emission);
 
         var pathExpression = BuildInlinePathExpression(request, parameterInfoNames, emission, settingsLocal, parameters);
@@ -181,8 +182,12 @@ internal static partial class Emitter
         var requestPrologueSource = prologue.ToString();
 
         var httpMethodExpression = ToHttpMethodExpression(request.HttpMethod);
-        var requestUriExpression =
-            $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
+
+        // A [QueryUriFormat] method re-encodes the whole path and query with the attribute's UriFormat, matching the
+        // reflection builder's final GetComponents pass; every other method uses the direct relative URI.
+        var requestUriExpression = request.QueryUriFormat is { } queryUriFormat
+            ? $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution, (global::System.UriFormat){queryUriFormat})"
+            : $"global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, {requestPathExpression}, {settingsLocal}.UrlResolution)";
         var (formFieldsSource, formFieldsFieldName) = BuildFormFieldsField(
             bodyParameter,
             uniqueNames,
@@ -417,14 +422,26 @@ internal static partial class Emitter
             }
         }
 
+        if (replacements.Count == 0)
+        {
+            return string.Empty;
+        }
+
         // BuildRequestPath fills the template left-to-right and slices between consecutive replacements, so they must
         // be ordered by template position. Parameter order does not match template order when an object binding (or a
         // later parameter) fills an earlier placeholder, so sort here rather than relying on declaration order.
         replacements.Sort(static (left, right) => left.Start.CompareTo(right.Start));
 
         var parametersSb = new PooledStringBuilder();
+        var first = true;
         foreach (var replacement in replacements)
         {
+            if (!first)
+            {
+                _ = parametersSb.Append(", ");
+            }
+
+            first = false;
             AppendPathTuple(
                 parametersSb,
                 replacement.Start,
@@ -434,8 +451,19 @@ internal static partial class Emitter
                 replacement.PreEncoded);
         }
 
-        return parametersSb.ToString();
+        return WrapPathReplacements(parametersSb.ToString(), emission.SupportsCollectionExpressions);
     }
+
+    /// <summary>Wraps the path replacement tuples as the collection argument passed to <c>BuildRequestPath</c>.</summary>
+    /// <param name="tuples">The comma-separated tuple expressions.</param>
+    /// <param name="supportsCollectionExpressions">Whether the consumer supports C# 12 collection expressions.</param>
+    /// <returns>The <c>, &lt;collection&gt;</c> argument fragment.</returns>
+    /// <remarks>A C# 12 consumer receives a <c>[...]</c> collection expression, which the compiler materializes on the
+    /// stack (net8.0+ inline arrays) so no array is allocated; an older consumer receives an inferred array that the same
+    /// <c>ReadOnlySpan</c> overload accepts via the array-to-span conversion. The array element type is inferred from the
+    /// tuple values rather than stated, so no nullable reference annotation is emitted into a pre-C# 8 consumer.</remarks>
+    private static string WrapPathReplacements(string tuples, bool supportsCollectionExpressions) =>
+        supportsCollectionExpressions ? ", [" + tuples + "]" : ", new[] { " + tuples + " }";
 
     /// <summary>Determines whether any path parameter passes its value through pre-encoded.</summary>
     /// <param name="request">The parsed request model.</param>
@@ -468,7 +496,7 @@ internal static partial class Emitter
         bool includePreEncoded,
         bool preEncoded)
     {
-        _ = sb.Append(", ").Append("((").Append(start).Append(", ").Append(end).Append("), ").Append(valueExpression);
+        _ = sb.Append("((").Append(start).Append(", ").Append(end).Append("), ").Append(valueExpression);
         if (includePreEncoded)
         {
             _ = sb.Append(", ").Append(ToLowerInvariantString(preEncoded));
@@ -548,8 +576,10 @@ internal static partial class Emitter
         var fastExpression = valueFormat.IsUrlSafeSpanFormattable
             ? $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression})"
             : $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression}, {ToNullableCSharpStringLiteral(valueFormat.Format)})";
-        var customExpression =
-            $"{runner}({template}, {allowUnmatched}, (({start}, {end}), {settingsLocal}.UrlParameterFormatter.Format({valueExpression}, {providerField}, typeof({pathParameter.Type}))))";
+        var customTuple =
+            $"(({start}, {end}), {settingsLocal}.UrlParameterFormatter.Format({valueExpression}, {providerField}, typeof({pathParameter.Type})))";
+        var customReplacements = WrapPathReplacements(customTuple, emission.SupportsCollectionExpressions);
+        var customExpression = $"{runner}({template}, {allowUnmatched}{customReplacements})";
 
         return $"({emission.UseDefaultFormattingLocal} ? {fastExpression} : {customExpression})";
     }

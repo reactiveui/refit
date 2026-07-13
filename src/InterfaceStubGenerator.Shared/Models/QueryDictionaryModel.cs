@@ -9,8 +9,12 @@ namespace Refit.Generator;
 /// <param name="KeyFormat">The reflection-free rendering strategy for a key.</param>
 /// <param name="ValueCanBeNull">Whether a value requires a null check; the reflection builder omits null values.</param>
 /// <param name="PrefixSegment">The enclosing parameter's compile-time <c>prefix + delimiter</c>, or null.</param>
+/// <param name="ValueProperties">The flattened property descriptors of a sealed or value complex value type, so each
+/// entry recurses into its value under the <c>entryKey.property</c> key exactly as the reflection builder's nested
+/// <c>BuildQueryMap</c> does; null for a simple value, which renders as a single <c>entryKey=value</c> pair.</param>
 internal sealed record QueryDictionaryModel(
     string KeyTypeName,
     InlineValueFormatModel KeyFormat,
     bool ValueCanBeNull,
-    string? PrefixSegment);
+    string? PrefixSegment,
+    ImmutableEquatableArray<QueryObjectPropertyModel>? ValueProperties = null);

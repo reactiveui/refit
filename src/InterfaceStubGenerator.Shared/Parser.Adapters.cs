@@ -163,28 +163,79 @@ internal static partial class Parser
         var openInterface = FindImplementedAdapterInterface(adapter, adapterInterface);
         return openInterface?.TypeArguments[0] is INamedTypeSymbol templateReturn
             && SymbolEqualityComparer.Default.Equals(templateReturn.OriginalDefinition, returnType.OriginalDefinition)
-            && IsPositionalTypeParameters(templateReturn, adapter)
-            ? adapter.Construct([.. returnType.TypeArguments])
+            && TryMapAdapterTypeArguments(templateReturn, returnType, adapter, out var adapterOrdered)
+            ? adapter.Construct(adapterOrdered)
             : null;
     }
 
-    /// <summary>Determines whether a constructed type's type arguments are the adapter's type parameters in order.</summary>
-    /// <param name="templateReturn">The adapter's declared <c>TReturn</c>.</param>
+    /// <summary>Maps a wrapper return type's arguments onto the adapter's type parameters, in adapter declaration order.</summary>
+    /// <param name="templateReturn">The adapter's declared <c>TReturn</c> (open constructed over the adapter's parameters).</param>
+    /// <param name="returnType">The declared return type supplying the concrete arguments.</param>
     /// <param name="adapter">The adapter type definition.</param>
-    /// <returns><see langword="true"/> when each argument is the adapter's type parameter in the same position.</returns>
-    /// <remarks>The sole caller invokes this only after verifying the template return and the return type share a
-    /// generic definition and match the adapter's arity, so the argument and type-parameter counts are always equal.</remarks>
-    private static bool IsPositionalTypeParameters(INamedTypeSymbol templateReturn, INamedTypeSymbol adapter)
+    /// <param name="adapterOrdered">The concrete arguments ordered by the adapter's type parameters when the map succeeds.</param>
+    /// <returns><see langword="true"/> when every adapter type parameter is bound consistently.</returns>
+    /// <remarks>
+    /// Supports reordered and concrete-mixed wrappers, not only the in-order case: each template argument that is one of
+    /// the adapter's type parameters binds the return type's argument at that position, and each concrete template
+    /// argument must equal the return type's argument. So <c>Adapter&lt;T1, T2&gt; : IReturnTypeAdapter&lt;Wrapper&lt;T2, T1&gt;, …&gt;</c>
+    /// closes over a <c>Wrapper&lt;A, B&gt;</c> return as <c>Adapter&lt;B, A&gt;</c>. The sole caller invokes this only after the
+    /// template return and the return type share a generic definition and arity, so the argument counts are equal.
+    /// </remarks>
+    private static bool TryMapAdapterTypeArguments(
+        INamedTypeSymbol templateReturn,
+        INamedTypeSymbol returnType,
+        INamedTypeSymbol adapter,
+        out ITypeSymbol[] adapterOrdered)
     {
-        var arguments = templateReturn.TypeArguments;
-        for (var i = 0; i < arguments.Length; i++)
+        adapterOrdered = [];
+        var templateArguments = templateReturn.TypeArguments;
+        var returnArguments = returnType.TypeArguments;
+        var mapped = new ITypeSymbol?[adapter.TypeParameters.Length];
+        for (var i = 0; i < templateArguments.Length; i++)
         {
-            if (!SymbolEqualityComparer.Default.Equals(arguments[i], adapter.TypeParameters[i]))
+            if (!TryBindAdapterArgument(templateArguments[i], returnArguments[i], adapter, mapped))
             {
                 return false;
             }
         }
 
+        foreach (var argument in mapped)
+        {
+            if (argument is null)
+            {
+                return false;
+            }
+        }
+
+        adapterOrdered = mapped!;
+        return true;
+    }
+
+    /// <summary>Binds one template argument to its return-type argument, either through a type parameter or an exact match.</summary>
+    /// <param name="templateArgument">The adapter template's argument (a type parameter or a concrete type).</param>
+    /// <param name="returnArgument">The return type's argument at the same position.</param>
+    /// <param name="adapter">The adapter type definition owning the type parameters.</param>
+    /// <param name="mapped">The per-type-parameter binding slots, filled by position.</param>
+    /// <returns><see langword="true"/> when the argument binds consistently.</returns>
+    private static bool TryBindAdapterArgument(
+        ITypeSymbol templateArgument,
+        ITypeSymbol returnArgument,
+        INamedTypeSymbol adapter,
+        ITypeSymbol?[] mapped)
+    {
+        if (templateArgument is not ITypeParameterSymbol typeParameter
+            || !SymbolEqualityComparer.Default.Equals(typeParameter.ContainingSymbol, adapter))
+        {
+            return SymbolEqualityComparer.Default.Equals(templateArgument, returnArgument);
+        }
+
+        var position = typeParameter.Ordinal;
+        if (mapped[position] is { } existing)
+        {
+            return SymbolEqualityComparer.Default.Equals(existing, returnArgument);
+        }
+
+        mapped[position] = returnArgument;
         return true;
     }
 

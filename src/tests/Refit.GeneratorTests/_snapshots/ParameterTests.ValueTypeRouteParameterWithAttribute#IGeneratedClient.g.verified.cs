@@ -53,7 +53,7 @@ namespace Refit.Implementation
             {
                 var refitSettings = _settings;
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/todos/{id}", refitSettings.AllowUnmatchedRouteParameters, ((7, 11), refitUseDefaultFormatting ? (@id == null ? null : global::Refit.GeneratedRequestRunner.FormatInvariant(@id.Value, "00")) : refitSettings.UrlParameterFormatter.Format(@id, ______idAttributeProvider, typeof(int?)))), refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/todos/{id}", refitSettings.AllowUnmatchedRouteParameters, [((7, 11), refitUseDefaultFormatting ? (@id == null ? null : global::Refit.GeneratedRequestRunner.FormatInvariant(@id.Value, "00")) : refitSettings.UrlParameterFormatter.Format(@id, ______idAttributeProvider, typeof(int?)))]), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;

@@ -16,6 +16,11 @@ public static class GeneratedRequestRunner
     /// <summary>The underlying value of the obsolete <c>BodySerializationMethod.Json</c> member.</summary>
     private const int ObsoleteJsonBodySerializationMethodValue = 1;
 
+    /// <summary>A dummy absolute base used only to re-encode a relative path and query for <c>[QueryUriFormat]</c>. The
+    /// host is irrelevant because <see cref="UriComponents.PathAndQuery"/> ignores it; it mirrors the reflection builder's
+    /// own base so the two produce byte-identical output.</summary>
+    private static readonly Uri QueryUriFormatBase = new("https://api", UriKind.Absolute);
+
     /// <summary>Builds the relative request URI for a generated request, joining the client base address with the method path.</summary>
     /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
     /// <param name="relativePath">The method's relative path, including any leading slash and query string.</param>
@@ -35,20 +40,47 @@ public static class GeneratedRequestRunner
         return new(basePath + relativePath, UriKind.Relative);
     }
 
+    /// <summary>Builds the relative request URI, re-encoding the whole path and query with a <c>[QueryUriFormat]</c> mode.</summary>
+    /// <param name="client">The HTTP client whose base address is used under legacy resolution.</param>
+    /// <param name="relativePath">The method's relative path, including any leading slash and query string.</param>
+    /// <param name="urlResolution">The configured URL resolution mode.</param>
+    /// <param name="queryUriFormat">The escaping mode from the method's <c>[QueryUriFormat]</c> attribute.</param>
+    /// <returns>A relative <see cref="Uri"/> whose path and query are re-encoded with <paramref name="queryUriFormat"/>.</returns>
+    /// <remarks>Mirrors the reflection request builder: it always assembles the path and query with the escaping query
+    /// builder, then re-encodes the whole thing through <see cref="Uri.GetComponents(UriComponents, UriFormat)"/> with the
+    /// method's <c>QueryUriFormat</c> (so <see cref="UriFormat.Unescaped"/> decodes it). Rfc3986 resolution ignores the
+    /// format, exactly as the reflection builder does.</remarks>
+    public static Uri BuildRelativeUri(HttpClient client, string relativePath, UrlResolutionMode urlResolution, UriFormat queryUriFormat)
+    {
+        if (urlResolution == UrlResolutionMode.Rfc3986)
+        {
+            return new(relativePath, UriKind.Relative);
+        }
+
+        var basePath = client.BaseAddress?.AbsolutePath
+                       ?? throw new InvalidOperationException("BaseAddress must be set on the HttpClient instance");
+        basePath = basePath == "/" ? string.Empty : basePath.TrimEnd('/');
+        var absolute = new Uri(QueryUriFormatBase, basePath + relativePath);
+        return new(absolute.GetComponents(UriComponents.PathAndQuery, queryUriFormat), UriKind.Relative);
+    }
+
     /// <summary>Builds the request path for a generated request from a template.</summary>
     /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
     /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
-    /// <param name="uriParams">The replacement uri parameters.</param>
+    /// <param name="uriParams">The replacement uri parameters, ordered by template position.</param>
     /// <returns>A path with all the placeholder parameters in the path template replaced.</returns>
     /// <exception cref="ArgumentException">
-    /// A URI template parameter is not available in the provided parameter array and unmatched URL parameters aren't allowed.
+    /// A URI template parameter is not available in the provided parameter span and unmatched URL parameters aren't allowed.
     /// </exception>
+    /// <remarks>Generated call sites pass the replacements as a collection expression. On C# 12 and a runtime with inline
+    /// array support (net8.0+) that materializes on the stack, so any number of path parameters is expanded without a heap
+    /// allocation; older consumers pass a small array via the same signature.</remarks>
     public static string BuildRequestPath(
         string relativePathTemplate,
         bool allowUnmatchedParameter,
-        params ((int startIdx, int endIdx) range, string? value)[] uriParams)
+        ReadOnlySpan<((int startIdx, int endIdx) range, string? value)> uriParams)
     {
-        if (uriParams.Length == 0 && allowUnmatchedParameter)
+        if (uriParams.IsEmpty && allowUnmatchedParameter)
         {
             return relativePathTemplate;
         }
@@ -68,99 +100,6 @@ public static class GeneratedRequestRunner
         }
 
         sb.Append(pathSpan[pos..]);
-        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
-    }
-
-    /// <summary>Builds the request path for a single-placeholder template without allocating a parameter array.</summary>
-    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
-    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
-    /// <param name="p0">The replacement range and value for the first placeholder.</param>
-    /// <returns>A path with the placeholder replaced.</returns>
-    /// <remarks>Overload resolution prefers this fixed-arity form over the <c>params</c> overload, so a generated call
-    /// with one path parameter binds here and skips the per-request array allocation. It also unrolls the replacement
-    /// loop into straight-line span appends.</remarks>
-    public static string BuildRequestPath(
-        string relativePathTemplate,
-        bool allowUnmatchedParameter,
-        ((int startIdx, int endIdx) range, string? value) p0)
-    {
-        var pathSpan = relativePathTemplate.AsSpan();
-        using var sb = new ValueStringBuilder(stackalloc char[256]);
-        sb.Append(pathSpan[..p0.range.startIdx]);
-        if (p0.value is not null)
-        {
-            sb.Append(StringHelpers.EscapeDataString(p0.value));
-        }
-
-        sb.Append(pathSpan[p0.range.endIdx..]);
-        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
-    }
-
-    /// <summary>Builds the request path for a two-placeholder template without allocating a parameter array.</summary>
-    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
-    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
-    /// <param name="p0">The replacement range and value for the first placeholder.</param>
-    /// <param name="p1">The replacement range and value for the second placeholder.</param>
-    /// <returns>A path with the placeholders replaced.</returns>
-    public static string BuildRequestPath(
-        string relativePathTemplate,
-        bool allowUnmatchedParameter,
-        ((int startIdx, int endIdx) range, string? value) p0,
-        ((int startIdx, int endIdx) range, string? value) p1)
-    {
-        var pathSpan = relativePathTemplate.AsSpan();
-        using var sb = new ValueStringBuilder(stackalloc char[256]);
-        sb.Append(pathSpan[..p0.range.startIdx]);
-        if (p0.value is not null)
-        {
-            sb.Append(StringHelpers.EscapeDataString(p0.value));
-        }
-
-        sb.Append(pathSpan[p0.range.endIdx..p1.range.startIdx]);
-        if (p1.value is not null)
-        {
-            sb.Append(StringHelpers.EscapeDataString(p1.value));
-        }
-
-        sb.Append(pathSpan[p1.range.endIdx..]);
-        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
-    }
-
-    /// <summary>Builds the request path for a three-placeholder template without allocating a parameter array.</summary>
-    /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
-    /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
-    /// <param name="p0">The replacement range and value for the first placeholder.</param>
-    /// <param name="p1">The replacement range and value for the second placeholder.</param>
-    /// <param name="p2">The replacement range and value for the third placeholder.</param>
-    /// <returns>A path with the placeholders replaced.</returns>
-    public static string BuildRequestPath(
-        string relativePathTemplate,
-        bool allowUnmatchedParameter,
-        ((int startIdx, int endIdx) range, string? value) p0,
-        ((int startIdx, int endIdx) range, string? value) p1,
-        ((int startIdx, int endIdx) range, string? value) p2)
-    {
-        var pathSpan = relativePathTemplate.AsSpan();
-        using var sb = new ValueStringBuilder(stackalloc char[256]);
-        sb.Append(pathSpan[..p0.range.startIdx]);
-        if (p0.value is not null)
-        {
-            sb.Append(StringHelpers.EscapeDataString(p0.value));
-        }
-
-        sb.Append(pathSpan[p0.range.endIdx..p1.range.startIdx]);
-        if (p1.value is not null)
-        {
-            sb.Append(StringHelpers.EscapeDataString(p1.value));
-        }
-
-        sb.Append(pathSpan[p1.range.endIdx..p2.range.startIdx]);
-        if (p2.value is not null)
-        {
-            sb.Append(StringHelpers.EscapeDataString(p2.value));
-        }
-
-        sb.Append(pathSpan[p2.range.endIdx..]);
         return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
     }
 
@@ -252,17 +191,19 @@ public static class GeneratedRequestRunner
     /// <summary>Builds the request path for a generated request from a template, honoring per-value encoding opt-outs.</summary>
     /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
     /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
-    /// <param name="uriParams">The replacement uri parameters; a <c>preEncoded</c> value is appended verbatim.</param>
+    /// <param name="uriParams">The replacement uri parameters, ordered by template position; a <c>preEncoded</c> value is appended verbatim.</param>
     /// <returns>A path with all the placeholder parameters in the path template replaced.</returns>
     /// <exception cref="ArgumentException">
-    /// A URI template parameter is not available in the provided parameter array and unmatched URL parameters aren't allowed.
+    /// A URI template parameter is not available in the provided parameter span and unmatched URL parameters aren't allowed.
     /// </exception>
+    /// <remarks>Generated call sites pass the replacements as a collection expression, stack-allocated on C# 12 with a
+    /// net8.0+ runtime and passed as a small array otherwise.</remarks>
     public static string BuildRequestPath(
         string relativePathTemplate,
         bool allowUnmatchedParameter,
-        params ((int startIdx, int endIdx) range, string? value, bool preEncoded)[] uriParams)
+        ReadOnlySpan<((int startIdx, int endIdx) range, string? value, bool preEncoded)> uriParams)
     {
-        if (uriParams.Length == 0 && allowUnmatchedParameter)
+        if (uriParams.IsEmpty && allowUnmatchedParameter)
         {
             return relativePathTemplate;
         }

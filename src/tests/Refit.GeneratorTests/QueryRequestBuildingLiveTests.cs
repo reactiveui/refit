@@ -41,6 +41,15 @@ public sealed class QueryRequestBuildingLiveTests
     /// <summary>The full name of the compiled scenario enum type.</summary>
     private const string SearchSortTypeName = "Refit.LiveQuery.SearchSort";
 
+    /// <summary>A value with a space and a slash, exercising percent-encoding of both reserved characters.</summary>
+    private const string EscapableValue = "a b/c";
+
+    /// <summary>The lower bound of the formatted complex query-object property scenario.</summary>
+    private const int WindowMin = 1;
+
+    /// <summary>The upper bound of the formatted complex query-object property scenario.</summary>
+    private const int WindowMax = 9;
+
     /// <summary>The interface source compiled through the generator for every scenario.</summary>
     private const string ApiSource =
         """
@@ -71,10 +80,42 @@ public sealed class QueryRequestBuildingLiveTests
             public int Version { get; set; }
         }
 
+        public sealed class RouteToken
+        {
+            public string? Value { get; set; }
+
+            public override string ToString() => Value ?? string.Empty;
+        }
+
+        public sealed class Bounds
+        {
+            public int Min { get; set; }
+
+            public int Max { get; set; }
+
+            public override string ToString() => Min + ".." + Max;
+        }
+
+        public sealed class RangeQuery
+        {
+            [Query(Format = "g")]
+            public Bounds? Window { get; set; }
+        }
+
+        public sealed class Facet
+        {
+            public string? Name { get; set; }
+
+            public int Count { get; set; }
+        }
+
         public interface ILiveQueryApi
         {
             [Get("/search")]
             Task<string> Plain(string q);
+
+            [Get("/token/{token}")]
+            Task<string> TokenPath(RouteToken token);
 
             [Get("/docs/{info.Slug}/rev/{info.Version}")]
             Task<string> DottedPath(RouteInfo info);
@@ -120,6 +161,16 @@ public sealed class QueryRequestBuildingLiveTests
 
             [Get("/tmpl?fixed=1")]
             Task<string> Templated(string extra);
+
+            [QueryUriFormat(UriFormat.Unescaped)]
+            [Get("/soql")]
+            Task<string> UnescapedQuery(string q);
+
+            [Get("/range")]
+            Task<string> RangeSearch([Query] RangeQuery query);
+
+            [Get("/facets")]
+            Task<string> Facets(Dictionary<string, Facet> facets);
 
             [Get("/when")]
             Task<string> When(DateTimeOffset at);
@@ -174,7 +225,7 @@ public sealed class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        await harness.AssertParityAsync("Plain", ["a b/c"], "/base/search?q=a%20b%2Fc");
+        await harness.AssertParityAsync("Plain", [EscapableValue], "/base/search?q=a%20b%2Fc");
         await harness.AssertParityAsync("Alias", ["me", "beta"], "/base/signin?login=me&kind=beta");
         await harness.AssertParityAsync("Multiple", ["x", SecondValue, true], "/base/multi?a=x&b=2&c=True");
         await harness.AssertParityAsync("NullSkip", [null, "kept"], "/base/nullskip?b=kept");
@@ -193,12 +244,70 @@ public sealed class QueryRequestBuildingLiveTests
     {
         using var harness = LiveQueryHarness.Create();
 
-        var info = harness.CreateApiValue("Refit.LiveQuery.RouteInfo", ("Slug", "a b/c"), ("Version", DocRevision));
+        var info = harness.CreateApiValue("Refit.LiveQuery.RouteInfo", ("Slug", EscapableValue), ("Version", DocRevision));
         _ = await harness.AssertParityAsync("DottedPath", [info], "/base/docs/a%20b%2Fc/rev/7");
 
         // Only Slug binds to the path; Version is a residual property flattened into the query, exactly as the
         // reflection builder splits a path-bound object between the path and the query string.
         _ = await harness.AssertParityAsync("DottedPathResidual", [info], "/base/tags/a%20b%2Fc?Version=7");
+    }
+
+    /// <summary>Verifies a sealed <c>ToString</c>-only type in a <c>{token}</c> slot matches the reflection builder: the
+    /// generated inline path calls the same URL parameter formatter (ultimately <c>ToString</c>) the reflection path does.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task SealedToStringPathParameterMatchesReflection()
+    {
+        using var harness = LiveQueryHarness.Create();
+
+        var token = harness.CreateApiValue("Refit.LiveQuery.RouteToken", ("Value", EscapableValue));
+        _ = await harness.AssertParityAsync("TokenPath", [token], "/base/token/a%20b%2Fc");
+    }
+
+    /// <summary>Verifies a <c>[QueryUriFormat(UriFormat.Unescaped)]</c> method matches the reflection builder: the whole
+    /// path and query is re-encoded with the attribute's format, decoding the escapes the query builder emitted.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task QueryUriFormatMatchesReflection()
+    {
+        using var harness = LiveQueryHarness.Create();
+
+        // The exact captured form depends on Uri normalization applied identically to both paths, so assert parity only.
+        _ = await harness.AssertParityAsync("UnescapedQuery", ["Select Id From Account"], null);
+    }
+
+    /// <summary>Verifies a <c>[Query(Format)]</c> on a complex query-object property matches the reflection builder: the
+    /// whole value is rendered as a single pair through the form formatter, not flattened into its own properties.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task FormattedComplexQueryPropertyMatchesReflection()
+    {
+        using var harness = LiveQueryHarness.Create();
+
+        var bounds = harness.CreateApiValue("Refit.LiveQuery.Bounds", ("Min", WindowMin), ("Max", WindowMax));
+        var query = harness.CreateApiValue("Refit.LiveQuery.RangeQuery", ("Window", bounds));
+        _ = await harness.AssertParityAsync("RangeSearch", [query], "/base/range?Window=1..9");
+    }
+
+    /// <summary>Verifies a dictionary of a sealed complex value type flattens each entry under the entry key, matching
+    /// the reflection builder's per-value nested map (<c>key.Property=value</c>).</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task DictionaryOfSealedValuesMatchesReflection()
+    {
+        using var harness = LiveQueryHarness.Create();
+
+        var facet = harness.CreateApiValue("Refit.LiveQuery.Facet", ("Name", "blue"), ("Count", WindowMin));
+        var facets = harness.CreateStringKeyedDictionary("Refit.LiveQuery.Facet", ("color", facet));
+        _ = await harness.AssertParityAsync("Facets", [facets], "/base/facets?color.Name=blue&color.Count=1");
     }
 
     /// <summary>Verifies generated query URIs match the reflection builder for formatted values.</summary>
@@ -379,6 +488,26 @@ public sealed class QueryRequestBuildingLiveTests
             }
 
             return instance;
+        }
+
+        /// <summary>Creates a <c>Dictionary&lt;string, TValue&gt;</c> of a compiled scenario value type.</summary>
+        /// <param name="valueTypeName">The compiled value type's full name.</param>
+        /// <param name="entries">The key/value entries to add.</param>
+        /// <returns>The created dictionary.</returns>
+        [RequiresUnreferencedCode("Reflects over generated types and members.")]
+        [RequiresDynamicCode("Constructs a closed Dictionary type over the compiled scenario value type.")]
+        public object CreateStringKeyedDictionary(string valueTypeName, params (string Key, object? Value)[] entries)
+        {
+            var valueType = interfaceType.Assembly.GetType(valueTypeName, throwOnError: true)!;
+            var dictionaryType = typeof(Dictionary<,>).MakeGenericType(typeof(string), valueType);
+            var dictionary = Activator.CreateInstance(dictionaryType)!;
+            var add = dictionaryType.GetMethod("Add")!;
+            foreach (var (key, value) in entries)
+            {
+                _ = add.Invoke(dictionary, [key, value]);
+            }
+
+            return dictionary;
         }
 
         /// <summary>Invokes a method on the generated client and asserts the captured relative URI.</summary>

@@ -308,10 +308,12 @@ public sealed class QueryObjectFlatteningGenerationTests
         await Assert.That(result.GeneratedSources[Hint]).DoesNotContain(ReflectiveFallback);
     }
 
-    /// <summary>Verifies a <c>[Query(Format)]</c> on a non-simple property falls the whole query object back.</summary>
+    /// <summary>Verifies a <c>[Query(Format)]</c> on a non-simple property renders the whole value as a single pair
+    /// inline, matching the reflection builder's <c>FormUrlEncodedParameterFormatter.Format(value, format)</c> pass
+    /// (which skips flattening), instead of falling back.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    public async Task QueryObjectFormatOnNonSimplePropertyFallsBack()
+    public async Task QueryObjectFormatOnNonSimplePropertyRendersWholeValueInline()
     {
         const string source =
             """
@@ -336,7 +338,13 @@ public sealed class QueryObjectFlatteningGenerationTests
             """;
 
         var result = Fixture.RunGenerator(source, generatedRequestBuilding: true);
+        var generated = result.GeneratedSources[Hint];
 
-        await Assert.That(result.GeneratedSources[Hint]).Contains(ReflectiveFallback);
+        await Assert.That(result.CompilesWithoutErrors).IsTrue();
+        await Assert.That(generated).DoesNotContain(ReflectiveFallback);
+
+        // The whole value is formatted through the form formatter with the property's format, not flattened.
+        await Assert.That(generated).Contains("FormUrlEncodedParameterFormatter.Format(");
+        await Assert.That(generated).Contains(", \"x\")");
     }
 }

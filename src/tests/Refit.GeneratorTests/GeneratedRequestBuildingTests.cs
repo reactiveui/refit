@@ -459,10 +459,6 @@ public class GeneratedRequestBuildingTests
             [Multipart]
             [Post("/multipart")]
             Task<string> Multipart([Body] string body);
-
-            [QueryUriFormat(UriFormat.Unescaped)]
-            [Get("/format")]
-            Task<string> QueryFormat();
             """,
             GeneratedClientHintName,
             generatedRequestBuilding: true);
@@ -471,6 +467,25 @@ public class GeneratedRequestBuildingTests
         await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"relative\"");
         await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"/users/{id}\"");
         await Assert.That(generated).DoesNotContain("BuildRelativeUri(this.Client, \"/bad");
+    }
+
+    /// <summary>Verifies a <c>[QueryUriFormat]</c> method generates inline, re-encoding the URI with the attribute's
+    /// format instead of falling back to the reflection request builder.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnGeneratesInlineForQueryUriFormat()
+    {
+        var generated = Fixture.GenerateForBody(
+            """
+            [QueryUriFormat(UriFormat.Unescaped)]
+            [Get("/query")]
+            Task<string> Query(string filter);
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains(".UrlResolution, (global::System.UriFormat)");
     }
 
     /// <summary>Verifies custom HTTP method attributes are discovered but fall back to the runtime builder.</summary>
@@ -493,6 +508,34 @@ public class GeneratedRequestBuildingTests
 
         await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
         await Assert.That(generated).DoesNotContain(NewHttpRequestMessage);
+    }
+
+    /// <summary>Verifies a custom HTTP method attribute whose <c>Method</c> getter is a literal <c>new HttpMethod("VERB")</c>
+    /// generates inline with that verb instead of falling back.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    public async Task SwitchOnGeneratesInlineForCustomHttpVerbLiteral()
+    {
+        var generated = Fixture.GenerateForDeclaration(
+            """
+            public sealed class PurgeAttribute : HttpMethodAttribute
+            {
+                public PurgeAttribute(string path) : base(path) { }
+                public override System.Net.Http.HttpMethod Method => new System.Net.Http.HttpMethod("PURGE");
+            }
+
+            public interface IGeneratedClient
+            {
+                [Purge("/cache/{id}")]
+                Task Evict(string id);
+            }
+            """,
+            GeneratedClientHintName,
+            generatedRequestBuilding: true);
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+        await Assert.That(generated).Contains(NewHttpRequestMessage);
+        await Assert.That(generated).Contains("new global::System.Net.Http.HttpMethod(\"PURGE\")");
     }
 
     /// <summary>Verifies synchronous Refit methods use the reflective fallback emitter shapes.</summary>
@@ -1070,7 +1113,7 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}", refitSettings.AllowUnmatchedRouteParameters, ((3, 9), """);
+        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a/{aVal}", refitSettings.AllowUnmatchedRouteParameters, [((3, 9), """);
     }
 
     /// <summary>Verifies that path parameters are supported by the source generator.</summary>
@@ -1096,7 +1139,7 @@ public class GeneratedRequestBuildingTests
         var generated = result.GeneratedSources[GeneratedClientHintName];
 
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
-        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a?b={bVal}", refitSettings.AllowUnmatchedRouteParameters, ((5, 11), """);
+        await Assert.That(generated).Contains("""GeneratedRequestRunner.BuildRequestPath("/a?b={bVal}", refitSettings.AllowUnmatchedRouteParameters, [((5, 11), """);
     }
 
     /// <summary>Verifies that auto-appended query parameters generate inline query construction.</summary>

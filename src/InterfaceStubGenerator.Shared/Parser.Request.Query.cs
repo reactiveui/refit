@@ -290,12 +290,17 @@ internal static partial class Parser
         string? format,
         string? parameterPrefixSegment,
         INamedTypeSymbol? formattableSymbol,
-        InterfaceGenerationContext context) =>
-        !TryGetDictionaryTypes(type, out var keyType, out var valueType)
-        || !IsSimpleType(keyType!, formattableSymbol)
-        || !IsSimpleType(valueType!, formattableSymbol)
-            ? null
-            : new(
+        InterfaceGenerationContext context)
+    {
+        if (!TryGetDictionaryTypes(type, out var keyType, out var valueType)
+            || !IsSimpleType(keyType!, formattableSymbol))
+        {
+            return null;
+        }
+
+        var valueProperties = ResolveDictionaryValueProperties(valueType!, format, formattableSymbol, context, out var valueInlineable);
+        return valueInlineable
+            ? new(
                 urlName,
                 QueryParameterShape.Dictionary,
                 TreatAsString: false,
@@ -307,7 +312,56 @@ internal static partial class Parser
                     QualifyType(keyType!, context),
                     BuildValueFormat(keyType!, null, formattableSymbol, context),
                     CanElementBeNull(valueType!),
-                    parameterPrefixSegment));
+                    parameterPrefixSegment,
+                    valueProperties))
+            : null;
+    }
+
+    /// <summary>Determines how a dictionary value type renders inline: scalar, flattened sealed complex, or not at all.</summary>
+    /// <param name="valueType">The dictionary value type.</param>
+    /// <param name="format">The parameter-level <c>[Query(Format)]</c> applied to each value, or null.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <param name="inlineable">Receives whether the value type renders inline at all.</param>
+    /// <returns>The flattened property descriptors for a sealed complex value, or null for a simple value.</returns>
+    /// <remarks>
+    /// A simple value renders as one <c>entryKey=value</c> pair. A sealed or value complex value (with no per-value
+    /// format) flattens under each entry's key, matching the reflection builder's per-value <c>BuildQueryMap</c>
+    /// recursion; because the declared type is the runtime type there is no divergence. An <c>object</c>, interface, open,
+    /// or collection value keeps falling back, since the runtime value could recurse differently than the declared type.
+    /// </remarks>
+    private static ImmutableEquatableArray<QueryObjectPropertyModel>? ResolveDictionaryValueProperties(
+        ITypeSymbol valueType,
+        string? format,
+        INamedTypeSymbol? formattableSymbol,
+        InterfaceGenerationContext context,
+        out bool inlineable)
+    {
+        if (IsSimpleType(valueType, formattableSymbol))
+        {
+            inlineable = true;
+            return null;
+        }
+
+        if (format is null
+            && IsSealedComplexType(valueType)
+            && TryBuildQueryObjectProperties(valueType, null, formattableSymbol, context) is { } properties)
+        {
+            inlineable = true;
+            return properties;
+        }
+
+        inlineable = false;
+        return null;
+    }
+
+    /// <summary>Determines whether a type is a sealed or value complex type whose declared shape is its runtime shape.</summary>
+    /// <param name="type">The type to inspect.</param>
+    /// <returns><see langword="true"/> for a sealed class or value type that is neither <c>object</c> nor a collection.</returns>
+    private static bool IsSealedComplexType(ITypeSymbol type) =>
+        (type.IsValueType || type.IsSealed)
+        && type.SpecialType != SpecialType.System_Object
+        && !TryGetEnumerableElementType(type, out _);
 
     /// <summary>Tries to resolve the key and value types of a dictionary-shaped query parameter.</summary>
     /// <param name="type">The declared parameter type.</param>
@@ -562,11 +616,22 @@ internal static partial class Parser
                 BuildValueFormat(property.Type, propertyFormat, formattableSymbol, context));
         }
 
-        // A [Query(Format)] on a non-simple property is rejected: the reflection builder stringifies the whole value
-        // through the form formatter instead of flattening or formatting elements, so it keeps using reflection.
+        // A [Query(Format)] on a non-simple (complex or collection) property renders the whole value as a single pair,
+        // not a flattened or expanded one: the reflection builder's TryFormatQueryPropertyValue stringifies the value
+        // through the form formatter before any enumerable or nested branch. That is exactly the scalar model - the value
+        // format is ToString-only for a non-IFormattable type (matching string.Format("{0:format}", value)), and the
+        // emitter still routes to FormUrlEncodedParameterFormatter.Format when the formatter is customized.
         if (propertyFormat is not null)
         {
-            return null;
+            return new(
+                property.Name,
+                aliasName,
+                serializerName,
+                normalizedPrefix,
+                query.SerializeNull,
+                CanElementBeNull(property.Type),
+                propertyFormat,
+                BuildValueFormat(property.Type, propertyFormat, formattableSymbol, context));
         }
 
         if (TryBuildCollectionPropertyModel(property, aliasName, serializerName, normalizedPrefix, query, formattableSymbol, context) is { } collectionModel)

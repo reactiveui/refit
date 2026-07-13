@@ -58,6 +58,7 @@ internal static partial class Parser
             EmitGeneratedCodeMarkers: false,
             SupportsNullable: false,
             SupportsStaticLambdas: false,
+            SupportsCollectionExpressions: false,
             Compilation: null,
             returnTypeAdapterInterface,
             returnTypeAdapters,

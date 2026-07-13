@@ -3,7 +3,6 @@
 // See the LICENSE file in the project root for full license information.
 
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -52,7 +51,7 @@ internal static partial class Parser
         }
 
         var returnTypes = GetRequestReturnTypes(resultTypeSource, context);
-        var unsupportedMetadata = HasUnsupportedInlineRequestMetadata(methodSymbol);
+        var queryUriFormat = ResolveQueryUriFormat(methodSymbol);
 
         // A multipart method builds its parts inline; each part parameter is classified into a
         // MultipartFormDataContent entry instead of feeding the query string or an implicit body.
@@ -60,7 +59,7 @@ internal static partial class Parser
 
         // Only POST/PUT/PATCH carry an implicit body, and a multipart method never does — every un-attributed
         // complex parameter is a form part rather than the request body.
-        var allowImplicitBody = !unsupportedMetadata && IsBodyCapableHttpMethod(httpMethod) && !isMultipart;
+        var allowImplicitBody = IsBodyCapableHttpMethod(httpMethod) && !isMultipart;
 
         var parameters = ParseRequestParameters(
             methodSymbol.Parameters,
@@ -83,7 +82,6 @@ internal static partial class Parser
             httpMethod,
             new(path, normalizedPath),
             parameters,
-            unsupportedMetadata,
             isMultipart);
 
         if (!canGenerateInline)
@@ -105,6 +103,7 @@ internal static partial class Parser
         {
             IsMultipart = isMultipart,
             MultipartBoundary = multipartBoundary,
+            QueryUriFormat = queryUriFormat,
         };
     }
 
@@ -148,7 +147,6 @@ internal static partial class Parser
     /// <param name="httpMethod">The HTTP method name.</param>
     /// <param name="path">The raw and normalized path forms from the HTTP method attribute.</param>
     /// <param name="parameters">The parsed request parameter models.</param>
-    /// <param name="unsupportedMetadata">Whether the method carries metadata the inline emitter does not handle.</param>
     /// <param name="isMultipart">Whether the method is multipart, which cannot also carry an explicit <c>[Body]</c>.</param>
     /// <returns><see langword="true"/> when the request is inline-eligible.</returns>
     /// <remarks>
@@ -163,7 +161,6 @@ internal static partial class Parser
         string httpMethod,
         in RequestPathForms path,
         ImmutableEquatableArray<RequestParameterModel> parameters,
-        bool unsupportedMetadata,
         bool isMultipart) =>
         parameterEligibility
         && returnShapeEligible
@@ -171,7 +168,6 @@ internal static partial class Parser
         && IsPathSupported(path.Raw)
         && IsPathSupported(path.Normalized)
         && IsSupportedInlineBody(parameters)
-        && !unsupportedMetadata
 
         // A multipart method with an explicit [Body] is an invalid combination the reflection builder rejects; fall
         // back so its validation still throws instead of emitting a non-multipart body request.
@@ -225,23 +221,6 @@ internal static partial class Parser
         return paramNames;
     }
 
-    /// <summary>Gets the HTTP method name represented by a Refit method attribute.</summary>
-    /// <param name="attributeClass">The attribute type.</param>
-    /// <returns>The HTTP method name, or an empty string for unsupported custom attributes.</returns>
-    [ExcludeFromCodeCoverage]
-    private static string GetHttpMethodName(INamedTypeSymbol? attributeClass) =>
-        attributeClass?.MetadataName switch
-        {
-            "DeleteAttribute" => "DELETE",
-            "GetAttribute" => "GET",
-            "HeadAttribute" => "HEAD",
-            "OptionsAttribute" => "OPTIONS",
-            "PatchAttribute" => "PATCH",
-            "PostAttribute" => "POST",
-            "PutAttribute" => "PUT",
-            _ => string.Empty
-        };
-
     /// <summary>Gets the literal path from a Refit HTTP method attribute.</summary>
     /// <param name="attributeData">The attribute data.</param>
     /// <returns>The path literal.</returns>
@@ -292,28 +271,24 @@ internal static partial class Parser
         queryLength += partLength;
     }
 
-    /// <summary>Determines whether a method carries request metadata the initial inline emitter does not handle.</summary>
+    /// <summary>Reads the <c>System.UriFormat</c> value from a method's <c>[QueryUriFormat]</c> attribute.</summary>
     /// <param name="methodSymbol">The method to inspect.</param>
-    /// <returns><see langword="true"/> when request construction must use the runtime builder.</returns>
-    private static bool HasUnsupportedInlineRequestMetadata(IMethodSymbol methodSymbol) =>
-        HasUnsupportedMethodAttribute(methodSymbol.GetAttributes());
-
-    /// <summary>Determines whether method attributes contain request metadata unsupported by the initial inline emitter.</summary>
-    /// <param name="attributes">The attributes to inspect.</param>
-    /// <returns><see langword="true"/> when an attribute name matches.</returns>
-    private static bool HasUnsupportedMethodAttribute(in ImmutableArray<AttributeData> attributes)
+    /// <returns>The <c>UriFormat</c> enum value, or null when the method has no <c>[QueryUriFormat]</c>.</returns>
+    /// <remarks>The value re-encodes the whole built path and query, matching the reflection builder's final
+    /// <c>Uri.GetComponents(PathAndQuery, QueryUriFormat)</c> pass, so the attribute no longer forces the runtime builder.</remarks>
+    private static int? ResolveQueryUriFormat(IMethodSymbol methodSymbol)
     {
-        foreach (var attribute in attributes)
+        foreach (var attribute in methodSymbol.GetAttributes())
         {
-            // [Multipart] is no longer unsupported: its parts are classified and emitted inline. [QueryUriFormat]
-            // still forces the reflection request builder.
-            if (IsRefitAttribute(attribute.AttributeClass, QueryUriFormatAttributeDisplayName))
+            if (IsRefitAttribute(attribute.AttributeClass, QueryUriFormatAttributeDisplayName)
+                && attribute.ConstructorArguments.Length == 1
+                && attribute.ConstructorArguments[0].Value is int uriFormat)
             {
-                return true;
+                return uriFormat;
             }
         }
 
-        return false;
+        return null;
     }
 
     /// <summary>Parses the static headers declared on inherited interfaces, the declaring interface, and the method.</summary>
@@ -609,7 +584,7 @@ internal static partial class Parser
         string parameterType,
         ImmutableEquatableArray<Range> locations,
         in LooseParameterContext context) =>
-        IsSimpleType(parameter.Type, context.FormattableSymbol)
+        CanInlinePathParameterType(parameter.Type, context.FormattableSymbol)
             ? new(
                 PathRequestParameter(parameter, parameterType, locations, context.Generation) with
                 {
@@ -621,6 +596,23 @@ internal static partial class Parser
                 0,
                 0)
             : new(UnsupportedRequestParameter(parameter, parameterType, context.Generation), false, 0, 0, 0);
+
+    /// <summary>Determines whether a plain <c>{name}</c> path parameter can be bound inline.</summary>
+    /// <param name="type">The declared parameter type.</param>
+    /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
+    /// <returns><see langword="true"/> when the value stringifies with the same result as the reflection builder.</returns>
+    /// <remarks>
+    /// A simple type formats through the fast path. A sealed or value non-collection type also binds inline: the reflection
+    /// builder renders a route value with <c>UrlParameterFormatter.Format(value, ...)</c> (ultimately <c>value.ToString()</c>
+    /// for a non-<c>IFormattable</c> value), and for a sealed or value type the declared type is the runtime type, so the
+    /// generated call is identical. An open, interface, or <c>object</c> type stays on the reflection path because a runtime
+    /// subtype could implement <c>IFormattable</c> and format differently.
+    /// </remarks>
+    private static bool CanInlinePathParameterType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol) =>
+        IsSimpleType(type, formattableSymbol)
+        || ((type.IsValueType || type.IsSealed)
+            && type.SpecialType != SpecialType.System_Object
+            && !TryGetEnumerableElementType(type, out _));
 
     /// <summary>Parses a parameter bound to a round-tripping <c>{**name}</c> placeholder.</summary>
     /// <remarks>Round-tripping normally needs the reflection builder's per-segment escaping, but an

@@ -23,6 +23,8 @@ namespace Refit.Generator;
 /// <param name="EmitGeneratedCodeMarkers">Whether generated files include generated-code analyzer skip markers.</param>
 /// <param name="SupportsNullable">Whether the compilation supports nullable reference types.</param>
 /// <param name="SupportsStaticLambdas">Whether the compilation supports the <c>static</c> lambda modifier (C# 9).</param>
+/// <param name="SupportsCollectionExpressions">Whether the compilation supports collection expressions (C# 12), letting the
+/// path builder receive its replacements as a stack-allocatable <c>[...]</c> span instead of an array.</param>
 /// <param name="Compilation">The compilation, used to resolve types behind an <c>extern alias</c>, or null.</param>
 /// <param name="ReturnTypeAdapterInterface">The <c>Refit.IReturnTypeAdapter`2</c> symbol, or null when Refit is unavailable.</param>
 /// <param name="ReturnTypeAdapters">The types implementing <c>IReturnTypeAdapter</c> discovered in the compilation.</param>
@@ -41,6 +43,7 @@ internal sealed record InterfaceGenerationContext(
     bool EmitGeneratedCodeMarkers,
     bool SupportsNullable,
     bool SupportsStaticLambdas,
+    bool SupportsCollectionExpressions,
     CSharpCompilation? Compilation,
     INamedTypeSymbol? ReturnTypeAdapterInterface,
     INamedTypeSymbol[] ReturnTypeAdapters,

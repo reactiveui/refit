@@ -84,6 +84,63 @@ public sealed class PathParameterTypeTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
+    /// <summary>Verifies a sealed class or value type that only overrides <c>ToString</c> generates inline: its declared
+    /// type is the runtime type, so the formatter call the generator emits matches the reflection builder exactly.</summary>
+    /// <param name="typeDeclaration">The custom type declaration.</param>
+    /// <param name="parameterType">The path parameter type expression.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("public sealed class Money { public override string ToString() => \"$5\"; }", "Money")]
+    [Arguments("public readonly struct Coordinate { public override string ToString() => \"1,2\"; }", "Coordinate")]
+    public async Task SealedOrValuePathParameterGeneratesInline(string typeDeclaration, string parameterType)
+    {
+        var generated = GenerateWithType(typeDeclaration, parameterType);
+
+        await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Verifies an open (non-sealed) class or <c>object</c> path parameter stays on the reflection builder,
+    /// because a runtime subtype could implement <c>IFormattable</c> and render differently than the declared type.</summary>
+    /// <param name="typeDeclaration">The custom type declaration, or empty for a built-in type.</param>
+    /// <param name="parameterType">The path parameter type expression.</param>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [Arguments("public class OpenValue { public override string ToString() => \"x\"; }", "OpenValue")]
+    [Arguments("", "object")]
+    public async Task PolymorphicPathParameterFallsBack(string typeDeclaration, string parameterType)
+    {
+        var generated = GenerateWithType(typeDeclaration, parameterType);
+
+        await Assert.That(generated).Contains(ReflectiveRequestBuilderCall);
+    }
+
+    /// <summary>Runs the generator over a client that declares a custom path-parameter type.</summary>
+    /// <param name="typeDeclaration">The custom type declaration, or empty for a built-in type.</param>
+    /// <param name="parameterType">The path parameter type expression.</param>
+    /// <returns>The generated client source text.</returns>
+    private static string GenerateWithType(string typeDeclaration, string parameterType)
+    {
+        var source =
+            $$"""
+              using System;
+              using System.Threading.Tasks;
+              using Refit;
+
+              namespace RefitGeneratorTest;
+
+              {{typeDeclaration}}
+
+              public interface IGeneratedClient
+              {
+                  [Get("/items/{value}")]
+                  Task<string> Get({{parameterType}} value);
+              }
+              """;
+
+        return Fixture.RunGenerator(source, generatedRequestBuilding: true)
+            .GeneratedSources[GeneratedClientHintName];
+    }
+
     /// <summary>Runs the generator over an interface body and returns the generated client source.</summary>
     /// <param name="body">The interface member body source.</param>
     /// <returns>The generated client source text.</returns>

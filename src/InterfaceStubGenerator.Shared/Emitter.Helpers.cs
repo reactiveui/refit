@@ -72,7 +72,8 @@ internal static partial class Emitter
     /// <summary>Maps a parsed HTTP method name to an expression that creates or returns an <see cref="HttpMethod"/>.</summary>
     /// <param name="httpMethod">The HTTP method text.</param>
     /// <returns>The HTTP method expression.</returns>
-    [ExcludeFromCodeCoverage]
+    /// <remarks>Known verbs reuse the cached <see cref="HttpMethod"/> singletons; a custom verb (read from a derived
+    /// attribute's <c>new HttpMethod("VERB")</c> getter) constructs one, matching what the reflection builder does.</remarks>
     internal static string ToHttpMethodExpression(string httpMethod) =>
         httpMethod switch
         {
@@ -82,8 +83,7 @@ internal static partial class Emitter
             "OPTIONS" => "global::System.Net.Http.HttpMethod.Options",
             "POST" => "global::System.Net.Http.HttpMethod.Post",
             "PUT" => "global::System.Net.Http.HttpMethod.Put",
-            "PATCH" => "new global::System.Net.Http.HttpMethod(\"PATCH\")",
-            _ => throw new ArgumentOutOfRangeException(nameof(httpMethod), httpMethod, "Unsupported HTTP method.")
+            _ => $"new global::System.Net.Http.HttpMethod({ToCSharpStringLiteral(httpMethod)})"
         };
 
     /// <summary>Gets the invocation text used for a generated method return type.</summary>

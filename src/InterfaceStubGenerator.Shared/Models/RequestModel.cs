@@ -49,4 +49,9 @@ internal sealed record RequestModel(
     /// <summary>Gets the multipart boundary text, used only when <see cref="IsMultipart"/> is set. Mirrors the
     /// reflection builder's boundary selection: the <c>[Multipart(boundary)]</c> argument, or the attribute default.</summary>
     public string MultipartBoundary { get; init; } = string.Empty;
+
+    /// <summary>Gets the <c>System.UriFormat</c> value from the method's <c>[QueryUriFormat]</c> attribute, or null when
+    /// absent. When set, the built path and query are re-encoded with this mode, matching the reflection builder's final
+    /// <c>Uri.GetComponents(PathAndQuery, QueryUriFormat)</c> pass.</summary>
+    public int? QueryUriFormat { get; init; }
 }

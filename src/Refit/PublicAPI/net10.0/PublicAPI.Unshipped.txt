@@ -1,12 +1,12 @@
 #nullable enable
 Refit.GeneratedQueryStringBuilder.AddCollectionValueFormatted<T>(T value) -> void
 Refit.GeneratedQueryStringBuilder.AddFormatted<T>(string! name, T value, string? format, bool preEncoded) -> void
-static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, ((int startIdx, int endIdx) range, string? value) p0) -> string!
-static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, ((int startIdx, int endIdx) range, string? value) p0, ((int startIdx, int endIdx) range, string? value) p1) -> string!
-static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, ((int startIdx, int endIdx) range, string? value) p0, ((int startIdx, int endIdx) range, string? value) p1, ((int startIdx, int endIdx) range, string? value) p2) -> string!
 static Refit.GeneratedRequestRunner.CanUnrollForm(object? body) -> bool
 static Refit.GeneratedRequestRunner.BuildRequestPath<T>(string! relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value) -> string!
 static Refit.GeneratedRequestRunner.BuildRequestPath<T>(string! relativePathTemplate, bool allowUnmatchedParameter, (int startIdx, int endIdx) range, T value, string? format) -> string!
 static Refit.GeneratedRequestRunner.RoundTripEscapePath(string? value, Refit.IUrlParameterFormatter! formatter, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string!
 Refit.GeneratedQueryStringBuilder.GeneratedQueryStringBuilder(string! relativePath, bool hasQuery) -> void
 static readonly Refit.GeneratedParameterAttributeProvider.Empty -> Refit.GeneratedParameterAttributeProvider!
+static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value)> uriParams) -> string!
+static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value, bool preEncoded)> uriParams) -> string!
+static Refit.GeneratedRequestRunner.BuildRelativeUri(System.Net.Http.HttpClient! client, string! relativePath, Refit.UrlResolutionMode urlResolution, System.UriFormat queryUriFormat) -> System.Uri!
