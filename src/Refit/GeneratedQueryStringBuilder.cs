@@ -93,7 +93,22 @@ public ref struct GeneratedQueryStringBuilder
             return;
         }
 
-        AppendPair(name, value, preEncoded);
+        AppendPair(name, value, keyEscaped: false, preEncoded);
+    }
+
+    /// <summary>Appends one <c>key=value</c> query parameter whose key the generator already escaped.</summary>
+    /// <param name="name">The pre-escaped (or caller-encoded) query key, appended verbatim.</param>
+    /// <param name="value">The formatted value; the parameter is omitted when this is <see langword="null"/>.</param>
+    /// <param name="preEncoded">Whether the value is caller-encoded and appended verbatim.</param>
+    /// <remarks>Used for compile-time-constant keys, which the generator escapes once instead of on every call.</remarks>
+    public void AddPreEscapedKey(string name, string? value, bool preEncoded)
+    {
+        if (value is null)
+        {
+            return;
+        }
+
+        AppendPair(name, value, keyEscaped: true, preEncoded);
     }
 
 #if NET6_0_OR_GREATER
@@ -109,12 +124,24 @@ public ref struct GeneratedQueryStringBuilder
     /// routes a URL-unreserved integer here, whose formatted span (digits and an optional <c>-</c>) needs no escaping.</remarks>
     public void AddFormatted<T>(string name, T value, string? format, bool preEncoded)
         where T : ISpanFormattable =>
-        AppendFormattedPair(name, value, format, preEncoded);
+        AppendFormattedPair(name, value, format, keyEscaped: false, preEncoded);
+
+    /// <summary>Appends one pre-escaped-key <c>key=value</c> pair, formatting a span-formattable value into the buffer.</summary>
+    /// <typeparam name="T">The span-formattable value type.</typeparam>
+    /// <param name="name">The pre-escaped (or caller-encoded) query key, appended verbatim.</param>
+    /// <param name="value">The value to render; the generator routes only non-null values here.</param>
+    /// <param name="format">The compile-time format from <c>[Query(Format = ...)]</c>, or null.</param>
+    /// <param name="preEncoded">Whether the value is caller-encoded and appended verbatim.</param>
+    public void AddFormattedPreEscapedKey<T>(string name, T value, string? format, bool preEncoded)
+        where T : ISpanFormattable =>
+        AppendFormattedPair(name, value, format, keyEscaped: true, preEncoded);
 #endif
 
     /// <summary>Appends one valueless query flag (<c>?name</c>).</summary>
     /// <param name="name">The formatted flag name; the flag is omitted when this is <see langword="null"/>.</param>
     /// <param name="preEncoded">Whether the name is caller-encoded and appended verbatim.</param>
+    /// <remarks>The flag name is the parameter's runtime value (a <c>[QueryName]</c> value or collection element), so it
+    /// is escaped here rather than pre-escaped by the generator.</remarks>
     public void AddFlag(string? name, bool preEncoded)
     {
         if (name is null)
@@ -157,7 +184,7 @@ public ref struct GeneratedQueryStringBuilder
         {
             if (value is not null)
             {
-                AppendPair(_collectionKey!, value, _collectionPreEncoded);
+                AppendPair(_collectionKey!, value, keyEscaped: false, _collectionPreEncoded);
             }
 
             return;
@@ -185,7 +212,7 @@ public ref struct GeneratedQueryStringBuilder
         Debug.Assert(_collectionKey is not null, "AddCollectionValueFormatted requires BeginCollection.");
         if (_collectionIsMulti)
         {
-            AppendFormattedPair(_collectionKey!, value, null, _collectionPreEncoded);
+            AppendFormattedPair(_collectionKey!, value, null, keyEscaped: false, _collectionPreEncoded);
             return;
         }
 
@@ -206,7 +233,7 @@ public ref struct GeneratedQueryStringBuilder
         {
             // A joined collection always emits its pair, even when the collection was empty (key=),
             // matching the reflection request builder.
-            AppendPair(_collectionKey!, _joinedValues.ToString(), _collectionPreEncoded);
+            AppendPair(_collectionKey!, _joinedValues.ToString(), keyEscaped: false, _collectionPreEncoded);
         }
 
         _collectionKey = null;
@@ -243,21 +270,14 @@ public ref struct GeneratedQueryStringBuilder
     /// <summary>Appends one <c>key=value</c> pair with the configured escaping.</summary>
     /// <param name="name">The query key.</param>
     /// <param name="value">The non-null formatted value.</param>
-    /// <param name="preEncoded">Whether the key and value are appended verbatim.</param>
-    private void AppendPair(string name, string value, bool preEncoded)
+    /// <param name="keyEscaped">Whether the key is already escaped by the generator and appended verbatim.</param>
+    /// <param name="preEncoded">Whether the value (and, when not <paramref name="keyEscaped"/>, the key) is caller-encoded.</param>
+    private void AppendPair(string name, string value, bool keyEscaped, bool preEncoded)
     {
         AppendSeparator();
-        if (preEncoded)
-        {
-            _text.Append(name);
-            _text.Append('=');
-            _text.Append(value);
-            return;
-        }
-
-        _text.Append(StringHelpers.EscapeDataString(name));
+        _text.Append(keyEscaped || preEncoded ? name : StringHelpers.EscapeDataString(name));
         _text.Append('=');
-        _text.Append(StringHelpers.EscapeDataString(value));
+        _text.Append(preEncoded ? value : StringHelpers.EscapeDataString(value));
     }
 
 #if NET6_0_OR_GREATER
@@ -266,12 +286,13 @@ public ref struct GeneratedQueryStringBuilder
     /// <param name="name">The query key.</param>
     /// <param name="value">The value to render.</param>
     /// <param name="format">The compile-time format, or null.</param>
-    /// <param name="preEncoded">Whether the key and value are appended verbatim.</param>
-    private void AppendFormattedPair<T>(string name, T value, string? format, bool preEncoded)
+    /// <param name="keyEscaped">Whether the key is already escaped by the generator and appended verbatim.</param>
+    /// <param name="preEncoded">Whether the value (and, when not <paramref name="keyEscaped"/>, the key) is caller-encoded.</param>
+    private void AppendFormattedPair<T>(string name, T value, string? format, bool keyEscaped, bool preEncoded)
         where T : ISpanFormattable
     {
         AppendSeparator();
-        _text.Append(preEncoded ? name : StringHelpers.EscapeDataString(name));
+        _text.Append(keyEscaped || preEncoded ? name : StringHelpers.EscapeDataString(name));
         _text.Append('=');
         AppendFormattedValue(ref _text, value, format, escape: !preEncoded);
     }

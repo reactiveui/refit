@@ -51,7 +51,7 @@ public sealed class QueryParameterTypeTests
     {
         var generated = Generate("[Get(\"/items\")] Task<string> Get(int? page);");
 
-        await Assert.That(generated).Contains(".AddFormatted(");
+        await Assert.That(generated).Contains(".AddFormattedPreEscapedKey(");
         await Assert.That(generated).Contains("@page.Value");
     }
 

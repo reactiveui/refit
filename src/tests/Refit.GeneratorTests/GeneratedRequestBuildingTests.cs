@@ -1161,7 +1161,7 @@ public class GeneratedRequestBuildingTests
         await Assert.That(result.CompilesWithoutErrors).IsTrue();
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
         await Assert.That(generated).Contains("new global::Refit.GeneratedQueryStringBuilder(\"/a\", false)");
-        await Assert.That(generated).Contains("refitQueryBuilder.Add(\"bVal\"");
+        await Assert.That(generated).Contains("refitQueryBuilder.AddPreEscapedKey(\"bVal\"");
     }
 
     /// <summary>Verifies that round trip path parameters are not supported by the source generator.</summary>

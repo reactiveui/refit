@@ -322,7 +322,9 @@ internal static partial class Emitter
             return;
         }
 
-        var key = ToCSharpStringLiteral(query.Key);
+        // The key is a compile-time constant, so it is escaped once here rather than on every call; the value keeps its
+        // per-call escaping, and the pre-escaped-key builder overloads append the key verbatim.
+        var key = BuildPreEscapedQueryKeyLiteral(query.Key, query.PreEncoded);
 
         // On the default-formatting branch a span-formattable value is rendered straight into the builder, skipping the
         // per-value intermediate string; a customized formatter keeps the string-formatted Add.
@@ -337,21 +339,30 @@ internal static partial class Emitter
             var innerIndent = indent + "    ";
             _ = sb.Append(indent).Append("if (").Append(emission.UseDefaultFormattingLocal).AppendLine(")")
                 .Append(indent).AppendLine("{")
-                .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".AddFormatted(").Append(key).Append(", ")
+                .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".AddFormattedPreEscapedKey(").Append(key).Append(", ")
                     .Append(fastAccessor).Append(", ").Append(ToNullableCSharpStringLiteral(format)).Append(", ").Append(preEncoded).AppendLine(");")
                 .Append(indent).AppendLine("}")
                 .Append(indent).AppendLine("else")
                 .Append(indent).AppendLine("{")
-                .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".Add(").Append(key).Append(", ")
+                .Append(innerIndent).Append(emission.QueryBuilderLocal).Append(".AddPreEscapedKey(").Append(key).Append(", ")
                     .Append(customExpression).Append(", ").Append(preEncoded).AppendLine(");")
                 .Append(indent).AppendLine("}");
             return;
         }
 
         var valueExpression = BuildFormattedValueExpression("@" + parameter.Name, false, parameter.Type, query, providerField, emission);
-        _ = sb.Append(indent).Append(emission.QueryBuilderLocal).Append(".Add(").Append(key).Append(", ").Append(valueExpression)
+        _ = sb.Append(indent).Append(emission.QueryBuilderLocal).Append(".AddPreEscapedKey(").Append(key).Append(", ").Append(valueExpression)
             .Append(", ").Append(preEncoded).AppendLine(");");
     }
+
+    /// <summary>Builds the C# literal for a compile-time-constant query key, escaping it at generation time.</summary>
+    /// <param name="key">The constant query key.</param>
+    /// <param name="preEncoded">Whether the key is caller-encoded and must be emitted verbatim.</param>
+    /// <returns>The C# string literal, URI-data-escaped unless <paramref name="preEncoded"/>.</returns>
+    /// <remarks>Escaping here rather than on every request matches the reflection builder's output because
+    /// <c>Uri.EscapeDataString</c> follows RFC 3986 consistently across the supported target frameworks.</remarks>
+    private static string BuildPreEscapedQueryKeyLiteral(string key, bool preEncoded) =>
+        ToCSharpStringLiteral(preEncoded ? key : System.Uri.EscapeDataString(key));
 
     /// <summary>Appends the statements emitting one collection-valued query parameter or flag set.</summary>
     /// <param name="sb">The statement builder.</param>

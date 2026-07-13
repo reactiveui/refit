@@ -164,7 +164,7 @@ namespace Refit.Implementation
                 var refitQueryBuilder = new global::Refit.GeneratedQueryStringBuilder("/search/users", false);
                 if (@q != null)
                 {
-                    refitQueryBuilder.Add("q", refitUseDefaultFormatting ? (@q) : refitSettings.UrlParameterFormatter.Format(@q, ______qAttributeProvider, typeof(string)), false);
+                    refitQueryBuilder.AddPreEscapedKey("q", refitUseDefaultFormatting ? (@q) : refitSettings.UrlParameterFormatter.Format(@q, ______qAttributeProvider, typeof(string)), false);
                 }
                 var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, refitQueryBuilder.Build(), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
