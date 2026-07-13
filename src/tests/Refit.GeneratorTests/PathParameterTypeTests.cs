@@ -84,28 +84,30 @@ public sealed class PathParameterTypeTests
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
-    /// <summary>Verifies a sealed class or value type that only overrides <c>ToString</c> generates inline: its declared
-    /// type is the runtime type, so the formatter call the generator emits matches the reflection builder exactly.</summary>
+    /// <summary>Verifies a concrete class (sealed or open) or value type that only overrides <c>ToString</c> generates
+    /// inline: the reflection builder's route value is a virtual <c>ToString</c> call that dispatches to the runtime type
+    /// exactly as the generated code does, so the rendering matches.</summary>
     /// <param name="typeDeclaration">The custom type declaration.</param>
     /// <param name="parameterType">The path parameter type expression.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
     [Arguments("public sealed class Money { public override string ToString() => \"$5\"; }", "Money")]
     [Arguments("public readonly struct Coordinate { public override string ToString() => \"1,2\"; }", "Coordinate")]
-    public async Task SealedOrValuePathParameterGeneratesInline(string typeDeclaration, string parameterType)
+    [Arguments("public class OpenValue { public override string ToString() => \"x\"; }", "OpenValue")]
+    public async Task ConcreteOrValuePathParameterGeneratesInline(string typeDeclaration, string parameterType)
     {
         var generated = GenerateWithType(typeDeclaration, parameterType);
 
         await Assert.That(generated).DoesNotContain(ReflectiveRequestBuilderCall);
     }
 
-    /// <summary>Verifies an open (non-sealed) class or <c>object</c> path parameter stays on the reflection builder,
-    /// because a runtime subtype could implement <c>IFormattable</c> and render differently than the declared type.</summary>
+    /// <summary>Verifies an <c>object</c> or interface path parameter stays on the reflection builder - it has no usable
+    /// declared shape, so the value must be inspected at runtime.</summary>
     /// <param name="typeDeclaration">The custom type declaration, or empty for a built-in type.</param>
     /// <param name="parameterType">The path parameter type expression.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments("public class OpenValue { public override string ToString() => \"x\"; }", "OpenValue")]
+    [Arguments("public interface IThing { }", "IThing")]
     [Arguments("", "object")]
     public async Task PolymorphicPathParameterFallsBack(string typeDeclaration, string parameterType)
     {

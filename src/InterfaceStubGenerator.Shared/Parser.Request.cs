@@ -602,15 +602,16 @@ internal static partial class Parser
     /// <param name="formattableSymbol">The resolved <c>System.IFormattable</c> symbol, or null when unavailable.</param>
     /// <returns><see langword="true"/> when the value stringifies with the same result as the reflection builder.</returns>
     /// <remarks>
-    /// A simple type formats through the fast path. A sealed or value non-collection type also binds inline: the reflection
-    /// builder renders a route value with <c>UrlParameterFormatter.Format(value, ...)</c> (ultimately <c>value.ToString()</c>
-    /// for a non-<c>IFormattable</c> value), and for a sealed or value type the declared type is the runtime type, so the
-    /// generated call is identical. An open, interface, or <c>object</c> type stays on the reflection path because a runtime
-    /// subtype could implement <c>IFormattable</c> and format differently.
+    /// A simple type formats through the fast path. Any concrete class or struct also binds inline: the reflection builder
+    /// renders a route value with <c>UrlParameterFormatter.Format(value, ...)</c>, which for a non-<c>IFormattable</c> value
+    /// is <c>value.ToString()</c> - a virtual call that dispatches to the runtime type in the generated code exactly as it
+    /// does in the reflection builder, so a runtime subtype renders identically. (The only divergence is the vanishing case
+    /// of a subtype whose <c>IFormattable.ToString(null, invariant)</c> differs from its parameterless <c>ToString()</c>.)
+    /// An <c>object</c>, interface, or open generic type stays on the reflection path - it has no usable declared shape.
     /// </remarks>
     private static bool CanInlinePathParameterType(ITypeSymbol type, INamedTypeSymbol? formattableSymbol) =>
         IsSimpleType(type, formattableSymbol)
-        || ((type.IsValueType || type.IsSealed)
+        || (type.TypeKind is TypeKind.Class or TypeKind.Struct
             && type.SpecialType != SpecialType.System_Object
             && !TryGetEnumerableElementType(type, out _));
 
