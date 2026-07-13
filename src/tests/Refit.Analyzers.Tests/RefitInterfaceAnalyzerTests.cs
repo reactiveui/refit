@@ -194,10 +194,6 @@ public sealed class RefitInterfaceAnalyzerTests
         [Post("/upload")]
         Task<string> Upload(object payload);
         """)]
-    [Arguments("""
-        [Get("/stream")]
-        IObservable<string> Observe();
-        """)]
     public async Task ReportsReflectionFallbackShapes(string body)
     {
         var diagnostics = await AnalyzerFixture.RunForBody(body);
@@ -240,6 +236,9 @@ public sealed class RefitInterfaceAnalyzerTests
             [Multipart]
             [Post("/upload")]
             Task<string> Upload([AliasAs("file")] StreamPart stream);
+
+            [Get("/stream")]
+            IObservable<string> Observe();
             """);
 
         await Assert.That(diagnostics.Select(static diagnostic => diagnostic.Id))
