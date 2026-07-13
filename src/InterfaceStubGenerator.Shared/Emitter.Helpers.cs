@@ -15,6 +15,9 @@ internal static partial class Emitter
     /// <summary>The text length added to a non-nullable generated parameter around its type and name.</summary>
     private const int ParameterExtraLength = 2;
 
+    /// <summary>The statement prefix that returns a generated expression to the caller.</summary>
+    private const string ReturnStatementPrefix = "return ";
+
     /// <summary>Builds the request-body buffering expression for an inline generated method.</summary>
     /// <param name="bodyParameter">The parsed body parameter, if any.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
@@ -96,8 +99,9 @@ internal static partial class Emitter
         {
             ReturnTypeInfo.AsyncVoid => (true, "await (", ").ConfigureAwait(false)"),
             ReturnTypeInfo.AsyncResult => (true, "return await (", ").ConfigureAwait(false)"),
-            ReturnTypeInfo.AsyncEnumerable => (false, "return ", string.Empty),
-            ReturnTypeInfo.Return => (false, "return ", string.Empty),
+            ReturnTypeInfo.AsyncEnumerable => (false, ReturnStatementPrefix, string.Empty),
+            ReturnTypeInfo.Observable => (false, ReturnStatementPrefix, string.Empty),
+            ReturnTypeInfo.Return => (false, ReturnStatementPrefix, string.Empty),
             ReturnTypeInfo.SyncVoid => (false, string.Empty, string.Empty),
             _ => throw new ArgumentOutOfRangeException(
                 nameof(returnTypeInfo),

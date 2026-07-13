@@ -37,6 +37,14 @@ namespace Refit.Implementation
                 _settings = requestBuilder.Settings;
             }
 
+            /// <summary>Initializes a new instance of the RefitTestsIGitHubApi class for generated-only execution.</summary>
+            /// <param name="client">The HTTP client used by the generated implementation.</param>
+            /// <param name="settings">The settings used by the generated implementation.</param>
+            public RefitTestsIGitHubApi(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
+            {
+                Client = client;
+                _settings = settings;
+            }
             /// <summary>Cached attribute provider for the generated GetUser method's userName parameter.</summary>
             private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
@@ -62,38 +70,62 @@ namespace Refit.Implementation
                     global::System.Threading.CancellationToken.None);
             }
 
+            /// <summary>Cached attribute provider for the generated GetUserObservable method's userName parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider0 = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
-            /// <summary>Cached parameter type array for the generated GetUserObservable method.</summary>
-            private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
-            #if NET5_0_OR_GREATER
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            #endif
             public global::System.IObservable<global::Refit.Tests.User> GetUserObservable(string @userName)
             {
-                var refitArguments = new object[] { @userName };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservable", ______typeParameters );
-
-                return (global::System.IObservable<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider0, typeof(string)))]), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<global::Refit.Tests.User, global::Refit.Tests.User>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    false,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
+            /// <summary>Cached attribute provider for the generated GetUserCamelCase method's userName parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider1 = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
-            /// <summary>Cached parameter type array for the generated GetUserCamelCase method.</summary>
-            private static readonly global::System.Type[] ______typeParameters0 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
-            #if NET5_0_OR_GREATER
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            #endif
             public global::System.IObservable<global::Refit.Tests.User> GetUserCamelCase(string @userName)
             {
-                var refitArguments = new object[] { @userName };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserCamelCase", ______typeParameters0 );
-
-                return (global::System.IObservable<global::Refit.Tests.User>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{userName}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider1, typeof(string)))]), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<global::Refit.Tests.User, global::Refit.Tests.User>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    false,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
             /// <summary>Cached attribute provider for the generated GetOrgMembers method's orgName parameter.</summary>
@@ -173,17 +205,28 @@ namespace Refit.Implementation
             }
 
             /// <inheritdoc />
-            #if NET5_0_OR_GREATER
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            #endif
             public global::System.IObservable<string> GetIndexObservable()
             {
-                var refitArguments = global::System.Array.Empty<object>();
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetIndexObservable", global::System.Array.Empty<global::System.Type>() );
-
-                return (global::System.IObservable<string>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, "/", refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<string, string>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    false,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
             /// <inheritdoc />
@@ -229,14 +272,14 @@ namespace Refit.Implementation
             }
 
             /// <summary>Cached attribute provider for the generated GetUserWithMetadata method's userName parameter.</summary>
-            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider0 = global::Refit.GeneratedParameterAttributeProvider.Empty;
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider2 = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
             /// <inheritdoc />
             public global::System.Threading.Tasks.Task<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserWithMetadata(string @userName, global::System.Threading.CancellationToken @cancellationToken)
             {
                 var refitSettings = _settings;
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider0, typeof(string)))]), refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider2, typeof(string)))]), refitSettings.UrlResolution));
                 #if NET6_0_OR_GREATER
                 refitRequest.Version = refitSettings.Version;
                 refitRequest.VersionPolicy = refitSettings.VersionPolicy;
@@ -253,38 +296,62 @@ namespace Refit.Implementation
                     @cancellationToken);
             }
 
+            /// <summary>Cached attribute provider for the generated GetUserObservableWithMetadata method's userName parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider3 = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
-            /// <summary>Cached parameter type array for the generated GetUserObservableWithMetadata method.</summary>
-            private static readonly global::System.Type[] ______typeParameters1 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
-            #if NET5_0_OR_GREATER
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            #endif
             public global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>> GetUserObservableWithMetadata(string @userName)
             {
-                var refitArguments = new object[] { @userName };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserObservableWithMetadata", ______typeParameters1 );
-
-                return (global::System.IObservable<global::Refit.ApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider3, typeof(string)))]), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<global::Refit.ApiResponse<global::Refit.Tests.User>, global::Refit.Tests.User>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    true,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
+            /// <summary>Cached attribute provider for the generated GetUserIApiResponseObservableWithMetadata method's userName parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userNameAttributeProvider4 = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
-            /// <summary>Cached parameter type array for the generated GetUserIApiResponseObservableWithMetadata method.</summary>
-            private static readonly global::System.Type[] ______typeParameters2 = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
-            #if NET5_0_OR_GREATER
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            #endif
             public global::System.IObservable<global::Refit.IApiResponse<global::Refit.Tests.User>> GetUserIApiResponseObservableWithMetadata(string @userName)
             {
-                var refitArguments = new object[] { @userName };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUserIApiResponseObservableWithMetadata", ______typeParameters2 );
-
-                return (global::System.IObservable<global::Refit.IApiResponse<global::Refit.Tests.User>>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{username}", refitSettings.AllowUnmatchedRouteParameters, [((7, 17), refitUseDefaultFormatting ? (@userName) : refitSettings.UrlParameterFormatter.Format(@userName, ______userNameAttributeProvider4, typeof(string)))]), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.SetHeader(refitRequest, "User-Agent", "Refit Integration Tests");
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::Refit.Tests.IGitHubApi));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<global::Refit.IApiResponse<global::Refit.Tests.User>, global::Refit.Tests.User>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    true,
+                    true,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
 
             /// <inheritdoc />

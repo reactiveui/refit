@@ -74,6 +74,7 @@ internal static partial class Parser
         // A registered adapter makes an otherwise-unsupported return shape inline-eligible.
         var returnShapeEligible =
             returnTypeInfo is ReturnTypeInfo.AsyncVoid or ReturnTypeInfo.AsyncResult or ReturnTypeInfo.AsyncEnumerable
+                or ReturnTypeInfo.Observable
             || adapterTypeExpression is not null;
 
         var canGenerateInline = CanGenerateInlineRequest(
@@ -1332,6 +1333,11 @@ internal static partial class Parser
             }
 
             if (namedType.MetadataName == "IAsyncEnumerable`1" && ns == "System.Collections.Generic")
+            {
+                return namedType.TypeArguments[0];
+            }
+
+            if (namedType.MetadataName == "IObservable`1" && ns == "System")
             {
                 return namedType.TypeArguments[0];
             }

@@ -281,8 +281,8 @@ public sealed class QueryParameterTypeTests
     {
         const string source =
             """
-            using System;
             using System.Collections.Generic;
+            using System.Threading.Tasks;
             using Refit;
 
             namespace RefitGeneratorTest;
@@ -297,7 +297,7 @@ public sealed class QueryParameterTypeTests
             public interface IGeneratedClient
             {
                 [Get("/i")]
-                IObservable<string> Get([QueryConverter(typeof(MapConverter))] Dictionary<string, object> filter);
+                Task<string> Get([QueryConverter(typeof(MapConverter))] Dictionary<string, object> filter, object other);
             }
             """;
 
@@ -527,7 +527,7 @@ public sealed class QueryParameterTypeTests
     /// <param name="body">The interface member body source.</param>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
-    [Arguments("[Get(\"/i\")] IObservable<string> Get([QueryName] string flag);")]
+    [Arguments("[Get(\"/i\")] Task<string> Get([QueryName] string flag, object other);")]
     [Arguments("[Get(\"/i/{**rest}\")] Task<string> Get([Encoded] int rest);")]
     [Arguments("[Multipart][Post(\"/i\")] Task<string> Post([QueryName] string flag, object payload);")]
     public async Task SourceGenOnlyAttributeOnFallbackMethodReportsError(string body)

@@ -451,6 +451,58 @@ public static class GeneratedRequestRunner
         }
     }
 
+    /// <summary>Sends a generated request as a cold <see cref="IObservable{T}"/>: each subscription rebuilds and sends
+    /// the request, mirroring the reflection request builder.</summary>
+    /// <typeparam name="T">The result type yielded to subscribers.</typeparam>
+    /// <typeparam name="TBody">The deserialized body type for API response wrappers.</typeparam>
+    /// <param name="client">The HTTP client to send with.</param>
+    /// <param name="requestFactory">Builds a fresh request per subscription, so a second subscription never reuses a
+    /// disposed request.</param>
+    /// <param name="settings">The Refit settings to use.</param>
+    /// <param name="isApiResponse">Whether the result type is an API response wrapper.</param>
+    /// <param name="shouldDisposeResponse">Whether the response should be disposed by this helper.</param>
+    /// <param name="bufferBody">Whether request content should be buffered before sending.</param>
+    /// <param name="methodCancellationToken">The cancellation token supplied as a method argument, if any.</param>
+    /// <returns>A cold observable of the deserialized or wrapped response.</returns>
+    [SuppressMessage(
+        "Major Code Smell",
+        "S4018:Generic methods should provide type parameters",
+        Justification = "Type parameters intentionally specified explicitly by generated callers.")]
+    public static IObservable<T?> SendObservable<T, TBody>(
+        HttpClient client,
+        Func<HttpRequestMessage> requestFactory,
+        RefitSettings settings,
+        bool isApiResponse,
+        bool shouldDisposeResponse,
+        bool bufferBody,
+        CancellationToken methodCancellationToken) =>
+        new ReactiveUI.Primitives.Advanced.FromAsyncSignal<T?>(async subscriptionToken =>
+        {
+            // Link the method's CancellationToken argument (if any) with the per-subscription token, allocating a linked
+            // source only when both can cancel - mirroring StreamAsync.
+            CancellationTokenSource? linked = null;
+            CancellationToken token;
+            if (methodCancellationToken.CanBeCanceled && subscriptionToken.CanBeCanceled)
+            {
+                linked = CancellationTokenSource.CreateLinkedTokenSource(methodCancellationToken, subscriptionToken);
+                token = linked.Token;
+            }
+            else
+            {
+                token = methodCancellationToken.CanBeCanceled ? methodCancellationToken : subscriptionToken;
+            }
+
+            try
+            {
+                return await SendAsync<T, TBody>(client, requestFactory(), settings, isApiResponse, shouldDisposeResponse, bufferBody, token)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                linked?.Dispose();
+            }
+        });
+
     /// <summary>Sends a generated request and streams the response as an <see cref="IAsyncEnumerable{T}"/>.</summary>
     /// <typeparam name="T">The element type yielded to the caller.</typeparam>
     /// <param name="client">The HTTP client to send with.</param>

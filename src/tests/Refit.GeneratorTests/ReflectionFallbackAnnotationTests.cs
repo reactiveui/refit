@@ -9,36 +9,36 @@ namespace Refit.GeneratorTests;
 /// suppresses the unactionable IL2026/IL3050 (issue #2200).</summary>
 public sealed class ReflectionFallbackAnnotationTests
 {
-    /// <summary>An <c>IObservable&lt;T&gt;</c>-returning method is not inline-eligible, so it falls back to reflection.</summary>
+    /// <summary>A method with a dynamic query-map (<c>object</c>) parameter is not inline-eligible, so it falls back to reflection.</summary>
     private const string UnannotatedSource =
         """
-        using System;
+        using System.Threading.Tasks;
         using Refit;
 
         namespace ConsumerNs;
 
-        public interface IObservableApi
+        public interface IFallbackApi
         {
             [Get("/thing")]
-            IObservable<string> GetThing();
+            Task<string> GetThing(object filters);
         }
         """;
 
     /// <summary>The same fallback method, but the interface member declares the trim/AOT annotations.</summary>
     private const string AnnotatedSource =
         """
-        using System;
         using System.Diagnostics.CodeAnalysis;
+        using System.Threading.Tasks;
         using Refit;
 
         namespace ConsumerNs;
 
-        public interface IObservableApi
+        public interface IFallbackApi
         {
             [Get("/thing")]
             [RequiresUnreferencedCode("Uses the reflection request builder.")]
             [RequiresDynamicCode("Uses the reflection request builder.")]
-            IObservable<string> GetThing();
+            Task<string> GetThing(object filters);
         }
         """;
 

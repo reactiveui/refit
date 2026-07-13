@@ -37,21 +37,40 @@ namespace Refit.Implementation
                 _settings = requestBuilder.Settings;
             }
 
+            /// <summary>Initializes a new instance of the RefitGeneratorTestIGeneratedClient class for generated-only execution.</summary>
+            /// <param name="client">The HTTP client used by the generated implementation.</param>
+            /// <param name="settings">The settings used by the generated implementation.</param>
+            public RefitGeneratorTestIGeneratedClient(global::System.Net.Http.HttpClient client, global::Refit.RefitSettings settings)
+            {
+                Client = client;
+                _settings = settings;
+            }
+            /// <summary>Cached attribute provider for the generated GetUser method's user parameter.</summary>
+            private static readonly global::Refit.GeneratedParameterAttributeProvider ______userAttributeProvider = global::Refit.GeneratedParameterAttributeProvider.Empty;
 
-            /// <summary>Cached parameter type array for the generated GetUser method.</summary>
-            private static readonly global::System.Type[] ______typeParameters = new global::System.Type[] { typeof(string) };
             /// <inheritdoc />
-            #if NET5_0_OR_GREATER
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            [global::System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("AOT", "IL3050", Justification = "This method's shape is not supported by generated request building and intentionally uses the reflection request builder; trimmed and Native AOT applications must use inline-eligible method shapes instead (Refit reports this at compile time).")]
-            #endif
             public global::System.IObservable<global::System.Net.Http.HttpResponseMessage> GetUser(string @user)
             {
-                var refitArguments = new object[] { @user };
-                var refitRequestBuilder = _requestBuilder ?? throw new global::System.InvalidOperationException("This generated Refit method requires a request builder.");
-                var refitFunc = refitRequestBuilder.BuildRestResultFuncForMethod("GetUser", ______typeParameters );
-
-                return (global::System.IObservable<global::System.Net.Http.HttpResponseMessage>)refitFunc(this.Client, refitArguments);
+                var refitSettings = _settings;
+                global::System.Net.Http.HttpRequestMessage BuildRefitRequest()
+                {
+                var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, [((7, 13), refitUseDefaultFormatting ? (@user) : refitSettings.UrlParameterFormatter.Format(@user, ______userAttributeProvider, typeof(string)))]), refitSettings.UrlResolution));
+                #if NET6_0_OR_GREATER
+                refitRequest.Version = refitSettings.Version;
+                refitRequest.VersionPolicy = refitSettings.VersionPolicy;
+                #endif
+                global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
+                    return refitRequest;
+                }
+                return global::Refit.GeneratedRequestRunner.SendObservable<global::System.Net.Http.HttpResponseMessage, global::System.Net.Http.HttpResponseMessage>(
+                    this.Client,
+                    BuildRefitRequest,
+                    refitSettings,
+                    false,
+                    false,
+                    false,
+                    global::System.Threading.CancellationToken.None);
             }
         }
     }

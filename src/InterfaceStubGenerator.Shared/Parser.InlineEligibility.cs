@@ -84,6 +84,7 @@ internal static partial class Parser
             "Task" when ns == "System.Threading.Tasks" => ReturnTypeInfo.AsyncVoid,
             "Task`1" or "ValueTask`1" when ns == "System.Threading.Tasks" => ReturnTypeInfo.AsyncResult,
             "IAsyncEnumerable`1" when ns == "System.Collections.Generic" => ReturnTypeInfo.AsyncEnumerable,
+            "IObservable`1" when ns == "System" => ReturnTypeInfo.Observable,
             _ => ReturnTypeInfo.Return
         };
     }

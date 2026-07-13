@@ -919,6 +919,7 @@ internal static partial class Parser
             "Task" => ReturnTypeInfo.AsyncVoid,
             "Task`1" or "ValueTask`1" => ReturnTypeInfo.AsyncResult,
             "IAsyncEnumerable`1" => ReturnTypeInfo.AsyncEnumerable,
+            "IObservable`1" => ReturnTypeInfo.Observable,
             "Void" => ReturnTypeInfo.SyncVoid,
             _ => ReturnTypeInfo.Return
         };

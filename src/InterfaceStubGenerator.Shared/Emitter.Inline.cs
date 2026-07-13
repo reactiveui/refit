@@ -142,7 +142,6 @@ internal static partial class Emitter
         var pathExpression = BuildInlinePathExpression(request, parameterInfoNames, emission, settingsLocal, parameters);
 
         var bodyIndent = Indent(MethodBodyIndentation);
-        var requestPathExpression = pathExpression;
 
         // Accumulate the request prologue through a pooled buffer rather than reallocating the whole string on each
         // '+=' branch below.
@@ -161,24 +160,7 @@ internal static partial class Emitter
                 .Append(settingsLocal).AppendLine(");");
         }
 
-        if (HasQueryBindings(request))
-        {
-            _ = prologue.Append(bodyIndent).Append("var ").Append(emission.QueryBuilderLocal)
-                .Append(" = new global::Refit.GeneratedQueryStringBuilder(").Append(pathExpression);
-
-            // The query separator (? vs &) depends on whether the built path already carries a query. Path values are
-            // escaped, so only a pre-encoded ([Encoded]) segment could inject a ? the template lacks; without one the
-            // answer is the compile-time presence of ? in the template, passed in so the path is not rescanned per call.
-            if (!HasPreEncodedPathParameter(request))
-            {
-                _ = prologue.Append(", ").Append(ToLowerInvariantString(request.Path.IndexOf('?') >= 0));
-            }
-
-            _ = prologue.AppendLine(");")
-                .Append(BuildInlineQueryStatements(request, parameterInfoNames, emission));
-            requestPathExpression = emission.QueryBuilderLocal + ".Build()";
-        }
-
+        var requestPathExpression = AppendInlineQueryPrologue(prologue, request, parameterInfoNames, emission, pathExpression, bodyIndent);
         var requestPrologueSource = prologue.ToString();
 
         var httpMethodExpression = ToHttpMethodExpression(request.HttpMethod);
@@ -206,17 +188,123 @@ internal static partial class Emitter
 
         var headerSource = BuildInlineHeaders(request, requestLocal);
         var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
-        var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal, adapterTokenLocal);
         var methodIndent = Indent(MethodMemberIndentation);
+        var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
+        var methodPrefix = $"{paramInfoSb}{formFieldsSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
 
-        return $$"""
-            {{paramInfoSb}}{{formFieldsSource}}{{BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable)}}{{bodyIndent}}var {{settingsLocal}} = {{settingsFieldName}};
+        // The request construction shared by every shape: prologue locals, the message, the version, content, headers,
+        // and request properties. A cold IObservable wraps this in a per-subscription local function so a second
+        // subscription rebuilds and re-sends instead of reusing a disposed request.
+        var requestConstruction = $$"""
             {{requestPrologueSource}}{{bodyIndent}}var {{requestLocal}} = new global::System.Net.Http.HttpRequestMessage({{httpMethodExpression}}, {{requestUriExpression}});
             {{bodyIndent}}#if NET6_0_OR_GREATER
             {{bodyIndent}}{{requestLocal}}.Version = {{settingsLocal}}.Version;
             {{bodyIndent}}{{requestLocal}}.VersionPolicy = {{settingsLocal}}.VersionPolicy;
             {{bodyIndent}}#endif
-            {{contentSource}}{{headerSource}}{{requestPropertySource}}{{returnSource}}{{methodIndent}}}
+            {{contentSource}}{{headerSource}}{{requestPropertySource}}
+            """;
+
+        if (methodModel.ReturnTypeMetadata == ReturnTypeInfo.Observable)
+        {
+            var buildRequestLocal = locals.New("BuildRefitRequest");
+            var observableReturn = BuildInlineObservableReturn(request, bufferBodyExpression, cancellationTokenExpression, buildRequestLocal, settingsLocal);
+            return BuildInlineObservableMethodSource(methodPrefix, requestConstruction, buildRequestLocal, requestLocal, observableReturn, bodyIndent, methodIndent);
+        }
+
+        var returnSource = BuildInlineReturn(methodModel, request, bufferBodyExpression, cancellationTokenExpression, requestLocal, settingsLocal, adapterTokenLocal);
+        return $$"""
+            {{methodPrefix}}{{requestConstruction}}{{returnSource}}{{methodIndent}}}
+
+            """;
+    }
+
+    /// <summary>Appends the query-string-builder prologue and returns the request-path expression to use.</summary>
+    /// <param name="prologue">The request-prologue buffer to append to.</param>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="parameterInfoNames">The per-parameter attribute-provider field names.</param>
+    /// <param name="emission">The inline value-emission context.</param>
+    /// <param name="pathExpression">The generated relative-path expression.</param>
+    /// <param name="bodyIndent">The method-body indentation.</param>
+    /// <returns>The request-path expression: the query builder's <c>Build()</c> call, or the path when no query binds.</returns>
+    private static string AppendInlineQueryPrologue(
+        PooledStringBuilder prologue,
+        RequestModel request,
+        Dictionary<string, string> parameterInfoNames,
+        in InlineValueEmission emission,
+        string pathExpression,
+        string bodyIndent)
+    {
+        if (!HasQueryBindings(request))
+        {
+            return pathExpression;
+        }
+
+        _ = prologue.Append(bodyIndent).Append("var ").Append(emission.QueryBuilderLocal)
+            .Append(" = new global::Refit.GeneratedQueryStringBuilder(").Append(pathExpression);
+
+        // The query separator (? vs &) depends on whether the built path already carries a query. Path values are
+        // escaped, so only a pre-encoded ([Encoded]) segment could inject a ? the template lacks; without one the
+        // answer is the compile-time presence of ? in the template, passed in so the path is not rescanned per call.
+        if (!HasPreEncodedPathParameter(request))
+        {
+            _ = prologue.Append(", ").Append(ToLowerInvariantString(request.Path.IndexOf('?') >= 0));
+        }
+
+        _ = prologue.AppendLine(");")
+            .Append(BuildInlineQueryStatements(request, parameterInfoNames, emission));
+        return emission.QueryBuilderLocal + ".Build()";
+    }
+
+    /// <summary>Assembles a cold-observable inline method: a per-subscription request factory and its send.</summary>
+    /// <param name="methodPrefix">The method signature, settings assignment, and any field prologue.</param>
+    /// <param name="requestConstruction">The shared request-construction block.</param>
+    /// <param name="buildRequestLocal">The per-subscription request-building local function name.</param>
+    /// <param name="requestLocal">The request-message local name.</param>
+    /// <param name="observableReturn">The generated <c>return SendObservable(...)</c> statement.</param>
+    /// <param name="bodyIndent">The method-body indentation.</param>
+    /// <param name="methodIndent">The method-member indentation.</param>
+    /// <returns>The generated method source.</returns>
+    private static string BuildInlineObservableMethodSource(
+        string methodPrefix,
+        string requestConstruction,
+        string buildRequestLocal,
+        string requestLocal,
+        string observableReturn,
+        string bodyIndent,
+        string methodIndent) =>
+        $$"""
+        {{methodPrefix}}{{bodyIndent}}global::System.Net.Http.HttpRequestMessage {{buildRequestLocal}}()
+        {{bodyIndent}}{
+        {{requestConstruction}}{{bodyIndent}}    return {{requestLocal}};
+        {{bodyIndent}}}
+        {{observableReturn}}{{methodIndent}}}
+
+        """;
+
+    /// <summary>Builds the cold-observable return statement: a per-subscription send over the request factory.</summary>
+    /// <param name="request">The parsed request model.</param>
+    /// <param name="bufferBodyExpression">The generated buffer-body expression.</param>
+    /// <param name="cancellationTokenExpression">The generated method cancellation-token expression.</param>
+    /// <param name="buildRequestLocal">The per-subscription request-building local function name.</param>
+    /// <param name="settingsLocal">The generated settings local name.</param>
+    /// <returns>The generated <c>return SendObservable(...)</c> statement.</returns>
+    private static string BuildInlineObservableReturn(
+        RequestModel request,
+        string bufferBodyExpression,
+        string cancellationTokenExpression,
+        string buildRequestLocal,
+        string settingsLocal)
+    {
+        var bodyIndent = Indent(MethodBodyIndentation);
+        return $$"""
+            {{bodyIndent}}return global::Refit.GeneratedRequestRunner.SendObservable<{{request.ResultType}}, {{request.DeserializedResultType}}>(
+            {{bodyIndent}}    this.Client,
+            {{bodyIndent}}    {{buildRequestLocal}},
+            {{bodyIndent}}    {{settingsLocal}},
+            {{bodyIndent}}    {{ToLowerInvariantString(request.IsApiResponse)}},
+            {{bodyIndent}}    {{ToLowerInvariantString(request.ShouldDisposeResponse)}},
+            {{bodyIndent}}    {{bufferBodyExpression}},
+            {{bodyIndent}}    {{cancellationTokenExpression}});
 
             """;
     }
