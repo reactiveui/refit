@@ -83,7 +83,7 @@
   <ItemGroup Label="Examples">
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(AspNetVersion)"/>
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(AspNetVersion)"/>
-    <PackageVersion Include="Serilog" Version="4.3.1"/>
+    <PackageVersion Include="Serilog" Version="4.4.0"/>
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1"/>
   </ItemGroup>
 
