@@ -14,5 +14,5 @@ namespace Refit.Benchmarks;
 public sealed class QueryVerbAttribute(string path) : HttpMethodAttribute(path)
 {
     /// <inheritdoc/>
-    public override HttpMethod Method => new("QUERY");
+    public override HttpMethod Method => new HttpMethod("QUERY");
 }
