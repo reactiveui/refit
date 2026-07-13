@@ -1142,6 +1142,16 @@ stylesharp.max_cognitive_complexity = 15
 stylesharp.max_property_cognitive_complexity = 3
 # SST1484 also reports a field that shadows one inherited from a base type.
 stylesharp.SST1484.check_base_types = true
+# stylesharp.max_line_length = 120                         # SST1521 (characters)
+# stylesharp.max_file_lines = 500                          # SST1522 (code lines; blank lines and comments do not count)
+# stylesharp.max_member_lines = 60                         # SST1523 (code lines)
+# stylesharp.max_switch_section_lines = 20                 # SST1524 (code lines)
+# stylesharp.include_internal = true                       # SST1499 (set false to report only fields visible outside the assembly)
+# stylesharp.require_parameterless = true                  # SST1488 (set false where every exception must carry a message)
+# stylesharp.include_non_public_types = true               # SST1488 (set false to check only externally visible exceptions)
+# performancesharp.empty_string_style = pattern            # PSH1204 (pattern | length | is_null_or_empty; the last two are only offered where the string is provably not null)
+# performancesharp.include_public = false                  # PSH1411 (set true in an app to seal public types too; a break in a library)
+# performancesharp.excluded_properties = Items, Keys       # PSH1017 (comma-separated; properties allowed to copy on read)
 
 # Spacing
 dotnet_diagnostic.SST1000.severity = error # A control-flow keyword is not followed by a space
@@ -1290,6 +1300,7 @@ dotnet_diagnostic.SST1214.severity = error # Static readonly fields should appea
 dotnet_diagnostic.SST1215.severity = error # Instance readonly fields should appear before instance non-readonly fields
 dotnet_diagnostic.SST1216.severity = error # Using static directives should be placed after regular usings and before aliases
 dotnet_diagnostic.SST1217.severity = error # Using static directives should be ordered alphabetically
+dotnet_diagnostic.SST1218.severity = error # Other members separate a method's overloads
 
 # Naming
 dotnet_diagnostic.SST1300.severity = none # Types and members should be PascalCase — naming duplicates existing analyzers
@@ -1356,7 +1367,32 @@ dotnet_diagnostic.SST1441.severity = error # Private fields assigned but never r
 dotnet_diagnostic.SST1442.severity = error # A function has too many direct branch points
 dotnet_diagnostic.SST1443.severity = error # A function has too much nested control flow
 dotnet_diagnostic.SST1444.severity = error # A loop cannot naturally reach a second iteration
+dotnet_diagnostic.SST1445.severity = error # A using directive is unnecessary
+dotnet_diagnostic.SST1446.severity = error # An inheritance chain is deeper than the configured maximum
+dotnet_diagnostic.SST1447.severity = error # An equality override delegates to object's reference semantics
+dotnet_diagnostic.SST1448.severity = error # An argument is passed explicitly to a caller-info parameter
+dotnet_diagnostic.SST1449.severity = error # Code writes directly to the console
 dotnet_diagnostic.SST1450.severity = error # Store files as UTF-8 without a byte order mark
+dotnet_diagnostic.SST1451.severity = error # A DateTime is created without a DateTimeKind
+dotnet_diagnostic.SST1452.severity = error # A generic type parameter is never used
+dotnet_diagnostic.SST1453.severity = error # Statements after an unconditional exit should be removed
+dotnet_diagnostic.SST1454.severity = error # Composite format placeholders should match the supplied arguments
+dotnet_diagnostic.SST1455.severity = error # Unsafe modifiers should be used only when unsafe syntax is present
+dotnet_diagnostic.SST1456.severity = error # Readonly fields should not store mutable source-defined structs
+dotnet_diagnostic.SST1457.severity = error # Global suppressions should point at real declarations
+dotnet_diagnostic.SST1458.severity = error # Global suppression targets should use declaration ids directly
+dotnet_diagnostic.SST1459.severity = error # Grouping parentheses should be removed when the parent syntax already isolates the expression
+dotnet_diagnostic.SST1460.severity = error # Non-mutating struct members should be readonly
+dotnet_diagnostic.SST1461.severity = error # Private parameters that are never read should be removed
+dotnet_diagnostic.SST1462.severity = error # Suppressions for diagnostics already disabled by config should be removed
+dotnet_diagnostic.SST1463.severity = error # Symbol-name strings should use nameof
+dotnet_diagnostic.SST1464.severity = error # An else follows a branch that never falls through
+dotnet_diagnostic.SST1465.severity = error # An else block only wraps an if and should collapse to else if
+dotnet_diagnostic.SST1466.severity = error # A case label shares its section with default and adds nothing
+dotnet_diagnostic.SST1467.severity = error # An enumerator is driven by hand where foreach would do
+dotnet_diagnostic.SST1468.severity = error # Boolean logic uses a non-short-circuiting operator
+dotnet_diagnostic.SST1469.severity = error # A value type is compared to null
+dotnet_diagnostic.SST1470.severity = error # A catch clause only rethrows
 dotnet_diagnostic.SST1471.severity = error # Magic numbers should be named constants
 dotnet_diagnostic.SST1472.severity = error # Signatures should not declare too many parameters
 dotnet_diagnostic.SST1473.severity = error # A floating-point value is compared for exact equality (zero comparison allowed by default)
@@ -1374,6 +1410,18 @@ dotnet_diagnostic.SST1484.severity = error # A declaration shadows an outer fiel
 dotnet_diagnostic.SST1485.severity = error # A member that must not throw throws
 dotnet_diagnostic.SST1486.severity = error # The same string literal is repeated instead of being named
 dotnet_diagnostic.SST1487.severity = error # A collection element is assigned twice with nothing reading it in between
+dotnet_diagnostic.SST1488.severity = error # An exception type does not declare the standard constructors (parameterless waivable)
+dotnet_diagnostic.SST1489.severity = error # An exception type carries serialization members the target framework has obsoleted
+dotnet_diagnostic.SST1490.severity = error # A base list names an interface the rest of the list already implies
+dotnet_diagnostic.SST1491.severity = error # A modifier restates the declaration's default
+dotnet_diagnostic.SST1492.severity = error # A value is tested against what it is then assigned, so the guard decides nothing
+dotnet_diagnostic.SST1493.severity = error # A method's whole body is a constant
+dotnet_diagnostic.SST1494.severity = error # A trailing argument repeats the parameter's default
+dotnet_diagnostic.SST1495.severity = error # '==' compares references on a type that overrides Equals, so the two disagree
+dotnet_diagnostic.SST1496.severity = error # An abstract type declares nothing abstract
+dotnet_diagnostic.SST1497.severity = error # A local is declared and never read
+dotnet_diagnostic.SST1498.severity = error # Only a nested type uses a private member
+dotnet_diagnostic.SST1499.severity = error # A static field visible outside its type can still be changed (internal fields included by default)
 
 # Layout
 dotnet_diagnostic.SST1500.severity = error # A brace in a multi-line construct shares its line with other code
@@ -1397,6 +1445,10 @@ dotnet_diagnostic.SST1517.severity = error # The file begins with one or more bl
 dotnet_diagnostic.SST1518.severity = error # The file does not end with exactly one newline
 dotnet_diagnostic.SST1519.severity = error # A multi-line child statement of a control-flow keyword omits its braces
 dotnet_diagnostic.SST1520.severity = error # The clauses of an if/else chain use braces inconsistently
+dotnet_diagnostic.SST1521.severity = error # A line is longer than the configured maximum (default 120 characters)
+dotnet_diagnostic.SST1522.severity = error # A file has more code lines than the configured maximum (default 500)
+dotnet_diagnostic.SST1523.severity = error # A member has more code lines than the configured maximum (default 60)
+dotnet_diagnostic.SST1524.severity = error # A switch section has more code lines than the configured maximum (default 20)
 
 # Documentation
 dotnet_diagnostic.SST1600.severity = error # Externally visible members should be documented
@@ -1444,6 +1496,8 @@ dotnet_diagnostic.SST1654.severity = error # Extension blocks should be document
 dotnet_diagnostic.SST1655.severity = error # Extension block parameters should be documented
 dotnet_diagnostic.SST1656.severity = error # Extension block type parameters should be documented
 dotnet_diagnostic.SST1657.severity = error # Extension block documentation should reference a real parameter or type parameter
+dotnet_diagnostic.SST1658.severity = error # Documentation repeats a word
+dotnet_diagnostic.SST1659.severity = error # A comment has no text at all
 
 # Concurrency and modernization
 dotnet_diagnostic.SST1900.severity = error # A dedicated object lock field should be a System.Threading.Lock
@@ -1458,6 +1512,14 @@ dotnet_diagnostic.SST2004.severity = suggestion # A range check should use an Ar
 dotnet_diagnostic.SST2005.severity = error # Use the 'is' type pattern instead of comparing an 'as' cast to null
 dotnet_diagnostic.SST2006.severity = error # Use the 'is not' pattern instead of negating an 'is' check
 dotnet_diagnostic.SST2007.severity = error # Use declaration patterns instead of an is check followed by a cast local
+dotnet_diagnostic.SST2008.severity = error # Negated pattern tests should use is-not patterns
+dotnet_diagnostic.SST2009.severity = error # A catch that rethrows unless a condition holds should use a when filter
+# dotnet_diagnostic.SST2010.severity = error # A type reads the machine clock directly instead of through a TimeProvider (opt-in)
+dotnet_diagnostic.SST2011.severity = error # An instant is recorded from the local clock rather than in UTC
+dotnet_diagnostic.SST2012.severity = error # A GUID is constructed with the parameterless constructor instead of Guid.Empty
+dotnet_diagnostic.SST2013.severity = error # An if whose entire body is another if should be merged
+dotnet_diagnostic.SST2014.severity = error # A goto jumps to a label
+dotnet_diagnostic.SST2015.severity = error # A ++ or -- is buried inside a larger expression
 
 # Modern language and library usage
 dotnet_diagnostic.SST1700.severity = error # An extension block declares no members
@@ -1512,23 +1574,160 @@ dotnet_diagnostic.SST2230.severity = none # LINQ type-filter simplification is r
 dotnet_diagnostic.SST2231.severity = error # A broad object pattern can use a direct null pattern
 dotnet_diagnostic.SST2232.severity = error # nameof does not need concrete generic type arguments
 dotnet_diagnostic.SST2233.severity = error # Hot-path code should avoid System.Linq.Enumerable calls
+dotnet_diagnostic.SST2234.severity = error # Nullable<T> should use the T? shorthand
+dotnet_diagnostic.SST2235.severity = error # Capture-free local functions should be static
+dotnet_diagnostic.SST2236.severity = error # Tail-position using blocks can use using declarations
+dotnet_diagnostic.SST2237.severity = error # Single block-scoped namespaces can use file-scoped syntax
+dotnet_diagnostic.SST2238.severity = error # Nested property patterns can use extended property syntax
+dotnet_diagnostic.SST2239.severity = error # Forwarding lambdas can use method groups
+dotnet_diagnostic.SST2240.severity = error # Delegate null checks can use conditional invocation
+dotnet_diagnostic.SST2241.severity = error # Constructors that only store parameters can use primary-constructor storage
+dotnet_diagnostic.SST2242.severity = error # Enum switch statement mappings should name every enum value or include a catch-all
+dotnet_diagnostic.SST2243.severity = error # A string literal escaping quotes or backslashes should be a raw string literal
+dotnet_diagnostic.SST2244.severity = error # A numeric literal's suffix is lower case
+dotnet_diagnostic.SST2245.severity = error # A for loop with only a condition should be a while loop
 dotnet_diagnostic.RCS1040.severity = none # covered by SST1180
+
+# Design
+dotnet_diagnostic.SST2300.severity = error # A class implements IDisposable but builds only half of the disposal pattern
+dotnet_diagnostic.SST2301.severity = error # A class implementing IEquatable<T> for itself can still be derived from
+dotnet_diagnostic.SST2302.severity = error # A type overloads an operator without the rest of the set it belongs to
+dotnet_diagnostic.SST2303.severity = error # A [Flags] enum's members are not distinct bit values
+dotnet_diagnostic.SST2304.severity = error # An event's delegate does not have the standard (object sender, TEventArgs e) shape
+dotnet_diagnostic.SST2305.severity = error # A mutable collection property declares a caller-visible setter
+dotnet_diagnostic.SST2306.severity = error # A collection-returning member hands back null
+dotnet_diagnostic.SST2308.severity = error # An [Obsolete] attribute carries no message
+
+# Correctness
+dotnet_diagnostic.SST2400.severity = error # Two arguments name each other's parameters and have been transposed
+dotnet_diagnostic.SST2401.severity = error # A catch targets NullReferenceException
+dotnet_diagnostic.SST2402.severity = error # An instance constructor assigns a static field of its own type
+dotnet_diagnostic.SST2403.severity = error # 'this' escapes from a constructor before the object is fully built
+dotnet_diagnostic.SST2404.severity = error # An iterator's argument guard does not run until the first MoveNext
+dotnet_diagnostic.SST2405.severity = error # A [DebuggerDisplay] string names a member the type does not have
+dotnet_diagnostic.SST2406.severity = error # A loop's stop condition reads only variables the loop never writes
+dotnet_diagnostic.SST2407.severity = error # A declared event is never raised
+dotnet_diagnostic.SST2408.severity = error # A StringBuilder is filled and never read
+dotnet_diagnostic.SST2409.severity = error # A throw constructs a general exception type (Exception/SystemException/ApplicationException)
 
 ###################
 # PerformanceSharp Analyzers (PSH)
 ###################
 # Allocations
+dotnet_diagnostic.PSH1000.severity = error # Anonymous functions without captures should be static
+dotnet_diagnostic.PSH1001.severity = error # Avoid allocating zero-length arrays (fix prefers [] on C# 12+, else Array.Empty<T>())
+dotnet_diagnostic.PSH1002.severity = error # Empty finalizers should be removed
+dotnet_diagnostic.PSH1003.severity = error # 'in' parameters should use readonly structs
+dotnet_diagnostic.PSH1004.severity = error # Constant arrays passed as arguments should be hoisted
+dotnet_diagnostic.PSH1005.severity = error # Structs should define equality members to avoid boxing comparisons
+dotnet_diagnostic.PSH1006.severity = error # ConcurrentDictionary factories should use the lambda argument
+dotnet_diagnostic.PSH1007.severity = error # Pass large readonly structs by 'in' reference (size threshold + exclusions configurable)
+dotnet_diagnostic.PSH1008.severity = error # GC.SuppressFinalize does nothing for sealed finalizer-free types
+dotnet_diagnostic.PSH1009.severity = error # Bound variable-length stackalloc with a constant guard
+dotnet_diagnostic.PSH1010.severity = error # Clear reference-typed arrays when returning them to the pool
+dotnet_diagnostic.PSH1011.severity = error # Pass state to callbacks through the state-taking overload
+dotnet_diagnostic.PSH1012.severity = error # Compare type parameter values with EqualityComparer<T>.Default
+dotnet_diagnostic.PSH1013.severity = error # Expose constant UTF-8 data as a ReadOnlySpan<byte> property
+dotnet_diagnostic.PSH1014.severity = error # Declare immutable structs as readonly
+dotnet_diagnostic.PSH1015.severity = error # Avoid casting value types through object
+dotnet_diagnostic.PSH1016.severity = error # Test enum flags with bitwise operators instead of boxing
 dotnet_diagnostic.PSH1017.severity = error # A property allocates a copy of a collection on every read (excludable via performancesharp.PSH1017.excluded_properties)
+dotnet_diagnostic.PSH1018.severity = error # A hand-written array is passed to a params parameter
+dotnet_diagnostic.PSH1019.severity = error # The range indexer on an array allocates a copy; slice with AsSpan/AsMemory
+dotnet_diagnostic.PSH1020.severity = error # Prefer a jagged array over a multidimensional one
 
 # Collections
+# dotnet_diagnostic.PSH1100.severity = error # Avoid LINQ calls on hot paths (opt-in; also set performancesharp.avoid_linq_on_hot_path = true)
+dotnet_diagnostic.PSH1101.severity = error # Carry LINQ predicates at the terminal call
+dotnet_diagnostic.PSH1102.severity = error # Filter LINQ values by type once
+dotnet_diagnostic.PSH1103.severity = error # Prefer the collection's own count over enumerating
+dotnet_diagnostic.PSH1104.severity = error # Use TryGetValue instead of ContainsKey followed by an indexer read
+dotnet_diagnostic.PSH1105.severity = error # Avoid double lookups on dictionaries and sets
+dotnet_diagnostic.PSH1106.severity = error # Index collections directly instead of using LINQ element access
+dotnet_diagnostic.PSH1107.severity = error # Filter sequences before sorting them
+dotnet_diagnostic.PSH1108.severity = error # Chain secondary sorts with ThenBy
+dotnet_diagnostic.PSH1109.severity = error # Merge consecutive Where calls
+dotnet_diagnostic.PSH1110.severity = error # Use the collection's own predicate methods over LINQ
+dotnet_diagnostic.PSH1111.severity = error # Use Contains for membership tests
+dotnet_diagnostic.PSH1112.severity = error # Seed the collection through its constructor (fix honors performancesharp.prefer_collection_expressions)
+dotnet_diagnostic.PSH1113.severity = error # Sort naturally instead of ordering by the element itself
+# dotnet_diagnostic.PSH1114.severity = error # Freeze static lookup collections (opt-in; freezing trades slower construction for faster reads)
+dotnet_diagnostic.PSH1115.severity = error # Insert-if-absent should probe the dictionary once
+dotnet_diagnostic.PSH1116.severity = error # Probe string-keyed collections with a span through GetAlternateLookup
+dotnet_diagnostic.PSH1117.severity = error # Ask the collection whether it is empty
+dotnet_diagnostic.PSH1118.severity = error # Take the extreme element without sorting the whole sequence
+dotnet_diagnostic.PSH1119.severity = error # Check for elements without counting them all
+dotnet_diagnostic.PSH1120.severity = error # Do not materialize a sequence just to enumerate it
 dotnet_diagnostic.PSH1122.severity = error # Read a sorted set's extreme through its Min/Max property, not the LINQ extension
+dotnet_diagnostic.PSH1124.severity = error # Read a linked list's end through its First/Last property, not the LINQ extension
+dotnet_diagnostic.PSH1125.severity = error # Do not enumerate the same lazy sequence twice
+dotnet_diagnostic.PSH1126.severity = error # Ask whether an async sequence has elements instead of counting them
+dotnet_diagnostic.PSH1127.severity = error # Clear an array instead of filling it with its default
 
 # Strings
+dotnet_diagnostic.PSH1200.severity = error # Compare strings without allocating case-converted copies
+dotnet_diagnostic.PSH1201.severity = error # Use the char overload for single-character strings
+dotnet_diagnostic.PSH1202.severity = error # Append characters as char, not single-character strings
+dotnet_diagnostic.PSH1203.severity = error # Let StringBuilder do the formatting work
+dotnet_diagnostic.PSH1204.severity = error # Test for empty strings by length
+dotnet_diagnostic.PSH1205.severity = error # Remove interpolation that does no work
+dotnet_diagnostic.PSH1206.severity = error # Do not build strings by concatenation in loops
+dotnet_diagnostic.PSH1207.severity = error # Specify StringComparison for culture-sensitive string operations
+dotnet_diagnostic.PSH1208.severity = error # Encode constant strings with u8 literals
+dotnet_diagnostic.PSH1209.severity = error # Build transformed strings with string.Create
+dotnet_diagnostic.PSH1210.severity = error # Compare UTF-8 bytes without decoding them
+dotnet_diagnostic.PSH1211.severity = error # Pass values directly instead of ToString results
+dotnet_diagnostic.PSH1212.severity = error # Slice with AsSpan when the call accepts a span
+dotnet_diagnostic.PSH1213.severity = error # Probe repeated character sets through SearchValues
+dotnet_diagnostic.PSH1214.severity = error # Append the parts, not a concatenated whole
+dotnet_diagnostic.PSH1215.severity = error # Concatenate when there is no separator to join on
+dotnet_diagnostic.PSH1216.severity = error # Ask for equality, not ordering, when only equality matters
 dotnet_diagnostic.PSH1217.severity = error # A sequence is copied to an array just to be read straight back
 dotnet_diagnostic.PSH1218.severity = error # A substring is allocated only to search it; slice with AsSpan instead
+dotnet_diagnostic.PSH1219.severity = error # Ask whether a string is blank without trimming it
+dotnet_diagnostic.PSH1220.severity = error # A length argument spells out the run that reaches the end anyway
+dotnet_diagnostic.PSH1221.severity = error # An IndexOf compared to 0 scans the whole string to answer a prefix test
+dotnet_diagnostic.PSH1222.severity = error # Concatenate slices without materializing them
+dotnet_diagnostic.PSH1223.severity = error # A reused composite format string is re-parsed on every call
+dotnet_diagnostic.PSH1224.severity = error # Convert bytes to hex in one call, not by building the string twice
+dotnet_diagnostic.PSH1225.severity = error # Decode bytes to a string in one call, without a throwaway char[]
+
+# Concurrency
+dotnet_diagnostic.PSH1300.severity = error # Use System.Threading.Lock for a dedicated lock object
+dotnet_diagnostic.PSH1301.severity = error # Do not wrap a single task in WhenAll or WaitAll
+dotnet_diagnostic.PSH1302.severity = error # TaskCompletionSource should run continuations asynchronously
+dotnet_diagnostic.PSH1303.severity = error # Do not block an async method with Thread.Sleep
+dotnet_diagnostic.PSH1304.severity = error # Use PeriodicTimer instead of pacing a loop with Task.Delay
+dotnet_diagnostic.PSH1305.severity = error # Enumerate a ConcurrentDictionary directly, not its Keys/Values snapshots
+# dotnet_diagnostic.PSH1306.severity = error # Guard one-time execution with an interlocked latch (opt-in; thread-safety needs are contextual)
+dotnet_diagnostic.PSH1307.severity = error # Access interlocked fields with Volatile
+dotnet_diagnostic.PSH1308.severity = error # Return the completed task instead of Task.FromResult
+# dotnet_diagnostic.PSH1309.severity = error # Register cancellation callbacks without flowing the execution context (opt-in; changes AsyncLocal visibility)
+dotnet_diagnostic.PSH1310.severity = error # Dispose asynchronously in async code
+dotnet_diagnostic.PSH1311.severity = error # Remove a pass-through async state machine
+dotnet_diagnostic.PSH1312.severity = error # Return a completed task, never null
+dotnet_diagnostic.PSH1313.severity = error # Call the async overload from an async method instead of blocking
+dotnet_diagnostic.PSH1314.severity = error # Read and write streams through the memory-based overloads
 
 # API selection
+dotnet_diagnostic.PSH1400.severity = error # Use the static HashData method for one-shot hashing
+dotnet_diagnostic.PSH1401.severity = error # Attribute types should be sealed
+dotnet_diagnostic.PSH1402.severity = error # Use const for compile-time constants
+dotnet_diagnostic.PSH1403.severity = error # Do not initialize fields to their default value
+dotnet_diagnostic.PSH1404.severity = error # Get the assembly from typeof instead of a stack walk
+dotnet_diagnostic.PSH1405.severity = error # Use the direct Environment APIs
+dotnet_diagnostic.PSH1406.severity = error # Ask Regex for the answer directly
+dotnet_diagnostic.PSH1407.severity = error # Query the dictionary, not its Keys view
+dotnet_diagnostic.PSH1408.severity = error # Measure elapsed time with Stopwatch timestamps
+dotnet_diagnostic.PSH1409.severity = error # Use the built-in throw helpers for argument guards
+# dotnet_diagnostic.PSH1410.severity = error # Mark trivial forwarders for aggressive inlining (opt-in; opinionated convention)
 dotnet_diagnostic.PSH1411.severity = error # Seal non-public types nothing derives from so the JIT can devirtualize
+dotnet_diagnostic.PSH1412.severity = error # Use Random.Shared instead of allocating a Random
+dotnet_diagnostic.PSH1413.severity = error # Read the Unix epoch from the framework, not a hand-built DateTime
+dotnet_diagnostic.PSH1414.severity = error # Mark members that do not touch instance state as static
+dotnet_diagnostic.PSH1415.severity = error # Hold the concrete type when the concrete type is what you have
+dotnet_diagnostic.PSH1416.severity = error # Cache the serializer options instead of building them per call
+dotnet_diagnostic.PSH1417.severity = error # Do not compute an expensive argument for an assertion
 
 ###################
 # PublicApiAnalyzers (RSxxxx) - public API surface tracking
