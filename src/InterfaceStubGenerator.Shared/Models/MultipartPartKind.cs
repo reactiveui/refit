@@ -32,5 +32,9 @@ internal enum MultipartPartKind
     ByteArray,
 
     /// <summary>The value is a date/time or <see cref="System.Guid"/> rendered by the form URL-encoded formatter.</summary>
-    Formattable
+    Formattable,
+
+    /// <summary>The value is a sealed or value type (a bool, enum, or sealed DTO) written through the content serializer,
+    /// matching the reflection builder's <c>AddSerializedMultipartItem</c> serializer fallback.</summary>
+    Serialized
 }

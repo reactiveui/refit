@@ -16,6 +16,9 @@ namespace Refit.GeneratorTests;
 /// </summary>
 public sealed class MultipartRequestBuildingLiveTests
 {
+    /// <summary>A stable score used by the serialized DTO part scenario.</summary>
+    private const int ReportScore = 42;
+
     /// <summary>The multipart interface compiled through the generator for every scenario.</summary>
     private const string ApiSource =
         """
@@ -27,8 +30,23 @@ public sealed class MultipartRequestBuildingLiveTests
 
         namespace Refit.LiveMultipart;
 
+        public sealed class Report
+        {
+            public string? Title { get; set; }
+
+            public int Score { get; set; }
+        }
+
         public interface ILiveMultipartApi
         {
+            [Multipart]
+            [Post("/upload")]
+            Task<string> UploadFlag([AliasAs("flag")] bool flag);
+
+            [Multipart]
+            [Post("/upload")]
+            Task<string> UploadReport([AliasAs("report")] Report report);
+
             [Multipart]
             [Post("/upload")]
             Task<string> UploadStream(Stream stream);
@@ -154,6 +172,22 @@ public sealed class MultipartRequestBuildingLiveTests
             ]);
     }
 
+    /// <summary>Verifies generated serialized parts (a bool and a sealed DTO) match the reflection builder, byte for byte
+    /// through the content serializer, mirroring its <c>AddSerializedMultipartItem</c> fallback.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task SerializedPartsMatchReflection()
+    {
+        using var harness = LiveMultipartHarness.Create();
+
+        await harness.AssertParityAsync("UploadFlag", static () => [true]);
+        await harness.AssertParityAsync(
+            "UploadReport",
+            () => [harness.CreateApiValue("Refit.LiveMultipart.Report", ("Title", "Q3"), ("Score", ReportScore))]);
+    }
+
     /// <summary>Verifies a header, request property and path parameter never become multipart parts.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -214,6 +248,23 @@ public sealed class MultipartRequestBuildingLiveTests
             var requestBuilder = RequestBuilder.ForType(interfaceType, new RefitSettings());
             var generatedApi = Activator.CreateInstance(generatedType, [client, requestBuilder])!;
             return new(loadContext, handler, client, interfaceType, generatedApi, requestBuilder);
+        }
+
+        /// <summary>Creates an instance of a compiled scenario type with the given properties assigned.</summary>
+        /// <param name="typeName">The compiled type's full name.</param>
+        /// <param name="properties">The property name/value pairs to assign.</param>
+        /// <returns>The created instance.</returns>
+        [RequiresUnreferencedCode("Reflects over generated types and members.")]
+        public object CreateApiValue(string typeName, params (string Name, object? Value)[] properties)
+        {
+            var type = interfaceType.Assembly.GetType(typeName, throwOnError: true)!;
+            var instance = Activator.CreateInstance(type)!;
+            foreach (var (name, value) in properties)
+            {
+                type.GetProperty(name)!.SetValue(instance, value);
+            }
+
+            return instance;
         }
 
         /// <summary>Creates a temporary file with the given bytes, tracked for cleanup on disposal.</summary>

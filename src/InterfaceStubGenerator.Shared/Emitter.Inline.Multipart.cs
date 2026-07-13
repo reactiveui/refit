@@ -164,6 +164,15 @@ internal static partial class Emitter
                 break;
             }
 
+            case MultipartPartKind.Serialized:
+            {
+                // A sealed/value part is JSON-serialized under its field name, matching AddSerializedMultipartItem's
+                // serializer fallback. The declared type drives ToHttpContent<T>, so the serialized form matches.
+                _ = sb.Append(settingsLocal).Append(".ContentSerializer.ToHttpContent(").Append(value).Append("), ")
+                    .Append(fieldName).AppendLine(");");
+                break;
+            }
+
             default:
             {
                 // Formattable: Guid/DateTime/etc. render through the form URL-encoded formatter, exactly as the
