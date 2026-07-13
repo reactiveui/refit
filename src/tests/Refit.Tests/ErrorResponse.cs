@@ -8,5 +8,5 @@ namespace Refit.Tests;
 public class ErrorResponse
 {
     /// <summary>Gets or sets the collection of error messages.</summary>
-    public string[]? Errors { get; set; }
+    public string[]? Errors { get; init; }
 }

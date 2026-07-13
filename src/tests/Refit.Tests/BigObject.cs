@@ -8,5 +8,5 @@ namespace Refit.Tests;
 public class BigObject
 {
     /// <summary>Gets or sets the large binary payload.</summary>
-    public byte[]? BigData { get; set; }
+    public byte[]? BigData { get; init; }
 }

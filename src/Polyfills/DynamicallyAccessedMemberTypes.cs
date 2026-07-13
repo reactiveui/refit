@@ -9,6 +9,10 @@ namespace System.Diagnostics.CodeAnalysis;
 [Flags]
 [SuppressMessage("Minor Code Smell", "S4070", Justification = "Mirrors the BCL flags enum shape.")]
 [SuppressMessage("Roslynator", "RCS1157", Justification = "Mirrors the BCL enum; PublicConstructors combines bits 1 and 2.")]
+[SuppressMessage(
+    "Design",
+    "SST2303:An enum marked [Flags] has members that are not distinct bit values",
+    Justification = "Mirrors the BCL flags enum; several members intentionally combine bits (e.g. PublicConstructors = 1 | 2).")]
 internal enum DynamicallyAccessedMemberTypes
 {
     /// <summary>No members are dynamically accessed.</summary>

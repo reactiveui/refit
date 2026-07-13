@@ -12,7 +12,7 @@ public interface IRefitInterfaceWithStaticMethod
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>Creates an instance of the interface via a static factory method.</summary>
     /// <returns>A Refit-backed implementation of the interface.</returns>
-    public static IRefitInterfaceWithStaticMethod Create() =>
+    static IRefitInterfaceWithStaticMethod Create() =>
         RestService.For<IRefitInterfaceWithStaticMethod>("http://foo/");
 #endif
 

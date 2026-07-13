@@ -21,6 +21,10 @@ namespace Refit.MockInterop.Tests;
     "Performance",
     "CA1859:Use concrete types when possible for improved performance",
     Justification = "These tests read the stub through IApiResponse/IApiResponse<T> on purpose; the concrete type would bypass the interface dispatch they exist to exercise.")]
+[SuppressMessage(
+    "Performance",
+    "PSH1415:Hold the concrete type when the concrete type is what you have",
+    Justification = "These tests read the stub through IApiResponse/IApiResponse<T> on purpose; the concrete type would bypass the interface dispatch they exist to exercise.")]
 public sealed class ApiResponseMockInteropTests
 {
     /// <summary>A non-empty content payload used by the content-narrowing tests.</summary>

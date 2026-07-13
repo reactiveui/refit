@@ -39,17 +39,23 @@ public sealed class RestMethodParameterPropertyTests
     /// <summary>A model whose properties supply real metadata for the constructor fixtures.</summary>
     private sealed class Sample
     {
+        /// <summary>The identifier value assigned to <see cref="Id"/>.</summary>
+        private const int IdValue = 7;
+
         /// <summary>Gets or sets the identifier bound by a single-level chain.</summary>
-        public int Id { get; set; }
+        public int Id { get; set; } = IdValue;
 
         /// <summary>Gets or sets the nested object bound by a multi-level chain.</summary>
-        public Inner? Inner { get; set; }
+        public Inner? Inner { get; set; } = new();
     }
 
     /// <summary>A nested model exercised by the chain constructor.</summary>
     private sealed class Inner
     {
+        /// <summary>The identifier value assigned to <see cref="Id"/>.</summary>
+        private const int IdValue = 11;
+
         /// <summary>Gets or sets the nested identifier bound as the final chain link.</summary>
-        public int Id { get; set; }
+        public int Id { get; set; } = IdValue;
     }
 }

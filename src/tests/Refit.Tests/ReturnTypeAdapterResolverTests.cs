@@ -221,9 +221,9 @@ public sealed class ReturnTypeAdapterResolverTests
     public async Task OpenGenericAdapterWithRepeatedWrapperParameterRequiresConsistentBinding()
     {
         // RepeatedWrapperAdapter<TValue, TResult> : IReturnTypeAdapter<Paired<TValue, TValue>, TResult>. Both wrapper
-        // positions bind the same parameter, so the second position re-checks the first binding for consistency. Neither
-        // return closes the adapter (TResult never appears in the wrapper), so both resolve to no match; the value lies in
-        // exercising the consistent (Paired<int, int>) and inconsistent (Paired<int, string>) outcomes of that re-check.
+        // positions bind the same parameter, so the second position re-checks the first binding for consistency. Because
+        // TResult never appears in the wrapper, neither binding closes the adapter, so both resolve to no match. The value
+        // lies in exercising the consistent (Paired<int, int>) and inconsistent (Paired<int, string>) outcomes of that re-check.
         var consistent = ReturnTypeAdapterResolver.TryResolveResultType(
             typeof(Paired<int, int>),
             [typeof(RepeatedWrapperAdapter<,>)],

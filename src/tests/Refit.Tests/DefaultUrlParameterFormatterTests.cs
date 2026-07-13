@@ -383,10 +383,10 @@ public class DefaultUrlParameterFormatterTests
         public IEnumerable<DateTime>? DateTimeCollection { get; set; }
 
         /// <summary>Gets or sets a dictionary of DateTime values keyed by integer.</summary>
-        public IDictionary<int, DateTime> DateTimeDictionary { get; set; } = new Dictionary<int, DateTime>();
+        public IDictionary<int, DateTime> DateTimeDictionary { get; init; } = new Dictionary<int, DateTime>();
 
         /// <summary>Gets or sets a dictionary of integer values keyed by DateTime.</summary>
-        public IDictionary<DateTime, int> DateTimeKeyedDictionary { get; set; } = new Dictionary<DateTime, int>();
+        public IDictionary<DateTime, int> DateTimeKeyedDictionary { get; init; } = new Dictionary<DateTime, int>();
     }
 
     /// <summary>Request fixture exposing a flags enum query parameter.</summary>

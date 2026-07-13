@@ -12,10 +12,10 @@ public interface IImplementTheInterfaceAndUseRefit : IAmInterfaceEWithNoRefit<in
     /// <param name="parameter">The parameter to send.</param>
     /// <returns>A task representing the request.</returns>
     [Get("/doSomething")]
-    public new Task DoSomething(int parameter);
+    new Task DoSomething(int parameter);
 
     /// <summary>Issues a GET request, hiding the non-Refit base member with a Refit-attributed one.</summary>
     /// <returns>A task representing the request.</returns>
     [Get("/DoSomethingElse")]
-    public new Task DoSomethingElse();
+    new Task DoSomethingElse();
 }

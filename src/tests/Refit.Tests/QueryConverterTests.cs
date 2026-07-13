@@ -19,6 +19,10 @@ public class QueryConverterTests
     /// <summary>A count value used to prove numeric properties format correctly.</summary>
     private const int CountValue = 3;
 
+    /// <summary>Reflection-backed serializer options shared by the interop-converter flattening fixture.</summary>
+    private static readonly JsonSerializerOptions ReflectionSerializerOptions =
+        new() { TypeInfoResolver = new DefaultJsonTypeInfoResolver() };
+
     /// <summary>Verifies a converter flattens an object-valued dictionary the generator cannot flatten itself.</summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
     [Test]
@@ -65,8 +69,7 @@ public class QueryConverterTests
     {
         var settings = new RefitSettings
         {
-            ContentSerializer = new SystemTextJsonContentSerializer(
-                new JsonSerializerOptions { TypeInfoResolver = new DefaultJsonTypeInfoResolver() })
+            ContentSerializer = new SystemTextJsonContentSerializer(ReflectionSerializerOptions)
         };
         var filter = new StjFilter { Query = "ada", Count = CountValue, Sub = new StjNested { City = "wien" } };
 

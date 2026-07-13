@@ -397,7 +397,7 @@ public class QueryObjectFlatteningTests
     private static SealedQueryObject CreateSealedQueryObject()
     {
         const int number = 7;
-        const double price = 5d;
+        const double price = 5D;
 
         return new()
         {

@@ -17,7 +17,7 @@ public sealed class NetworkBehaviorTests
     [Test]
     public async Task FailureRateAlwaysThrows()
     {
-        var behavior = new NetworkBehavior { Delay = TimeSpan.Zero, FailurePercent = 1d, ErrorPercent = 0d };
+        var behavior = new NetworkBehavior { Delay = TimeSpan.Zero, FailurePercent = 1D, ErrorPercent = 0D };
         var handler = new StubHttp(behavior)
         {
             {
@@ -37,8 +37,8 @@ public sealed class NetworkBehaviorTests
         var behavior = new NetworkBehavior
         {
             Delay = TimeSpan.Zero,
-            FailurePercent = 0d,
-            ErrorPercent = 1d,
+            FailurePercent = 0D,
+            ErrorPercent = 1D,
             ErrorStatusCode = HttpStatusCode.ServiceUnavailable,
         };
         var handler = new StubHttp(behavior)
@@ -59,7 +59,7 @@ public sealed class NetworkBehaviorTests
     [Test]
     public async Task NoFaultsYieldStubbedResponse()
     {
-        var behavior = new NetworkBehavior { Delay = TimeSpan.Zero, FailurePercent = 0d, ErrorPercent = 0d };
+        var behavior = new NetworkBehavior { Delay = TimeSpan.Zero, FailurePercent = 0D, ErrorPercent = 0D };
         var handler = new StubHttp(behavior)
         {
             {
@@ -81,7 +81,7 @@ public sealed class NetworkBehaviorTests
     {
         const int samples = 5;
         const int seed = 123;
-        const double delayVariance = 0.5d;
+        const double delayVariance = 0.5D;
         var a = new NetworkBehavior(seed) { Delay = TimeSpan.FromSeconds(1), Variance = delayVariance };
         var b = new NetworkBehavior(seed) { Delay = TimeSpan.FromSeconds(1), Variance = delayVariance };
 
@@ -96,8 +96,8 @@ public sealed class NetworkBehaviorTests
     [Test]
     public async Task ProbabilityBoundariesAreHonored()
     {
-        var always = new NetworkBehavior { FailurePercent = 1d, ErrorPercent = 1d };
-        var never = new NetworkBehavior { FailurePercent = 0d, ErrorPercent = 0d };
+        var always = new NetworkBehavior { FailurePercent = 1D, ErrorPercent = 1D };
+        var never = new NetworkBehavior { FailurePercent = 0D, ErrorPercent = 0D };
 
         await Assert.That(always.NextIsFailure()).IsTrue();
         await Assert.That(always.NextIsError()).IsTrue();

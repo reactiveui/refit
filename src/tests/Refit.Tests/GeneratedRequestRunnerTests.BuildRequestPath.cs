@@ -7,6 +7,9 @@ namespace Refit.Tests;
 /// <summary>Tests for building request paths with route parameters via <see cref="GeneratedRequestRunner"/>.</summary>
 public partial class GeneratedRequestRunnerTests
 {
+    /// <summary>A single-parameter templated path reused across the BuildRequestPath fixtures.</summary>
+    private const string SingleParameterPath = "/n/{v}";
+
     /// <summary>Verifies BuildRequestPath returns a path with substituted parameters.</summary>
     /// <param name="expectedResult">The expected result.</param>
     /// <param name="path">The templated path.</param>
@@ -56,7 +59,7 @@ public partial class GeneratedRequestRunnerTests
         const int start = 3;
         const int end = 6;
         const long value = -7;
-        var result = GeneratedRequestRunner.BuildRequestPath("/n/{v}", false, (start, end), value);
+        var result = GeneratedRequestRunner.BuildRequestPath(SingleParameterPath, false, (start, end), value);
 
         await Assert.That(result).EqualTo("/n/-7");
     }
@@ -84,7 +87,7 @@ public partial class GeneratedRequestRunnerTests
     {
         const int start = 3;
         const int end = 6;
-        var result = GeneratedRequestRunner.BuildRequestPath("/n/{v}", false, (start, end), new AlwaysUnformattableValue());
+        var result = GeneratedRequestRunner.BuildRequestPath(SingleParameterPath, false, (start, end), new AlwaysUnformattableValue());
 
         await Assert.That(result).IsEqualTo("/n/a%2Fb");
     }
@@ -97,7 +100,7 @@ public partial class GeneratedRequestRunnerTests
     {
         const int start = 3;
         const int end = 6;
-        var result = GeneratedRequestRunner.BuildRequestPath("/n/{v}", false, (start, end), new AlwaysUnformattableValue(), null);
+        var result = GeneratedRequestRunner.BuildRequestPath(SingleParameterPath, false, (start, end), new AlwaysUnformattableValue(), null);
 
         await Assert.That(result).IsEqualTo("/n/a%2Fb");
     }

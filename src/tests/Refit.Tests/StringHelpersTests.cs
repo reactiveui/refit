@@ -13,6 +13,9 @@ public sealed class StringHelpersTests
     /// <summary>The length of the slice escaped by the fixture.</summary>
     private const int SliceLength = 3;
 
+    /// <summary>The initial capacity of the value string builder under test.</summary>
+    private const int BuilderInitialCapacity = 16;
+
     /// <summary>Verifies the slice overload escapes only the requested span of the value.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -29,7 +32,7 @@ public sealed class StringHelpersTests
     [Test]
     public async Task AppendUriDataEscapedEscapesNonAsciiValue()
     {
-        var target = new ValueStringBuilder(16);
+        var target = new ValueStringBuilder(BuilderInitialCapacity);
         StringHelpers.AppendUriDataEscaped(ref target, "café".AsSpan());
 
         // ToString returns the rented buffer to the pool.

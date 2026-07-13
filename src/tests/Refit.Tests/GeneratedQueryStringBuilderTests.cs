@@ -19,6 +19,9 @@ public sealed class GeneratedQueryStringBuilderTests
     /// buffer and the first 256-char rented buffer so the format loop grows twice and returns the earlier rented buffer.</summary>
     private const int LongValueZeroCount = 300;
 
+    /// <summary>The base of the power used to build the buffer-overflowing value.</summary>
+    private const int PowerBase = 10;
+
     /// <summary>Verifies a null value omits its parameter, leaving the path unchanged.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Test]
@@ -88,7 +91,7 @@ public sealed class GeneratedQueryStringBuilderTests
     [Test]
     public async Task AddFormattedGrowsRentedBufferForLongValue()
     {
-        var value = BigInteger.Pow(10, LongValueZeroCount);
+        var value = BigInteger.Pow(PowerBase, LongValueZeroCount);
         var builder = new GeneratedQueryStringBuilder(Path);
         builder.AddFormatted(Key, value, null, false);
 

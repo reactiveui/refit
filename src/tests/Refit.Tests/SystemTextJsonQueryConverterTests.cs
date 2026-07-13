@@ -125,6 +125,10 @@ public sealed class SystemTextJsonQueryConverterTests
     /// <summary>Builds settings backed by a System.Text.Json serializer using the given type-info resolver.</summary>
     /// <param name="resolver">The type-info resolver to use.</param>
     /// <returns>The configured settings.</returns>
+    [SuppressMessage(
+        "Performance",
+        "PSH1416:Cache the serializer options instead of building them per call",
+        Justification = "The options carry the per-call type-info resolver, so a shared cached instance would leak one caller's resolver into another.")]
     private static RefitSettings SettingsFor(IJsonTypeInfoResolver resolver) =>
         new()
         {

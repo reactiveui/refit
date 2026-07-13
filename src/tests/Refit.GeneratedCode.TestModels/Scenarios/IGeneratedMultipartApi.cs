@@ -17,7 +17,7 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         /// <returns>The response payload.</returns>
         [Multipart]
         [Post("/upload")]
-        public Task<string> UploadStreamAsync(Stream stream);
+        Task<string> UploadStreamAsync(Stream stream);
 
         /// <summary>Uploads a stream, byte array and string part together.</summary>
         /// <param name="stream">The stream part to upload.</param>
@@ -26,7 +26,7 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         /// <returns>The response payload.</returns>
         [Multipart]
         [Post("/upload")]
-        public Task<string> UploadMixedAsync(
+        Task<string> UploadMixedAsync(
             StreamPart stream,
             byte[] bytes,
             [AliasAs("note")] string text);
@@ -36,7 +36,7 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         /// <returns>The response payload.</returns>
         [Multipart("----CustomBoundary")]
         [Post("/upload")]
-        public Task<string> UploadCustomBoundaryAsync([AliasAs("blob")] ByteArrayPart bytes);
+        Task<string> UploadCustomBoundaryAsync([AliasAs("blob")] ByteArrayPart bytes);
 
         /// <summary>Uploads a collection of files alongside a single file and formattable identifier.</summary>
         /// <param name="files">The files to upload as one part each.</param>
@@ -45,7 +45,7 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         /// <returns>The response payload.</returns>
         [Multipart]
         [Post("/upload")]
-        public Task<string> UploadFilesAsync(
+        Task<string> UploadFilesAsync(
             IEnumerable<FileInfo> files,
             FileInfo extra,
             [AliasAs("id")] Guid id);
@@ -55,7 +55,7 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         /// <returns>The response payload.</returns>
         [Multipart]
         [Post("/upload")]
-        public Task<string> UploadContentAsync(HttpContent content);
+        Task<string> UploadContentAsync(HttpContent content);
 
         /// <summary>Uploads a stream part alongside a path, header and request property that must not become parts.</summary>
         /// <param name="folder">The path segment.</param>
@@ -65,7 +65,7 @@ namespace Refit.GeneratedCode.TestModels.Scenarios
         /// <returns>The response payload.</returns>
         [Multipart]
         [Post("/upload/{folder}")]
-        public Task<string> UploadWithMetadataAsync(
+        Task<string> UploadWithMetadataAsync(
             string folder,
             [Header("X-Token")] string token,
             [Property("Trace")] string trace,

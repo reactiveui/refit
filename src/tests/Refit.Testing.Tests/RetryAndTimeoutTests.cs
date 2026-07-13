@@ -157,9 +157,9 @@ public sealed class RetryAndTimeoutTests
         var behavior = new NetworkBehavior
         {
             Delay = delay,
-            Variance = 0d,
-            FailurePercent = 0d,
-            ErrorPercent = 0d,
+            Variance = 0D,
+            FailurePercent = 0D,
+            ErrorPercent = 0D,
         };
 
         return new(behavior)

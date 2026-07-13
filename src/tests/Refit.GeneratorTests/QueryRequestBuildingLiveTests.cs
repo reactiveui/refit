@@ -27,10 +27,10 @@ public sealed class QueryRequestBuildingLiveTests
     private const int DocRevision = 7;
 
     /// <summary>A sample price formatted with two decimals.</summary>
-    private const double PriceFive = 5d;
+    private const double PriceFive = 5D;
 
     /// <summary>A sample raw double for TreatAsString.</summary>
-    private const double RawDouble = 1.5d;
+    private const double RawDouble = 1.5D;
 
     /// <summary>The enum-valued query method exercised across parity scenarios.</summary>
     private const string SortedMethodName = "Sorted";
@@ -49,182 +49,6 @@ public sealed class QueryRequestBuildingLiveTests
 
     /// <summary>The upper bound of the formatted complex query-object property scenario.</summary>
     private const int WindowMax = 9;
-
-    /// <summary>The interface source compiled through the generator for every scenario.</summary>
-    private const string ApiSource =
-        """
-        using System;
-        using System.Collections.Generic;
-        using System.Runtime.Serialization;
-        using System.Threading.Tasks;
-        using Refit;
-
-        namespace Refit.LiveQuery;
-
-        public enum SearchSort
-        {
-            [EnumMember(Value = "date-desc")]
-            DateDescending,
-            Name,
-        }
-
-        public sealed class CreatePayload
-        {
-            public string? Name { get; set; }
-        }
-
-        public sealed class RouteInfo
-        {
-            public string? Slug { get; set; }
-
-            public int Version { get; set; }
-        }
-
-        public sealed class NestedCustomer
-        {
-            public string? Id { get; set; }
-        }
-
-        public sealed class NestedOrder
-        {
-            public NestedCustomer? Customer { get; set; }
-
-            public string? Note { get; set; }
-        }
-
-        public sealed class RouteToken
-        {
-            public string? Value { get; set; }
-
-            public override string ToString() => Value ?? string.Empty;
-        }
-
-        public sealed class Bounds
-        {
-            public int Min { get; set; }
-
-            public int Max { get; set; }
-
-            public override string ToString() => Min + ".." + Max;
-        }
-
-        public sealed class RangeQuery
-        {
-            [Query(Format = "g")]
-            public Bounds? Window { get; set; }
-        }
-
-        // Deliberately not sealed: exercises the concrete (non-sealed) declared-type flatten. The test value is not a
-        // subtype, so the declared-type flatten matches the reflection builder's runtime-type flatten exactly.
-        public class Facet
-        {
-            public string? Name { get; set; }
-
-            public int Count { get; set; }
-        }
-
-        // The HTTP QUERY method (currently a draft standard): a custom verb attribute carrying a body.
-        public sealed class QueryVerbAttribute : HttpMethodAttribute
-        {
-            public QueryVerbAttribute(string path) : base(path) { }
-
-            public override System.Net.Http.HttpMethod Method => new System.Net.Http.HttpMethod("QUERY");
-        }
-
-        public interface ILiveQueryApi
-        {
-            [Get("/search")]
-            Task<string> Plain(string q);
-
-            [Get("/token/{token}")]
-            Task<string> TokenPath(RouteToken token);
-
-            [Get("/docs/{info.Slug}/rev/{info.Version}")]
-            Task<string> DottedPath(RouteInfo info);
-
-            [Get("/tags/{info.Slug}")]
-            Task<string> DottedPathResidual(RouteInfo info);
-
-            [Get("/orders/{order.Customer.Id}")]
-            Task<string> NestedPath(NestedOrder order);
-
-            [Get("/signin")]
-            Task<string> Alias([AliasAs("login")] string user, [AliasAs("kind")] string kind);
-
-            [Get("/multi")]
-            Task<string> Multiple(string a, int b, bool c);
-
-            [Get("/nullskip")]
-            Task<string> NullSkip(string? a, string b);
-
-            [Get("/fmt")]
-            Task<string> Formatted([Query(Format = "0.00")] double price);
-
-            [Get("/csv")]
-            Task<string> Csv([Query(CollectionFormat.Csv)] int[] ids);
-
-            [Get("/expand")]
-            Task<string> Expanded([Query(CollectionFormat.Multi)] int[] ids);
-
-            [Get("/pipes")]
-            Task<string> Pipes([Query(CollectionFormat.Pipes)] string[] values);
-
-            [Get("/list")]
-            Task<string> DefaultList(List<int> ids);
-
-            [Get("/enum")]
-            Task<string> Sorted(SearchSort sort);
-
-            [Get("/page")]
-            Task<string> Paged(int? page);
-
-            [Get("/big")]
-            Task<string> Big(long id);
-
-            [Get("/treat")]
-            Task<string> Treated([Query(TreatAsString = true)] double raw);
-
-            [Get("/tmpl?fixed=1")]
-            Task<string> Templated(string extra);
-
-            [QueryUriFormat(UriFormat.Unescaped)]
-            [Get("/soql")]
-            Task<string> UnescapedQuery(string q);
-
-            [Get("/range")]
-            Task<string> RangeSearch([Query] RangeQuery query);
-
-            [Get("/facets")]
-            Task<string> Facets(Dictionary<string, Facet> facets);
-
-            [QueryVerb("/documents")]
-            Task<string> QueryDocuments([Body] CreatePayload body);
-
-            [QueryVerb("/rows")]
-            Task<string> QueryRows([Query] RangeQuery filter);
-
-            [Get("/when")]
-            Task<string> When(DateTimeOffset at);
-
-            [Post("/create")]
-            Task<string> Create(CreatePayload payload, string tag);
-
-            [Get("/flags")]
-            Task<string> Flag([QueryName] string flag);
-
-            [Get("/flags/many")]
-            Task<string> Flags([QueryName] string[] flags);
-
-            [Get("/encq")]
-            Task<string> EncodedQuery([Encoded] string v);
-
-            [Get("/encp/{id}")]
-            Task<string> EncodedPath([Encoded] string id);
-
-            [Get("/cal/{**rest}")]
-            Task<string> EncodedRoundTrip([Encoded] string rest);
-        }
-        """;
 
     /// <summary>Csv-joined identifiers.</summary>
     private static readonly int[] CsvIds = [1, 2, 3];
@@ -511,6 +335,182 @@ public sealed class QueryRequestBuildingLiveTests
     {
         /// <summary>The base address the relative request URIs resolve against.</summary>
         private const string BaseAddress = "https://example.test/base/";
+
+        /// <summary>The interface source compiled through the generator for every scenario.</summary>
+        private const string ApiSource =
+            """
+            using System;
+            using System.Collections.Generic;
+            using System.Runtime.Serialization;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace Refit.LiveQuery;
+
+            public enum SearchSort
+            {
+                [EnumMember(Value = "date-desc")]
+                DateDescending,
+                Name,
+            }
+
+            public sealed class CreatePayload
+            {
+                public string? Name { get; set; }
+            }
+
+            public sealed class RouteInfo
+            {
+                public string? Slug { get; set; }
+
+                public int Version { get; set; }
+            }
+
+            public sealed class NestedCustomer
+            {
+                public string? Id { get; set; }
+            }
+
+            public sealed class NestedOrder
+            {
+                public NestedCustomer? Customer { get; set; }
+
+                public string? Note { get; set; }
+            }
+
+            public sealed class RouteToken
+            {
+                public string? Value { get; set; }
+
+                public override string ToString() => Value ?? string.Empty;
+            }
+
+            public sealed class Bounds
+            {
+                public int Min { get; set; }
+
+                public int Max { get; set; }
+
+                public override string ToString() => Min + ".." + Max;
+            }
+
+            public sealed class RangeQuery
+            {
+                [Query(Format = "g")]
+                public Bounds? Window { get; set; }
+            }
+
+            // Deliberately not sealed: exercises the concrete (non-sealed) declared-type flatten. The test value is not a
+            // subtype, so the declared-type flatten matches the reflection builder's runtime-type flatten exactly.
+            public class Facet
+            {
+                public string? Name { get; set; }
+
+                public int Count { get; set; }
+            }
+
+            // The HTTP QUERY method (currently a draft standard): a custom verb attribute carrying a body.
+            public sealed class QueryVerbAttribute : HttpMethodAttribute
+            {
+                public QueryVerbAttribute(string path) : base(path) { }
+
+                public override System.Net.Http.HttpMethod Method => new System.Net.Http.HttpMethod("QUERY");
+            }
+
+            public interface ILiveQueryApi
+            {
+                [Get("/search")]
+                Task<string> Plain(string q);
+
+                [Get("/token/{token}")]
+                Task<string> TokenPath(RouteToken token);
+
+                [Get("/docs/{info.Slug}/rev/{info.Version}")]
+                Task<string> DottedPath(RouteInfo info);
+
+                [Get("/tags/{info.Slug}")]
+                Task<string> DottedPathResidual(RouteInfo info);
+
+                [Get("/orders/{order.Customer.Id}")]
+                Task<string> NestedPath(NestedOrder order);
+
+                [Get("/signin")]
+                Task<string> Alias([AliasAs("login")] string user, [AliasAs("kind")] string kind);
+
+                [Get("/multi")]
+                Task<string> Multiple(string a, int b, bool c);
+
+                [Get("/nullskip")]
+                Task<string> NullSkip(string? a, string b);
+
+                [Get("/fmt")]
+                Task<string> Formatted([Query(Format = "0.00")] double price);
+
+                [Get("/csv")]
+                Task<string> Csv([Query(CollectionFormat.Csv)] int[] ids);
+
+                [Get("/expand")]
+                Task<string> Expanded([Query(CollectionFormat.Multi)] int[] ids);
+
+                [Get("/pipes")]
+                Task<string> Pipes([Query(CollectionFormat.Pipes)] string[] values);
+
+                [Get("/list")]
+                Task<string> DefaultList(List<int> ids);
+
+                [Get("/enum")]
+                Task<string> Sorted(SearchSort sort);
+
+                [Get("/page")]
+                Task<string> Paged(int? page);
+
+                [Get("/big")]
+                Task<string> Big(long id);
+
+                [Get("/treat")]
+                Task<string> Treated([Query(TreatAsString = true)] double raw);
+
+                [Get("/tmpl?fixed=1")]
+                Task<string> Templated(string extra);
+
+                [QueryUriFormat(UriFormat.Unescaped)]
+                [Get("/soql")]
+                Task<string> UnescapedQuery(string q);
+
+                [Get("/range")]
+                Task<string> RangeSearch([Query] RangeQuery query);
+
+                [Get("/facets")]
+                Task<string> Facets(Dictionary<string, Facet> facets);
+
+                [QueryVerb("/documents")]
+                Task<string> QueryDocuments([Body] CreatePayload body);
+
+                [QueryVerb("/rows")]
+                Task<string> QueryRows([Query] RangeQuery filter);
+
+                [Get("/when")]
+                Task<string> When(DateTimeOffset at);
+
+                [Post("/create")]
+                Task<string> Create(CreatePayload payload, string tag);
+
+                [Get("/flags")]
+                Task<string> Flag([QueryName] string flag);
+
+                [Get("/flags/many")]
+                Task<string> Flags([QueryName] string[] flags);
+
+                [Get("/encq")]
+                Task<string> EncodedQuery([Encoded] string v);
+
+                [Get("/encp/{id}")]
+                Task<string> EncodedPath([Encoded] string id);
+
+                [Get("/cal/{**rest}")]
+                Task<string> EncodedRoundTrip([Encoded] string rest);
+            }
+            """;
 
         /// <summary>Gets the body content captured for the most recent request, or null.</summary>
         public string? LastCapturedContent => handler.LastContent;

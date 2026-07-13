@@ -126,8 +126,9 @@ internal partial class RequestBuilderImplementation
             if (!string.IsNullOrWhiteSpace(key))
             {
                 queryParamsToAdd.Insert(
-                    index++,
+                    index,
                     new(key, query[key]));
+                index++;
             }
         }
     }

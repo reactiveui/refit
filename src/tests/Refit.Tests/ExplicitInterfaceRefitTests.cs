@@ -1,6 +1,7 @@
 // Copyright (c) 2019-2026 ReactiveUI and Contributors. All rights reserved.
 // ReactiveUI and Contributors licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for full license information.
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -43,6 +44,10 @@ public class ExplicitInterfaceRefitTests
         /// <summary>Returns the value fetched from the remote <c>/bar</c> endpoint.</summary>
         /// <returns>The integer value returned by the remote endpoint.</returns>
         [Get("/bar")]
+        [SuppressMessage(
+            "Design",
+            "SST1491:Redundant access or inheritance modifier",
+            Justification = "Re-abstracting an explicit interface member requires the explicit 'abstract' modifier; without it the declaration would need a body (CS0501).")]
         abstract int IFoo.Bar();
     }
 

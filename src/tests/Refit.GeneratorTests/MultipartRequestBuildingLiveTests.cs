@@ -19,89 +19,6 @@ public sealed class MultipartRequestBuildingLiveTests
     /// <summary>A stable score used by the serialized DTO part scenario.</summary>
     private const int ReportScore = 42;
 
-    /// <summary>The multipart interface compiled through the generator for every scenario.</summary>
-    private const string ApiSource =
-        """
-        using System;
-        using System.Collections.Generic;
-        using System.IO;
-        using System.Threading.Tasks;
-        using Refit;
-
-        namespace Refit.LiveMultipart;
-
-        // Not sealed: exercises the concrete (non-sealed) serialized part; the test value is not a subtype.
-        public class Report
-        {
-            public string? Title { get; set; }
-
-            public int Score { get; set; }
-        }
-
-        public interface ILiveMultipartApi
-        {
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadFlag([AliasAs("flag")] bool flag);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadReport([AliasAs("report")] Report report);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadStream(Stream stream);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadStreamPart(StreamPart part);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadBytes(byte[] bytes);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadBytesPart([AliasAs("blob")] ByteArrayPart part);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadString([AliasAs("alias")] string value);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadFileInfoPart(FileInfoPart part);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadFile(FileInfo file);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadFiles(IEnumerable<FileInfo> files, FileInfo extra);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadStreamParts(IEnumerable<StreamPart> parts);
-
-            [Multipart]
-            [Post("/upload")]
-            Task<string> UploadFormattable([AliasAs("id")] Guid id, [AliasAs("at")] DateTimeOffset at);
-
-            [Multipart("----CustomBoundary")]
-            [Post("/upload")]
-            Task<string> UploadCustomBoundary(byte[] bytes);
-
-            [Multipart]
-            [Post("/upload/{folder}")]
-            Task<string> UploadWithHeaderPropertyPath(
-                string folder,
-                [Header("X-Token")] string token,
-                [Property("Trace")] string trace,
-                [AliasAs("file")] StreamPart part);
-        }
-        """;
-
     /// <summary>The bytes uploaded by the primary binary part scenarios.</summary>
     private static readonly byte[] SampleBytes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -222,6 +139,89 @@ public sealed class MultipartRequestBuildingLiveTests
     {
         /// <summary>The base address the relative request URIs resolve against.</summary>
         private const string BaseAddress = "https://example.test/base/";
+
+        /// <summary>The multipart interface compiled through the generator for every scenario.</summary>
+        private const string ApiSource =
+            """
+            using System;
+            using System.Collections.Generic;
+            using System.IO;
+            using System.Threading.Tasks;
+            using Refit;
+
+            namespace Refit.LiveMultipart;
+
+            // Not sealed: exercises the concrete (non-sealed) serialized part; the test value is not a subtype.
+            public class Report
+            {
+                public string? Title { get; set; }
+
+                public int Score { get; set; }
+            }
+
+            public interface ILiveMultipartApi
+            {
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadFlag([AliasAs("flag")] bool flag);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadReport([AliasAs("report")] Report report);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadStream(Stream stream);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadStreamPart(StreamPart part);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadBytes(byte[] bytes);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadBytesPart([AliasAs("blob")] ByteArrayPart part);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadString([AliasAs("alias")] string value);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadFileInfoPart(FileInfoPart part);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadFile(FileInfo file);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadFiles(IEnumerable<FileInfo> files, FileInfo extra);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadStreamParts(IEnumerable<StreamPart> parts);
+
+                [Multipart]
+                [Post("/upload")]
+                Task<string> UploadFormattable([AliasAs("id")] Guid id, [AliasAs("at")] DateTimeOffset at);
+
+                [Multipart("----CustomBoundary")]
+                [Post("/upload")]
+                Task<string> UploadCustomBoundary(byte[] bytes);
+
+                [Multipart]
+                [Post("/upload/{folder}")]
+                Task<string> UploadWithHeaderPropertyPath(
+                    string folder,
+                    [Header("X-Token")] string token,
+                    [Property("Trace")] string trace,
+                    [AliasAs("file")] StreamPart part);
+            }
+            """;
 
         /// <summary>The temporary files created for file-part scenarios, deleted on disposal.</summary>
         private readonly List<string> _tempFiles = [];

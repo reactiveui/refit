@@ -8,7 +8,7 @@ namespace Refit.Tests;
 public sealed class CollectionPropertyQueryObject
 {
     /// <summary>Gets or sets an integer collection joined with the default (CSV) collection format.</summary>
-    public int[]? Ids { get; set; }
+    public int[]? Ids { get; init; }
 
     /// <summary>Gets or sets an enum collection rendered one <c>key=value</c> pair per element.</summary>
     [Query(CollectionFormat.Multi)]

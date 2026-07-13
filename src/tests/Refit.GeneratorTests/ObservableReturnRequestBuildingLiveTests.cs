@@ -17,21 +17,6 @@ public sealed class ObservableReturnRequestBuildingLiveTests
     /// <summary>The request count expected after subscribing to the cold observable a second time.</summary>
     private const int TwoSubscriptionRequestCount = 2;
 
-    /// <summary>The interface source compiled through the generator for every scenario.</summary>
-    private const string ApiSource =
-        """
-        using System;
-        using Refit;
-
-        namespace Refit.LiveObservable;
-
-        public interface IObservableApi
-        {
-            [Get("/items/{id}")]
-            IObservable<string> Watch(string id, string q);
-        }
-        """;
-
     /// <summary>Verifies a cold generated observable rebuilds and re-sends per subscription, never reusing a disposed
     /// request, and that the request it sends matches the reflection request builder.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
@@ -77,6 +62,21 @@ public sealed class ObservableReturnRequestBuildingLiveTests
     {
         /// <summary>The base address the relative request URIs resolve against.</summary>
         private const string BaseAddress = "https://example.test/base/";
+
+        /// <summary>The interface source compiled through the generator for every scenario.</summary>
+        private const string ApiSource =
+            """
+            using System;
+            using Refit;
+
+            namespace Refit.LiveObservable;
+
+            public interface IObservableApi
+            {
+                [Get("/items/{id}")]
+                IObservable<string> Watch(string id, string q);
+            }
+            """;
 
         /// <summary>Gets the number of requests sent through the handler so far.</summary>
         public int RequestCount => handler.RequestCount;
