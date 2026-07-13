@@ -31,7 +31,7 @@ internal static partial class Parser
         var boundPropertyNames = new HashSet<string>(StringComparer.Ordinal);
         foreach (var binding in bindings)
         {
-            _ = boundPropertyNames.Add(binding.PropertyClrName);
+            _ = boundPropertyNames.Add(binding.TopLevelClrName);
         }
 
         // The reflection builder splits a bound object between the path and the query: matched properties fill the
@@ -123,21 +123,17 @@ internal static partial class Parser
                 continue;
             }
 
-            // Only a single-level property binds inline; a further dot is a nested access the reflection builder handles.
-            var propertyName = key[prefix.Length..];
-            if (propertyName.IndexOf('.') >= 0
-                || FindReadablePathProperty(parameter.Type, propertyName) is not { } property
-                || !IsSimpleType(property.Type, context.FormattableSymbol))
+            // A single-level {param.Prop} binds a direct property; a dotted {param.a.b} binds a nested chain, walked
+            // with null-conditional access so a null link renders empty exactly as the reflection builder does.
+            var propertyPath = key[prefix.Length..];
+            if (TryResolvePathPropertyChain(parameter.Type, propertyPath, context) is not { } chain)
             {
                 return null;
             }
 
-            var valueFormat = BuildValueFormat(property.Type, null, context.FormattableSymbol, context.Generation);
-            var propertyType = QualifyType(property.Type, context.Generation);
-            var canBeNull = CanBeNull(property.Type, property.NullableAnnotation);
             foreach (var location in placeholder.Value)
             {
-                bindings.Add(new(location, property.Name, propertyType, valueFormat, canBeNull));
+                bindings.Add(new(location, chain.AccessPath, chain.TopLevelName, chain.PropertyType, chain.ValueFormat, chain.CanBeNull));
             }
         }
 
@@ -149,6 +145,55 @@ internal static partial class Parser
         // The path builder appends fragments in template order, so bindings must be sorted by placeholder position.
         bindings.Sort(static (left, right) => left.Location.Start.Value.CompareTo(right.Location.Start.Value));
         return bindings.ToImmutableEquatableArray();
+    }
+
+    /// <summary>Resolves a dotted path placeholder (single or nested) into its access expression and formatting metadata.</summary>
+    /// <param name="rootType">The enclosing object parameter's type.</param>
+    /// <param name="propertyPath">The placeholder text after the parameter name (e.g. <c>Slug</c> or <c>a.b</c>).</param>
+    /// <param name="context">The lookup state carrying the generation context.</param>
+    /// <returns>The resolved access path, top-level property, final type, formatting strategy and nullability, or null.</returns>
+    private static (string AccessPath, string TopLevelName, string PropertyType, InlineValueFormatModel ValueFormat, bool CanBeNull)?
+        TryResolvePathPropertyChain(ITypeSymbol rootType, string propertyPath, in LooseParameterContext context)
+    {
+        var segments = propertyPath.Split('.');
+        if (FindReadablePathProperty(rootType, segments[0]) is not { } firstProperty)
+        {
+            return null;
+        }
+
+        var names = new List<string>(segments.Length) { firstProperty.Name };
+        var finalProperty = firstProperty;
+        var currentType = finalProperty.Type;
+        for (var i = 1; i < segments.Length; i++)
+        {
+            if (FindReadablePathProperty(currentType, segments[i]) is not { } property)
+            {
+                return null;
+            }
+
+            names.Add(property.Name);
+            finalProperty = property;
+            currentType = property.Type;
+        }
+
+        if (!IsSimpleType(finalProperty.Type, context.FormattableSymbol))
+        {
+            return null;
+        }
+
+        var propertyType = QualifyType(finalProperty.Type, context.Generation);
+        var canBeNull = CanBeNull(finalProperty.Type, finalProperty.NullableAnnotation);
+
+        // A single-level binding keeps the span-formattable fast path. A nested chain is formatted through the URL
+        // parameter formatter (FormatterOnly): '?.' between links already yields null for a missing intermediate, so the
+        // fast '.Value' unwrap - which would bind to the wrong link - is skipped, matching the reflection builder's walk.
+        if (segments.Length == 1)
+        {
+            return (names[0], names[0], propertyType, BuildValueFormat(finalProperty.Type, null, context.FormattableSymbol, context.Generation), canBeNull);
+        }
+
+        var formatterOnly = new InlineValueFormatModel(InlineFormatKind.FormatterOnly, null, propertyType, IsNullableValueType: false, EnumMembers: null);
+        return (string.Join("?.", names), names[0], propertyType, formatterOnly, canBeNull);
     }
 
     /// <summary>Finds a public readable property on a type or its base types by case-insensitive name.</summary>

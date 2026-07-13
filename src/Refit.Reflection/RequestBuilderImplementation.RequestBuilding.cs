@@ -508,9 +508,20 @@ internal partial class RequestBuilderImplementation
         ParameterFragment fragment,
         RestMethodParameterInfo parameterMapValue)
     {
-        var param = paramList[fragment.ArgumentIndex];
         var property = parameterMapValue.ParameterProperties[fragment.PropertyIndex];
-        var propertyObject = property.PropertyInfo.GetValue(param);
+
+        // Walk the property chain (one link for a single-level binding, more for a dotted {a.b.c} binding), stopping at
+        // the first null so a missing intermediate formats as an empty segment rather than throwing.
+        object? propertyObject = paramList[fragment.ArgumentIndex];
+        foreach (var link in property.PropertyChain)
+        {
+            if (propertyObject is null)
+            {
+                break;
+            }
+
+            propertyObject = link.GetValue(propertyObject);
+        }
 
         vsb.Append(StringHelpers.EscapeDataString(_settings.UrlParameterFormatter.Format(
             propertyObject,

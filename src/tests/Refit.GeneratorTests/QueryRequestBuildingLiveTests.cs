@@ -80,6 +80,18 @@ public sealed class QueryRequestBuildingLiveTests
             public int Version { get; set; }
         }
 
+        public sealed class NestedCustomer
+        {
+            public string? Id { get; set; }
+        }
+
+        public sealed class NestedOrder
+        {
+            public NestedCustomer? Customer { get; set; }
+
+            public string? Note { get; set; }
+        }
+
         public sealed class RouteToken
         {
             public string? Value { get; set; }
@@ -132,6 +144,9 @@ public sealed class QueryRequestBuildingLiveTests
 
             [Get("/tags/{info.Slug}")]
             Task<string> DottedPathResidual(RouteInfo info);
+
+            [Get("/orders/{order.Customer.Id}")]
+            Task<string> NestedPath(NestedOrder order);
 
             [Get("/signin")]
             Task<string> Alias([AliasAs("login")] string user, [AliasAs("kind")] string kind);
@@ -266,6 +281,26 @@ public sealed class QueryRequestBuildingLiveTests
         // Only Slug binds to the path; Version is a residual property flattened into the query, exactly as the
         // reflection builder splits a path-bound object between the path and the query string.
         _ = await harness.AssertParityAsync("DottedPathResidual", [info], "/base/tags/a%20b%2Fc?Version=7");
+    }
+
+    /// <summary>Verifies a multi-level dotted <c>{order.Customer.Id}</c> path binds the nested property chain and matches
+    /// the reflection builder: the top-level property is consumed by the path (residual sibling flattens into the query),
+    /// and a null intermediate renders an empty segment instead of throwing.</summary>
+    /// <returns>A task representing the asynchronous test.</returns>
+    [Test]
+    [RequiresUnreferencedCode("Loads a generated assembly and reflects over generated types and members.")]
+    [RequiresDynamicCode("Compares generated request building against the reflection request builder.")]
+    public async Task NestedPathPropertyMatchesReflection()
+    {
+        using var harness = LiveQueryHarness.Create();
+
+        var customer = harness.CreateApiValue("Refit.LiveQuery.NestedCustomer", ("Id", EscapableValue));
+        var order = harness.CreateApiValue("Refit.LiveQuery.NestedOrder", ("Customer", customer), ("Note", "hi"));
+        _ = await harness.AssertParityAsync("NestedPath", [order], "/base/orders/a%20b%2Fc?Note=hi");
+
+        // A null intermediate short-circuits the chain to an empty segment, matching the reflection builder's walk.
+        var missing = harness.CreateApiValue("Refit.LiveQuery.NestedOrder", ("Customer", null), ("Note", "x"));
+        _ = await harness.AssertParityAsync("NestedPath", [missing], "/base/orders/?Note=x");
     }
 
     /// <summary>Verifies a sealed <c>ToString</c>-only type in a <c>{token}</c> slot matches the reflection builder: the

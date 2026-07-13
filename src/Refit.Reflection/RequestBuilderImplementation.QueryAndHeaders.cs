@@ -27,7 +27,7 @@ internal partial class RequestBuilderImplementation
         // would otherwise be wrongly emitted as a duplicate query parameter.
         return ShouldIgnorePropertyInQueryMap(propertyInfo)
             || (parameterInfo is { IsObjectPropertyParameter: true }
-                && parameterInfo.ParameterProperties.Exists(x => x.PropertyInfo.Name == propertyInfo.Name));
+                && parameterInfo.ParameterProperties.Exists(x => x.PropertyChain[0].Name == propertyInfo.Name));
     }
 
     /// <summary>Determines whether a property is marked to be ignored during serialization.</summary>

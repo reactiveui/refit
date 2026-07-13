@@ -469,6 +469,7 @@ internal class RestMethodInfoInternal
     /// <param name="validation">The lookups of directly matched parameter names and nested object-property names.</param>
     /// <param name="match">The parameterized URL match being resolved.</param>
     /// <param name="allowUnmatchedRouteParameters">When true, an unmatched placeholder is left in the path verbatim instead of throwing.</param>
+    [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
     private static void AddFragmentForMatch(
         string relativePath,
         ParameterInfo[] parameterInfo,
@@ -494,7 +495,11 @@ internal class RestMethodInfoInternal
         }
         else if (validation.Object.TryGetValue(name, out var value1) && !isRoundTripping)
         {
-            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1);
+            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, value1.Item1, [value1.Item2]);
+        }
+        else if (!isRoundTripping && TryResolveNestedPropertyChain(parameterInfo, name) is { } nested)
+        {
+            AddObjectPropertyParameter(parameterInfo, ret, fragmentList, name, nested.Parameter, nested.Chain);
         }
         else if (allowUnmatchedRouteParameters)
         {
@@ -543,20 +548,22 @@ internal class RestMethodInfoInternal
 #endif
     }
 
-    /// <summary>Adds an object-property route parameter to the parameter map and fragment list.</summary>
+    /// <summary>Adds an object-property route parameter, resolving a nested <c>{a.b.c}</c> chain when needed.</summary>
     /// <param name="parameterInfo">The array of method parameters.</param>
     /// <param name="ret">The parameter map being built.</param>
     /// <param name="fragmentList">The fragment list being built.</param>
     /// <param name="name">The normalized parameter name.</param>
-    /// <param name="property">The matched parameter and property pair.</param>
+    /// <param name="owner">The parameter whose property chain binds the placeholder.</param>
+    /// <param name="propertyChain">The ordered property navigation from the parameter to the bound value.</param>
     private static void AddObjectPropertyParameter(
         ParameterInfo[] parameterInfo,
         Dictionary<int, RestMethodParameterInfo> ret,
         List<ParameterFragment> fragmentList,
         string name,
-        Tuple<ParameterInfo, PropertyInfo> property)
+        ParameterInfo owner,
+        IReadOnlyList<PropertyInfo> propertyChain)
     {
-        var parameterIndex = Array.IndexOf(parameterInfo, property.Item1);
+        var parameterIndex = Array.IndexOf(parameterInfo, owner);
 
         // If we already have this parameter, add an additional ParameterProperty.
         if (ret.TryGetValue(parameterIndex, out var value2))
@@ -564,17 +571,17 @@ internal class RestMethodInfoInternal
             if (!value2.IsObjectPropertyParameter)
             {
                 throw new ArgumentException(
-                    $"Parameter {property.Item1.Name} matches both a parameter and nested parameter on a parameter object");
+                    $"Parameter {owner.Name} matches both a parameter and nested parameter on a parameter object");
             }
 
-            value2.ParameterProperties.Add(new(name, property.Item2));
+            value2.ParameterProperties.Add(new(name, propertyChain));
             fragmentList.Add(
                 ParameterFragment.DynamicObject(parameterIndex, value2.ParameterProperties.Count - 1));
             return;
         }
 
-        var restMethodParameterInfo = new RestMethodParameterInfo(true, property.Item1);
-        restMethodParameterInfo.ParameterProperties.Add(new(name, property.Item2));
+        var restMethodParameterInfo = new RestMethodParameterInfo(true, owner);
+        restMethodParameterInfo.ParameterProperties.Add(new(name, propertyChain));
 
         var idx = Array.IndexOf(parameterInfo, restMethodParameterInfo.ParameterInfo);
         fragmentList.Add(ParameterFragment.DynamicObject(idx, 0));
@@ -588,6 +595,67 @@ internal class RestMethodInfoInternal
 
         ret.Add(idx, restMethodParameterInfo);
 #endif
+    }
+
+    /// <summary>Resolves a dotted <c>{a.b.c}</c> placeholder into the parameter and its nested property navigation chain.</summary>
+    /// <param name="parameterInfo">The array of method parameters.</param>
+    /// <param name="name">The normalized (lower-cased) placeholder name.</param>
+    /// <returns>The parameter and its property chain, or null when the placeholder is not a resolvable nested chain.</returns>
+    [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
+    private static (ParameterInfo Parameter, IReadOnlyList<PropertyInfo> Chain)? TryResolveNestedPropertyChain(
+        ParameterInfo[] parameterInfo,
+        string name)
+    {
+        // A single dot ("a.b") is a direct object property handled by the validation dictionary; only deeper chains reach here.
+        var segments = name.Split('.');
+        if (segments.Length < 3)
+        {
+            return null;
+        }
+
+        var parameter = Array.Find(parameterInfo, p => string.Equals(p.Name, segments[0], StringComparison.OrdinalIgnoreCase));
+        if (parameter is null)
+        {
+            return null;
+        }
+
+        if (!parameter.ParameterType.GetTypeInfo().IsClass)
+        {
+            return null;
+        }
+
+        var chain = new List<PropertyInfo>(segments.Length - 1);
+        var currentType = parameter.ParameterType;
+        for (var i = 1; i < segments.Length; i++)
+        {
+            if (FindPropertyByUrlName(currentType, segments[i]) is not { } property)
+            {
+                return null;
+            }
+
+            chain.Add(property);
+            currentType = property.PropertyType;
+        }
+
+        return (parameter, chain);
+    }
+
+    /// <summary>Finds a readable public property by its URL name (honoring any alias), case-insensitively.</summary>
+    /// <param name="type">The declaring type to search.</param>
+    /// <param name="urlName">The URL name segment to match.</param>
+    /// <returns>The matching property, or null when none matches.</returns>
+    [RequiresUnreferencedCode("Binding route parameters from request object properties requires public property metadata to be available at runtime.")]
+    private static PropertyInfo? FindPropertyByUrlName(Type type, string urlName)
+    {
+        foreach (var property in ReflectionPropertyHelpers.GetReadablePublicInstanceProperties(type))
+        {
+            if (string.Equals(GetUrlNameForProperty(property), urlName, StringComparison.OrdinalIgnoreCase))
+            {
+                return property;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>Gets the URL name to use for a parameter, honoring any alias attribute.</summary>
