@@ -152,7 +152,7 @@ public class XmlContentSerializerTests
     {
         var sut = new XmlContentSerializer();
 
-        await Assert.That(() => new XmlContentSerializer(null!)).ThrowsExactly<ArgumentNullException>();
+        await Assert.That(static () => new XmlContentSerializer(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => sut.ToHttpContent<Dto>(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => sut.GetFieldNameForProperty(null!)).ThrowsExactly<ArgumentNullException>();
         await Assert.That(sut.GetFieldNameForProperty(typeof(XmlFieldNameDto).GetProperty(nameof(XmlFieldNameDto.Element))!))

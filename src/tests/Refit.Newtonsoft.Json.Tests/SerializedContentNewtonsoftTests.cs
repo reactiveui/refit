@@ -34,7 +34,7 @@ public class SerializedContentNewtonsoftTests
 
         var handler = new MockPushStreamContentHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
                 new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
         };
 

@@ -191,7 +191,7 @@ public partial class RestMethodInfoTests
             input
                 .GetMethods()
                 .First(
-                    x =>
+                    static x =>
                         x.Name
                         == nameof(
                             IRestMethodInfoTests.FetchSomeStuffWithDynamicHeaderCollectionAndDynamicHeaderOrderFlipped)));

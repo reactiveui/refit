@@ -332,7 +332,7 @@ public sealed class StubHttpTests
         var handler = new StubHttp
         {
             {
-                new RouteMatcher { Template = "*", Where = request => request.Headers.Contains("X-Flag"), Reusable = true },
+                new RouteMatcher { Template = "*", Where = static request => request.Headers.Contains("X-Flag"), Reusable = true },
                 Reply.Status(HttpStatusCode.OK)
             },
         };

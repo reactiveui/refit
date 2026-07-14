@@ -313,7 +313,7 @@ public partial class RestServiceIntegrationTests
         const int byteModulus = 256;
         var bigObject = new BigObject
         {
-            BigData = [.. Enumerable.Range(0, bigDataByteCount).Select(x => (byte)(x % byteModulus))]
+            BigData = [.. Enumerable.Range(0, bigDataByteCount).Select(static x => (byte)(x % byteModulus))]
         };
 
         var handler = new StubHttp

@@ -236,7 +236,7 @@ public partial class SerializedContentTests
 
         var handler = new MockPushStreamContentHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
                 new StringContent(await content.ReadAsStringAsync().ConfigureAwait(false))
         };
 
@@ -397,10 +397,6 @@ public partial class SerializedContentTests
     /// <summary>Verifies that RestService can use source-generated System.Text.Json metadata.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [SuppressMessage(
-        "Performance",
-        "PSH1416:Cache the serializer options instead of building them per call",
-        Justification = "The options embed a per-test tracking resolver instance, so they cannot be cached in a shared static field.")]
     public async Task RestService_CanUseSourceGeneratedSystemTextJsonMetadata()
     {
         var resolver = new TrackingTypeInfoResolver(SerializedContentJsonSerializerContext.Default);
@@ -462,16 +458,12 @@ public partial class SerializedContentTests
     /// <summary>Verifies resolver-provided polymorphism metadata is honored for declared abstract body types.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
-    [SuppressMessage(
-        "Performance",
-        "PSH1416:Cache the serializer options instead of building them per call",
-        Justification = "The options embed a per-test resolver configured with test-specific modifiers, so they cannot be cached in a shared static field.")]
     public async Task RestService_SerializesBodyUsingResolverPolymorphismMetadata()
     {
         string? serializedBody = null;
         var resolver = new DefaultJsonTypeInfoResolver();
         resolver.Modifiers.Add(
-            typeInfo =>
+            static typeInfo =>
             {
                 if (typeInfo.Type != typeof(ResolverPolymorphicRequest))
                 {

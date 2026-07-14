@@ -111,20 +111,20 @@ internal static class HttpClientFactoryCore
         _ = services.AddSingleton(provider => new SettingsFor<T>(settings?.Invoke(provider)));
 
         // register RequestBuilder
-        _ = services.AddSingleton(provider =>
+        _ = services.AddSingleton(static provider =>
             RequestBuilder.ForType<T>(provider.GetRequiredService<SettingsFor<T>>().Settings));
 
         // create HttpClientBuilder
         var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>());
 
         // configure the primary handler from the supplied settings (or fall back to the default)
-        _ = builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+        _ = builder.ConfigurePrimaryHttpMessageHandler(static serviceProvider =>
             CreateInnerHandlerIfProvided(
                 serviceProvider.GetRequiredService<SettingsFor<T>>().Settings)
             ?? new HttpClientHandler());
 
         // add typed client using framework AddTypedClient
-        return builder.AddTypedClient((client, serviceProvider) =>
+        return builder.AddTypedClient(static (client, serviceProvider) =>
             RestService.For<T>(
                 client,
                 serviceProvider.GetRequiredService<IRequestBuilder<T>>()));
@@ -283,13 +283,13 @@ internal static class HttpClientFactoryCore
         var builder = services.AddHttpClient(httpClientName ?? UniqueName.ForType<T>());
 
         // configure the primary handler from the supplied settings (or fall back to the default)
-        _ = builder.ConfigurePrimaryHttpMessageHandler(serviceProvider =>
+        _ = builder.ConfigurePrimaryHttpMessageHandler(static serviceProvider =>
             CreateInnerHandlerIfProvided(
                 serviceProvider.GetRequiredService<SettingsFor<T>>().Settings)
             ?? new HttpClientHandler());
 
         // add typed client backed by the source generator only; throws clearly if no generated client exists
-        return builder.AddTypedClient((client, serviceProvider) =>
+        return builder.AddTypedClient(static (client, serviceProvider) =>
             RestService.ForGenerated<T>(
                 client,
                 serviceProvider.GetRequiredService<SettingsFor<T>>().Settings ?? new RefitSettings()));

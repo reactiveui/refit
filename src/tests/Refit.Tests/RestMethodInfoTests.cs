@@ -336,7 +336,7 @@ public partial class RestMethodInfoTests
     public async Task ConstructorGuardsAndMissingHttpMethodThrow()
     {
         var input = typeof(IRestMethodInfoTests);
-        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuff));
+        var method = input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.FetchSomeStuff));
         var missingInput = typeof(IMissingHttpMethodApi);
         var missingHttpMethod = missingInput.GetMethod(nameof(IMissingHttpMethodApi.MethodWithoutHttpMethod))!;
 
@@ -354,7 +354,7 @@ public partial class RestMethodInfoTests
     public async Task PathContainingNewlineThrows()
     {
         var input = typeof(IRestMethodInfoTests);
-        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.NewlinePath));
+        var method = input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.NewlinePath));
 
         await Assert.That(() => new RestMethodInfoInternal(input, method))
             .ThrowsExactly<ArgumentException>();
@@ -383,7 +383,7 @@ public partial class RestMethodInfoTests
     public async Task ObjectRouteBindingConflictingDirectAndPropertyMatchThrows()
     {
         var input = typeof(IRestMethodInfoTests);
-        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.ConflictingObjectRoute));
+        var method = input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.ConflictingObjectRoute));
 
         await Assert.That(() => new RestMethodInfoInternal(input, method))
             .ThrowsExactly<ArgumentException>();
@@ -395,7 +395,7 @@ public partial class RestMethodInfoTests
     public async Task DeepDottedRouteWithUnknownRootParameterThrows()
     {
         var input = typeof(IRestMethodInfoTests);
-        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithUnknownRootParameter));
+        var method = input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithUnknownRootParameter));
 
         await Assert.That(() => new RestMethodInfoInternal(input, method))
             .ThrowsExactly<ArgumentException>();
@@ -408,7 +408,7 @@ public partial class RestMethodInfoTests
     public async Task DeepDottedRouteWithValueTypeRootParameterThrows()
     {
         var input = typeof(IRestMethodInfoTests);
-        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithValueTypeRootParameter));
+        var method = input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithValueTypeRootParameter));
 
         await Assert.That(() => new RestMethodInfoInternal(input, method))
             .ThrowsExactly<ArgumentException>();
@@ -420,7 +420,7 @@ public partial class RestMethodInfoTests
     public async Task DeepDottedRouteWithUnknownNestedPropertyThrows()
     {
         var input = typeof(IRestMethodInfoTests);
-        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithUnknownNestedProperty));
+        var method = input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.DeepDottedRouteWithUnknownNestedProperty));
 
         await Assert.That(() => new RestMethodInfoInternal(input, method))
             .ThrowsExactly<ArgumentException>();
@@ -432,7 +432,7 @@ public partial class RestMethodInfoTests
     public async Task DuplicateAuthorizeParametersThrow()
     {
         var input = typeof(IRestMethodInfoTests);
-        var method = input.GetMethods().First(x => x.Name == nameof(IRestMethodInfoTests.DuplicateAuthorize));
+        var method = input.GetMethods().First(static x => x.Name == nameof(IRestMethodInfoTests.DuplicateAuthorize));
 
         await Assert.That(() => new RestMethodInfoInternal(input, method))
             .ThrowsExactly<ArgumentException>();

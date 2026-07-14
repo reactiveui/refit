@@ -14,10 +14,10 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 _ = builder.Services.AddScoped(_ => new HttpClient { BaseAddress = new(builder.HostEnvironment.BaseAddress) });
 
-_ = builder.Services.AddScoped(sp =>
+_ = builder.Services.AddScoped(static sp =>
     RestService.For<IIssue2065Api>(sp.GetRequiredService<HttpClient>()));
 
-_ = builder.Services.AddScoped(sp =>
+_ = builder.Services.AddScoped(static sp =>
     RestService.For<IIssue2067Api>(
         sp.GetRequiredService<HttpClient>(),
         new RefitSettings(

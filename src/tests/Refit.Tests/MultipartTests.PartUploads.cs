@@ -23,7 +23,7 @@ public partial class MultipartTests
     {
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 
@@ -54,7 +54,7 @@ public partial class MultipartTests
     {
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 
@@ -85,8 +85,8 @@ public partial class MultipartTests
     {
         var handler = new MockHttpMessageHandler
         {
-            RequestAsserts = async request => await Assert.That(request.RequestUri!.Query).IsEqualTo("?Property1=test&Property2=test2"),
-            Asserts = async content =>
+            RequestAsserts = static async request => await Assert.That(request.RequestUri!.Query).IsEqualTo("?Property1=test&Property2=test2"),
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 
@@ -118,7 +118,7 @@ public partial class MultipartTests
     {
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 
@@ -380,7 +380,7 @@ public partial class MultipartTests
 
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 

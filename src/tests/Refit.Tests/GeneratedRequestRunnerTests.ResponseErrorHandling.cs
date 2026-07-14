@@ -14,7 +14,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task SendVoidAsyncAppliesAuthorizationAndThrowsFactoryException()
     {
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.Accepted)
                 {
                     Content = new StringContent("accepted")
@@ -27,7 +27,7 @@ public partial class GeneratedRequestRunnerTests
         request.Headers.Authorization = new("Bearer");
         var exception = new InvalidOperationException("factory failure");
         var settings = CreateSettings();
-        settings.AuthorizationHeaderValueGetter = (_, _) => new ValueTask<string>("token");
+        settings.AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("token");
         settings.ExceptionFactory = _ => new ValueTask<Exception?>(exception);
 
         var thrown = await Assert
@@ -72,7 +72,7 @@ public partial class GeneratedRequestRunnerTests
     {
         var exception = new InvalidOperationException("factory failure");
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
                     Content = new StringContent("bad")
@@ -127,7 +127,7 @@ public partial class GeneratedRequestRunnerTests
     public async Task SendAsyncThrowsApiRequestExceptionForTransportFailure()
     {
         var handler = new CapturingHandler(
-            (_, _) => throw new HttpRequestException("network failure"));
+            static (_, _) => throw new HttpRequestException("network failure"));
         using var client = CreateClient(handler);
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
@@ -224,7 +224,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializeException = new FormatException(BadContentMessage)
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("bad")
@@ -260,7 +260,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializeException = new FormatException(BadContentMessage)
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("bad")
@@ -294,7 +294,7 @@ public partial class GeneratedRequestRunnerTests
             DeserializeException = new OperationCanceledException("cancelled")
         };
         var handler = new CapturingHandler(
-            (_, _) => Task.FromResult(
+            static (_, _) => Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent("cancelled")

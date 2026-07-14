@@ -427,7 +427,7 @@ public class AuthenticatedClientHandlerTests
         {
             var fixture = handler.CreateClient<IInheritedAuthenticatedServiceWithHeadersCrlf>(BaseUrl, new RefitSettings
             {
-                AuthorizationHeaderValueGetter = (_, _) => new ValueTask<string>(TokenValue)
+                AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(TokenValue)
             });
 
             await fixture.GetInheritedThing();

@@ -50,9 +50,9 @@ internal static class CodeFixFixture
         var diagnostic = diagnostics.SingleOrDefault(x => x.Id == diagnosticId)
                          ?? throw new InvalidOperationException(
                              "Expected diagnostic was not produced. Compiler diagnostics: "
-                             + string.Join(", ", compilation.GetDiagnostics().Select(x => x.ToString()))
+                             + string.Join(", ", compilation.GetDiagnostics().Select(static x => x.ToString()))
                              + ". Analyzer diagnostics: "
-                             + string.Join(", ", diagnostics.Select(x => x.ToString())));
+                             + string.Join(", ", diagnostics.Select(static x => x.ToString())));
 
         var actions = new List<CodeAction>();
         var provider = new RefitInterfaceCodeFixProvider();

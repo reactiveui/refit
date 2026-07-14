@@ -146,7 +146,7 @@ public sealed partial class ApiExceptionTests
 
         await Assert.That(messageOnly.Message).IsEqualTo(MessageText);
         await Assert.That(withInner.InnerException).IsSameReferenceAs(inner);
-        await Assert.That(() => ValidationApiException.Create(null!))
+        await Assert.That(static () => ValidationApiException.Create(null!))
             .ThrowsExactly<ArgumentNullException>();
 
         using var emptyResponse = CreateErrorResponse(" ");

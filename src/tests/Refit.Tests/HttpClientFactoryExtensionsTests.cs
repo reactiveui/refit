@@ -312,7 +312,7 @@ public partial class HttpClientFactoryExtensionsTests
         await Assert.That(gitHubApi).IsNotNull();
         await Assert.That(httpClient.BaseAddress).IsEqualTo(baseUri);
         await Assert.That(httpClient.DefaultRequestHeaders).Contains(
-            h => h.Key == PoweredByHeaderName
+            static h => h.Key == PoweredByHeaderName
                 && h.Value.Contains(Environment.OSVersion.VersionString));
     }
 
@@ -324,19 +324,19 @@ public partial class HttpClientFactoryExtensionsTests
     {
         var services = new ServiceCollection();
 
-        await Assert.That(() => InvokeAddRefitClientCore(null!, typeof(IFooWithOtherAttribute), null, null))
+        await Assert.That(static () => InvokeAddRefitClientCore(null!, typeof(IFooWithOtherAttribute), null, null))
             .ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => InvokeAddRefitClientCore(services, null!, null, null))
             .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => InvokeAddRefitClientCoreGeneric<IFooWithOtherAttribute>(null!, null, null))
+        await Assert.That(static () => InvokeAddRefitClientCoreGeneric<IFooWithOtherAttribute>(null!, null, null))
             .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => InvokeAddKeyedRefitClientCore(null!, typeof(IFooWithOtherAttribute), "key", null, null))
+        await Assert.That(static () => InvokeAddKeyedRefitClientCore(null!, typeof(IFooWithOtherAttribute), "key", null, null))
             .ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => InvokeAddKeyedRefitClientCore(services, null!, "key", null, null))
             .ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => InvokeAddKeyedRefitClientCore(services, typeof(IFooWithOtherAttribute), null, null, null))
             .ThrowsExactly<ArgumentNullException>();
-        await Assert.That(() => InvokeAddKeyedRefitClientCoreGeneric<IFooWithOtherAttribute>(null!, "key", null, null))
+        await Assert.That(static () => InvokeAddKeyedRefitClientCoreGeneric<IFooWithOtherAttribute>(null!, "key", null, null))
             .ThrowsExactly<ArgumentNullException>();
         await Assert.That(() => InvokeAddKeyedRefitClientCoreGeneric<IFooWithOtherAttribute>(services, null, null, null))
             .ThrowsExactly<ArgumentNullException>();

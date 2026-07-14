@@ -181,7 +181,7 @@ public partial class RestMethodInfoTests
                     input
                         .GetMethods()
                         .First(
-                            x => x.Name == nameof(IRestMethodInfoTests.InvalidGenericReturnType)))).ThrowsExactly<ArgumentException>();
+                            static x => x.Name == nameof(IRestMethodInfoTests.InvalidGenericReturnType)))).ThrowsExactly<ArgumentException>();
     }
 
     /// <summary>Verifies an internal sync generic return type sets the deserialized type to the return type.</summary>

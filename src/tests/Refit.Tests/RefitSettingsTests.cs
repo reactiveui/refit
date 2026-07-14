@@ -16,7 +16,7 @@ public class RefitSettingsTests
         var urlParameterKeyFormatter = new CamelCaseUrlParameterKeyFormatter();
         var formUrlEncodedParameterFormatter = new DefaultFormUrlEncodedParameterFormatter();
 
-        var exception = CaptureException(() => new RefitSettings());
+        var exception = CaptureException(static () => new RefitSettings());
         await Assert.That(exception).IsNull();
 
         exception = CaptureException(() => new RefitSettings(contentSerializer));

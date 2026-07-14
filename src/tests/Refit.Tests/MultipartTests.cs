@@ -65,7 +65,7 @@ public partial class MultipartTests
     {
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 
@@ -94,7 +94,7 @@ public partial class MultipartTests
     {
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 
@@ -120,7 +120,7 @@ public partial class MultipartTests
         var input = typeof(IRunscopeApi);
         var methodFixture = new RestMethodInfoInternal(
             input,
-            input.GetMethods().First(x => x.Name == "UploadStreamWithCustomBoundary"));
+            input.GetMethods().First(static x => x.Name == "UploadStreamWithCustomBoundary"));
         await Assert.That(methodFixture.MultipartBoundary).IsEqualTo("-----SomeCustomBoundary");
     }
 
@@ -131,7 +131,7 @@ public partial class MultipartTests
     {
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 
@@ -234,7 +234,7 @@ public partial class MultipartTests
 
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 
@@ -298,7 +298,7 @@ public partial class MultipartTests
     {
         var handler = new MockHttpMessageHandler
         {
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
                 await Assert.That(parts[0].Headers.ContentDisposition!.Name).IsEqualTo("id");
@@ -327,7 +327,7 @@ public partial class MultipartTests
 
         var handler = new MockHttpMessageHandler
         {
-            RequestAsserts = async message =>
+            RequestAsserts = static async message =>
             {
                 // The source-generated inline path attaches the interface type and the [Property] option, but not the
                 // reflection-only RestMethodInfo option, so it carries one fewer request option than the reflection
@@ -349,7 +349,7 @@ public partial class MultipartTests
                 await Assert.That(message.Properties["SomeProperty"]).IsEqualTo(someProperty);
 #pragma warning restore CS0618 // Type or member is obsolete
             },
-            Asserts = async content =>
+            Asserts = static async content =>
             {
                 var parts = content.ToList();
 

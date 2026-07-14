@@ -19,7 +19,7 @@ public partial class RestMethodInfoTests
                 input,
                 input
                     .GetMethods()
-                    .First(x => x.Name == nameof(IRestMethodInfoTests.TooManyComplexTypes)));
+                    .First(static x => x.Name == nameof(IRestMethodInfoTests.TooManyComplexTypes)));
         }).ThrowsExactly<ArgumentException>();
     }
 
