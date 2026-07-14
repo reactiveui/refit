@@ -112,6 +112,11 @@ visible in three places.
 
   This is a behavior change to previously unusable output, so it is extremely unlikely anyone depended on it. Complex
   elements of a collection are still `ToString()`-ed per element (the same limitation as the query path).
+* **An empty token from `AuthorizationHeaderValueGetter` now omits the `Authorization` header instead of sending a
+  blank one** (#1688). Previously a getter that returned `null`, an empty string, or whitespace produced a blank
+  `Authorization: <scheme>` header (and could throw for some scheme/value combinations). Refit now clears the header for
+  that request, so a single client can mix authenticated and anonymous calls by returning a token or an empty string. If
+  you relied on a blank header being sent, return a non-empty value.
 
 ### New in V14.x
 
@@ -173,6 +178,12 @@ visible in three places.
   generator discovers adapters declared in your project at compile time and emits a direct `Adapt` call — no reflection,
   so adapter-backed methods stay trim and Native AOT clean; the reflection request builder resolves adapters registered
   in `RefitSettings.ReturnTypeAdapters`. See [Custom return types](../README.md#custom-return-types-ireturntypeadapter).
+* **Scoped (per-request) authorization tokens via DI (`AddAuthorizationHeaderValueProvider`).** A new
+  `IHttpClientBuilder` extension in `Refit.HttpClientFactory` resolves the `Authorization` token from dependency
+  injection per request. Because `IHttpClientFactory` pools message handlers, it creates a fresh DI scope for every
+  request and resolves your delegate `(IServiceProvider, HttpRequestMessage, CancellationToken) -> ValueTask<string>`
+  from that scope, disposing it when the request completes — no `Microsoft.AspNetCore.*` dependency required (#1679). See
+  [Scoped (per-request) authorization tokens with dependency injection](../README.md#scoped-per-request-authorization-tokens-with-dependency-injection).
 
 ## V13.x.x
 
@@ -226,6 +237,23 @@ Two breaking changes are called out for migration:
   members still binds to the inherited base members, but assemblies compiled against v8-v11 should be recompiled.
   If you used `IsSuccessful` to narrow `Content` to non-null on an `IApiResponse<T>` value, use `HasContent` or
   `IsSuccessfulWithContent` instead.
+
+  Because the shadow is gone, `Error` is now typed as `ApiExceptionBase?`, which exposes only request-side context
+  (`RequestContent`, `HttpMethod`, `Uri`, `RequestMessage`). The response body lives on the derived `ApiException`, so
+  `response.Error.Content` no longer compiles. The feature was not removed; the body simply moved to the derived type.
+  Migrate like this:
+
+  ```csharp
+  // Before (v8-v11)
+  var content = response.Error.Content;
+
+  // After (v12+) - null-safe typed access to the response body
+  if (response.HasResponseError(out var apiException))
+      logger.LogError(apiException, apiException.Content);
+
+  // Or, as a shorthand cast when you just want the body
+  var content = (response.Error as ApiException)?.Content;
+  ```
 * The default `System.Text.Json` serializer now reads numbers from JSON strings by setting
   `JsonNumberHandling.AllowReadingFromString`. To opt back out, set `NumberHandling = JsonNumberHandling.Strict` on
   your `JsonSerializerOptions`.
