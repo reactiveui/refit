@@ -523,7 +523,8 @@ internal partial class RequestBuilderImplementation
             propertyObject = link.GetValue(propertyObject);
         }
 
-        vsb.Append(StringHelpers.EscapeDataString(_settings.UrlParameterFormatter.Format(
+        vsb.Append(StringHelpers.EscapeDataString(GeneratedRequestRunner.FormatUrlParameter(
+            _settings,
             propertyObject,
             property.PropertyInfo,
             property.PropertyInfo.PropertyType) ?? string.Empty));
@@ -548,7 +549,8 @@ internal partial class RequestBuilderImplementation
         if (parameterMapValue.Type == ParameterType.Normal)
         {
             vsb.Append(StringHelpers.EscapeDataString(
-                _settings.UrlParameterFormatter.Format(
+                GeneratedRequestRunner.FormatUrlParameter(
+                    _settings,
                     param,
                     parameterInfo,
                     parameterInfo.ParameterType) ?? string.Empty));
@@ -564,7 +566,8 @@ internal partial class RequestBuilderImplementation
         {
             vsb.Append(
                 StringHelpers.EscapeDataString(
-                    _settings.UrlParameterFormatter.Format(
+                    GeneratedRequestRunner.FormatUrlParameter(
+                        _settings,
                         paramValue,
                         parameterInfo,
                         parameterInfo.ParameterType) ?? string.Empty));
@@ -587,7 +590,8 @@ internal partial class RequestBuilderImplementation
             var section = paramValue.Substring(sectionStart, i - sectionStart);
             vsb.Append(
                 StringHelpers.EscapeDataString(
-                    _settings.UrlParameterFormatter.Format(
+                    GeneratedRequestRunner.FormatUrlParameter(
+                        _settings,
                         section,
                         parameterInfo,
                         parameterInfo.ParameterType) ?? string.Empty));

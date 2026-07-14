@@ -53,7 +53,7 @@ namespace Refit.Implementation
             {
                 var refitSettings = _settings;
                 var refitUseDefaultFormatting = global::Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(refitSettings);
-                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, (refitUseDefaultFormatting ? global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, (7, 13), @user) : global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, [((7, 13), refitSettings.UrlParameterFormatter.Format(@user, ______userAttributeProvider, typeof(int)))])), refitSettings.UrlResolution));
+                var refitRequest = new global::System.Net.Http.HttpRequestMessage(global::System.Net.Http.HttpMethod.Get, global::Refit.GeneratedRequestRunner.BuildRelativeUri(this.Client, (refitUseDefaultFormatting ? global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, (7, 13), @user) : global::Refit.GeneratedRequestRunner.BuildRequestPath("/users/{user}", refitSettings.AllowUnmatchedRouteParameters, [((7, 13), global::Refit.GeneratedRequestRunner.FormatUrlParameter(refitSettings, @user, ______userAttributeProvider, typeof(int)))])), refitSettings.UrlResolution));
                 global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(refitRequest, refitSettings, typeof(global::RefitGeneratorTest.IGeneratedClient));
                 return global::Refit.GeneratedRequestRunner.SendAsync<string, string>(
                     this.Client,

@@ -136,6 +136,19 @@ public class RefitSettings
     /// <summary>Gets or sets the <see cref="IUrlParameterFormatter"/> instance to use (defaults to <see cref="DefaultUrlParameterFormatter"/>).</summary>
     public IUrlParameterFormatter UrlParameterFormatter { get; set; }
 
+    /// <summary>Gets a registry of <see cref="IUrlParameterFormatter"/> instances keyed by the CLR type they format,
+    /// consulted before <see cref="UrlParameterFormatter"/> when rendering a value into a path or query string.</summary>
+    /// <remarks>
+    /// When a value is rendered into a URL (a path parameter, a round-trip path segment, or a query value), its runtime
+    /// type (<see cref="object.GetType"/>) is looked up here first; a registered formatter is used for that value, and
+    /// any other type falls back to <see cref="UrlParameterFormatter"/>. Matching is by exact runtime type only - no base
+    /// class or interface walking - so register the concrete type the value will have at runtime. Both the reflection and
+    /// source-generated request builders consult this registry identically. It does not affect header or body
+    /// serialization. Registering any entry opts a request out of the generator's inline formatting fast path.
+    /// </remarks>
+    public IDictionary<Type, IUrlParameterFormatter> UrlParameterFormatterMap { get; } =
+        new Dictionary<Type, IUrlParameterFormatter>();
+
     /// <summary>Gets or sets the <see cref="IFormUrlEncodedParameterFormatter"/> instance to use (defaults to <see cref="DefaultFormUrlEncodedParameterFormatter"/>).</summary>
     public IFormUrlEncodedParameterFormatter FormUrlEncodedParameterFormatter { get; set; }
 

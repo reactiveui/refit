@@ -132,7 +132,7 @@ internal static partial class Emitter
             ? $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression})"
             : $"{runner}({template}, {allowUnmatched}, ({start}, {end}), {valueExpression}, {ToNullableCSharpStringLiteral(valueFormat.Format)})";
         var customTuple =
-            $"(({start}, {end}), {settingsLocal}.UrlParameterFormatter.Format({valueExpression}, {providerField}, typeof({pathParameter.Type})))";
+            $"(({start}, {end}), {EmitFormatUrlParameter(valueExpression, providerField, $"typeof({pathParameter.Type})", emission)})";
         var customReplacements = WrapPathReplacements(customTuple, emission.SupportsCollectionExpressions);
         var customExpression = $"{runner}({template}, {allowUnmatched}{customReplacements})";
 

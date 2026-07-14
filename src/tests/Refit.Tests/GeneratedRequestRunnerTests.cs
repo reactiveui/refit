@@ -420,9 +420,10 @@ public partial class GeneratedRequestRunnerTests
     [Test]
     public async Task RoundTripEscapePathSubstitutesEmptyForNullFormattedSection()
     {
+        var settings = new RefitSettings { UrlParameterFormatter = new NullUrlParameterFormatter() };
         var result = GeneratedRequestRunner.RoundTripEscapePath(
             "a/b",
-            new NullUrlParameterFormatter(),
+            settings,
             typeof(string),
             typeof(string));
 

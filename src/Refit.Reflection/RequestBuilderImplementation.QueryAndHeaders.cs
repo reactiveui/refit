@@ -334,7 +334,7 @@ internal partial class RequestBuilderImplementation
             }
 
             var keyType = key.GetType();
-            var formattedKey = _settings.UrlParameterFormatter.Format(key, keyType, keyType);
+            var formattedKey = GeneratedRequestRunner.FormatUrlParameter(_settings, key, keyType, keyType);
 
             if (string.IsNullOrWhiteSpace(formattedKey)) // blank keys can't be put in the query string
             {

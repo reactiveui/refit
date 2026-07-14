@@ -148,6 +148,13 @@ visible in three places.
   generator discovers adapters declared in your project at compile time and emits a direct `Adapt` call — no reflection,
   so adapter-backed methods stay trim and Native AOT clean; the reflection request builder resolves adapters registered
   in `RefitSettings.ReturnTypeAdapters`. See [Custom return types](../README.md#custom-return-types-ireturntypeadapter).
+* **Per-type URL parameter formatters (`RefitSettings.UrlParameterFormatterMap`).** Register an `IUrlParameterFormatter`
+  for a specific CLR type instead of hand-rolling a type switch inside a single custom formatter. When a value is
+  rendered into a path or query string, its runtime type is looked up in the map first (exact type only, no base-class or
+  interface walking); a registered formatter wins, and every other type falls back to `UrlParameterFormatter`. Both the
+  reflection and source-generated request builders consult the map identically. This is a purely additive, opt-in setting
+  — an empty map (the default) changes no behavior. See
+  [Formatting URL Parameter Values](../README.md#formatting-url-parameter-values-with-the-urlparameterformatter).
 
 ## V13.x.x
 
