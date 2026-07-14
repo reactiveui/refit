@@ -295,6 +295,49 @@ internal static partial class Parser
         return false;
     }
 
+    /// <summary>Tries to parse a <c>[Url]</c> parameter that supplies the absolute request URI.</summary>
+    /// <param name="parameter">The parameter to inspect.</param>
+    /// <param name="parameterType">The parameter type display string.</param>
+    /// <param name="context">The interface generation context, used to qualify extern-aliased types.</param>
+    /// <param name="urlParameter">Receives the url parameter model.</param>
+    /// <returns><see langword="true"/> when the parameter carries <c>[Url]</c>.</returns>
+    private static bool TryParseUrlParameter(
+        IParameterSymbol parameter,
+        string parameterType,
+        InterfaceGenerationContext context,
+        out RequestParameterModel urlParameter)
+    {
+        foreach (var attribute in parameter.GetAttributes())
+        {
+            if (!IsRefitAttribute(attribute.AttributeClass, UrlAttributeDisplayName))
+            {
+                continue;
+            }
+
+            urlParameter = new(
+                parameter.MetadataName,
+                parameterType,
+                null,
+                BuildParameterAttributes(parameter, context),
+                RequestParameterKind.Url,
+                CanBeNull(parameter.Type, parameter.NullableAnnotation),
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                BodyBufferMode.None);
+            return true;
+        }
+
+        urlParameter = null!;
+        return false;
+    }
+
+    /// <summary>Determines whether a <c>[Url]</c> parameter type can be emitted inline.</summary>
+    /// <param name="type">The parameter type.</param>
+    /// <returns><see langword="true"/> for <see cref="string"/> or <see cref="Uri"/>; other types fall back to reflection.</returns>
+    private static bool IsInlineUrlType(ITypeSymbol type) =>
+        type.SpecialType == SpecialType.System_String || IsUri(type);
+
     /// <summary>Tries to parse a request property parameter.</summary>
     /// <param name="parameter">The parameter to inspect.</param>
     /// <param name="parameterType">The parameter type display string.</param>

@@ -65,6 +65,20 @@ public static partial class GeneratedRequestRunner
         return new(absolute.GetComponents(UriComponents.PathAndQuery, queryUriFormat), UriKind.Relative);
     }
 
+    /// <summary>Validates that a <c>[Url]</c> parameter value is an absolute URI, returning its string form as the
+    /// base for a full-URL request that bypasses the client's base address. A <see cref="string"/> value is used as
+    /// written; a <see cref="Uri"/> value contributes its <see cref="Uri.OriginalString"/>.</summary>
+    /// <param name="url">The <c>[Url]</c> parameter value: a <see cref="string"/> or a <see cref="Uri"/>.</param>
+    /// <returns>The absolute URI's string form.</returns>
+    /// <exception cref="ArgumentException"><paramref name="url"/> is <see langword="null"/>, empty, or not an absolute URI.</exception>
+    public static string RequireAbsoluteUrl(object? url)
+    {
+        var text = url is Uri uri ? uri.OriginalString : url as string;
+        return Uri.TryCreate(text, UriKind.Absolute, out _)
+            ? text!
+            : throw new ArgumentException(FormatAbsoluteUrlError(url), nameof(url));
+    }
+
     /// <summary>Builds the request path for a generated request from a template.</summary>
     /// <param name="relativePathTemplate">The method's relative path, including any leading slash and query string.</param>
     /// <param name="allowUnmatchedParameter">Whether to allow unmatched URL parameters.</param>
@@ -599,6 +613,12 @@ public static partial class GeneratedRequestRunner
         throw new ArgumentException(
             $"URL path {relativePath} must start with '/' and be of the form '/foo/bar/baz'");
     }
+
+    /// <summary>Builds the message describing an invalid <c>[Url]</c> parameter value.</summary>
+    /// <param name="value">The rejected value.</param>
+    /// <returns>The exception message.</returns>
+    private static string FormatAbsoluteUrlError(object? value) =>
+        $"The [Url] parameter value \"{value}\" must be an absolute URI (for example \"https://host/path\").";
 
     /// <summary>Adds one pre-boxed configured request property or option value.</summary>
     /// <param name="request">The request to modify.</param>

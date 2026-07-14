@@ -355,6 +355,40 @@ significant, exactly as with `HttpClient`:
 > resolution is validated when the request is built — so the `ArgumentException` surfaces on the first call rather than
 > from `RestService.For<T>(...)`. Under `UrlResolutionMode.Rfc3986` the route is valid and no exception is raised.
 
+#### Absolute URLs per call with `[Url]`
+
+The route templates and `{**catch-all}` segments above build a path *relative* to the client's base address. When you
+instead need to dispatch a single call to an arbitrary **absolute** URL — often a different host, such as a
+pre-signed download link or a URL returned by a previous response — mark a `string` or `System.Uri` parameter with
+`[Url]`. Its value becomes the request URI and the client's base address is ignored. This is Refit's equivalent of
+Retrofit's `@Url`.
+
+```csharp
+public interface IFileApi
+{
+    [Get("")]
+    Task<Stream> Download([Url] string absoluteUrl);
+}
+
+// base address "https://api.example.com" is ignored:
+api.Download("https://cdn.example.com/files/report.pdf");
+>>> GET https://cdn.example.com/files/report.pdf
+```
+
+- The value must be an **absolute** URI; a relative or otherwise invalid value throws an `ArgumentException` when the
+  request is built.
+- Because `[Url]` supplies the full URL, the method's route template must be **empty** (`[Get("")]`). Combining `[Url]`
+  with a non-empty path template throws an `ArgumentException`.
+- `[Query]` parameters still work and are appended to the absolute URL's query string:
+
+```csharp
+[Get("")]
+Task<string> Fetch([Url] string absoluteUrl, [Query] string token);
+
+api.Fetch("https://cdn.example.com/data", "abc");
+>>> GET https://cdn.example.com/data?token=abc
+```
+
 ### Querystrings
 
 #### Dynamic Querystring Parameters

@@ -27,6 +27,9 @@ internal enum RequestParameterKind
     /// <summary>The parameter supplies a value for a placeholder in the path.</summary>
     Path,
 
+    /// <summary>The parameter supplies the complete absolute request URI, bypassing the client base address.</summary>
+    Url,
+
     /// <summary>The parameter supplies one or more query string values or flags.</summary>
     Query,
 
