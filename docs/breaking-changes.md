@@ -148,6 +148,12 @@ visible in three places.
   generator discovers adapters declared in your project at compile time and emits a direct `Adapt` call — no reflection,
   so adapter-backed methods stay trim and Native AOT clean; the reflection request builder resolves adapters registered
   in `RefitSettings.ReturnTypeAdapters`. See [Custom return types](../README.md#custom-return-types-ireturntypeadapter).
+* **Optional URL path segments (`{name?}`).** Append `?` to a placeholder name (matching ASP.NET routing) to make the
+  segment optional. When the bound argument is `null` the segment and its preceding `/` are dropped, so a route such as
+  `[Get("/push/notifMsg/{deviceId}/{notifMsgId?}")]` produces `/push/notifMsg/device1` (not a 404-prone
+  `/push/notifMsg/device1/`) when `notifMsgId` is null. This is additive syntax: existing `{name}` placeholders are
+  unchanged, a non-null (or empty-string) value formats exactly as before, and the behaviour is identical on the
+  reflection and source-generated request paths. See [API Attributes](../README.md#api-attributes).
 
 ## V13.x.x
 

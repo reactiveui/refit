@@ -87,21 +87,32 @@ public static partial class GeneratedRequestRunner
         }
 
         var pathSpan = relativePathTemplate.AsSpan();
-        using var sb = new ValueStringBuilder(stackalloc char[256]);
-        var pos = 0;
-        foreach (var ((startIdx, endIdx), value) in uriParams)
+        var sb = new ValueStringBuilder(stackalloc char[256]);
+        try
         {
-            sb.Append(pathSpan[pos..startIdx]);
-            if (value is not null)
+            var pos = 0;
+            foreach (var ((startIdx, endIdx), value) in uriParams)
             {
-                sb.Append(StringHelpers.EscapeDataString(value));
+                sb.Append(pathSpan[pos..startIdx]);
+                if (value is not null)
+                {
+                    sb.Append(StringHelpers.EscapeDataString(value));
+                }
+                else
+                {
+                    DropOptionalSegmentSeparator(ref sb, pathSpan, endIdx);
+                }
+
+                pos = endIdx;
             }
 
-            pos = endIdx;
+            sb.Append(pathSpan[pos..]);
+            return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
         }
-
-        sb.Append(pathSpan[pos..]);
-        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+        finally
+        {
+            sb.Dispose();
+        }
     }
 
 #if NET6_0_OR_GREATER
@@ -217,21 +228,32 @@ public static partial class GeneratedRequestRunner
         }
 
         var pathSpan = relativePathTemplate.AsSpan();
-        using var sb = new ValueStringBuilder(stackalloc char[256]);
-        var pos = 0;
-        foreach (var ((startIdx, endIdx), value, preEncoded) in uriParams)
+        var sb = new ValueStringBuilder(stackalloc char[256]);
+        try
         {
-            sb.Append(pathSpan[pos..startIdx]);
-            if (value is not null)
+            var pos = 0;
+            foreach (var ((startIdx, endIdx), value, preEncoded) in uriParams)
             {
-                sb.Append(preEncoded ? value : StringHelpers.EscapeDataString(value));
+                sb.Append(pathSpan[pos..startIdx]);
+                if (value is not null)
+                {
+                    sb.Append(preEncoded ? value : StringHelpers.EscapeDataString(value));
+                }
+                else
+                {
+                    DropOptionalSegmentSeparator(ref sb, pathSpan, endIdx);
+                }
+
+                pos = endIdx;
             }
 
-            pos = endIdx;
+            sb.Append(pathSpan[pos..]);
+            return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
         }
-
-        sb.Append(pathSpan[pos..]);
-        return ThrowIfUnmatchedParameter(sb.ToString(), relativePathTemplate, allowUnmatchedParameter);
+        finally
+        {
+            sb.Dispose();
+        }
     }
 
     /// <summary>Round-trips a catch-all <c>{**param}</c> path value: each <c>/</c>-separated section is formatted and
@@ -560,6 +582,28 @@ public static partial class GeneratedRequestRunner
         }
 
         return builder.ToString();
+    }
+
+    /// <summary>Drops the '/' preceding an optional <c>{name?}</c> segment whose bound value was null.</summary>
+    /// <param name="sb">The path builder written so far, ending in the separator in front of the placeholder.</param>
+    /// <param name="template">The relative path template, scanned to detect the optional <c>?}</c> marker.</param>
+    /// <param name="endIdx">The placeholder's end offset in the template (one past its closing brace).</param>
+    /// <remarks>An optional placeholder ends with <c>?}</c>; a plain <c>{name}</c> ends with <c>}</c>, so a null value
+    /// there still renders an empty segment exactly as before. The separator is trimmed only when it is a '/', so a null
+    /// value in a query position (for example <c>?key={value?}</c>) collapses to an empty value rather than eating an
+    /// unrelated character.</remarks>
+    private static void DropOptionalSegmentSeparator(ref ValueStringBuilder sb, ReadOnlySpan<char> template, int endIdx)
+    {
+        // An optional {name?} placeholder ends with the two-character "?}" suffix, so the '?' sits one char before endIdx.
+        const int optionalMarkerSuffixLength = 2;
+        var isOptional = endIdx >= optionalMarkerSuffixLength
+            && template[endIdx - optionalMarkerSuffixLength] == '?';
+        if (!isOptional || sb.Length == 0 || sb[sb.Length - 1] != '/')
+        {
+            return;
+        }
+
+        sb.Length--;
     }
 
     /// <summary>Throws when the expanded path still contains a placeholder and unmatched parameters are not allowed.</summary>
