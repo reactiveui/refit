@@ -52,7 +52,8 @@ internal partial class RequestBuilderImplementation
     /// <summary>Applies the collected headers to the request, creating empty content if needed.</summary>
     /// <param name="headersToAdd">The headers to apply, or null.</param>
     /// <param name="ret">The request message to populate.</param>
-    private static void AddHeadersToRequest(Dictionary<string, string?>? headersToAdd, HttpRequestMessage ret)
+    /// <param name="validateHeaders">Whether header values are validated as they are applied; see <see cref="SetHeader"/>.</param>
+    private static void AddHeadersToRequest(Dictionary<string, string?>? headersToAdd, HttpRequestMessage ret, bool validateHeaders)
     {
         // NB: We defer setting headers until the body has been
         // added so any custom content headers don't get left out.
@@ -71,7 +72,7 @@ internal partial class RequestBuilderImplementation
 
         foreach (var header in headersToAdd)
         {
-            SetHeader(ret, header.Key, header.Value);
+            SetHeader(ret, header.Key, header.Value, validateHeaders);
         }
     }
 

@@ -392,7 +392,12 @@ public static partial class GeneratedRequestRunner
     /// <param name="request">The request to modify.</param>
     /// <param name="name">The header name.</param>
     /// <param name="value">The header value, or null to remove the header.</param>
-    public static void SetHeader(HttpRequestMessage request, string name, string? value)
+    /// <param name="validateHeaders">
+    /// When <see langword="true"/> the value is added with <see cref="System.Net.Http.Headers.HttpHeaders.Add(string, string?)"/>
+    /// so a malformed value throws <see cref="FormatException"/>; when <see langword="false"/> it is added verbatim with
+    /// <c>TryAddWithoutValidation</c>. CR/LF stripping applies in both modes.
+    /// </param>
+    public static void SetHeader(HttpRequestMessage request, string name, string? value, bool validateHeaders)
     {
         if (ContainsHeader(request.Headers, name))
         {
@@ -416,22 +421,17 @@ public static partial class GeneratedRequestRunner
 
         name = EnsureSafeHeaderValue(name);
         value = EnsureSafeHeaderValue(value);
-
-        var added = request.Headers.TryAddWithoutValidation(name, value);
-        if (added || request.Content is null)
-        {
-            return;
-        }
-
-        _ = request.Content.Headers.TryAddWithoutValidation(name, value);
+        ApplyHeaderValue(request, name, value, validateHeaders);
     }
 
     /// <summary>Adds a generated request header collection, replacing earlier values by key.</summary>
     /// <param name="request">The request to modify.</param>
     /// <param name="headers">The header collection argument.</param>
+    /// <param name="validateHeaders">Whether header values are validated as they are applied; see <see cref="SetHeader"/>.</param>
     public static void AddHeaderCollection(
         HttpRequestMessage request,
-        IDictionary<string, string>? headers)
+        IDictionary<string, string>? headers,
+        bool validateHeaders)
     {
         if (headers is null)
         {
@@ -440,7 +440,7 @@ public static partial class GeneratedRequestRunner
 
         foreach (var header in headers)
         {
-            SetHeader(request, header.Key, header.Value);
+            SetHeader(request, header.Key, header.Value, validateHeaders);
         }
     }
 
@@ -690,4 +690,54 @@ public static partial class GeneratedRequestRunner
     /// <param name="value">The header name or value.</param>
     /// <returns>The sanitized value.</returns>
     private static string EnsureSafeHeaderValue(string value) => StringHelpers.RemoveCrOrLf(value);
+
+    /// <summary>Applies a sanitized header value to the request or its content, validating it when requested.</summary>
+    /// <param name="request">The request to modify.</param>
+    /// <param name="name">The sanitized header name.</param>
+    /// <param name="value">The sanitized header value.</param>
+    /// <param name="validateHeaders">Whether the value is validated (<c>Add</c>) or added verbatim (<c>TryAddWithoutValidation</c>).</param>
+    /// <exception cref="FormatException">Validation is enabled and the value is malformed for the header's parser.</exception>
+    private static void ApplyHeaderValue(HttpRequestMessage request, string name, string value, bool validateHeaders)
+    {
+        if (validateHeaders)
+        {
+            if (TryAddValidated(request.Headers, name, value) || request.Content is null)
+            {
+                return;
+            }
+
+            request.Content.Headers.Add(name, value);
+            return;
+        }
+
+        var added = request.Headers.TryAddWithoutValidation(name, value);
+        if (added || request.Content is null)
+        {
+            return;
+        }
+
+        _ = request.Content.Headers.TryAddWithoutValidation(name, value);
+    }
+
+    /// <summary>Adds a header with framework validation, reporting whether it belongs to this collection.</summary>
+    /// <param name="headers">The header collection to add to.</param>
+    /// <param name="name">The header name.</param>
+    /// <param name="value">The header value.</param>
+    /// <returns><see langword="true"/> when the header was stored; <see langword="false"/> when it belongs on the
+    /// content collection instead, mirroring the <c>false</c> return of <c>TryAddWithoutValidation</c>.</returns>
+    /// <exception cref="FormatException">The value is malformed for this header's parser.</exception>
+    private static bool TryAddValidated(System.Net.Http.Headers.HttpHeaders headers, string name, string value)
+    {
+        try
+        {
+            headers.Add(name, value);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // The header name belongs on the request's content headers, not this collection; a malformed value would
+            // instead surface as FormatException, which is allowed to propagate.
+            return false;
+        }
+    }
 }

@@ -310,4 +310,28 @@ public partial class RequestBuilderTests
         await Assert.That(output.Content!.Headers.ContentType).IsNotNull();
         await Assert.That(output.Content!.Headers.ContentType!.MediaType).IsEqualTo("text/dson");
     }
+
+    /// <summary>With the default settings the reflection builder sends a malformed header value verbatim.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ValidateHeadersDisabledSendsMalformedHeaderVerbatim()
+    {
+        var fixture = new RequestBuilderImplementation<IHeaderValidationApi>();
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IHeaderValidationApi.Get));
+
+        var output = await factory([MalformedHeaderValue]);
+
+        await Assert.That(output.Headers.GetValues(ValidatedHeaderName)).IsEquivalentTo([MalformedHeaderValue]);
+    }
+
+    /// <summary>With <see cref="RefitSettings.ValidateHeaders"/> enabled the reflection builder rejects a malformed header value.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task ValidateHeadersEnabledThrowsForMalformedHeader()
+    {
+        var fixture = new RequestBuilderImplementation<IHeaderValidationApi>(new RefitSettings { ValidateHeaders = true });
+        var factory = fixture.BuildRequestFactoryForMethod(nameof(IHeaderValidationApi.Get));
+
+        await Assert.That(() => (Task)factory([MalformedHeaderValue])).Throws<FormatException>();
+    }
 }

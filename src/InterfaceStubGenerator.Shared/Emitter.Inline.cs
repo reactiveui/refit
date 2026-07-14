@@ -194,7 +194,7 @@ internal static partial class Emitter
             contentSource = BuildInlineMultipartContent(request, requestLocal, settingsLocal, plan.Locals);
         }
 
-        var headerSource = BuildInlineHeaders(request, requestLocal);
+        var headerSource = BuildInlineHeaders(request, requestLocal, settingsLocal);
         var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
         var methodIndent = Indent(MethodMemberIndentation);
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
@@ -455,16 +455,20 @@ internal static partial class Emitter
     /// <summary>Builds static and dynamic header application for an inline generated method.</summary>
     /// <param name="request">The parsed request model.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
+    /// <param name="settingsLocal">The generated settings local name, read for the header validation flag.</param>
     /// <returns>The generated header statements.</returns>
-    private static string BuildInlineHeaders(RequestModel request, string requestLocal)
+    private static string BuildInlineHeaders(RequestModel request, string requestLocal, string settingsLocal)
     {
         var parts = new string[request.StaticHeaders.Count + request.Parameters.Count];
         var count = 0;
         var bodyIndent = Indent(MethodBodyIndentation);
+        var validateHeaders = $"{settingsLocal}.ValidateHeaders";
         foreach (var header in request.StaticHeaders)
         {
+            var headerName = ToCSharpStringLiteral(header.Name);
+            var headerValue = ToNullableCSharpStringLiteral(header.Value);
             parts[count] =
-                $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(header.Name)}, {ToNullableCSharpStringLiteral(header.Value)});\n";
+                $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {headerName}, {headerValue}, {validateHeaders});\n";
             count++;
         }
 
@@ -479,7 +483,7 @@ internal static partial class Emitter
                             ? $"{ToCSharpStringLiteral(valuePrefix)} + {BuildHeaderValueExpression(parameter)}"
                             : BuildHeaderValueExpression(parameter);
                         parts[count] =
-                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(parameter.HeaderName)}, {headerValueExpression});\n";
+                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.SetHeader({requestLocal}, {ToCSharpStringLiteral(parameter.HeaderName)}, {headerValueExpression}, {validateHeaders});\n";
                         count++;
                         continue;
                     }
@@ -487,7 +491,7 @@ internal static partial class Emitter
                 case RequestParameterKind.HeaderCollection:
                     {
                         parts[count] =
-                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddHeaderCollection({requestLocal}, @{parameter.Name});\n";
+                            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddHeaderCollection({requestLocal}, @{parameter.Name}, {validateHeaders});\n";
                         count++;
                         break;
                     }

@@ -25,6 +25,12 @@ public partial class GeneratedRequestRunnerTests
     /// <summary>Content-Language header value used by the content-header tests.</summary>
     private const string ContentLanguageValue = "en-US";
 
+    /// <summary>A strictly-parsed header used by the header-validation tests.</summary>
+    private const string ValidatedHeaderName = "If-Modified-Since";
+
+    /// <summary>A value that fails the <see cref="ValidatedHeaderName"/> parser but is accepted verbatim without validation.</summary>
+    private const string MalformedHeaderValue = "not a date";
+
     /// <summary>Stream body payload shared by the stream-content tests.</summary>
     private const string StreamBodyText = "stream-body";
 

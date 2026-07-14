@@ -68,6 +68,7 @@ lets you stub responses and verify requests with a declarative route table — s
     * [Reducing header boilerplate with DelegatingHandlers (Authorization headers worked example)](#reducing-header-boilerplate-with-delegatinghandlers-authorization-headers-worked-example)
     * [Redefining headers](#redefining-headers)
     * [Removing headers](#removing-headers)
+    * [Validating header values](#validating-header-values)
 * [Passing state into DelegatingHandlers](#passing-state-into-delegatinghandlers)
     * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
     * [Target Interface type](#target-interface-type)
@@ -1325,6 +1326,32 @@ await CreateUser(user, null);
 // X-Emoji:
 await CreateUser(user, "");
 ```
+
+#### Validating header values
+
+By default Refit adds header values verbatim with
+[`HttpHeaders.TryAddWithoutValidation`](https://learn.microsoft.com/dotnet/api/system.net.http.headers.httpheaders.tryaddwithoutvalidation),
+so values are sent exactly as supplied. This is deliberate: many valid header values (custom `User-Agent`
+strings, comma-separated list headers, and some date formats) are rejected by the framework's strict header
+parsers even though servers accept them.
+
+If you would rather have malformed header values fail fast, set `RefitSettings.ValidateHeaders` to `true`.
+Refit then applies headers with [`HttpHeaders.Add`](https://learn.microsoft.com/dotnet/api/system.net.http.headers.httpheaders.add),
+which validates each value against its header parser and throws a `FormatException` while the request is being
+built if a value is malformed:
+
+```csharp
+var settings = new RefitSettings
+{
+    ValidateHeaders = true // default is false (values sent verbatim)
+};
+
+var gitHubApi = RestService.For<IGitHubApi>("https://api.github.com", settings);
+```
+
+The default (`false`) preserves Refit's long-standing behaviour. Carriage-return and line-feed characters are
+stripped from header names and values in **both** modes to guard against header injection, so turning this on only
+changes whether otherwise-malformed values are surfaced as an exception rather than sent as-is.
 
 ### Passing state into DelegatingHandlers
 

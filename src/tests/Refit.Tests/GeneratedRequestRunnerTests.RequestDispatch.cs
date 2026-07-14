@@ -18,12 +18,12 @@ public partial class GeneratedRequestRunnerTests
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
 
-        GeneratedRequestRunner.SetHeader(request, TestHeaderName, "first");
-        GeneratedRequestRunner.SetHeader(request, TestHeaderName, "second\r\nvalue");
+        GeneratedRequestRunner.SetHeader(request, TestHeaderName, "first", validateHeaders: false);
+        GeneratedRequestRunner.SetHeader(request, TestHeaderName, "second\r\nvalue", validateHeaders: false);
 
         await Assert.That(request.Headers.GetValues(TestHeaderName)).IsCollectionEqualTo(["secondvalue"]);
 
-        GeneratedRequestRunner.SetHeader(request, TestHeaderName, null);
+        GeneratedRequestRunner.SetHeader(request, TestHeaderName, null, validateHeaders: false);
 
         await Assert.That(request.Headers.Contains(TestHeaderName)).IsFalse();
     }
@@ -35,7 +35,7 @@ public partial class GeneratedRequestRunnerTests
     {
         using var request = new HttpRequestMessage(HttpMethod.Post, RelativeResourcePath);
 
-        GeneratedRequestRunner.SetHeader(request, "Content-Language", ContentLanguageValue);
+        GeneratedRequestRunner.SetHeader(request, "Content-Language", ContentLanguageValue, validateHeaders: false);
 
         await Assert.That(request.Content).IsNotNull();
         await Assert.That(request.Content!.Headers.ContentLanguage).IsCollectionEqualTo([ContentLanguageValue]);
@@ -52,9 +52,32 @@ public partial class GeneratedRequestRunnerTests
         };
         request.Content.Headers.ContentLanguage.Add(ContentLanguageValue);
 
-        GeneratedRequestRunner.SetHeader(request, "Content-Language", "fr-FR");
+        GeneratedRequestRunner.SetHeader(request, "Content-Language", "fr-FR", validateHeaders: false);
 
         await Assert.That(request.Content.Headers.ContentLanguage).IsCollectionEqualTo(["fr-FR"]);
+    }
+
+    /// <summary>Verifies that generated header assignment sends a malformed value verbatim when validation is disabled.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SetHeaderWithoutValidationSendsMalformedValueVerbatim()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+
+        GeneratedRequestRunner.SetHeader(request, ValidatedHeaderName, MalformedHeaderValue, validateHeaders: false);
+
+        await Assert.That(request.Headers.GetValues(ValidatedHeaderName)).IsCollectionEqualTo([MalformedHeaderValue]);
+    }
+
+    /// <summary>Verifies that generated header assignment throws for a malformed value when validation is enabled.</summary>
+    /// <returns>A task that represents the asynchronous operation.</returns>
+    [Test]
+    public async Task SetHeaderWithValidationThrowsForMalformedValue()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, RelativeResourcePath);
+
+        await Assert.That(() => GeneratedRequestRunner.SetHeader(request, ValidatedHeaderName, MalformedHeaderValue, validateHeaders: true))
+            .Throws<FormatException>();
     }
 
     /// <summary>Verifies that header collections are optional and replace earlier values by key.</summary>
@@ -69,9 +92,9 @@ public partial class GeneratedRequestRunnerTests
             ["X-Second"] = "two"
         };
 
-        GeneratedRequestRunner.SetHeader(request, FirstHeaderName, "original");
-        GeneratedRequestRunner.AddHeaderCollection(request, null);
-        GeneratedRequestRunner.AddHeaderCollection(request, headers);
+        GeneratedRequestRunner.SetHeader(request, FirstHeaderName, "original", validateHeaders: false);
+        GeneratedRequestRunner.AddHeaderCollection(request, null, validateHeaders: false);
+        GeneratedRequestRunner.AddHeaderCollection(request, headers, validateHeaders: false);
 
         await Assert.That(request.Headers.GetValues(FirstHeaderName)).IsCollectionEqualTo(["one"]);
         await Assert.That(request.Headers.GetValues("X-Second")).IsCollectionEqualTo(["two"]);

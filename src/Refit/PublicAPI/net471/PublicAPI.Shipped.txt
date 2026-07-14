@@ -305,6 +305,8 @@ Refit.RefitSettings.UrlParameterKeyFormatter.get -> Refit.IUrlParameterKeyFormat
 Refit.RefitSettings.UrlParameterKeyFormatter.set -> void
 Refit.RefitSettings.UrlResolution.get -> Refit.UrlResolutionMode
 Refit.RefitSettings.UrlResolution.set -> void
+Refit.RefitSettings.ValidateHeaders.get -> bool
+Refit.RefitSettings.ValidateHeaders.set -> void
 Refit.RequestBodySerializationMode
 Refit.RequestBodySerializationMode.Buffered = 1 -> Refit.RequestBodySerializationMode
 Refit.RequestBodySerializationMode.Default = 0 -> Refit.RequestBodySerializationMode
@@ -396,7 +398,7 @@ static Refit.ApiException.Create(string! exceptionMessage, System.Net.Http.HttpR
 static Refit.ApiResponseExtensions.EnsureSuccessStatusCodeAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
 static Refit.ApiResponseExtensions.EnsureSuccessfulAsync<T>(this Refit.IApiResponse<T>! response) -> System.Threading.Tasks.ValueTask<Refit.IApiResponse<T>!>
 static Refit.GeneratedRequestRunner.AddConfiguredRequestOptions(System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Type! interfaceType) -> void
-static Refit.GeneratedRequestRunner.AddHeaderCollection(System.Net.Http.HttpRequestMessage! request, System.Collections.Generic.IDictionary<string!, string!>? headers) -> void
+static Refit.GeneratedRequestRunner.AddHeaderCollection(System.Net.Http.HttpRequestMessage! request, System.Collections.Generic.IDictionary<string!, string!>? headers, bool validateHeaders) -> void
 static Refit.GeneratedRequestRunner.AddRequestProperty<TValue>(System.Net.Http.HttpRequestMessage! request, string! key, TValue value) -> void
 static Refit.GeneratedRequestRunner.BuildRelativeUri(System.Net.Http.HttpClient! client, string! relativePath, Refit.UrlResolutionMode urlResolution) -> System.Uri!
 static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter) -> string!
@@ -407,7 +409,7 @@ static Refit.GeneratedRequestRunner.CreateUrlEncodedBodyContent<TBody>(Refit.Ref
 static Refit.GeneratedRequestRunner.FormatInvariant<T>(T value, string? format) -> string!
 static Refit.GeneratedRequestRunner.SendAsync<T, TBody>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<T?>!
 static Refit.GeneratedRequestRunner.SendVoidAsync(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, bool bufferBody, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
-static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage! request, string! name, string? value) -> void
+static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage! request, string! name, string? value, bool validateHeaders) -> void
 static Refit.GeneratedRequestRunner.StreamAsync<T>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Threading.CancellationToken methodCancellationToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
 static Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(Refit.RefitSettings! settings) -> bool
 static Refit.HttpRequestMessageOptions.InterfaceType.get -> string!
@@ -473,3 +475,16 @@ Refit.SystemTextJsonQueryConverter<T>.Flatten(T value, string! keyPrefix, ref Re
 Refit.IReturnTypeAdapter<TReturn, TResult>
 Refit.IReturnTypeAdapter<TReturn, TResult>.Adapt(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! invoke) -> TReturn
 Refit.RefitSettings.ReturnTypeAdapters.get -> System.Collections.Generic.IList<System.Type!>!
+static Refit.GeneratedRequestRunner.CanUnrollForm(object? body) -> bool
+static Refit.GeneratedRequestRunner.RoundTripEscapePath(string? value, Refit.IUrlParameterFormatter! formatter, System.Reflection.ICustomAttributeProvider! attributeProvider, System.Type! type) -> string!
+Refit.GeneratedQueryStringBuilder.GeneratedQueryStringBuilder(string! relativePath, bool hasQuery) -> void
+static readonly Refit.GeneratedParameterAttributeProvider.Empty -> Refit.GeneratedParameterAttributeProvider!
+static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value)> uriParams) -> string!
+static Refit.GeneratedRequestRunner.BuildRequestPath(string! relativePathTemplate, bool allowUnmatchedParameter, System.ReadOnlySpan<((int startIdx, int endIdx) range, string? value, bool preEncoded)> uriParams) -> string!
+static Refit.GeneratedRequestRunner.BuildRelativeUri(System.Net.Http.HttpClient! client, string! relativePath, Refit.UrlResolutionMode urlResolution, System.UriFormat queryUriFormat) -> System.Uri!
+static Refit.GeneratedRequestRunner.SendObservable<T, TBody>(System.Net.Http.HttpClient! client, System.Func<System.Net.Http.HttpRequestMessage!>! requestFactory, Refit.RefitSettings! settings, bool isApiResponse, bool shouldDisposeResponse, bool bufferBody, System.Threading.CancellationToken methodCancellationToken) -> System.IObservable<T?>!
+Refit.RestMethodParameterProperty.RestMethodParameterProperty(string! name, System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo!>! propertyChain) -> void
+Refit.RestMethodParameterProperty.PropertyChain.get -> System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo!>!
+Refit.RestMethodParameterProperty.PropertyChain.set -> void
+static Refit.GeneratedRequestRunner.SerializeMultipartPart<T>(Refit.RefitSettings! settings, T value, string! fieldName) -> System.Net.Http.HttpContent!
+Refit.GeneratedQueryStringBuilder.AddPreEscapedKey(string! name, string? value, bool preEncoded) -> void

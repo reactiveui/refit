@@ -148,6 +148,11 @@ visible in three places.
   generator discovers adapters declared in your project at compile time and emits a direct `Adapt` call — no reflection,
   so adapter-backed methods stay trim and Native AOT clean; the reflection request builder resolves adapters registered
   in `RefitSettings.ReturnTypeAdapters`. See [Custom return types](../README.md#custom-return-types-ireturntypeadapter).
+* **Opt-in header validation (`RefitSettings.ValidateHeaders`).** Header values are still added verbatim by default
+  (`TryAddWithoutValidation`), so nothing changes unless you ask for it. Set `ValidateHeaders = true` to have Refit apply
+  headers with `HttpHeaders.Add` instead, validating each value against its header parser and throwing a
+  `FormatException` at request-build time when a value is malformed. CR/LF stripping still applies in both modes. Both
+  request builders honor the flag identically. See [Validating header values](../README.md#validating-header-values).
 
 ## V13.x.x
 
