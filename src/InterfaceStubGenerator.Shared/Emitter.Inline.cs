@@ -28,6 +28,10 @@ internal static partial class Emitter
     /// <summary>The cast prefix for an explicit collection format value.</summary>
     private const string CollectionFormatCast = "(global::Refit.CollectionFormat)";
 
+    /// <summary>The count of request options emitted for every inline method: the configured options, the method name,
+    /// and the raw route template.</summary>
+    private const int AlwaysEmittedRequestOptionCount = 3;
+
     /// <summary>Builds the body of the Refit method.</summary>
     /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="isTopLevel">True if directly from the type we're generating for, false for methods found on base interfaces.</param>
@@ -195,7 +199,7 @@ internal static partial class Emitter
         }
 
         var headerSource = BuildInlineHeaders(request, requestLocal);
-        var requestPropertySource = BuildInlineRequestProperties(request, interfaceModel, requestLocal, settingsLocal);
+        var requestPropertySource = BuildInlineRequestProperties(methodModel, interfaceModel, requestLocal, settingsLocal);
         var methodIndent = Indent(MethodMemberIndentation);
         var opening = BuildMethodOpening(methodModel, isExplicit, isExplicit, interfaceModel.SupportsNullable);
         var methodPrefix = $"{plan.ParamInfoBuilder}{formFieldsSource}{httpMethodFieldSource}{opening}{bodyIndent}var {settingsLocal} = {settingsFieldName};\n";
@@ -516,22 +520,35 @@ internal static partial class Emitter
     }
 
     /// <summary>Builds request-option/property application for an inline generated method.</summary>
-    /// <param name="request">The parsed request model.</param>
+    /// <param name="methodModel">The method model being emitted.</param>
     /// <param name="interfaceModel">The interface model being emitted.</param>
     /// <param name="requestLocal">The generated request message local name.</param>
     /// <param name="settingsLocal">The generated settings local name.</param>
     /// <returns>The generated request option/property statements.</returns>
     private static string BuildInlineRequestProperties(
-        RequestModel request,
+        MethodModel methodModel,
         InterfaceModel interfaceModel,
         string requestLocal,
         string settingsLocal)
     {
-        var parts = new string[1 + interfaceModel.Properties.Count + request.Parameters.Count];
+        var request = methodModel.Request;
+        var parts = new string[AlwaysEmittedRequestOptionCount + interfaceModel.Properties.Count + request.Parameters.Count];
         var count = 0;
         var bodyIndent = Indent(MethodBodyIndentation);
         parts[count] =
             $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddConfiguredRequestOptions({requestLocal}, {settingsLocal}, typeof({interfaceModel.InterfaceDisplayName}));\n";
+        count++;
+
+        // The method name (stripped of any explicit-interface prefix, matching reflection's MethodInfo.Name) and the
+        // raw route template are compile-time literals, so a source-gen handler can read the same low-cardinality
+        // metadata the reflection path publishes without any runtime reflection.
+        parts[count] =
+            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<string>({requestLocal}, "
+            + $"global::Refit.HttpRequestMessageOptions.MethodName, {ToCSharpStringLiteral(StripExplicitInterfacePrefix(methodModel.Name))});\n";
+        count++;
+        parts[count] =
+            $"{bodyIndent}global::Refit.GeneratedRequestRunner.AddRequestProperty<string>({requestLocal}, "
+            + $"global::Refit.HttpRequestMessageOptions.RelativePathTemplate, {ToCSharpStringLiteral(request.Path)});\n";
         count++;
 
         foreach (var property in interfaceModel.Properties)

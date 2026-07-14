@@ -12,6 +12,13 @@ public static class HttpRequestMessageOptions
     /// <summary>Gets the property key for the rest method info of the top-level interface.</summary>
     public static string RestMethodInfo { get; } = "Refit.RestMethodInfo";
 
+    /// <summary>Gets the property key for the Refit interface method's name. Populated on every request.</summary>
+    public static string MethodName { get; } = "Refit.MethodName";
+
+    /// <summary>Gets the property key for the raw route template with <c>{placeholders}</c> (not the filled URL). This is
+    /// the low-cardinality value suited to logging, metrics, and tracing. Populated on every request.</summary>
+    public static string RelativePathTemplate { get; } = "Refit.RelativePathTemplate";
+
     /// <summary>Gets the property key under which the captured request body string is stored for <see cref="ApiExceptionBase.RequestContent"/>.</summary>
     public static string RequestContent { get; } = "Refit.RequestContent";
 }

@@ -415,6 +415,8 @@ static Refit.GeneratedRequestRunner.SetHeader(System.Net.Http.HttpRequestMessage
 static Refit.GeneratedRequestRunner.StreamAsync<T>(System.Net.Http.HttpClient! client, System.Net.Http.HttpRequestMessage! request, Refit.RefitSettings! settings, System.Threading.CancellationToken methodCancellationToken, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Collections.Generic.IAsyncEnumerable<T?>!
 static Refit.GeneratedRequestRunner.UsesDefaultUrlParameterFormatting(Refit.RefitSettings! settings) -> bool
 static Refit.HttpRequestMessageOptions.InterfaceType.get -> string!
+static Refit.HttpRequestMessageOptions.MethodName.get -> string!
+static Refit.HttpRequestMessageOptions.RelativePathTemplate.get -> string!
 static Refit.HttpRequestMessageOptions.RequestContent.get -> string!
 static Refit.HttpRequestMessageOptions.RestMethodInfo.get -> string!
 static Refit.JsonLinesContent.JsonLinesMediaType.get -> string!
