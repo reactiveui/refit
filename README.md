@@ -72,6 +72,7 @@ lets you stub responses and verify requests with a declarative route table — s
     * [Support for Polly and Polly.Context](#support-for-polly-and-pollycontext)
     * [Target Interface type](#target-interface-type)
     * [MethodInfo of the method on the Refit client interface that was invoked](#methodinfo-of-the-method-on-the-refit-client-interface-that-was-invoked)
+* [Per-request timeouts](#per-request-timeouts)
 * [Multipart uploads](#multipart-uploads)
 * [Retrieving the response](#retrieving-the-response)
 * [Using generic interfaces](#using-generic-interfaces)
@@ -1479,6 +1480,29 @@ Note: in .NET 5 `HttpRequestMessage.Properties` has been marked `Obsolete` and R
 into the new `HttpRequestMessage.Options`. Refit provides `HttpRequestMessageOptions.InterfaceType` and
 `HttpRequestMessageOptions.RestMethodInfo` to respectively access the interface type and REST method info from the
 options.
+
+### Per-request timeouts
+
+Decorate a method with `[Timeout(milliseconds)]` to give that single call its own deadline, expressed in milliseconds:
+
+```csharp
+public interface IGitHubApi
+{
+    [Get("/users/{user}")]
+    [Timeout(5000)] // fail this call if it takes longer than 5 seconds
+    Task<User> GetUser(string user);
+}
+```
+
+When the deadline elapses the request is canceled and surfaces as an `OperationCanceledException` (typically a
+`TaskCanceledException`), the same way a lapsed `HttpClient.Timeout` reports. If the method also declares a
+`CancellationToken` parameter, both still work: whichever fires first — the caller's token or the timeout — cancels the
+call.
+
+The per-call timeout is independent of, and composes with, `HttpClient.Timeout` (the client-wide default) and any
+timeout enforced by Polly or a `DelegatingHandler`; whichever deadline elapses first wins. A value that is not positive
+leaves the method without a per-call deadline. Only a positive value adds one, so methods without `[Timeout]` pay no
+extra cost.
 
 ### Multipart uploads
 
