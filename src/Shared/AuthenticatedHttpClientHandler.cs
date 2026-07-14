@@ -63,7 +63,12 @@ internal sealed class AuthenticatedHttpClientHandler : DelegatingHandler
         if (auth is not null)
         {
             var token = await _getToken(request, cancellationToken).ConfigureAwait(false);
-            request.Headers.Authorization = new(auth.Scheme, token);
+
+            // An empty token means "no credentials for this request": drop the header rather than
+            // sending a blank `Authorization: <scheme>` value (#1688).
+            request.Headers.Authorization = string.IsNullOrWhiteSpace(token)
+                ? null
+                : new(auth.Scheme, token);
         }
 
         return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);

@@ -209,6 +209,54 @@ public class AuthenticatedClientHandlerTests
         await Assert.That(result).IsEqualTo("Ok");
     }
 
+    /// <summary>Verifies an empty token from the getter drops the authorization header (#1688).</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task AuthenticatedHandlerWithEmptyTokenSkipsAuth()
+    {
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Where = static msg => msg.Headers.Authorization is null },
+                Reply.Text("Ok", PlainTextContentType)
+            },
+        };
+        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
+        {
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(string.Empty)
+        });
+
+        var result = await fixture.GetAuthenticated();
+
+        await handler.VerifyAllCalledAsync();
+
+        await Assert.That(result).IsEqualTo("Ok");
+    }
+
+    /// <summary>Verifies a whitespace token from the getter drops the authorization header (#1688).</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task AuthenticatedHandlerWithWhitespaceTokenSkipsAuth()
+    {
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Where = static msg => msg.Headers.Authorization is null },
+                Reply.Text("Ok", PlainTextContentType)
+            },
+        };
+        var fixture = handler.CreateClient<IMyAuthenticatedService>(BaseUrl, new RefitSettings
+        {
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("   ")
+        });
+
+        var result = await fixture.GetAuthenticated();
+
+        await handler.VerifyAllCalledAsync();
+
+        await Assert.That(result).IsEqualTo("Ok");
+    }
+
     /// <summary>Verifies authentication works when the token is supplied as a method parameter.</summary>
     /// <returns>A task that represents the asynchronous test operation.</returns>
     [Test]
@@ -482,6 +530,60 @@ public class AuthenticatedClientHandlerTests
                 await Task.Yield();
                 return TokenValue;
             }
+        };
+
+        var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
+
+        var result = await fixture.GetAuthenticated();
+
+        await handler.VerifyAllCalledAsync();
+        await Assert.That(result).IsEqualTo("Ok");
+    }
+
+    /// <summary>Verifies an empty token from the getter drops the authorization header when supplying an explicit HTTP client (#1688).</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task AuthorizationHeaderValueGetterWithEmptyTokenSkipsAuthWhenSupplyingHttpClient()
+    {
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Where = static msg => msg.Headers.Authorization is null },
+                Reply.Text("Ok", PlainTextContentType)
+            },
+        };
+        var httpClient = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
+
+        var settings = new RefitSettings
+        {
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>(string.Empty)
+        };
+
+        var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
+
+        var result = await fixture.GetAuthenticated();
+
+        await handler.VerifyAllCalledAsync();
+        await Assert.That(result).IsEqualTo("Ok");
+    }
+
+    /// <summary>Verifies a whitespace token from the getter drops the authorization header when supplying an explicit HTTP client (#1688).</summary>
+    /// <returns>A task that represents the asynchronous test operation.</returns>
+    [Test]
+    public async Task AuthorizationHeaderValueGetterWithWhitespaceTokenSkipsAuthWhenSupplyingHttpClient()
+    {
+        var handler = new StubHttp
+        {
+            {
+                new RouteMatcher { Method = HttpMethod.Get, Template = AuthUrl, Where = static msg => msg.Headers.Authorization is null },
+                Reply.Text("Ok", PlainTextContentType)
+            },
+        };
+        var httpClient = new HttpClient(handler) { BaseAddress = new(BaseUrl) };
+
+        var settings = new RefitSettings
+        {
+            AuthorizationHeaderValueGetter = static (_, _) => new ValueTask<string>("   ")
         };
 
         var fixture = RestService.For<IMyAuthenticatedService>(httpClient, settings);
